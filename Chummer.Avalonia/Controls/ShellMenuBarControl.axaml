@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Chummer.Avalonia.Controls.ShellMenuBarControl">
+  <Grid ColumnDefinitions="Auto,*">
+    <StackPanel x:Name="MenuBarPanel" Grid.Column="0" Orientation="Horizontal" Spacing="6">
+      <Button Classes="menu-button" Content="File" Click="MenuButton_OnClick" />
+      <Button Classes="menu-button" Content="Edit" Click="MenuButton_OnClick" />
+      <Button Classes="menu-button" Content="Special" Click="MenuButton_OnClick" />
+      <Button Classes="menu-button" Content="Tools" Click="MenuButton_OnClick" />
+      <Button Classes="menu-button" Content="Windows" Click="MenuButton_OnClick" />
+      <Button Classes="menu-button" Content="Help" Click="MenuButton_OnClick" />
+    </StackPanel>
+    <TextBlock Grid.Column="1"
+               HorizontalAlignment="Right"
+               VerticalAlignment="Center"
+               FontWeight="SemiBold"
+               Text="Chummer Desktop Shell (Avalonia Head)" />
+  </Grid>
+</UserControl>

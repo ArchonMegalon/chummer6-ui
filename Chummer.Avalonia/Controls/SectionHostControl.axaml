@@ -1,0 +1,251 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Chummer.Avalonia.Controls.SectionHostControl">
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
+    <TextBlock Grid.Row="0" x:Name="NoticeText" Text="Notice: Ready." TextWrapping="Wrap" />
+
+    <Border Grid.Row="1" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,*" RowSpacing="6">
+        <TextBlock Grid.Row="0" Text="Active Section Preview" FontWeight="Bold" />
+        <Border Grid.Row="1"
+                x:Name="BuildLabBorder"
+                IsVisible="False"
+                Padding="8"
+                BorderThickness="1"
+                BorderBrush="#CBD5E1">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+            <TextBlock x:Name="BuildLabSummaryText"
+                       Text="Build Lab intake"
+                       FontWeight="Bold"
+                       TextWrapping="Wrap" />
+            <ListBox Grid.Row="1" x:Name="BuildLabFieldsList" Height="132">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <ListBox Grid.Row="2" x:Name="BuildLabConstraintsList" Height="72">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <TextBox Grid.Row="3"
+                     x:Name="BuildLabProvenanceBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+            <ListBox Grid.Row="4" x:Name="BuildLabVariantsList" Height="128">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <TextBox Grid.Row="5"
+                     x:Name="BuildLabTimelinesBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+            <TextBox Grid.Row="6"
+                     x:Name="BuildLabExportPayloadsBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+            <ListBox Grid.Row="7" x:Name="BuildLabExportTargetsList" Height="96">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <ListBox Grid.Row="8" x:Name="BuildLabActionsList" Height="56">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+          </Grid>
+        </Border>
+        <Border Grid.Row="2"
+                x:Name="BrowseWorkspaceBorder"
+                IsVisible="False"
+                Padding="8"
+                BorderThickness="1"
+                BorderBrush="#CBD5E1">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="6">
+            <TextBlock x:Name="BrowseSummaryText"
+                       Text="Browse workspace"
+                       FontWeight="Bold"
+                       TextWrapping="Wrap" />
+            <ListBox Grid.Row="1" x:Name="BrowsePresetsList" Height="56">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <ListBox Grid.Row="2" x:Name="BrowseFacetsList" Height="96">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
+              <ListBox Grid.Column="0" x:Name="BrowseResultsList" Height="160">
+                <ListBox.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                  </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+              </ListBox>
+              <TextBox Grid.Column="1"
+                       x:Name="BrowseDetailBox"
+                       AcceptsReturn="True"
+                       TextWrapping="Wrap"
+                       IsReadOnly="True" />
+            </Grid>
+            <ListBox Grid.Row="4" x:Name="BrowseSelectedItemsList" Height="76">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+          </Grid>
+        </Border>
+        <Border Grid.Row="3"
+                x:Name="ContactGraphBorder"
+                IsVisible="False"
+                Padding="8"
+                BorderThickness="1"
+                BorderBrush="#CBD5E1">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+            <TextBlock x:Name="ContactGraphSummaryText"
+                       Text="Contact relationship graph"
+                       FontWeight="Bold"
+                       TextWrapping="Wrap" />
+            <ListBox Grid.Row="1" x:Name="ContactNodeList" Height="112">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <TextBox Grid.Row="2"
+                     x:Name="ContactFactionStatusBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+            <TextBox Grid.Row="3"
+                     x:Name="ContactHeatObligationBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+            <TextBox Grid.Row="4"
+                     x:Name="ContactFavorRailBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+          </Grid>
+        </Border>
+        <Border Grid.Row="4"
+                x:Name="NpcPersonaStudioBorder"
+                IsVisible="False"
+                Padding="8"
+                BorderThickness="1"
+                BorderBrush="#CBD5E1">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+            <TextBlock x:Name="NpcPersonaSummaryText"
+                       Text="NPC Persona Studio"
+                       FontWeight="Bold"
+                       TextWrapping="Wrap" />
+            <ListBox Grid.Row="1" x:Name="NpcPersonaList" Height="92">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <ListBox Grid.Row="2" x:Name="NpcPolicyList" Height="92">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <TextBox Grid.Row="3"
+                     x:Name="NpcEvidenceBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+            <TextBox Grid.Row="4"
+                     x:Name="NpcApprovalBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+          </Grid>
+        </Border>
+        <Border Grid.Row="5"
+                x:Name="DowntimePlannerBorder"
+                IsVisible="False"
+                Padding="8"
+                BorderThickness="1"
+                BorderBrush="#CBD5E1">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6">
+            <TextBlock x:Name="DowntimePlannerSummaryText"
+                       Text="Downtime planner"
+                       FontWeight="Bold"
+                       TextWrapping="Wrap" />
+            <ListBox Grid.Row="1" x:Name="DowntimePlannerLanesList" Height="92">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+            <TextBox Grid.Row="2"
+                     x:Name="DowntimeCalendarBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+            <ListBox Grid.Row="3" x:Name="DowntimeScheduleList" Height="96">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+          </Grid>
+        </Border>
+        <ListBox Grid.Row="6" x:Name="SectionRowsList" Height="120">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <VirtualizingStackPanel />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+        </ListBox>
+        <TextBox Grid.Row="7"
+                 x:Name="SectionPreviewBox"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 IsReadOnly="True" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="2" BorderThickness="1" BorderBrush="#CBD5E1" Padding="6">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Raw XML Import (Developer Utility)" FontWeight="Bold" />
+        <TextBox x:Name="XmlInputBox"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 Height="100"
+                 Watermark="Optional raw XML payload for diagnostics" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

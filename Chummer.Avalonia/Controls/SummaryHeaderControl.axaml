@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Chummer.Avalonia.Controls.SummaryHeaderControl">
+  <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
+    <Border Grid.Column="0" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
+      <StackPanel>
+        <TextBlock Text="Name" FontWeight="Bold" />
+        <TextBlock x:Name="NameValueText" Text="-" />
+      </StackPanel>
+    </Border>
+    <Border Grid.Column="1" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
+      <StackPanel>
+        <TextBlock Text="Alias" FontWeight="Bold" />
+        <TextBlock x:Name="AliasValueText" Text="-" />
+      </StackPanel>
+    </Border>
+    <Border Grid.Column="2" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
+      <StackPanel>
+        <TextBlock Text="Karma" FontWeight="Bold" />
+        <TextBlock x:Name="KarmaValueText" Text="-" />
+      </StackPanel>
+    </Border>
+    <Border Grid.Column="3" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
+      <StackPanel>
+        <TextBlock Text="Skills" FontWeight="Bold" />
+        <TextBlock x:Name="SkillsValueText" Text="-" />
+      </StackPanel>
+    </Border>
+    <Border Grid.Column="4" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
+      <StackPanel>
+        <TextBlock Text="Runtime" FontWeight="Bold" />
+        <TextBlock x:Name="RuntimeValueText" Text="-" TextWrapping="Wrap" />
+        <Button x:Name="RuntimeInspectButton" Content="Inspect Runtime" HorizontalAlignment="Left" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>
