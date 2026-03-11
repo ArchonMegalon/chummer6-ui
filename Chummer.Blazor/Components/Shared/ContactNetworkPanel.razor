@@ -1,0 +1,101 @@
+@using Chummer.Contracts.Characters
+@using Chummer.Presentation.Overview
+
+<section class="panel design-panel">
+    <header class="panel-header">
+        <div>
+            <h2>Contact Network</h2>
+            <p class="meta">Relationship graph rendered from contact contracts with faction status, heat, obligations, and unresolved favor rails.</p>
+        </div>
+        @if (Graph is not null)
+        {
+            <span class="badge">@Graph.Nodes.Count contacts · @Graph.EdgeCount links</span>
+        }
+    </header>
+
+    @if (Graph is null || Graph.Nodes.Count == 0)
+    {
+        <p class="hint">No contacts are available for this view.</p>
+    }
+    else
+    {
+        <ul class="runtime-list" data-contact-graph-nodes>
+            @foreach (ContactRelationshipNodeState node in Graph.Nodes)
+            {
+                <li data-contact-node="@node.Name">
+                    <div class="coach-card-header">
+                        <div>
+                            <strong>@node.Name</strong>
+                            <p class="meta">@node.Role · @node.Location · @node.Faction</p>
+                        </div>
+                        <span class="badge @GetTrustBadge(node.Loyalty)">L@node.Loyalty / C@node.Connection</span>
+                    </div>
+                    <dl class="facts compact">
+                        <div><dt>Connection</dt><dd>@node.Connection</dd></div>
+                        <div><dt>Loyalty</dt><dd>@node.Loyalty</dd></div>
+                        <div><dt>Faction status</dt><dd>@node.FactionStatus</dd></div>
+                        <div><dt>Heat</dt><dd>@node.Heat (@GetHeatStatus(node.Heat))</dd></div>
+                        <div><dt>Links</dt><dd>@string.Join(", ", node.LinkedContactNames)</dd></div>
+                    </dl>
+                </li>
+            }
+        </ul>
+
+        <div class="facts compact" data-contact-faction-rail>
+            <h3>Faction Status Rail</h3>
+            @foreach (ContactRelationshipFactionState faction in Graph.Factions)
+            {
+                <p>@faction.Name: @faction.Status (contacts: @faction.ContactCount, heat: @faction.AverageHeat)</p>
+            }
+        </div>
+
+        <div class="facts compact" data-contact-heat-rail>
+            <h3>Heat Rail</h3>
+            @foreach (ContactRelationshipHeatState heat in Graph.HeatRails.Take(3))
+            {
+                <p>@heat.Subject: @heat.Heat (@heat.Status)</p>
+            }
+        </div>
+
+        <div class="facts compact" data-contact-obligation-rail>
+            <h3>Obligation Rail</h3>
+            @if (Graph.Obligations.Count == 0)
+            {
+                <p class="hint">No active obligations.</p>
+            }
+            else
+            {
+                @foreach (ContactRelationshipObligationState obligation in Graph.Obligations)
+                {
+                    <p>@obligation.Subject: @obligation.Summary (@obligation.Severity)</p>
+                }
+            }
+        </div>
+
+        <div class="facts compact" data-contact-favor-rail>
+            <h3>Unresolved Favor Rail</h3>
+            @if (Graph.UnresolvedFavors.Count == 0)
+            {
+                <p class="hint">No unresolved favors.</p>
+            }
+            else
+            {
+                @foreach (ContactRelationshipFavorState favor in Graph.UnresolvedFavors)
+                {
+                    <p>@favor.Subject: @favor.Summary@(favor.Overdue ? " (overdue)" : string.Empty)</p>
+                }
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public ContactRelationshipGraphState? Graph { get; set; }
+
+    private static string GetTrustBadge(int loyalty)
+        => loyalty >= 4 ? "coach-badge good" : loyalty >= 2 ? "coach-badge warn" : string.Empty;
+
+    private static string GetHeatStatus(int heat)
+        => heat >= 5 ? "critical" : heat >= 3 ? "watch" : "low";
+}

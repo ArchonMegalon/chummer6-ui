@@ -1,0 +1,559 @@
+@using Chummer.Contracts.Presentation
+
+<section class="panel design-panel" data-generated-asset-viewer>
+    <header class="panel-header">
+        <div>
+            <h2>@Title</h2>
+            <p class="note">@Summary</p>
+        </div>
+        @if (SelectedAsset is not null)
+        {
+            <div class="button-row compact" data-generated-asset-header-badges>
+                <span class="badge @(SelectedAsset.IsCanonical ? "good" : string.Empty)">
+                    @(SelectedAsset.IsCanonical ? "canonical" : "candidate")
+                </span>
+                <span class="badge">@SelectedAsset.ReviewState</span>
+                <span class="badge">@SelectedAsset.AssetKind</span>
+            </div>
+        }
+    </header>
+
+    @if (Assets.Count == 0)
+    {
+        <p class="hint">No generated assets are ready for review.</p>
+    }
+    else
+    {
+        <div class="stack">
+            <section class="panel trace-card" data-generated-asset-rail>
+                <header class="trace-section-title">Generated Assets</header>
+                <div class="button-row compact" role="tablist" aria-label="Generated assets">
+                    @foreach (GeneratedAssetProjection asset in Assets)
+                    {
+                        bool isSelected = string.Equals(asset.AssetId, SelectedAsset?.AssetId, StringComparison.Ordinal);
+                        <button type="button"
+                                class="mini-btn @(isSelected ? "selected" : string.Empty)"
+                                data-generated-asset-tab="@asset.AssetId"
+                                role="tab"
+                                id="@($"generated-asset-tab-{asset.AssetId}")"
+                                aria-selected="@isSelected"
+                                aria-controls="@($"generated-asset-panel-{asset.AssetId}")"
+                                @onclick="() => SelectAsset(asset.AssetId)">
+                            @asset.Title
+                        </button>
+                    }
+                </div>
+            </section>
+
+            @if (SelectedAsset is not null)
+            {
+                @foreach (GeneratedAssetProjection asset in Assets)
+                {
+                    bool isSelected = string.Equals(asset.AssetId, SelectedAsset.AssetId, StringComparison.Ordinal);
+                    <div role="tabpanel"
+                         id="@($"generated-asset-panel-{asset.AssetId}")"
+                         aria-labelledby="@($"generated-asset-tab-{asset.AssetId}")"
+                         hidden="@(!isSelected)">
+                        @if (isSelected)
+                        {
+                            <article class="panel trace-card" data-generated-asset-detail="@SelectedAsset.AssetId">
+                                <header class="coach-card-header">
+                                    <div>
+                                        <h3>@SelectedAsset.Title</h3>
+                                        <p class="meta">@SelectedAsset.AssetKind • @SelectedAsset.Source</p>
+                                    </div>
+                                    <div class="button-row compact">
+                                        @foreach (GeneratedAssetBadge badge in SelectedAsset.Badges ?? [])
+                                        {
+                                            <span class="badge @(badge.Emphasized ? "good" : string.Empty)"
+                                                  data-generated-asset-badge="@badge.BadgeId">
+                                                @badge.Label
+                                            </span>
+                                        }
+                                    </div>
+                                </header>
+
+                    <div class="gm-board-fact-grid">
+                        <div>
+                            <span class="trace-section-title">Created</span>
+                            <span data-generated-asset-created>@SelectedAsset.CreatedAtUtc.ToString("u")</span>
+                        </div>
+                        <div>
+                            <span class="trace-section-title">Source</span>
+                            <span data-generated-asset-source>@SelectedAsset.Source</span>
+                        </div>
+                        <div>
+                            <span class="trace-section-title">Review State</span>
+                            <span data-generated-asset-review-state>@SelectedAsset.ReviewState</span>
+                        </div>
+                        <div>
+                            <span class="trace-section-title">Preview</span>
+                            <span data-generated-asset-preview-kind>@SelectedAsset.PreviewKind</span>
+                        </div>
+                    </div>
+
+                    <section data-generated-asset-preview>
+                        <header class="trace-section-title">Preview</header>
+                        @switch (SelectedAsset.PreviewKind)
+                        {
+                            case GeneratedAssetPreviewKinds.Image:
+                                @if (SelectedAsset.ComparisonSlots?.Count > 0)
+                                {
+                                    <div class="gm-board-fact-grid" data-generated-asset-compare>
+                                        @foreach (GeneratedAssetComparisonSlot slot in SelectedAsset.ComparisonSlots)
+                                        {
+                                            <article class="panel trace-card" data-generated-asset-compare-slot="@slot.SlotId">
+                                                <header class="coach-card-header">
+                                                    <div>
+                                                        <strong>@slot.Label</strong>
+                                                        <p class="meta">@slot.Role</p>
+                                                    </div>
+                                                    @if (slot.Badges?.Count > 0)
+                                                    {
+                                                        <div class="button-row compact">
+                                                            @foreach (GeneratedAssetBadge badge in slot.Badges)
+                                                            {
+                                                                <span class="badge @(badge.Emphasized ? "good" : string.Empty)">@badge.Label</span>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </header>
+                                                <p class="meta">@slot.PreviewUri</p>
+                                                <p>@slot.Summary</p>
+                                                @if (slot.Metadata?.Count > 0)
+                                                {
+                                                    <div class="stack compact" data-generated-asset-compare-metadata="@slot.SlotId">
+                                                        @foreach (GeneratedAssetMetadataField field in slot.Metadata)
+                                                        {
+                                                            <p class="meta">
+                                                                <strong>@field.Label:</strong> @field.Value
+                                                            </p>
+                                                        }
+                                                    </div>
+                                                }
+                                            </article>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div data-generated-asset-preview-image>
+                                        <strong>Image preview</strong>
+                                        <p class="meta">@SelectedAsset.PreviewUri</p>
+                                        <p>@SelectedAsset.Summary</p>
+                                    </div>
+                                }
+                                break;
+                            case GeneratedAssetPreviewKinds.Video:
+                                <div class="stack" data-generated-asset-preview-video>
+                                    <article class="panel trace-card" data-generated-asset-video-viewer>
+                                        <header class="coach-card-header">
+                                            <div>
+                                                <strong>Route-video viewer</strong>
+                                                <p class="meta">@SelectedAsset.PreviewUri</p>
+                                            </div>
+                                            <div class="button-row compact">
+                                                <span class="badge">@SelectedAsset.ReviewState</span>
+                                                <span class="badge">@SelectedAsset.AssetKind</span>
+                                            </div>
+                                        </header>
+                                        <p>@SelectedAsset.Summary</p>
+                                        @if (!string.IsNullOrWhiteSpace(SelectedAsset.PreviewBody))
+                                        {
+                                            <p class="note">@SelectedAsset.PreviewBody</p>
+                                        }
+                                    </article>
+                                    @if (SelectedAsset.PreviewSections?.Count > 0)
+                                    {
+                                        <div class="stack compact" data-generated-asset-video-cards>
+                                            @foreach (GeneratedAssetPreviewSection section in SelectedAsset.PreviewSections)
+                                            {
+                                                <article class="panel trace-card" data-generated-asset-video-card="@section.SectionId">
+                                                    <header class="coach-card-header">
+                                                        <div>
+                                                            <strong>@section.Label</strong>
+                                                            <p class="meta">@section.Summary</p>
+                                                        </div>
+                                                        @if (section.Badges?.Count > 0)
+                                                        {
+                                                            <div class="button-row compact">
+                                                                @foreach (GeneratedAssetBadge badge in section.Badges)
+                                                                {
+                                                                    <span class="badge @(badge.Emphasized ? "good" : string.Empty)">@badge.Label</span>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </header>
+                                                    @if (!string.IsNullOrWhiteSpace(section.Body))
+                                                    {
+                                                        <p>@section.Body</p>
+                                                    }
+                                                    @if (section.Metadata?.Count > 0)
+                                                    {
+                                                        <div class="gm-board-fact-grid" data-generated-asset-video-card-metadata="@section.SectionId">
+                                                            @foreach (GeneratedAssetMetadataField field in section.Metadata)
+                                                            {
+                                                                <div data-generated-asset-video-card-field="@field.FieldId">
+                                                                    <span class="trace-section-title">@field.Label</span>
+                                                                    <span class="@(field.Emphasized ? "note" : string.Empty)">@field.Value</span>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </article>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                break;
+                            case GeneratedAssetPreviewKinds.Document:
+                                @if (SelectedAsset.PreviewSections?.Count > 0)
+                                {
+                                    <div class="stack" data-generated-asset-preview-document>
+                                        <strong>Document preview</strong>
+                                        @foreach (GeneratedAssetPreviewSection section in SelectedAsset.PreviewSections)
+                                        {
+                                            <article class="panel trace-card" data-generated-asset-preview-section="@section.SectionId">
+                                                <header class="coach-card-header">
+                                                    <div>
+                                                        <strong>@section.Label</strong>
+                                                        <p class="meta">@section.Summary</p>
+                                                    </div>
+                                                    @if (section.Badges?.Count > 0)
+                                                    {
+                                                        <div class="button-row compact">
+                                                            @foreach (GeneratedAssetBadge badge in section.Badges)
+                                                            {
+                                                                <span class="badge @(badge.Emphasized ? "good" : string.Empty)">@badge.Label</span>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </header>
+                                                @if (!string.IsNullOrWhiteSpace(section.Body))
+                                                {
+                                                    <p>@section.Body</p>
+                                                }
+                                                @if (section.Metadata?.Count > 0)
+                                                {
+                                                    <div class="gm-board-fact-grid">
+                                                        @foreach (GeneratedAssetMetadataField field in section.Metadata)
+                                                        {
+                                                            <div data-generated-asset-preview-section-field="@field.FieldId">
+                                                                <span class="trace-section-title">@field.Label</span>
+                                                                <span class="@(field.Emphasized ? "note" : string.Empty)">@field.Value</span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </article>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div data-generated-asset-preview-document>
+                                        <strong>Document preview</strong>
+                                        <p>@SelectedAsset.PreviewBody</p>
+                                    </div>
+                                }
+                                break;
+                            default:
+                                <div data-generated-asset-preview-summary>
+                                    <strong>Summary preview</strong>
+                                    <p>@SelectedAsset.PreviewBody</p>
+                                </div>
+                                break;
+                        }
+                    </section>
+
+                    @if (SelectedAsset.Metadata?.Count > 0)
+                    {
+                        <section data-generated-asset-metadata>
+                            <header class="trace-section-title">Explain + Source</header>
+                            <div class="gm-board-fact-grid">
+                                @foreach (GeneratedAssetMetadataField field in SelectedAsset.Metadata)
+                                {
+                                    <div data-generated-asset-metadata-field="@field.FieldId">
+                                        <span class="trace-section-title">@field.Label</span>
+                                        <span class="@(field.Emphasized ? "note" : string.Empty)">@field.Value</span>
+                                    </div>
+                                }
+                            </div>
+                        </section>
+                    }
+
+                    <section data-generated-asset-actions>
+                        <header class="trace-section-title">Operational Actions</header>
+                        @if (IsStaleDispatchState(SelectedAsset.ReviewState))
+                        {
+                            <p class="error" role="status" aria-live="polite" data-generated-asset-stale-banner>
+                                Dispatch state is stale after a session context shift and needs refresh.
+                            </p>
+                        }
+                        <div class="button-row compact">
+                            @foreach (GeneratedAssetActionDescriptor action in SelectedAsset.Actions ?? [])
+                            {
+                                <button type="button"
+                                        class="mini-btn"
+                                        disabled="@(!action.Enabled)"
+                                        data-generated-asset-action="@action.ActionKind"
+                                        data-generated-asset-action-id="@action.ActionId"
+                                        @onclick="() => RequestAction(SelectedAsset.AssetId, action)">
+                                    @action.Label
+                                </button>
+                            }
+                        </div>
+                        @if (HasCoachRoutingRail(SelectedAsset))
+                        {
+                            <div class="gm-board-fact-grid" data-generated-asset-coach-routing>
+                                <div>
+                                    <span class="trace-section-title">Coach Route</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "coachRouteType", "unknown")</span>
+                                </div>
+                                <div>
+                                    <span class="trace-section-title">Route Class</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "coachRouteClass", "unknown")</span>
+                                </div>
+                                <div>
+                                    <span class="trace-section-title">Operator</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "coachOperator", "unassigned")</span>
+                                </div>
+                                <div>
+                                    <span class="trace-section-title">Model</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "coachModel", "unknown")</span>
+                                </div>
+                            </div>
+                        }
+                        @if (HasShadowfeedRail(SelectedAsset))
+                        {
+                            <div class="gm-board-fact-grid" data-generated-asset-shadowfeed-rail>
+                                <div>
+                                    <span class="trace-section-title">Dispatch Channel</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "shadowfeedDispatchChannel", "pending")</span>
+                                </div>
+                                <div>
+                                    <span class="trace-section-title">Dispatch Receipt</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "shadowfeedDispatchReceipt", "pending")</span>
+                                </div>
+                                <div>
+                                    <span class="trace-section-title">Review Queue</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "shadowfeedReviewQueue", "pending")</span>
+                                </div>
+                                <div>
+                                    <span class="trace-section-title">Reviewer</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "shadowfeedReviewer", "unassigned")</span>
+                                </div>
+                            </div>
+                        }
+                        @if (SelectedAsset.AttachmentTargets?.Count > 0)
+                        {
+                            <div class="button-row compact" data-generated-asset-attachments>
+                                @foreach (GeneratedAssetAttachmentTarget target in SelectedAsset.AttachmentTargets)
+                                {
+                                    <button type="button"
+                                            class="mini-btn"
+                                            disabled="@(!target.Enabled)"
+                                            data-generated-asset-attach="@target.TargetId"
+                                            @onclick="() => RequestAttach(SelectedAsset.AssetId, target)">
+                                        Attach to @target.Label
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </section>
+                    @if (HasPortraitForgeRail(SelectedAsset))
+                    {
+                        <section data-generated-portrait-forge>
+                            <header class="trace-section-title">Portrait Forge</header>
+                            <div class="gm-board-fact-grid" data-generated-portrait-forge-selection>
+                                <div data-generated-portrait-forge-seed>
+                                    <span class="trace-section-title">Prompt seed</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "portraitPromptSeed", "n/a")</span>
+                                </div>
+                                <div data-generated-portrait-forge-style>
+                                    <span class="trace-section-title">Selected style</span>
+                                    <span>@GetMetadataValue(SelectedAsset, "portraitStyleSelected", "unassigned")</span>
+                                </div>
+                                <div data-generated-portrait-forge-canonical>
+                                    <span class="trace-section-title">Canonical state</span>
+                                    <span>@(SelectedAsset.IsCanonical ? "canonical" : "candidate")</span>
+                                </div>
+                            </div>
+                            @if (TryGetCsvMetadataValues(SelectedAsset, "portraitStyleOptions", out IReadOnlyList<string> styleOptions))
+                            {
+                                <div class="button-row compact" data-generated-portrait-forge-style-options>
+                                    @foreach (string option in styleOptions)
+                                    {
+                                        bool selectedStyle = string.Equals(
+                                            option,
+                                            GetMetadataValue(SelectedAsset, "portraitStyleSelected", string.Empty),
+                                            StringComparison.OrdinalIgnoreCase);
+                                        <span class="badge @(selectedStyle ? "good" : string.Empty)">@option</span>
+                                    }
+                                </div>
+                            }
+                            @{
+                                IReadOnlyList<GeneratedAssetPreviewSection> rerollHistory = GetRerollHistory(SelectedAsset);
+                            }
+                            @if (rerollHistory.Count > 0)
+                            {
+                                <div class="stack compact" data-generated-portrait-forge-reroll-timeline>
+                                    @foreach (GeneratedAssetPreviewSection reroll in rerollHistory)
+                                    {
+                                        <article class="panel trace-card" data-generated-portrait-forge-reroll="@reroll.SectionId">
+                                            <header class="coach-card-header">
+                                                <div>
+                                                    <strong>@reroll.Label</strong>
+                                                    <p class="meta">@reroll.Summary</p>
+                                                </div>
+                                                @if (reroll.Badges?.Count > 0)
+                                                {
+                                                    <div class="button-row compact">
+                                                        @foreach (GeneratedAssetBadge badge in reroll.Badges)
+                                                        {
+                                                            <span class="badge @(badge.Emphasized ? "good" : string.Empty)">@badge.Label</span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </header>
+                                            @if (!string.IsNullOrWhiteSpace(reroll.Body))
+                                            {
+                                                <p>@reroll.Body</p>
+                                            }
+                                        </article>
+                                    }
+                                </div>
+                            }
+                        </section>
+                    }
+                            </article>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Generated Asset Viewer";
+
+    [Parameter]
+    public string Summary { get; set; } = "Review generated portraits, dossiers, recaps, and reveal media through one reusable approval frame.";
+
+    [Parameter]
+    public IReadOnlyList<GeneratedAssetProjection> Assets { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<string> SelectedAssetChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<GeneratedAssetActionRequest> ActionRequested { get; set; }
+
+    [Parameter]
+    public string? SelectedAssetId { get; set; }
+
+    private string? _selectedAssetId;
+
+    private GeneratedAssetProjection? SelectedAsset
+        => Assets.FirstOrDefault(asset => string.Equals(asset.AssetId, EffectiveSelectedAssetId, StringComparison.Ordinal));
+
+    private string? EffectiveSelectedAssetId
+        => !string.IsNullOrWhiteSpace(SelectedAssetId)
+            ? SelectedAssetId
+            : !string.IsNullOrWhiteSpace(_selectedAssetId)
+            ? _selectedAssetId
+            : Assets.Count > 0
+                ? Assets[0].AssetId
+                : null;
+
+    protected override void OnParametersSet()
+    {
+        if (Assets.Count == 0)
+        {
+            _selectedAssetId = null;
+            return;
+        }
+
+        string? preferredAssetId = !string.IsNullOrWhiteSpace(SelectedAssetId) ? SelectedAssetId : _selectedAssetId;
+
+        if (string.IsNullOrWhiteSpace(preferredAssetId)
+            || Assets.All(asset => !string.Equals(asset.AssetId, preferredAssetId, StringComparison.Ordinal)))
+        {
+            _selectedAssetId = Assets[0].AssetId;
+            return;
+        }
+
+        _selectedAssetId = preferredAssetId;
+    }
+
+    private async Task SelectAsset(string assetId)
+    {
+        _selectedAssetId = assetId;
+        await SelectedAssetChanged.InvokeAsync(assetId);
+    }
+
+    private Task RequestAction(string assetId, GeneratedAssetActionDescriptor action)
+        => ActionRequested.InvokeAsync(new GeneratedAssetActionRequest(assetId, action.ActionId, action.Kind, action.TargetId));
+
+    private Task RequestAttach(string assetId, GeneratedAssetAttachmentTarget target)
+        => ActionRequested.InvokeAsync(new GeneratedAssetActionRequest(
+            assetId,
+            $"{GeneratedAssetActionKinds.Attach}:{target.TargetId}",
+            GeneratedAssetActionKinds.Attach,
+            target.TargetId));
+
+    private static bool HasCoachRoutingRail(GeneratedAssetProjection asset)
+        => HasMetadataField(asset, "coachRouteType")
+            || HasMetadataField(asset, "coachRouteClass")
+            || HasMetadataField(asset, "coachOperator")
+            || HasMetadataField(asset, "coachModel");
+
+    private static bool HasShadowfeedRail(GeneratedAssetProjection asset)
+        => HasMetadataField(asset, "shadowfeedDispatchChannel")
+            || HasMetadataField(asset, "shadowfeedDispatchReceipt")
+            || HasMetadataField(asset, "shadowfeedReviewQueue")
+            || HasMetadataField(asset, "shadowfeedReviewer");
+
+    private static bool HasPortraitForgeRail(GeneratedAssetProjection asset)
+        => string.Equals(asset.Source, "Portrait Forge", StringComparison.Ordinal)
+            || HasMetadataField(asset, "portraitPromptSeed")
+            || HasMetadataField(asset, "portraitStyleSelected")
+            || HasMetadataField(asset, "portraitStyleOptions")
+            || GetRerollHistory(asset).Count > 0;
+
+    private static bool IsStaleDispatchState(string? reviewState)
+        => !string.IsNullOrWhiteSpace(reviewState)
+            && reviewState.StartsWith("stale:", StringComparison.OrdinalIgnoreCase);
+
+    private static bool HasMetadataField(GeneratedAssetProjection asset, string fieldId)
+        => asset.Metadata?.Any(field => string.Equals(field.FieldId, fieldId, StringComparison.Ordinal)) == true;
+
+    private static bool TryGetCsvMetadataValues(GeneratedAssetProjection asset, string fieldId, out IReadOnlyList<string> values)
+    {
+        string raw = GetMetadataValue(asset, fieldId, string.Empty);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            values = [];
+            return false;
+        }
+
+        values = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return values.Count > 0;
+    }
+
+    private static IReadOnlyList<GeneratedAssetPreviewSection> GetRerollHistory(GeneratedAssetProjection asset)
+        => asset.PreviewSections?
+            .Where(section => section.SectionId.StartsWith("portrait-reroll-", StringComparison.Ordinal))
+            .ToArray()
+            ?? [];
+
+    private static string GetMetadataValue(GeneratedAssetProjection asset, string fieldId, string fallback)
+    {
+        string? value = asset.Metadata?
+            .FirstOrDefault(field => string.Equals(field.FieldId, fieldId, StringComparison.Ordinal))
+            ?.Value;
+        return string.IsNullOrWhiteSpace(value) ? fallback : value;
+    }
+}

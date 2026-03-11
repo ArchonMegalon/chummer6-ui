@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <BuildInParallel>false</BuildInParallel>
+    <RestoreDisableParallel>true</RestoreDisableParallel>
+    <MaxCpuCount>1</MaxCpuCount>
+    <ChummerContractsPackageId Condition="'$(ChummerContractsPackageId)' == ''">Chummer.Engine.Contracts</ChummerContractsPackageId>
+    <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">5.225.0.0</ChummerContractsPackageVersion>
+  </PropertyGroup>
+</Project>

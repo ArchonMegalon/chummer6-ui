@@ -1,0 +1,68 @@
+@using Chummer.Contracts.Presentation
+@using Chummer.Presentation.UiKit
+
+<div class="menu-bar">
+    @foreach (AppCommandDefinition menu in MenuRoots)
+    {
+        <button class="menu-btn @(string.Equals(OpenMenuId, menu.Id, StringComparison.Ordinal) ? "active" : string.Empty)"
+                @onclick="() => ToggleMenuAsync(menu.Id)">
+            @ShellChromeBoundary.FormatCommandLabel(menu.Id)
+        </button>
+    }
+</div>
+
+@if (!string.IsNullOrWhiteSpace(OpenMenuId))
+{
+    <div class="menu-dropdown">
+        @foreach (AppCommandDefinition command in ResolveMenuCommands(OpenMenuId))
+        {
+            bool enabled = IsCommandEnabled(command);
+            <button class="menu-item"
+                    disabled="@(!enabled || IsBusy)"
+                    @onclick="() => ExecuteCommandAsync(command.Id)">
+                @ShellChromeBoundary.FormatCommandLabel(command.Id)
+            </button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<AppCommandDefinition> MenuRoots { get; set; } = [];
+
+    [Parameter]
+    public string? OpenMenuId { get; set; }
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public Func<string, IEnumerable<AppCommandDefinition>> MenuCommands { get; set; } = _ => [];
+
+    [Parameter]
+    public Func<AppCommandDefinition, bool> IsCommandEnabled { get; set; } = _ => false;
+
+    [Parameter]
+    public EventCallback<string> ToggleMenuRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ExecuteCommandRequested { get; set; }
+
+    private IEnumerable<AppCommandDefinition> ResolveMenuCommands(string? menuId)
+    {
+        if (string.IsNullOrWhiteSpace(menuId))
+            return [];
+
+        return MenuCommands(menuId);
+    }
+
+    private Task ToggleMenuAsync(string menuId)
+    {
+        return ToggleMenuRequested.InvokeAsync(menuId);
+    }
+
+    private Task ExecuteCommandAsync(string commandId)
+    {
+        return ExecuteCommandRequested.InvokeAsync(commandId);
+    }
+}

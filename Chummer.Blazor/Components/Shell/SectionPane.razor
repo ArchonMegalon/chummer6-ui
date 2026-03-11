@@ -1,0 +1,679 @@
+@using Microsoft.AspNetCore.Components.Web
+@using Chummer.Contracts.Presentation
+@using Chummer.Presentation.Overview
+
+<section class="panel section-preview">
+    <h2>Section Payload (@(State.ActiveSectionId ?? "none"))</h2>
+    @if (string.IsNullOrWhiteSpace(State.ActiveSectionJson))
+    {
+        <p class="note">Select a tab to render a workspace section.</p>
+    }
+    else if (State.ActiveBuildLab is { } buildLab)
+    {
+        <section class="build-lab-shell" data-build-lab="@buildLab.WorkspaceId">
+            <header class="browse-shell-header">
+                <div>
+                    <h3>@buildLab.Title</h3>
+                    <p class="note">@buildLab.Summary</p>
+                </div>
+                <div class="browse-shell-meta">
+                    <span>@buildLab.RulesetId</span>
+                    <span>@buildLab.BuildMethod</span>
+                    <span>@(buildLab.CanContinue ? "Ready to compare" : "Intake incomplete")</span>
+                </div>
+            </header>
+
+            <div class="build-lab-chip-group" data-build-lab-roles>
+                @foreach (BuildLabBadge badge in buildLab.RoleBadges)
+                {
+                    <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                }
+            </div>
+
+            <div class="build-lab-field-grid">
+                @foreach (BuildLabIntakeField field in buildLab.IntakeFields)
+                {
+                    <label class="field" data-build-lab-field="@field.FieldId">
+                        <span>@field.Label@(field.Required ? " *" : string.Empty)</span>
+                        @if (string.Equals(field.Kind, BuildLabFieldKinds.Multiline, StringComparison.Ordinal))
+                        {
+                            <textarea readonly="@field.ReadOnly"
+                                      placeholder="@field.Placeholder">@field.Value</textarea>
+                        }
+                        else if (string.Equals(field.Kind, BuildLabFieldKinds.SingleSelect, StringComparison.Ordinal)
+                            || string.Equals(field.Kind, BuildLabFieldKinds.MultiSelect, StringComparison.Ordinal))
+                        {
+                            <select disabled="@field.ReadOnly">
+                                @if (field.Options is not null)
+                                {
+                                    @foreach (BuildLabFieldOption option in field.Options)
+                                    {
+                                        <option selected="@option.Selected">@option.Label</option>
+                                    }
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <input value="@field.Value" readonly="@field.ReadOnly" placeholder="@field.Placeholder" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(field.HelpText))
+                        {
+                            <span class="note">@field.HelpText</span>
+                        }
+                    </label>
+                }
+            </div>
+
+            <div class="browse-results-shell">
+                <section class="browse-results-pane">
+                    <h4>Constraints</h4>
+                    <div class="build-lab-chip-group" data-build-lab-constraints>
+                        @foreach (BuildLabBadge badge in buildLab.ConstraintBadges)
+                        {
+                            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                        }
+                    </div>
+                </section>
+
+                <section class="browse-detail-pane">
+                    <h4>Explain + Source</h4>
+                    <div class="build-lab-chip-group" data-build-lab-provenance>
+                        @foreach (BuildLabBadge badge in buildLab.ProvenanceBadges)
+                        {
+                            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                        }
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(buildLab.ExplainEntryId))
+                    {
+                        <p class="note">Explain: @buildLab.ExplainEntryId</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(buildLab.SourceDocumentId))
+                    {
+                        <p class="note">Source: @buildLab.SourceDocumentId</p>
+                    }
+                </section>
+            </div>
+
+            @if (buildLab.Variants.Count > 0)
+            {
+                <section class="browse-results-pane" data-build-lab-variants>
+                    <h4>Variant Comparison</h4>
+                    <div class="build-lab-variant-grid">
+                        @foreach (BuildLabVariantProjection variant in buildLab.Variants)
+                        {
+                            <article class="browse-facet-card" data-build-lab-variant="@variant.VariantId">
+                                <header class="coach-card-header">
+                                    <div>
+                                        <h5>@variant.Label</h5>
+                                        <p class="note">@variant.Summary</p>
+                                    </div>
+                                    <span class="badge" data-build-lab-table-fit="@variant.VariantId">@variant.TableFit</span>
+                                </header>
+
+                                <div class="build-lab-chip-group">
+                                    @foreach (BuildLabBadge badge in variant.RoleBadges)
+                                    {
+                                        <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                                    }
+                                </div>
+
+                                <ul class="browse-detail-lines">
+                                    @foreach (BuildLabVariantMetric metric in variant.Metrics)
+                                    {
+                                        <li>@metric.Label: @metric.Value@(string.IsNullOrWhiteSpace(metric.Delta) ? string.Empty : $" ({metric.Delta})")</li>
+                                    }
+                                </ul>
+
+                                @if (variant.Warnings.Count > 0)
+                                {
+                                    <div class="build-lab-chip-group" data-build-lab-variant-warnings="@variant.VariantId">
+                                        @foreach (BuildLabVariantWarning warning in variant.Warnings)
+                                        {
+                                            <span class="browse-chip @(warning.Emphasized ? "active" : null)"
+                                                  data-build-lab-warning-kind="@warning.Kind">
+                                                @warning.Label
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <ul class="browse-detail-lines">
+                                        @foreach (BuildLabVariantWarning warning in variant.Warnings)
+                                        {
+                                            <li>@warning.Detail</li>
+                                        }
+                                    </ul>
+                                }
+
+                                @if (variant.OverlapBadges.Count > 0)
+                                {
+                                    <div class="build-lab-chip-group" data-build-lab-variant-overlap="@variant.VariantId">
+                                        @foreach (BuildLabBadge badge in variant.OverlapBadges)
+                                        {
+                                            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                                        }
+                                    </div>
+                                }
+
+                                @if (variant.Actions.Count > 0)
+                                {
+                                    <div class="build-lab-chip-group">
+                                        @foreach (BuildLabActionDescriptor action in variant.Actions)
+                                        {
+                                            <button type="button" class="mini-btn" disabled="@(!action.Enabled)">@action.Label</button>
+                                        }
+                                    </div>
+                                }
+                            </article>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (buildLab.ProgressionTimelines.Count > 0)
+            {
+                <section class="browse-detail-pane" data-build-lab-timelines>
+                    <h4>25 / 50 / 100 Karma</h4>
+                    @foreach (BuildLabProgressionTimeline timeline in buildLab.ProgressionTimelines)
+                    {
+                        <article class="browse-facet-card" data-build-lab-timeline="@timeline.TimelineId">
+                            <header class="coach-card-header">
+                                <div>
+                                    <h5>@timeline.Title</h5>
+                                    <p class="note">@timeline.Summary</p>
+                                </div>
+                                <span class="badge" data-build-lab-timeline-variant="@timeline.VariantId">@timeline.VariantId</span>
+                            </header>
+
+                            <ul class="browse-detail-lines">
+                                @foreach (BuildLabProgressionStep step in timeline.Steps)
+                                {
+                                    <li>
+                                        <strong>@step.KarmaTarget Karma</strong>: @step.Label · @step.Summary
+                                        @if (step.Outcomes.Count > 0)
+                                        {
+                                            <span> · @string.Join(" | ", step.Outcomes.Select(metric => $"{metric.Label}: {metric.Value}"))</span>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(step.ExplainEntryId))
+                                        {
+                                            <span> · Explain: @step.ExplainEntryId</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+
+                            @if (timeline.Steps.Any(step => step.MilestoneBadges.Count > 0 || step.RiskBadges.Count > 0))
+                            {
+                                <div class="build-lab-chip-group" data-build-lab-timeline-badges="@timeline.TimelineId">
+                                    @foreach (BuildLabProgressionStep step in timeline.Steps)
+                                    {
+                                        @foreach (BuildLabBadge badge in step.MilestoneBadges)
+                                        {
+                                            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                                        }
+
+                                        @foreach (BuildLabBadge badge in step.RiskBadges)
+                                        {
+                                            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                                        }
+                                    }
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(timeline.SourceDocumentId))
+                            {
+                                <p class="note">Source: @timeline.SourceDocumentId</p>
+                            }
+                        </article>
+                    }
+                </section>
+            }
+
+            @if (buildLab.Actions.Count > 0)
+            {
+                <section class="browse-results-pane" data-build-lab-export>
+                    <h4>Export + Hand-off</h4>
+
+                    @if (buildLab.ExportPayloads.Count > 0)
+                    {
+                        <div class="build-lab-variant-grid" data-build-lab-export-payloads>
+                            @foreach (BuildLabExportPayload payload in buildLab.ExportPayloads)
+                            {
+                                <article class="browse-facet-card" data-build-lab-export-payload="@payload.PayloadId">
+                                    <header class="coach-card-header">
+                                        <div>
+                                            <h5>@payload.Title</h5>
+                                            <p class="note">@payload.Summary</p>
+                                        </div>
+                                        <span class="badge">@payload.PayloadKind</span>
+                                    </header>
+
+                                    <ul class="browse-detail-lines">
+                                        @foreach (BuildLabExportField field in payload.Fields)
+                                        {
+                                            <li><strong>@field.Label:</strong> @field.Value</li>
+                                        }
+                                    </ul>
+
+                                    @if (!string.IsNullOrWhiteSpace(payload.QueryText))
+                                    {
+                                        <p class="note">Build Idea query: @payload.QueryText</p>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(payload.SourceDocumentId))
+                                    {
+                                        <p class="note">Source: @payload.SourceDocumentId</p>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    }
+
+                    <div class="build-lab-chip-group" data-build-lab-actions>
+                        @foreach (BuildLabActionDescriptor action in buildLab.Actions)
+                        {
+                            BuildLabExportTarget? exportTarget = ResolveBuildLabExportTarget(buildLab, action);
+                            <button type="button"
+                                    class="mini-btn"
+                                    disabled="@(!action.Enabled)"
+                                    data-build-lab-action="@action.ActionId"
+                                    data-build-lab-action-target="@(exportTarget?.TargetId ?? action.TargetId ?? string.Empty)">
+                                @BuildBuildLabActionLabel(action, exportTarget)
+                            </button>
+                        }
+                    </div>
+
+                    @if (buildLab.ExportTargets.Count > 0)
+                    {
+                        <div class="build-lab-variant-grid" data-build-lab-export-targets>
+                            @foreach (BuildLabExportTarget target in buildLab.ExportTargets)
+                            {
+                                BuildLabExportPayload? payload = ResolveBuildLabExportPayload(buildLab, target.PayloadId);
+                                <article class="browse-facet-card" data-build-lab-export-target="@target.TargetId">
+                                    <header class="coach-card-header">
+                                        <div>
+                                            <h5>@target.Label</h5>
+                                            <p class="note">@target.Description</p>
+                                        </div>
+                                        <span class="badge">@target.TargetKind</span>
+                                    </header>
+
+                                    @if (target.Badges?.Count > 0)
+                                    {
+                                        <div class="build-lab-chip-group">
+                                            @foreach (BuildLabBadge badge in target.Badges)
+                                            {
+                                                <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                                            }
+                                        </div>
+                                    }
+
+                                    <p class="note">Workflow: @target.WorkflowId</p>
+                                    @if (payload is not null)
+                                    {
+                                        <p class="note">Payload: @payload.Title</p>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+        </section>
+        <pre>@State.ActiveSectionJson</pre>
+    }
+    else if (State.ActiveNpcPersonaStudio is { } personaStudio)
+    {
+        <section class="browse-shell" data-npc-persona-workspace="@personaStudio.SelectedPersonaId">
+            <header class="browse-shell-header">
+                <div>
+                    <h3>NPC Persona Studio</h3>
+                    <p class="note">Shared persona descriptor and route-policy contracts.</p>
+                </div>
+                <div class="browse-shell-meta">
+                    <span>default:@personaStudio.DefaultPersonaId</span>
+                    <span>selected:@personaStudio.SelectedPersonaId</span>
+                    <span>@(personaStudio.HasDraftPolicies ? "draft-present" : "draft-none")</span>
+                </div>
+            </header>
+
+            <div class="browse-results-shell">
+                <section class="browse-results-pane" data-npc-persona-selection>
+                    <h4>Persona Selection</h4>
+                    <ul class="browse-result-list">
+                        @foreach (NpcPersonaDescriptorState persona in personaStudio.Personas)
+                        {
+                            <li data-npc-persona="@persona.PersonaId">
+                                @(persona.IsSelected ? "[selected] " : string.Empty)@persona.Label
+                                · @persona.PersonaId
+                                · @(persona.EvidenceFirst ? "evidence-first" : "balanced")
+                                · @persona.ApprovalState
+                            </li>
+                        }
+                    </ul>
+                </section>
+
+                <section class="browse-detail-pane" data-npc-persona-evidence>
+                    <h4>Evidence + Provenance</h4>
+                    @if (personaStudio.EvidenceLines.Count == 0)
+                    {
+                        <p class="note">No evidence/provenance lines were supplied.</p>
+                    }
+                    else
+                    {
+                        <ul class="browse-detail-lines">
+                            @foreach (string line in personaStudio.EvidenceLines)
+                            {
+                                <li>@line</li>
+                            }
+                        </ul>
+                    }
+                </section>
+            </div>
+
+            <section class="browse-results-pane" data-npc-persona-policies>
+                <h4>Route Policies</h4>
+                <ul class="browse-result-list">
+                    @foreach (NpcPersonaRoutePolicyState policy in personaStudio.Policies)
+                    {
+                        <li data-npc-policy="@policy.RouteType">
+                            @policy.RouteType
+                            · @(string.IsNullOrWhiteSpace(policy.RouteClassId) ? "class:none" : $"class:{policy.RouteClassId}")
+                            · @(string.IsNullOrWhiteSpace(policy.PrimaryProviderId) ? "provider:none" : $"provider:{policy.PrimaryProviderId}")
+                            · @(string.IsNullOrWhiteSpace(policy.PersonaId) ? "persona:none" : $"persona:{policy.PersonaId}")
+                            · @policy.ApprovalState
+                        </li>
+                    }
+                </ul>
+            </section>
+        </section>
+    }
+    else if (State.ActiveBrowseWorkspace is { } browseWorkspace)
+    {
+        <section class="browse-shell"
+                 tabindex="0"
+                 data-browse-shell="@browseWorkspace.WorkspaceId"
+                 data-browse-window-offset="@browseWorkspace.QueryOffset"
+                 data-browse-window-limit="@browseWorkspace.QueryLimit"
+                 @onkeydown="OnBrowseKeyDown">
+            <header class="browse-shell-header">
+                <div>
+                    <h3>@(browseWorkspace.DialogTitle ?? "Browse Workspace")</h3>
+                    <p class="note">@browseWorkspace.QueryText</p>
+                </div>
+                <div class="browse-shell-meta">
+                    <span>@BuildBrowseResultWindowLabel(browseWorkspace)</span>
+                    <span>@browseWorkspace.SortId (@browseWorkspace.SortDirection)</span>
+                    @if (!string.IsNullOrWhiteSpace(browseWorkspace.DialogMode))
+                    {
+                        <span>@browseWorkspace.DialogMode</span>
+                    }
+                </div>
+            </header>
+
+            @if (browseWorkspace.Presets.Count > 0)
+            {
+                <div class="browse-chip-group presets" data-browse-presets>
+                    @foreach (BrowseWorkspacePresetState preset in browseWorkspace.Presets)
+                    {
+                        <button type="button"
+                                class="browse-chip @(preset.IsActive ? "active" : null)"
+                                aria-pressed="@preset.IsActive">
+                            @preset.Label@(preset.Shared ? " · shared" : string.Empty)
+                        </button>
+                    }
+                </div>
+            }
+
+            <div class="browse-facet-grid">
+                @foreach (BrowseWorkspaceFacetState facet in GetVisibleBrowseFacets(browseWorkspace))
+                {
+                    <section class="browse-facet-card" data-browse-facet="@facet.FacetId">
+                        <h4>@facet.Label</h4>
+                        <ul>
+                            @foreach (BrowseWorkspaceFacetOptionState option in facet.Options)
+                            {
+                                <li class="@(option.Selected ? "selected" : null)">
+                                    <span>@option.Label</span>
+                                    <span class="facet-count">@option.Count</span>
+                                </li>
+                            }
+                        </ul>
+                    </section>
+                }
+            </div>
+
+            <div class="browse-results-shell">
+                <section class="browse-results-pane">
+                    <h4>Results</h4>
+                    <div class="browse-results-list"
+                         data-browse-results
+                         role="listbox"
+                         aria-label="Browse results"
+                         aria-activedescendant="@BuildBrowseOptionId(_activeBrowseItemId ?? browseWorkspace.ActiveResultItemId)">
+                        <Virtualize Items="@browseWorkspace.Results"
+                                    Context="item"
+                                    ItemSize="56"
+                                    ItemsTagName="ul"
+                                    ItemTagName="li">
+                            <button type="button"
+                                    id="@BuildBrowseOptionId(item.ItemId)"
+                                    class="browse-result-button @(IsBrowseResultActive(browseWorkspace, item) ? "active" : null)"
+                                    data-browse-item="@item.ItemId"
+                                    role="option"
+                                    aria-selected="@IsBrowseResultActive(browseWorkspace, item)"
+                                    aria-label="@BuildBrowseResultAriaLabel(item)"
+                                    @onclick="@(() => SetActiveBrowseResult(item.ItemId))">
+                                <span class="browse-result-title">@item.Title</span>
+                                @if (!item.IsSelectable)
+                                {
+                                    <span class="browse-result-flag">Unavailable</span>
+                                }
+                                @foreach ((string key, string value) in item.ColumnValues)
+                                {
+                                    <span class="browse-result-column">@key: @value</span>
+                                }
+                            </button>
+                        </Virtualize>
+                    </div>
+                </section>
+
+                <section class="browse-detail-pane">
+                    <h4>Selection</h4>
+                    @if (browseWorkspace.SelectedItems.Count == 0)
+                    {
+                        <p class="note">No items selected in this browse view.</p>
+                    }
+                    else
+                    {
+                        <ul class="browse-selection-list">
+                            @foreach (SelectionSummaryItem item in browseWorkspace.SelectedItems)
+                            {
+                                <li>@item.Title@(string.IsNullOrWhiteSpace(item.Detail) ? string.Empty : $" · {item.Detail}")</li>
+                            }
+                        </ul>
+                    }
+
+                    @if (ResolveActiveBrowseDetail(browseWorkspace) is { } detail)
+                    {
+                        <h4>Detail</h4>
+                        <p class="browse-detail-title">@detail.Title</p>
+                        @if (detail.SummaryLines.Count > 0)
+                        {
+                            <ul class="browse-detail-lines">
+                                @foreach (string line in detail.SummaryLines)
+                                {
+                                    <li>@line</li>
+                                }
+                            </ul>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(detail.ExplainEntryId))
+                        {
+                            <p class="note">Explain: @detail.ExplainEntryId</p>
+                        }
+                    }
+                </section>
+            </div>
+        </section>
+        <pre>@State.ActiveSectionJson</pre>
+    }
+    else
+    {
+        <table class="section-table">
+            <thead>
+                <tr><th>Field</th><th>Value</th></tr>
+            </thead>
+            <Virtualize Items="@State.ActiveSectionRows"
+                       Context="row"
+                       ItemSize="40"
+                       ItemsTagName="tbody"
+                       ItemTagName="tr">
+                <td><code>@row.Path</code></td>
+                <td><code>@row.Value</code></td>
+            </Virtualize>
+        </table>
+        <pre>@State.ActiveSectionJson</pre>
+    }
+</section>
+
+@code {
+    private string? _activeBrowseItemId;
+    private string? _activeBrowseWorkspaceId;
+
+    [Parameter]
+    public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
+
+    protected override void OnParametersSet()
+    {
+        BrowseWorkspaceState? browseWorkspace = State.ActiveBrowseWorkspace;
+        if (browseWorkspace is null)
+        {
+            _activeBrowseItemId = null;
+            _activeBrowseWorkspaceId = null;
+            return;
+        }
+
+        if (!string.Equals(_activeBrowseWorkspaceId, browseWorkspace.WorkspaceId, StringComparison.Ordinal))
+        {
+            _activeBrowseWorkspaceId = browseWorkspace.WorkspaceId;
+            _activeBrowseItemId = browseWorkspace.ActiveResultItemId;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_activeBrowseItemId)
+            || !browseWorkspace.Results.Any(item => string.Equals(item.ItemId, _activeBrowseItemId, StringComparison.Ordinal)))
+        {
+            _activeBrowseItemId = browseWorkspace.ActiveResultItemId;
+        }
+    }
+
+    private IReadOnlyList<BrowseWorkspaceFacetState> GetVisibleBrowseFacets(BrowseWorkspaceState browseWorkspace)
+    {
+        IReadOnlyList<BrowseWorkspaceFacetState> preferred = browseWorkspace.SourceFacets
+            .Concat(browseWorkspace.PackFacets)
+            .DistinctBy(facet => facet.FacetId, StringComparer.Ordinal)
+            .ToArray();
+
+        return preferred.Count > 0
+            ? preferred
+            : browseWorkspace.Facets.Take(4).ToArray();
+    }
+
+    private void SetActiveBrowseResult(string itemId)
+    {
+        _activeBrowseItemId = itemId;
+    }
+
+    private static string BuildBrowseResultWindowLabel(BrowseWorkspaceState browseWorkspace)
+    {
+        if (browseWorkspace.Results.Count == 0)
+            return $"0 of {browseWorkspace.TotalCount} results";
+
+        if (browseWorkspace.QueryOffset > 0 || browseWorkspace.TotalCount > browseWorkspace.Results.Count)
+            return $"Showing {browseWorkspace.VisibleResultStart}-{browseWorkspace.VisibleResultEnd} of {browseWorkspace.TotalCount}";
+
+        return $"{browseWorkspace.TotalCount} results";
+    }
+
+    private void OnBrowseKeyDown(KeyboardEventArgs args)
+    {
+        BrowseWorkspaceState? browseWorkspace = State.ActiveBrowseWorkspace;
+        if (browseWorkspace is null || browseWorkspace.Results.Count == 0)
+            return;
+
+        int currentIndex = ResolveBrowseResultIndex(browseWorkspace);
+        int nextIndex = args.Key switch
+        {
+            "ArrowDown" => Math.Min(currentIndex + 1, browseWorkspace.Results.Count - 1),
+            "ArrowUp" => Math.Max(currentIndex - 1, 0),
+            "Home" => 0,
+            "End" => browseWorkspace.Results.Count - 1,
+            _ => currentIndex
+        };
+
+        _activeBrowseItemId = browseWorkspace.Results[nextIndex].ItemId;
+
+        if (!string.IsNullOrWhiteSpace(_activeBrowseItemId)
+            && (string.Equals(args.Key, "Enter", StringComparison.Ordinal)
+                || string.Equals(args.Key, " ", StringComparison.Ordinal)
+                || string.Equals(args.Key, "Spacebar", StringComparison.Ordinal)))
+        {
+            SetActiveBrowseResult(_activeBrowseItemId);
+        }
+    }
+
+    private int ResolveBrowseResultIndex(BrowseWorkspaceState browseWorkspace)
+    {
+        string? activeItemId = _activeBrowseItemId ?? browseWorkspace.ActiveResultItemId;
+        if (string.IsNullOrWhiteSpace(activeItemId))
+            return 0;
+
+        int matchIndex = browseWorkspace.Results
+            .Select((item, index) => (item, index))
+                .FirstOrDefault(entry => string.Equals(entry.item.ItemId, activeItemId, StringComparison.Ordinal))
+            .index;
+        return matchIndex >= 0 ? matchIndex : 0;
+    }
+
+    private bool IsBrowseResultActive(BrowseWorkspaceState browseWorkspace, BrowseWorkspaceResultItemState item)
+    {
+        string? activeItemId = _activeBrowseItemId ?? browseWorkspace.ActiveResultItemId;
+        return string.Equals(item.ItemId, activeItemId, StringComparison.Ordinal);
+    }
+
+    private static string BuildBrowseOptionId(string? itemId)
+        => $"browse-option-{(string.IsNullOrWhiteSpace(itemId) ? "none" : itemId)}";
+
+    private static string BuildBrowseResultAriaLabel(BrowseWorkspaceResultItemState item)
+    {
+        if (item.IsSelectable)
+        {
+            return item.Title;
+        }
+
+        return $"{item.Title}, unavailable";
+    }
+
+    private BrowseItemDetail? ResolveActiveBrowseDetail(BrowseWorkspaceState browseWorkspace)
+    {
+        string? activeItemId = _activeBrowseItemId ?? browseWorkspace.ActiveResultItemId;
+        return string.Equals(browseWorkspace.ActiveDetail?.ItemId, activeItemId, StringComparison.Ordinal)
+            ? browseWorkspace.ActiveDetail
+            : null;
+    }
+
+    private static BuildLabExportTarget? ResolveBuildLabExportTarget(BuildLabConceptIntakeState buildLab, BuildLabActionDescriptor action)
+        => string.IsNullOrWhiteSpace(action.TargetId)
+            ? null
+            : buildLab.ExportTargets.FirstOrDefault(target => string.Equals(target.TargetId, action.TargetId, StringComparison.Ordinal));
+
+    private static BuildLabExportPayload? ResolveBuildLabExportPayload(BuildLabConceptIntakeState buildLab, string? payloadId)
+        => string.IsNullOrWhiteSpace(payloadId)
+            ? null
+            : buildLab.ExportPayloads.FirstOrDefault(payload => string.Equals(payload.PayloadId, payloadId, StringComparison.Ordinal));
+
+    private static string BuildBuildLabActionLabel(BuildLabActionDescriptor action, BuildLabExportTarget? target)
+        => target is null
+            ? action.Label
+            : $"{action.Label} -> {target.Label}";
+}

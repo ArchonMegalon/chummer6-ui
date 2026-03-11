@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <BuildInParallel>false</BuildInParallel>
+    <RestoreBuildInParallel>false</RestoreBuildInParallel>
+  </PropertyGroup>
+
+  <Target Name="ForceSingleThreadedRestoreGraph" BeforeTargets="_FilterRestoreGraphProjectInputItems">
+    <PropertyGroup>
+      <BuildInParallel>false</BuildInParallel>
+      <RestoreBuildInParallel>false</RestoreBuildInParallel>
+    </PropertyGroup>
+  </Target>
+</Project>

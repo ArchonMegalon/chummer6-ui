@@ -1,0 +1,15 @@
+<section class="panel results">
+    <h2>Result</h2>
+    <p class="note">@(State.Notice ?? "Ready.")</p>
+    <p class="hint">UI: @State.Preferences.UiScalePercent% / @State.Preferences.Theme / @State.Preferences.Language</p>
+    <p class="hint">Character: @State.Preferences.CharacterPriority, Ratio @State.Preferences.KarmaNuyenRatio, House Rules @(State.Preferences.HouseRulesEnabled ? "On" : "Off")</p>
+    @if (!string.IsNullOrWhiteSpace(State.Error))
+    {
+        <p class="error">Error: @State.Error</p>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
+}
