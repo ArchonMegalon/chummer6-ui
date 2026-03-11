@@ -1,0 +1,131 @@
+@using Chummer.Presentation.UiKit
+@using Microsoft.AspNetCore.Components
+@if (Dialog is { } dialog)
+{
+    <div id="dialogBackdrop" class="dialog-backdrop" @onclick="CloseAsync">
+        <div class="desktop-dialog"
+             @ref="_dialogRoot"
+             role="@AccessibilityPrimitiveBoundary.DialogRole"
+             aria-modal="true"
+             aria-labelledby="dialogTitle"
+             aria-describedby="@AccessibilityPrimitiveBoundary.BuildDialogDescriptionId(dialog.Id)"
+             tabindex="-1"
+             @onclick:stopPropagation="true">
+            <div class="dialog-titlebar">
+                <span id="dialogTitle">@dialog.Title</span>
+                <button id="dialogClose" class="dialog-close" @onclick="CloseAsync">X</button>
+            </div>
+            <div id="@AccessibilityPrimitiveBoundary.BuildDialogDescriptionId(dialog.Id)" class="dialog-body">
+                @if (!string.IsNullOrWhiteSpace(dialog.Message))
+                {
+                    <p class="note">@dialog.Message</p>
+                }
+                @foreach (DesktopDialogField field in dialog.Fields)
+                {
+                    <label>
+                        @field.Label
+                        @if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
+                        {
+                            <input type="checkbox"
+                                   checked="@IsDialogCheckboxChecked(field)"
+                                   disabled="@field.IsReadOnly"
+                                   @onchange="e => OnDialogCheckboxChangedAsync(field, e.Value)" />
+                        }
+                        else if (field.IsMultiline)
+                        {
+                            <textarea value="@field.Value"
+                                      placeholder="@field.Placeholder"
+                                      readonly="@field.IsReadOnly"
+                                      @oninput="e => OnDialogFieldInputAsync(field, e.Value?.ToString())"></textarea>
+                        }
+                        else
+                        {
+                            <input type="@field.InputType"
+                                   value="@field.Value"
+                                   placeholder="@field.Placeholder"
+                                   readonly="@field.IsReadOnly"
+                                   @oninput="e => OnDialogFieldInputAsync(field, e.Value?.ToString())" />
+                        }
+                    </label>
+                }
+            </div>
+            <div id="dialogFooter" class="dialog-footer">
+                @foreach (DesktopDialogAction action in dialog.Actions)
+                {
+                    <button class="action-btn @(action.IsPrimary ? "primary" : string.Empty)"
+                            @onclick="() => ExecuteDialogActionAsync(action.Id)">
+                        @action.Label
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public DesktopDialogState? Dialog { get; set; }
+
+    [Parameter]
+    public EventCallback CloseRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ExecuteDialogActionRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<DialogFieldInputChange> FieldInputRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<DialogFieldCheckboxChange> FieldCheckboxRequested { get; set; }
+
+    private ElementReference _dialogRoot;
+    private string? _focusedDialogId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Dialog is null || string.Equals(_focusedDialogId, Dialog.Id, StringComparison.Ordinal))
+            return;
+
+        _focusedDialogId = Dialog.Id;
+        await _dialogRoot.FocusAsync();
+    }
+
+    private Task CloseAsync()
+    {
+        return CloseRequested.InvokeAsync();
+    }
+
+    private Task ExecuteDialogActionAsync(string actionId)
+    {
+        return ExecuteDialogActionRequested.InvokeAsync(actionId);
+    }
+
+    private Task OnDialogFieldInputAsync(DesktopDialogField field, string? value)
+    {
+        if (field.IsReadOnly)
+            return Task.CompletedTask;
+
+        return FieldInputRequested.InvokeAsync(new DialogFieldInputChange(field.Id, value));
+    }
+
+    private Task OnDialogCheckboxChangedAsync(DesktopDialogField field, object? value)
+    {
+        if (field.IsReadOnly)
+            return Task.CompletedTask;
+
+        bool parsed = value is bool direct
+            ? direct
+            : bool.TryParse(value?.ToString(), out bool parsedBool) && parsedBool;
+        return FieldCheckboxRequested.InvokeAsync(new DialogFieldCheckboxChange(field.Id, parsed));
+    }
+
+    private static bool IsDialogCheckboxChecked(DesktopDialogField field)
+    {
+        if (bool.TryParse(field.Value, out bool value))
+            return value;
+
+        return string.Equals(field.Value, "1", StringComparison.Ordinal)
+            || string.Equals(field.Value, "on", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(field.Value, "yes", StringComparison.OrdinalIgnoreCase);
+    }
+}

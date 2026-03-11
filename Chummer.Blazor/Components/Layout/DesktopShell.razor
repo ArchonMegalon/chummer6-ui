@@ -1,0 +1,214 @@
+
+
+<div class="desktop-shell"
+     @ref="_shellRoot"
+     tabindex="0"
+     @onkeydown="OnShellKeyDown">
+    <MenuBar MenuRoots="@MenuRoots.ToArray()"
+             OpenMenuId="@_shellSurfaceState.OpenMenuId"
+             IsBusy="@State.IsBusy"
+             MenuCommands="@MenuCommands"
+             IsCommandEnabled="@IsCommandEnabled"
+             ToggleMenuRequested="@ToggleMenu"
+             ExecuteCommandRequested="@ExecuteCommandAsync" />
+
+    <ToolStrip Commands="@ToolStripCommands.ToArray()"
+               LastCommandId="@(_shellSurfaceState.LastCommandId ?? State.LastCommandId)"
+               IsBusy="@State.IsBusy"
+               IsCommandEnabled="@IsCommandEnabled"
+               ExecuteCommandRequested="@ExecuteCommandAsync" />
+
+    <MdiStrip OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
+              ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+              IsBusy="@State.IsBusy"
+              OpenWorkspaceRequested="@OpenWorkspaceAsync"
+              CloseWorkspaceRequested="@CloseWorkspaceAsync" />
+
+    <div class="workspace-layout">
+        <WorkspaceLeftPane State="@State"
+                           OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
+                           ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+                           ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                           NavigationTabs="@NavigationTabs"
+                           ActiveWorkspaceActions="@ActiveWorkspaceActions"
+                           ActiveWorkflowSurfaceActions="@ActiveWorkflowSurfaceActions"
+                           IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                           OpenWorkspaceRequested="@OpenWorkspaceAsync"
+                           CloseWorkspaceRequested="@CloseWorkspaceAsync"
+                           SelectTabRequested="@SelectTabAsync"
+                           ExecuteWorkspaceActionRequested="@ExecuteWorkspaceActionAsync"
+                           ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
+
+        <main class="center-pane">
+            <SummaryHeader State="@State"
+                           ShellSurface="@_shellSurfaceState"
+                           InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
+
+            <MetadataPanel State="@State"
+                           @bind-MetadataName="MetadataName"
+                           @bind-MetadataAlias="MetadataAlias"
+                           @bind-MetadataNotes="MetadataNotes"
+                           @bind-LoadWorkspaceId="LoadWorkspaceId"
+                           UpdateMetadataRequested="@UpdateMetadataAsync"
+                           SaveRequested="@SaveAsync"
+                           LoadWorkspaceRequested="@LoadWorkspaceAsync" />
+
+            <SectionPane State="@State" />
+        </main>
+
+        <aside class="right-pane">
+            <ImportPanel IsBusy="@State.IsBusy"
+                         ImportedFileName="@ImportedFileName"
+                         ImportError="@ImportError"
+                         @bind-RawImportXml="RawImportXml"
+                         ImportFileRequested="@ImportFileAsync"
+                         ImportRawRequested="@ImportRawAsync" />
+
+            <CommandPanel State="@State"
+                          Commands="@HeadCommands.ToArray()"
+                          IsCommandEnabled="@IsCommandEnabled"
+                          ExecuteCommandRequested="@ExecuteCommandAsync" />
+
+            <ResultPanel State="@State" />
+
+            <section class="panel coach-panel">
+                <div class="coach-header">
+                    <div>
+                        <h2>Coach Sidecar</h2>
+                        <p class="hint">Grounded Guidance</p>
+                    </div>
+                    <div class="mini-grid">
+                        <a class="mini-btn"
+                           data-testid="open-workbench-coach-sidecar"
+                           href="@BuildCoachLaunchUri()">
+                            Open Coach
+                        </a>
+                        <button class="mini-btn"
+                                type="button"
+                                data-testid="refresh-workbench-coach-sidecar"
+                                @onclick="LoadCoachSidecarAsync"
+                                disabled="@(_isCoachLoading || State.IsBusy)">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_coachErrorMessage))
+                {
+                    <p class="error">@_coachErrorMessage</p>
+                }
+
+                @if (_coachStatus is null)
+                {
+                    <p class="hint">Coach sidecar has not been loaded yet.</p>
+                }
+                else
+                {
+                    <dl class="coach-facts">
+                        <div><dt>Status</dt><dd>@_coachStatus.Status</dd></div>
+                        <div><dt>Prompt Policy</dt><dd>@_coachStatus.PromptPolicy</dd></div>
+                        <div><dt>Coach Budget</dt><dd>@GetCoachBudgetSummary()</dd></div>
+                        <div><dt>Workspace</dt><dd class="mono">@FormatCoachString(_shellSurfaceState.ActiveWorkspaceId?.Value)</dd></div>
+                        <div><dt>Runtime</dt><dd class="mono">@FormatCoachString(GetCoachRuntimeFingerprint())</dd></div>
+                    </dl>
+
+                    @if (GetCoachProviders().Count > 0)
+                    {
+                        <section class="coach-card">
+                            <div class="coach-card-header">
+                                <div>
+                                    <h3>Provider Health</h3>
+                                    <p class="coach-meta">Protected AI providers that can serve the coach route.</p>
+                                </div>
+                            </div>
+                            <div class="coach-card-list">
+                                @foreach (AiProviderHealthProjection provider in GetCoachProviders())
+                                {
+                                    <article class="coach-card">
+                                        <div class="coach-card-header">
+                                            <div>
+                                                <h3>@provider.DisplayName</h3>
+                                                <p class="coach-meta">@provider.ProviderId · @provider.AdapterKind</p>
+                                            </div>
+                                            <span class="@GetCoachProviderHealthBadgeClass(provider)">@provider.CircuitState</span>
+                                        </div>
+                                        <p class="hint">Last success: @FormatCoachTimestamp(provider.LastSuccessAtUtc)</p>
+                                        <p class="hint">Last failure: @(string.IsNullOrWhiteSpace(provider.LastFailureMessage) ? "none" : provider.LastFailureMessage)</p>
+                                        <p class="hint" data-testid="workbench-coach-provider-transport">Transport: @DescribeCoachProviderTransport(provider) · keys @DescribeCoachProviderKeys(provider) · @DescribeCoachProviderBinding(provider)</p>
+                                    </article>
+                                }
+                            </div>
+                        </section>
+                    }
+
+                    <section class="coach-card">
+                        <div class="coach-card-header">
+                            <div>
+                                <h3>Recent Coach Guidance</h3>
+                                <p class="coach-meta">Lightweight audit cards from <code>/api/ai/conversation-audits</code>.</p>
+                            </div>
+                        </div>
+
+                        @if (_coachAudits.Count == 0)
+                        {
+                            <p class="hint">No recent coach guidance matched the active runtime.</p>
+                        }
+                        else
+                        {
+                            <div class="coach-card-list" data-testid="workbench-coach-audit-list">
+                                @foreach (AiConversationAuditSummary audit in _coachAudits)
+                                {
+                                    <article class="coach-card">
+                                        <div class="coach-card-header">
+                                            <div>
+                                                <h3>@audit.ConversationId</h3>
+                                                <p class="coach-meta">@audit.RouteType · @(audit.RuntimeFingerprint ?? "no runtime pin")</p>
+                                        </div>
+                                        <span class="@GetCoachCacheBadgeClass(audit.Cache)">@FormatCoachCacheStatus(audit.Cache)</span>
+                                    </div>
+                                    <p class="hint">@(audit.LastAssistantAnswer ?? "No stored assistant answer yet.")</p>
+                                    @if (!string.IsNullOrWhiteSpace(audit.FlavorLine))
+                                    {
+                                        <p class="hint" data-testid="workbench-coach-audit-flavor">@audit.FlavorLine</p>
+                                    }
+                                    @if (audit.Budget is not null)
+                                    {
+                                        <p class="hint" data-testid="workbench-coach-audit-budget">Budget snapshot: @DescribeCoachBudgetSnapshot(audit.Budget)</p>
+                                    }
+                                    @if (audit.StructuredAnswer is not null)
+                                    {
+                                        <div class="stack" data-testid="workbench-coach-audit-structured">
+                                            <p class="hint">Structured summary: @audit.StructuredAnswer.Summary</p>
+                                            <p class="hint">Recommendations: @DescribeCoachRecommendationSummary(audit.StructuredAnswer)</p>
+                                            <p class="hint">Evidence: @DescribeCoachEvidenceSummary(audit.StructuredAnswer)</p>
+                                            <p class="hint">Risks: @DescribeCoachRiskSummary(audit.StructuredAnswer)</p>
+                                            <p class="hint">Sources: @DescribeCoachSourceSummary(audit.StructuredAnswer)</p>
+                                        </div>
+                                    }
+                                    <a class="mini-btn" data-testid="open-workbench-coach-thread" href="@BuildCoachLaunchUri(audit)">
+                                        Continue Thread
+                                    </a>
+                                    <p class="hint">Route decision: @DescribeCoachRouteDecision(audit.RouteDecision, audit.LastProviderId ?? "n/a")</p>
+                                    <p class="hint">Grounding coverage: @DescribeCoachCoverage(audit.GroundingCoverage)</p>
+                                    <p class="hint">Updated: @FormatCoachTimestamp(audit.LastUpdatedAtUtc)</p>
+                                </article>
+                            }
+                            </div>
+                        }
+                    </section>
+                }
+            </section>
+        </aside>
+    </div>
+
+    <StatusStrip WorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+                 Error="@_shellSurfaceState.Error"
+                 LastUiUtc="@_lastUiUtc"
+                 ComplianceState="@ComplianceState" />
+</div>
+
+<DialogHost Dialog="@State.ActiveDialog"
+            CloseRequested="@CloseDialogAsync"
+            ExecuteDialogActionRequested="@ExecuteDialogActionAsync"
+            FieldInputRequested="@OnDialogFieldInputAsync"
+            FieldCheckboxRequested="@OnDialogCheckboxChangedAsync" />

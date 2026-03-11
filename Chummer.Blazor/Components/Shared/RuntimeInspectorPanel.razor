@@ -1,0 +1,436 @@
+@using Chummer.Contracts.Content
+@using Chummer.Contracts.Rulesets
+@using Chummer.Presentation.Overview
+
+<section class="panel design-panel">
+    <header class="panel-header">
+        <div>
+            <h2>Runtime Inspector</h2>
+            <p class="meta">Resolved runtime lock, compatibility diagnostics, and provider bindings rendered from shared contracts.</p>
+        </div>
+        @if (Projection is not null)
+        {
+            <div class="button-row compact">
+                <span class="badge @GetInstallBadgeClass(Projection.Install.State)">@Projection.Install.State</span>
+                <span class="badge">@Projection.RuntimeLock.RulesetId</span>
+            </div>
+        }
+    </header>
+
+    @if (Projection is null)
+    {
+        <p class="hint">No runtime projection is available.</p>
+    }
+    else
+    {
+        <section class="runtime-inspector-grid">
+            <article class="panel trace-card">
+                <header>
+                    <h3>Runtime Identity</h3>
+                    <span class="badge">@Projection.TargetKind</span>
+                </header>
+                <dl class="facts compact">
+                    <div><dt>Target</dt><dd>@Projection.TargetId</dd></div>
+                    <div><dt>Profile Source</dt><dd>@Projection.ProfileSourceKind</dd></div>
+                    <div><dt>Engine API</dt><dd>@Projection.RuntimeLock.EngineApiVersion</dd></div>
+                    <div><dt>Fingerprint</dt><dd class="mono">@Projection.RuntimeLock.RuntimeFingerprint</dd></div>
+                    <div><dt>Generated</dt><dd>@Projection.GeneratedAtUtc.ToLocalTime().ToString("u")</dd></div>
+                    <div><dt>Install Target</dt><dd>@FormatInstallTarget(Projection.Install)</dd></div>
+                </dl>
+            </article>
+
+            <article class="panel trace-card">
+                <header>
+                    <h3>Rule Profile</h3>
+                    <span class="badge">@GetProfileBadgeText(Projection)</span>
+                </header>
+                <dl class="facts compact">
+                    <div><dt>Profile</dt><dd>@Projection.TargetId</dd></div>
+                    <div><dt>Install State</dt><dd>@Projection.Install.State</dd></div>
+                    <div><dt>Install Target</dt><dd>@RuntimeInspectorDiagnostics.FormatInstallTarget(Projection.Install)</dd></div>
+                    <div><dt>Session-safe Bindings</dt><dd>@RuntimeInspectorDiagnostics.CountProfileSessionSafeBindings(Projection)/@Projection.ProviderBindings.Count</dd></div>
+                    <div><dt>Attention Items</dt><dd>@RuntimeInspectorDiagnostics.CountProfileAttentionItems(Projection)</dd></div>
+                    <div><dt>Generated</dt><dd>@Projection.GeneratedAtUtc.ToLocalTime().ToString("u")</dd></div>
+                </dl>
+            </article>
+
+            <article class="panel trace-card">
+                <header>
+                    <h3>Runtime Footprint</h3>
+                    <span class="badge">@Projection.ResolvedRulePacks.Count packs</span>
+                </header>
+                <dl class="facts compact">
+                    <div><dt>Content Bundles</dt><dd>@Projection.RuntimeLock.ContentBundles.Count</dd></div>
+                    <div><dt>Provider Bindings</dt><dd>@Projection.ProviderBindings.Count</dd></div>
+                    <div><dt>Warnings</dt><dd>@Projection.Warnings.Count</dd></div>
+                    <div><dt>Migration Items</dt><dd>@Projection.MigrationPreview.Count</dd></div>
+                    <div><dt>Compatibility</dt><dd>@Projection.CompatibilityDiagnostics.Count</dd></div>
+                    <div><dt>Capabilities</dt><dd>@(Projection.CapabilityDescriptors?.Count ?? 0)</dd></div>
+                </dl>
+            </article>
+        </section>
+
+        <article class="panel trace-card" data-runtime-rule-profile-diagnostics>
+            <header>
+                <h3>Rule Profile Diagnostics</h3>
+                <span class="badge">@RuntimeInspectorDiagnostics.CountProfileAttentionItems(Projection) attention</span>
+            </header>
+            <dl class="facts compact">
+                <div><dt>Runtime Lock</dt><dd class="mono">@Projection.RuntimeLock.RuntimeFingerprint</dd></div>
+                <div><dt>Ruleset</dt><dd>@Projection.RuntimeLock.RulesetId</dd></div>
+                <div><dt>Engine API</dt><dd>@Projection.RuntimeLock.EngineApiVersion</dd></div>
+                <div><dt>Profile Source</dt><dd>@Projection.ProfileSourceKind</dd></div>
+                <div><dt>Provider Coverage</dt><dd>@Projection.ProviderBindings.Count bindings across @(Projection.CapabilityDescriptors?.Count ?? 0) capability descriptors</dd></div>
+                <div><dt>Summary</dt><dd>@RuntimeInspectorDiagnostics.BuildProfileDiagnosticsSummary(Projection)</dd></div>
+            </dl>
+        </article>
+
+        <article class="panel trace-card" data-runtime-hub-diagnostics>
+            <header>
+                <h3>Hub Client Diagnostics</h3>
+                <span class="badge">@RuntimeInspectorDiagnostics.CountHubOriginRulePacks(Projection)/@Projection.ResolvedRulePacks.Count hub-origin</span>
+            </header>
+            <dl class="facts compact">
+                <div><dt>Hub Profile Source</dt><dd>@Projection.ProfileSourceKind</dd></div>
+                <div><dt>Hub-origin RulePacks</dt><dd>@RuntimeInspectorDiagnostics.CountHubOriginRulePacks(Projection) of @Projection.ResolvedRulePacks.Count resolved packs</dd></div>
+                <div><dt>Install Visibility</dt><dd>@Projection.Install.State via @RuntimeInspectorDiagnostics.FormatInstallTarget(Projection.Install)</dd></div>
+                <div><dt>Review State</dt><dd>@(RuntimeInspectorDiagnostics.HasStaleOrInvalidatedState(Projection) ? "review required" : "review current")</dd></div>
+                <div><dt>Update State</dt><dd>@(RuntimeInspectorDiagnostics.HasStaleOrInvalidatedState(Projection) ? "refresh pending" : "no refresh required")</dd></div>
+                <div><dt>Stale/Invalidation</dt><dd>@(RuntimeInspectorDiagnostics.HasStaleOrInvalidatedState(Projection) ? "action required" : "none")</dd></div>
+                <div><dt>Summary</dt><dd>@RuntimeInspectorDiagnostics.BuildHubClientDiagnosticsSummary(Projection)</dd></div>
+            </dl>
+        </article>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Content Bundles</h3>
+                <span class="badge">@Projection.RuntimeLock.ContentBundles.Count</span>
+            </header>
+            @if (Projection.RuntimeLock.ContentBundles.Count == 0)
+            {
+                <p class="hint">No content bundles are pinned into this runtime.</p>
+            }
+            else
+            {
+                <table class="section-table">
+                    <thead>
+                        <tr>
+                            <th>Bundle</th>
+                            <th>Ruleset</th>
+                            <th>Version</th>
+                            <th>Assets</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (ContentBundleDescriptor bundle in Projection.RuntimeLock.ContentBundles)
+                        {
+                            <tr>
+                                <td>@bundle.Title</td>
+                                <td>@bundle.RulesetId</td>
+                                <td>@bundle.Version</td>
+                                <td>@bundle.AssetPaths.Count</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </article>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Rule Packs</h3>
+                <span class="badge">@Projection.ResolvedRulePacks.Count</span>
+            </header>
+            @if (Projection.ResolvedRulePacks.Count == 0)
+            {
+                <p class="hint">No RulePacks are resolved for this runtime.</p>
+            }
+            else
+            {
+                <ul class="runtime-list">
+                    @foreach (RuntimeInspectorRulePackEntry rulePack in Projection.ResolvedRulePacks)
+                    {
+                        <li>
+                            <div class="coach-card-header">
+                                <div>
+                                    <strong>@rulePack.Title</strong>
+                                    <p class="meta">@rulePack.RulePack.Id@("@")@rulePack.RulePack.Version · @rulePack.SourceKind</p>
+                                </div>
+                                <span class="badge @GetTrustBadgeClass(rulePack.TrustTier)">@rulePack.TrustTier</span>
+                            </div>
+                            <p class="hint">Visibility: @rulePack.Visibility · Capabilities: @FormatCapabilityIds(rulePack.CapabilityIds)</p>
+                        </li>
+                    }
+                </ul>
+            }
+        </article>
+
+        <article class="panel trace-card" data-runtime-rulepack-diagnostics>
+            <header>
+                <h3>Rule Pack Diagnostics</h3>
+                <span class="badge">@Projection.ResolvedRulePacks.Count tracked</span>
+            </header>
+            @if (Projection.ResolvedRulePacks.Count == 0)
+            {
+                <p class="hint">No RulePack diagnostics are available because no packs are resolved for this runtime.</p>
+            }
+            else
+            {
+                <table class="section-table">
+                    <thead>
+                        <tr>
+                            <th>RulePack</th>
+                            <th>Trust</th>
+                            <th>Bindings</th>
+                            <th>Warnings</th>
+                            <th>Migration</th>
+                            <th>Capabilities</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (RuntimeInspectorRulePackEntry rulePack in Projection.ResolvedRulePacks)
+                        {
+                            <tr data-runtime-rulepack-row="@rulePack.RulePack.Id">
+                                <td>
+                                    <strong>@rulePack.Title</strong>
+                                    <div class="meta">@rulePack.RulePack.Id@("@")@rulePack.RulePack.Version · @rulePack.SourceKind</div>
+                                </td>
+                                <td>@rulePack.TrustTier / @rulePack.Visibility</td>
+                                <td>@RuntimeInspectorDiagnostics.CountRulePackProviderBindings(Projection, rulePack)</td>
+                                <td>@RuntimeInspectorDiagnostics.CountRulePackWarnings(Projection, rulePack)</td>
+                                <td>@RuntimeInspectorDiagnostics.CountRulePackMigrationItems(Projection, rulePack)</td>
+                                <td>@FormatCapabilityIds(rulePack.CapabilityIds)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </article>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Provider Bindings</h3>
+                <span class="badge">@Projection.ProviderBindings.Count</span>
+            </header>
+            @if (Projection.ProviderBindings.Count == 0)
+            {
+                <p class="hint">No provider bindings are active.</p>
+            }
+            else
+            {
+                <table class="section-table">
+                    <thead>
+                        <tr>
+                            <th>Capability</th>
+                            <th>Provider</th>
+                            <th>Pack</th>
+                            <th>Session Safe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (RuntimeInspectorProviderBinding binding in Projection.ProviderBindings)
+                        {
+                            <tr>
+                                <td>@binding.CapabilityId</td>
+                                <td>@binding.ProviderId</td>
+                                <td>@(binding.PackId ?? "(none)")</td>
+                                <td>@(binding.SessionSafe ? "yes" : "no")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </article>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Compatibility Diagnostics</h3>
+                <span class="badge">@Projection.CompatibilityDiagnostics.Count</span>
+            </header>
+            @if (Projection.CompatibilityDiagnostics.Count == 0)
+            {
+                <p class="hint">No compatibility diagnostics were emitted.</p>
+            }
+            else
+            {
+                <ul class="runtime-list">
+                    @foreach (RuntimeLockCompatibilityDiagnostic diagnostic in Projection.CompatibilityDiagnostics)
+                    {
+                        <li>
+                            <div class="coach-card-header">
+                                <strong>@diagnostic.Message</strong>
+                                <span class="badge @GetCompatibilityBadgeClass(diagnostic.State)">@diagnostic.State</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(diagnostic.RequiredRuntimeFingerprint) || !string.IsNullOrWhiteSpace(diagnostic.RequiredRulesetId))
+                            {
+                                <p class="hint">
+                                    Required runtime: @(diagnostic.RequiredRuntimeFingerprint ?? "(current)")
+                                    · Required ruleset: @(diagnostic.RequiredRulesetId ?? "(current)")
+                                </p>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </article>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Warnings</h3>
+                <span class="badge">@Projection.Warnings.Count</span>
+            </header>
+            @if (Projection.Warnings.Count == 0)
+            {
+                <p class="hint">No runtime warnings are active.</p>
+            }
+            else
+            {
+                <ul class="runtime-list">
+                    @foreach (RuntimeInspectorWarning warning in Projection.Warnings)
+                    {
+                        <li>
+                            <div class="coach-card-header">
+                                <strong>@warning.Message</strong>
+                                <span class="badge @GetWarningBadgeClass(warning.Severity)">@warning.Severity</span>
+                            </div>
+                            <p class="hint">Kind: @warning.Kind · Subject: @(warning.SubjectId ?? "(none)")</p>
+                        </li>
+                    }
+                </ul>
+            }
+        </article>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Migration Preview</h3>
+                <span class="badge">@Projection.MigrationPreview.Count</span>
+            </header>
+            @if (Projection.MigrationPreview.Count == 0)
+            {
+                <p class="hint">No migration preview items were generated.</p>
+            }
+            else
+            {
+                <ul class="runtime-list">
+                    @foreach (RuntimeMigrationPreviewItem item in Projection.MigrationPreview)
+                    {
+                        <li>
+                            <div class="coach-card-header">
+                                <strong>@item.Summary</strong>
+                                <span class="badge @(item.RequiresRebind ? "coach-badge warn" : "coach-badge good")">@item.Kind</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(item.BeforeValue) || !string.IsNullOrWhiteSpace(item.AfterValue))
+                            {
+                                <p class="hint">Before: @(item.BeforeValue ?? "(none)") · After: @(item.AfterValue ?? "(none)")</p>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </article>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Capability Descriptors</h3>
+                <span class="badge">@(Projection.CapabilityDescriptors?.Count ?? 0)</span>
+            </header>
+            @if (Projection.CapabilityDescriptors is not { Count: > 0 })
+            {
+                <p class="hint">No capability descriptors were supplied for this runtime.</p>
+            }
+            else
+            {
+                <table class="section-table">
+                    <thead>
+                        <tr>
+                            <th>Capability</th>
+                            <th>Invocation</th>
+                            <th>Provider</th>
+                            <th>Flags</th>
+                            <th>Gas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (RuntimeInspectorCapabilityDescriptorProjection descriptor in Projection.CapabilityDescriptors)
+                        {
+                            <tr>
+                                <td>@descriptor.Title</td>
+                                <td>@descriptor.InvocationKind</td>
+                                <td>@(descriptor.ProviderId ?? "(none)")</td>
+                                <td>@FormatCapabilityFlags(descriptor)</td>
+                                <td>@FormatGasBudget(descriptor.DefaultGasBudget)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </article>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public RuntimeInspectorProjection? Projection { get; set; }
+
+    private static string FormatCapabilityIds(IReadOnlyList<string> capabilityIds)
+        => capabilityIds.Count == 0 ? "(none)" : string.Join(", ", capabilityIds);
+
+    private static string FormatCapabilityFlags(RuntimeInspectorCapabilityDescriptorProjection descriptor)
+    {
+        List<string> flags = [];
+        if (descriptor.Explainable)
+        {
+            flags.Add("explainable");
+        }
+
+        if (descriptor.SessionSafe)
+        {
+            flags.Add("session-safe");
+        }
+
+        if (!string.IsNullOrWhiteSpace(descriptor.PackId))
+        {
+            flags.Add($"pack:{descriptor.PackId}");
+        }
+
+        return flags.Count == 0 ? "(none)" : string.Join(", ", flags);
+    }
+
+    private static string FormatGasBudget(RulesetGasBudget budget)
+        => $"{budget.ProviderInstructionLimit}/{budget.RequestInstructionLimit} · {budget.MemoryBytesLimit / 1024 / 1024} MB";
+
+    private static string GetProfileBadgeText(RuntimeInspectorProjection projection)
+        => RuntimeInspectorDiagnostics.CountProfileAttentionItems(projection) == 0 ? "stable" : "attention";
+
+    private static string GetInstallBadgeClass(string installState)
+        => installState switch
+        {
+            ArtifactInstallStates.Pinned => "coach-badge good",
+            ArtifactInstallStates.Installed => "coach-badge warn",
+            _ => string.Empty
+        };
+
+    private static string GetTrustBadgeClass(string trustTier)
+        => trustTier switch
+        {
+            ArtifactTrustTiers.Official => "coach-badge good",
+            ArtifactTrustTiers.Curated => "coach-badge warn",
+            _ => string.Empty
+        };
+
+    private static string GetCompatibilityBadgeClass(string state)
+        => state switch
+        {
+            RuntimeLockCompatibilityStates.Compatible => "coach-badge good",
+            RuntimeLockCompatibilityStates.RebindRequired => "coach-badge warn",
+            _ => "coach-badge error"
+        };
+
+    private static string GetWarningBadgeClass(string severity)
+        => severity switch
+        {
+            RuntimeInspectorWarningSeverityLevels.Info => "coach-badge good",
+            RuntimeInspectorWarningSeverityLevels.Warning => "coach-badge warn",
+            _ => "coach-badge error"
+        };
+}

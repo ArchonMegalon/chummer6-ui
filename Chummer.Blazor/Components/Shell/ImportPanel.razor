@@ -1,0 +1,46 @@
+@using Microsoft.AspNetCore.Components.Forms
+
+<section class="panel import">
+    <h2>Import Character File</h2>
+    <InputFile OnChange="ImportFileRequested"
+               accept=".chum5,.xml,text/xml,application/xml"
+               disabled="@IsBusy" />
+    <p class="hint">File: @(ImportedFileName ?? "(none)")</p>
+    @if (!string.IsNullOrWhiteSpace(ImportError))
+    {
+        <p class="error">@ImportError</p>
+    }
+    <details>
+        <summary>Raw XML Debug Import</summary>
+        <textarea value="@RawImportXml" rows="8" @oninput="OnRawImportXmlChanged"></textarea>
+        <button @onclick="ImportRawRequested" disabled="@IsBusy">Import Raw XML</button>
+    </details>
+</section>
+
+@code {
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public string? ImportedFileName { get; set; }
+
+    [Parameter]
+    public string? ImportError { get; set; }
+
+    [Parameter]
+    public string RawImportXml { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> RawImportXmlChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<InputFileChangeEventArgs> ImportFileRequested { get; set; }
+
+    [Parameter]
+    public EventCallback ImportRawRequested { get; set; }
+
+    private Task OnRawImportXmlChanged(ChangeEventArgs args)
+    {
+        return RawImportXmlChanged.InvokeAsync(args.Value?.ToString() ?? string.Empty);
+    }
+}

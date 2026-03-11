@@ -1,0 +1,36 @@
+@using Chummer.Contracts.Workspaces
+@using Chummer.Presentation.UiKit
+
+<div class="status-strip"
+     role="@AccessibilityPrimitiveBoundary.StatusRegionRole"
+     aria-live="@AccessibilityPrimitiveBoundary.PoliteAnnouncementMode"
+     aria-atomic="true"
+     aria-label="@BuildStatusAnnouncement()">
+    <span id="charState">Character: @(WorkspaceId is null ? "none" : "loaded")</span>
+    <span id="serviceState">Service: @(string.IsNullOrWhiteSpace(Error) ? "online" : "error")</span>
+    <span id="timeState">Time: @LastUiUtc</span>
+    <span id="complianceState">@ComplianceState</span>
+</div>
+
+@code {
+    [Parameter]
+    public CharacterWorkspaceId? WorkspaceId { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    [Parameter]
+    public string LastUiUtc { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ComplianceState { get; set; } = "Ruleset: unresolved | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us";
+
+    private string BuildStatusAnnouncement()
+    {
+        return AccessibilityPrimitiveBoundary.BuildStatusAnnouncement(
+            characterState: $"Character: {(WorkspaceId is null ? "none" : "loaded")}",
+            serviceState: $"Service: {(string.IsNullOrWhiteSpace(Error) ? "online" : "error")}",
+            timeState: $"Time: {LastUiUtc}",
+            complianceState: ComplianceState);
+    }
+}

@@ -1,0 +1,349 @@
+<section class="panel design-panel gm-board-panel" data-gm-board-showcase>
+    <header class="panel-header gm-board-header">
+        <div>
+            <h2>GM Ops Board</h2>
+            <p class="note">Tactical cards replace chat flow so the table can act on state immediately.</p>
+        </div>
+        <div class="gm-board-header-actions">
+            <div class="mini-grid">
+                <label>
+                    Interruption budget
+                    <input type="range" min="0" max="100" step="5" value="@InterruptionBudget" @oninput="OnBudgetInput" />
+                    <span>@InterruptionBudget · @GetBudgetLabel(InterruptionBudget)</span>
+                </label>
+            </div>
+            <div class="gm-board-global-actions">
+                <button type="button" class="button ghost" data-gm-board-mute="15" @onclick="() => MuteRequested.InvokeAsync(15)">Mute Spider 15 min</button>
+                @if (!string.IsNullOrWhiteSpace(MutedUntilLabel))
+                {
+                    <span class="badge" data-gm-board-muted-until>@MutedUntilLabel</span>
+                }
+            </div>
+        </div>
+    </header>
+
+    <section class="gm-board-control-strip" aria-label="Operational controls">
+        <div class="gm-board-control-card">
+            <span class="trace-section-title">Session context</span>
+            @if (SessionContexts.Count > 0)
+            {
+                <div class="gm-board-context-buttons" role="group" aria-label="Session context">
+                    @foreach (string context in SessionContexts)
+                    {
+                        <button type="button"
+                                class="mini-btn @(string.Equals(context, CurrentSessionContext, StringComparison.OrdinalIgnoreCase) ? "selected" : string.Empty)"
+                                data-gm-board-context="@context"
+                                aria-pressed="@string.Equals(context, CurrentSessionContext, StringComparison.OrdinalIgnoreCase)"
+                                @onclick="() => SessionContextChanged.InvokeAsync(context)">
+                            @context
+                        </button>
+                    }
+                </div>
+            }
+            <p class="meta" data-gm-board-current-context>Current lane: @CurrentSessionContext</p>
+        </div>
+        <div class="gm-board-control-card">
+            <span class="trace-section-title">Autonomy</span>
+            <div class="gm-board-autonomy-buttons" role="group" aria-label="Autonomy level">
+                @foreach (string level in AutonomyLevels)
+                {
+                    <button type="button"
+                            class="mini-btn @(string.Equals(level, AutonomyLevel, StringComparison.OrdinalIgnoreCase) ? "selected" : string.Empty)"
+                            data-gm-board-autonomy="@level"
+                            aria-pressed="@string.Equals(level, AutonomyLevel, StringComparison.OrdinalIgnoreCase)"
+                            @onclick="() => AutonomyLevelChanged.InvokeAsync(level)">
+                        @level
+                    </button>
+                }
+            </div>
+            <p class="meta" data-gm-board-autonomy-note>@GetAutonomyDescription(AutonomyLevel)</p>
+        </div>
+        <div class="gm-board-control-card">
+            <span class="trace-section-title">Ops posture</span>
+            <div class="gm-board-status-badges">
+                <span class="badge">@GetBudgetLabel(InterruptionBudget)</span>
+                <span class="badge">@($"Autonomy: {AutonomyLevel}")</span>
+                @if (!string.IsNullOrWhiteSpace(MutedUntilLabel))
+                {
+                    <span class="badge">Spider muted</span>
+                }
+            </div>
+            <p class="meta">Pinned cards stay visible across autonomy filters. Snoozed cards remain visible, but their primary actions pause until they resume.</p>
+        </div>
+    </section>
+
+    @if (GetInvalidatedCardCount() > 0)
+    {
+        <section class="gm-board-stale-banner" data-gm-board-stale-banner role="status" aria-live="polite">
+            <strong>Session context shifted.</strong>
+            <span>@GetInvalidatedCardCount() Spider @(GetInvalidatedCardCount() == 1 ? "card is" : "cards are") stale in @CurrentSessionContext and need refresh before action.</span>
+        </section>
+    }
+
+    @if (Cards.Count == 0)
+    {
+        <p class="hint">No tactical cards available.</p>
+    }
+    else
+    {
+        <section class="gm-board-rail" aria-label="Initiative rail">
+            <header class="trace-section-title">Initiative Rail</header>
+            <div class="gm-board-initiative-strip">
+                @foreach (GmBoardCard card in Cards)
+                {
+                    <article class="gm-board-initiative-pill @GetSeverityClass(card.Severity)" data-gm-board-initiative-pill="@card.Id">
+                        <span class="gm-board-initiative-slot">@card.InitiativeSlot</span>
+                        <span>@card.Title</span>
+                        @if (card.IsPinned)
+                        {
+                            <span class="badge">Pinned</span>
+                        }
+                    </article>
+                }
+            </div>
+        </section>
+
+        <div class="stack gm-board-card-stack">
+            @foreach (GmBoardCard card in Cards)
+            {
+                <article class="panel gm-board-card @GetSeverityClass(card.Severity)" data-gm-board-card="@card.Id" data-card-source="@card.Source">
+                    <header class="coach-card-header">
+                        <div class="gm-board-card-title">
+                            <div class="button-row compact gm-board-card-badges">
+                                <span class="badge">@card.Source</span>
+                                <span class="badge">@card.Kind</span>
+                                <span class="badge @GetSeverityClass(card.Severity)">@card.Severity</span>
+                                @if (card.IsPinned)
+                                {
+                                    <span class="badge">Pinned</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(card.SnoozedUntilLabel))
+                                {
+                                    <span class="badge" data-gm-board-snoozed-badge="@card.Id">Snoozed until @card.SnoozedUntilLabel</span>
+                                }
+                                @if (IsContextInvalidated(card))
+                                {
+                                    <span class="badge warn" data-gm-board-stale-badge="@card.Id">Stale</span>
+                                }
+                            </div>
+                            <h3>@card.Title</h3>
+                            <p class="meta">@card.Summary</p>
+                        </div>
+                        <div class="gm-board-card-timing">
+                            <span class="gm-board-card-time">@card.Timestamp</span>
+                            <span class="gm-board-card-expiry">@card.Expiry</span>
+                        </div>
+                    </header>
+
+                    @if (IsContextInvalidated(card))
+                    {
+                        <div class="gm-board-card-banner" data-gm-board-card-banner="@card.Id">
+                            <strong>Invalidated by context shift.</strong>
+                            <span>Generated for @card.ContextSnapshot and no longer trustworthy after @CurrentSessionContext. Refresh Spider advice before acting.</span>
+                        </div>
+                    }
+
+                    <div class="gm-board-fact-grid">
+                        <div>
+                            <span class="trace-section-title">Initiative</span>
+                            <span>@card.InitiativeSlot</span>
+                        </div>
+                        <div>
+                            <span class="trace-section-title">Target</span>
+                            <span>@card.Target</span>
+                        </div>
+                        <div>
+                            <span class="trace-section-title">Operational Action</span>
+                            <span>@card.PrimaryActionLabel</span>
+                        </div>
+                        <div>
+                            <span class="trace-section-title">Surface State</span>
+                            <span>@GetCardSurfaceState(card)</span>
+                        </div>
+                        <div>
+                            <span class="trace-section-title">Context Snapshot</span>
+                            <span>@card.ContextSnapshot</span>
+                        </div>
+                    </div>
+
+                    @if (card.Alerts.Count > 0)
+                    {
+                        <div class="gm-board-alerts" aria-label="Operational alerts">
+                            @foreach (string alert in card.Alerts)
+                            {
+                                <span class="gm-board-alert">@alert</span>
+                            }
+                        </div>
+                    }
+
+                    <div class="gm-board-actions">
+                        <button type="button"
+                                class="button"
+                                data-gm-board-primary-action="@card.Id"
+                                aria-label="@($"{card.Title}: {card.PrimaryActionLabel}")"
+                                disabled="@(card.IsPrimaryActionMuted || IsContextInvalidated(card))"
+                                @onclick="() => QuickActionRequested.InvokeAsync(new GmBoardQuickActionRequest(card.Id, card.PrimaryActionId))">
+                            @card.PrimaryActionLabel
+                        </button>
+                        @if (IsContextInvalidated(card))
+                        {
+                            <button class="mini-btn" data-gm-board-refresh-context="@card.Id" @onclick="() => QuickActionRequested.InvokeAsync(new GmBoardQuickActionRequest(card.Id, card.RefreshActionId))">@card.RefreshActionLabel</button>
+                        }
+                        <button class="mini-btn" data-gm-board-pin="@card.Id" @onclick="() => PinRequested.InvokeAsync(card.Id)">@(card.IsPinned ? "Unpin" : "Pin")</button>
+                        <button class="mini-btn" data-gm-board-dismiss="@card.Id" @onclick="() => DismissRequested.InvokeAsync(card.Id)">Dismiss</button>
+                        <button class="mini-btn" data-gm-board-snooze="@card.Id" @onclick="() => SnoozeRequested.InvokeAsync(card.Id)">@(card.IsSnoozed ? "Resume" : "Snooze")</button>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public int InterruptionBudget { get; set; } = 50;
+
+    [Parameter]
+    public EventCallback<int> InterruptionBudgetChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<GmBoardCard> Cards { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<string> PinRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> DismissRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SnoozeRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<int> MuteRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<GmBoardQuickActionRequest> QuickActionRequested { get; set; }
+
+    [Parameter]
+    public string AutonomyLevel { get; set; } = "Tactical";
+
+    [Parameter]
+    public EventCallback<string> AutonomyLevelChanged { get; set; }
+
+    [Parameter]
+    public string? MutedUntilLabel { get; set; }
+
+    [Parameter]
+    public string CurrentSessionContext { get; set; } = "Pass 2";
+
+    [Parameter]
+    public IReadOnlyList<string> SessionContexts { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<string> SessionContextChanged { get; set; }
+
+    private static readonly IReadOnlyList<string> AutonomyLevels = ["Off", "Low", "Tactical", "Narrative", "High"];
+
+    private Task OnBudgetInput(ChangeEventArgs args)
+    {
+        if (!int.TryParse(Convert.ToString(args.Value), out int value))
+        {
+            return Task.CompletedTask;
+        }
+
+        InterruptionBudget = value;
+        return InterruptionBudgetChanged.InvokeAsync(value);
+    }
+
+    private static string GetSeverityClass(string severity)
+    {
+        return severity.ToLowerInvariant() switch
+        {
+            "high" => "coach-badge error",
+            "medium" => "coach-badge warn",
+            "low" => "coach-badge good",
+            _ => string.Empty
+        };
+    }
+
+    private static string GetBudgetLabel(int budget)
+    {
+        return budget switch
+        {
+            <= 20 => "Quiet table",
+            <= 45 => "Guarded",
+            <= 70 => "Operational",
+            _ => "Interrupt-heavy"
+        };
+    }
+
+    private static string GetAutonomyDescription(string autonomyLevel)
+    {
+        return autonomyLevel.ToLowerInvariant() switch
+        {
+            "off" => "Only pinned or highest-risk cards should surface. Spider suggestions stay silent.",
+            "low" => "Surface urgent operational alerts, but suppress softer prompts and scene-shaping suggestions.",
+            "tactical" => "Default during-play mode: show actionable ops cards without turning the board into a chat feed.",
+            "narrative" => "Allow broader scene prompts and connective reminders when the table wants more steering.",
+            "high" => "Keep the full advisory lane visible, including follow-up prompts after immediate actions resolve.",
+            _ => "Operational cards stay visible with explainable provenance."
+        };
+    }
+
+    private string GetCardSurfaceState(GmBoardCard card)
+    {
+        if (IsContextInvalidated(card))
+        {
+            return "Invalidated by context shift";
+        }
+
+        if (card.IsSnoozed && !string.IsNullOrWhiteSpace(card.SnoozedUntilLabel))
+        {
+            return $"Snoozed until {card.SnoozedUntilLabel}";
+        }
+
+        if (card.IsPinned)
+        {
+            return "Pinned across context shifts";
+        }
+
+        return card.IsPrimaryActionMuted
+            ? "Action paused"
+            : "Live";
+    }
+
+    private int GetInvalidatedCardCount() => Cards.Count(IsContextInvalidated);
+
+    private bool IsContextInvalidated(GmBoardCard card)
+        => card.InvalidatesOnContextShift
+           && !string.IsNullOrWhiteSpace(card.ContextSnapshot)
+           && !string.Equals(card.ContextSnapshot, CurrentSessionContext, StringComparison.OrdinalIgnoreCase);
+
+    public sealed record GmBoardCard(
+        string Id,
+        string Source,
+        string Kind,
+        string Title,
+        string Summary,
+        string Severity,
+        string Timestamp,
+        string Expiry,
+        string InitiativeSlot,
+        string Target,
+        string PrimaryActionId,
+        string PrimaryActionLabel,
+        IReadOnlyList<string> Alerts,
+        string MinimumAutonomy = "Low",
+        string ContextSnapshot = "",
+        bool InvalidatesOnContextShift = false,
+        string RefreshActionId = "refresh-context",
+        string RefreshActionLabel = "Refresh Spider context",
+        bool IsPinned = false,
+        bool IsSnoozed = false,
+        string? SnoozedUntilLabel = null,
+        bool IsPrimaryActionMuted = false);
+
+    public sealed record GmBoardQuickActionRequest(
+        string CardId,
+        string ActionId);
+}
