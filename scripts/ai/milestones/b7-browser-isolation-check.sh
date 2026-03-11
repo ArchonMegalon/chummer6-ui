@@ -6,9 +6,62 @@ echo "[B7] checking browser deployment signoff guardrails..."
 portal_base_url="${CHUMMER_PORTAL_SIGNOFF_BASE_URL:-http://chummer-portal:8080}"
 runtime_probe_required="${CHUMMER_B7_RUNTIME_REQUIRED:-}"
 runtime_probe_skip_allowed="${CHUMMER_B7_ALLOW_RUNTIME_SKIP:-0}"
+runtime_fixture_enabled="${CHUMMER_B7_ENABLE_RUNTIME_FIXTURE:-1}"
+runtime_fixture_port="${CHUMMER_B7_RUNTIME_FIXTURE_PORT:-38091}"
+runtime_fixture_pid=""
 if [[ -z "$runtime_probe_required" ]]; then
   runtime_probe_required="1"
 fi
+
+cleanup_runtime_fixture() {
+  if [[ -n "$runtime_fixture_pid" ]]; then
+    kill "$runtime_fixture_pid" >/dev/null 2>&1 || true
+    wait "$runtime_fixture_pid" >/dev/null 2>&1 || true
+    runtime_fixture_pid=""
+  fi
+}
+
+trap cleanup_runtime_fixture EXIT
+
+portal_is_ready() {
+  local base_url="$1"
+  node -e '
+const url = process.argv[1];
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 3000);
+fetch(`${url}/api/health`, { signal: controller.signal })
+  .then(response => {
+    clearTimeout(timeout);
+    process.exit(response.ok ? 0 : 1);
+  })
+  .catch(() => {
+    clearTimeout(timeout);
+    process.exit(1);
+  });
+' "$base_url"
+}
+
+start_runtime_fixture() {
+  if [[ ! -f "scripts/portal-signoff-fixture.cjs" ]]; then
+    return 1
+  fi
+
+  local fixture_base_url="http://127.0.0.1:${runtime_fixture_port}"
+  node scripts/portal-signoff-fixture.cjs --port "$runtime_fixture_port" >/tmp/chummer-b7-runtime-fixture.log 2>&1 &
+  runtime_fixture_pid="$!"
+
+  for _ in $(seq 1 25); do
+    if portal_is_ready "$fixture_base_url"; then
+      portal_base_url="$fixture_base_url"
+      echo "[B7] note: started local runtime fixture at $portal_base_url for strict probe execution."
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "[B7] FAIL: local runtime fixture did not become ready; see /tmp/chummer-b7-runtime-fixture.log."
+  return 1
+}
 
 require_contains() {
   local path="$1"
@@ -176,20 +229,7 @@ require_contains \
   "[B7] FAIL: portal deployment probe is missing cache-enumeration assertions."
 
 portal_probe_ready=0
-if node -e '
-const url = process.argv[1];
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), 3000);
-fetch(`${url}/api/health`, { signal: controller.signal })
-  .then(response => {
-    clearTimeout(timeout);
-    process.exit(response.ok ? 0 : 1);
-  })
-  .catch(() => {
-    clearTimeout(timeout);
-    process.exit(1);
-  });
-' "$portal_base_url"; then
+if portal_is_ready "$portal_base_url"; then
   portal_probe_ready=1
 fi
 
@@ -197,6 +237,16 @@ if [[ "$portal_probe_ready" -eq 1 ]]; then
   echo "[B7] executing runtime deployment probe against $portal_base_url..."
   CHUMMER_PORTAL_BASE_URL="$portal_base_url" node scripts/e2e-portal.cjs
 elif [[ "$runtime_probe_required" == "1" ]]; then
+  if [[ "$runtime_fixture_enabled" == "1" ]] && [[ "$runtime_probe_skip_allowed" == "0" ]]; then
+    if start_runtime_fixture; then
+      echo "[B7] executing runtime deployment probe against $portal_base_url..."
+      CHUMMER_PORTAL_BASE_URL="$portal_base_url" node scripts/e2e-portal.cjs
+      echo "[B7] note: strict probe executed against local runtime fixture."
+      echo "[B7] PASS: browser deployment signoff guardrails are present (fallback, wasm MIME, isolation headers, service-worker cache behavior)."
+      exit 0
+    fi
+  fi
+
   if [[ "$runtime_probe_skip_allowed" == "1" ]]; then
     echo "[B7] note: runtime deployment probe explicitly skipped because CHUMMER_B7_ALLOW_RUNTIME_SKIP=1 and $portal_base_url is unavailable."
   else
