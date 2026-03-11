@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$repo_root"
+
+echo "[verify] checking contract package consumption..."
+
+if rg -n 'ProjectReference Include="..\\Chummer.Contracts\\Chummer.Contracts.csproj"' \
+  Chummer.Presentation/Chummer.Presentation.csproj \
+  Chummer.Blazor/Chummer.Blazor.csproj \
+  Chummer.Tests/Chummer.Tests.csproj >/dev/null; then
+  echo "[verify] FAIL: duplicated Chummer.Contracts source project is still referenced."
+  exit 3
+fi
+
+if ! rg -n 'PackageReference Include="\$\(ChummerContractsPackageId\)" Version="\$\(ChummerContractsPackageVersion\)"' \
+  Chummer.Presentation/Chummer.Presentation.csproj \
+  Chummer.Blazor/Chummer.Blazor.csproj \
+  Chummer.Tests/Chummer.Tests.csproj >/dev/null; then
+  echo "[verify] FAIL: authoritative contracts package references are missing."
+  exit 4
+fi
+
+if rg -n -F 'Chummer.Contracts/Chummer.Contracts.csproj' \
+  Chummer.Blazor/Dockerfile \
+  Docker/Dockerfile.tests \
+  scripts/ai/day1-p1-setup.sh >/dev/null; then
+  echo "[verify] FAIL: build scripts still hard-code the duplicated contracts project."
+  exit 5
+fi
+
+if [ -d Chummer.Contracts ]; then
+  echo "[verify] FAIL: duplicated Chummer.Contracts source tree still exists in the UI repo."
+  exit 6
+fi
+
+if [ -d Chummer.Session.Web ] || [ -d Chummer.Coach.Web ]; then
+  echo "[verify] FAIL: play/mobile heads still exist in the presentation repo."
+  exit 7
+fi
+
+if rg -n 'Chummer\.Session\.Web|Chummer\.Coach\.Web' Chummer.sln Chummer.Presentation.sln Docker/Dockerfile.tests docker-compose.yml scripts/ai/day1-p1-setup.sh >/dev/null; then
+  echo "[verify] FAIL: repo build wiring still references removed play/mobile heads."
+  exit 8
+fi
+
+echo "[verify] checking post-split ownership guard..."
+bash scripts/ai/milestones/b11-post-split-ownership-check.sh
+
+echo "[verify] checking NPC Persona Studio backlog mapping guard..."
+bash scripts/ai/milestones/b11-npc-persona-studio-check.sh
+
+echo "[verify] checking UI milestone coverage registry guard..."
+bash scripts/ai/milestones/ui-milestone-coverage-check.sh
+
+echo "[verify] checking ui-kit shell chrome guard..."
+bash scripts/ai/milestones/p5-ui-kit-shell-chrome-check.sh
+
+echo "[verify] checking ui-kit design token/theme queue guard..."
+bash scripts/ai/milestones/p5-ui-kit-design-token-check.sh
+
+echo "[verify] checking ui-kit accessibility/state guard..."
+bash scripts/ai/milestones/p5-ui-kit-accessibility-state-check.sh
+
+echo "[verify] checking B13 accessibility signoff guard..."
+CHUMMER_B13_TESTS_REQUIRED=1 bash scripts/ai/milestones/b13-accessibility-signoff-check.sh
+
+echo "[verify] checking B7 browser deployment signoff guard..."
+CHUMMER_B7_RUNTIME_REQUIRED=1 CHUMMER_B7_ALLOW_RUNTIME_SKIP=0 bash scripts/ai/milestones/b7-browser-isolation-check.sh
+
+echo "[verify] checking B12 generated-asset dispatch/review guard..."
+bash scripts/ai/milestones/b12-generated-asset-dispatch-check.sh
+
+echo "[verify] checking B9 campaign journal planner/calendar guard..."
+bash scripts/ai/milestones/b9-campaign-journal-check.sh
+
+echo "[verify] PASS"

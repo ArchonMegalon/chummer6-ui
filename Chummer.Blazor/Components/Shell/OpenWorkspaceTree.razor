@@ -1,0 +1,68 @@
+@using Chummer.Contracts.Workspaces
+@using Chummer.Presentation.Overview
+
+<section class="panel navigator">
+    <h2>Open Characters</h2>
+    @if (OpenWorkspaces.Count == 0)
+    {
+        <p class="hint">No open workspaces.</p>
+    }
+    else
+    {
+        <div class="virtual-list navigator-list" data-testid="open-workspace-tree">
+            <Virtualize Items="@OpenWorkspaces"
+                        Context="workspace"
+                        ItemSize="52"
+                        ItemsTagName="ul"
+                        ItemTagName="li">
+                @{
+                    bool isActive = string.Equals(ActiveWorkspaceId?.Value, workspace.Id.Value, StringComparison.Ordinal);
+                    string workspaceLabel = string.IsNullOrWhiteSpace(workspace.Alias)
+                        ? workspace.Name
+                        : $"{workspace.Name} ({workspace.Alias})";
+                }
+                <div class="navigator-row">
+                    <button class="command-button @(isActive ? "selected" : string.Empty)"
+                            disabled="@IsBusy"
+                            @onclick="() => OpenWorkspaceAsync(workspace.Id.Value)">
+                        <span>@workspaceLabel</span>
+                        <span class="hint mono">@workspace.Id.Value</span>
+                    </button>
+                    <button class="mini-btn"
+                            title="Close workspace"
+                            disabled="@IsBusy"
+                            @onclick="() => CloseWorkspaceAsync(workspace.Id.Value)">
+                        Close
+                    </button>
+                </div>
+            </Virtualize>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<OpenWorkspaceState> OpenWorkspaces { get; set; } = [];
+
+    [Parameter]
+    public CharacterWorkspaceId? ActiveWorkspaceId { get; set; }
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OpenWorkspaceRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> CloseWorkspaceRequested { get; set; }
+
+    private Task OpenWorkspaceAsync(string workspaceId)
+    {
+        return OpenWorkspaceRequested.InvokeAsync(workspaceId);
+    }
+
+    private Task CloseWorkspaceAsync(string workspaceId)
+    {
+        return CloseWorkspaceRequested.InvokeAsync(workspaceId);
+    }
+}

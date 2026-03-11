@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Chummer.Avalonia.Controls.CoachSidecarControl">
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,*" RowSpacing="6">
+    <TextBlock Grid.Row="0" Text="Coach Sidecar" FontWeight="Bold" />
+    <TextBlock Grid.Row="1" x:Name="CoachStatusText" Text="Status: unloaded" TextWrapping="Wrap" />
+    <TextBlock Grid.Row="2" x:Name="CoachPromptPolicyText" Text="Prompt Policy: n/a" TextWrapping="Wrap" />
+    <TextBlock Grid.Row="3" x:Name="CoachBudgetText" Text="Coach Budget: n/a" TextWrapping="Wrap" />
+    <TextBlock Grid.Row="4" x:Name="CoachWorkspaceText" Text="Workspace: n/a" TextWrapping="Wrap" />
+    <TextBlock Grid.Row="5" x:Name="CoachRuntimeText" Text="Runtime: n/a" TextWrapping="Wrap" />
+    <StackPanel Grid.Row="6" Spacing="4">
+      <TextBlock Text="Coach Launch" FontWeight="Bold" />
+      <TextBox x:Name="CoachLaunchUriTextBox" IsReadOnly="True" Watermark="/coach/" />
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button x:Name="CopyCoachLaunchButton" Content="Copy Coach Link" Click="CopyCoachLaunchButton_OnClick" />
+        <TextBlock x:Name="CoachLaunchStatusText" Text="Launch link unavailable." VerticalAlignment="Center" TextWrapping="Wrap" />
+      </StackPanel>
+    </StackPanel>
+    <TextBlock Grid.Row="7" x:Name="CoachErrorText" Text="(none)" TextWrapping="Wrap" />
+    <TextBlock Grid.Row="8" Text="Provider Health" FontWeight="Bold" />
+    <ListBox Grid.Row="9" x:Name="ProviderHealthList" />
+    <TextBlock Grid.Row="10" Text="Recent Coach Guidance" FontWeight="Bold" />
+    <ListBox Grid.Row="11" x:Name="AuditList" />
+  </Grid>
+</UserControl>

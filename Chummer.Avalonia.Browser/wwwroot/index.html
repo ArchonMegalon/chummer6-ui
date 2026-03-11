@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chummer Avalonia Browser Host</title>
+    <style>
+      :root {
+        --bg: #09131f;
+        --bg-glow: #17314d;
+        --panel: rgba(11, 24, 38, 0.92);
+        --panel-strong: rgba(13, 29, 46, 0.98);
+        --line: rgba(130, 167, 208, 0.22);
+        --ink: #eef5ff;
+        --muted: #a3b4c9;
+        --accent: #f59d48;
+        --accent-strong: #ffd3a6;
+        --good: #7ed6ae;
+        --warn: #ffbe72;
+        --bad: #ff8b7c;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 32px 20px 48px;
+        font-family: "Aptos", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(245, 157, 72, 0.16), transparent 28%),
+          radial-gradient(circle at 85% 18%, rgba(68, 142, 219, 0.22), transparent 24%),
+          linear-gradient(180deg, var(--bg-glow), var(--bg));
+      }
+
+      main {
+        width: min(1040px, 100%);
+        margin: 0 auto;
+      }
+
+      .banner {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 18px;
+        padding: 16px 18px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 139, 124, 0.32);
+        background: rgba(95, 20, 15, 0.42);
+        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.22);
+      }
+
+      .banner[hidden] { display: none; }
+
+      .banner strong {
+        font-size: 0.96rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--accent-strong);
+      }
+
+      .hero {
+        display: grid;
+        gap: 22px;
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: linear-gradient(180deg, rgba(18, 37, 57, 0.98), rgba(11, 24, 38, 0.94));
+        box-shadow: 0 28px 60px rgba(0, 0, 0, 0.28);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        width: fit-content;
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(245, 157, 72, 0.34);
+        background: rgba(245, 157, 72, 0.12);
+        color: var(--accent-strong);
+        font-size: 0.86rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .hero-head {
+        display: grid;
+        gap: 12px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.1rem, 5vw, 4rem);
+        line-height: 0.98;
+        letter-spacing: -0.04em;
+      }
+
+      .hero p,
+      .detail-list,
+      .helper {
+        color: var(--muted);
+      }
+
+      .hero-copy {
+        max-width: 760px;
+        margin: 0;
+        font-size: 1.04rem;
+        line-height: 1.65;
+      }
+
+      .status-grid,
+      .detail-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .status-card,
+      .detail-card {
+        padding: 18px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .status-card h2,
+      .detail-card h2 {
+        margin: 0 0 14px;
+        font-size: 0.94rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--accent-strong);
+      }
+
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        font-weight: 700;
+        font-size: 0.92rem;
+      }
+
+      .status-chip::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: currentColor;
+      }
+
+      .status-good { color: var(--good); }
+      .status-warn { color: var(--warn); }
+      .status-bad { color: var(--bad); }
+
+      .detail-list {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .detail-list strong {
+        display: block;
+        margin-bottom: 2px;
+        color: var(--ink);
+      }
+
+      code {
+        color: var(--accent-strong);
+        font-family: "Cascadia Code", "Consolas", monospace;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .actions a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(245, 157, 72, 0.26);
+        text-decoration: none;
+        font-weight: 700;
+        color: #08121d;
+        background: linear-gradient(135deg, #f59d48, #ffd3a6);
+      }
+
+      .actions a.secondary {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .helper {
+        margin: 0;
+        font-size: 0.94rem;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 700px) {
+        body { padding: 18px 14px 32px; }
+        .hero { padding: 22px; border-radius: 22px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section id="degraded-banner" class="banner" hidden>
+        <strong>Degraded browser mode</strong>
+        <div>
+          <span>This origin is not cross-origin isolated.</span>
+          <span>Threaded Avalonia/WASM features stay disabled until the host serves <code>Cross-Origin-Opener-Policy: same-origin</code> and <code>Cross-Origin-Embedder-Policy: require-corp</code>.</span>
+        </div>
+      </section>
+
+      <section class="hero">
+        <div class="hero-head">
+          <span class="eyebrow">Avalonia Browser Host</span>
+          <h1>Deployment diagnostics for the <code>/avalonia/</code> head.</h1>
+          <p class="hero-copy">
+            This entry point keeps the browser-hosted Avalonia surface honest about isolation, deep links, and static-asset readiness before the full artifact bundle is published behind the portal.
+          </p>
+        </div>
+
+        <section class="status-grid" aria-label="Browser host status">
+          <article class="status-card">
+            <h2>Isolation</h2>
+            <div id="isolation-chip" class="status-chip status-warn">Checking browser isolation...</div>
+            <p id="isolation-copy" class="helper">Waiting for runtime diagnostics.</p>
+          </article>
+
+          <article class="status-card">
+            <h2>Service Worker</h2>
+            <div id="service-worker-chip" class="status-chip status-warn">Checking cache support...</div>
+            <p id="service-worker-copy" class="helper">Waiting for runtime diagnostics.</p>
+          </article>
+
+          <article class="status-card">
+            <h2>Health Route</h2>
+            <div id="health-chip" class="status-chip status-warn">Checking host health...</div>
+            <p id="health-copy" class="helper">Waiting for server diagnostics.</p>
+          </article>
+        </section>
+
+        <section class="detail-grid" aria-label="Deployment detail">
+          <article class="detail-card">
+            <h2>Expected host contract</h2>
+            <ul class="detail-list">
+              <li>
+                <strong>COOP / COEP</strong>
+                <span>The host should emit <code>same-origin</code> and <code>require-corp</code> for every response.</span>
+              </li>
+              <li>
+                <strong>Static assets</strong>
+                <span>The server should publish WebAssembly with <code>application/wasm</code> once browser artifacts land.</span>
+              </li>
+              <li>
+                <strong>Deep links</strong>
+                <span>Refreshes on <code>/avalonia/*</code> must fall back to this page instead of 404ing.</span>
+              </li>
+            </ul>
+          </article>
+
+          <article class="detail-card">
+            <h2>Observed route data</h2>
+            <ul class="detail-list">
+              <li>
+                <strong>Current origin</strong>
+                <span id="origin-value">Pending...</span>
+              </li>
+              <li>
+                <strong>Current route</strong>
+                <span id="route-value">Pending...</span>
+              </li>
+              <li>
+                <strong>Health path base</strong>
+                <span id="path-base-value">Pending...</span>
+              </li>
+            </ul>
+          </article>
+        </section>
+
+        <div class="actions">
+          <a href="./health">Open health JSON</a>
+          <a class="secondary" href="/blazor/deep-link-check">Check deep-link surface</a>
+          <a class="secondary" href="/downloads/">Desktop downloads</a>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (async function () {
+        const statusClassNames = {
+          good: "status-chip status-good",
+          warn: "status-chip status-warn",
+          bad: "status-chip status-bad"
+        };
+
+        function setStatus(id, state, text) {
+          const element = document.getElementById(id);
+          if (!element) {
+            return;
+          }
+
+          element.className = statusClassNames[state];
+          element.textContent = text;
+        }
+
+        function setText(id, text) {
+          const element = document.getElementById(id);
+          if (element) {
+            element.textContent = text;
+          }
+        }
+
+        function inferBasePath() {
+          const segments = window.location.pathname.split("/").filter(Boolean);
+          return segments.length === 0 ? "/" : "/" + segments[0] + "/";
+        }
+
+        const basePath = inferBasePath();
+        const isCrossOriginIsolated = window.crossOriginIsolated === true;
+        const hasServiceWorkerSupport = "serviceWorker" in navigator;
+        const degradedBanner = document.getElementById("degraded-banner");
+
+        setText("origin-value", window.location.origin);
+        setText("route-value", window.location.pathname);
+        setText("path-base-value", basePath === "/" ? "/" : basePath.slice(0, -1));
+
+        if (isCrossOriginIsolated) {
+          setStatus("isolation-chip", "good", "Cross-origin isolated");
+          setText("isolation-copy", "Threaded/shared-memory browser features can be enabled on this origin.");
+        } else {
+          setStatus("isolation-chip", "bad", "Degraded mode active");
+          setText("isolation-copy", "Shared-memory browser features stay disabled until COOP and COEP are both present on the final host.");
+          if (degradedBanner) {
+            degradedBanner.hidden = false;
+          }
+        }
+
+        if (hasServiceWorkerSupport) {
+          try {
+            const registration = await navigator.serviceWorker.register(
+              new URL(basePath + "service-worker.js", window.location.origin)
+            );
+            setStatus("service-worker-chip", "good", "Service worker registered");
+            setText("service-worker-copy", "Cache shell active for " + registration.scope + ".");
+          } catch (error) {
+            setStatus("service-worker-chip", "warn", "Registration failed");
+            setText(
+              "service-worker-copy",
+              "Browser cache APIs exist, but the host could not register its shell cache: " +
+                (error && error.message ? error.message : String(error))
+            );
+          }
+        } else {
+          setStatus("service-worker-chip", "warn", "No service worker support");
+          setText("service-worker-copy", "This browser cannot expose service-worker-backed cache behavior.");
+        }
+
+        try {
+          const response = await fetch(new URL(basePath + "health", window.location.origin), { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+          }
+
+          const payload = await response.json();
+          setStatus("health-chip", "good", "Health route online");
+          setText(
+            "health-copy",
+            "Server advertises " +
+              payload.isolation.crossOriginOpenerPolicy +
+              " / " +
+              payload.isolation.crossOriginEmbedderPolicy +
+              " and " +
+              payload.staticAssets.wasmMimeType +
+              " for WebAssembly assets."
+          );
+          setText("path-base-value", payload.pathBase || (basePath === "/" ? "/" : basePath.slice(0, -1)));
+        } catch (error) {
+          setStatus("health-chip", "bad", "Health route unavailable");
+          setText("health-copy", "Unable to load browser-host diagnostics: " + (error && error.message ? error.message : String(error)));
+        }
+      })();
+    </script>
+  </body>
+</html>

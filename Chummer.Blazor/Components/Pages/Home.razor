@@ -1,0 +1,1366 @@
+@page "/"
+@using Chummer.Contracts.Characters
+@using Chummer.Contracts.Content
+@using Chummer.Contracts.Journal
+@using Chummer.Contracts.Presentation
+@using Chummer.Contracts.Rulesets
+@using Chummer.Presentation.Explain
+@using Chummer.Presentation.Overview
+
+<main class="page">
+    <section class="panel-grid">
+        <ExplainTracePanel Trace="_sampleExplainTrace" Chrome="_sampleExplainChrome" />
+        <BuildLabPanel Projection="_buildLabProjection" />
+        <RuntimeInspectorPanel Projection="_runtimeInspector" />
+        <CampaignJournalPanel Projection="_journalPanel" />
+        <ContactNetworkPanel Graph="_contactGraph" />
+        <NpcPersonaStudioPanel Projection="_npcPersonaStudio" />
+
+        <GmBoardFeed InterruptionBudget="_interruptionBudget"
+                     CurrentSessionContext="_currentSessionContext"
+                     SessionContexts="SessionContexts"
+                     SessionContextChanged="OnSessionContextChanged"
+                     AutonomyLevel="_autonomyLevel"
+                     AutonomyLevelChanged="OnAutonomyLevelChanged"
+                     InterruptionBudgetChanged="OnBudgetChanged"
+                     MuteRequested="OnMuteRequested"
+                     MutedUntilLabel="_mutedUntilLabel"
+                     Cards="VisibleGmCards"
+                     QuickActionRequested="OnCardQuickAction"
+                     PinRequested="OnCardPinned"
+                     DismissRequested="OnCardDismissed"
+                     SnoozeRequested="OnCardSnoozed" />
+
+        <GeneratedAssetReviewPanel Assets="_assets"
+                                   SelectedAssetId="_selectedAssetId"
+                                   SelectedAssetChanged="OnSelectedAssetChanged"
+                                   ActionRequested="OnAssetActionRequested" />
+    </section>
+</main>
+
+@code {
+    private const string DefaultAutonomyLevel = "Tactical";
+    private const string GeneratedAssetActionKindDispatch = "dispatch";
+    private const string GeneratedAssetActionKindReview = "review";
+    private const string GeneratedAssetActionKindRefreshDispatch = "refresh_dispatch";
+    private const string GeneratedAssetActionKindMarkCanonical = "mark_canonical";
+    private static readonly IReadOnlyList<string> SessionContexts = ["Pass 1", "Pass 2", "Scene break"];
+
+    private BuildLabConceptIntakeProjection _buildLabProjection = new(
+        WorkspaceId: "showcase.build-lab",
+        WorkflowId: "workflow.build-lab",
+        Title: "Build Lab Intake",
+        Summary: "Ops-first concept intake shell for engine-backed build planning.",
+        RulesetId: "sr5",
+        BuildMethod: "Priority",
+        IntakeFields:
+        [
+            new BuildLabIntakeField(
+                "concept",
+                "Concept",
+                BuildLabFieldKinds.Text,
+                "Street face who can cover legwork without dragging matrix math into play.",
+                "Describe the concept",
+                "Stored as a pure intake DTO."),
+            new BuildLabIntakeField(
+                "table",
+                "Table Constraints",
+                BuildLabFieldKinds.Text,
+                "Cross-device session shell, sparse ops view, house-rule friendly.",
+                "Capture table expectations",
+                "Flows from engine-owned planning payloads.")
+        ],
+        RoleBadges:
+        [
+            new BuildLabBadge("face", "Face", BuildLabBadgeKinds.Role, true),
+            new BuildLabBadge("legwork", "Legwork", BuildLabBadgeKinds.Role)
+        ],
+        ConstraintBadges:
+        [
+            new BuildLabBadge("ops-first", "Ops-first table", BuildLabBadgeKinds.Constraint, true),
+            new BuildLabBadge("offline", "Offline-friendly", BuildLabBadgeKinds.Constraint)
+        ],
+        ProvenanceBadges:
+        [
+            new BuildLabBadge("runtime", "Runtime-backed", BuildLabBadgeKinds.Provenance, true)
+        ],
+        Variants:
+        [
+            new BuildLabVariantProjection(
+                VariantId: "variant.social-operator",
+                Label: "Social Operator",
+                Summary: "Fastest route to table-ready legwork with light matrix dependence.",
+                TableFit: "Best for ops-first tables",
+                RoleBadges:
+                [
+                    new BuildLabBadge("face", "Face lead", BuildLabBadgeKinds.Role, true),
+                    new BuildLabBadge("legwork", "Legwork backup", BuildLabBadgeKinds.Role)
+                ],
+                Metrics:
+                [
+                    new BuildLabVariantMetric("survivability", "Survivability", "Steady"),
+                    new BuildLabVariantMetric("bookkeeping", "Bookkeeping", "Low", "-1 subsystem"),
+                    new BuildLabVariantMetric("handoff", "GM handoff", "Clean")
+                ],
+                Warnings:
+                [
+                    new BuildLabVariantWarning(
+                        "magic-gap",
+                        "Magic coverage gap",
+                        "Relies on another runner for astral coverage after the opener.",
+                        BuildLabWarningKinds.Trap,
+                        true)
+                ],
+                OverlapBadges:
+                [
+                    new BuildLabBadge("face-overlap", "Overlaps primary face lightly", BuildLabBadgeKinds.Overlap)
+                ],
+                Actions:
+                [
+                    new BuildLabActionDescriptor("focus-social", "Inspect Timeline", BuildLabSurfaceIds.ProgressionTimelineRail, true, "timeline.social-operator")
+                ],
+                ExplainEntryId: "buildlab.variant.social-operator"),
+            new BuildLabVariantProjection(
+                VariantId: "variant.matrix-fixer",
+                Label: "Matrix Fixer",
+                Summary: "More reach on intrusion and overwatch, but higher during-play bookkeeping.",
+                TableFit: "Best for matrix-heavy groups",
+                RoleBadges:
+                [
+                    new BuildLabBadge("matrix", "Matrix support", BuildLabBadgeKinds.Role, true)
+                ],
+                Metrics:
+                [
+                    new BuildLabVariantMetric("survivability", "Survivability", "Fragile"),
+                    new BuildLabVariantMetric("bookkeeping", "Bookkeeping", "High", "+2 subsystems", true),
+                    new BuildLabVariantMetric("handoff", "GM handoff", "Busy")
+                ],
+                Warnings:
+                [
+                    new BuildLabVariantWarning(
+                        "ops-tax",
+                        "Ops tax",
+                        "Adds duplicate matrix state tracking the table may not want in live play.",
+                        BuildLabWarningKinds.Trap,
+                        true),
+                    new BuildLabVariantWarning(
+                        "decker-overlap",
+                        "Role overlap",
+                        "Crowds a dedicated decker if one is already in the crew.",
+                        BuildLabWarningKinds.RoleOverlap)
+                ],
+                OverlapBadges:
+                [
+                    new BuildLabBadge("decker-overlap", "High decker overlap", BuildLabBadgeKinds.Overlap, true)
+                ],
+                Actions:
+                [
+                    new BuildLabActionDescriptor("focus-matrix", "Inspect Timeline", BuildLabSurfaceIds.ProgressionTimelineRail, true, "timeline.matrix-fixer")
+                ],
+                ExplainEntryId: "buildlab.variant.matrix-fixer")
+        ],
+        ProgressionTimelines:
+        [
+            new BuildLabProgressionTimeline(
+                TimelineId: "timeline.social-operator",
+                Title: "Social Operator Ladder",
+                Summary: "Operational gains at 25 / 50 / 100 Karma without dragging build math into the shell.",
+                VariantId: "variant.social-operator",
+                Steps:
+                [
+                    new BuildLabProgressionStep(
+                        "social-25",
+                        25,
+                        "Table-ready opener",
+                        "Stabilize the core social package and tighten legwork reliability.",
+                        Outcomes:
+                        [
+                            new BuildLabVariantMetric("spotlight", "Spotlight load", "Balanced"),
+                            new BuildLabVariantMetric("prep", "Prep speed", "Fast")
+                        ],
+                        MilestoneBadges:
+                        [
+                            new BuildLabBadge("25", "25 Karma", BuildLabBadgeKinds.Milestone, true)
+                        ],
+                        RiskBadges:
+                        [
+                            new BuildLabBadge("astral-gap", "Astral gap persists", BuildLabBadgeKinds.Risk)
+                        ],
+                        ExplainEntryId: "buildlab.timeline.social-25"),
+                    new BuildLabProgressionStep(
+                        "social-50",
+                        50,
+                        "Reliability pass",
+                        "Raise the fallback lanes so the build survives long sessions cleanly.",
+                        Outcomes:
+                        [
+                            new BuildLabVariantMetric("resilience", "Resilience", "Improved"),
+                            new BuildLabVariantMetric("duplicate-entry", "Duplicate entry", "Still low")
+                        ],
+                        MilestoneBadges:
+                        [
+                            new BuildLabBadge("50", "50 Karma", BuildLabBadgeKinds.Milestone, true)
+                        ],
+                        RiskBadges: [],
+                        ExplainEntryId: "buildlab.timeline.social-50"),
+                    new BuildLabProgressionStep(
+                        "social-100",
+                        100,
+                        "Campaign anchor",
+                        "Round out leadership and contingency lanes for long-form play.",
+                        Outcomes:
+                        [
+                            new BuildLabVariantMetric("crew-coverage", "Crew coverage", "Broad"),
+                            new BuildLabVariantMetric("ops-clutter", "Ops clutter", "Contained")
+                        ],
+                        MilestoneBadges:
+                        [
+                            new BuildLabBadge("100", "100 Karma", BuildLabBadgeKinds.Milestone, true)
+                        ],
+                        RiskBadges:
+                        [
+                            new BuildLabBadge("niche-blur", "Can blur with the face lead", BuildLabBadgeKinds.Risk)
+                        ],
+                        ExplainEntryId: "buildlab.timeline.social-100")
+                ],
+                SourceDocumentId: "designer-feedback.ops-first"),
+            new BuildLabProgressionTimeline(
+                TimelineId: "timeline.matrix-fixer",
+                Title: "Matrix Fixer Ladder",
+                Summary: "Shows the higher-complexity path explicitly so the table can reject it quickly when needed.",
+                VariantId: "variant.matrix-fixer",
+                Steps:
+                [
+                    new BuildLabProgressionStep(
+                        "matrix-25",
+                        25,
+                        "Patch the basics",
+                        "Secure the minimum intrusion lane, but the play shell load is already higher.",
+                        Outcomes:
+                        [
+                            new BuildLabVariantMetric("ops-load", "Ops load", "Elevated"),
+                            new BuildLabVariantMetric("reach", "Reach", "Good")
+                        ],
+                        MilestoneBadges:
+                        [
+                            new BuildLabBadge("25m", "25 Karma", BuildLabBadgeKinds.Milestone, true)
+                        ],
+                        RiskBadges:
+                        [
+                            new BuildLabBadge("tracking", "Extra tracking burden", BuildLabBadgeKinds.Risk, true)
+                        ],
+                        ExplainEntryId: "buildlab.timeline.matrix-25"),
+                    new BuildLabProgressionStep(
+                        "matrix-50",
+                        50,
+                        "Subsystem expansion",
+                        "Push deeper matrix utility at the cost of more combat downtime.",
+                        Outcomes:
+                        [
+                            new BuildLabVariantMetric("ops-load", "Ops load", "High"),
+                            new BuildLabVariantMetric("crew-overlap", "Crew overlap", "Noticeable")
+                        ],
+                        MilestoneBadges:
+                        [
+                            new BuildLabBadge("50m", "50 Karma", BuildLabBadgeKinds.Milestone, true)
+                        ],
+                        RiskBadges:
+                        [
+                            new BuildLabBadge("overlap", "Decker overlap risk", BuildLabBadgeKinds.Risk, true)
+                        ],
+                        ExplainEntryId: "buildlab.timeline.matrix-50"),
+                    new BuildLabProgressionStep(
+                        "matrix-100",
+                        100,
+                        "Specialist peak",
+                        "Powerful, but not the default recommendation for sparse table ops.",
+                        Outcomes:
+                        [
+                            new BuildLabVariantMetric("reach", "Reach", "Very high"),
+                            new BuildLabVariantMetric("ops-clutter", "Ops clutter", "Heavy", true)
+                        ],
+                        MilestoneBadges:
+                        [
+                            new BuildLabBadge("100m", "100 Karma", BuildLabBadgeKinds.Milestone, true)
+                        ],
+                        RiskBadges:
+                        [
+                            new BuildLabBadge("shell-fit", "Poor fit for sparse play shell", BuildLabBadgeKinds.Risk, true)
+                        ],
+                        ExplainEntryId: "buildlab.timeline.matrix-100")
+                ],
+                SourceDocumentId: "designer-feedback.ops-first")
+        ],
+        ExportPayloads:
+        [
+            new BuildLabExportPayload(
+                PayloadId: "payload.social-operator",
+                Title: "Ops-first Social Operator",
+                Summary: "Reusable hand-off payload that can seed either grounded Build Idea cards or local templates.",
+                PayloadKind: "build-lab-handoff",
+                Fields:
+                [
+                    new BuildLabExportField("concept", "Concept", "Street face who can cover legwork."),
+                    new BuildLabExportField("table-fit", "Table fit", "Ops-first", true),
+                    new BuildLabExportField("progression", "Progression rail", "25 / 50 / 100 Karma checkpoints")
+                ],
+                VariantId: "variant.social-operator",
+                TimelineId: "timeline.social-operator",
+                QueryText: "street face ops-first",
+                SourceDocumentId: "designer-feedback.ops-first"),
+            new BuildLabExportPayload(
+                PayloadId: "payload.matrix-fixer",
+                Title: "Matrix Fixer Specialist",
+                Summary: "Higher-complexity hand-off payload kept visible so tables can reject it before duplicate entry starts.",
+                PayloadKind: "build-lab-handoff",
+                Fields:
+                [
+                    new BuildLabExportField("concept", "Concept", "Matrix-heavy fixer support"),
+                    new BuildLabExportField("table-fit", "Table fit", "Matrix-heavy", true),
+                    new BuildLabExportField("ops-load", "Ops load", "High")
+                ],
+                VariantId: "variant.matrix-fixer",
+                TimelineId: "timeline.matrix-fixer",
+                QueryText: "matrix fixer specialist",
+                SourceDocumentId: "designer-feedback.ops-first")
+        ],
+        ExportTargets:
+        [
+            new BuildLabExportTarget(
+                TargetId: "target.build-idea-card",
+                Label: "Build Idea Card",
+                TargetKind: BuildLabExportTargetKinds.BuildIdeaCard,
+                WorkflowId: "workflow.coach.build-ideas",
+                Enabled: true,
+                Description: "Launch a grounded Build Idea Card search without re-entering the concept.",
+                PayloadId: "payload.social-operator",
+                ActionId: "handoff-build-idea",
+                Badges:
+                [
+                    new BuildLabBadge("searchable", "Searchable", BuildLabBadgeKinds.Export, true)
+                ]),
+            new BuildLabExportTarget(
+                TargetId: "target.character-template",
+                Label: "Character Template",
+                TargetKind: BuildLabExportTargetKinds.CharacterTemplate,
+                WorkflowId: "workflow.templates.character",
+                Enabled: true,
+                Description: "Seed a local-first template for downstream builder flows.",
+                PayloadId: "payload.social-operator",
+                ActionId: "handoff-template",
+                Badges:
+                [
+                    new BuildLabBadge("local-first", "Local-first", BuildLabBadgeKinds.Export, true)
+                ]),
+            new BuildLabExportTarget(
+                TargetId: "target.matrix-template",
+                Label: "Specialist Template",
+                TargetKind: BuildLabExportTargetKinds.Workflow,
+                WorkflowId: "workflow.templates.specialist",
+                Enabled: true,
+                Description: "Keep the complex lane explicit when a table still wants it.",
+                PayloadId: "payload.matrix-fixer",
+                ActionId: "handoff-matrix-template",
+                Badges:
+                [
+                    new BuildLabBadge("complex", "Complex lane", BuildLabBadgeKinds.Export)
+                ])
+        ],
+        Actions:
+        [
+            new BuildLabActionDescriptor("handoff-build-idea", "Hand Off", BuildLabSurfaceIds.ExportRail, true, "target.build-idea-card"),
+            new BuildLabActionDescriptor("handoff-template", "Save As Template", BuildLabSurfaceIds.ExportRail, true, "target.character-template"),
+            new BuildLabActionDescriptor("handoff-matrix-template", "Keep Specialist Lane", BuildLabSurfaceIds.ExportRail, true, "target.matrix-template")
+        ],
+        ExplainEntryId: "buildlab.showcase.concept",
+        SourceDocumentId: "designer-feedback.ops-first",
+        CanContinue: true);
+    private int _interruptionBudget = 50;
+    private string _currentSessionContext = "Pass 2";
+    private string _autonomyLevel = DefaultAutonomyLevel;
+    private string? _mutedUntilLabel;
+    private RuntimeInspectorProjection _runtimeInspector = new(
+        TargetKind: RuntimeInspectorTargetKinds.Workspace,
+        TargetId: "workspace.shadow-ops",
+        RuntimeLock: new ResolvedRuntimeLock(
+            RulesetId: "sr6",
+            ContentBundles:
+            [
+                new ContentBundleDescriptor(
+                    BundleId: "bundle.core.sr6",
+                    RulesetId: "sr6",
+                    Version: "2026.03.0",
+                    Title: "Core Sixth World",
+                    Description: "Primary localized runtime bundle.",
+                    AssetPaths:
+                    [
+                        "content/qualities.json",
+                        "content/gear.json"
+                    ]),
+                new ContentBundleDescriptor(
+                    BundleId: "bundle.session.overlay",
+                    RulesetId: "sr6",
+                    Version: "2026.03.0",
+                    Title: "Session Overlay",
+                    Description: "Session-safe prompt and recap affordances.",
+                    AssetPaths:
+                    [
+                        "session/prompts.json",
+                        "session/layouts.json"
+                    ])
+            ],
+            RulePacks:
+            [
+                new ArtifactVersionReference("pack.matrix-overwatch", "1.3.0"),
+                new ArtifactVersionReference("pack.street-magic", "2.1.4")
+            ],
+            ProviderBindings: new Dictionary<string, string>
+            {
+                ["content.catalog"] = "provider.runtime-catalog",
+                ["derive.stat"] = "provider.rules-eval",
+                ["session.quick-actions"] = "provider.session-feed"
+            },
+            EngineApiVersion: "2026.3",
+            RuntimeFingerprint: "runtime-sr6-2026-03-08"),
+        Install: new ArtifactInstallState(
+            State: ArtifactInstallStates.Pinned,
+            InstalledAtUtc: DateTimeOffset.UtcNow.AddDays(-2),
+            InstalledTargetKind: RuntimeInspectorTargetKinds.Workspace,
+            InstalledTargetId: "workspace.shadow-ops",
+            RuntimeFingerprint: "runtime-sr6-2026-03-08"),
+        ResolvedRulePacks:
+        [
+            new RuntimeInspectorRulePackEntry(
+                RulePack: new ArtifactVersionReference("pack.matrix-overwatch", "1.3.0"),
+                Title: "Matrix Overwatch",
+                Visibility: ArtifactVisibilityModes.Shared,
+                TrustTier: ArtifactTrustTiers.Curated,
+                CapabilityIds:
+                [
+                    RulePackCapabilityIds.ContentCatalog,
+                    RulePackCapabilityIds.SessionQuickActions
+                ],
+                Enabled: true,
+                SourceKind: RegistryEntrySourceKinds.PersistedManifest),
+            new RuntimeInspectorRulePackEntry(
+                RulePack: new ArtifactVersionReference("pack.street-magic", "2.1.4"),
+                Title: "Street Magic Overlay",
+                Visibility: ArtifactVisibilityModes.LocalOnly,
+                TrustTier: ArtifactTrustTiers.Private,
+                CapabilityIds:
+                [
+                    RulePackCapabilityIds.Localization,
+                    RulePackCapabilityIds.ValidateCharacter
+                ],
+                Enabled: true,
+                SourceKind: RegistryEntrySourceKinds.OverlayDerivedProfile)
+        ],
+        ProviderBindings:
+        [
+            new RuntimeInspectorProviderBinding(
+                CapabilityId: RulePackCapabilityIds.ContentCatalog,
+                ProviderId: "provider.runtime-catalog",
+                PackId: "pack.matrix-overwatch",
+                SourceAssetPath: "packs/matrix-overwatch/catalog.json",
+                SessionSafe: true),
+            new RuntimeInspectorProviderBinding(
+                CapabilityId: RulePackCapabilityIds.SessionQuickActions,
+                ProviderId: "provider.session-feed",
+                PackId: "pack.matrix-overwatch",
+                SourceAssetPath: "packs/matrix-overwatch/session-actions.json",
+                SessionSafe: true),
+            new RuntimeInspectorProviderBinding(
+                CapabilityId: RulePackCapabilityIds.ValidateCharacter,
+                ProviderId: "provider.rules-eval",
+                PackId: "pack.street-magic",
+                SourceAssetPath: "packs/street-magic/validation.json",
+                SessionSafe: false)
+        ],
+        CompatibilityDiagnostics:
+        [
+            new RuntimeLockCompatibilityDiagnostic(
+                State: RuntimeLockCompatibilityStates.Compatible,
+                Message: "Runtime lock matches the active engine fingerprint."),
+            new RuntimeLockCompatibilityDiagnostic(
+                State: RuntimeLockCompatibilityStates.RebindRequired,
+                Message: "Session quick-action provider will rebind on the next mobile bundle refresh.",
+                RequiredRuntimeFingerprint: "runtime-sr6-2026-03-10")
+        ],
+        Warnings:
+        [
+            new RuntimeInspectorWarning(
+                Kind: RuntimeInspectorWarningKinds.Trust,
+                Severity: RuntimeInspectorWarningSeverityLevels.Warning,
+                Message: "One overlay pack is private-only and requires approval before publish.",
+                SubjectId: "pack.street-magic"),
+            new RuntimeInspectorWarning(
+                Kind: RuntimeInspectorWarningKinds.SessionReplay,
+                Severity: RuntimeInspectorWarningSeverityLevels.Info,
+                Message: "Three local session actions will replay after the next runtime bundle refresh.",
+                SubjectId: "session.shadow-ops")
+        ],
+        MigrationPreview:
+        [
+            new RuntimeMigrationPreviewItem(
+                Kind: RuntimeMigrationPreviewChangeKinds.ProviderRebound,
+                Summary: "session.quick-actions will move to provider.session-feed.v2",
+                SubjectId: RulePackCapabilityIds.SessionQuickActions,
+                BeforeValue: "provider.session-feed",
+                AfterValue: "provider.session-feed.v2",
+                RequiresRebind: true),
+            new RuntimeMigrationPreviewItem(
+                Kind: RuntimeMigrationPreviewChangeKinds.ContentBundleUpdated,
+                Summary: "Session overlay bundle will update to 2026.03.1 for mobile shell rendering.",
+                SubjectId: "bundle.session.overlay",
+                BeforeValue: "2026.03.0",
+                AfterValue: "2026.03.1")
+        ],
+        GeneratedAtUtc: DateTimeOffset.UtcNow.AddMinutes(-9),
+        ProfileSourceKind: RegistryEntrySourceKinds.OverlayDerivedProfile,
+        CapabilityDescriptors:
+        [
+            new RuntimeInspectorCapabilityDescriptorProjection(
+                CapabilityId: RulePackCapabilityIds.ContentCatalog,
+                InvocationKind: "query",
+                Title: "Catalog Query",
+                Explainable: true,
+                SessionSafe: false,
+                DefaultGasBudget: new RulesetGasBudget(240, 120, 48 * 1024 * 1024, TimeSpan.FromMilliseconds(850)),
+                MaximumGasBudget: new RulesetGasBudget(360, 180, 64 * 1024 * 1024, TimeSpan.FromMilliseconds(1200)),
+                ProviderId: "provider.runtime-catalog",
+                PackId: "pack.matrix-overwatch"),
+            new RuntimeInspectorCapabilityDescriptorProjection(
+                CapabilityId: RulePackCapabilityIds.SessionQuickActions,
+                InvocationKind: "session",
+                Title: "Session Quick Actions",
+                Explainable: true,
+                SessionSafe: true,
+                DefaultGasBudget: new RulesetGasBudget(120, 64, 16 * 1024 * 1024, TimeSpan.FromMilliseconds(300)),
+                MaximumGasBudget: new RulesetGasBudget(180, 96, 24 * 1024 * 1024, TimeSpan.FromMilliseconds(450)),
+                ProviderId: "provider.session-feed",
+                PackId: "pack.matrix-overwatch")
+        ]);
+    private JournalPanelProjection _journalPanel = new(
+        ScopeKind: JournalScopeKinds.Campaign,
+        ScopeId: "campaign.downtown-burn",
+        Sections:
+        [
+            new JournalPanelSection(JournalPanelSurfaceIds.NotesPanel, JournalPanelSectionKinds.Notes, "Field Notes", 2),
+            new JournalPanelSection(JournalPanelSurfaceIds.LedgerPanel, JournalPanelSectionKinds.Ledger, "Crew Ledger", 3),
+            new JournalPanelSection(JournalPanelSurfaceIds.TimelinePanel, JournalPanelSectionKinds.Timeline, "Downtime Timeline", 5),
+            new JournalPanelSection("downtime-planner", "planner", "Downtime Planner", 4),
+            new JournalPanelSection("journal-calendar", "calendar", "Calendar View", 4),
+            new JournalPanelSection("journal-schedule", "schedule", "Schedule View", 5)
+        ],
+        Notes:
+        [
+            new NoteListItem(
+                NoteId: "note-safehouse",
+                Title: "Safehouse access rotation",
+                ScopeKind: JournalScopeKinds.Campaign,
+                BlockCount: 3,
+                UpdatedAtUtc: DateTimeOffset.UtcNow.AddHours(-6)),
+            new NoteListItem(
+                NoteId: "note-mr-johnson",
+                Title: "Johnson asks for quiet matrix support",
+                ScopeKind: JournalScopeKinds.Session,
+                BlockCount: 2,
+                UpdatedAtUtc: DateTimeOffset.UtcNow.AddHours(-20))
+        ],
+        LedgerEntries:
+        [
+            new LedgerEntryView(
+                EntryId: "ledger-1",
+                Kind: LedgerEntryKinds.Expense,
+                Label: "Fake SIN refresh",
+                Amount: 2400m,
+                Currency: "nuyen",
+                OccurredAtUtc: DateTimeOffset.UtcNow.AddDays(-2)),
+            new LedgerEntryView(
+                EntryId: "ledger-2",
+                Kind: LedgerEntryKinds.Income,
+                Label: "Johnson escrow release",
+                Amount: 9000m,
+                Currency: "nuyen",
+                OccurredAtUtc: DateTimeOffset.UtcNow.AddDays(-3)),
+            new LedgerEntryView(
+                EntryId: "ledger-3",
+                Kind: LedgerEntryKinds.Karma,
+                Label: "Legwork follow-through",
+                Amount: 2m,
+                Currency: "karma",
+                OccurredAtUtc: DateTimeOffset.UtcNow.AddDays(-1))
+        ],
+        TimelineEvents:
+        [
+            new TimelineEventView(
+                EventId: "timeline-1",
+                Kind: TimelineEventKinds.Downtime,
+                Title: "Street doc follow-up",
+                StartsAtUtc: DateTimeOffset.UtcNow.AddHours(10),
+                EndsAtUtc: DateTimeOffset.UtcNow.AddHours(13)),
+            new TimelineEventView(
+                EventId: "timeline-2",
+                Kind: TimelineEventKinds.Training,
+                Title: "Drone rig calibration block",
+                StartsAtUtc: DateTimeOffset.UtcNow.AddDays(1),
+                EndsAtUtc: DateTimeOffset.UtcNow.AddDays(1).AddHours(3)),
+            new TimelineEventView(
+                EventId: "timeline-3",
+                Kind: TimelineEventKinds.Milestone,
+                Title: "Bundle refresh before next session",
+                StartsAtUtc: DateTimeOffset.UtcNow.AddDays(2)),
+            new TimelineEventView(
+                EventId: "timeline-4",
+                Kind: "healing",
+                Title: "Street doc healing block",
+                StartsAtUtc: DateTimeOffset.UtcNow.AddDays(1).AddHours(5),
+                EndsAtUtc: DateTimeOffset.UtcNow.AddDays(1).AddHours(7)),
+            new TimelineEventView(
+                EventId: "timeline-5",
+                Kind: "addiction-test",
+                Title: "Crash test and stabilization",
+                StartsAtUtc: DateTimeOffset.UtcNow.AddDays(3).AddHours(2),
+                EndsAtUtc: DateTimeOffset.UtcNow.AddDays(3).AddHours(3))
+        ]);
+    private CharacterContactsSection _contacts = new(
+        Count: 3,
+        Contacts:
+        [
+            new CharacterContactSummary(
+                Name: "Paz Ortega",
+                Role: "Street doc",
+                Location: "Redmond",
+                Connection: 4,
+                Loyalty: 5),
+            new CharacterContactSummary(
+                Name: "Mina Voss",
+                Role: "Fixer",
+                Location: "Tacoma",
+                Connection: 6,
+                Loyalty: 3),
+            new CharacterContactSummary(
+                Name: "Hexswitch",
+                Role: "Matrix broker",
+                Location: "Bellevue",
+                Connection: 3,
+                Loyalty: 2)
+        ]);
+    private ContactRelationshipGraphState? _contactGraph;
+    private NpcPersonaStudioState _npcPersonaStudio = new(
+        DefaultPersonaId: "decker-contact",
+        SelectedPersonaId: "decker-contact",
+        PromptPolicy: "decker-contact evidence-first",
+        Personas:
+        [
+            new NpcPersonaDescriptorState(
+                PersonaId: "decker-contact",
+                Label: "Decker Contact",
+                EvidenceFirst: true,
+                Summary: "Grounded NPC helper focused on route evidence and session-safe recommendations.",
+                Provenance: "persona.registry/decker-contact",
+                ApprovalState: "approved",
+                IsSelected: true),
+            new NpcPersonaDescriptorState(
+                PersonaId: "street-fixer",
+                Label: "Street Fixer",
+                EvidenceFirst: true,
+                Summary: "Fallback negotiation persona for fast table-side downtime cues.",
+                Provenance: "persona.registry/street-fixer",
+                ApprovalState: "draft",
+                IsSelected: false)
+        ],
+        Policies:
+        [
+            new NpcPersonaRoutePolicyState(
+                RouteType: "coach",
+                RouteClassId: "grounded_rules_chat",
+                PersonaId: "decker-contact",
+                PrimaryProviderId: "aimagicx",
+                ToolingEnabled: true,
+                ApprovalState: "approved",
+                AllowedToolIds: ["create_apply_preview", "search_build_ideas"]),
+            new NpcPersonaRoutePolicyState(
+                RouteType: "chat",
+                RouteClassId: "cross_repo_contract",
+                PersonaId: "street-fixer",
+                PrimaryProviderId: "oneminai",
+                ToolingEnabled: false,
+                ApprovalState: "draft",
+                AllowedToolIds: [])
+        ],
+        EvidenceLines:
+        [
+            "Prompt policy: decker-contact evidence-first",
+            "Persona summary: grounded NPC helper for route evidence and session-safe guidance.",
+            "Persona provenance: persona.registry/decker-contact",
+            "coach: class grounded_rules_chat · provider aimagicx"
+        ],
+        HasDraftPolicies: true,
+        HasApprovedPolicies: true);
+
+    private IReadOnlyList<GmBoardFeed.GmBoardCard> _gmCards = [
+        new GmBoardFeed.GmBoardCard(
+            Id: "spider-001",
+            Source: "Spider Feed",
+            Kind: "Escalation",
+            Title: "Late escalation from decker",
+            Summary: "Hostile matrix pressure is spilling into the current initiative window.",
+            Severity: "high",
+            Timestamp: "08:42 UTC",
+            Expiry: "Expires in 8m30s",
+            InitiativeSlot: "Pass 2",
+            Target: "Hostile decker",
+            PrimaryActionId: "trace-lock",
+            PrimaryActionLabel: "Lock trace lane",
+            Alerts:
+            [
+                "Condition monitor risk",
+                "Noise spike",
+                "NPC response ready"
+            ],
+            MinimumAutonomy: "Low",
+            ContextSnapshot: "Pass 2",
+            InvalidatesOnContextShift: true,
+            RefreshActionId: "refresh-trace-lock",
+            RefreshActionLabel: "Refresh trace lane"),
+        new GmBoardFeed.GmBoardCard(
+            Id: "spider-002",
+            Source: "GM Board",
+            Kind: "Reminder",
+            Title: "Downtime trigger",
+            Summary: "Push strain before the next combat exchange so resource drift stays visible.",
+            Severity: "medium",
+            Timestamp: "08:37 UTC",
+            Expiry: "Expires in 14m",
+            InitiativeSlot: "Between scenes",
+            Target: "Crew resources",
+            PrimaryActionId: "apply-strain",
+            PrimaryActionLabel: "Apply strain",
+            Alerts:
+            [
+                "Edge spend pending",
+                "Ammo check queued"
+            ],
+            MinimumAutonomy: "Tactical",
+            ContextSnapshot: "Pass 2"),
+        new GmBoardFeed.GmBoardCard(
+            Id: "spider-003",
+            Source: "Spider Feed",
+            Kind: "Forecast",
+            Title: "Narrative reveal window",
+            Summary: "Prep a soft reveal card for the crew once the current pass resolves.",
+            Severity: "low",
+            Timestamp: "08:30 UTC",
+            Expiry: "Holds for the next scene",
+            InitiativeSlot: "Scene break",
+            Target: "Player reveal lane",
+            PrimaryActionId: "queue-reveal",
+            PrimaryActionLabel: "Queue reveal",
+            Alerts:
+            [
+                "Player share surface ready"
+            ],
+            MinimumAutonomy: "Narrative",
+            ContextSnapshot: "Pass 2",
+            InvalidatesOnContextShift: true,
+            RefreshActionId: "refresh-reveal-window",
+            RefreshActionLabel: "Refresh reveal lane")
+    ];
+
+    private IReadOnlyList<GeneratedAssetProjection> _assets =
+    [
+        new GeneratedAssetProjection(
+            AssetId: "asset-portraits-01",
+            Title: "Contact portrait revision",
+            AssetKind: "Portrait",
+            Source: "Portrait Forge",
+            Summary: "Side portrait draft for a player-facing reveal surface with table-safe provenance attached.",
+            PreviewKind: GeneratedAssetPreviewKinds.Image,
+            ReviewState: "review:queued",
+            CreatedAtUtc: DateTimeOffset.UtcNow.AddMinutes(-4),
+            IsCanonical: false,
+            PreviewUri: "/media/portraits/contact-portrait-revision.png",
+            PreviewBody: "Portrait revision ready for final attach.",
+            Badges:
+            [
+                new GeneratedAssetBadge("portrait", "portrait", GeneratedAssetBadgeKinds.Source),
+                new GeneratedAssetBadge("player-safe", "player-safe", GeneratedAssetBadgeKinds.Audience),
+                new GeneratedAssetBadge("runtime", "runtime-backed", GeneratedAssetBadgeKinds.Provenance, true)
+            ],
+            Metadata:
+            [
+                new GeneratedAssetMetadataField("provenance", "Source", "Prompt seed: cyberpunk noir portrait, cinematic lighting"),
+                new GeneratedAssetMetadataField("trace", "Why this draft", "Prepared for a fast player reveal lane with no builder-only chrome.", true),
+                new GeneratedAssetMetadataField("share", "Attach target", "Contact dossier / player reveal shelf"),
+                new GeneratedAssetMetadataField("portraitPromptSeed", "Prompt Seed", "cyberpunk noir portrait, cinematic lighting"),
+                new GeneratedAssetMetadataField("portraitStyleSelected", "Style", "Noir Ink"),
+                new GeneratedAssetMetadataField("portraitStyleOptions", "Style Options", "Noir Ink,Neon Street,Chrome Editorial"),
+                new GeneratedAssetMetadataField("canonicalAssetId", "Canonical Asset", "asset-portraits-baseline"),
+                new GeneratedAssetMetadataField("coachRouteType", "Coach Route", "coach"),
+                new GeneratedAssetMetadataField("coachRouteClass", "Route Class", "bounded_fix"),
+                new GeneratedAssetMetadataField("coachOperator", "Operator", "portrait-ops"),
+                new GeneratedAssetMetadataField("coachModel", "Model", "gpt-5.3-codex")
+            ],
+            ComparisonSlots:
+            [
+                new GeneratedAssetComparisonSlot(
+                    SlotId: "portrait-baseline",
+                    Label: "Current reveal portrait",
+                    Role: GeneratedAssetComparisonRoles.Baseline,
+                    Summary: "Current approved reveal portrait kept for fast side-by-side ops review.",
+                    PreviewUri: "/media/portraits/contact-portrait-current.png",
+                    Badges:
+                    [
+                        new GeneratedAssetBadge("baseline", "current", GeneratedAssetBadgeKinds.State, true)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("lighting", "Lighting", "Existing table-approved lighting"),
+                        new GeneratedAssetMetadataField("provenance", "Source", "Approved contact dossier portrait")
+                    ]),
+                new GeneratedAssetComparisonSlot(
+                    SlotId: "portrait-candidate",
+                    Label: "Candidate revision",
+                    Role: GeneratedAssetComparisonRoles.Candidate,
+                    Summary: "New crop improves face readability on tablet reveal surfaces without extra builder chrome.",
+                    PreviewUri: "/media/portraits/contact-portrait-revision.png",
+                    Badges:
+                    [
+                        new GeneratedAssetBadge("candidate", "candidate", GeneratedAssetBadgeKinds.State),
+                        new GeneratedAssetBadge("player-safe", "player-safe", GeneratedAssetBadgeKinds.Audience)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("framing", "Framing", "Tighter crop for portrait reveal"),
+                        new GeneratedAssetMetadataField("ops", "Ops note", "Faster ID at the table", true)
+                    ])
+            ],
+            PreviewSections:
+            [
+                new GeneratedAssetPreviewSection(
+                    SectionId: "portrait-reroll-01",
+                    Label: "Reroll #1",
+                    Summary: "Neon Street style drifted too hard into background clutter.",
+                    Body: "Seed preserved, style adjusted for cleaner silhouette.",
+                    Badges:
+                    [
+                        new GeneratedAssetBadge("rejected", "rejected", GeneratedAssetBadgeKinds.State)
+                    ]),
+                new GeneratedAssetPreviewSection(
+                    SectionId: "portrait-reroll-02",
+                    Label: "Reroll #2",
+                    Summary: "Noir Ink keeps face readability and table-safe contrast.",
+                    Body: "Current candidate promoted for canonical review.",
+                    Badges:
+                    [
+                        new GeneratedAssetBadge("candidate", "candidate", GeneratedAssetBadgeKinds.State, true)
+                    ])
+            ],
+            AttachmentTargets:
+            [
+                new GeneratedAssetAttachmentTarget("contact-dossier", "Contact dossier", "dossier"),
+                new GeneratedAssetAttachmentTarget("player-reveal", "Player reveal shelf", "reveal")
+            ],
+            Actions:
+            [
+                new GeneratedAssetActionDescriptor("mark-canonical-portrait", "Mark Canonical", GeneratedAssetActionKindMarkCanonical, true),
+                new GeneratedAssetActionDescriptor("dispatch-portrait", "Dispatch to Coach", GeneratedAssetActionKindDispatch, true),
+                new GeneratedAssetActionDescriptor("review-portrait", "Queue Review", GeneratedAssetActionKindReview, true),
+                new GeneratedAssetActionDescriptor("approve-portrait", "Approve", GeneratedAssetActionKinds.Approve, true),
+                new GeneratedAssetActionDescriptor("archive-portrait", "Archive", GeneratedAssetActionKinds.Archive, true)
+            ]),
+        new GeneratedAssetProjection(
+            AssetId: "asset-dossier-01",
+            Title: "Johnson dossier packet",
+            AssetKind: "Dossier",
+            Source: "Johnson's Briefcase",
+            Summary: "Two-page op brief with provenance notes and attach-ready summary blocks.",
+            PreviewKind: GeneratedAssetPreviewKinds.Document,
+            ReviewState: "pending",
+            CreatedAtUtc: DateTimeOffset.UtcNow.AddMinutes(-11),
+            IsCanonical: false,
+            PreviewBody: "Executive summary, threat markers, handoff notes, and provenance lines for the GM prep rail.",
+            Badges:
+            [
+                new GeneratedAssetBadge("dossier", "dossier", GeneratedAssetBadgeKinds.Source),
+                new GeneratedAssetBadge("gm-prep", "gm-prep", GeneratedAssetBadgeKinds.Audience),
+                new GeneratedAssetBadge("source", "source-linked", GeneratedAssetBadgeKinds.Provenance, true)
+            ],
+            Metadata:
+            [
+                new GeneratedAssetMetadataField("provenance", "Source", "Compiled from current session notes, route tags, and approved contacts."),
+                new GeneratedAssetMetadataField("state", "Ops posture", "Pending attach to prep board and dossier lane."),
+                new GeneratedAssetMetadataField("offline", "Offline status", "Safe to carry locally for table use.", true),
+                new GeneratedAssetMetadataField("coachRouteType", "Coach Route", "coach"),
+                new GeneratedAssetMetadataField("coachRouteClass", "Route Class", "bounded_fix"),
+                new GeneratedAssetMetadataField("coachOperator", "Operator", "dossier-review"),
+                new GeneratedAssetMetadataField("coachModel", "Model", "gpt-5.3-codex")
+            ],
+            PreviewSections:
+            [
+                new GeneratedAssetPreviewSection(
+                    SectionId: "dossier-summary",
+                    Label: "Executive Summary",
+                    Summary: "Quick read for the GM ops board before the briefing starts.",
+                    Body: "Johnson needs a deniable extraction with low astral noise and minimal matrix chatter.",
+                    Badges:
+                    [
+                        new GeneratedAssetBadge("gm", "gm-only", GeneratedAssetBadgeKinds.Audience, true)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("source", "Source", "Current session brief + approved contacts"),
+                        new GeneratedAssetMetadataField("confidence", "Confidence", "Ready for prep attach")
+                    ]),
+                new GeneratedAssetPreviewSection(
+                    SectionId: "dossier-threats",
+                    Label: "Threat Markers",
+                    Summary: "Operational flags that should stay visible during live play.",
+                    Body: "Knight Errant patrol uptick, one compromised contact, and a probable drone tail on the pickup lane.",
+                    Badges:
+                    [
+                        new GeneratedAssetBadge("alert", "ops-alert", GeneratedAssetBadgeKinds.State, true)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("staleness", "Refresh posture", "Refresh after each scene break"),
+                        new GeneratedAssetMetadataField("provenance", "Provenance", "Session notes, route tags, approved heat markers", true)
+                    ]),
+                new GeneratedAssetPreviewSection(
+                    SectionId: "dossier-handoff",
+                    Label: "Handoff Notes",
+                    Summary: "Attach-ready notes for the briefcase and GM prep board.",
+                    Body: "Hand players the clean executive summary only; keep the threat markers in the GM lane.",
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("share", "Share path", "Johnson briefcase + GM prep board"),
+                        new GeneratedAssetMetadataField("offline", "Offline carry", "Safe for local session cache", true)
+                    ])
+            ],
+            AttachmentTargets:
+            [
+                new GeneratedAssetAttachmentTarget("gm-prep-board", "GM prep board", "ops-board"),
+                new GeneratedAssetAttachmentTarget("briefcase", "Johnson briefcase", "briefcase")
+            ],
+            Actions:
+            [
+                new GeneratedAssetActionDescriptor("dispatch-dossier", "Dispatch to Coach", GeneratedAssetActionKindDispatch, true),
+                new GeneratedAssetActionDescriptor("review-dossier", "Queue Review", GeneratedAssetActionKindReview, true),
+                new GeneratedAssetActionDescriptor("approve-dossier", "Approve", GeneratedAssetActionKinds.Approve, true),
+                new GeneratedAssetActionDescriptor("archive-dossier", "Archive", GeneratedAssetActionKinds.Archive, true)
+            ]),
+        new GeneratedAssetProjection(
+            AssetId: "asset-news-01",
+            Title: "Route recap clip",
+            AssetKind: "Route video",
+            Source: "Route Cinema",
+            Summary: "Short route video draft tuned for a one-tap recap reveal after the scene break.",
+            PreviewKind: GeneratedAssetPreviewKinds.Video,
+            ReviewState: "pending",
+            CreatedAtUtc: DateTimeOffset.UtcNow.AddMinutes(-17),
+            IsCanonical: false,
+            PreviewUri: "/media/routes/route-recap-clip.mp4",
+            PreviewBody: "Narrated route clip with scene-safe beats.",
+            Badges:
+            [
+                new GeneratedAssetBadge("video", "route-video", GeneratedAssetBadgeKinds.Source),
+                new GeneratedAssetBadge("share", "share-ready", GeneratedAssetBadgeKinds.Audience),
+                new GeneratedAssetBadge("queued", "queued-sync", GeneratedAssetBadgeKinds.Provenance)
+            ],
+            Metadata:
+            [
+                new GeneratedAssetMetadataField("provenance", "Source", "Route recap, scene markers, and share-safe notes were merged into this cut."),
+                new GeneratedAssetMetadataField("delivery", "Delivery", "Queued for reveal after approval."),
+                new GeneratedAssetMetadataField("ops", "GM note", "Use the shared viewer instead of per-feature one-offs.", true),
+                new GeneratedAssetMetadataField("coachRouteType", "Coach Route", "coach"),
+                new GeneratedAssetMetadataField("coachRouteClass", "Route Class", "bounded_fix"),
+                new GeneratedAssetMetadataField("coachOperator", "Operator", "shadowfeed-dispatch"),
+                new GeneratedAssetMetadataField("coachModel", "Model", "gpt-5.3-codex"),
+                new GeneratedAssetMetadataField("shadowfeedDispatchChannel", "Dispatch Channel", "shadowfeed.ops"),
+                new GeneratedAssetMetadataField("shadowfeedDispatchReceipt", "Dispatch Receipt", "pending"),
+                new GeneratedAssetMetadataField("shadowfeedReviewQueue", "Review Queue", "shadowfeed.review"),
+                new GeneratedAssetMetadataField("shadowfeedReviewer", "Reviewer", "unassigned"),
+                new GeneratedAssetMetadataField("dispatchContext", "Dispatch Context", "Pass 2"),
+                new GeneratedAssetMetadataField("invalidatesOnContextShift", "Context Invalidation", "true")
+            ],
+            PreviewSections:
+            [
+                new GeneratedAssetPreviewSection(
+                    SectionId: "route-recap-card",
+                    Label: "Recap Card",
+                    Summary: "One-tap scene-break summary for the player reveal lane.",
+                    Body: "Summarizes the last route turn, highlights the clean extraction beat, and keeps the player-facing timeline short.",
+                    Badges:
+                    [
+                        new GeneratedAssetBadge("recap", "recap-ready", GeneratedAssetBadgeKinds.Audience, true)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("audience", "Audience", "Player share surface"),
+                        new GeneratedAssetMetadataField("timing", "Reveal timing", "Scene break", true)
+                    ]),
+                new GeneratedAssetPreviewSection(
+                    SectionId: "route-news-card",
+                    Label: "Sixth World News Card",
+                    Summary: "Prep-friendly headline card generated from the same route-video cut.",
+                    Body: "Frames the route as a public incident blip so the GM can drop the aftermath into the table feed without extra prep duplication.",
+                    Badges:
+                    [
+                        new GeneratedAssetBadge("news", "news-card", GeneratedAssetBadgeKinds.Source),
+                        new GeneratedAssetBadge("gm", "gm-prep", GeneratedAssetBadgeKinds.Audience)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("share", "Share path", "News rail + recap feed"),
+                        new GeneratedAssetMetadataField("provenance", "Provenance", "Scene markers, approved reveal notes", true)
+                    ])
+            ],
+            AttachmentTargets:
+            [
+                new GeneratedAssetAttachmentTarget("recap-feed", "Recap feed", "recap"),
+                new GeneratedAssetAttachmentTarget("news-card", "News card", "news")
+            ],
+            Actions:
+            [
+                new GeneratedAssetActionDescriptor("dispatch-route", "Dispatch to Shadowfeed", GeneratedAssetActionKindDispatch, true),
+                new GeneratedAssetActionDescriptor("review-route", "Queue Shadowfeed Review", GeneratedAssetActionKindReview, true),
+                new GeneratedAssetActionDescriptor("refresh-route-dispatch", "Refresh Dispatch", GeneratedAssetActionKindRefreshDispatch, true),
+                new GeneratedAssetActionDescriptor("approve-route", "Approve", GeneratedAssetActionKinds.Approve, true),
+                new GeneratedAssetActionDescriptor("archive-route", "Archive", GeneratedAssetActionKinds.Archive, true)
+            ])
+    ];
+
+    private string _selectedAssetId = "asset-portraits-01";
+
+    private static readonly MapExplainTextLocalization ExplainLocalization = new(
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["explain.chrome.title"] = "Explain Trace",
+            ["explain.chrome.empty"] = "No explain payload is available for this selection.",
+            ["explain.chrome.value_label"] = "Value",
+            ["explain.chrome.missing_value"] = "(none)",
+            ["explain.chrome.reason_label"] = "Reason",
+            ["explain.chrome.provider_label"] = "Provider",
+            ["explain.chrome.capability_label"] = "Capability",
+            ["explain.chrome.pack_label"] = "Pack",
+            ["explain.chrome.trace_steps_label"] = "Trace Steps",
+            ["explain.chrome.diff_label"] = "What Changed",
+            ["explain.chrome.before_label"] = "Before",
+            ["explain.chrome.after_label"] = "After",
+            ["explain.chrome.close_action"] = "Close",
+            ["subject.agent_trace_example"] = "Agent Trace Example",
+            ["explain.message.base_value"] = "Base value loaded from the runtime projection.",
+            ["explain.message.pack_context"] = "Street-magic overlay contributed the final context.",
+            ["provider.runtime"] = "Runtime Evaluator",
+            ["capability.skill_check"] = "Skill Check",
+            ["pack.street_magic"] = "Street Magic Overlay",
+            ["explain.message.provider_delta"] = "Provider delta applied from the active rule bundle.",
+            ["fragment.label.base"] = "Base",
+            ["fragment.label.modified"] = "Modified",
+            ["fragment.reason.active_traits"] = "Active traits and status modifiers are included."
+        },
+        throwOnMissing: true);
+
+    private readonly LocalizedExplainChrome _sampleExplainChrome = RulesetExplainRenderer.CreateChrome(ExplainLocalization);
+
+    private readonly LocalizedRulesetExplainTrace _sampleExplainTrace = RulesetExplainRenderer.Project(
+        RulesetExplainContractFactory.CreateTrace(
+            new ExplainTraceSeed(
+                Subject: new ExplainTextSeed("subject.agent_trace_example"),
+                Providers:
+                [
+                    new ExplainProviderSeed(
+                        Provider: new ExplainProvenanceSeed("provider.runtime", new ExplainTextSeed("provider.runtime")),
+                        Capability: new ExplainProvenanceSeed("capability.skill_check", new ExplainTextSeed("capability.skill_check")),
+                        Pack: new ExplainProvenanceSeed("pack.street_magic", new ExplainTextSeed("pack.street_magic")),
+                        Success: true,
+                        Fragments:
+                        [
+                            new ExplainFragmentSeed(
+                                Label: new ExplainTextSeed("fragment.label.base"),
+                                Value: "10",
+                                Reason: new ExplainTextSeed("fragment.reason.active_traits"),
+                                Pack: new ExplainProvenanceSeed("pack.street_magic", new ExplainTextSeed("pack.street_magic")),
+                                Provider: new ExplainProvenanceSeed("provider.runtime", new ExplainTextSeed("provider.runtime"))),
+                            new ExplainFragmentSeed(
+                                Label: new ExplainTextSeed("fragment.label.modified"),
+                                Value: "12",
+                                Reason: new ExplainTextSeed("fragment.reason.active_traits"),
+                                Pack: new ExplainProvenanceSeed("pack.street_magic", new ExplainTextSeed("pack.street_magic")),
+                                Provider: new ExplainProvenanceSeed("provider.runtime", new ExplainTextSeed("provider.runtime")))
+                        ],
+                        GasUsage: new RulesetGasUsage(3, 8, 256),
+                        Messages:
+                        [
+                            new ExplainTextSeed("explain.message.provider_delta")
+                        ])
+                ],
+                Messages:
+                [
+                    new ExplainTextSeed("explain.message.base_value"),
+                    new ExplainTextSeed("explain.message.pack_context")
+                ],
+                AggregateGasUsage: new RulesetGasUsage(3, 8, 256))),
+        ExplainLocalization)!;
+
+    protected override void OnInitialized()
+    {
+        _contactGraph = ContactRelationshipGraphProjector.FromContacts(_contacts);
+    }
+
+    private IReadOnlyList<GmBoardFeed.GmBoardCard> VisibleGmCards => _gmCards
+        .Where(card => card.IsPinned || IsCardVisibleAtAutonomy(card.MinimumAutonomy, _autonomyLevel))
+        .OrderByDescending(card => card.IsPinned)
+        .ThenBy(card => card.IsSnoozed)
+        .ThenBy(card => card.Timestamp, StringComparer.Ordinal)
+        .ToArray();
+
+    private void OnBudgetChanged(int value) => _interruptionBudget = value;
+
+    private void OnAutonomyLevelChanged(string level) => _autonomyLevel = level;
+
+    private void OnSessionContextChanged(string context)
+    {
+        _currentSessionContext = context;
+        _assets = _assets
+            .Select(asset => ApplyDispatchInvalidation(asset, context))
+            .ToArray();
+    }
+
+    private void OnMuteRequested(int minutes)
+    {
+        _interruptionBudget = Math.Max(0, _interruptionBudget - Math.Min(minutes, 25));
+        _mutedUntilLabel = minutes <= 0
+            ? null
+            : $"Spider muted for {minutes} min";
+        _gmCards = _gmCards
+            .Select(card => card with
+            {
+                IsPrimaryActionMuted = card.IsSnoozed
+            })
+            .ToArray();
+    }
+
+    private void OnCardPinned(string cardId)
+    {
+        if (_gmCards.All(card => card.Id != cardId))
+        {
+            return;
+        }
+
+        _gmCards = _gmCards
+            .Select(card => card.Id == cardId
+                ? card with { IsPinned = !card.IsPinned }
+                : card)
+            .OrderByDescending(card => card.IsPinned)
+            .ToArray();
+    }
+
+    private void OnCardDismissed(string cardId)
+    {
+        _gmCards = _gmCards.Where(card => card.Id != cardId).ToArray();
+    }
+
+    private void OnCardSnoozed(string cardId)
+    {
+        _interruptionBudget = Math.Min(100, _interruptionBudget + 5);
+        _gmCards = _gmCards
+            .Select(card => card.Id == cardId
+                ? card with
+                {
+                    IsSnoozed = !card.IsSnoozed,
+                    SnoozedUntilLabel = card.IsSnoozed ? null : "next context refresh",
+                    IsPrimaryActionMuted = !card.IsSnoozed
+                }
+                : card)
+            .ToArray();
+    }
+
+    private void OnCardQuickAction(GmBoardFeed.GmBoardQuickActionRequest request)
+    {
+        _gmCards = _gmCards
+            .Select(card => card.Id == request.CardId
+                ? card with
+                {
+                    Summary = request.ActionId.StartsWith("refresh-", StringComparison.Ordinal)
+                        ? $"Refreshed for {_currentSessionContext}. {card.Summary}"
+                        : $"Action executed: {request.ActionId}. {card.Summary}",
+                    Expiry = request.ActionId.StartsWith("refresh-", StringComparison.Ordinal)
+                        ? $"Valid in {_currentSessionContext}"
+                        : "Executed just now",
+                    ContextSnapshot = _currentSessionContext,
+                    IsSnoozed = false,
+                    SnoozedUntilLabel = null,
+                    IsPrimaryActionMuted = false
+                }
+                : card)
+            .ToArray();
+    }
+
+    private static bool IsCardVisibleAtAutonomy(string minimumLevel, string currentLevel)
+        => GetAutonomyRank(currentLevel) >= GetAutonomyRank(minimumLevel);
+
+    private static int GetAutonomyRank(string level)
+    {
+        return level.ToLowerInvariant() switch
+        {
+            "off" => 0,
+            "low" => 1,
+            "tactical" => 2,
+            "narrative" => 3,
+            "high" => 4,
+            _ => 2
+        };
+    }
+
+    private void OnSelectedAssetChanged(string assetId)
+    {
+        _selectedAssetId = assetId;
+    }
+
+    private void OnAssetActionRequested(GeneratedAssetActionRequest request)
+    {
+        _selectedAssetId = request.AssetId;
+        _assets = _assets
+            .Select(asset => ApplyAssetAction(asset, request, _currentSessionContext))
+            .ToArray();
+    }
+
+    private static GeneratedAssetProjection ApplyAssetAction(
+        GeneratedAssetProjection asset,
+        GeneratedAssetActionRequest request,
+        string currentSessionContext)
+    {
+        if (!string.Equals(asset.AssetId, request.AssetId, StringComparison.Ordinal))
+        {
+            return request.ActionKind is GeneratedAssetActionKinds.Approve or GeneratedAssetActionKindMarkCanonical
+                ? asset with { IsCanonical = false }
+                : asset;
+        }
+
+        return request.ActionKind switch
+        {
+            GeneratedAssetActionKinds.Attach => asset with
+            {
+                ReviewState = $"attached:{request.TargetId}",
+                Metadata = ReplaceMetadataValue(asset.Metadata, "share", "Attach target", $"Attached to {request.TargetId}.")
+            },
+            GeneratedAssetActionKindDispatch => asset with
+            {
+                ReviewState = "dispatched",
+                Metadata = ReplaceMetadataValues(
+                    asset.Metadata,
+                    ("shadowfeedDispatchReceipt", "Dispatch Receipt", "dispatch:queued"),
+                    ("shadowfeedReviewer", "Reviewer", "pending-review"),
+                    ("dispatchContext", "Dispatch Context", currentSessionContext))
+            },
+            GeneratedAssetActionKindReview => asset with
+            {
+                ReviewState = "review:queued",
+                Metadata = ReplaceMetadataValues(
+                    asset.Metadata,
+                    ("shadowfeedReviewQueue", "Review Queue", "queued"),
+                    ("shadowfeedReviewer", "Reviewer", "coach-operator"),
+                    ("dispatchContext", "Dispatch Context", currentSessionContext))
+            },
+            GeneratedAssetActionKindRefreshDispatch => asset with
+            {
+                ReviewState = "dispatched",
+                Metadata = ReplaceMetadataValues(
+                    asset.Metadata,
+                    ("shadowfeedDispatchReceipt", "Dispatch Receipt", "dispatch:refreshed"),
+                    ("dispatchContext", "Dispatch Context", currentSessionContext))
+            },
+            GeneratedAssetActionKinds.Approve => asset with
+            {
+                ReviewState = "approved",
+                IsCanonical = true,
+                Metadata = ReplaceMetadataValue(asset.Metadata, "canonicalAssetId", "Canonical Asset", asset.AssetId)
+            },
+            GeneratedAssetActionKindMarkCanonical => asset with
+            {
+                ReviewState = "canonical:selected",
+                IsCanonical = true,
+                Metadata = ReplaceMetadataValue(asset.Metadata, "canonicalAssetId", "Canonical Asset", asset.AssetId)
+            },
+            GeneratedAssetActionKinds.Archive => asset with
+            {
+                ReviewState = "archived",
+                IsCanonical = false
+            },
+            _ => asset
+        };
+    }
+
+    private static GeneratedAssetProjection ApplyDispatchInvalidation(GeneratedAssetProjection asset, string context)
+    {
+        string invalidates = GetMetadataValue(asset.Metadata, "invalidatesOnContextShift");
+        if (!string.Equals(invalidates, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            return asset;
+        }
+
+        string? dispatchContext = GetMetadataValue(asset.Metadata, "dispatchContext");
+        if (string.IsNullOrWhiteSpace(dispatchContext)
+            || string.Equals(dispatchContext, context, StringComparison.Ordinal))
+        {
+            return asset;
+        }
+
+        return asset with
+        {
+            ReviewState = $"stale:{context}",
+            Metadata = ReplaceMetadataValue(asset.Metadata, "shadowfeedDispatchReceipt", "Dispatch Receipt", $"invalidated:{context}")
+        };
+    }
+
+    private static string? GetMetadataValue(IReadOnlyList<GeneratedAssetMetadataField>? metadata, string fieldId)
+        => metadata?.FirstOrDefault(field => string.Equals(field.FieldId, fieldId, StringComparison.Ordinal))?.Value;
+
+    private static IReadOnlyList<GeneratedAssetMetadataField> ReplaceMetadataValue(
+        IReadOnlyList<GeneratedAssetMetadataField>? metadata,
+        string fieldId,
+        string fallbackLabel,
+        string value)
+    {
+        if (metadata is null || metadata.Count == 0)
+        {
+            return [new GeneratedAssetMetadataField(fieldId, fallbackLabel, value)];
+        }
+
+        bool matched = false;
+        List<GeneratedAssetMetadataField> updated = metadata
+            .Select(field =>
+            {
+                if (!string.Equals(field.FieldId, fieldId, StringComparison.Ordinal))
+                {
+                    return field;
+                }
+
+                matched = true;
+                return field with { Value = value };
+            })
+            .ToList();
+
+        if (!matched)
+        {
+            updated.Add(new GeneratedAssetMetadataField(fieldId, fallbackLabel, value));
+        }
+
+        return updated;
+    }
+
+    private static IReadOnlyList<GeneratedAssetMetadataField> ReplaceMetadataValues(
+        IReadOnlyList<GeneratedAssetMetadataField>? metadata,
+        params (string FieldId, string Label, string Value)[] updates)
+    {
+        IReadOnlyList<GeneratedAssetMetadataField> current = metadata ?? [];
+        foreach ((string fieldId, string label, string value) in updates)
+        {
+            current = ReplaceMetadataValue(current, fieldId, label, value);
+        }
+
+        return current;
+    }
+}

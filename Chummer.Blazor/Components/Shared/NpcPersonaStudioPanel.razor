@@ -1,0 +1,81 @@
+@using Chummer.Presentation.Overview
+
+<section class="panel design-panel">
+    <header class="panel-header">
+        <div>
+            <h2>NPC Persona Studio</h2>
+            <p class="meta">Persona descriptors and route-policy contracts with evidence/provenance and draft-vs-approved visibility.</p>
+        </div>
+        @if (Projection is not null)
+        {
+            <span class="badge">@Projection.Personas.Count personas · @Projection.Policies.Count policies</span>
+        }
+    </header>
+
+    @if (Projection is null || Projection.Personas.Count == 0)
+    {
+        <p class="hint">No persona descriptors were supplied for this runtime.</p>
+    }
+    else
+    {
+        <div class="facts compact" data-npc-persona-selection>
+            <h3>Persona Selection</h3>
+            @foreach (NpcPersonaDescriptorState persona in Projection.Personas)
+            {
+                <p data-npc-persona="@persona.PersonaId">
+                    @(persona.IsSelected ? "[selected] " : string.Empty)@persona.Label
+                    · @persona.PersonaId
+                    · @(persona.EvidenceFirst ? "evidence-first" : "balanced")
+                    · @persona.ApprovalState
+                </p>
+            }
+        </div>
+
+        <div class="facts compact" data-npc-persona-provenance>
+            <h3>Evidence + Provenance</h3>
+            @if (Projection.EvidenceLines.Count == 0)
+            {
+                <p class="hint">No evidence/provenance details were provided.</p>
+            }
+            else
+            {
+                @foreach (string line in Projection.EvidenceLines)
+                {
+                    <p>@line</p>
+                }
+            }
+        </div>
+
+        <div class="facts compact" data-npc-persona-policy>
+            <h3>Policy Contract Surface</h3>
+            @if (Projection.Policies.Count == 0)
+            {
+                <p class="hint">No route-policy descriptors were provided.</p>
+            }
+            else
+            {
+                @foreach (NpcPersonaRoutePolicyState policy in Projection.Policies)
+                {
+                    <p data-npc-policy="@policy.RouteType">
+                        @policy.RouteType
+                        · @(string.IsNullOrWhiteSpace(policy.RouteClassId) ? "class:none" : $"class:{policy.RouteClassId}")
+                        · @(string.IsNullOrWhiteSpace(policy.PrimaryProviderId) ? "provider:none" : $"provider:{policy.PrimaryProviderId}")
+                        · @(string.IsNullOrWhiteSpace(policy.PersonaId) ? "persona:none" : $"persona:{policy.PersonaId}")
+                        · @policy.ApprovalState
+                    </p>
+                }
+            }
+        </div>
+
+        <div class="facts compact" data-npc-persona-approval>
+            <h3>Draft vs Approved</h3>
+            <p>Draft policies: @(Projection.HasDraftPolicies ? "present" : "none")</p>
+            <p>Approved policies: @(Projection.HasApprovedPolicies ? "present" : "none")</p>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public NpcPersonaStudioState? Projection { get; set; }
+}

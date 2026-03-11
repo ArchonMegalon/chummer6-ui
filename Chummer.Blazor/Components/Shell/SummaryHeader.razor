@@ -1,0 +1,42 @@
+<section class="desktop-summary panel">
+    <h2>Desktop Summary Header</h2>
+    <div class="summary-grid">
+        <label>Name <input id="summaryName" value="@(State.Profile?.Name ?? string.Empty)" readonly /></label>
+        <label>Alias <input id="summaryAlias" value="@(State.Profile?.Alias ?? string.Empty)" readonly /></label>
+        <label>Metatype <input id="summaryMetatype" value="@(State.Profile?.Metatype ?? string.Empty)" readonly /></label>
+        <label>Build <input id="summaryBuildMethod" value="@(State.Build?.BuildMethod ?? string.Empty)" readonly /></label>
+        <label>Karma <input id="summaryKarma" value="@(State.Progress?.Karma.ToString() ?? "0")" readonly /></label>
+        <label>Street Cred <input id="summaryStreetCred" value="@(State.Progress?.StreetCred.ToString() ?? "0")" readonly /></label>
+        <label class="wide">
+            Runtime
+            <input id="summaryRuntime" value="@RuntimeSummary" readonly />
+            <button id="summaryRuntimeInspect"
+                    type="button"
+                    disabled="@(!CanInspectRuntime || State.IsBusy)"
+                    @onclick="OpenRuntimeInspectorAsync">
+                Inspect Runtime
+            </button>
+        </label>
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
+
+    [Parameter]
+    public Chummer.Presentation.Shell.ShellSurfaceState ShellSurface { get; set; } = Chummer.Presentation.Shell.ShellSurfaceState.Empty;
+
+    [Parameter]
+    public EventCallback InspectRuntimeRequested { get; set; }
+
+    private string RuntimeSummary =>
+        Chummer.Presentation.Shell.ShellStatusTextFormatter.BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime);
+
+    private bool CanInspectRuntime => ShellSurface.ActiveRuntime is not null;
+
+    private Task OpenRuntimeInspectorAsync()
+    {
+        return InspectRuntimeRequested.InvokeAsync();
+    }
+}

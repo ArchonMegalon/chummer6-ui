@@ -1,0 +1,60 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+WORKDIR /src
+
+COPY global.json ./
+COPY Directory.Build.props ./
+COPY Directory.Build.targets ./
+COPY Chummer.sln ./
+COPY Chummer.Core/Chummer.Core.csproj Chummer.Core/
+COPY Chummer.Application/Chummer.Application.csproj Chummer.Application/
+COPY Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj Chummer.Rulesets.Hosting/
+COPY Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj Chummer.Rulesets.Sr4/
+COPY Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj Chummer.Rulesets.Sr5/
+COPY Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj Chummer.Rulesets.Sr6/
+COPY Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj Chummer.Desktop.Runtime/
+COPY Chummer.Infrastructure/Chummer.Infrastructure.csproj Chummer.Infrastructure/
+COPY Chummer.Infrastructure.Browser/Chummer.Infrastructure.Browser.csproj Chummer.Infrastructure.Browser/
+COPY Chummer.Presentation/Chummer.Presentation.csproj Chummer.Presentation/
+COPY Chummer.Avalonia/Chummer.Avalonia.csproj Chummer.Avalonia/
+COPY Chummer.Avalonia.Browser/Chummer.Avalonia.Browser.csproj Chummer.Avalonia.Browser/
+COPY Chummer.Blazor/Chummer.Blazor.csproj Chummer.Blazor/
+COPY Chummer.Hub.Web/Chummer.Hub.Web.csproj Chummer.Hub.Web/
+COPY Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj Chummer.Blazor.Desktop/
+COPY Chummer.Portal/Chummer.Portal.csproj Chummer.Portal/
+COPY Chummer.Api/Chummer.Api.csproj Chummer.Api/
+COPY Chummer.Tests/Chummer.Tests.csproj Chummer.Tests/
+RUN dotnet restore Chummer.Tests/Chummer.Tests.csproj -p:TargetFramework=net10.0
+
+COPY Chummer.Core/ Chummer.Core/
+COPY Chummer.Application/ Chummer.Application/
+COPY Chummer.Rulesets.Hosting/ Chummer.Rulesets.Hosting/
+COPY Chummer.Rulesets.Sr4/ Chummer.Rulesets.Sr4/
+COPY Chummer.Rulesets.Sr5/ Chummer.Rulesets.Sr5/
+COPY Chummer.Rulesets.Sr6/ Chummer.Rulesets.Sr6/
+COPY Chummer.Desktop.Runtime/ Chummer.Desktop.Runtime/
+COPY Chummer.Infrastructure/ Chummer.Infrastructure/
+COPY Chummer.Infrastructure.Browser/ Chummer.Infrastructure.Browser/
+COPY Chummer.Presentation/ Chummer.Presentation/
+COPY Chummer.Avalonia/ Chummer.Avalonia/
+COPY Chummer.Avalonia.Browser/ Chummer.Avalonia.Browser/
+COPY Chummer.Blazor/ Chummer.Blazor/
+COPY Chummer.Hub.Web/ Chummer.Hub.Web/
+COPY Chummer.Blazor.Desktop/ Chummer.Blazor.Desktop/
+COPY Chummer.Portal/ Chummer.Portal/
+COPY Chummer.Api/ Chummer.Api/
+COPY Chummer.Tests/ Chummer.Tests/
+COPY .gitignore ./
+COPY .dockerignore ./
+COPY .env.example ./
+COPY README.md ./
+COPY docker-compose.yml ./
+COPY Chummer.Web/ Chummer.Web/
+COPY Chummer/ Chummer/
+COPY docs/ docs/
+COPY scripts/ scripts/
+COPY .github/PULL_REQUEST_TEMPLATE.md .github/
+COPY .github/workflows/ .github/workflows/
+COPY Docker/Dockerfile.tests Docker/
+COPY Docker/Amends/ Docker/Amends/
+COPY Docker/Downloads/ Docker/Downloads/
+RUN dotnet build Chummer.Tests/Chummer.Tests.csproj -c Release -f net10.0 --no-restore -p:TargetFramework=net10.0

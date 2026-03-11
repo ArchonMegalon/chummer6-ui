@@ -1,0 +1,134 @@
+@using Chummer.Contracts.Rulesets
+@using Chummer.Presentation.Explain
+
+<section class="panel design-panel">
+    <h2>@Chrome.Title.Text</h2>
+
+    @if (Trace is null)
+    {
+        <p class="hint">@Chrome.Empty.Text</p>
+    }
+    else
+    {
+        @if (Trace.Messages.Count > 0)
+        {
+            <ul class="design-list">
+                @foreach (LocalizedExplainText message in Trace.Messages)
+                {
+                    <li data-explain-key="@message.Key">@message.Text</li>
+                }
+            </ul>
+        }
+
+        @if (Trace.Providers.Count > 0)
+        {
+            @foreach (LocalizedRulesetExplainProvider provider in Trace.Providers)
+            {
+                <article class="panel trace-card">
+                    <header>
+                        <div>
+                            <h3 data-explain-key="@provider.ProviderId.Key"
+                                data-explain-provenance-id="@provider.Provider.Id">@provider.ProviderId.Text</h3>
+                            <p class="meta">@Trace.SubjectId.Text</p>
+                        </div>
+                        <div class="explain-badges">
+                            <span class="badge" data-explain-provenance-id="@provider.Provider.Id">@Chrome.ProviderLabel.Text: @provider.ProviderId.Text</span>
+                            <span class="badge" data-explain-provenance-id="@provider.Capability.Id">@Chrome.CapabilityLabel.Text: @provider.CapabilityId.Text</span>
+                            @if (provider.PackId is not null)
+                            {
+                                <span class="badge" data-explain-provenance-id="@provider.Pack?.Id">@Chrome.PackLabel.Text: @provider.PackId.Text</span>
+                            }
+                            @if (provider.Message is not null)
+                            {
+                                <span class="badge" data-explain-key="@provider.Message.Key">@provider.Message.Text</span>
+                            }
+                        </div>
+                    </header>
+
+                    @if (provider.Diffs.Count > 0)
+                    {
+                        <section class="trace-diff" data-testid="explain-diff">
+                            <p class="trace-section-title">@Chrome.DiffLabel.Text</p>
+                            <dl class="facts compact">
+                                @foreach (LocalizedExplainDiff diff in provider.Diffs)
+                                {
+                                    <div>
+                                        <dt data-explain-key="@diff.Label.Key">@diff.Label.Text</dt>
+                                        <dd>
+                                            <span class="diff-before">@Chrome.BeforeLabel.Text: @diff.Before.Text</span>
+                                            <span class="diff-arrow" aria-hidden="true">→</span>
+                                            <span class="diff-after">@Chrome.AfterLabel.Text: @diff.After.Text</span>
+                                        </dd>
+                                    </div>
+                                }
+                            </dl>
+                        </section>
+                    }
+
+                    @if (provider.Steps.Count > 0)
+                    {
+                        <section class="trace-steps" data-testid="explain-steps">
+                            <p class="trace-section-title">@Chrome.TraceStepsLabel.Text</p>
+                            @foreach (LocalizedExplainStep step in provider.Steps)
+                            {
+                                <details class="trace-step" open="@(step.Index == provider.Steps.Count ? string.Empty : null)">
+                                    <summary>
+                                        <span class="badge">#@step.Index</span>
+                                        <span data-explain-key="@step.Title.Key">@step.Title.Text</span>
+                                        <strong>@step.Value.Text</strong>
+                                    </summary>
+
+                                    @if (step.Facts.Count > 0)
+                                    {
+                                        <dl class="facts compact">
+                                            @foreach (LocalizedExplainFact fact in step.Facts)
+                                            {
+                                                <div>
+                                                    <dt data-explain-key="@fact.Label.Key">@fact.Label.Text</dt>
+                                                    <dd data-explain-key="@fact.Value.Key">@fact.Value.Text</dd>
+                                                </div>
+                                            }
+                                        </dl>
+                                    }
+                                </details>
+                            }
+                        </section>
+                    }
+
+                    @if (provider.Fragments.Count > 0)
+                    {
+                        <dl class="facts compact explain-fragments">
+                            @foreach (LocalizedExplainFragment fragment in provider.Fragments)
+                            {
+                                <div>
+                                    <dt data-explain-key="@(fragment.Label?.Key ?? Chrome.ValueLabel.Key)">@(fragment.Label?.Text ?? Chrome.ValueLabel.Text)</dt>
+                                    <dd data-explain-key="@(fragment.Value?.Key ?? Chrome.MissingValue.Key)">@(string.IsNullOrWhiteSpace(fragment.Value?.Text) ? Chrome.MissingValue.Text : fragment.Value.Text)</dd>
+                                </div>
+                                @if (fragment.Reason is not null)
+                                {
+                                    <div><dt>@Chrome.ReasonLabel.Text</dt><dd data-explain-key="@fragment.Reason.Key">@fragment.Reason.Text</dd></div>
+                                }
+                                @if (fragment.PackId is not null)
+                                {
+                                    <div><dt>@Chrome.PackLabel.Text</dt><dd data-explain-key="@fragment.PackId.Key" data-explain-provenance-id="@fragment.Pack?.Id">@fragment.PackId.Text</dd></div>
+                                }
+                                @if (fragment.ProviderId is not null)
+                                {
+                                    <div><dt>@Chrome.ProviderLabel.Text</dt><dd data-explain-key="@fragment.ProviderId.Key" data-explain-provenance-id="@fragment.Provider?.Id">@fragment.ProviderId.Text</dd></div>
+                                }
+                            }
+                        </dl>
+                    }
+                </article>
+            }
+        }
+    }
+</section>
+
+@code {
+    [Parameter]
+    public LocalizedRulesetExplainTrace? Trace { get; set; }
+
+    [Parameter]
+    public LocalizedExplainChrome Chrome { get; set; } = RulesetExplainRenderer.CreateChrome();
+}

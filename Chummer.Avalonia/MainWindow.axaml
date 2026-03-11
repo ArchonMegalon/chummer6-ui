@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
+        x:Class="Chummer.Avalonia.MainWindow"
+        Width="1360"
+        Height="860"
+        MinWidth="1000"
+        MinHeight="680"
+        Title="Chummer Avalonia Head"
+        KeyDown="Window_OnKeyDown">
+  <Window.Styles>
+    <Style Selector="Button.menu-button.active-menu">
+      <Setter Property="Background" Value="#dbeafe" />
+      <Setter Property="BorderBrush" Value="#2563eb" />
+    </Style>
+  </Window.Styles>
+  <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="6">
+    <Border x:Name="MenuBarRegion" Grid.Row="0" Background="#E2E8F0" BorderBrush="#94A3B8" BorderThickness="1" Padding="6">
+      <controls:ShellMenuBarControl x:Name="ShellMenuBarControl" />
+    </Border>
+
+    <Border x:Name="ToolStripRegion" Grid.Row="1" Background="#EEF2FF" BorderBrush="#CBD5E1" BorderThickness="1" Padding="6">
+      <controls:ToolStripControl x:Name="ToolStripControl" />
+    </Border>
+
+    <Border x:Name="WorkspaceStripRegion" Grid.Row="2" Background="#E0E7FF" BorderBrush="#CBD5E1" BorderThickness="1" Padding="6">
+      <controls:WorkspaceStripControl x:Name="WorkspaceStripControl" />
+    </Border>
+
+    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="300,*,300" ColumnSpacing="8">
+      <Border x:Name="LeftNavigatorRegion" Grid.Column="0" BorderThickness="1" BorderBrush="#94A3B8" Padding="8">
+        <controls:NavigatorPaneControl x:Name="NavigatorPaneControl" />
+      </Border>
+
+      <Grid x:Name="CenterShellRegion" Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="8">
+        <Border x:Name="SummaryHeaderRegion" Grid.Row="0" BorderThickness="1" BorderBrush="#94A3B8" Padding="8">
+          <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
+        </Border>
+
+        <Border x:Name="SectionRegion" Grid.Row="1" BorderThickness="0" Padding="0">
+          <controls:SectionHostControl x:Name="SectionHostControl" />
+        </Border>
+      </Grid>
+
+      <Border x:Name="RightShellRegion" Grid.Column="2" BorderThickness="1" BorderBrush="#94A3B8" Padding="8">
+        <Grid RowDefinitions="2*,*" RowSpacing="8">
+          <controls:CommandDialogPaneControl x:Name="CommandDialogPaneControl" Grid.Row="0" />
+          <controls:CoachSidecarControl x:Name="CoachSidecarControl" Grid.Row="1" />
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Border x:Name="StatusStripRegion" Grid.Row="4" Background="#E2E8F0" BorderBrush="#CBD5E1" BorderThickness="1" Padding="6">
+      <controls:StatusStripControl x:Name="StatusStripControl" />
+    </Border>
+  </Grid>
+</Window>

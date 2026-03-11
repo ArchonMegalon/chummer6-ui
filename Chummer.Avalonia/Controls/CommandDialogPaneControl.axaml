@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Chummer.Avalonia.Controls.CommandDialogPaneControl">
+  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto,*" RowSpacing="6">
+    <TextBlock Grid.Row="0" Text="Command Palette" FontWeight="Bold" />
+    <ListBox Grid.Row="1" x:Name="CommandsList">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+    </ListBox>
+    <TextBlock Grid.Row="2" Text="Dialog Title" FontWeight="Bold" />
+    <TextBlock Grid.Row="3" x:Name="DialogTitleText" Text="(none)" />
+    <TextBlock Grid.Row="4" Text="Dialog Message" FontWeight="Bold" />
+    <TextBlock Grid.Row="5" x:Name="DialogMessageText" Text="(none)" TextWrapping="Wrap" />
+    <Grid Grid.Row="6" RowDefinitions="Auto,*,Auto,*" RowSpacing="6">
+      <TextBlock Grid.Row="0" Text="Dialog Fields" FontWeight="Bold" />
+      <ListBox Grid.Row="1" x:Name="DialogFieldsList">
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate>
+            <VirtualizingStackPanel />
+          </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+      </ListBox>
+      <TextBlock Grid.Row="2" Text="Dialog Actions" FontWeight="Bold" />
+      <ListBox Grid.Row="3" x:Name="DialogActionsList">
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate>
+            <VirtualizingStackPanel />
+          </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+      </ListBox>
+    </Grid>
+  </Grid>
+</UserControl>

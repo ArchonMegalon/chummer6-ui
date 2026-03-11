@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Chummer.Avalonia.Controls.StatusStripControl">
+  <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+    <TextBlock Grid.Column="0" x:Name="CharacterStateText" Text="Character: none" />
+    <TextBlock Grid.Column="1" x:Name="ServiceStateText" Text="Service: online" />
+    <TextBlock Grid.Column="2" x:Name="TimeStateText" Text="Time: -" />
+    <TextBlock Grid.Column="3" x:Name="ComplianceStateText" Text="Compliance: shared presenter path" />
+  </Grid>
+</UserControl>

@@ -1,0 +1,75 @@
+@page "/"
+@page "/blazor"
+@page "/blazor/"
+@using Chummer.Blazor.Services
+@using System.Net.Http
+
+<div class="chummer-desktop-layout">
+    <div class="menu-bar">
+        <button class="menu-btn">File</button><button class="menu-btn">Edit</button><button class="menu-btn">View</button>
+        <button class="menu-btn">Character</button><button class="menu-btn">Tools</button><button class="menu-btn">Help</button>
+    </div>
+    <div class="workspace">
+        <div class="left-nav">
+            <div class="nav-item active">Common</div><div class="nav-item">Attributes</div><div class="nav-item">Skills</div>
+            <div class="nav-item">Spells</div><div class="nav-item">Cyberware</div><div class="nav-item">Street Gear</div>
+        </div>
+        <div class="main-content">
+            <div class="header-summary">
+                <input type="text" placeholder="Character Name" class="char-input" />
+                <select class="char-input"><option>Human</option><option>Elf</option><option>Troll</option></select>
+                <div class="karma-box">Karma: 0 / 0</div>
+            </div>
+            <div class="tab-content">
+                <h3 style="margin-top:0;">System Console (Lua Engine Link)</h3>
+                <div style="margin-top: 20px;">
+                    <input @bind="actionCommand" placeholder="Enter engine command..." class="cmd-input" />
+                    <button @onclick="FireCommand" disabled="@isProcessing" class="action-btn">
+                        @(isProcessing ? "Processing..." : "Send to Core Engine")
+                    </button>
+                </div>
+                <pre class="terminal-output">@apiResponse</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chummer-desktop-layout { display: flex; flex-direction: column; height: 100vh; background-color: #2d2d30; color: #dfdfdf; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: -2rem; }
+    .menu-bar { background-color: #1e1e1e; padding: 5px; border-bottom: 1px solid #000; }
+    .menu-btn { background: none; border: none; color: #ccc; padding: 5px 10px; cursor: pointer; }
+    .menu-btn:hover { background-color: #3e3e42; }
+    .workspace { display: flex; flex: 1; overflow: hidden; }
+    .left-nav { width: 200px; background-color: #252526; border-right: 1px solid #000; padding: 10px 0; }
+    .nav-item { padding: 8px 15px; cursor: pointer; border-bottom: 1px solid #333; }
+    .nav-item:hover { background-color: #3e3e42; }
+    .nav-item.active { background-color: #007acc; color: white; }
+    .main-content { flex: 1; padding: 20px; overflow-y: auto; }
+    .header-summary { display: flex; gap: 10px; margin-bottom: 20px; background-color: #333337; padding: 15px; border-radius: 4px; align-items: center; }
+    .char-input { background-color: #1e1e1e; border: 1px solid #555; color: white; padding: 5px; }
+    .karma-box { margin-left: auto; font-weight: bold; color: #4fc1ff; }
+    .tab-content { background-color: #1e1e1e; padding: 20px; border: 1px solid #000; min-height: 400px; }
+    .cmd-input { width: 300px; padding: 8px; background: #111; color: #0f0; border: 1px solid #555; }
+    .action-btn { padding: 8px 15px; background: #007acc; color: white; border: none; cursor: pointer; }
+    .action-btn:disabled { background: #555; }
+    .terminal-output { margin-top: 20px; background: #000; color: #0f0; padding: 15px; min-height: 100px; border: 1px solid #444; }
+</style>
+
+@code {
+    private string actionCommand = "Test Lua Engine";
+    private string apiResponse = "Ready. Awaiting API connection...";
+    private bool isProcessing = false;
+    private EngineClient engine = new EngineClient(new HttpClient());
+
+    private async Task FireCommand()
+    {
+        isProcessing = true;
+        apiResponse = "Sending request to internal Docker API (chummer-api:8080)...";
+        await InvokeAsync(StateHasChanged);
+        
+        apiResponse = await engine.ExecuteBuildAsync(actionCommand);
+        
+        isProcessing = false;
+        await InvokeAsync(StateHasChanged);
+    }
+}

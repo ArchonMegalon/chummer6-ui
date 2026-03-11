@@ -1,0 +1,75 @@
+<section class="panel metadata">
+    <h2>Metadata</h2>
+    <div class="summary-grid">
+        <label>Name <input value="@MetadataName" @oninput="OnMetadataNameChanged" /></label>
+        <label>Alias <input value="@MetadataAlias" @oninput="OnMetadataAliasChanged" /></label>
+        <label>Workspace <input value="@(State.WorkspaceId?.Value ?? string.Empty)" readonly /></label>
+        <label class="wide">Notes <textarea rows="3" @oninput="OnMetadataNotesChanged">@MetadataNotes</textarea></label>
+    </div>
+    <div class="actions">
+        <button @onclick="UpdateMetadataRequested" disabled="@(State.IsBusy || State.WorkspaceId is null)">Update Metadata</button>
+        <button @onclick="SaveRequested" disabled="@(State.IsBusy || State.WorkspaceId is null)">Save Workspace</button>
+        <button @onclick="LoadWorkspaceRequested" disabled="@State.IsBusy || string.IsNullOrWhiteSpace(LoadWorkspaceId)">Load Workspace</button>
+    </div>
+    <div class="inline-fields">
+        <input value="@LoadWorkspaceId" placeholder="Workspace id" @oninput="OnLoadWorkspaceIdChanged" />
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
+
+    [Parameter]
+    public string MetadataName { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> MetadataNameChanged { get; set; }
+
+    [Parameter]
+    public string MetadataAlias { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> MetadataAliasChanged { get; set; }
+
+    [Parameter]
+    public string MetadataNotes { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> MetadataNotesChanged { get; set; }
+
+    [Parameter]
+    public string LoadWorkspaceId { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> LoadWorkspaceIdChanged { get; set; }
+
+    [Parameter]
+    public EventCallback UpdateMetadataRequested { get; set; }
+
+    [Parameter]
+    public EventCallback SaveRequested { get; set; }
+
+    [Parameter]
+    public EventCallback LoadWorkspaceRequested { get; set; }
+
+    private Task OnMetadataNameChanged(ChangeEventArgs args)
+    {
+        return MetadataNameChanged.InvokeAsync(args.Value?.ToString() ?? string.Empty);
+    }
+
+    private Task OnMetadataAliasChanged(ChangeEventArgs args)
+    {
+        return MetadataAliasChanged.InvokeAsync(args.Value?.ToString() ?? string.Empty);
+    }
+
+    private Task OnMetadataNotesChanged(ChangeEventArgs args)
+    {
+        return MetadataNotesChanged.InvokeAsync(args.Value?.ToString() ?? string.Empty);
+    }
+
+    private Task OnLoadWorkspaceIdChanged(ChangeEventArgs args)
+    {
+        return LoadWorkspaceIdChanged.InvokeAsync(args.Value?.ToString() ?? string.Empty);
+    }
+}

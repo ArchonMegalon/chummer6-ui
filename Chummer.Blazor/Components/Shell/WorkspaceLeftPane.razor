@@ -1,0 +1,108 @@
+@using Chummer.Contracts.Presentation
+@using Chummer.Contracts.Workspaces
+@using Chummer.Presentation.Shell
+
+<aside class="left-pane">
+    <OpenWorkspaceTree OpenWorkspaces="OpenWorkspaces"
+                       ActiveWorkspaceId="ActiveWorkspaceId"
+                       IsBusy="State.IsBusy"
+                       OpenWorkspaceRequested="OpenWorkspaceRequested"
+                       CloseWorkspaceRequested="CloseWorkspaceRequested" />
+
+    <section class="panel tabs">
+        <h2>Workspace Tabs</h2>
+        <div class="virtual-list tab-grid">
+            <Virtualize Items="@NavigationTabs"
+                        Context="tab"
+                        ItemSize="42"
+                        ItemsTagName="ul"
+                        ItemTagName="li">
+                @{
+                    bool enabled = IsNavigationTabEnabled(tab);
+                }
+                <button class="tab-btn @(ActiveTabId == tab.Id ? "active" : string.Empty)"
+                        id="@tab.Id"
+                        disabled="@(!enabled || State.IsBusy)"
+                        @onclick="() => SelectTabRequested.InvokeAsync(tab.Id)">
+                    @tab.Label
+                </button>
+            </Virtualize>
+        </div>
+    </section>
+
+    <section class="panel section-actions">
+        <h2>Section Actions</h2>
+        <div class="virtual-list action-grid">
+            <Virtualize Items="@ActiveWorkspaceActions"
+                        Context="action"
+                        ItemSize="44"
+                        ItemsTagName="ul"
+                        ItemTagName="li">
+                <button class="action-button @(State.ActiveActionId == action.Id ? "selected" : string.Empty)"
+                        disabled="@State.IsBusy"
+                        @onclick="() => ExecuteWorkspaceActionRequested.InvokeAsync(action)">
+                    @action.Label
+                </button>
+            </Virtualize>
+        </div>
+    </section>
+
+    <section class="panel controls">
+        <h2>Workflow Surfaces</h2>
+        <div class="virtual-list mini-grid">
+            <Virtualize Items="@ActiveWorkflowSurfaceActions"
+                        Context="surface"
+                        ItemSize="40"
+                        ItemsTagName="ul"
+                        ItemTagName="li">
+                <button class="mini-btn"
+                        data-workflow-surface="@surface.SurfaceId"
+                        disabled="@State.IsBusy"
+                        @onclick="() => ExecuteWorkflowSurfaceRequested.InvokeAsync(surface.ActionId)">
+                    @surface.Label
+                </button>
+            </Virtualize>
+        </div>
+    </section>
+</aside>
+
+@code {
+    [Parameter]
+    public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
+
+    [Parameter]
+    public IReadOnlyList<OpenWorkspaceState> OpenWorkspaces { get; set; } = [];
+
+    [Parameter]
+    public CharacterWorkspaceId? ActiveWorkspaceId { get; set; }
+
+    [Parameter]
+    public string? ActiveTabId { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<NavigationTabDefinition> NavigationTabs { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<WorkspaceSurfaceActionDefinition> ActiveWorkspaceActions { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<WorkflowSurfaceActionBinding> ActiveWorkflowSurfaceActions { get; set; } = [];
+
+    [Parameter]
+    public Func<NavigationTabDefinition, bool> IsNavigationTabEnabled { get; set; } = _ => false;
+
+    [Parameter]
+    public EventCallback<string> OpenWorkspaceRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> CloseWorkspaceRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SelectTabRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<WorkspaceSurfaceActionDefinition> ExecuteWorkspaceActionRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ExecuteWorkflowSurfaceRequested { get; set; }
+}

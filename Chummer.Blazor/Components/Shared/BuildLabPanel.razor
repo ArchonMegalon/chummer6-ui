@@ -1,0 +1,173 @@
+@using Chummer.Contracts.Presentation
+
+<section class="panel design-panel" data-build-lab-showcase="@Projection.WorkspaceId">
+    <header class="panel-header">
+        <div>
+            <h2>@Projection.Title</h2>
+            <p class="note">@Projection.Summary</p>
+        </div>
+        <div class="button-row compact">
+            <span>@Projection.RulesetId</span>
+            <span>@Projection.BuildMethod</span>
+        </div>
+    </header>
+
+    <div class="build-lab-chip-group">
+        @foreach (BuildLabBadge badge in Projection.RoleBadges)
+        {
+            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+        }
+    </div>
+
+    <div class="build-lab-field-grid">
+        @foreach (BuildLabIntakeField field in Projection.IntakeFields)
+        {
+            <label class="field">
+                <span>@field.Label</span>
+                <input value="@field.Value" readonly placeholder="@field.Placeholder" />
+                @if (!string.IsNullOrWhiteSpace(field.HelpText))
+                {
+                    <span class="note">@field.HelpText</span>
+                }
+            </label>
+        }
+    </div>
+
+    <div class="build-lab-chip-group">
+        @foreach (BuildLabBadge badge in Projection.ConstraintBadges)
+        {
+            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+        }
+    </div>
+
+    <section class="coach-card">
+        <div class="coach-card-header">
+            <h3>Explain + Source</h3>
+            <span class="badge">Engine DTO</span>
+        </div>
+        <dl class="facts compact">
+            <div><dt>Explain</dt><dd>@(Projection.ExplainEntryId ?? "none")</dd></div>
+            <div><dt>Source</dt><dd>@(Projection.SourceDocumentId ?? "none")</dd></div>
+            <div><dt>Next</dt><dd>@(Projection.CanContinue ? "Compare variants" : "Complete intake")</dd></div>
+        </dl>
+    </section>
+
+    @if (Projection.Variants.Count > 0)
+    {
+        <section class="coach-card">
+            <div class="coach-card-header">
+                <h3>Variant Comparison</h3>
+                <span class="badge">@Projection.Variants.Count option(s)</span>
+            </div>
+            @foreach (BuildLabVariantProjection variant in Projection.Variants)
+            {
+                <article data-build-lab-variant-showcase="@variant.VariantId">
+                    <p><strong>@variant.Label</strong> · @variant.TableFit</p>
+                    <p class="note">@variant.Summary</p>
+                    <p class="note">@string.Join(" | ", variant.Metrics.Select(metric => $"{metric.Label}: {metric.Value}{(string.IsNullOrWhiteSpace(metric.Delta) ? string.Empty : $" ({metric.Delta})")}"))</p>
+                    @if (variant.Warnings.Count > 0)
+                    {
+                        <p class="note">@string.Join(" | ", variant.Warnings.Select(warning => warning.Label))</p>
+                    }
+                    @if (variant.OverlapBadges.Count > 0)
+                    {
+                        <p class="note">@string.Join(" | ", variant.OverlapBadges.Select(badge => badge.Label))</p>
+                    }
+                </article>
+            }
+        </section>
+    }
+
+    @if (Projection.ProgressionTimelines.Count > 0)
+    {
+        <section class="coach-card">
+            <div class="coach-card-header">
+                <h3>25 / 50 / 100 Karma</h3>
+                <span class="badge">Progression</span>
+            </div>
+            @foreach (BuildLabProgressionTimeline timeline in Projection.ProgressionTimelines)
+            {
+                <article data-build-lab-timeline-showcase="@timeline.TimelineId">
+                    <p><strong>@timeline.Title</strong> · @timeline.VariantId</p>
+                    <p class="note">@timeline.Summary</p>
+                    <ul class="browse-detail-lines">
+                        @foreach (BuildLabProgressionStep step in timeline.Steps)
+                        {
+                            <li>
+                                @step.KarmaTarget Karma · @step.Label · @step.Summary
+                                @if (step.Outcomes.Count > 0)
+                                {
+                                    <span> · @string.Join(" | ", step.Outcomes.Select(metric => $"{metric.Label}: {metric.Value}"))</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                    @if (!string.IsNullOrWhiteSpace(timeline.SourceDocumentId))
+                    {
+                        <p class="note">Source: @timeline.SourceDocumentId</p>
+                    }
+                </article>
+            }
+        </section>
+    }
+
+    @if (Projection.Actions.Count > 0)
+    {
+        <section class="coach-card" data-build-lab-export-showcase>
+            <div class="coach-card-header">
+                <h3>Export + Hand-off</h3>
+                <span class="badge">@Projection.Actions.Count action(s)</span>
+            </div>
+
+            @if (Projection.ExportPayloads?.Count > 0)
+            {
+                @foreach (BuildLabExportPayload payload in Projection.ExportPayloads)
+                {
+                    <article data-build-lab-export-payload-showcase="@payload.PayloadId">
+                        <p><strong>@payload.Title</strong> · @payload.PayloadKind</p>
+                        <p class="note">@payload.Summary</p>
+                        <p class="note">@string.Join(" | ", payload.Fields.Select(field => $"{field.Label}: {field.Value}"))</p>
+                        @if (!string.IsNullOrWhiteSpace(payload.QueryText))
+                        {
+                            <p class="note">Query: @payload.QueryText</p>
+                        }
+                    </article>
+                }
+            }
+
+            @if (Projection.ExportTargets?.Count > 0)
+            {
+                @foreach (BuildLabExportTarget target in Projection.ExportTargets)
+                {
+                    <article data-build-lab-export-target-showcase="@target.TargetId">
+                        <p><strong>@target.Label</strong> · @target.TargetKind</p>
+                        <p class="note">@target.Description</p>
+                    </article>
+                }
+            }
+        </section>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public BuildLabConceptIntakeProjection Projection { get; set; } = new(
+        WorkspaceId: "build-lab-showcase",
+        WorkflowId: "workflow.build-lab",
+        Title: "Build Lab Intake",
+        Summary: "Capture concept, role intent, and table constraints before variant generation.",
+        RulesetId: "sr5",
+        BuildMethod: "Priority",
+        IntakeFields:
+        [
+            new BuildLabIntakeField("concept", "Concept", BuildLabFieldKinds.Text, string.Empty)
+        ],
+        RoleBadges: [],
+        ConstraintBadges: [],
+        ProvenanceBadges: [],
+        Variants: [],
+        ProgressionTimelines: [],
+        ExportPayloads: [],
+        ExportTargets: [],
+        Actions: []);
+}

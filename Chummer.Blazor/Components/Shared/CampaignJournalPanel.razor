@@ -1,0 +1,266 @@
+@using Chummer.Contracts.Journal
+@using Chummer.Contracts.Presentation
+@using Chummer.Presentation.Overview
+
+<section class="panel design-panel">
+    <header class="panel-header">
+        <div>
+            <h2>Campaign Journal</h2>
+            <p class="meta">Ledger, note, and downtime timeline cards rendered from the journal presentation projection.</p>
+        </div>
+        @if (Projection is not null)
+        {
+            <div class="button-row compact">
+                <span class="badge">@Projection.ScopeKind</span>
+                <span class="badge">@Projection.ScopeId</span>
+            </div>
+        }
+    </header>
+
+    @if (Projection is null)
+    {
+        <p class="hint">No journal projection is available.</p>
+    }
+    else
+    {
+        DowntimePlannerState planner = BuildDowntimePlanner(Projection);
+
+        <section class="runtime-inspector-grid">
+            @foreach (JournalPanelSection section in Projection.Sections)
+            {
+                <article class="panel trace-card">
+                    <header>
+                        <h3>@section.Title</h3>
+                        <span class="badge">@section.ItemCount</span>
+                    </header>
+                    <p class="hint">Section kind: @section.Kind</p>
+                </article>
+            }
+        </section>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Notes</h3>
+                <span class="badge">@Projection.Notes.Count</span>
+            </header>
+            @if (Projection.Notes.Count == 0)
+            {
+                <p class="hint">No notes were projected into the journal surface.</p>
+            }
+            else
+            {
+                <ul class="runtime-list">
+                    @foreach (NoteListItem note in Projection.Notes)
+                    {
+                        <li>
+                            <div class="coach-card-header">
+                                <strong>@note.Title</strong>
+                                <span class="badge">@note.BlockCount blocks</span>
+                            </div>
+                            <p class="hint">Scope: @note.ScopeKind · Updated @note.UpdatedAtUtc.ToLocalTime().ToString("u")</p>
+                        </li>
+                    }
+                </ul>
+            }
+        </article>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Ledger</h3>
+                <span class="badge">@Projection.LedgerEntries.Count</span>
+            </header>
+            @if (Projection.LedgerEntries.Count == 0)
+            {
+                <p class="hint">No ledger entries were projected into this journal.</p>
+            }
+            else
+            {
+                <table class="section-table">
+                    <thead>
+                        <tr>
+                            <th>Kind</th>
+                            <th>Label</th>
+                            <th>Amount</th>
+                            <th>When</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (LedgerEntryView entry in Projection.LedgerEntries)
+                        {
+                            <tr>
+                                <td>@entry.Kind</td>
+                                <td>@entry.Label</td>
+                                <td>@FormatAmount(entry)</td>
+                                <td>@entry.OccurredAtUtc.ToLocalTime().ToString("u")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </article>
+
+        <article class="panel trace-card">
+            <header>
+                <h3>Timeline</h3>
+                <span class="badge">@Projection.TimelineEvents.Count</span>
+            </header>
+            @if (Projection.TimelineEvents.Count == 0)
+            {
+                <p class="hint">No timeline events were projected into this journal.</p>
+            }
+            else
+            {
+                <ul class="runtime-list">
+                    @foreach (TimelineEventView timelineEvent in Projection.TimelineEvents)
+                    {
+                        <li>
+                            <div class="coach-card-header">
+                                <strong>@timelineEvent.Title</strong>
+                                <span class="badge @GetTimelineBadgeClass(timelineEvent.Kind)">@timelineEvent.Kind</span>
+                            </div>
+                            <p class="hint">
+                                Starts @timelineEvent.StartsAtUtc.ToLocalTime().ToString("u")
+                                @if (timelineEvent.EndsAtUtc is DateTimeOffset endsAtUtc)
+                                {
+                                    <span> · Ends @endsAtUtc.ToLocalTime().ToString("u")</span>
+                                }
+                            </p>
+                        </li>
+                    }
+                </ul>
+            }
+        </article>
+
+        <article class="panel trace-card" data-journal-downtime-planner>
+            <header>
+                <h3>Downtime Planner</h3>
+                <span class="badge">@planner.PlannerLanes.Count lanes</span>
+            </header>
+            @if (planner.PlannerLanes.Count == 0)
+            {
+                <p class="hint">No planner lanes were projected from timeline events.</p>
+            }
+            else
+            {
+                <div class="runtime-inspector-grid">
+                    @foreach (DowntimePlannerLaneState lane in planner.PlannerLanes)
+                    {
+                        <article class="panel trace-card" data-journal-downtime-lane="@lane.LaneId">
+                            <header>
+                                <h4>@lane.Title</h4>
+                                <span class="badge">@lane.ItemCount</span>
+                            </header>
+                            <ul class="runtime-list">
+                                @foreach (DowntimeScheduleItemState item in lane.Items)
+                                {
+                                    <li>
+                                        <div class="coach-card-header">
+                                            <strong>@item.Title</strong>
+                                            <span class="badge">@item.Kind</span>
+                                        </div>
+                                        <p class="hint">@item.TimeWindow</p>
+                                    </li>
+                                }
+                            </ul>
+                        </article>
+                    }
+                </div>
+            }
+        </article>
+
+        <article class="panel trace-card" data-journal-calendar-view>
+            <header>
+                <h3>Calendar View</h3>
+                <span class="badge">@planner.CalendarDays.Count days</span>
+            </header>
+            @if (planner.CalendarDays.Count == 0)
+            {
+                <p class="hint">No calendar days are available for this journal projection.</p>
+            }
+            else
+            {
+                <table class="section-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Items</th>
+                            <th>Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (DowntimeCalendarDayState day in planner.CalendarDays)
+                        {
+                            <tr data-journal-calendar-day="@day.Date">
+                                <td>@day.Date</td>
+                                <td>@day.ItemCount</td>
+                                <td>@day.Summary</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </article>
+
+        <article class="panel trace-card" data-journal-schedule-view>
+            <header>
+                <h3>Schedule View</h3>
+                <span class="badge">@planner.ScheduleItems.Count items</span>
+            </header>
+            @if (planner.ScheduleItems.Count == 0)
+            {
+                <p class="hint">No scheduled journal events are available.</p>
+            }
+            else
+            {
+                <ol class="runtime-list">
+                    @foreach (DowntimeScheduleItemState item in planner.ScheduleItems)
+                    {
+                        <li data-journal-schedule-item="@item.EventId">
+                            <div class="coach-card-header">
+                                <strong>@item.Title</strong>
+                                <span class="badge">@item.LaneTitle</span>
+                            </div>
+                            <p class="hint">@item.TimeWindow · @item.Kind</p>
+                        </li>
+                    }
+                </ol>
+            }
+        </article>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public JournalPanelProjection? Projection { get; set; }
+
+    private static string FormatAmount(LedgerEntryView entry)
+    {
+        string prefix = entry.Kind switch
+        {
+            LedgerEntryKinds.Expense => "-",
+            LedgerEntryKinds.Karma => "+",
+            LedgerEntryKinds.Income => "+",
+            _ => string.Empty
+        };
+
+        return $"{prefix}{entry.Amount:0.##} {entry.Currency}";
+    }
+
+    private static string GetTimelineBadgeClass(string kind)
+        => kind switch
+        {
+            TimelineEventKinds.Downtime => "coach-badge warn",
+            TimelineEventKinds.Milestone => "coach-badge good",
+            TimelineEventKinds.Reminder => "coach-badge error",
+            _ => string.Empty
+        };
+
+    private static DowntimePlannerState BuildDowntimePlanner(JournalPanelProjection projection)
+    {
+        return DowntimePlannerProjector.FromJournal(projection)
+            ?? new DowntimePlannerState(
+                PlannerLanes: [],
+                CalendarDays: [],
+                ScheduleItems: []);
+    }
+}

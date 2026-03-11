@@ -1,0 +1,76 @@
+@inject NavigationManager Navigation
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="@Navigation.BaseUri" />
+    <title>Chummer Blazor Head</title>
+    <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+<Routes @rendermode="new InteractiveServerRenderMode()" />
+<script src="_framework/blazor.web.js"></script>
+<script>
+    window.chummerUtilities = window.chummerUtilities || {};
+    window.chummerUtilities.decodeBase64Utf8 = function(contentBase64) {
+        const binary = atob(contentBase64 || '');
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+
+        return new TextDecoder().decode(bytes);
+    };
+    window.chummerDownloads = window.chummerDownloads || {};
+    window.chummerDownloads.downloadBase64 = function(fileName, contentBase64, mimeType) {
+        if (!contentBase64) {
+            return;
+        }
+
+        const anchor = document.createElement('a');
+        anchor.href = `data:${mimeType || 'application/octet-stream'};base64,${contentBase64}`;
+        anchor.download = fileName || 'chummer-download.dat';
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+    };
+    window.chummerExports = window.chummerExports || {};
+    window.chummerExports.downloadBase64 = function(fileName, contentBase64, mimeType) {
+        window.chummerDownloads.downloadBase64(fileName, contentBase64, mimeType);
+    };
+    window.chummerPrints = window.chummerPrints || {};
+    window.chummerPrints.openBase64 = function(fileName, contentBase64, mimeType, title) {
+        if (!contentBase64) {
+            return;
+        }
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            throw new Error('Print window could not be opened.');
+        }
+
+        const decoded = window.chummerUtilities.decodeBase64Utf8(contentBase64);
+        if ((mimeType || '').toLowerCase() === 'text/html') {
+            printWindow.document.open();
+            printWindow.document.write(decoded);
+            printWindow.document.close();
+        } else {
+            printWindow.document.open();
+            printWindow.document.write(`<pre>${decoded}</pre>`);
+            printWindow.document.close();
+        }
+
+        if (title) {
+            printWindow.document.title = title;
+        } else if (fileName) {
+            printWindow.document.title = fileName;
+        }
+
+        printWindow.focus();
+        setTimeout(() => printWindow.print(), 50);
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+FROM nginx:alpine
+# Copy the compiled WebAssembly files into the web server
+COPY ./publish_output/wwwroot /usr/share/nginx/html
+EXPOSE 80

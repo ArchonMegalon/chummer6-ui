@@ -1,0 +1,59 @@
+@using Chummer.Presentation.Overview
+@using Chummer.Contracts.Workspaces
+
+<div class="mdi-strip" id="mdiStrip">
+    @if (OpenWorkspaces.Count == 0)
+    {
+        <span class="mdi-doc">No open character</span>
+    }
+    else
+    {
+        @foreach (OpenWorkspaceState workspace in OpenWorkspaces)
+        {
+            bool isActive = string.Equals(ActiveWorkspaceId?.Value, workspace.Id.Value, StringComparison.Ordinal);
+            string workspaceLabel = string.IsNullOrWhiteSpace(workspace.Alias) ? workspace.Name : $"{workspace.Name} ({workspace.Alias})";
+            string saveStatus = workspace.HasSavedWorkspace ? "saved" : "unsaved";
+            <span class="mdi-doc-wrap">
+                <button class="mdi-doc @(isActive ? "active" : string.Empty)"
+                        title="@($"Workspace {workspace.Id.Value} is {saveStatus}")"
+                        disabled="@IsBusy"
+                        @onclick="() => OpenWorkspaceAsync(workspace.Id.Value)">
+                    @($"{workspaceLabel}{(workspace.HasSavedWorkspace ? string.Empty : " *")}")
+                </button>
+                <button class="mdi-close"
+                        title="Close workspace"
+                        disabled="@IsBusy"
+                        @onclick="() => CloseWorkspaceAsync(workspace.Id.Value)">
+                    x
+                </button>
+            </span>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<OpenWorkspaceState> OpenWorkspaces { get; set; } = [];
+
+    [Parameter]
+    public CharacterWorkspaceId? ActiveWorkspaceId { get; set; }
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OpenWorkspaceRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> CloseWorkspaceRequested { get; set; }
+
+    private Task OpenWorkspaceAsync(string workspaceId)
+    {
+        return OpenWorkspaceRequested.InvokeAsync(workspaceId);
+    }
+
+    private Task CloseWorkspaceAsync(string workspaceId)
+    {
+        return CloseWorkspaceRequested.InvokeAsync(workspaceId);
+    }
+}

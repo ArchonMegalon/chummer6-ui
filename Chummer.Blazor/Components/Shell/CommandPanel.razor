@@ -1,0 +1,43 @@
+@using Chummer.Contracts.Presentation
+@using Chummer.Presentation.UiKit
+
+<section class="panel commands">
+    <h2>Commands</h2>
+    <div class="virtual-list command-list">
+        <Virtualize Items="@Commands"
+                    Context="command"
+                    ItemSize="42"
+                    ItemsTagName="ul"
+                    ItemTagName="li">
+            @{
+                bool enabled = IsCommandEnabled(command);
+            }
+            <div class="command-list-row @(enabled ? string.Empty : "disabled")">
+                <button class="command-button @(string.Equals(State.LastCommandId, command.Id, StringComparison.Ordinal) ? "selected" : string.Empty)"
+                        disabled="@(!enabled || State.IsBusy)"
+                        @onclick="() => ExecuteCommandAsync(command.Id)">
+                    <code>@ShellChromeBoundary.FormatCommandLabel(command.Id)</code>
+                </button>
+            </div>
+        </Virtualize>
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
+
+    [Parameter]
+    public IReadOnlyList<AppCommandDefinition> Commands { get; set; } = [];
+
+    [Parameter]
+    public Func<AppCommandDefinition, bool> IsCommandEnabled { get; set; } = _ => false;
+
+    [Parameter]
+    public EventCallback<string> ExecuteCommandRequested { get; set; }
+
+    private Task ExecuteCommandAsync(string commandId)
+    {
+        return ExecuteCommandRequested.InvokeAsync(commandId);
+    }
+}
