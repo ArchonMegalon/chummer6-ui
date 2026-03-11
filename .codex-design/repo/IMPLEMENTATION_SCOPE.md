@@ -2,7 +2,7 @@
 
 ## Mission
 
-`chummer-presentation` owns desktop/browser workbench UX, large-screen operator flows, admin/moderation surfaces, and package consumption of the shared UI kit.
+`chummer6-ui` owns desktop/browser workbench UX, large-screen operator flows, admin/moderation surfaces, and package consumption of the shared UI kit.
 
 ## Owns
 
@@ -24,7 +24,7 @@
 
 ## Current extraction focus
 
-* align all local docs to the reality that `chummer-play` owns shipped `/session` and `/coach`
+* align all local docs to the reality that `chummer6-mobile` owns shipped `/session` and `/coach`
 * consume `Chummer.Ui.Kit` as a package-only dependency
 * keep workbench-only seams separate from play-only seams
 * stop carrying stale or ambiguous play-host assumptions
@@ -44,12 +44,12 @@
 ## Worker rule
 
 If the job is about building, browsing, comparing, moderating, or explaining on a workbench/browser/desktop surface, it belongs here.
-If the job is about live play shell behavior, it belongs in `chummer-play`.
+If the job is about live play shell behavior, it belongs in `chummer6-mobile`.
 
 
 ## External integration note
 
-`chummer-presentation` may render upstream projections, previews, docs/help links, and provider-assisted artifact references.
+`chummer6-ui` may render upstream projections, previews, docs/help links, and provider-assisted artifact references.
 
 It must not own:
 
