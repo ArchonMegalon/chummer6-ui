@@ -2891,8 +2891,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(portalPlaywrightText, "http://chummer-portal:8080/api/ai/status");
         StringAssert.Contains(portalPlaywrightText, "http://chummer-portal:8080/hub/health");
         Assert.IsFalse(portalPlaywrightText.Contains("http://chummer-portal:8080/session/health", StringComparison.Ordinal));
+        Assert.IsFalse(portalPlaywrightText.Contains("CHUMMER_PORTAL_INPROCESS_FIXTURE", StringComparison.Ordinal));
+        Assert.IsFalse(portalPlaywrightText.Contains("inprocess-portal-fixture.local", StringComparison.Ordinal));
         StringAssert.Contains(portalPlaywrightText, "No published desktop builds yet");
         StringAssert.Contains(portalPlaywrightText, "fallback-link");
+
+        string b7SignoffPath = FindPath("scripts", "ai", "milestones", "b7-browser-isolation-check.sh");
+        string b7SignoffText = File.ReadAllText(b7SignoffPath);
+        Assert.IsFalse(b7SignoffText.Contains("CHUMMER_PORTAL_INPROCESS_FIXTURE=1", StringComparison.Ordinal));
+        StringAssert.Contains(b7SignoffText, "connected runtime-capable lane");
     }
 
     [TestMethod]
