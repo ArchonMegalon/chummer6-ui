@@ -59,6 +59,12 @@ start_runtime_fixture() {
     sleep 1
   done
 
+  if rg -q "listen EPERM: operation not permitted" /tmp/chummer-b7-runtime-fixture.log 2>/dev/null; then
+    runtime_fixture_pid=""
+    echo "[B7] FAIL: local runtime fixture could not bind to port ${runtime_fixture_port} (EPERM). Strict B7 signoff requires a connected runtime-capable lane; use CHUMMER_PORTAL_SIGNOFF_BASE_URL to target a reachable deployed stack."
+    return 1
+  fi
+
   echo "[B7] FAIL: local runtime fixture did not become ready; see /tmp/chummer-b7-runtime-fixture.log."
   return 1
 }
