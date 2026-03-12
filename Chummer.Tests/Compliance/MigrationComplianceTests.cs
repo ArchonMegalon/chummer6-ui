@@ -2900,6 +2900,10 @@ public class MigrationComplianceTests
         string b7SignoffText = File.ReadAllText(b7SignoffPath);
         Assert.IsFalse(b7SignoffText.Contains("CHUMMER_PORTAL_INPROCESS_FIXTURE=1", StringComparison.Ordinal));
         StringAssert.Contains(b7SignoffText, "connected runtime-capable lane");
+        StringAssert.Contains(b7SignoffText, "local runtime fixture could not bind");
+        StringAssert.Contains(b7SignoffText, "portal runtime probe target is unavailable");
+        StringAssert.Contains(b7SignoffText, "exit 5");
+        StringAssert.Contains(b7SignoffText, "CHUMMER_B7_ALLOW_RUNTIME_SKIP=1");
     }
 
     [TestMethod]
