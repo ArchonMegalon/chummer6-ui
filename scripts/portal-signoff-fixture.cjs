@@ -128,8 +128,11 @@ function withIsolationHeaders(headers = {}) {
   };
 }
 
-const server = http.createServer((request, response) => {
-  const url = new URL(request.url || '/', `http://${request.headers.host || `127.0.0.1:${port}`}`);
+function createFixtureResponder(options = {}) {
+  const effectivePort = Number(options.port || port);
+  const defaultHost = options.host || `127.0.0.1:${effectivePort}`;
+  return function fixtureResponder(request, response) {
+    const url = new URL(request.url || '/', `http://${request.headers.host || defaultHost}`);
   const pathname = url.pathname;
 
   if (request.method === 'POST' && pathname === '/blazor/_blazor/negotiate') {
@@ -224,14 +227,30 @@ const server = http.createServer((request, response) => {
       response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
       response.end('not found');
   }
-});
+  };
+}
 
-server.listen(port, '127.0.0.1', () => {
-  console.log(`portal-signoff-fixture listening on http://127.0.0.1:${port}`);
-});
-
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, () => {
-    server.close(() => process.exit(0));
+function startFixtureServer(options = {}) {
+  const effectivePort = Number(options.port || port);
+  const host = options.host || '127.0.0.1';
+  const responder = createFixtureResponder({ port: effectivePort, host: `${host}:${effectivePort}` });
+  const server = http.createServer(responder);
+  server.listen(effectivePort, host, () => {
+    console.log(`portal-signoff-fixture listening on http://${host}:${effectivePort}`);
   });
+  return server;
+}
+
+module.exports = {
+  createFixtureResponder,
+  startFixtureServer
+};
+
+if (require.main === module) {
+  const server = startFixtureServer({ port });
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.on(signal, () => {
+      server.close(() => process.exit(0));
+    });
+  }
 }
