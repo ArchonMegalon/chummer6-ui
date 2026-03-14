@@ -20,12 +20,14 @@ on:
       - 'Chummer.Core/**'
       - 'Chummer.Rulesets.Sr5/**'
       - 'Chummer.Desktop.Runtime/**'
+      - 'Chummer.Desktop.Installer/**'
       - 'Chummer.Infrastructure/**'
       - 'Chummer.Portal/**'
       - 'Chummer.Presentation/**'
       - 'Directory.Build.props'
       - 'global.json'
       - 'scripts/generate-releases-manifest.sh'
+      - 'scripts/build-desktop-installer.sh'
       - 'scripts/publish-download-bundle.sh'
       - 'scripts/publish-download-bundle-s3.sh'
       - 'scripts/verify-releases-manifest.sh'
@@ -47,11 +49,13 @@ jobs:
             os: windows-latest
             rid: win-x64
             archive_ext: zip
+            launch_exe: Chummer.Avalonia.exe
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: windows-latest
             rid: win-arm64
             archive_ext: zip
+            launch_exe: Chummer.Avalonia.exe
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: ubuntu-latest
@@ -77,11 +81,13 @@ jobs:
             os: windows-latest
             rid: win-x64
             archive_ext: zip
+            launch_exe: Chummer.Blazor.Desktop.exe
           - app: blazor-desktop
             project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
             os: windows-latest
             rid: win-arm64
             archive_ext: zip
+            launch_exe: Chummer.Blazor.Desktop.exe
           - app: blazor-desktop
             project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
             os: ubuntu-latest
@@ -131,12 +137,17 @@ jobs:
 
       - name: Package archive (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: bash
         run: |
-          New-Item -ItemType Directory -Path dist -Force | Out-Null
-          $archive = "dist/chummer-${{ matrix.app }}-${{ matrix.rid }}.zip"
-          if (Test-Path $archive) { Remove-Item $archive -Force }
-          Compress-Archive -Path "out/${{ matrix.app }}/${{ matrix.rid }}/*" -DestinationPath $archive -Force
+          set -euo pipefail
+          release_version="run-${GITHUB_RUN_NUMBER:-local}"
+          bash scripts/build-desktop-installer.sh \
+            "out/${{ matrix.app }}/${{ matrix.rid }}" \
+            "${{ matrix.app }}" \
+            "${{ matrix.rid }}" \
+            "${{ matrix.launch_exe }}" \
+            "dist" \
+            "$release_version"
 
       - name: Package archive (Linux/macOS)
         if: runner.os != 'Windows'
@@ -150,7 +161,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.app }}-${{ matrix.rid }}
-          path: dist/chummer-${{ matrix.app }}-${{ matrix.rid }}.${{ matrix.archive_ext }}
+          path: |
+            dist/chummer-${{ matrix.app }}-${{ matrix.rid }}.${{ matrix.archive_ext }}
+            dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.exe
           if-no-files-found: error
           retention-days: 14
 
@@ -180,7 +193,7 @@ jobs:
           mkdir -p dist/files
           shopt -s nullglob
           moved=0
-          for artifact in dist/chummer-*.zip dist/chummer-*.tar.gz; do
+          for artifact in dist/chummer-*.zip dist/chummer-*.tar.gz dist/chummer-*-installer.exe; do
             [[ -f "$artifact" ]] || continue
             mv "$artifact" dist/files/
             moved=1

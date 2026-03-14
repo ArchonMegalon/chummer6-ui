@@ -1,6 +1,3 @@
-global using Chummer;
-global using Chummer.Rulesets.Hosting;
-global using Chummer.Rulesets.Hosting.Presentation;
 global using BuildLabActionDescriptor = Chummer.Contracts.Presentation.BuildLabActionDescriptor;
 global using BuildLabBadge = Chummer.Contracts.Presentation.BuildLabBadge;
 global using BuildLabBadgeKinds = Chummer.Contracts.Presentation.BuildLabBadgeKinds;
@@ -19,4 +16,3 @@ global using BuildLabVariantMetric = Chummer.Contracts.Presentation.BuildLabVari
 global using BuildLabVariantProjection = Chummer.Contracts.Presentation.BuildLabVariantProjection;
 global using BuildLabVariantWarning = Chummer.Contracts.Presentation.BuildLabVariantWarning;
 global using BuildLabWarningKinds = Chummer.Contracts.Presentation.BuildLabWarningKinds;
-global using IEngineEvaluator = Chummer.Contracts.Rulesets.IRulesetCapabilityHost;

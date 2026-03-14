@@ -1,17 +1,19 @@
+using Chummer.Ui.Kit.Tokens;
+
 namespace Chummer.Presentation.UiKit;
 
 public static class DesignTokenThemeBoundary
 {
     public const string PackageId = "Chummer.Ui.Kit";
-    public const string LocalAdapterMarker = "TODO: replace presentation-local design token/theme mappings with Chummer.Ui.Kit package tokens.";
+    private static readonly TokenCanon Canon = TokenCanon.CreateDefault();
 
-    public const string ShellSurfaceToken = "--ui-kit-shell-surface";
-    public const string ShellBorderToken = "--ui-kit-shell-border";
-    public const string PanelSurfaceToken = "--ui-kit-panel-surface";
-    public const string FocusRingToken = "--ui-kit-focus-ring";
+    public static readonly string ShellSurfaceToken = Canon["color.background.canvas"];
+    public static readonly string ShellBorderToken = Canon["color.border.subtle"];
+    public static readonly string PanelSurfaceToken = Canon["color.background.panel"];
+    public static readonly string FocusRingToken = Canon["color.accent.primary"];
 
-    public static string CssVariable(string tokenName)
+    public static string CssVariable(string tokenValue)
     {
-        return $"var({tokenName})";
+        return tokenValue;
     }
 }

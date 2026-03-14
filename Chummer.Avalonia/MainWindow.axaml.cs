@@ -9,7 +9,7 @@ namespace Chummer.Avalonia;
 
 public partial class MainWindow : Window
 {
-    private const string UiKitShellChromeAdapterMarker = ShellChromeBoundary.LocalAdapterMarker;
+    private static readonly string UiKitShellChromeAdapterMarker = ShellChromeBoundary.RootClass;
     private readonly IShellPresenter _shellPresenter;
     private readonly ICommandAvailabilityEvaluator _commandAvailabilityEvaluator;
     private readonly IShellSurfaceResolver _shellSurfaceResolver;

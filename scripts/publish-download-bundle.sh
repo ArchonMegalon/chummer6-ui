@@ -44,7 +44,8 @@ fi
 
 mapfile -t artifacts < <(find "$FILES_SOURCE" -maxdepth 1 -type f \
   \( -name "chummer-avalonia-*.zip" -o -name "chummer-avalonia-*.tar.gz" -o \
-     -name "chummer-blazor-desktop-*.zip" -o -name "chummer-blazor-desktop-*.tar.gz" \) \
+     -name "chummer-blazor-desktop-*.zip" -o -name "chummer-blazor-desktop-*.tar.gz" -o \
+     -name "chummer-avalonia-*-installer.exe" -o -name "chummer-blazor-desktop-*-installer.exe" \) \
   | sort)
 
 if [[ "${#artifacts[@]}" -eq 0 ]]; then
@@ -55,7 +56,8 @@ fi
 mkdir -p "$DEPLOY_DIR/files"
 find "$DEPLOY_DIR/files" -maxdepth 1 -type f \
   \( -name "chummer-avalonia-*.zip" -o -name "chummer-avalonia-*.tar.gz" -o \
-     -name "chummer-blazor-desktop-*.zip" -o -name "chummer-blazor-desktop-*.tar.gz" \) \
+     -name "chummer-blazor-desktop-*.zip" -o -name "chummer-blazor-desktop-*.tar.gz" -o \
+     -name "chummer-avalonia-*-installer.exe" -o -name "chummer-blazor-desktop-*-installer.exe" \) \
   -delete
 
 for artifact in "${artifacts[@]}"; do

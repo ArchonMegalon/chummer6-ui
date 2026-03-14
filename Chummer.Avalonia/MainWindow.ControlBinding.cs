@@ -5,7 +5,7 @@ namespace Chummer.Avalonia;
 
 internal static class MainWindowControlBinder
 {
-    private const string UiKitShellChromeAdapterMarker = ShellChromeBoundary.LocalAdapterMarker;
+    private static readonly string UiKitShellChromeAdapterMarker = ShellChromeBoundary.RootClass;
 
     public static MainWindowControls Bind(
         ToolStripControl toolStrip,
