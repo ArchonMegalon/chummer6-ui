@@ -1,6 +1,3 @@
-global using Chummer;
-global using Chummer.Rulesets.Hosting;
-global using Chummer.Rulesets.Hosting.Presentation;
 global using BuildLabActionDescriptor = Chummer.Contracts.Presentation.BuildLabActionDescriptor;
 global using BuildLabBadge = Chummer.Contracts.Presentation.BuildLabBadge;
 global using BuildLabBadgeKinds = Chummer.Contracts.Presentation.BuildLabBadgeKinds;

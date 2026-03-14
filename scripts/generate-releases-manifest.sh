@@ -42,33 +42,48 @@ platform_names = {
     "osx-x64": "macOS x64",
 }
 
-pattern = re.compile(r"^chummer-(?P<app>avalonia|blazor-desktop)-(?P<rid>[^.]+)\.(?P<ext>zip|tar\.gz)$")
+portable_pattern = re.compile(r"^chummer-(?P<app>avalonia|blazor-desktop)-(?P<rid>[^.]+)\.(?P<ext>zip|tar\.gz)$")
+installer_pattern = re.compile(r"^chummer-(?P<app>avalonia|blazor-desktop)-(?P<rid>[^.]+)-installer\.(?P<ext>exe)$")
 downloads = []
 
 for artifact in sorted(downloads_dir.iterdir()):
     if not artifact.is_file():
         continue
 
-    match = pattern.match(artifact.name)
+    match = portable_pattern.match(artifact.name)
+    flavor = "portable"
+    if not match:
+        match = installer_pattern.match(artifact.name)
+        flavor = "installer"
     if not match:
         continue
 
     app = match.group("app")
     rid = match.group("rid")
+    ext = match.group("ext")
     sha256 = hashlib.sha256(artifact.read_bytes()).hexdigest()
     size_bytes = artifact.stat().st_size
+    platform = f"{app_labels.get(app, app)} {platform_names.get(rid, rid)}"
+    if flavor == "installer":
+        platform += " Installer"
+    elif rid.startswith("win-"):
+        platform += " Portable"
     downloads.append(
         {
-            "id": f"{app}-{rid}",
-            "platform": f"{app_labels.get(app, app)} {platform_names.get(rid, rid)}",
+            "id": f"{app}-{rid}-{flavor}",
+            "platform": platform,
             "url": f"/downloads/files/{artifact.name}",
             "sha256": sha256,
             "sizeBytes": size_bytes,
+            "format": ext,
+            "flavor": flavor,
         }
     )
 
 if not downloads:
     version = "unpublished"
+
+downloads.sort(key=lambda item: (0 if item.get("flavor") == "installer" else 1, str(item.get("platform") or "")))
 
 manifest = {
     "version": version,
@@ -91,9 +106,9 @@ else
 
   portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
   mkdir -p "$portal_files_dir"
-  mapfile -t portal_artifacts < <(find "$DOWNLOADS_DIR" -maxdepth 1 -type f \( -name "chummer-*.zip" -o -name "chummer-*.tar.gz" \) | sort)
+  mapfile -t portal_artifacts < <(find "$DOWNLOADS_DIR" -maxdepth 1 -type f \( -name "chummer-*.zip" -o -name "chummer-*.tar.gz" -o -name "chummer-*-installer.exe" \) | sort)
   if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
-    rm -f "$portal_files_dir"/chummer-*.zip "$portal_files_dir"/chummer-*.tar.gz
+    rm -f "$portal_files_dir"/chummer-*.zip "$portal_files_dir"/chummer-*.tar.gz "$portal_files_dir"/chummer-*-installer.exe
     cp "${portal_artifacts[@]}" "$portal_files_dir"/
     echo "synced ${#portal_artifacts[@]} local portal artifact(s) -> $portal_files_dir"
   else

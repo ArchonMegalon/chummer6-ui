@@ -8,7 +8,7 @@ namespace Chummer.Avalonia;
 
 public partial class DesktopDialogWindow : Window
 {
-    private const string UiKitAccessibilityAdapterMarker = AccessibilityPrimitiveBoundary.LocalAdapterMarker;
+    private static readonly string UiKitAccessibilityAdapterMarker = AccessibilityPrimitiveBoundary.RootClass;
     private CharacterOverviewViewModelAdapter? _adapter;
     private readonly TextBlock _dialogTitleText;
     private readonly TextBlock _dialogMessageText;

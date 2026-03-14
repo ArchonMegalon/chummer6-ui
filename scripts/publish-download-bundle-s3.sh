@@ -52,7 +52,7 @@ fi
 
 bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$VERIFY_URL"
 
-artifact_count="$(find "$FILES_SOURCE" -maxdepth 1 -type f \( -name 'chummer-*.zip' -o -name 'chummer-*.tar.gz' \) | wc -l | tr -d ' ')"
+artifact_count="$(find "$FILES_SOURCE" -maxdepth 1 -type f \( -name 'chummer-*.zip' -o -name 'chummer-*.tar.gz' -o -name 'chummer-*-installer.exe' \) | wc -l | tr -d ' ')"
 echo "Published ${artifact_count} desktop artifact(s) to object storage target: $S3_TARGET_URI"
 if [[ -n "$S3_LATEST_URI" ]]; then
   echo "Also published latest alias target: $S3_LATEST_URI"

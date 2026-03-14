@@ -5,5 +5,7 @@
     <MaxCpuCount>1</MaxCpuCount>
     <ChummerContractsPackageId Condition="'$(ChummerContractsPackageId)' == ''">Chummer.Engine.Contracts</ChummerContractsPackageId>
     <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">5.225.0.0</ChummerContractsPackageVersion>
+    <ChummerUiKitPackageId Condition="'$(ChummerUiKitPackageId)' == ''">Chummer.Ui.Kit</ChummerUiKitPackageId>
+    <ChummerUiKitPackageVersion Condition="'$(ChummerUiKitPackageVersion)' == ''">0.1.0-preview</ChummerUiKitPackageVersion>
   </PropertyGroup>
 </Project>

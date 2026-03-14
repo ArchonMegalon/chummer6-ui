@@ -35,6 +35,13 @@ if [ -d Chummer.Contracts ]; then
   exit 6
 fi
 
+if rg -n '^namespace[[:space:]]+Chummer\.Contracts(\.|;|$)' \
+  Chummer.Presentation Chummer.Blazor Chummer.Avalonia Chummer.Tests \
+  -g '*.cs' -g '!**/obj/**' -g '!**/bin/**' >/dev/null; then
+  echo "[verify] FAIL: UI repo still declares local Chummer.Contracts namespaces instead of consuming the package."
+  exit 11
+fi
+
 if [ -d Chummer.Session.Web ] || [ -d Chummer.Coach.Web ]; then
   echo "[verify] FAIL: play/mobile heads still exist in the presentation repo."
   exit 7
@@ -63,11 +70,25 @@ bash scripts/ai/milestones/p5-ui-kit-design-token-check.sh
 echo "[verify] checking ui-kit accessibility/state guard..."
 bash scripts/ai/milestones/p5-ui-kit-accessibility-state-check.sh
 
+echo "[verify] checking ui-kit package-only boundary guard..."
+if ! rg -n 'PackageReference Include="\$\(ChummerUiKitPackageId\)" Version="\$\(ChummerUiKitPackageVersion\)"' \
+  Chummer.Presentation/Chummer.Presentation.csproj >/dev/null; then
+  echo "[verify] FAIL: Chummer.Presentation must consume Chummer.Ui.Kit as a package reference."
+  exit 9
+fi
+
+if rg -n '\b(class|record)\s+(TokenCanon|ThemeCompiler|ShellChrome|AccessibilityState)\b|\b(static\s+)?UiAdapterPayload\s+Adapt(ShellChrome|AccessibilityState)\s*\(' \
+  Chummer.Presentation Chummer.Blazor Chummer.Avalonia Chummer.Tests -g '*.cs' >/dev/null; then
+  echo "[verify] FAIL: source-copied ui-kit token/theme/shell/accessibility primitives were reintroduced."
+  exit 10
+fi
+
 echo "[verify] checking B13 accessibility signoff guard..."
 CHUMMER_B13_TESTS_REQUIRED=1 bash scripts/ai/milestones/b13-accessibility-signoff-check.sh
 
 echo "[verify] checking B7 browser deployment signoff guard..."
-CHUMMER_B7_RUNTIME_REQUIRED=1 CHUMMER_B7_ALLOW_RUNTIME_SKIP=0 bash scripts/ai/milestones/b7-browser-isolation-check.sh
+CHUMMER_B7_RUNTIME_REQUIRED=1 CHUMMER_B7_ALLOW_RUNTIME_SKIP=0 \
+bash scripts/ai/milestones/b7-browser-isolation-check.sh
 
 echo "[verify] checking B12 generated-asset dispatch/review guard..."
 bash scripts/ai/milestones/b12-generated-asset-dispatch-check.sh
