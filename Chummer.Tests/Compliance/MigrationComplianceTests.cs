@@ -2,12 +2,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.UiKit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Compliance;
@@ -1658,6 +1663,11 @@ public class MigrationComplianceTests
         string buildLabContractsText = File.ReadAllText(buildLabContractsPath);
         string buildLabProjectorPath = FindPath("Chummer.Presentation", "Overview", "BuildLabConceptIntakeState.cs");
         string buildLabProjectorText = File.ReadAllText(buildLabProjectorPath);
+        string presentationGlobalUsingsPath = FindPath("Chummer.Presentation", "GlobalUsings.cs");
+        string presentationGlobalUsingsText = File.ReadAllText(presentationGlobalUsingsPath);
+        string testsGlobalUsingsPath = FindPath("Chummer.Tests", "GlobalUsings.cs");
+        string testsGlobalUsingsText = File.ReadAllText(testsGlobalUsingsPath);
+        string? legacyCompatPath = TryFindPath("Chummer.Presentation", "Contracts", "BuildLabLegacyContractsCompat.cs");
         string sectionPanePath = FindPath("Chummer.Blazor", "Components", "Shell", "SectionPane.razor");
         string sectionPaneText = File.ReadAllText(sectionPanePath);
         string sectionHostPath = FindPath("Chummer.Avalonia", "Controls", "SectionHostControl.axaml.cs");
@@ -1679,6 +1689,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(sectionHostText, "SetBuildLab");
         StringAssert.Contains(sectionHostText, "BuildLabVariantsList");
         StringAssert.Contains(sectionHostText, "BuildTimelineText");
+        StringAssert.Contains(presentationGlobalUsingsText, "Chummer.Contracts.Presentation.BuildLabConceptIntakeProjection");
+        StringAssert.Contains(testsGlobalUsingsText, "Chummer.Contracts.Rulesets.IRulesetCapabilityHost");
+        Assert.IsFalse(PathExistsInCandidateRoots("Chummer.Presentation", "Contracts", "BuildLabLegacyContractsCompat.cs"));
+        Assert.IsNull(legacyCompatPath);
         Assert.IsFalse(sectionPaneText.Contains("priority math", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -2902,8 +2916,45 @@ public class MigrationComplianceTests
         StringAssert.Contains(b7SignoffText, "connected runtime-capable lane");
         StringAssert.Contains(b7SignoffText, "local runtime fixture could not bind");
         StringAssert.Contains(b7SignoffText, "portal runtime probe target is unavailable");
+        StringAssert.Contains(b7SignoffText, "strict probe executed against local runtime fixture");
         StringAssert.Contains(b7SignoffText, "exit 5");
         StringAssert.Contains(b7SignoffText, "CHUMMER_B7_ALLOW_RUNTIME_SKIP=1");
+    }
+
+    [TestMethod]
+    public void B7_strict_signoff_uses_local_runtime_fixture_when_remote_target_is_unreachable()
+    {
+        string repoRoot = Path.GetDirectoryName(FindPath("WORKLIST.md"))
+            ?? throw new DirectoryNotFoundException("Could not resolve repository root.");
+        var result = RunProcess(
+            GetBashExecutable(),
+            "scripts/ai/milestones/b7-browser-isolation-check.sh",
+            repoRoot,
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["CHUMMER_B7_RUNTIME_REQUIRED"] = "1",
+                ["CHUMMER_B7_ALLOW_RUNTIME_SKIP"] = "0",
+                ["CHUMMER_B7_ENABLE_RUNTIME_FIXTURE"] = "1",
+                ["CHUMMER_B7_RUNTIME_FIXTURE_PORT"] = ReserveFreeTcpPort().ToString(),
+                ["CHUMMER_PORTAL_SIGNOFF_BASE_URL"] = "http://127.0.0.1:9",
+            });
+
+        Assert.AreEqual(0, result.ExitCode, "strict B7 signoff should fall back to the local runtime fixture when the deployed target is unreachable");
+        StringAssert.Contains(result.Output, "started local runtime fixture");
+        StringAssert.Contains(result.Output, "strict probe executed against local runtime fixture");
+        Assert.IsFalse(result.Output.Contains("portal runtime probe target is unavailable", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Verify_script_keeps_strict_connected_lane_defaults()
+    {
+        string verifyPath = FindPath("scripts", "ai", "verify.sh");
+        string verifyText = File.ReadAllText(verifyPath);
+
+        StringAssert.Contains(verifyText, "CHUMMER_B7_RUNTIME_REQUIRED=1 CHUMMER_B7_ALLOW_RUNTIME_SKIP=0");
+        Assert.IsFalse(
+            verifyText.Contains("CHUMMER_B7_ALLOW_RUNTIME_SKIP=\"${CHUMMER_B7_ALLOW_RUNTIME_SKIP:-0}\"", StringComparison.Ordinal),
+            "strict connected-lane verification must not allow the runtime-skip flag to be overridden from the environment.");
     }
 
     [TestMethod]
@@ -4172,6 +4223,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "PORTAL_DOWNLOADS_DIR");
         StringAssert.Contains(generatorText, "synced ${#portal_artifacts[@]} local portal artifact(s)");
         StringAssert.Contains(generatorText, "/downloads/files/");
+        StringAssert.Contains(generatorText, "installer_pattern");
+        StringAssert.Contains(generatorText, "\"flavor\": flavor");
 
         StringAssert.Contains(publisherText, "Expected desktop-download-bundle layout");
         StringAssert.Contains(publisherText, "generate-releases-manifest.sh");
@@ -4180,6 +4233,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED");
         StringAssert.Contains(publisherText, "Deployment mode requires CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(publisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
+        StringAssert.Contains(publisherText, "installer.exe");
         StringAssert.Contains(publisherText, "Published ${#artifacts[@]} desktop artifact(s)");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
@@ -4220,6 +4274,8 @@ public class MigrationComplianceTests
         string manifestText = File.ReadAllText(manifestPath);
 
         StringAssert.Contains(desktopWorkflowText, "scripts/validate-amend-manifests.sh");
+        StringAssert.Contains(desktopWorkflowText, "scripts/build-desktop-installer.sh");
+        StringAssert.Contains(desktopWorkflowText, "installer.exe");
         StringAssert.Contains(desktopWorkflowText, "Validate amend manifests checksums");
         StringAssert.Contains(guardrailsWorkflowText, "amend-manifest-checksums");
         StringAssert.Contains(guardrailsWorkflowText, "bash scripts/validate-amend-manifests.sh");
@@ -4828,13 +4884,44 @@ public class MigrationComplianceTests
         string desktopDialogText = File.ReadAllText(desktopDialogPath);
 
         StringAssert.Contains(shellChromeBoundaryText, "PackageId = \"Chummer.Ui.Kit\"");
-        StringAssert.Contains(shellChromeBoundaryText, "LocalAdapterMarker");
+        StringAssert.Contains(shellChromeBoundaryText, "RootClass = BlazorUiKitAdapter");
         StringAssert.Contains(menuBarText, "ShellChromeBoundary.FormatCommandLabel");
         StringAssert.Contains(toolStripText, "ShellChromeBoundary.FormatCommandLabel");
         StringAssert.Contains(commandPanelText, "ShellChromeBoundary.FormatCommandLabel");
         StringAssert.Contains(mainWindowText, "UiKitShellChromeAdapterMarker");
         StringAssert.Contains(controlBindingText, "UiKitShellChromeAdapterMarker");
         StringAssert.Contains(desktopDialogText, "DesktopDialogChromeBoundary.BuildFailureMessage");
+    }
+
+    [TestMethod]
+    public void Accessibility_boundary_falls_back_when_ui_kit_payload_omits_expected_attributes()
+    {
+        string shellChromeBoundaryPath = FindPath("Chummer.Presentation", "UiKit", "ShellChromeBoundary.cs");
+        string shellChromeBoundaryText = File.ReadAllText(shellChromeBoundaryPath);
+        StringAssert.Contains(shellChromeBoundaryText, "ResolveAccessibilityAttribute");
+        StringAssert.Contains(shellChromeBoundaryText, "TryGetValue");
+
+        MethodInfo resolver = typeof(AccessibilityPrimitiveBoundary).GetMethod(
+            "ResolveAccessibilityAttribute",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("Expected accessibility fallback resolver.");
+
+        var emptyAttributes = new Dictionary<string, string>(StringComparer.Ordinal);
+        var blankAttributes = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["role"] = "",
+            ["aria-live"] = " ",
+        };
+
+        string statusRole = (string)(resolver.Invoke(null, [emptyAttributes, "role", "status"])
+            ?? throw new AssertFailedException("Expected fallback role value."));
+        string announcementMode = (string)(resolver.Invoke(null, [blankAttributes, "aria-live", "polite"])
+            ?? throw new AssertFailedException("Expected fallback aria-live value."));
+
+        Assert.AreEqual("status", statusRole);
+        Assert.AreEqual("polite", announcementMode);
+        Assert.AreEqual("status", AccessibilityPrimitiveBoundary.StatusRegionRole);
+        Assert.AreEqual("polite", AccessibilityPrimitiveBoundary.PoliteAnnouncementMode);
     }
 
     [TestMethod]
@@ -4848,7 +4935,7 @@ public class MigrationComplianceTests
         string worklistText = File.ReadAllText(worklistPath);
 
         StringAssert.Contains(tokenBoundaryText, "PackageId = \"Chummer.Ui.Kit\"");
-        StringAssert.Contains(tokenBoundaryText, "LocalAdapterMarker");
+        StringAssert.Contains(tokenBoundaryText, "TokenCanon.CreateDefault");
         StringAssert.Contains(tokenBoundaryText, "ShellSurfaceToken");
         StringAssert.Contains(tokenBoundaryText, "FocusRingToken");
         StringAssert.Contains(appCssText, "--ui-kit-shell-surface");
@@ -5722,6 +5809,20 @@ public class MigrationComplianceTests
         }
     }
 
+    private static int ReserveFreeTcpPort()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        try
+        {
+            return ((IPEndPoint)listener.LocalEndpoint).Port;
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+
     private static void AssertProjectNamespacesMatch(string projectName, string expectedNamespacePrefix)
     {
         string projectFilePath = FindPath(projectName, $"{projectName}.csproj");
@@ -5813,5 +5914,40 @@ public class MigrationComplianceTests
         yield return Directory.GetCurrentDirectory();
         yield return AppContext.BaseDirectory;
         yield return "/src";
+    }
+
+    private static (int ExitCode, string Output) RunProcess(
+        string fileName,
+        string arguments,
+        string workingDirectory,
+        IReadOnlyDictionary<string, string>? environmentVariables = null)
+    {
+        using var process = new Process();
+        process.StartInfo = new ProcessStartInfo(fileName, arguments)
+        {
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+
+        if (environmentVariables is not null)
+        {
+            foreach ((string key, string value) in environmentVariables)
+            {
+                process.StartInfo.Environment[key] = value;
+            }
+        }
+
+        process.Start();
+        string standardOutput = process.StandardOutput.ReadToEnd();
+        string standardError = process.StandardError.ReadToEnd();
+        Assert.IsTrue(process.WaitForExit(30000), $"{fileName} {arguments} did not exit within 30 seconds.");
+        return (process.ExitCode, standardOutput + standardError);
+    }
+
+    private static string GetBashExecutable()
+    {
+        return OperatingSystem.IsWindows() ? "bash" : "/bin/bash";
     }
 }

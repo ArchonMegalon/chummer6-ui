@@ -320,10 +320,12 @@ if [[ "$RUNBOOK_MODE" == "desktop-gate" ]]; then
   require_match "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "Chummer.Application/\\*\\*" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "Chummer.Core/\\*\\*" ".github/workflows/desktop-downloads-matrix.yml"
+  require_match "Chummer.Desktop.Installer/\\*\\*" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "Chummer.Desktop.Runtime/\\*\\*" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "Chummer.Infrastructure/\\*\\*" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "Chummer.Portal/\\*\\*" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "\"DownloadsBaseUrl\": \"/downloads/\"" "Chummer.Portal/appsettings.json"
+  require_match "scripts/build-desktop-installer.sh" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "scripts/generate-releases-manifest.sh" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "scripts/publish-download-bundle.sh" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "scripts/publish-download-bundle-s3.sh" ".github/workflows/desktop-downloads-matrix.yml"
@@ -336,7 +338,7 @@ if [[ "$RUNBOOK_MODE" == "desktop-gate" ]]; then
   require_match "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "chummer-\\(\\?P<app>avalonia\\|blazor-desktop\\)-" "scripts/generate-releases-manifest.sh"
   require_match "\"osx-x64\": \"macOS x64\"" "scripts/generate-releases-manifest.sh"
-  require_match "\"id\": f\"\\{app\\}-\\{rid\\}\"" "scripts/generate-releases-manifest.sh"
+  require_match "\"id\": f\"\\{app\\}-\\{rid\\}-\\{flavor\\}\"" "scripts/generate-releases-manifest.sh"
   require_match "Task<ShellBootstrapSnapshot> GetShellBootstrapAsync\\(string\\? rulesetId, CancellationToken ct\\);" "Chummer.Presentation/IChummerClient.cs"
   require_no_match "GetShellBootstrapAsync\\(string\\? rulesetId, CancellationToken ct\\)\\s*\\{" "Chummer.Presentation/IChummerClient.cs"
   require_no_match "GetShellBootstrapAsync\\(string\\? rulesetId, CancellationToken ct\\)\\s*=>" "Chummer.Presentation/IChummerClient.cs"
@@ -530,7 +532,9 @@ if [[ "$RUNBOOK_MODE" == "downloads-smoke" ]]; then
   mkdir -p "$DOWNLOADS_SMOKE_BUNDLE_DIR/files" "$DOWNLOADS_SMOKE_DEPLOY_DIR"
 
   artifact_path="$DOWNLOADS_SMOKE_BUNDLE_DIR/files/chummer-avalonia-linux-x64.zip"
+  installer_path="$DOWNLOADS_SMOKE_BUNDLE_DIR/files/chummer-avalonia-win-x64-installer.exe"
   printf 'downloads smoke artifact\n' > "$artifact_path"
+  printf 'downloads smoke installer\n' > "$installer_path"
   cat > "$DOWNLOADS_SMOKE_BUNDLE_DIR/releases.json" <<JSON
 {
   "version": "$DOWNLOADS_SMOKE_VERSION",

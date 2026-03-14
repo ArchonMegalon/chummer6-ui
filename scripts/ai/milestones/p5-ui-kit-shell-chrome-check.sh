@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "[P5] checking shell chrome ui-kit boundary..."
 
-if ! rg -q "public static class ShellChromeBoundary|PackageId = \"Chummer\\.Ui\\.Kit\"|LocalAdapterMarker" \
+if ! rg -q "public static class ShellChromeBoundary|PackageId = \"Chummer\\.Ui\\.Kit\"|RootClass = BlazorUiKitAdapter" \
   Chummer.Presentation/UiKit/ShellChromeBoundary.cs; then
   echo "[P5] FAIL: shell chrome boundary shim is missing."
   exit 3
@@ -17,7 +17,7 @@ if ! rg -q "ShellChromeBoundary\\.FormatCommandLabel" \
   exit 4
 fi
 
-if ! rg -q "ShellChromeBoundary\\.LocalAdapterMarker|UiKitShellChromeAdapterMarker" \
+if ! rg -q "ShellChromeBoundary\\.RootClass|UiKitShellChromeAdapterMarker" \
   Chummer.Avalonia/MainWindow.axaml.cs \
   Chummer.Avalonia/MainWindow.ControlBinding.cs; then
   echo "[P5] FAIL: avalonia shell chrome is missing the ui-kit adapter marker seam."

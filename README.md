@@ -31,6 +31,12 @@ The work here is purification:
 - finish accessibility and deployment signoff without pretending the split is already done
 - keep workbench-side coach sidecars and portal/proxy expectations explicit
 
+Current honesty clause:
+
+- feature maturity is ahead of boundary purity
+- the release lane now ships installer-capable desktop bundles, not just loose files
+- `B2` stays open in design truth until the repo body stops looking like the old all-purpose presentation root
+
 ## Go deeper
 
 - `.codex-design/repo/IMPLEMENTATION_SCOPE.md`

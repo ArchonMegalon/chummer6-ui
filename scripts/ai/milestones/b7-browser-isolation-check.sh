@@ -243,7 +243,7 @@ if [[ "$portal_probe_ready" -eq 1 ]]; then
   echo "[B7] executing runtime deployment probe against $portal_base_url..."
   CHUMMER_PORTAL_BASE_URL="$portal_base_url" node scripts/e2e-portal.cjs
 elif [[ "$runtime_probe_required" == "1" ]]; then
-  if [[ "$runtime_fixture_enabled" == "1" ]] && [[ "$runtime_probe_skip_allowed" == "0" ]]; then
+  if [[ "$runtime_fixture_enabled" == "1" ]]; then
     if start_runtime_fixture; then
       echo "[B7] executing runtime deployment probe against $portal_base_url..."
       CHUMMER_PORTAL_BASE_URL="$portal_base_url" node scripts/e2e-portal.cjs
@@ -256,10 +256,19 @@ elif [[ "$runtime_probe_required" == "1" ]]; then
   if [[ "$runtime_probe_skip_allowed" == "1" ]]; then
     echo "[B7] note: runtime deployment probe explicitly skipped because CHUMMER_B7_ALLOW_RUNTIME_SKIP=1 and $portal_base_url is unavailable."
   else
-    echo "[B7] FAIL: portal runtime probe target is unavailable at $portal_base_url. Start the portal stack, set CHUMMER_PORTAL_SIGNOFF_BASE_URL to a reachable deployment, or set CHUMMER_B7_ALLOW_RUNTIME_SKIP=1 for an explicit local skip."
+    echo "[B7] FAIL: portal runtime probe target is unavailable at $portal_base_url. Strict signoff requires a reachable deployed portal via CHUMMER_PORTAL_SIGNOFF_BASE_URL or a working local runtime fixture lane."
     exit 5
   fi
 else
+  if [[ "$runtime_fixture_enabled" == "1" ]]; then
+    if start_runtime_fixture; then
+      echo "[B7] executing runtime deployment probe against $portal_base_url..."
+      CHUMMER_PORTAL_BASE_URL="$portal_base_url" node scripts/e2e-portal.cjs
+      echo "[B7] note: optional probe executed against local runtime fixture."
+      echo "[B7] PASS: browser deployment signoff guardrails are present (fallback, wasm MIME, isolation headers, service-worker cache behavior)."
+      exit 0
+    fi
+  fi
   echo "[B7] note: runtime deployment probe not required in this invocation."
 fi
 

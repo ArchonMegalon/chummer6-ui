@@ -6,7 +6,7 @@ namespace Chummer.Avalonia.Controls;
 
 public partial class StatusStripControl : UserControl
 {
-    private const string UiKitAccessibilityAdapterMarker = AccessibilityPrimitiveBoundary.LocalAdapterMarker;
+    private static readonly string UiKitAccessibilityAdapterMarker = AccessibilityPrimitiveBoundary.RootClass;
 
     public StatusStripControl()
     {

@@ -1,9 +1,15 @@
+using Chummer.Ui.Kit.Adapters;
+using Chummer.Ui.Kit.Blazor.Adapters;
+using System.Collections.Generic;
+
 namespace Chummer.Presentation.UiKit;
 
 public static class ShellChromeBoundary
 {
     public const string PackageId = "Chummer.Ui.Kit";
-    public const string LocalAdapterMarker = "TODO: replace presentation-local shell chrome adapter with Chummer.Ui.Kit package consumption.";
+    public static readonly string RootClass = BlazorUiKitAdapter
+        .AdaptShellChrome(new ShellChrome("shell", "shell"))
+        .RootClass;
 
     public static string FormatCommandLabel(string commandId)
     {
@@ -15,8 +21,6 @@ public static class ShellChromeBoundary
 
 public static class DesktopDialogChromeBoundary
 {
-    public const string LocalAdapterMarker = "TODO: replace presentation-local desktop dialog chrome with Chummer.Ui.Kit dialog shell primitives.";
-
     public static string BuildFailureMessage(string operationName, string message)
     {
         return $"Unable to {operationName}: {message}";
@@ -26,10 +30,12 @@ public static class DesktopDialogChromeBoundary
 public static class AccessibilityPrimitiveBoundary
 {
     public const string PackageId = "Chummer.Ui.Kit";
-    public const string LocalAdapterMarker = "TODO: replace presentation-local accessibility/state primitives with Chummer.Ui.Kit focus, announcement, and selection helpers.";
-    public const string StatusRegionRole = "status";
+    private static readonly UiAdapterPayload DefaultAccessibilityPayload =
+        BlazorUiKitAdapter.AdaptAccessibilityState(new AccessibilityState());
+    public static readonly string RootClass = DefaultAccessibilityPayload.RootClass;
+    public static readonly string StatusRegionRole = ResolveAccessibilityAttribute(DefaultAccessibilityPayload.Attributes, "role", "status");
     public const string DialogRole = "dialog";
-    public const string PoliteAnnouncementMode = "polite";
+    public static readonly string PoliteAnnouncementMode = ResolveAccessibilityAttribute(DefaultAccessibilityPayload.Attributes, "aria-live", "polite");
 
     public static string BuildDialogDescriptionId(string dialogId)
     {
@@ -53,5 +59,19 @@ public static class AccessibilityPrimitiveBoundary
                 timeState,
                 complianceState
             }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private static string ResolveAccessibilityAttribute(
+        IReadOnlyDictionary<string, string> attributes,
+        string key,
+        string fallback)
+    {
+        if (attributes.TryGetValue(key, out var value)
+            && !string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        return fallback;
     }
 }

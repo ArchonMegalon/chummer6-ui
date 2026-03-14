@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "[P5/B13] checking accessibility/state ui-kit boundary..."
 
-if ! rg -q "public static class AccessibilityPrimitiveBoundary|PackageId = \"Chummer\\.Ui\\.Kit\"|LocalAdapterMarker|BuildStatusAnnouncement|BuildDialogDescriptionId" \
+if ! rg -q "public static class AccessibilityPrimitiveBoundary|PackageId = \"Chummer\\.Ui\\.Kit\"|DefaultAccessibilityPayload|BuildStatusAnnouncement|BuildDialogDescriptionId" \
   Chummer.Presentation/UiKit/ShellChromeBoundary.cs; then
   echo "[P5/B13] FAIL: accessibility primitive boundary shim is missing."
   exit 3
@@ -21,7 +21,7 @@ if ! rg -q "AccessibilityPrimitiveBoundary\\.StatusRegionRole|AccessibilityPrimi
   exit 5
 fi
 
-if ! rg -q "UiKitAccessibilityAdapterMarker|AccessibilityPrimitiveBoundary\\.LocalAdapterMarker|primaryAction\\.Focus" \
+if ! rg -q "UiKitAccessibilityAdapterMarker|AccessibilityPrimitiveBoundary\\.RootClass|primaryAction\\.Focus" \
   Chummer.Avalonia/DesktopDialogWindow.axaml.cs; then
   echo "[P5/B13] FAIL: avalonia desktop dialog is missing the shared focus seam."
   exit 6

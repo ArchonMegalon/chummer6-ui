@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <AssemblyName Condition="'$(ChummerInstallerAssemblyName)' != ''">$(ChummerInstallerAssemblyName)</AssemblyName>
+    <RootNamespace>Chummer.Desktop.Installer</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <InstallerPayloadZip Condition="'$(InstallerPayloadZip)' == ''">$(MSBuildProjectDirectory)\payload.zip</InstallerPayloadZip>
+    <ChummerInstallerAppId Condition="'$(ChummerInstallerAppId)' == ''">avalonia</ChummerInstallerAppId>
+    <ChummerInstallerDisplayName Condition="'$(ChummerInstallerDisplayName)' == ''">Chummer6</ChummerInstallerDisplayName>
+    <ChummerInstallerInstallDirName Condition="'$(ChummerInstallerInstallDirName)' == ''">Chummer6</ChummerInstallerInstallDirName>
+    <ChummerInstallerLaunchExecutable Condition="'$(ChummerInstallerLaunchExecutable)' == ''">Chummer.Avalonia.exe</ChummerInstallerLaunchExecutable>
+    <ChummerInstallerVersion Condition="'$(ChummerInstallerVersion)' == ''">unpublished</ChummerInstallerVersion>
+    <ChummerInstallerPublisher Condition="'$(ChummerInstallerPublisher)' == ''">ArchonMegalon</ChummerInstallerPublisher>
+    <ChummerInstallerShortcutName Condition="'$(ChummerInstallerShortcutName)' == ''">Chummer6</ChummerInstallerShortcutName>
+    <ChummerInstallerOutputName Condition="'$(ChummerInstallerOutputName)' == ''">Chummer6Installer</ChummerInstallerOutputName>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(InstallerPayloadZip)')">
+    <EmbeddedResource Include="$(InstallerPayloadZip)" LogicalName="ChummerInstaller.Payload.zip" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerAppId</_Parameter1>
+      <_Parameter2>$(ChummerInstallerAppId)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerDisplayName</_Parameter1>
+      <_Parameter2>$(ChummerInstallerDisplayName)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerInstallDirName</_Parameter1>
+      <_Parameter2>$(ChummerInstallerInstallDirName)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerLaunchExecutable</_Parameter1>
+      <_Parameter2>$(ChummerInstallerLaunchExecutable)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerVersion</_Parameter1>
+      <_Parameter2>$(ChummerInstallerVersion)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerPublisher</_Parameter1>
+      <_Parameter2>$(ChummerInstallerPublisher)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerShortcutName</_Parameter1>
+      <_Parameter2>$(ChummerInstallerShortcutName)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerInstallerOutputName</_Parameter1>
+      <_Parameter2>$(ChummerInstallerOutputName)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

@@ -5,7 +5,7 @@ Purpose: publish desktop artifacts to a self-hosted downloads surface and verify
 ## Prerequisites
 
 1. Desktop bundle exists (`desktop-download-bundle` layout):
-`releases.json` and `files/chummer-*.zip|tar.gz`.
+`releases.json` and `files/chummer-*.zip|tar.gz|exe`.
 2. Portal serves `/downloads/releases.json` from your storage topology.
 3. Use preapproved runbook/script paths from repository root (`/docker/chummer5a`).
 4. Optional unattended overrides:

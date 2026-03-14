@@ -13,7 +13,7 @@ if ! rg -q 'WL-087.*Runnable slice command chain: `bash scripts/ai/milestones/p5
   exit 4
 fi
 
-if ! rg -q 'public static class DesignTokenThemeBoundary|PackageId = "Chummer\.Ui\.Kit"|LocalAdapterMarker|--ui-kit-shell-surface|--ui-kit-focus-ring' \
+if ! rg -q 'public static class DesignTokenThemeBoundary|PackageId = "Chummer\.Ui\.Kit"|TokenCanon\.CreateDefault|ShellSurfaceToken|FocusRingToken' \
   Chummer.Presentation/UiKit/DesignTokenThemeBoundary.cs; then
   echo "[P5] FAIL: design token/theme boundary shim is missing required ui-kit markers."
   exit 5

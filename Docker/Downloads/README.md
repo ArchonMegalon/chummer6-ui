@@ -6,7 +6,7 @@ Expected contents:
 
 - `releases.json`
 - `files/`
-- desktop artifacts under `files/` (for example `chummer-avalonia-win-x64.zip` and `chummer-blazor-desktop-linux-x64.tar.gz`)
+- desktop artifacts under `files/` (for example `chummer-avalonia-win-x64-installer.exe`, `chummer-avalonia-win-x64.zip`, and `chummer-blazor-desktop-linux-x64.tar.gz`)
 
 The portal serves `/downloads/releases.json` from this directory and resolves
 `/downloads/files/<artifact>` from the same root.

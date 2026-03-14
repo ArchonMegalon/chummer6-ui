@@ -14,18 +14,24 @@ function getArg(name, fallback) {
   return fallback;
 }
 
-const port = Number(getArg('--port', process.env.CHUMMER_B7_RUNTIME_FIXTURE_PORT || '38091'));
-if (!Number.isInteger(port) || port <= 0) {
-  console.error('Invalid port for portal signoff fixture.');
-  process.exit(2);
+function parsePort(rawPort) {
+  const port = Number(rawPort);
+  return Number.isInteger(port) && port > 0 ? port : null;
 }
 
-const repoRoot = path.resolve(__dirname, '..');
-const avaloniaIndexPath = path.join(repoRoot, 'Chummer.Avalonia.Browser', 'wwwroot', 'index.html');
-const avaloniaServiceWorkerPath = path.join(repoRoot, 'Chummer.Avalonia.Browser', 'wwwroot', 'service-worker.js');
+function resolvePort(options = {}) {
+  return parsePort(options.port ?? process.env.CHUMMER_B7_RUNTIME_FIXTURE_PORT ?? '38091');
+}
 
-const avaloniaIndex = fs.readFileSync(avaloniaIndexPath, 'utf8');
-const avaloniaServiceWorker = fs.readFileSync(avaloniaServiceWorkerPath, 'utf8');
+function loadAvaloniaFixtureAssets(options = {}) {
+  const repoRoot = path.resolve(options.repoRoot || path.join(__dirname, '..'));
+  const avaloniaIndexPath = path.join(repoRoot, 'Chummer.Avalonia.Browser', 'wwwroot', 'index.html');
+  const avaloniaServiceWorkerPath = path.join(repoRoot, 'Chummer.Avalonia.Browser', 'wwwroot', 'service-worker.js');
+  return {
+    avaloniaIndex: fs.readFileSync(avaloniaIndexPath, 'utf8'),
+    avaloniaServiceWorker: fs.readFileSync(avaloniaServiceWorkerPath, 'utf8'),
+  };
+}
 
 const landingPage = `<!doctype html>
 <html lang="en">
@@ -129,8 +135,12 @@ function withIsolationHeaders(headers = {}) {
 }
 
 function createFixtureResponder(options = {}) {
-  const effectivePort = Number(options.port || port);
+  const effectivePort = resolvePort(options);
+  if (effectivePort === null) {
+    throw new Error('Invalid port for portal signoff fixture.');
+  }
   const defaultHost = options.host || `127.0.0.1:${effectivePort}`;
+  const { avaloniaIndex, avaloniaServiceWorker } = loadAvaloniaFixtureAssets(options);
   return function fixtureResponder(request, response) {
     const url = new URL(request.url || '/', `http://${request.headers.host || defaultHost}`);
   const pathname = url.pathname;
@@ -231,7 +241,10 @@ function createFixtureResponder(options = {}) {
 }
 
 function startFixtureServer(options = {}) {
-  const effectivePort = Number(options.port || port);
+  const effectivePort = resolvePort(options);
+  if (effectivePort === null) {
+    throw new Error('Invalid port for portal signoff fixture.');
+  }
   const host = options.host || '127.0.0.1';
   const responder = createFixtureResponder({ port: effectivePort, host: `${host}:${effectivePort}` });
   const server = http.createServer(responder);
@@ -247,6 +260,11 @@ module.exports = {
 };
 
 if (require.main === module) {
+  const port = parsePort(getArg('--port', process.env.CHUMMER_B7_RUNTIME_FIXTURE_PORT || '38091'));
+  if (port === null) {
+    console.error('Invalid port for portal signoff fixture.');
+    process.exit(2);
+  }
   const server = startFixtureServer({ port });
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => {
