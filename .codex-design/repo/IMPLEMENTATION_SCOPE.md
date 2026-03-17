@@ -1,58 +1,52 @@
-# Presentation implementation scope
+# UI implementation scope
 
 ## Mission
 
-`chummer6-ui` owns desktop/browser workbench UX, large-screen operator flows, admin/moderation surfaces, and package consumption of the shared UI kit.
+`chummer6-ui` owns the workbench, browser, and desktop user experience for Chummer6.
+It is the repo for builders, inspectors, compare views, explain UX, moderation/admin surfaces, and installable desktop delivery.
 
 ## Owns
 
-* builder/workbench UX
-* compare and inspect flows
-* Explain Everywhere workbench UX
-* publication/admin/moderation UX
-* browser/desktop shell composition
-* consumption of shared UI and engine contracts
+* workbench/browser/desktop UX
+* builders, inspectors, and compare flows
+* explain and audit-facing UX on the workbench side
+* moderation and admin surfaces that stay outside the live play shell
+* desktop packaging, installer delivery, and workbench-side release polish
 
 ## Must not own
 
-* dedicated mobile/session play shell
-* rules math
-* offline play ledger persistence
-* media job execution
-* registry persistence internals
-* provider secrets
+* the dedicated play/mobile shell
+* offline session-ledger authority
+* engine/runtime mechanics truth
+* hosted orchestration or provider-secret ownership
+* source-copied shared UI primitives that belong in `Chummer.Ui.Kit`
 
-## Current extraction focus
+## Package boundary
 
-* align all local docs to the reality that `chummer6-mobile` owns shipped `/session` and `/coach`
-* consume `Chummer.Ui.Kit` as a package-only dependency
-* keep workbench-only seams separate from play-only seams
-* stop carrying stale or ambiguous play-host assumptions
+`chummer6-ui` consumes shared packages. It does not recreate them locally.
 
-## Milestone spine
+Primary consumption boundary:
 
-* P0 ownership correction
-* P1 package-only UI consumption
-* P2 workbench shell
-* P3 explain UX
-* P4 Build Lab UX
-* P5 publish/admin/moderation UX
-* P6 platform parity
-* P7 accessibility/performance
-* P8 finished workbench
+* `Chummer.Engine.Contracts`
+* `Chummer.Ui.Kit`
 
-## Worker rule
+## Boundary truth
 
-If the job is about building, browsing, comparing, moderating, or explaining on a workbench/browser/desktop surface, it belongs here.
-If the job is about live play shell behavior, it belongs in `chummer6-mobile`.
+Feature completion inside this repo is not enough to close the program milestone.
+`B2` closes only when the repo body matches the stated boundary:
 
+* legacy/helper/tooling roots stop dominating the tree
+* shared visual chrome migrates into `chummer6-ui-kit`
+* play-shell ownership remains fully outside this repo
+* installer/release work stays workbench-scoped instead of reabsorbing unrelated ownership
 
-## External integration note
+## Current reality
 
-`chummer6-ui` may render upstream projections, previews, docs/help links, and provider-assisted artifact references.
+The product direction is right.
+The repo body still needs cleanup to match it.
 
-It must not own:
+That means:
 
-* vendor credentials
-* direct provider SDK integrations
-* direct third-party API orchestration
+* feature maturity can be ahead of boundary purity
+* local “done” slices do not overrule the central `B2` program blocker
+* cleanup-by-deletion is still part of the implementation scope here
