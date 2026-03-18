@@ -24,6 +24,8 @@ without allowing any external tool to become canonical product truth.
 External tools may assist, route, render, summarize, visualize, archive, notify, or project. They may not become the canonical source of rules truth, session truth, approval truth, registry truth, media truth, or canon truth.
 
 Chummer-owned repos and Chummer-owned manifests/stores remain authoritative.
+Owning an LTD does not obligate Chummer to integrate it.
+A tool may be promoted, bounded, parked, or explicitly excluded.
 
 ## Tool inventory posture
 
@@ -32,6 +34,7 @@ Current known external-tool inventory includes:
 * 1min.AI
 * Prompting Systems
 * ChatPlayground AI
+* Soundmadeseen
 * AI Magicx
 * FastestVPN PRO
 * OneAir
@@ -41,7 +44,9 @@ Current known external-tool inventory includes:
 * ApproveThis
 * AvoMap
 * BrowserAct
+* Crezlo Tours
 * Documentation.AI
+* First Book ai
 * Invoiless
 * MarkupGo
 * MetaSurvey
@@ -49,6 +54,7 @@ Current known external-tool inventory includes:
 * Paperguide
 * PeekShot
 * Teable
+* Unmixr AI
 * Vizologi
 
 Current internal posture assumes every listed LTD is redeemed and activated.
@@ -82,6 +88,7 @@ Examples:
 * survey bridges
 * route visualization orchestration
 * media orchestration
+* public-signal intake governance
 
 ### Class B - Runtime-adjacent media integrations
 
@@ -92,6 +99,7 @@ Examples:
 * document render providers
 * preview/thumbnail providers
 * image/portrait providers
+* narrated audio/video providers
 * bounded video providers
 * map/route visualization providers
 * archive providers
@@ -578,6 +586,31 @@ Document-render adapter.
 * not manifest owner
 * not archive truth
 
+## Soundmadeseen
+
+### Role
+
+Narrated media and explainer adapter.
+
+### Architectural use
+
+* narrated recap clips
+* release videos
+* mission brief videos
+* dossier videos
+* voiced explainer artifacts
+
+### Owner
+
+* execution: `chummer6-media-factory`
+* orchestration and link shaping: `chummer6-hub`
+
+### Hard boundary
+
+* not canon writer
+* not source of briefing truth
+* not archive truth
+
 ## PeekShot
 
 ### Role
@@ -599,6 +632,31 @@ Preview/thumbnail/share-card adapter.
 
 * not canonical parent asset
 * not canonical manifest
+
+## Crezlo Tours
+
+### Role
+
+Explorable location and tour adapter.
+
+### Architectural use
+
+* run-site packs
+* GM walkthroughs
+* floor-plan briefings
+* safehouse and facility tours
+* hub-published location artifacts
+
+### Owner
+
+* execution: `chummer6-media-factory`
+* orchestration, permissions, and link shaping: `chummer6-hub`
+
+### Hard boundary
+
+* not live session truth
+* not campaign geography canon
+* not permission truth
 
 ## Mootion
 
@@ -623,6 +681,32 @@ Bounded video-render adapter.
 * no bypass of preview-first or approval policy
 * no canonical archive ownership
 
+## First Book ai
+
+### Role
+
+Long-form authoring and blueprint support.
+
+### Architectural use
+
+* player primers
+* faction handbooks
+* campaign bibles
+* convention module drafts
+* district guides
+* season recap books
+
+### Owner
+
+* orchestration and source-pack shaping: `chummer6-hub`
+* downstream publication refs where needed: `chummer6-hub-registry`
+
+### Hard boundary
+
+* not source-of-truth for canon
+* not approval truth
+* not publication truth by itself
+
 ## AvoMap
 
 ### Role
@@ -645,6 +729,28 @@ Route visualization / route-render adapter.
 
 * not source of route truth
 * not source of campaign geography semantics
+
+## Unmixr AI
+
+### Role
+
+Candidate voice and audio adapter.
+
+### Architectural use
+
+* bounded TTS support
+* dubbing or narrated artifact experiments
+* future companion audio for briefings and primers
+
+### Owner
+
+* `chummer6-media-factory`
+
+### Hard boundary
+
+* candidate only until proven
+* not canon writer
+* not approval or archive truth
 
 ## Internxt Cloud Storage
 
