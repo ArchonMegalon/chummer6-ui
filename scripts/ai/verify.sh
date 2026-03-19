@@ -4,6 +4,11 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
+test -f docs/COMPATIBILITY_CARGO.md
+
+dotnet build "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" --nologo -m:1 >/dev/null
+dotnet build "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" --nologo -m:1 >/dev/null
+
 echo "[verify] checking contract package consumption..."
 
 if rg -n 'ProjectReference Include="..\\Chummer.Contracts\\Chummer.Contracts.csproj"' \
@@ -77,10 +82,16 @@ if ! rg -n 'PackageReference Include="\$\(ChummerUiKitPackageId\)" Version="\$\(
   exit 9
 fi
 
-if rg -n '\b(class|record)\s+(TokenCanon|ThemeCompiler|ShellChrome|AccessibilityState)\b|\b(static\s+)?UiAdapterPayload\s+Adapt(ShellChrome|AccessibilityState)\s*\(' \
+if rg -n '\b(class|record)\s+(TokenCanon|ThemeCompiler|ShellChrome|AccessibilityState|Banner|StaleStateBadge|ApprovalChip|OfflineBanner)\b|\b(static\s+)?UiAdapterPayload\s+Adapt(ShellChrome|AccessibilityState|Banner|StaleStateBadge|ApprovalChip|OfflineBanner)\s*\(' \
   Chummer.Presentation Chummer.Blazor Chummer.Avalonia Chummer.Tests -g '*.cs' >/dev/null; then
   echo "[verify] FAIL: source-copied ui-kit token/theme/shell/accessibility primitives were reintroduced."
   exit 10
+fi
+
+if ! rg -n '^# Compatibility Cargo$|`Chummer/`|`ChummerDataViewer/`|`CrashHandler/`|`TextblockConverter/`|`Translator/`' \
+  docs/COMPATIBILITY_CARGO.md >/dev/null; then
+  echo "[verify] FAIL: compatibility cargo inventory must explicitly document retained legacy roots." >&2
+  exit 12
 fi
 
 echo "[verify] checking B13 accessibility signoff guard..."
