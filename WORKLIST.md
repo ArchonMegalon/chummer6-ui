@@ -17,20 +17,20 @@ Purpose: keep the live UI queue readable. Historical reruns, strict-signoff chur
 | B11 Post-split ownership + NPC persona | done | 100% | 2026-03-10 | high | Materially complete in shipped UI rails; ownership closure and NPC Persona Studio surfaces are both regression-guarded. |
 | B12 Dispatch/review rails depth | done | 100% | 2026-03-10 | high | Dispatch/review rails are materially complete; remaining repo risk is boundary bulk, not missing dispatch UX. |
 | B13 Accessibility signoff | done | 100% | 2026-03-10 | high | Accessibility and browser signoff guards remain executable and closed. |
-| P5 Ui-kit package boundary | open | 75% | 2026-03-25 | medium | Shared UI consumption is real, but canonical package-adoption proof still lives in `chummer6-ui-kit` plus design truth. |
+| P5 Ui-kit package boundary | done | 100% | 2026-03-19 | high | Shared UI consumption is package-only and regression-guarded in both presentation and mobile verification paths. |
 
 ## Boundary and release truth
 | Lane | Status | Notes |
 |---|---|---|
 | Feature maturity | done | The major workbench feature lanes are materially implemented and regression-guarded. |
-| Boundary purity (`B2`) | open in design canon | The UI repo still carries too much legacy desktop/helper/tooling cargo for the design repo to honestly call the boundary fully purified yet. |
+| Boundary purity (`B2`) | done | Dedicated play/mobile heads stay out, shared UI is package-owned, and remaining legacy roots are isolated as explicit compatibility cargo in `docs/COMPATIBILITY_CARGO.md`. |
 | Installer-capable release lane | done | The desktop release path now stages portable archives and generated installers together instead of loose files only. |
 
 ## Queue
 | ID | Status | Priority | Task | Owner | Notes |
 |---|---|---|---|---|---|
-| WL-200 | queued | P1 | Publish CI guardrail slice for package-only B1 primitives so local copies of `Chummer.Ui.Kit` shell/accessibility primitives cannot be reintroduced. | agent | Add scoped checks in presentation and `workbench` pipelines and pin the guardrail to the specific primitive namespaces consumed by workbench and browser shells. |
-| WL-201 | queued | P1 | Close `B2` boundary purity by moving remaining legacy desktop/helper roots out of the primary UI repo body or isolating them as explicit compatibility cargo with explicit rationale. | agent | Keep release lanes explicit about what remains in legacy cargo so feature completion cannot mask boundary shape mismatch. |
+| WL-200 | done | P1 | Publish CI guardrail slice for package-only B1 primitives so local copies of `Chummer.Ui.Kit` shell/accessibility primitives cannot be reintroduced. | agent | Closed 2026-03-19: `scripts/ai/verify.sh` now enforces package-only shell/state primitive consumption and blocks repo-local copies of shell, accessibility, banner, stale, approval, and offline state primitives. |
+| WL-201 | done | P1 | Close `B2` boundary purity by moving remaining legacy desktop/helper roots out of the primary UI repo body or isolating them as explicit compatibility cargo with explicit rationale. | agent | Closed 2026-03-19: retained legacy roots are now explicitly documented in `docs/COMPATIBILITY_CARGO.md`, and verification requires that compatibility-cargo inventory to remain present. |
 | WL-079 | done | P1 | Milestone B11: build NPC Persona Studio screens on shared persona descriptor/policy contracts. | agent | Closure stays explicit so the verifier can prove NPC Persona Studio remains materially implemented on shared contract-driven surfaces. |
 | WL-087 | done | P1 | Milestone P5: publish the remaining shared token/theme extraction backlog for `Chummer.Ui.Kit`. | agent | Runnable slice command chain: `bash scripts/ai/milestones/p5-ui-kit-design-token-check.sh && bash scripts/ai/verify.sh` |
 | WL-197 | done | P1 | Close browser/deployment signoff without pretending the boundary reset is complete. | agent | Closed 2026-03-11: deploy/signoff guardrails are real, but the repo no longer treats that as proof that the UI boundary itself is pure. |
@@ -40,9 +40,9 @@ Purpose: keep the live UI queue readable. Historical reruns, strict-signoff chur
 ## Current repo truth
 
 - Repo-local live queue: empty
-- Repo-local live queue: includes queued boundary-purity follow-up rows until transport and legacy-root cleanup evidence is in place.
+- Repo-local live queue: empty after package-boundary and compatibility-cargo closure.
 - Installer/public-download work is now part of the normal desktop release path, not a “figure it out yourself” afterthought
-- Remaining blocker is architectural, not feature-shaped: the repo body still needs to physically look like workbench/browser/desktop-only ownership before `B2` can honestly close
+- Remaining work is product evolution, not split confusion: workbench/browser/desktop ownership is explicit and the retained legacy cargo is documented instead of implied
 
 ## Historical log
 

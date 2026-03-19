@@ -35,12 +35,13 @@ Current honesty clause:
 
 - feature maturity is ahead of boundary purity
 - the release lane now ships installer-capable desktop bundles, not just loose files
-- `B2` stays open in design truth until the repo body stops looking like the old all-purpose presentation root
+- legacy compatibility cargo is explicitly isolated in `docs/COMPATIBILITY_CARGO.md` instead of being treated as active boundary truth
 
 ## Go deeper
 
 - `.codex-design/repo/IMPLEMENTATION_SCOPE.md`
 - `.codex-design/review/REVIEW_CONTEXT.md`
+- `docs/COMPATIBILITY_CARGO.md`
 
 ## Verification
 
