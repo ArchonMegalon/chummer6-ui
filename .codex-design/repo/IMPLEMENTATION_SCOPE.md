@@ -30,6 +30,15 @@ Primary consumption boundary:
 * `Chummer.Engine.Contracts`
 * `Chummer.Ui.Kit`
 
+## Restore rule
+
+`chummer6-ui` must restore those shared packages through:
+
+* the canonical local/CI package feed
+* or an explicit generated compatibility tree for legacy consumers
+
+Workers must not have to guess whether missing restore is caused by a feed problem or a missing compatibility tree.
+
 ## Boundary truth
 
 Feature completion inside this repo was not enough to close the split milestone.
