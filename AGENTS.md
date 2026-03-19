@@ -12,6 +12,7 @@
 ## Repo Boundary
 - `Chummer.Session.Web` and `Chummer.Coach.Web` do not belong in this repo anymore.
 - Keep shared presentation and UI-kit seams here; play/mobile deployed heads belong in `chummer-play`.
+- Treat legacy desktop/helper roots documented in `docs/COMPATIBILITY_CARGO.md` as compatibility cargo, not active boundary expansion targets.
 
 <!-- fleet-design-mirror:start -->
 ## Fleet Design Mirror
