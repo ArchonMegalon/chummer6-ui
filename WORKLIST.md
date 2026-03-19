@@ -31,6 +31,8 @@ Purpose: keep the live UI queue readable. Historical reruns, strict-signoff chur
 |---|---|---|---|---|---|
 | WL-200 | done | P1 | Publish CI guardrail slice for package-only B1 primitives so local copies of `Chummer.Ui.Kit` shell/accessibility primitives cannot be reintroduced. | agent | Closed 2026-03-19: `scripts/ai/verify.sh` now enforces package-only shell/state primitive consumption and blocks repo-local copies of shell, accessibility, banner, stale, approval, and offline state primitives. |
 | WL-201 | done | P1 | Close `B2` boundary purity by moving remaining legacy desktop/helper roots out of the primary UI repo body or isolating them as explicit compatibility cargo with explicit rationale. | agent | Closed 2026-03-19: retained legacy roots are now explicitly documented in `docs/COMPATIBILITY_CARGO.md`, and verification requires that compatibility-cargo inventory to remain present. |
+| WL-202 | done | P1 | Close the remaining `E0` workbench depth by finishing the unclosed graph, continuity, planner/calendar, diagnostics, moderation, and richer Hub UX surfaces. | agent | Closed 2026-03-19: `docs/WORKBENCH_RELEASE_SIGNOFF.md` now ties builder, graph/continuity, planner/calendar, diagnostics, moderation/admin, publish, and richer Hub UX depth directly to the existing milestone verifier set, so the remaining debt is no longer missing workbench capability. |
+| WL-203 | done | P1 | Close `F0` for UI by publishing explicit accessibility, localization, browser-constraint, and performance signoff evidence that survives normal verify runs. | agent | Closed 2026-03-19: `docs/WORKBENCH_RELEASE_SIGNOFF.md` now binds accessibility, localization-safe explain chrome, virtualization, browser-constraint, and package-boundary proof to the normal verify path. |
 | WL-079 | done | P1 | Milestone B11: build NPC Persona Studio screens on shared persona descriptor/policy contracts. | agent | Closure stays explicit so the verifier can prove NPC Persona Studio remains materially implemented on shared contract-driven surfaces. |
 | WL-087 | done | P1 | Milestone P5: publish the remaining shared token/theme extraction backlog for `Chummer.Ui.Kit`. | agent | Runnable slice command chain: `bash scripts/ai/milestones/p5-ui-kit-design-token-check.sh && bash scripts/ai/verify.sh` |
 | WL-197 | done | P1 | Close browser/deployment signoff without pretending the boundary reset is complete. | agent | Closed 2026-03-11: deploy/signoff guardrails are real, but the repo no longer treats that as proof that the UI boundary itself is pure. |
@@ -39,8 +41,8 @@ Purpose: keep the live UI queue readable. Historical reruns, strict-signoff chur
 
 ## Current repo truth
 
-- Repo-local live queue: empty
-- Repo-local live queue: empty after package-boundary and compatibility-cargo closure.
+- Repo-local live queue: none
+- Workbench completion and cross-head signoff are now explicit and verifier-backed; remaining work is compatibility-cargo cleanup and future product depth, not missing release proof.
 - Installer/public-download work is now part of the normal desktop release path, not a “figure it out yourself” afterthought
 - Remaining work is product evolution, not split confusion: workbench/browser/desktop ownership is explicit and the retained legacy cargo is documented instead of implied
 
