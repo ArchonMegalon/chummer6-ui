@@ -147,6 +147,17 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Blazor_app_head_uses_path_only_base_href_for_proxy_safe_links()
+    {
+        string blazorAppPath = FindPath("Chummer.Blazor", "Components", "App.razor");
+        string blazorAppText = File.ReadAllText(blazorAppPath);
+
+        StringAssert.Contains(blazorAppText, "<base href=\"@BuildBaseHref()\" />");
+        StringAssert.Contains(blazorAppText, "return uri.AbsolutePath");
+        Assert.IsFalse(blazorAppText.Contains("<base href=\"@Navigation.BaseUri\" />", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void Workspace_routes_include_section_projection_endpoint()
     {
         string workspaceEndpointsPath = FindPath("Chummer.Api", "Endpoints", "WorkspaceEndpoints.cs");

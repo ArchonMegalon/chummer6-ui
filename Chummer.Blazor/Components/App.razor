@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="@Navigation.BaseUri" />
+    <base href="@BuildBaseHref()" />
     <title>Chummer Blazor Head</title>
     <link rel="stylesheet" href="app.css" />
 </head>
@@ -74,3 +74,17 @@
 </script>
 </body>
 </html>
+
+@code {
+    private string BuildBaseHref()
+    {
+        if (!Uri.TryCreate(Navigation.BaseUri, UriKind.Absolute, out Uri? uri))
+            return "/";
+
+        string path = uri.AbsolutePath;
+        if (string.IsNullOrWhiteSpace(path) || string.Equals(path, "/", StringComparison.Ordinal))
+            return "/";
+
+        return path.EndsWith("/", StringComparison.Ordinal) ? path : $"{path}/";
+    }
+}
