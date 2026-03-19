@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
 test -f docs/COMPATIBILITY_CARGO.md
+test -f docs/WORKBENCH_RELEASE_SIGNOFF.md
 
 dotnet build "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" --nologo -m:1 >/dev/null
 dotnet build "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" --nologo -m:1 >/dev/null
@@ -92,6 +93,12 @@ if ! rg -n '^# Compatibility Cargo$|`Chummer/`|`ChummerDataViewer/`|`CrashHandle
   docs/COMPATIBILITY_CARGO.md >/dev/null; then
   echo "[verify] FAIL: compatibility cargo inventory must explicitly document retained legacy roots." >&2
   exit 12
+fi
+
+if ! rg -n 'b3-build-lab-check\.sh|b10-contact-network-check\.sh|b9-campaign-journal-check\.sh|b8-runtime-inspector-check\.sh|b12-generated-asset-dispatch-check\.sh|b11-npc-persona-studio-check\.sh|b4-gm-board-spider-feed-check\.sh|b13-accessibility-signoff-check\.sh|b7-browser-isolation-check\.sh|b2-browse-virtualization-check\.sh|RulesetExplainRenderer\.cs' \
+  docs/WORKBENCH_RELEASE_SIGNOFF.md >/dev/null; then
+  echo "[verify] FAIL: workbench release signoff must keep E0/F0 evidence explicit." >&2
+  exit 13
 fi
 
 echo "[verify] checking B13 accessibility signoff guard..."
