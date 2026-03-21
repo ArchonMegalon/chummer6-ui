@@ -36,7 +36,7 @@ if rg -n -F 'Chummer.Contracts/Chummer.Contracts.csproj' \
   exit 5
 fi
 
-if [ -d Chummer.Contracts ]; then
+if [ -d Chummer.Contracts ] || [ -d Chummer.Presentation/Contracts ]; then
   echo "[verify] FAIL: duplicated Chummer.Contracts source tree still exists in the UI repo."
   exit 6
 fi
