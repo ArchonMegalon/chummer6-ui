@@ -39,10 +39,11 @@ Purpose: keep the live UI queue readable. Historical reruns, strict-signoff chur
 | WL-198 | done | P1 | Publish installer-capable desktop downloads instead of raw loose-file bundles only. | agent | Closed 2026-03-14: the desktop downloads lane now builds portable archives and a generated installer via `scripts/build-desktop-installer.sh` and the matrix workflow stages installer artifacts alongside portable bundles. |
 | WL-199 | done | P1 | Archive strict-signoff and rerun sludge out of the live queue. | agent | Completed 2026-03-14: the historical ledger was preserved in `RECONCILIATION_LOG.md`, and this worklist now describes current repo truth instead of replaying every stale blocked signoff row. |
 | WL-204 | done | P1 | Publish runnable backlog evidence for Richer Hub client UX queue coverage and enforce queue/worklist consistency for this slice. | agent | Closed 2026-03-21: executed `bash scripts/ai/milestones/b8-runtime-inspector-check.sh && bash scripts/ai/milestones/ui-milestone-coverage-check.sh && bash scripts/ai/verify.sh`; queue/worklist consistency and richer Hub UX coverage now verify together. |
+| WL-205 | done | P1 | Publish runnable backlog evidence for Contact and relationship graph UI queue coverage and enforce queue/worklist consistency for this slice. | agent | Closed 2026-03-21: executed `bash scripts/ai/milestones/b10-contact-network-check.sh && bash scripts/ai/milestones/ui-milestone-coverage-check.sh && bash scripts/ai/verify.sh`; queue/worklist consistency and contact/relationship graph coverage now verify together. |
 
 ## Current repo truth
 
-- Repo-local live queue: none (WL-204 closed 2026-03-21; external queue overlay still lists future publications).
+- Repo-local live queue: none (WL-204 and WL-205 closed 2026-03-21; external queue overlay still lists future publications).
 - Workbench completion and cross-head signoff are now explicit and verifier-backed; remaining work is compatibility-cargo cleanup and future product depth, not missing release proof.
 - Installer/public-download work is now part of the normal desktop release path, not a “figure it out yourself” afterthought
 - Remaining work is product evolution, not split confusion: workbench/browser/desktop ownership is explicit and the retained legacy cargo is documented instead of implied
