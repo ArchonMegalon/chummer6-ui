@@ -230,4 +230,16 @@ if rg -q "Add milestone mapping or executable queue work for Heat, faction, and 
   fi
 fi
 
+if rg -q "Replace duplicated \`Chummer.Contracts\` source in UI with package consumption from the canonical shared contract owner\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| WL-213 \\| (queued|done) \\| P1 \\| Replace duplicated \`Chummer.Contracts\` source in UI with package consumption from the canonical shared contract owner\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has contracts package-boundary publication but WORKLIST lacks WL-213 runnable backlog entry."
+    exit 42
+  fi
+
+  if ! rg -q "^\\| WL-213 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-213`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has contracts package-boundary publication but WORKLIST must either keep WL-213 active or mark it done."
+    exit 43
+  fi
+fi
+
 echo "[UI-MILESTONES] PASS: milestone coverage registry is explicit and queue publication is normalized."
