@@ -74,13 +74,13 @@ if rg -q "Heat, faction, and favor continuity views\\." .codex-studio/published/
 fi
 
 if rg -q "Richer Hub client UX\\." .codex-studio/published/QUEUE.generated.yaml; then
-  if ! rg -q "^\\| WL-204 \\| queued \\| P1 \\| Publish runnable backlog evidence for Richer Hub client UX queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
-    echo "[UI-MILESTONES] FAIL: queue has Richer Hub publication but WORKLIST lacks queued WL-204 runnable backlog entry."
+  if ! rg -q "^\\| WL-204 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Richer Hub client UX queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has Richer Hub publication but WORKLIST lacks WL-204 runnable backlog entry."
     exit 17
   fi
 
-  if ! rg -q '^- Repo-local live queue: active \(`WL-204`\)' WORKLIST.md; then
-    echo "[UI-MILESTONES] FAIL: queue has Richer Hub publication but WORKLIST current-truth section does not declare active live queue."
+  if ! rg -q "^\\| WL-204 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-204`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has Richer Hub publication but WORKLIST must either keep WL-204 active or mark it done."
     exit 18
   fi
 fi
