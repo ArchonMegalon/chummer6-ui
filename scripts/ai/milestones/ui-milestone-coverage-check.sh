@@ -67,6 +67,18 @@ if rg -q "Final accessibility, deployment, and browser-constraint signoff\\." .c
   fi
 fi
 
+if rg -q "Sync the approved Chummer design bundle into \`ui\` under \\.codex-design/ and refresh repo-local review context\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q '^\| WL-214 \| (queued|done) \| P1 \| Refresh local design mirror for `ui` and keep repo-local review context in sync with canonical `chummer6-design`\.' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has design-mirror refresh publication but WORKLIST lacks WL-214 coverage entry."
+    exit 44
+  fi
+
+  if ! rg -q "^\\| WL-214 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-214`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has design-mirror refresh publication but WORKLIST must either keep WL-214 active or mark it done."
+    exit 45
+  fi
+fi
+
 if rg -q "Retire session/mobile and coach play heads from Presentation, keep workbench/UI-kit ownership there, and point the play split at the dedicated repo and API surface\\." .codex-studio/published/QUEUE.generated.yaml; then
   if ! rg -q '^\| WL-201 \| (queued|done) \| P1 \| Close `B2` boundary purity by moving remaining legacy desktop/helper roots out of the primary UI repo body or isolating them as explicit compatibility cargo with explicit rationale\.' WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue has play-head retirement publication but WORKLIST lacks WL-201 boundary coverage entry."
