@@ -97,4 +97,16 @@ if rg -q "Contact and relationship graph UI\\." .codex-studio/published/QUEUE.ge
   fi
 fi
 
+if rg -q "Coach, Shadowfeed, player dispatch, and review workflows\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| WL-206 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Coach, Shadowfeed, player dispatch, and review workflow queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has Coach/Shadowfeed/player-dispatch publication but WORKLIST lacks WL-206 runnable backlog entry."
+    exit 21
+  fi
+
+  if ! rg -q "^\\| WL-206 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-206`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has Coach/Shadowfeed/player-dispatch publication but WORKLIST must either keep WL-206 active or mark it done."
+    exit 22
+  fi
+fi
+
 echo "[UI-MILESTONES] PASS: milestone coverage registry is explicit and queue publication is normalized."
