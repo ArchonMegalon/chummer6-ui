@@ -85,4 +85,16 @@ if rg -q "Richer Hub client UX\\." .codex-studio/published/QUEUE.generated.yaml;
   fi
 fi
 
+if rg -q "Contact and relationship graph UI\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| WL-205 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Contact and relationship graph UI queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has Contact/relationship graph publication but WORKLIST lacks WL-205 runnable backlog entry."
+    exit 19
+  fi
+
+  if ! rg -q "^\\| WL-205 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-205`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has Contact/relationship graph publication but WORKLIST must either keep WL-205 active or mark it done."
+    exit 20
+  fi
+fi
+
 echo "[UI-MILESTONES] PASS: milestone coverage registry is explicit and queue publication is normalized."
