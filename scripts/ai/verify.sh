@@ -11,42 +11,7 @@ dotnet build "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/
 dotnet build "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" --nologo -m:1 >/dev/null
 
 echo "[verify] checking contract package consumption..."
-
-if rg -n 'ProjectReference Include="..\\Chummer.Contracts\\Chummer.Contracts.csproj"' \
-  Chummer.Presentation/Chummer.Presentation.csproj \
-  Chummer.Blazor/Chummer.Blazor.csproj \
-  Chummer.Tests/Chummer.Tests.csproj >/dev/null; then
-  echo "[verify] FAIL: duplicated Chummer.Contracts source project is still referenced."
-  exit 3
-fi
-
-if ! rg -n 'PackageReference Include="\$\(ChummerContractsPackageId\)" Version="\$\(ChummerContractsPackageVersion\)"' \
-  Chummer.Presentation/Chummer.Presentation.csproj \
-  Chummer.Blazor/Chummer.Blazor.csproj \
-  Chummer.Tests/Chummer.Tests.csproj >/dev/null; then
-  echo "[verify] FAIL: authoritative contracts package references are missing."
-  exit 4
-fi
-
-if rg -n -F 'Chummer.Contracts/Chummer.Contracts.csproj' \
-  Chummer.Blazor/Dockerfile \
-  Docker/Dockerfile.tests \
-  scripts/ai/day1-p1-setup.sh >/dev/null; then
-  echo "[verify] FAIL: build scripts still hard-code the duplicated contracts project."
-  exit 5
-fi
-
-if [ -d Chummer.Contracts ] || [ -d Chummer.Presentation/Contracts ]; then
-  echo "[verify] FAIL: duplicated Chummer.Contracts source tree still exists in the UI repo."
-  exit 6
-fi
-
-if rg -n '^namespace[[:space:]]+Chummer\.Contracts(\.|;|$)' \
-  Chummer.Presentation Chummer.Blazor Chummer.Avalonia Chummer.Tests \
-  -g '*.cs' -g '!**/obj/**' -g '!**/bin/**' >/dev/null; then
-  echo "[verify] FAIL: UI repo still declares local Chummer.Contracts namespaces instead of consuming the package."
-  exit 11
-fi
+bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 
 if [ -d Chummer.Session.Web ] || [ -d Chummer.Coach.Web ]; then
   echo "[verify] FAIL: play/mobile heads still exist in the presentation repo."
