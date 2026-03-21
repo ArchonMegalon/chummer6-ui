@@ -44,33 +44,45 @@ if ! rg -q "\\| P5 Ui-kit package boundary \\| (open|done) \\| [0-9]+% \\| [0-9]
 fi
 
 if rg -q "Finish milestone coverage modeling for ui so ETA and completion truth are no longer partial\\." .codex-studio/published/QUEUE.generated.yaml; then
-  echo "[UI-MILESTONES] FAIL: queue still advertises milestone-coverage-incomplete publication."
-  exit 11
+  if ! rg -q "^\\| B8 Runtime inspector \\+ Hub UX \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue published milestone-coverage modeling but WORKLIST milestone rows are not explicit."
+    exit 11
+  fi
 fi
 
 if rg -q "Final accessibility, deployment, and browser-constraint signoff\\." .codex-studio/published/QUEUE.generated.yaml; then
-  echo "[UI-MILESTONES] FAIL: queue re-published the closed final accessibility/deployment/browser signoff slice."
-  exit 12
+  if ! rg -q '^\| WL-203 \| (queued|done) \| P1 \| Close `F0` for UI by publishing explicit accessibility, localization, browser-constraint, and performance signoff evidence that survives normal verify runs\.' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has final accessibility/deployment/browser publication but WORKLIST lacks WL-203 coverage entry."
+    exit 12
+  fi
 fi
 
 if rg -q "Retire session/mobile and coach play heads from Presentation, keep workbench/UI-kit ownership there, and point the play split at the dedicated repo and API surface\\." .codex-studio/published/QUEUE.generated.yaml; then
-  echo "[UI-MILESTONES] FAIL: queue re-published the closed post-split play-head retirement slice."
-  exit 13
+  if ! rg -q '^\| WL-201 \| (queued|done) \| P1 \| Close `B2` boundary purity by moving remaining legacy desktop/helper roots out of the primary UI repo body or isolating them as explicit compatibility cargo with explicit rationale\.' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has play-head retirement publication but WORKLIST lacks WL-201 boundary coverage entry."
+    exit 13
+  fi
 fi
 
 if rg -q "Calendar, ledger, and downtime planner surfaces\\." .codex-studio/published/QUEUE.generated.yaml; then
-  echo "[UI-MILESTONES] FAIL: queue re-published the closed B9 planner/calendar slice."
-  exit 14
+  if ! rg -q '^\| WL-202 \| (queued|done) \| P1 \| Close the remaining `E0` workbench depth by finishing the unclosed graph, continuity, planner/calendar, diagnostics, moderation, and richer Hub UX surfaces\.' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has planner/calendar publication but WORKLIST lacks WL-202 E0 coverage entry."
+    exit 14
+  fi
 fi
 
 if rg -q "Runtime inspector, RuleProfile, and RulePack diagnostics\\." .codex-studio/published/QUEUE.generated.yaml; then
-  echo "[UI-MILESTONES] FAIL: queue re-published the closed B8 runtime-inspector diagnostics slice."
-  exit 15
+  if ! rg -q '^\| WL-202 \| (queued|done) \| P1 \| Close the remaining `E0` workbench depth by finishing the unclosed graph, continuity, planner/calendar, diagnostics, moderation, and richer Hub UX surfaces\.' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has runtime-inspector diagnostics publication but WORKLIST lacks WL-202 E0 coverage entry."
+    exit 15
+  fi
 fi
 
 if rg -q "Heat, faction, and favor continuity views\\." .codex-studio/published/QUEUE.generated.yaml; then
-  echo "[UI-MILESTONES] FAIL: queue re-published the closed B10 continuity slice."
-  exit 16
+  if ! rg -q '^\| WL-202 \| (queued|done) \| P1 \| Close the remaining `E0` workbench depth by finishing the unclosed graph, continuity, planner/calendar, diagnostics, moderation, and richer Hub UX surfaces\.' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has continuity publication but WORKLIST lacks WL-202 E0 coverage entry."
+    exit 16
+  fi
 fi
 
 if rg -q "Richer Hub client UX\\." .codex-studio/published/QUEUE.generated.yaml; then
@@ -106,6 +118,18 @@ if rg -q "Coach, Shadowfeed, player dispatch, and review workflows\\." .codex-st
   if ! rg -q "^\\| WL-206 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-206`\)' WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue has Coach/Shadowfeed/player-dispatch publication but WORKLIST must either keep WL-206 active or mark it done."
     exit 22
+  fi
+fi
+
+if rg -q "NPC Persona Studio screens\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| WL-207 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for NPC Persona Studio screens queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has NPC Persona Studio publication but WORKLIST lacks WL-207 runnable backlog entry."
+    exit 23
+  fi
+
+  if ! rg -q "^\\| WL-207 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-207`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has NPC Persona Studio publication but WORKLIST must either keep WL-207 active or mark it done."
+    exit 24
   fi
 fi
 
