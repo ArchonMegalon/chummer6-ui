@@ -89,9 +89,14 @@ if rg -q "Runtime inspector, RuleProfile, and RulePack diagnostics\\." .codex-st
 fi
 
 if rg -q "Heat, faction, and favor continuity views\\." .codex-studio/published/QUEUE.generated.yaml; then
-  if ! rg -q '^\| WL-202 \| (queued|done) \| P1 \| Close the remaining `E0` workbench depth by finishing the unclosed graph, continuity, planner/calendar, diagnostics, moderation, and richer Hub UX surfaces\.' WORKLIST.md; then
-    echo "[UI-MILESTONES] FAIL: queue has continuity publication but WORKLIST lacks WL-202 E0 coverage entry."
+  if ! rg -q "^\\| WL-211 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Heat, faction, and favor continuity views queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has heat/faction/favor continuity publication but WORKLIST lacks WL-211 runnable backlog entry."
     exit 16
+  fi
+
+  if ! rg -q "^\\| WL-211 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-211`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has heat/faction/favor continuity publication but WORKLIST must either keep WL-211 active or mark it done."
+    exit 37
   fi
 fi
 
@@ -200,6 +205,18 @@ if rg -q "Add milestone mapping or executable queue work for Calendar, ledger, a
   if ! rg -q "^\\| WL-210 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Calendar, ledger, and downtime planner surfaces queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue asks for planner/calendar executable queue work but WORKLIST lacks WL-210 mapping."
     exit 36
+  fi
+fi
+
+if rg -q "Add milestone mapping or executable queue work for Heat, faction, and favor continuity views\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| B10 Contact graph continuity \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for heat/faction/favor continuity milestone mapping but WORKLIST milestone registry lacks explicit B10 mapping."
+    exit 38
+  fi
+
+  if ! rg -q "^\\| WL-211 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Heat, faction, and favor continuity views queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for heat/faction/favor continuity executable queue work but WORKLIST lacks WL-211 mapping."
+    exit 39
   fi
 fi
 
