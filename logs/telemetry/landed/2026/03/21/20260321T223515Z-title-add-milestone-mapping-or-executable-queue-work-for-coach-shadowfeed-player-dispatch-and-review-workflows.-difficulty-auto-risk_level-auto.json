@@ -1,0 +1,64 @@
+{
+  "accepted_on_round": "1",
+  "allow_credit_burn": false,
+  "allow_paid_fast_lane": false,
+  "blocking_issue_counts": [
+    2
+  ],
+  "core_rescue_reason": null,
+  "diff_added": 0,
+  "diff_removed": 0,
+  "files_touched": 0,
+  "groundwork_workers_used": [],
+  "implementation_workers_used": [
+    "acct-chatgpt-archon"
+  ],
+  "issue_fingerprints": [
+    "review-runtime-bwrap-namespace-block",
+    "portrait-forge-queue-normalization-drift",
+    "queue-worklist-live-queue-contradiction",
+    "missing-guardrail-for-richer-hub-queue-residue"
+  ],
+  "jury_verdicts": [
+    "manual_hold",
+    "rework",
+    "rework",
+    "accept",
+    "accept",
+    "accept",
+    "accept",
+    "accept"
+  ],
+  "landed_at": "2026-03-21T22:35:15Z",
+  "landed_sha": "",
+  "landing_commit_ref": "self",
+  "landing_lane": "core",
+  "lane_sequence": [
+    "core"
+  ],
+  "needs_core_rescue": false,
+  "project_id": "ui",
+  "repeat_issue_count": 0,
+  "review_rounds_used": 1,
+  "schema_version": 1,
+  "shadow_phase": [],
+  "shadow_worker_used": false,
+  "slice_id": "title-add-milestone-mapping-or-executable-queue-work-for-coach-shadowfeed-player-dispatch-and-review-workflows.-difficulty-auto-risk_level-auto",
+  "timing_ms": {
+    "core_total": 0,
+    "groundwork_total": 0,
+    "jury_total": 710000,
+    "lead_time_total": 236008,
+    "queue_wait_total": 0,
+    "shadow_groundwork_total": 0
+  },
+  "title": "title: Add milestone mapping or executable queue work for Coach, Shadowfeed, player dispatch, and review workflows. | difficulty: auto | risk_level: auto",
+  "usage_estimates": {
+    "core_runs": 1,
+    "groundwork_runs": 0,
+    "jury_reviews": 0
+  },
+  "verify_passed": true,
+  "worker_topology": {},
+  "workflow_kind": "default"
+}
