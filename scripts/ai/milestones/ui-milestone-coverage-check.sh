@@ -65,9 +65,14 @@ if rg -q "Retire session/mobile and coach play heads from Presentation, keep wor
 fi
 
 if rg -q "Calendar, ledger, and downtime planner surfaces\\." .codex-studio/published/QUEUE.generated.yaml; then
-  if ! rg -q '^\| WL-202 \| (queued|done) \| P1 \| Close the remaining `E0` workbench depth by finishing the unclosed graph, continuity, planner/calendar, diagnostics, moderation, and richer Hub UX surfaces\.' WORKLIST.md; then
-    echo "[UI-MILESTONES] FAIL: queue has planner/calendar publication but WORKLIST lacks WL-202 E0 coverage entry."
+  if ! rg -q "^\\| WL-210 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Calendar, ledger, and downtime planner surfaces queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has planner/calendar publication but WORKLIST lacks WL-210 runnable backlog entry."
     exit 14
+  fi
+
+  if ! rg -q "^\\| WL-210 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-210`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has planner/calendar publication but WORKLIST must either keep WL-210 active or mark it done."
+    exit 34
   fi
 fi
 
@@ -183,6 +188,18 @@ if rg -q "Add milestone mapping or executable queue work for Runtime inspector, 
   if ! rg -q "^\\| WL-209 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Runtime inspector, RuleProfile, and RulePack diagnostics queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue asks for runtime-inspector diagnostics executable queue work but WORKLIST lacks WL-209 mapping."
     exit 33
+  fi
+fi
+
+if rg -q "Add milestone mapping or executable queue work for Calendar, ledger, and downtime planner surfaces\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| B9 Journal \\+ planner/calendar \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for planner/calendar milestone mapping but WORKLIST milestone registry lacks explicit B9 mapping."
+    exit 35
+  fi
+
+  if ! rg -q "^\\| WL-210 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Calendar, ledger, and downtime planner surfaces queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for planner/calendar executable queue work but WORKLIST lacks WL-210 mapping."
+    exit 36
   fi
 fi
 
