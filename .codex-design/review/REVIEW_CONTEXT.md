@@ -8,7 +8,6 @@ Use this review context in the mirrored `chummer6-ui` repo.
 - Flag session or mobile routes left in workbench/browser packages as P1.
 - Flag direct play-shell ownership that should live in `chummer6-mobile` as P1.
 - Flag shared component changes that bypass `Chummer.Ui.Kit` package ownership as P1.
-- Flag repo-local `Chummer.Contracts` or other shared contract source copies in UI as P1.
 - Flag workbench code that introduces offline ledger or sync-cache behavior as P1.
 
 ## Boundary check
@@ -17,7 +16,6 @@ Reject if the change:
 
 - leaves dedicated play/mobile behavior in UI-owned packages
 - reintroduces copied shared contracts or source-level UI-kit ownership
-- keeps or adds local shared-contract source trees instead of package consumption
 - treats feature completion as proof that the boundary reset is done
 
 ## Contract check
@@ -38,6 +36,3 @@ Every substantive review should answer:
 - mirror fit: pass/fail
 - milestone fit: pass/fail
 - required design-repo follow-up: yes/no
-
-Mirror fit should fail when `.codex-design/product/` no longer matches the approved
-`chummer6-design/products/chummer` bundle.
