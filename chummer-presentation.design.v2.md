@@ -6,13 +6,13 @@ Status: authoritative design for Codex Instance B
 
 ## 1. Mission
 
-`chummer-presentation` is the **desktop, browser, and mobile rendering repo** for Chummer.
+`chummer-presentation` is the **desktop and browser workbench rendering repo** for Chummer.
 
 It owns:
 
 - Avalonia desktop workbench
 - Blazor / WASM workbench surfaces
-- shared UI-kit surfaces consumed by the dedicated `chummer-play` shell
+- shared presentation seams and UI-kit primitives consumed by the dedicated `chummer-play` shell
 - design system and design tokens
 - localization rendering
 - Explain trace visualization
@@ -76,20 +76,21 @@ This repo is where **truth becomes understandable and usable**.
    - preview generated artifacts
    - attach, approve, export, archive
 
-## 2.2 Companion-facing features rendered here
+## 2.2 Companion-facing seams rendered here
 
-The Presentation repo also owns the shared user-facing UX building blocks for:
+The Presentation repo owns workbench-facing renderers and shared seams for:
 
-- Chummer Coach
+- Chummer Coach sidecar surfaces (workbench heads only)
 - Johnson's Briefcase asset previews
 - Spider Feed
 - NPC Persona Studio screens
-- Session Memory Engine views
-- Shadowfeed
+- Session Memory Engine projections consumed by workbench heads
+- Shadowfeed review surfaces
 - Sixth World News cards/videos
-- Route Cinema viewers
+- Route Cinema viewers embedded in workbench/admin flows
 - Portrait Forge selection/re-roll UI
 
+The shipped `/session` and `/coach` hosts stay outside this repo in `chummer-play`.
 The actual heavy generation stays in `chummer.run-services`.
 
 ---
