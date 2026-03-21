@@ -72,9 +72,14 @@ if rg -q "Calendar, ledger, and downtime planner surfaces\\." .codex-studio/publ
 fi
 
 if rg -q "Runtime inspector, RuleProfile, and RulePack diagnostics\\." .codex-studio/published/QUEUE.generated.yaml; then
-  if ! rg -q '^\| WL-202 \| (queued|done) \| P1 \| Close the remaining `E0` workbench depth by finishing the unclosed graph, continuity, planner/calendar, diagnostics, moderation, and richer Hub UX surfaces\.' WORKLIST.md; then
-    echo "[UI-MILESTONES] FAIL: queue has runtime-inspector diagnostics publication but WORKLIST lacks WL-202 E0 coverage entry."
+  if ! rg -q "^\\| WL-209 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Runtime inspector, RuleProfile, and RulePack diagnostics queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has runtime-inspector diagnostics publication but WORKLIST lacks WL-209 runnable backlog entry."
     exit 15
+  fi
+
+  if ! rg -q "^\\| WL-209 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-209`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has runtime-inspector diagnostics publication but WORKLIST must either keep WL-209 active or mark it done."
+    exit 31
   fi
 fi
 
@@ -133,6 +138,18 @@ if rg -q "NPC Persona Studio screens\\." .codex-studio/published/QUEUE.generated
   fi
 fi
 
+if rg -q "Portrait Forge selection and reroll UX depth\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| WL-208 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Portrait Forge selection and reroll UX depth queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has Portrait Forge selection/reroll publication but WORKLIST lacks WL-208 runnable backlog entry."
+    exit 27
+  fi
+
+  if ! rg -q "^\\| WL-208 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-208`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has Portrait Forge selection/reroll publication but WORKLIST must either keep WL-208 active or mark it done."
+    exit 28
+  fi
+fi
+
 if rg -q "Add milestone mapping or executable queue work for NPC Persona Studio screens\\." .codex-studio/published/QUEUE.generated.yaml; then
   if ! rg -q "^\\| B11 Post-split ownership \\+ NPC persona \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue asks for NPC Persona milestone mapping but WORKLIST milestone registry lacks explicit B11 mapping."
@@ -142,6 +159,30 @@ if rg -q "Add milestone mapping or executable queue work for NPC Persona Studio 
   if ! rg -q "^\\| WL-207 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for NPC Persona Studio screens queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue asks for NPC Persona executable queue work but WORKLIST lacks WL-207 mapping."
     exit 26
+  fi
+fi
+
+if rg -q "Add milestone mapping or executable queue work for Portrait Forge selection and reroll UX depth\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| B12 Dispatch/review rails depth \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for Portrait Forge milestone mapping but WORKLIST milestone registry lacks explicit B12 mapping."
+    exit 29
+  fi
+
+  if ! rg -q "^\\| WL-208 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Portrait Forge selection and reroll UX depth queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for Portrait Forge executable queue work but WORKLIST lacks WL-208 mapping."
+    exit 30
+  fi
+fi
+
+if rg -q "Add milestone mapping or executable queue work for Runtime inspector, RuleProfile, and RulePack diagnostics\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| B8 Runtime inspector \\+ Hub UX \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for runtime-inspector diagnostics milestone mapping but WORKLIST milestone registry lacks explicit B8 mapping."
+    exit 32
+  fi
+
+  if ! rg -q "^\\| WL-209 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Runtime inspector, RuleProfile, and RulePack diagnostics queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for runtime-inspector diagnostics executable queue work but WORKLIST lacks WL-209 mapping."
+    exit 33
   fi
 fi
 
