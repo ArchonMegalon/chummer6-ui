@@ -48,6 +48,16 @@ if rg -q "Finish milestone coverage modeling for ui so ETA and completion truth 
     echo "[UI-MILESTONES] FAIL: queue published milestone-coverage modeling but WORKLIST milestone rows are not explicit."
     exit 11
   fi
+
+  if ! rg -q "^\\| WL-212 \\| (queued|done) \\| P1 \\| Finish milestone coverage modeling for ui so ETA and completion truth are no longer partial\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has milestone-coverage modeling publication but WORKLIST lacks WL-212 runnable backlog entry."
+    exit 40
+  fi
+
+  if ! rg -q "^\\| WL-212 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-212`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has milestone-coverage modeling publication but WORKLIST must either keep WL-212 active or mark it done."
+    exit 41
+  fi
 fi
 
 if rg -q "Final accessibility, deployment, and browser-constraint signoff\\." .codex-studio/published/QUEUE.generated.yaml; then
