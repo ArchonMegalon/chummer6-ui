@@ -133,4 +133,16 @@ if rg -q "NPC Persona Studio screens\\." .codex-studio/published/QUEUE.generated
   fi
 fi
 
+if rg -q "Add milestone mapping or executable queue work for NPC Persona Studio screens\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| B11 Post-split ownership \\+ NPC persona \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for NPC Persona milestone mapping but WORKLIST milestone registry lacks explicit B11 mapping."
+    exit 25
+  fi
+
+  if ! rg -q "^\\| WL-207 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for NPC Persona Studio screens queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for NPC Persona executable queue work but WORKLIST lacks WL-207 mapping."
+    exit 26
+  fi
+fi
+
 echo "[UI-MILESTONES] PASS: milestone coverage registry is explicit and queue publication is normalized."
