@@ -7,8 +7,21 @@ cd "$repo_root"
 test -f docs/COMPATIBILITY_CARGO.md
 test -f docs/WORKBENCH_RELEASE_SIGNOFF.md
 
-dotnet build "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" --nologo -m:1 >/dev/null
-dotnet build "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" --nologo -m:1 >/dev/null
+if [ "${CHUMMER_VERIFY_CROSS_REPO_BUILDS:-0}" = "1" ]; then
+  echo "[verify] running opt-in cross-repo contract builds..."
+
+  if [ -f "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" ]; then
+    dotnet build "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" --nologo -m:1 >/dev/null
+  else
+    echo "[verify] WARN: skipping hub-registry contracts build (sibling repo not present)."
+  fi
+
+  if [ -f "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" ]; then
+    dotnet build "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" --nologo -m:1 >/dev/null
+  else
+    echo "[verify] WARN: skipping run-services contracts build (sibling repo not present)."
+  fi
+fi
 
 echo "[verify] checking contract package consumption..."
 bash scripts/ai/milestones/p5-contract-package-boundary-check.sh

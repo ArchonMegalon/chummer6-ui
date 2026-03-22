@@ -52,17 +52,10 @@ Purpose: keep the live UI queue readable. Historical reruns, strict-signoff chur
 
 ## Current repo truth
 
-- Repo-local live queue: none (WL-204, WL-205, WL-206, WL-207, WL-208, WL-209, WL-210, WL-211, WL-212, WL-213, and WL-214 closed 2026-03-21; external queue overlay still lists future publications).
-- Queue overlay hygiene refresh (2026-03-22): removed republished runtime-inspector (`WL-209`) and calendar/ledger/downtime planner (`WL-210`) publication lines because both slices are already closed with runnable verification evidence.
-- Queue overlay hygiene refresh (2026-03-22): removed republished Coach/Shadowfeed/player-dispatch review lines because `WL-206` is already closed with runnable verification evidence.
-- Queue overlay hygiene refresh (2026-03-22): removed republished play-head retirement publication because `WL-201` boundary retirement is already closed and still verifier-backed (`B5`/`B11`).
-- Queue overlay hygiene refresh (2026-03-22): removed republished NPC Persona Studio publication lines because `WL-207` is already closed with runnable verification evidence.
-- Queue overlay hygiene refresh (2026-03-22): removed republished Richer Hub client UX (`WL-204`) publication lines because that slice is already closed with runnable verification evidence.
-- Queue overlay hygiene refresh (2026-03-22): removed republished Heat/faction/favor continuity publication lines because `WL-211` is already closed with runnable verification evidence.
-- Auditor publication incorporation (2026-03-22): restored final accessibility/deployment/browser (`WL-203`) queue publication lines and tightened `ui-milestone-coverage-check.sh` so queue/worklist/milestone mapping for this signoff cannot drift silently.
-- Auditor publication incorporation (2026-03-22): incorporated Contact/relationship graph publication pair (`WL-205`) by enforcing both runnable backlog and milestone-mapping checks in `ui-milestone-coverage-check.sh`.
-- Queue overlay hygiene refresh (2026-03-22): removed republished design-bundle sync publication because `WL-214` is already closed and mirror parity remains clean for `.codex-design/product/*`, repo scope, and review context.
-- Auditor publication incorporation (2026-03-22): reviewed `feedback/2026-03-22-004138-audit-task-18.md` (runtime inspector diagnostics) and `feedback/2026-03-22-004138-audit-task-11.md` (Portrait Forge depth); both already map to closed runnable slices (`WL-209`, `WL-208`), so no new queue/worklist rows were opened.
+- Repo-local live queue: none (WL-203, WL-204, WL-205, WL-206, WL-207, WL-208, WL-209, WL-210, WL-211, WL-212, WL-213, and WL-214 are closed with runnable verification evidence).
+- Queue overlay hygiene refresh (2026-03-22): normalized `.codex-studio/published/QUEUE.generated.yaml` to `items: []` because every republished auditor item already maps to closed runnable slices in this repo.
+- Auditor publication incorporation (2026-03-22): reviewed `feedback/2026-03-22-004138-audit-task-20.md` and `feedback/2026-03-22-004138-audit-task-11.md` (Portrait Forge depth); both map to closed slice `WL-208`, so no new queue/worklist row was opened.
+- GitHub review incorporation (2026-03-22): default `scripts/ai/verify.sh` is now repo-local/offline-safe, `Chummer.Tests.csproj` no longer references sibling binary artifacts, and compliance tests now guard the opt-in cross-repo verify path.
 - Milestone coverage modeling is now explicit and verifier-enforced: queue publication for ETA/completion closure maps to WL-212 and fails verification if queue/worklist status drifts.
 - Workbench completion and cross-head signoff are now explicit and verifier-backed; remaining work is compatibility-cargo cleanup and future product depth, not missing release proof.
 - Installer/public-download work is now part of the normal desktop release path, not a “figure it out yourself” afterthought
