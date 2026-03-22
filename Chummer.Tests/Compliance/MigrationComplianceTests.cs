@@ -2969,6 +2969,28 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Verify_script_keeps_cross_repo_builds_opt_in_and_existence_gated()
+    {
+        string verifyPath = FindPath("scripts", "ai", "verify.sh");
+        string verifyText = File.ReadAllText(verifyPath);
+        string optInGate = "if [ \"${CHUMMER_VERIFY_CROSS_REPO_BUILDS:-0}\" = \"1\" ]; then";
+        string hubBuild = "dotnet build \"$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj\" --nologo -m:1 >/dev/null";
+        string runBuild = "dotnet build \"$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj\" --nologo -m:1 >/dev/null";
+
+        StringAssert.Contains(verifyText, "CHUMMER_VERIFY_CROSS_REPO_BUILDS:-0");
+        StringAssert.Contains(verifyText, "../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj");
+        StringAssert.Contains(verifyText, "../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj");
+        StringAssert.Contains(verifyText, "if [ -f \"$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj\" ]");
+        StringAssert.Contains(verifyText, "if [ -f \"$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj\" ]");
+        Assert.IsTrue(
+            verifyText.IndexOf(optInGate, StringComparison.Ordinal) < verifyText.IndexOf(hubBuild, StringComparison.Ordinal),
+            "hub-registry sibling build must stay inside the opt-in gate.");
+        Assert.IsTrue(
+            verifyText.IndexOf(optInGate, StringComparison.Ordinal) < verifyText.IndexOf(runBuild, StringComparison.Ordinal),
+            "run-services sibling build must stay inside the opt-in gate.");
+    }
+
+    [TestMethod]
     public void Blazor_desktop_host_project_is_present_and_photino_backed()
     {
         string projectPath = FindPath("Chummer.Blazor.Desktop", "Chummer.Blazor.Desktop.csproj");
