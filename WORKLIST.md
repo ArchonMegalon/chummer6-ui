@@ -57,6 +57,7 @@ Purpose: keep the live UI queue readable. Historical reruns, strict-signoff chur
 - Queue overlay hygiene refresh (2026-03-22): removed republished Coach/Shadowfeed/player-dispatch review lines because `WL-206` is already closed with runnable verification evidence.
 - Queue overlay hygiene refresh (2026-03-22): removed republished play-head retirement publication because `WL-201` boundary retirement is already closed and still verifier-backed (`B5`/`B11`).
 - Queue overlay hygiene refresh (2026-03-22): removed republished NPC Persona Studio publication lines because `WL-207` is already closed with runnable verification evidence.
+- Queue overlay hygiene refresh (2026-03-22): removed republished Richer Hub client UX (`WL-204`) publication lines because that slice is already closed with runnable verification evidence.
 - Auditor publication incorporation (2026-03-22): restored final accessibility/deployment/browser (`WL-203`) queue publication lines and tightened `ui-milestone-coverage-check.sh` so queue/worklist/milestone mapping for this signoff cannot drift silently.
 - Auditor publication incorporation (2026-03-22): incorporated Contact/relationship graph publication pair (`WL-205`) by enforcing both runnable backlog and milestone-mapping checks in `ui-milestone-coverage-check.sh`.
 - Milestone coverage modeling is now explicit and verifier-enforced: queue publication for ETA/completion closure maps to WL-212 and fails verification if queue/worklist status drifts.
