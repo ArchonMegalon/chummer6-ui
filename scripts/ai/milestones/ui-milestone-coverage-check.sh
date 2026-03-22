@@ -65,6 +65,23 @@ if rg -q "Final accessibility, deployment, and browser-constraint signoff\\." .c
     echo "[UI-MILESTONES] FAIL: queue has final accessibility/deployment/browser publication but WORKLIST lacks WL-203 coverage entry."
     exit 12
   fi
+
+  if ! rg -q "^\\| WL-203 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-203`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has final accessibility/deployment/browser publication but WORKLIST must either keep WL-203 active or mark it done."
+    exit 46
+  fi
+fi
+
+if rg -q "Add milestone mapping or executable queue work for Final accessibility, deployment, and browser-constraint signoff\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| B13 Accessibility signoff \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for final accessibility/deployment/browser milestone mapping but WORKLIST milestone registry lacks explicit B13 mapping."
+    exit 47
+  fi
+
+  if ! rg -q '^\| WL-203 \| (queued|done) \| P1 \| Close `F0` for UI by publishing explicit accessibility, localization, browser-constraint, and performance signoff evidence that survives normal verify runs\.' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for final accessibility/deployment/browser executable queue work but WORKLIST lacks WL-203 mapping."
+    exit 48
+  fi
 fi
 
 if rg -q "Sync the approved Chummer design bundle into \`ui\` under \\.codex-design/ and refresh repo-local review context\\." .codex-studio/published/QUEUE.generated.yaml; then
