@@ -53,6 +53,7 @@ Purpose: keep the live UI queue readable. Historical reruns, strict-signoff chur
 ## Current repo truth
 
 - Repo-local live queue: none (WL-204, WL-205, WL-206, WL-207, WL-208, WL-209, WL-210, WL-211, WL-212, WL-213, and WL-214 closed 2026-03-21; external queue overlay still lists future publications).
+- Queue overlay hygiene refresh (2026-03-22): removed republished runtime-inspector (`WL-209`) and final accessibility/deployment/browser (`WL-203`) publication lines because both slices are already closed with runnable verification evidence.
 - Milestone coverage modeling is now explicit and verifier-enforced: queue publication for ETA/completion closure maps to WL-212 and fails verification if queue/worklist status drifts.
 - Workbench completion and cross-head signoff are now explicit and verifier-backed; remaining work is compatibility-cargo cleanup and future product depth, not missing release proof.
 - Installer/public-download work is now part of the normal desktop release path, not a “figure it out yourself” afterthought
