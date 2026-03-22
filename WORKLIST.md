@@ -53,8 +53,9 @@ Purpose: keep the live UI queue readable. Historical reruns, strict-signoff chur
 ## Current repo truth
 
 - Repo-local live queue: none (WL-203, WL-204, WL-205, WL-206, WL-207, WL-208, WL-209, WL-210, WL-211, WL-212, WL-213, and WL-214 are closed with runnable verification evidence).
-- Queue overlay hygiene refresh (2026-03-22): normalized `.codex-studio/published/QUEUE.generated.yaml` to `items: []` because every republished auditor item already maps to closed runnable slices in this repo.
+- Queue overlay hygiene refresh (2026-03-22): normalized `.codex-studio/published/QUEUE.generated.yaml` to `items: []` after the latest prepend republish wave because every published auditor item already maps to closed runnable slices in this repo.
 - Auditor publication incorporation (2026-03-22): reviewed `feedback/2026-03-22-004138-audit-task-20.md` and `feedback/2026-03-22-004138-audit-task-11.md` (Portrait Forge depth); both map to closed slice `WL-208`, so no new queue/worklist row was opened.
+- Auditor publication incorporation (2026-03-22): reviewed `feedback/2026-03-22-063355-audit-task-21.md` and `feedback/2026-03-22-063355-audit-task-12.md` (NPC Persona Studio screens); both map to closed slice `WL-207`, so no new queue/worklist row was opened.
 - GitHub review incorporation (2026-03-22): default `scripts/ai/verify.sh` is now repo-local/offline-safe, `Chummer.Tests.csproj` no longer references sibling binary artifacts, and compliance tests now guard the opt-in cross-repo verify path.
 - Milestone coverage modeling is now explicit and verifier-enforced: queue publication for ETA/completion closure maps to WL-212 and fails verification if queue/worklist status drifts.
 - Workbench completion and cross-head signoff are now explicit and verifier-backed; remaining work is compatibility-cargo cleanup and future product depth, not missing release proof.
