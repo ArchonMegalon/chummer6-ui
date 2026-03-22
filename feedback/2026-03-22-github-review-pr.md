@@ -1,14 +1,11 @@
 # GitHub Codex Review
 
-PR: https://github.com/ArchonMegalon/chummer6-ui/pull/11
+PR: https://github.com/ArchonMegalon/chummer6-ui/pull/13
 
 Findings:
-- [high] scripts/ai/verify.sh [state] verify-cross-repo-build-coupling
-scripts/ai/verify.sh:10-11 unconditionally builds ../chummer-hub-registry and ../chummer.run-services projects before repo-local checks.; With set -euo pipefail, missing sibling checkouts/buildability fails default verify even when this repo is otherwise valid, creating an offline/local-state hazard.
-Expected fix: Make sibling-repo builds opt-in and existence-gated (or remove from default verify path) so default verify remains repo-local and offline-safe.
-- [high] Chummer.Tests/Chummer.Tests.csproj [contracts] tests-sibling-binary-hintpath-coupling
-Chummer.Tests/Chummer.Tests.csproj:182-184 adds <Reference Include="Chummer.Hub.Registry.Contracts"> with HintPath to ../../chummer-hub-registry/.../bin/$(Configuration)/net10.0/Chummer.Hub.Registry.Contracts.dll.; This couples test compilation to external sibling build artifacts instead of canonical package/compatibility restore, causing nondeterministic bootstrap and offline failures.
-Expected fix: Replace sibling-bin HintPath reference with package-based restore (or explicit compatibility-tree fallback) so tests build without external repo binaries.
-- [high] Chummer.Tests/Compliance/MigrationComplianceTests.cs [tests] missing-verify-offline-regression-guard
-MigrationComplianceTests.cs:2960+ validates strict B7 flags in verify.sh, but does not assert verify avoids unconditional sibling-repo dependencies.; No compliance guard fails when verify introduces hard-coded cross-repo build prerequisites.
-Expected fix: Add a compliance test that fails if default verify includes unconditional sibling-repo build dependencies.
+- [high] WORKLIST.md [state] state-feedback-wave-not-recorded
+WORKLIST.md lines 59-60 claim the unread 065326-065328 wave was reviewed/re-read and mapped to closed slices.; Those referenced files are not present in HEAD (`git cat-file -e HEAD:feedback/2026-03-22-065326-audit-task-11708.md` and `...065328-audit-task-21.md` both missing).; feedback/.applied.log contains no 065326/065327/065328 entries, so canonical read-tracking does not reflect the claimed incorporation.
+Expected fix: Make WORKLIST state truthful and idempotent: either commit and ledger-mark the referenced 065326-065328 files in feedback/.applied.log, or remove/adjust the incorporation claims to only reference committed, applied feedback.
+- [medium] scripts/ai/milestones/ui-milestone-coverage-check.sh [tests] tests-missing-feedback-ledger-guard
+Current milestone/compliance checks assert WORKLIST rows but do not assert feedback incorporation entries are reflected in feedback/.applied.log.; This gap allowed the same state-drift issue to recur (also reflected by feedback/2026-03-22-github-review-pr.md).
+Expected fix: Add a guardrail test/check that fails when WORKLIST claims feedback-wave incorporation without corresponding committed feedback artifacts and applied-log entries.
