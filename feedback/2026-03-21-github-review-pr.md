@@ -1,8 +1,14 @@
 # GitHub Codex Review
 
-PR: https://github.com/ArchonMegalon/chummer6-ui/pull/10
+PR: https://github.com/ArchonMegalon/chummer6-ui/pull/11
 
 Findings:
-- [high] .codex-studio/published/QUEUE.generated.yaml [contracts] heat-continuity-queue-worklist-contract-drift
-Queue still includes both heat continuity prompts: `Publish or append runnable backlog for Heat, faction, and favor continuity views.` and `Add milestone mapping or executable queue work for Heat, faction, and favor continuity views.` (`.codex-studio/published/QUEUE.generated.yaml:7-8`).; Coverage script only checks for a broad WL-202 E0 row when heat continuity is present, not a runnable slice-specific backlog entry (`scripts/ai/milestones/ui-milestone-coverage-check.sh:91-95`).; WORKLIST has no heat/faction/favor-specific runnable backlog row (WL-204..WL-210 cover other slices; no dedicated continuity slice row) (`WORKLIST.md:41-47`).; The script currently returns PASS despite unresolved heat continuity queue prompts, masking this gap (`bash scripts/ai/milestones/ui-milestone-coverage-check.sh` => PASS).
-Expected fix: Materialize a dedicated runnable backlog/mapping entry for the heat/faction/favor continuity slice in WORKLIST (or explicitly retire those queue items), and update `ui-milestone-coverage-check.sh` to assert that exact slice mapping for both publish and add-mapping queue prompts.
+- [high] scripts/ai/verify.sh [state] verify-cross-repo-build-coupling
+Default verify now unconditionally builds sibling repos: line 10 references `../chummer-hub-registry/...csproj` and line 11 references `../chummer.run-services/...csproj`.; With `set -euo pipefail`, missing sibling checkouts or offline-only environments fail before repo-local checks, creating a local-state/offline hazard.
+Expected fix: Make cross-repo builds opt-in and existence-gated (or remove them from default verify), keeping `scripts/ai/verify.sh` repo-local and offline-safe by default.
+- [high] Chummer.Tests/Chummer.Tests.csproj [contracts] tests-sibling-binary-hintpath-coupling
+Lines 182-183 add an assembly reference with `HintPath` to `..\..\chummer-hub-registry\...\bin\$(Configuration)\net10.0\Chummer.Hub.Registry.Contracts.dll`.; This couples test compilation to external sibling build artifacts instead of package/compatibility-tree restore, causing nondeterministic bootstrap and offline failures.
+Expected fix: Replace sibling-bin `HintPath` usage with canonical package consumption (or explicit compatibility-tree fallback) so tests restore/build without external repo binaries.
+- [medium] Chummer.Tests/Compliance/MigrationComplianceTests.cs [tests] missing-offline-verify-regression-guard-test
+The added compliance test `Verify_script_keeps_strict_connected_lane_defaults` checks B7 env defaults but does not assert that default `verify.sh` avoids unconditional external-repo dependencies.; Given the current verify-script coupling, there is no regression test explicitly preventing this offline/bootstrap hazard.
+Expected fix: Add a compliance guard that fails if default verify introduces unconditional sibling-repo build dependencies.
