@@ -259,6 +259,18 @@ if rg -q "Add milestone mapping or executable queue work for Heat, faction, and 
   fi
 fi
 
+if rg -q "Add milestone mapping or executable queue work for Contact and relationship graph UI\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| B10 Contact graph continuity \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for Contact/relationship graph milestone mapping but WORKLIST milestone registry lacks explicit B10 mapping."
+    exit 49
+  fi
+
+  if ! rg -q "^\\| WL-205 \\| (queued|done) \\| P1 \\| Publish runnable backlog evidence for Contact and relationship graph UI queue coverage and enforce queue/worklist consistency for this slice\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue asks for Contact/relationship graph executable queue work but WORKLIST lacks WL-205 mapping."
+    exit 50
+  fi
+fi
+
 if rg -q "Replace duplicated \`Chummer.Contracts\` source in UI with package consumption from the canonical shared contract owner\\." .codex-studio/published/QUEUE.generated.yaml; then
   if ! rg -q "^\\| WL-213 \\| (queued|done) \\| P1 \\| Replace duplicated \`Chummer.Contracts\` source in UI with package consumption from the canonical shared contract owner\\." WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue has contracts package-boundary publication but WORKLIST lacks WL-213 runnable backlog entry."
