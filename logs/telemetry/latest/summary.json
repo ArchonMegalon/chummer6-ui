@@ -1,14 +1,14 @@
 {
   "accepted_on_round_counts": {
-    "1": 16
+    "1": 17
   },
   "core_rescue_rate": 0.0,
-  "generated_at": "2026-03-23T07:26:34Z",
+  "generated_at": "2026-03-23T07:58:17Z",
   "groundwork_primary_busy_percent": 0.0,
   "groundwork_shadow_busy_percent": 0.0,
-  "jury_busy_percent": 6.1,
+  "jury_busy_percent": 5.9,
   "schema_version": 1,
   "shadow_assist_rate": 0.0,
-  "total_landed_slices": 16,
-  "zero_credit_slices_landed": 16
+  "total_landed_slices": 17,
+  "zero_credit_slices_landed": 17
 }
