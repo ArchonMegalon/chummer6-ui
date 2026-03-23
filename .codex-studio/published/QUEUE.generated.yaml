@@ -1,0 +1,9 @@
+mode: prepend
+items:
+- Finish milestone coverage modeling for ui so ETA and completion truth are no longer partial.
+- Publish or append runnable backlog for Final accessibility, deployment, and browser-constraint signoff.
+- Publish or append runnable backlog for Coach, Shadowfeed, player dispatch, and review workflows.
+- Add milestone mapping or executable queue work for Coach, Shadowfeed, player dispatch, and review workflows.
+- Sync the approved Chummer design bundle into `ui` under `.codex-design/` and refresh repo-local review context.
+- Retire session/mobile and coach play heads from Presentation, keep workbench/UI-kit ownership there, and point the play split at the dedicated repo and API surface.
+- Replace duplicated `Chummer.Contracts` source in UI with package consumption from the canonical shared contract owner.

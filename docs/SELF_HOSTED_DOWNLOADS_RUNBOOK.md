@@ -2,11 +2,15 @@
 
 Purpose: publish desktop artifacts to a self-hosted downloads surface and verify that `/downloads/releases.json` serves non-empty artifacts.
 
+Registry note:
+`/downloads/releases.json` is now a compatibility projection.
+The canonical promoted release record is `RELEASE_CHANNEL.generated.json`, materialized by `chummer6-hub-registry`.
+
 ## Prerequisites
 
 1. Desktop bundle exists (`desktop-download-bundle` layout):
-`releases.json` and `files/chummer-*.zip|tar.gz|exe`.
-2. Portal serves `/downloads/releases.json` from your storage topology.
+`RELEASE_CHANNEL.generated.json`, `releases.json`, and `files/chummer-*.zip|tar.gz|exe`.
+2. Portal serves `/downloads/releases.json` from your storage topology and should carry the registry-owned `RELEASE_CHANNEL.generated.json` beside it.
 3. Use preapproved runbook/script paths from repository root (`/docker/chummer5a`).
 4. Optional unattended overrides:
 `RUNBOOK_LOG_DIR` pins runbook log files to a known writable directory and `RUNBOOK_STATE_DIR` pins writable state (for example `DOTNET_CLI_HOME`) to a known writable directory.
