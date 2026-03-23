@@ -33,6 +33,11 @@ Those checks are all part of the normal `scripts/ai/verify.sh` path, so release 
 - Localization: explain and workbench chrome must remain localization-safe; `Chummer.Presentation/Explain/RulesetExplainRenderer.cs` is allowed to fail fast on missing localization keys rather than silently falling back to stale copy.
 - Performance: dense browse and browser delivery must remain under the existing virtualization and browser-isolation guardrails instead of regressing into unbounded table/render paths.
 
+## Ownership note
+
+Installer-capable artifacts and updater integration are owned here.
+Promoted release channels, installer/update-feed publication truth, and public `/downloads` state are owned downstream by `chummer6-hub-registry` and rendered by `chummer6-hub`.
+
 ## Exit statement
 
 The remaining UI debt is no longer missing release-depth workbench capability. It is compatibility-cargo cleanup and future feature growth, both of which sit outside the current `E0`/`F0` closure bar.

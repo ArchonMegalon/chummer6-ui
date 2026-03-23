@@ -35,6 +35,7 @@ Current honesty clause:
 
 - the workbench/browser/desktop feature lane is materially release-complete for the current scope
 - the release lane now ships installer-capable desktop bundles, not just loose files
+- release-channel publication truth now lives downstream in `chummer6-hub-registry`; this repo emits the desktop bundle and installer recipe, not the promoted channel head
 - explicit release evidence lives in `docs/WORKBENCH_RELEASE_SIGNOFF.md`
 - legacy compatibility cargo is explicitly isolated in `docs/COMPATIBILITY_CARGO.md` instead of being treated as active boundary truth
 
@@ -42,6 +43,7 @@ Current honesty clause:
 
 - `.codex-design/repo/IMPLEMENTATION_SCOPE.md`
 - `.codex-design/review/REVIEW_CONTEXT.md`
+- `docs/DESKTOP_RELEASE_PIPELINE.md`
 - `docs/WORKBENCH_RELEASE_SIGNOFF.md`
 - `docs/COMPATIBILITY_CARGO.md`
 
