@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-03-23T07:26:34Z",
+  "generated_at": "2026-03-23T07:58:17Z",
   "groundwork_primary_busy_percent": 0.0,
   "groundwork_shadow_busy_percent": 0.0,
-  "jury_busy_percent": 6.1,
+  "jury_busy_percent": 5.9,
   "review_bottleneck": "review",
   "schema_version": 1,
   "shadow_assist_rate": 0.0
