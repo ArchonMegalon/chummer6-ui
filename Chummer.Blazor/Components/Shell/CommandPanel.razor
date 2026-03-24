@@ -4,7 +4,7 @@
 <section class="panel commands">
     <h2>Commands</h2>
     <div class="virtual-list command-list">
-        <Virtualize Items="@Commands"
+        <Virtualize Items="@(Commands.ToArray())"
                     Context="command"
                     ItemSize="42"
                     ItemsTagName="ul"

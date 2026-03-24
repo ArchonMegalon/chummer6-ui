@@ -4,7 +4,7 @@ namespace Chummer.Presentation.Shell;
 
 public sealed class NullEngineEvaluator : IEngineEvaluator
 {
-    public ValueTask<RulesetCapabilityInvocationResult> EvaluateAsync(
+    public ValueTask<RulesetCapabilityInvocationResult> InvokeAsync(
         RulesetCapabilityInvocationRequest request,
         CancellationToken ct)
     {

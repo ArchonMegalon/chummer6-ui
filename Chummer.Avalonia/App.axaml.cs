@@ -27,8 +27,14 @@ public partial class App : global::Avalonia.Application
             _serviceProvider = BuildServiceProvider();
             Services = _serviceProvider;
             desktop.MainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+            desktop.MainWindow.Opened += MainWindow_OnOpened;
             desktop.Exit += (_, _) =>
             {
+                if (desktop.MainWindow is not null)
+                {
+                    desktop.MainWindow.Opened -= MainWindow_OnOpened;
+                }
+
                 Services = null;
                 _serviceProvider?.Dispose();
                 _serviceProvider = null;
@@ -83,5 +89,24 @@ public partial class App : global::Avalonia.Application
         }
 
         return client;
+    }
+
+    private static async void MainWindow_OnOpened(object? sender, EventArgs e)
+    {
+        if (sender is not MainWindow owner)
+        {
+            return;
+        }
+
+        owner.Opened -= MainWindow_OnOpened;
+
+        try
+        {
+            await DesktopCrashRecoveryWindow.ShowPendingAsync(owner);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to display the desktop crash recovery window: {ex}");
+        }
     }
 }

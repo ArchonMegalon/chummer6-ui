@@ -111,17 +111,17 @@
         </section>
     }
 
-    @if (Projection.Actions.Count > 0)
+    @if (Projection is BuildLabConceptIntakeProjection buildLabProjection && buildLabProjection.Actions is { Count: > 0 } buildLabActions)
     {
         <section class="coach-card" data-build-lab-export-showcase>
             <div class="coach-card-header">
                 <h3>Export + Hand-off</h3>
-                <span class="badge">@Projection.Actions.Count action(s)</span>
+                <span class="badge">@buildLabActions.Count action(s)</span>
             </div>
 
-            @if (Projection.ExportPayloads?.Count > 0)
+            @if (buildLabProjection.ExportPayloads?.Count > 0)
             {
-                @foreach (BuildLabExportPayload payload in Projection.ExportPayloads)
+                @foreach (BuildLabExportPayload payload in buildLabProjection.ExportPayloads)
                 {
                     <article data-build-lab-export-payload-showcase="@payload.PayloadId">
                         <p><strong>@payload.Title</strong> · @payload.PayloadKind</p>

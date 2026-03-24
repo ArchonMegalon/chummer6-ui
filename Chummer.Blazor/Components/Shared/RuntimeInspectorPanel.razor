@@ -35,7 +35,7 @@
                     <div><dt>Engine API</dt><dd>@Projection.RuntimeLock.EngineApiVersion</dd></div>
                     <div><dt>Fingerprint</dt><dd class="mono">@Projection.RuntimeLock.RuntimeFingerprint</dd></div>
                     <div><dt>Generated</dt><dd>@Projection.GeneratedAtUtc.ToLocalTime().ToString("u")</dd></div>
-                    <div><dt>Install Target</dt><dd>@FormatInstallTarget(Projection.Install)</dd></div>
+                    <div><dt>Install Target</dt><dd>@RuntimeInspectorDiagnostics.FormatInstallTarget(Projection.Install)</dd></div>
                 </dl>
             </article>
 

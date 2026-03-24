@@ -8,6 +8,8 @@ internal static class Program
     [STAThread]
     private static async Task<int> Main(string[] args)
     {
+        using DesktopCrashMonitor crashMonitor = DesktopCrashRuntime.InstallUnhandledExceptionMonitor("avalonia");
+
         int? specialModeExitCode = await DesktopUpdateRuntime.TryHandleSpecialModeAsync(args, CancellationToken.None).ConfigureAwait(false);
         if (specialModeExitCode is not null)
         {

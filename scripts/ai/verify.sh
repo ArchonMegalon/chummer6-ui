@@ -67,7 +67,7 @@ if rg -n '\b(class|record)\s+(TokenCanon|ThemeCompiler|ShellChrome|Accessibility
   exit 10
 fi
 
-if ! rg -n '^# Compatibility Cargo$|`Chummer/`|`ChummerDataViewer/`|`CrashHandler/`|`TextblockConverter/`|`Translator/`' \
+if ! rg -n '^# Compatibility Cargo$|`Chummer/`|`ChummerDataViewer/`|`TextblockConverter/`|`Translator/`' \
   docs/COMPATIBILITY_CARGO.md >/dev/null; then
   echo "[verify] FAIL: compatibility cargo inventory must explicitly document retained legacy roots." >&2
   exit 12

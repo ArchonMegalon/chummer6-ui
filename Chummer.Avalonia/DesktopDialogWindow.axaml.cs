@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
 

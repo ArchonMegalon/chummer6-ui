@@ -1295,7 +1295,7 @@
 
     private static GeneratedAssetProjection ApplyDispatchInvalidation(GeneratedAssetProjection asset, string context)
     {
-        string invalidates = GetMetadataValue(asset.Metadata, "invalidatesOnContextShift");
+        string? invalidates = GetMetadataValue(asset.Metadata, "invalidatesOnContextShift");
         if (!string.Equals(invalidates, "true", StringComparison.OrdinalIgnoreCase))
         {
             return asset;
