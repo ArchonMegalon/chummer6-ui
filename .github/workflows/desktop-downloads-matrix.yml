@@ -8,6 +8,11 @@ on:
         required: false
         default: false
         type: boolean
+      publish_github_release:
+        description: "Sync the rolling GitHub release assets to the latest built desktop bundle"
+        required: false
+        default: true
+        type: boolean
   push:
     branches:
       - Docker
@@ -27,6 +32,7 @@ on:
       - 'Directory.Build.props'
       - 'global.json'
       - 'scripts/generate-releases-manifest.sh'
+      - 'scripts/sync-github-release-assets.py'
       - 'scripts/build-desktop-installer.sh'
       - 'scripts/publish-download-bundle.sh'
       - 'scripts/publish-download-bundle-s3.sh'
@@ -34,7 +40,7 @@ on:
       - 'scripts/validate-amend-manifests.sh'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-desktop:
@@ -234,6 +240,61 @@ jobs:
             echo
             echo "Files:"
             find dist -maxdepth 2 -type f | sort | sed 's|^|- `|' | sed 's|$|`|'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish-github-release:
+    name: Publish Rolling GitHub Release
+    needs: generate-manifest
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_github_release) }}
+    runs-on: ubuntu-latest
+    env:
+      CHUMMER_GITHUB_RELEASE_REPO: ${{ vars.CHUMMER_GITHUB_RELEASE_REPO }}
+      CHUMMER_GITHUB_RELEASE_TAG: ${{ vars.CHUMMER_GITHUB_RELEASE_TAG }}
+      CHUMMER_GITHUB_RELEASE_TITLE: ${{ vars.CHUMMER_GITHUB_RELEASE_TITLE }}
+      CHUMMER_GITHUB_RELEASE_TARGET_COMMITISH: ${{ github.sha }}
+      CHUMMER_GITHUB_RELEASE_TOKEN: ${{ secrets.CHUMMER_GITHUB_RELEASE_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download manifest bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-download-bundle
+          path: dist
+
+      - name: Publish rolling GitHub release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_repo="${CHUMMER_GITHUB_RELEASE_REPO:-${GITHUB_REPOSITORY}}"
+          if [[ "$release_repo" != "${GITHUB_REPOSITORY}" && -z "${CHUMMER_GITHUB_RELEASE_TOKEN:-}" ]]; then
+            echo "Cross-repo release publish requires CHUMMER_GITHUB_RELEASE_TOKEN." >&2
+            exit 1
+          fi
+          if [[ -n "${CHUMMER_GITHUB_RELEASE_TOKEN:-}" ]]; then
+            export GH_TOKEN="$CHUMMER_GITHUB_RELEASE_TOKEN"
+          else
+            export GH_TOKEN="$GITHUB_TOKEN"
+          fi
+          CHUMMER_GITHUB_RELEASE_REPO="$release_repo" \
+          CHUMMER_GITHUB_RELEASE_BUNDLE_DIR="dist" \
+          python3 scripts/sync-github-release-assets.py
+
+      - name: Publish release summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_repo="${CHUMMER_GITHUB_RELEASE_REPO:-${GITHUB_REPOSITORY}}"
+          release_tag="${CHUMMER_GITHUB_RELEASE_TAG:-desktop-latest}"
+          {
+            echo "## Rolling GitHub Release"
+            echo
+            echo "- Repo: \`$release_repo\`"
+            echo "- Tag: \`$release_tag\`"
+            echo "- Bundle: \`desktop-download-bundle\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy-downloads:
