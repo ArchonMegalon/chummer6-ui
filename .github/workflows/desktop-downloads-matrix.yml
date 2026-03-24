@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       deploy_portal_downloads:
-        description: "Publish desktop-download-bundle into configured portal downloads directory"
+        description: "Compatibility input only. Desktop builds now auto-deploy when a downloads target is configured."
         required: false
-        default: false
+        default: true
         type: boolean
       publish_github_release:
-        description: "Sync the rolling GitHub release assets to the latest built desktop bundle"
+        description: "Compatibility input only. Desktop builds now auto-sync the rolling GitHub release when the workflow runs."
         required: false
         default: true
         type: boolean
@@ -245,7 +245,7 @@ jobs:
   publish-github-release:
     name: Publish Rolling GitHub Release
     needs: generate-manifest
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_github_release) }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_GITHUB_RELEASE_REPO: ${{ vars.CHUMMER_GITHUB_RELEASE_REPO }}
@@ -300,7 +300,7 @@ jobs:
   deploy-downloads:
     name: Deploy Downloads Bundle
     needs: generate-manifest
-    if: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy_portal_downloads)) && vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR != '' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR != '' }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR }}
@@ -358,7 +358,7 @@ jobs:
   deploy-downloads-object-storage:
     name: Deploy Downloads Bundle (Object Storage)
     needs: generate-manifest
-    if: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy_portal_downloads)) && vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI != '' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI != '' }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_PORTAL_DOWNLOADS_S3_URI: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI }}

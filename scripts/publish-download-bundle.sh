@@ -57,7 +57,8 @@ mkdir -p "$DEPLOY_DIR/files"
 find "$DEPLOY_DIR/files" -maxdepth 1 -type f \
   \( -name "chummer-avalonia-*.zip" -o -name "chummer-avalonia-*.tar.gz" -o \
      -name "chummer-blazor-desktop-*.zip" -o -name "chummer-blazor-desktop-*.tar.gz" -o \
-     -name "chummer-avalonia-*-installer.exe" -o -name "chummer-blazor-desktop-*-installer.exe" \) \
+     -name "chummer-avalonia-*-installer.exe" -o -name "chummer-blazor-desktop-*-installer.exe" -o \
+     -name "chummer-6-*.zip" -o -name "chummer-6-*.tar.gz" -o -name "chummer-6-*-installer.exe" \) \
   -delete
 
 for artifact in "${artifacts[@]}"; do
