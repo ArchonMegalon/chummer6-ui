@@ -36,10 +36,14 @@ Current honesty clause:
 - the workbench/browser/desktop feature lane is materially release-complete for the current scope
 - the release lane now ships installer-capable desktop bundles, not just loose files
 - release-channel publication truth now lives downstream in `chummer6-hub-registry`; this repo emits the desktop bundle and installer recipe, not the promoted channel head
+- desktop heads can consume the canonical registry manifest for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` is configured
 - explicit release evidence lives in `docs/WORKBENCH_RELEASE_SIGNOFF.md`
 - legacy compatibility cargo is explicitly isolated in `docs/COMPATIBILITY_CARGO.md` instead of being treated as active boundary truth
+- after the `chummer-play` split, presentation ownership for session/coach flows is limited to shared UI-kit primitives consumed by `chummer-play` through `Chummer.Ui.Kit`, workbench-side coach sidecars, and portal/proxy expectations for external `/session` and `/coach` hosts
 
 ## Go deeper
+
+Legacy root `chummer-presentation.design*.md` files remain only as compatibility aliases. Use `.codex-design/*` as the live canon.
 
 - `.codex-design/repo/IMPLEMENTATION_SCOPE.md`
 - `.codex-design/review/REVIEW_CONTEXT.md`

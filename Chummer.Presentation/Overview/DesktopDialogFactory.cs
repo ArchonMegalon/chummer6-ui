@@ -284,7 +284,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "update" => new DesktopDialogState(
                 "dialog.update",
                 "Check for Updates",
-                "Update channel status can be checked from the service layer.",
+                "Desktop heads check the configured registry manifest (`CHUMMER_DESKTOP_UPDATE_MANIFEST`) at startup and stage full-head archive updates through the local runtime.",
                 [],
                 [new DesktopDialogAction("close", "Close", true)]),
             _ => new DesktopDialogState(
