@@ -59,7 +59,7 @@ public static class BuildLabConceptIntakeProjector
             ProgressionTimelines: projection.ProgressionTimelines.ToArray(),
             ExportPayloads: projection.ExportPayloads?.ToArray() ?? [],
             ExportTargets: projection.ExportTargets?.ToArray() ?? [],
-            Actions: projection.Actions.ToArray(),
+            Actions: projection.Actions?.ToArray() ?? [],
             ExplainEntryId: projection.ExplainEntryId,
             SourceDocumentId: projection.SourceDocumentId,
             CanContinue: projection.CanContinue);

@@ -451,7 +451,7 @@
                          role="listbox"
                          aria-label="Browse results"
                          aria-activedescendant="@BuildBrowseOptionId(_activeBrowseItemId ?? browseWorkspace.ActiveResultItemId)">
-                        <Virtualize Items="@browseWorkspace.Results"
+                        <Virtualize Items="@(browseWorkspace.Results.ToArray())"
                                     Context="item"
                                     ItemSize="56"
                                     ItemsTagName="ul"
@@ -523,7 +523,7 @@
             <thead>
                 <tr><th>Field</th><th>Value</th></tr>
             </thead>
-            <Virtualize Items="@State.ActiveSectionRows"
+            <Virtualize Items="@(State.ActiveSectionRows.ToArray())"
                        Context="row"
                        ItemSize="40"
                        ItemsTagName="tbody"

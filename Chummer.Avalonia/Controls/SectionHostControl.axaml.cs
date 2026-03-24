@@ -95,16 +95,13 @@ public partial class SectionHostControl : UserControl
 
         BrowseSummaryText.Text = BuildBrowseSummary(browseWorkspace);
         BrowsePresetsList.ItemsSource = browseWorkspace.Presets.Select(BuildPresetLine).ToArray();
-        string[] preferredFacets = browseWorkspace.SourceFacets
+        BrowseWorkspaceFacetState[] preferredFacets = browseWorkspace.SourceFacets
             .Concat(browseWorkspace.PackFacets)
             .DistinctBy(facet => facet.FacetId, StringComparer.Ordinal)
             .ToArray();
         BrowseFacetsList.ItemsSource = preferredFacets.Length > 0
-            ? preferredFacets
-            : browseWorkspace.Facets
-                .Take(4)
-                .Select(BuildFacetLine)
-                .ToArray();
+            ? preferredFacets.Select(BuildFacetLine).ToArray()
+            : browseWorkspace.Facets.Take(4).Select(BuildFacetLine).ToArray();
         BrowseResultsList.ItemsSource = browseWorkspace.Results
             .Select(result => new BrowseResultDisplayItem(result.ItemId, BuildResultLine(result)))
             .ToArray();

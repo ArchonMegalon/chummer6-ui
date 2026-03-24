@@ -10,7 +10,7 @@
     else
     {
         <div class="virtual-list navigator-list" data-testid="open-workspace-tree">
-            <Virtualize Items="@OpenWorkspaces"
+            <Virtualize Items="@(OpenWorkspaces.ToArray())"
                         Context="workspace"
                         ItemSize="52"
                         ItemsTagName="ul"

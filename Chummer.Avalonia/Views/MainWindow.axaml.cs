@@ -17,9 +17,9 @@ namespace AvaloniaProject.Views
         private async void OnSimulateBuildClicked(object sender, RoutedEventArgs e)
         {
             // Disable the button while processing to prevent multiple clicks
-            if (sender is Button btn)
+            if (sender is Button triggerButton)
             {
-                btn.IsEnabled = false;
+                triggerButton.IsEnabled = false;
             }
 
             ResultTextBlock.Text = "Executing build simulation... Please wait.";
@@ -40,9 +40,9 @@ namespace AvaloniaProject.Views
             finally
             {
                 // Re-enable the button
-                if (sender is Button btn)
+                if (sender is Button restoreButton)
                 {
-                    btn.IsEnabled = true;
+                    restoreButton.IsEnabled = true;
                 }
             }
         }
