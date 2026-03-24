@@ -1,12 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ChummerDesktopHeadId>blazor-desktop</ChummerDesktopHeadId>
+    <ChummerDesktopReleaseVersion Condition="'$(ChummerDesktopReleaseVersion)' == ''">$(Version)</ChummerDesktopReleaseVersion>
+    <ChummerDesktopReleaseChannel Condition="'$(ChummerDesktopReleaseChannel)' == ''">local</ChummerDesktopReleaseChannel>
   </PropertyGroup>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
+    <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
+  </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <PackageReference Include="Photino.Blazor" Version="4.0.13" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj" />
+    <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
+    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerDesktopHeadId</_Parameter1>
+      <_Parameter2>$(ChummerDesktopHeadId)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerDesktopReleaseVersion</_Parameter1>
+      <_Parameter2>$(ChummerDesktopReleaseVersion)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerDesktopReleaseChannel</_Parameter1>
+      <_Parameter2>$(ChummerDesktopReleaseChannel)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 </Project>

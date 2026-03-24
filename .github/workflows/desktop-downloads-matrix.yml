@@ -132,6 +132,7 @@ jobs:
         run: |
           set -euo pipefail
           out_dir="out/${{ matrix.app }}/${{ matrix.rid }}"
+          release_version="run-${GITHUB_RUN_NUMBER:-local}"
           dotnet publish "${{ matrix.project }}" \
             -c Release \
             -r "${{ matrix.rid }}" \
@@ -139,6 +140,8 @@ jobs:
             -p:PublishSingleFile=true \
             -p:PublishTrimmed=false \
             -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:ChummerDesktopReleaseVersion="$release_version" \
+            -p:ChummerDesktopReleaseChannel="docker" \
             -o "$out_dir"
 
       - name: Package archive (Windows)
