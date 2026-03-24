@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -231,41 +232,33 @@ namespace Chummer.Backend
                     dump.SerializeJson(objJsonWriter);
                 }
 
-                string strCrashHandler = Path.Combine(Utils.GetStartupPath, "CrashHandler.exe");
-                if (File.Exists(strCrashHandler))
+                string strBundlePath = Path.ChangeExtension(strJsonPath, ".zip");
+                try
                 {
-                    string strArgs = "crash \"" + strJsonPath + "\" \"" + datCrashDateTime.ToFileTimeUtc().ToString(CultureInfo.InvariantCulture)
-#if DEBUG
-                        + "\" --debug";
-#else
-                        + "\"";
-#endif
-                    using (Process prcCrashHandler = Process.Start(strCrashHandler, strArgs))
+                    if (File.Exists(strBundlePath))
                     {
-                        if (prcCrashHandler == null)
-                            return;
-                        prcCrashHandler.WaitForExit();
-                        if (prcCrashHandler.ExitCode != 0)
-                        {
-                            Program.ShowScrollableMessageBox(
-                                "Failed to create crash report because of an issue with the crash handler."
-                                + Environment.NewLine + "Chummer crashed with version: " + Utils.CurrentChummerVersion.ToString()
-                                + Environment.NewLine + "Crash Handler crashed with exit code: " + prcCrashHandler.ExitCode.ToString(CultureInfo.InvariantCulture)
-                                + Environment.NewLine + "Crash information:"
-                                + Environment.NewLine + ex.ToString().AnonymizePath(),
-                                "Failed to Create Crash Report", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
+                        File.Delete(strBundlePath);
+                    }
+
+                    using (ZipArchive objArchive = ZipFile.Open(strBundlePath, ZipArchiveMode.Create))
+                    {
+                        objArchive.CreateEntryFromFile(strJsonPath, Path.GetFileName(strJsonPath));
                     }
                 }
-                else
+                catch (Exception zipEx)
                 {
-                    Program.ShowScrollableMessageBox(
-                                "Failed to create crash report because the crash handler was not found."
-                                + Environment.NewLine + "Chummer crashed with version: " + Utils.CurrentChummerVersion.ToString()
-                                + Environment.NewLine + "Crash information:"
-                                + Environment.NewLine + ex.ToString().AnonymizePath(),
-                                "Failed to Create Crash Report", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Log.Error(zipEx);
+                    strBundlePath = strJsonPath;
                 }
+
+                Program.ShowScrollableMessageBox(
+                    "Chummer created a local crash report package."
+                    + Environment.NewLine + "Chummer crashed with version: " + Utils.CurrentChummerVersion.ToString()
+                    + Environment.NewLine + "Report path: " + strJsonPath.AnonymizePath()
+                    + Environment.NewLine + "Bundle path: " + strBundlePath.AnonymizePath()
+                    + Environment.NewLine + "Crash information:"
+                    + Environment.NewLine + ex.ToString().AnonymizePath(),
+                    "Crash Report Created", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception nex)
             {

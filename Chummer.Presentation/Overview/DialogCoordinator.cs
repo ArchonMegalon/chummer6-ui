@@ -454,7 +454,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         CancellationToken ct)
     {
         string expression = DesktopDialogFieldValueParser.GetValue(dialog, "diceExpression") ?? "1d6";
-        RulesetCapabilityInvocationResult result = await _engineEvaluator.EvaluateAsync(
+        RulesetCapabilityInvocationResult result = await _engineEvaluator.InvokeAsync(
             new RulesetCapabilityInvocationRequest(
                 CapabilityId: "ui.dice_roll",
                 InvocationKind: RulesetCapabilityInvocationKinds.Rule,

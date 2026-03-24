@@ -166,32 +166,32 @@
                                     @if (SelectedAsset.PreviewSections?.Count > 0)
                                     {
                                         <div class="stack compact" data-generated-asset-video-cards>
-                                            @foreach (GeneratedAssetPreviewSection section in SelectedAsset.PreviewSections)
+                                            @foreach (GeneratedAssetPreviewSection previewSection in SelectedAsset.PreviewSections)
                                             {
-                                                <article class="panel trace-card" data-generated-asset-video-card="@section.SectionId">
+                                                <article class="panel trace-card" data-generated-asset-video-card="@previewSection.SectionId">
                                                     <header class="coach-card-header">
                                                         <div>
-                                                            <strong>@section.Label</strong>
-                                                            <p class="meta">@section.Summary</p>
+                                                            <strong>@previewSection.Label</strong>
+                                                            <p class="meta">@previewSection.Summary</p>
                                                         </div>
-                                                        @if (section.Badges?.Count > 0)
+                                                        @if (previewSection.Badges?.Count > 0)
                                                         {
                                                             <div class="button-row compact">
-                                                                @foreach (GeneratedAssetBadge badge in section.Badges)
+                                                                @foreach (GeneratedAssetBadge badge in previewSection.Badges)
                                                                 {
                                                                     <span class="badge @(badge.Emphasized ? "good" : string.Empty)">@badge.Label</span>
                                                                 }
                                                             </div>
                                                         }
                                                     </header>
-                                                    @if (!string.IsNullOrWhiteSpace(section.Body))
+                                                    @if (!string.IsNullOrWhiteSpace(previewSection.Body))
                                                     {
-                                                        <p>@section.Body</p>
+                                                        <p>@previewSection.Body</p>
                                                     }
-                                                    @if (section.Metadata?.Count > 0)
+                                                    @if (previewSection.Metadata?.Count > 0)
                                                     {
-                                                        <div class="gm-board-fact-grid" data-generated-asset-video-card-metadata="@section.SectionId">
-                                                            @foreach (GeneratedAssetMetadataField field in section.Metadata)
+                                                        <div class="gm-board-fact-grid" data-generated-asset-video-card-metadata="@previewSection.SectionId">
+                                                            @foreach (GeneratedAssetMetadataField field in previewSection.Metadata)
                                                             {
                                                                 <div data-generated-asset-video-card-field="@field.FieldId">
                                                                     <span class="trace-section-title">@field.Label</span>
@@ -211,32 +211,32 @@
                                 {
                                     <div class="stack" data-generated-asset-preview-document>
                                         <strong>Document preview</strong>
-                                        @foreach (GeneratedAssetPreviewSection section in SelectedAsset.PreviewSections)
+                                        @foreach (GeneratedAssetPreviewSection previewSection in SelectedAsset.PreviewSections)
                                         {
-                                            <article class="panel trace-card" data-generated-asset-preview-section="@section.SectionId">
+                                            <article class="panel trace-card" data-generated-asset-preview-section="@previewSection.SectionId">
                                                 <header class="coach-card-header">
                                                     <div>
-                                                        <strong>@section.Label</strong>
-                                                        <p class="meta">@section.Summary</p>
+                                                        <strong>@previewSection.Label</strong>
+                                                        <p class="meta">@previewSection.Summary</p>
                                                     </div>
-                                                    @if (section.Badges?.Count > 0)
+                                                    @if (previewSection.Badges?.Count > 0)
                                                     {
                                                         <div class="button-row compact">
-                                                            @foreach (GeneratedAssetBadge badge in section.Badges)
+                                                            @foreach (GeneratedAssetBadge badge in previewSection.Badges)
                                                             {
                                                                 <span class="badge @(badge.Emphasized ? "good" : string.Empty)">@badge.Label</span>
                                                             }
                                                         </div>
                                                     }
                                                 </header>
-                                                @if (!string.IsNullOrWhiteSpace(section.Body))
+                                                @if (!string.IsNullOrWhiteSpace(previewSection.Body))
                                                 {
-                                                    <p>@section.Body</p>
+                                                    <p>@previewSection.Body</p>
                                                 }
-                                                @if (section.Metadata?.Count > 0)
+                                                @if (previewSection.Metadata?.Count > 0)
                                                 {
                                                     <div class="gm-board-fact-grid">
-                                                        @foreach (GeneratedAssetMetadataField field in section.Metadata)
+                                                        @foreach (GeneratedAssetMetadataField field in previewSection.Metadata)
                                                         {
                                                             <div data-generated-asset-preview-section-field="@field.FieldId">
                                                                 <span class="trace-section-title">@field.Label</span>
@@ -443,7 +443,7 @@
     public string Summary { get; set; } = "Review generated portraits, dossiers, recaps, and reveal media through one reusable approval frame.";
 
     [Parameter]
-    public IReadOnlyList<GeneratedAssetProjection> Assets { get; set; } = [];
+    public new IReadOnlyList<GeneratedAssetProjection> Assets { get; set; } = [];
 
     [Parameter]
     public EventCallback<string> SelectedAssetChanged { get; set; }

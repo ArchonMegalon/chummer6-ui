@@ -26,14 +26,14 @@
         DowntimePlannerState planner = BuildDowntimePlanner(Projection);
 
         <section class="runtime-inspector-grid">
-            @foreach (JournalPanelSection section in Projection.Sections)
+            @foreach (JournalPanelSection panelSection in Projection.Sections)
             {
                 <article class="panel trace-card">
                     <header>
-                        <h3>@section.Title</h3>
-                        <span class="badge">@section.ItemCount</span>
+                        <h3>@panelSection.Title</h3>
+                        <span class="badge">@panelSection.ItemCount</span>
                     </header>
-                    <p class="hint">Section kind: @section.Kind</p>
+                    <p class="hint">Section kind: @panelSection.Kind</p>
                 </article>
             }
         </section>

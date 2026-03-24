@@ -7,5 +7,10 @@
     <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">5.225.0.0</ChummerContractsPackageVersion>
     <ChummerUiKitPackageId Condition="'$(ChummerUiKitPackageId)' == ''">Chummer.Ui.Kit</ChummerUiKitPackageId>
     <ChummerUiKitPackageVersion Condition="'$(ChummerUiKitPackageVersion)' == ''">0.1.0-preview</ChummerUiKitPackageVersion>
+    <ChummerLocalContractsProject>$(MSBuildThisFileDirectory)..\chummer-core-engine\Chummer.Contracts\Chummer.Contracts.csproj</ChummerLocalContractsProject>
+    <ChummerLocalRunContractsProject>$(MSBuildThisFileDirectory)..\chummer.run-services\Chummer.Run.Contracts\Chummer.Run.Contracts.csproj</ChummerLocalRunContractsProject>
+    <ChummerLocalUiKitProject>$(MSBuildThisFileDirectory)..\chummer-ui-kit\src\Chummer.Ui.Kit\Chummer.Ui.Kit.csproj</ChummerLocalUiKitProject>
+    <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == '' and Exists('$(ChummerLocalContractsProject)') and Exists('$(ChummerLocalRunContractsProject)') and Exists('$(ChummerLocalUiKitProject)')">true</ChummerUseLocalCompatibilityTree>
+    <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == ''">false</ChummerUseLocalCompatibilityTree>
   </PropertyGroup>
 </Project>

@@ -6,7 +6,6 @@ The following retained roots are compatibility cargo, not active boundary claims
 
 - `Chummer/`: legacy desktop application compatibility body kept for release continuity while workbench/browser/desktop seams stay canonical.
 - `ChummerDataViewer/`: legacy inspection utility retained for compatibility and audit playback, not as a new product boundary.
-- `CrashHandler/`: crash collection/support utility that remains tied to desktop release continuity.
 - `TextblockConverter/`: legacy conversion helper kept for backward compatibility, not as a shared product surface.
 - `Translator/`: legacy localization helper retained as compatibility tooling.
 
