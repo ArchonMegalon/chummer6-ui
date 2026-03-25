@@ -54,66 +54,50 @@ jobs:
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: windows-latest
             rid: win-x64
-            archive_ext: zip
-            launch_exe: Chummer.Avalonia.exe
+            installer_ext: exe
+            launch_target: Chummer.Avalonia.exe
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: windows-latest
             rid: win-arm64
-            archive_ext: zip
-            launch_exe: Chummer.Avalonia.exe
+            installer_ext: exe
+            launch_target: Chummer.Avalonia.exe
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: ubuntu-latest
             rid: linux-x64
-            archive_ext: tar.gz
+            installer_ext: deb
+            launch_target: Chummer.Avalonia
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: ubuntu-latest
             rid: linux-arm64
-            archive_ext: tar.gz
-          - app: avalonia
-            project: Chummer.Avalonia/Chummer.Avalonia.csproj
-            os: macos-latest
-            rid: osx-arm64
-            archive_ext: tar.gz
-          - app: avalonia
-            project: Chummer.Avalonia/Chummer.Avalonia.csproj
-            os: macos-latest
-            rid: osx-x64
-            archive_ext: tar.gz
+            installer_ext: deb
+            launch_target: Chummer.Avalonia
           - app: blazor-desktop
             project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
             os: windows-latest
             rid: win-x64
-            archive_ext: zip
-            launch_exe: Chummer.Blazor.Desktop.exe
+            installer_ext: exe
+            launch_target: Chummer.Blazor.Desktop.exe
           - app: blazor-desktop
             project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
             os: windows-latest
             rid: win-arm64
-            archive_ext: zip
-            launch_exe: Chummer.Blazor.Desktop.exe
+            installer_ext: exe
+            launch_target: Chummer.Blazor.Desktop.exe
           - app: blazor-desktop
             project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
             os: ubuntu-latest
             rid: linux-x64
-            archive_ext: tar.gz
+            installer_ext: deb
+            launch_target: Chummer.Blazor.Desktop
           - app: blazor-desktop
             project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
             os: ubuntu-latest
             rid: linux-arm64
-            archive_ext: tar.gz
-          - app: blazor-desktop
-            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
-            os: macos-latest
-            rid: osx-arm64
-            archive_ext: tar.gz
-          - app: blazor-desktop
-            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
-            os: macos-latest
-            rid: osx-x64
-            archive_ext: tar.gz
+            installer_ext: deb
+            launch_target: Chummer.Blazor.Desktop
 
     steps:
       - name: Checkout
@@ -125,7 +109,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore ${{ matrix.project }}
+        run: dotnet restore ${{ matrix.project }} -r ${{ matrix.rid }}
 
       - name: Publish desktop app
         shell: bash
@@ -144,8 +128,7 @@ jobs:
             -p:ChummerDesktopReleaseChannel="docker" \
             -o "$out_dir"
 
-      - name: Package archive (Windows)
-        if: runner.os == 'Windows'
+      - name: Package installer
         shell: bash
         run: |
           set -euo pipefail
@@ -154,25 +137,15 @@ jobs:
             "out/${{ matrix.app }}/${{ matrix.rid }}" \
             "${{ matrix.app }}" \
             "${{ matrix.rid }}" \
-            "${{ matrix.launch_exe }}" \
+            "${{ matrix.launch_target }}" \
             "dist" \
             "$release_version"
-
-      - name: Package archive (Linux/macOS)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-          tar -C "out/${{ matrix.app }}/${{ matrix.rid }}" -czf "dist/chummer-${{ matrix.app }}-${{ matrix.rid }}.tar.gz" .
 
       - name: Upload RID artifact
         uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.app }}-${{ matrix.rid }}
-          path: |
-            dist/chummer-${{ matrix.app }}-${{ matrix.rid }}.${{ matrix.archive_ext }}
-            dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.exe
+          path: dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.${{ matrix.installer_ext }}
           if-no-files-found: error
           retention-days: 14
 
@@ -202,7 +175,7 @@ jobs:
           mkdir -p dist/files
           shopt -s nullglob
           moved=0
-          for artifact in dist/chummer-*.zip dist/chummer-*.tar.gz dist/chummer-*-installer.exe; do
+          for artifact in dist/chummer-*-installer.exe dist/chummer-*-installer.deb dist/chummer-*-installer.pkg dist/chummer-*-installer.dmg dist/chummer-*-installer.msix; do
             [[ -f "$artifact" ]] || continue
             mv "$artifact" dist/files/
             moved=1

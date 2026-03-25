@@ -284,7 +284,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "update" => new DesktopDialogState(
                 "dialog.update",
                 "Check for Updates",
-                "Desktop heads check the configured registry manifest (`CHUMMER_DESKTOP_UPDATE_MANIFEST`) at startup and stage full-head archive updates through the local runtime.",
+                "Desktop heads check the configured registry manifest (`CHUMMER_DESKTOP_UPDATE_MANIFEST`) at startup and hand off either an in-place payload or a platform installer through the local runtime.",
                 [],
                 [new DesktopDialogAction("close", "Close", true)]),
             _ => new DesktopDialogState(

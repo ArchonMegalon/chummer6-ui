@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PUBLISH_DIR="${1:?publish directory is required}"
 APP_KEY="${2:?app key is required}"
 RID="${3:?rid is required}"
-LAUNCH_EXE="${4:?launch executable name is required}"
+LAUNCH_TARGET="${4:?launch target name is required}"
 DIST_DIR="${5:-$REPO_ROOT/dist}"
 VERSION="${6:-local}"
 
@@ -29,12 +29,10 @@ case "$APP_KEY" in
 esac
 
 mkdir -p "$DIST_DIR"
-PORTABLE_ARCHIVE="$DIST_DIR/chummer-$APP_KEY-$RID.zip"
-INSTALLER_NAME="chummer-$APP_KEY-$RID-installer.exe"
-INSTALLER_OUT_DIR="$DIST_DIR/installer-$APP_KEY-$RID"
 
-python3 - "$PUBLISH_DIR" "$PORTABLE_ARCHIVE" <<'PY'
-import os
+build_payload_zip() {
+  local target="$1"
+  python3 - "$PUBLISH_DIR" "$target" <<'PY'
 import sys
 import zipfile
 from pathlib import Path
@@ -51,32 +49,142 @@ with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             zf.write(file, file.relative_to(source))
 print(target)
 PY
+}
 
-rm -rf "$INSTALLER_OUT_DIR"
-dotnet publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
-  -c Release \
-  -r "$RID" \
-  --self-contained true \
-  -p:PublishSingleFile=true \
-  -p:PublishTrimmed=false \
-  -p:EnableCompressionInSingleFile=true \
-  -p:IncludeNativeLibrariesForSelfExtract=true \
-  -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
-  -p:InstallerPayloadZip="$PORTABLE_ARCHIVE" \
-  -p:ChummerInstallerAppId="$APP_KEY-$RID" \
-  -p:ChummerInstallerDisplayName="$APP_DISPLAY" \
-  -p:ChummerInstallerInstallDirName="$INSTALL_DIR_NAME-$RID" \
-  -p:ChummerInstallerLaunchExecutable="$LAUNCH_EXE" \
-  -p:ChummerInstallerVersion="$VERSION" \
-  -p:ChummerInstallerShortcutName="$SHORTCUT_NAME" \
-  -p:ChummerInstallerOutputName="Chummer6Installer-$APP_KEY-$RID" \
-  -o "$INSTALLER_OUT_DIR"
+normalize_deb_version() {
+  python3 - "$VERSION" <<'PY'
+import re
+import sys
 
-installer_source="$(find "$INSTALLER_OUT_DIR" -maxdepth 1 -type f -name '*.exe' | sort | head -n 1)"
-if [[ -z "$installer_source" ]]; then
-  echo "Installer publish output did not produce a .exe in $INSTALLER_OUT_DIR" >&2
-  exit 1
-fi
-cp "$installer_source" "$DIST_DIR/$INSTALLER_NAME"
-echo "built portable archive $PORTABLE_ARCHIVE"
-echo "built installer $DIST_DIR/$INSTALLER_NAME"
+raw = sys.argv[1].strip() or "0~local"
+value = re.sub(r"[^0-9A-Za-z.+~:-]+", "-", raw)
+value = value.strip(".-:+~") or "0~local"
+if not value[0].isdigit():
+    value = f"0~{value}"
+print(value)
+PY
+}
+
+linux_deb_arch() {
+  case "$RID" in
+    linux-x64) echo "amd64" ;;
+    linux-arm64) echo "arm64" ;;
+    *)
+      echo "Unsupported Linux RID for deb packaging: $RID" >&2
+      exit 1
+      ;;
+  esac
+}
+
+build_windows_installer() {
+  local payload_zip="$DIST_DIR/chummer-$APP_KEY-$RID-payload.zip"
+  local installer_name="chummer-$APP_KEY-$RID-installer.exe"
+  local installer_out_dir="$DIST_DIR/installer-$APP_KEY-$RID"
+
+  build_payload_zip "$payload_zip"
+
+  rm -rf "$installer_out_dir"
+  dotnet publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
+    -c Release \
+    -r "$RID" \
+    --self-contained true \
+    -p:PublishSingleFile=true \
+    -p:PublishTrimmed=false \
+    -p:EnableCompressionInSingleFile=true \
+    -p:IncludeNativeLibrariesForSelfExtract=true \
+    -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
+    -p:InstallerPayloadZip="$payload_zip" \
+    -p:ChummerInstallerAppId="$APP_KEY-$RID" \
+    -p:ChummerInstallerDisplayName="$APP_DISPLAY" \
+    -p:ChummerInstallerInstallDirName="$INSTALL_DIR_NAME-$RID" \
+    -p:ChummerInstallerLaunchExecutable="$LAUNCH_TARGET" \
+    -p:ChummerInstallerVersion="$VERSION" \
+    -p:ChummerInstallerShortcutName="$SHORTCUT_NAME" \
+    -p:ChummerInstallerOutputName="Chummer6Installer-$APP_KEY-$RID" \
+    -o "$installer_out_dir"
+
+  local installer_source
+  installer_source="$(find "$installer_out_dir" -maxdepth 1 -type f -name '*.exe' | sort | head -n 1)"
+  if [[ -z "$installer_source" ]]; then
+    echo "Installer publish output did not produce a .exe in $installer_out_dir" >&2
+    exit 1
+  fi
+
+  cp "$installer_source" "$DIST_DIR/$installer_name"
+  rm -f "$payload_zip"
+  echo "built installer $DIST_DIR/$installer_name"
+}
+
+build_linux_installer() {
+  local deb_arch
+  deb_arch="$(linux_deb_arch)"
+  local deb_version
+  deb_version="$(normalize_deb_version)"
+  local installer_name="chummer-$APP_KEY-$RID-installer.deb"
+  local stage_root="$DIST_DIR/package-$APP_KEY-$RID"
+  local install_root="$stage_root/opt/chummer6/$APP_KEY-$RID"
+  local wrapper_path="$stage_root/usr/bin/chummer6-$APP_KEY"
+  local desktop_path="$stage_root/usr/share/applications/chummer6-$APP_KEY.desktop"
+
+  rm -rf "$stage_root"
+  mkdir -p "$stage_root/DEBIAN" "$install_root" "$(dirname "$wrapper_path")" "$(dirname "$desktop_path")"
+  cp -a "$PUBLISH_DIR"/. "$install_root"/
+
+  if [[ ! -f "$install_root/$LAUNCH_TARGET" ]]; then
+    echo "Launch target not found in publish directory: $install_root/$LAUNCH_TARGET" >&2
+    exit 1
+  fi
+  chmod 0755 "$install_root/$LAUNCH_TARGET"
+
+  cat > "$stage_root/DEBIAN/control" <<EOF
+Package: chummer6-$APP_KEY
+Version: $deb_version
+Section: games
+Priority: optional
+Architecture: $deb_arch
+Maintainer: ArchonMegalon
+Description: $APP_DISPLAY
+ Installer package for the $APP_DISPLAY head.
+EOF
+
+  cat > "$wrapper_path" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec "/opt/chummer6/$APP_KEY-$RID/$LAUNCH_TARGET" "\$@"
+EOF
+  chmod 0755 "$wrapper_path"
+
+  cat > "$desktop_path" <<EOF
+[Desktop Entry]
+Type=Application
+Name=$APP_DISPLAY
+Exec=/usr/bin/chummer6-$APP_KEY
+Terminal=false
+Categories=Game;
+StartupNotify=true
+EOF
+
+  if dpkg-deb --help 2>&1 | grep -q -- '--root-owner-group'; then
+    dpkg-deb --root-owner-group --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
+  elif command -v fakeroot >/dev/null 2>&1; then
+    fakeroot dpkg-deb --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
+  else
+    dpkg-deb --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null
+  fi
+
+  rm -rf "$stage_root"
+  echo "built installer $DIST_DIR/$installer_name"
+}
+
+case "$RID" in
+  win-*)
+    build_windows_installer
+    ;;
+  linux-*)
+    build_linux_installer
+    ;;
+  *)
+    echo "Unsupported installer target RID: $RID" >&2
+    exit 1
+    ;;
+esac
