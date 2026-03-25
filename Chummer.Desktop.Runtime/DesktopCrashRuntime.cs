@@ -430,6 +430,7 @@ public static class DesktopCrashRuntime
     private static DesktopCrashEnvelope BuildEnvelope(DesktopCrashReport report, string summaryText)
     {
         string platform = ResolvePlatformFromOs(report.OperatingSystem);
+        DesktopInstallLinkingState? installState = TryLoadInstallLinkingState(report.HeadId);
         return new DesktopCrashEnvelope(
             CrashId: report.CrashId,
             HeadId: report.HeadId,
@@ -447,9 +448,25 @@ public static class DesktopCrashRuntime
             Platform: platform,
             DesktopHead: report.HeadId,
             RuntimeHead: "desktop-runtime",
+            InstallationId: installState?.InstallationId,
+            UserId: installState?.UserId,
+            SubjectId: installState?.SubjectId,
             LastActionCategory: null,
             LogTail: BuildLogTail(summaryText, report.ExceptionDetail),
             FullDiagnosticsOptIn: false);
+    }
+
+    private static DesktopInstallLinkingState? TryLoadInstallLinkingState(string headId)
+    {
+        try
+        {
+            DesktopInstallLinkingState state = DesktopInstallLinkingRuntime.LoadOrCreateState(headId);
+            return DesktopInstallLinkingRuntime.IsClaimed(state) ? state : null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static IReadOnlyList<string> BuildLogTail(string summaryText, string exceptionDetail)
@@ -563,6 +580,9 @@ public static class DesktopCrashRuntime
         string? Platform,
         string? DesktopHead,
         string? RuntimeHead,
+        string? InstallationId,
+        string? UserId,
+        string? SubjectId,
         string? LastActionCategory,
         IReadOnlyList<string> LogTail,
         bool FullDiagnosticsOptIn);
