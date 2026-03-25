@@ -4,9 +4,10 @@
 1. instructions.md
 2. .agent-memory.md
 3. AGENT_MEMORY.md
-4. chummer-presentation.design.v2.md
-5. AGENTS.md if present
-6. audit.md if present
+4. .codex-design/repo/IMPLEMENTATION_SCOPE.md
+5. .codex-design/review/REVIEW_CONTEXT.md
+6. AGENTS.md if present
+7. audit.md if present
 
 ## Scope
 Own:

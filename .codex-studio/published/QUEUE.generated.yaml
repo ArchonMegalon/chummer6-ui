@@ -1,5 +1,18 @@
 mode: prepend
 items:
+- Close the remaining quality, restore, migration, and release-proof obligations for `ui` with executable evidence instead of registry prose alone.
+- Cluster the remaining `ui` product-completion items into one executable backlog slice instead of publishing one queue task per bullet.
+- Add milestone mapping or executable queue work for NPC Persona Studio screens.
+- Add milestone mapping or executable queue work for Portrait Forge selection and reroll UX depth.
+- Add milestone mapping or executable queue work for Richer Hub client UX.
+- Add milestone mapping or executable queue work for Runtime inspector, RuleProfile, and RulePack diagnostics.
+- Add milestone mapping or executable queue work for Calendar, ledger, and downtime planner surfaces.
+- Publish or append runnable backlog for NPC Persona Studio screens.
+- Publish or append runnable backlog for Portrait Forge selection and reroll UX depth.
+- Publish or append runnable backlog for Richer Hub client UX.
+- Publish or append runnable backlog for Runtime inspector, RuleProfile, and RulePack diagnostics.
+- Publish or append runnable backlog for Calendar, ledger, and downtime planner surfaces.
+- Add milestone mapping or executable queue work for Final accessibility, deployment, and browser-constraint signoff.
 - Finish milestone coverage modeling for ui so ETA and completion truth are no longer partial.
 - Publish or append runnable backlog for Final accessibility, deployment, and browser-constraint signoff.
 - Publish or append runnable backlog for Coach, Shadowfeed, player dispatch, and review workflows.

@@ -1354,8 +1354,6 @@ public class MigrationComplianceTests
     {
         string readmePath = FindPath("README.md");
         string readmeText = File.ReadAllText(readmePath);
-        string designDocPath = FindPath("chummer-presentation.design.v2.md");
-        string designDocText = File.ReadAllText(designDocPath);
         string dockerComposePath = FindPath("docker-compose.yml");
         string dockerComposeText = File.ReadAllText(dockerComposePath);
         string blazorProgramPath = FindPath("Chummer.Blazor", "Program.cs");
@@ -1385,9 +1383,9 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(readmeText, "`chummer-play` owns the shipped `/session` and `/coach` web heads");
         StringAssert.Contains(readmeText, "shared presentation seam, `ISessionClient`, launch/deep-link contracts, and the workbench-side coach sidecars");
-        StringAssert.Contains(designDocText, "After the `chummer-play` split, Presentation ownership for session/coach flows is limited to shared seams:");
-        StringAssert.Contains(designDocText, "shared UI-kit primitives consumed by `chummer-play`");
-        StringAssert.Contains(designDocText, "portal/proxy expectations for external `/session` and `/coach` hosts");
+        StringAssert.Contains(readmeText, "after the `chummer-play` split, presentation ownership for session/coach flows is limited to shared UI-kit primitives consumed by `chummer-play` through `Chummer.Ui.Kit`");
+        StringAssert.Contains(readmeText, "workbench-side coach sidecars");
+        StringAssert.Contains(readmeText, "portal/proxy expectations for external `/session` and `/coach` hosts");
         StringAssert.Contains(dockerComposeText, "CHUMMER_PORTAL_SESSION_PROXY_URL");
         StringAssert.Contains(dockerComposeText, "CHUMMER_PORTAL_COACH_PROXY_URL");
         StringAssert.Contains(dockerComposeText, "CHUMMER_RUN_URL");
