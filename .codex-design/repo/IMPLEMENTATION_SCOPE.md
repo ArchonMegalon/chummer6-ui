@@ -3,7 +3,7 @@
 ## Mission
 
 `chummer6-ui` owns the workbench, browser, and desktop user experience for Chummer6.
-It is the repo for builders, inspectors, compare views, explain UX, moderation/admin surfaces, and installable desktop delivery.
+It is the repo for builders, inspectors, compare views, explain UX, moderation/admin surfaces, installable desktop delivery, desktop self-update behavior, and in-app bug/feedback/crash entry points.
 
 ## Owns
 
@@ -13,7 +13,18 @@ It is the repo for builders, inspectors, compare views, explain UX, moderation/a
 * moderation and admin surfaces that stay outside the live play shell
 * desktop packaging, installer delivery, and workbench-side release polish
 * updater integration inside desktop heads
+* local install/channel state for desktop clients
+* staged apply helpers and relaunch flow
+* local crash interception where the client can catch it
+* redacted diagnostics bundle creation
+* offline spool and retry for support payloads
+* next-launch crash recovery UX
+* in-app feedback and structured bug-report entry points
+* platform-specific packaging adapters that emit machine update payloads
+* Windows `.exe`, macOS `.dmg`, and Linux `.deb` installer targets for the desktop release bundle
+* platform-specific startup-smoke fixtures that prove each built desktop head can launch
 * release-bundle emission for desktop artifacts
+* automatic post-build publication of the latest successful desktop bundle into configured self-hosted downloads targets
 
 ## Must not own
 
@@ -22,7 +33,12 @@ It is the repo for builders, inspectors, compare views, explain UX, moderation/a
 * engine/runtime mechanics truth
 * hosted orchestration or provider-secret ownership
 * canonical channel or update-feed truth
+* rollout or revoke truth for promoted desktop heads
+* hosted support-ticket truth
+* knowledge-base truth
+* support-assistant orchestration
 * source-copied shared UI primitives that belong in `Chummer.Ui.Kit`
+* archive-style retention of superseded public download bundles
 
 ## Package boundary
 
@@ -32,6 +48,7 @@ Primary consumption boundary:
 
 * `Chummer.Engine.Contracts`
 * `Chummer.Ui.Kit`
+* `Chummer.Hub.Registry.Contracts` for published desktop release-head and update-feed DTOs
 
 ## Restore rule
 
@@ -42,6 +59,29 @@ Primary consumption boundary:
 
 Workers must not have to guess whether missing restore is caused by a feed problem or a missing compatibility tree.
 
+## Desktop update rule
+
+The updater backend is not canonical. The ownership split is.
+
+`chummer6-ui` may wrap a third-party updater backend or use a custom helper, but it must still own:
+
+* check/download/stage/apply/relaunch behavior
+* local rollback-window state
+* per-head startup hooks
+* update settings/about UX
+
+It must not invent a second promoted-channel vocabulary or bypass registry-published rollout and revoke truth.
+
+## Support rule
+
+`chummer6-ui` must ship the first support plane as native product UX:
+
+* crash recovery and private crash-report entry
+* structured bug reporting
+* lightweight feedback
+
+It must not make a chat assistant the first support feature, and it must not require another AppSumo LTD for the core crash path.
+
 ## Boundary truth
 
 Feature completion inside this repo was not enough to close the split milestone.
@@ -51,6 +91,8 @@ Feature completion inside this repo was not enough to close the split milestone.
 * shared visual chrome migrates into `chummer6-ui-kit`
 * play-shell ownership remains fully outside this repo
 * installer/release work stays workbench-scoped instead of reabsorbing unrelated ownership
+
+Desktop auto-update is additive evolution after that boundary closure. It must not be implemented by letting desktop concerns leak back into Hub, Fleet, or Core.
 
 ## Current reality
 
@@ -63,3 +105,4 @@ That means:
 * shared visual chrome is package-owned and regression-guarded
 * workbench release evidence is explicit in `docs/WORKBENCH_RELEASE_SIGNOFF.md`
 * any retained legacy roots must stay explicitly documented as compatibility cargo
+* the first desktop updater wave should ship atomic full-head replacement before delta or runtime-only evolution

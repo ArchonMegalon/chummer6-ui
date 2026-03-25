@@ -1668,7 +1668,9 @@ public class MigrationComplianceTests
     [TestMethod]
     public void Build_lab_shell_uses_contract_projection_types_instead_of_inline_rules_logic()
     {
-        string buildLabContractsPath = FindPath("Chummer.Contracts", "Presentation", "BuildLabWorkspaceContracts.cs");
+        string buildLabContractsPath =
+            TryFindPath("Chummer.Run.Contracts", "CompatCore", "Presentation", "BuildLabWorkspaceContracts.cs")
+            ?? FindPath("Chummer.Contracts", "Presentation", "BuildLabWorkspaceContracts.cs");
         string buildLabContractsText = File.ReadAllText(buildLabContractsPath);
         string buildLabProjectorPath = FindPath("Chummer.Presentation", "Overview", "BuildLabConceptIntakeState.cs");
         string buildLabProjectorText = File.ReadAllText(buildLabProjectorPath);

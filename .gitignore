@@ -257,6 +257,10 @@ git/
 *.pyo
 *.user.delete
 Chummer/Resources/source/upscaling/4x_FireAlpha.pth
+/dist-live/
+/dist-smoke/
+/out-live/
+/out-smoke/
 
 # Local janitor artifacts
 /feedback/.applied.log
