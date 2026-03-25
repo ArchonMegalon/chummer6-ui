@@ -78,6 +78,7 @@ public static class DesktopCrashRuntime
             SummaryPath: summaryPath,
             BundlePath: Path.Combine(reportDirectory, CrashBundleFileName),
             SummaryText: summaryText,
+            ClaimSnapshot: marker.ClaimSnapshot,
             SubmissionAttempts: marker.SubmissionAttempts,
             LastSubmissionAttemptUtc: marker.LastSubmissionAttemptUtc,
             LastSubmissionError: marker.LastSubmissionError,
@@ -139,7 +140,7 @@ public static class DesktopCrashRuntime
         DateTimeOffset attemptAtUtc = DateTimeOffset.UtcNow;
         try
         {
-            DesktopCrashEnvelope envelope = BuildEnvelope(pending.Report, pending.SummaryText);
+            DesktopCrashEnvelope envelope = BuildEnvelope(pending.Report, pending.SummaryText, pending.ClaimSnapshot);
             using HttpClient client = CreateApiHttpClient(TimeSpan.FromSeconds(20));
             using StringContent content = new(
                 JsonSerializer.Serialize(envelope, JsonOptions),
@@ -317,11 +318,7 @@ public static class DesktopCrashRuntime
                 CurrentDirectoryLabel: context.CurrentDirectoryLabel,
                 ExceptionType: exception.GetType().FullName ?? exception.GetType().Name,
                 ExceptionMessage: SanitizeText(exception.Message, context),
-                ExceptionDetail: SanitizeText(exception.ToString(), context),
-                InstallationId: installState?.InstallationId,
-                ClaimedUserId: installState?.UserId,
-                ClaimedSubjectId: installState?.SubjectId,
-                ClaimGrantId: installState?.GrantId);
+                ExceptionDetail: SanitizeText(exception.ToString(), context));
 
             string reportPath = Path.Combine(reportDirectory, CrashReportFileName);
             File.WriteAllText(reportPath, JsonSerializer.Serialize(report, JsonOptions), Encoding.UTF8);
@@ -335,7 +332,17 @@ public static class DesktopCrashRuntime
 
             if (isTerminating)
             {
-                PersistPendingMarker(new DesktopCrashPendingMarker(report.CrashId, reportDirectory));
+                PersistPendingMarker(
+                    new DesktopCrashPendingMarker(
+                        report.CrashId,
+                        reportDirectory,
+                        ClaimSnapshot: installState is null
+                            ? null
+                            : new DesktopCrashClaimSnapshot(
+                                installState.InstallationId,
+                                installState.UserId,
+                                installState.SubjectId,
+                                installState.GrantId)));
             }
 
             Console.Error.WriteLine(summaryText);
@@ -432,10 +439,10 @@ public static class DesktopCrashRuntime
         }
     }
 
-    private static DesktopCrashEnvelope BuildEnvelope(DesktopCrashReport report, string summaryText)
+    private static DesktopCrashEnvelope BuildEnvelope(DesktopCrashReport report, string summaryText, DesktopCrashClaimSnapshot? claimSnapshot = null)
     {
         string platform = ResolvePlatformFromOs(report.OperatingSystem);
-        DesktopInstallLinkingState? installState = ResolveSubmissionInstallState(report);
+        DesktopInstallLinkingState? installState = ResolveSubmissionInstallState(claimSnapshot, report.HeadId);
         return new DesktopCrashEnvelope(
             CrashId: report.CrashId,
             HeadId: report.HeadId,
@@ -462,18 +469,23 @@ public static class DesktopCrashRuntime
             FullDiagnosticsOptIn: false);
     }
 
-    private static DesktopInstallLinkingState? ResolveSubmissionInstallState(DesktopCrashReport report)
+    private static DesktopInstallLinkingState? ResolveSubmissionInstallState(DesktopCrashClaimSnapshot? claimSnapshot, string headId)
     {
-        DesktopInstallLinkingState? currentState = TryLoadInstallLinkingState(report.HeadId);
+        if (claimSnapshot is null)
+        {
+            return null;
+        }
+
+        DesktopInstallLinkingState? currentState = TryLoadInstallLinkingState(headId);
         if (currentState is null)
         {
             return null;
         }
 
-        if (!string.Equals(currentState.InstallationId, report.InstallationId, StringComparison.Ordinal)
-            || !string.Equals(currentState.UserId, report.ClaimedUserId, StringComparison.Ordinal)
-            || !string.Equals(currentState.SubjectId, report.ClaimedSubjectId, StringComparison.Ordinal)
-            || !string.Equals(currentState.GrantId, report.ClaimGrantId, StringComparison.Ordinal))
+        if (!string.Equals(currentState.InstallationId, claimSnapshot.InstallationId, StringComparison.Ordinal)
+            || !string.Equals(currentState.UserId, claimSnapshot.ClaimedUserId, StringComparison.Ordinal)
+            || !string.Equals(currentState.SubjectId, claimSnapshot.ClaimedSubjectId, StringComparison.Ordinal)
+            || !string.Equals(currentState.GrantId, claimSnapshot.ClaimGrantId, StringComparison.Ordinal))
         {
             return null;
         }
@@ -580,6 +592,7 @@ public static class DesktopCrashRuntime
     private sealed record DesktopCrashPendingMarker(
         string CrashId,
         string ReportDirectory,
+        DesktopCrashClaimSnapshot? ClaimSnapshot = null,
         int SubmissionAttempts = 0,
         DateTimeOffset? LastSubmissionAttemptUtc = null,
         string? LastSubmissionError = null,
