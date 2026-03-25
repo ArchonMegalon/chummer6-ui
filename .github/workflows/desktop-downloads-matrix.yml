@@ -34,6 +34,7 @@ on:
       - 'scripts/generate-releases-manifest.sh'
       - 'scripts/sync-github-release-assets.py'
       - 'scripts/build-desktop-installer.sh'
+      - 'scripts/run-desktop-startup-smoke.sh'
       - 'scripts/publish-download-bundle.sh'
       - 'scripts/publish-download-bundle-s3.sh'
       - 'scripts/verify-releases-manifest.sh'
@@ -74,31 +75,12 @@ jobs:
             rid: linux-arm64
             installer_ext: deb
             launch_target: Chummer.Avalonia
-          - app: blazor-desktop
-            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
-            os: windows-latest
-            rid: win-x64
-            installer_ext: exe
-            launch_target: Chummer.Blazor.Desktop.exe
-          - app: blazor-desktop
-            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
-            os: windows-latest
-            rid: win-arm64
-            installer_ext: exe
-            launch_target: Chummer.Blazor.Desktop.exe
-          - app: blazor-desktop
-            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
-            os: ubuntu-latest
-            rid: linux-x64
-            installer_ext: deb
-            launch_target: Chummer.Blazor.Desktop
-          - app: blazor-desktop
-            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
-            os: ubuntu-latest
-            rid: linux-arm64
-            installer_ext: deb
-            launch_target: Chummer.Blazor.Desktop
-
+          - app: avalonia
+            project: Chummer.Avalonia/Chummer.Avalonia.csproj
+            os: macos-latest
+            rid: osx-x64
+            installer_ext: dmg
+            launch_target: Chummer.Avalonia
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -141,11 +123,37 @@ jobs:
             "dist" \
             "$release_version"
 
+      - name: Startup smoke
+        shell: bash
+        env:
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: docker
+          CHUMMER_DESKTOP_RELEASE_VERSION: run-${GITHUB_RUN_NUMBER:-local}
+          CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-${{ matrix.os }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist/startup-smoke
+          bash scripts/run-desktop-startup-smoke.sh \
+            "dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.${{ matrix.installer_ext }}" \
+            "${{ matrix.app }}" \
+            "${{ matrix.rid }}" \
+            "${{ matrix.launch_target }}" \
+            "dist/startup-smoke" \
+            "run-${GITHUB_RUN_NUMBER:-local}"
+
       - name: Upload RID artifact
         uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.app }}-${{ matrix.rid }}
           path: dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.${{ matrix.installer_ext }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload startup smoke evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-smoke-${{ matrix.app }}-${{ matrix.rid }}
+          path: dist/startup-smoke
           if-no-files-found: error
           retention-days: 14
 

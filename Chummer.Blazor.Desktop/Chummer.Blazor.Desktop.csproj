@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
+    <OutputType Condition="'$(RuntimeIdentifier)' == ''">Exe</OutputType>
+    <OutputType Condition="'$(RuntimeIdentifier)' != '' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win-')) == 'True'">WinExe</OutputType>
+    <OutputType Condition="'$(RuntimeIdentifier)' != '' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win-')) == 'False'">Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -8,6 +10,10 @@
     <ChummerDesktopReleaseVersion Condition="'$(ChummerDesktopReleaseVersion)' == ''">$(Version)</ChummerDesktopReleaseVersion>
     <ChummerDesktopReleaseChannel Condition="'$(ChummerDesktopReleaseChannel)' == ''">local</ChummerDesktopReleaseChannel>
   </PropertyGroup>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
+    <ProjectReference Include="$(ChummerLocalContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
+  </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
   </ItemGroup>

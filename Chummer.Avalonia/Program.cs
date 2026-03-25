@@ -30,7 +30,15 @@ internal static class Program
             args,
             CancellationToken.None).ConfigureAwait(false);
 
-        return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        AppBuilder builder = BuildAvaloniaApp();
+        int? startupSmokeExitCode = await DesktopStartupSmokeRuntime.TryHandleAsync("avalonia", args, CancellationToken.None)
+            .ConfigureAwait(false);
+        if (startupSmokeExitCode is not null)
+        {
+            return startupSmokeExitCode.Value;
+        }
+
+        return builder.StartWithClassicDesktopLifetime(args);
     }
 
     public static AppBuilder BuildAvaloniaApp()
