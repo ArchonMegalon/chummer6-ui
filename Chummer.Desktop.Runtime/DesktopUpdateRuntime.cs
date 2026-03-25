@@ -21,6 +21,7 @@ public sealed record DesktopUpdateStartupResult(
 public static class DesktopUpdateRuntime
 {
     private const string ApplySwitch = "--desktop-update-apply";
+    private const string LaunchInstallerSwitch = "--desktop-update-launch-installer";
     private const string UpdateManifestEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_MANIFEST";
     private const string UpdateEnabledEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_ENABLED";
     private const string UpdateAutoApplyEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_AUTO_APPLY";
@@ -31,13 +32,24 @@ public static class DesktopUpdateRuntime
     {
         ArgumentNullException.ThrowIfNull(args);
 
-        if (args.Length < 2 || !string.Equals(args[0], ApplySwitch, StringComparison.Ordinal))
+        if (args.Length < 2)
         {
             return null;
         }
 
-        DesktopUpdateApplyRequest request = LoadApplyRequest(args[1]);
-        return await ApplyStagedUpdateAsync(request, ct).ConfigureAwait(false);
+        if (string.Equals(args[0], ApplySwitch, StringComparison.Ordinal))
+        {
+            DesktopUpdateApplyRequest request = LoadApplyRequest(args[1]);
+            return await ApplyStagedUpdateAsync(request, ct).ConfigureAwait(false);
+        }
+
+        if (string.Equals(args[0], LaunchInstallerSwitch, StringComparison.Ordinal))
+        {
+            DesktopUpdateInstallerLaunchRequest request = LoadInstallerLaunchRequest(args[1]);
+            return await LaunchInstallerAsync(request, ct).ConfigureAwait(false);
+        }
+
+        return null;
     }
 
     public static async Task<DesktopUpdateStartupResult> CheckAndScheduleStartupUpdateAsync(
@@ -77,7 +89,17 @@ public static class DesktopUpdateRuntime
                 LastManifestPublishedAt: null,
                 LastError: null);
 
-        if (string.IsNullOrWhiteSpace(state.InstalledVersion))
+        if (!string.IsNullOrWhiteSpace(releaseMetadata.Version)
+            && !string.Equals(state.InstalledVersion, releaseMetadata.Version, StringComparison.OrdinalIgnoreCase))
+        {
+            state = state with
+            {
+                InstalledVersion = releaseMetadata.Version,
+                ChannelId = releaseMetadata.ChannelId
+            };
+            DesktopUpdateStateStore.Save(paths.StateFilePath, state);
+        }
+        else if (string.IsNullOrWhiteSpace(state.InstalledVersion))
         {
             DesktopUpdateStateStore.Save(paths.StateFilePath, state);
         }
@@ -104,7 +126,7 @@ public static class DesktopUpdateRuntime
             LastCheckedAt = DateTimeOffset.UtcNow,
             LastManifestVersion = manifest.Version,
             LastManifestPublishedAt = manifest.PublishedAt,
-            LastError = artifact is null ? $"No in-place update payload was available for {headId} {identity.Platform}/{identity.Arch}." : null
+            LastError = artifact is null ? $"No compatible desktop update payload was available for {headId} {identity.Platform}/{identity.Arch}." : null
         };
 
         if (artifact is null || !IsPublishedManifest(manifest))
@@ -139,36 +161,59 @@ public static class DesktopUpdateRuntime
         }
 
         string stageRoot = Path.Combine(paths.TempRoot, $"stage-{Guid.NewGuid():N}");
-        string payloadRoot = Path.Combine(stageRoot, "payload");
-        Directory.CreateDirectory(payloadRoot);
+        Directory.CreateDirectory(stageRoot);
 
         Uri downloadUri = ResolveArtifactUri(manifest.SourceUri, artifact);
-        string archivePath = Path.Combine(stageRoot, artifact.FileName);
-        await DownloadArtifactAsync(downloadUri, archivePath, ct).ConfigureAwait(false);
-        ExtractArchive(archivePath, payloadRoot);
-
-        string launchExecutableName = Path.GetFileName(processPath!)!;
-        string payloadInstallRoot = NormalizePayloadRoot(payloadRoot, launchExecutableName);
-        if (!File.Exists(Path.Combine(payloadInstallRoot, launchExecutableName)))
-        {
-            throw new InvalidOperationException(
-                $"The staged desktop payload did not contain '{launchExecutableName}'.");
-        }
+        string downloadedArtifactPath = Path.Combine(stageRoot, artifact.FileName);
+        await DownloadArtifactAsync(downloadUri, downloadedArtifactPath, ct).ConfigureAwait(false);
 
         string helperPath = CopyProcessExecutableToHelper(processPath!, paths.TempRoot);
-        DesktopUpdateApplyRequest request = new(
-            ParentProcessId: Environment.ProcessId,
-            StageRoot: stageRoot,
-            PayloadRoot: payloadInstallRoot,
-            InstallDirectory: AppContext.BaseDirectory,
-            LaunchExecutableName: launchExecutableName,
-            StateFilePath: paths.StateFilePath,
-            Version: manifest.Version,
-            ChannelId: manifest.ChannelId,
-            RelaunchArgs: relaunchArgs);
-        string requestPath = Path.Combine(stageRoot, "apply-request.json");
-        WriteApplyRequest(requestPath, request);
-        LaunchApplyHelper(helperPath, requestPath);
+        if (artifact.SupportsInPlaceApply)
+        {
+            string payloadRoot = Path.Combine(stageRoot, "payload");
+            Directory.CreateDirectory(payloadRoot);
+            ExtractArchive(downloadedArtifactPath, payloadRoot);
+
+            string launchExecutableName = Path.GetFileName(processPath)!;
+            string payloadInstallRoot = NormalizePayloadRoot(payloadRoot, launchExecutableName);
+            if (!File.Exists(Path.Combine(payloadInstallRoot, launchExecutableName)))
+            {
+                throw new InvalidOperationException(
+                    $"The staged desktop payload did not contain '{launchExecutableName}'.");
+            }
+
+            DesktopUpdateApplyRequest request = new(
+                ParentProcessId: Environment.ProcessId,
+                StageRoot: stageRoot,
+                PayloadRoot: payloadInstallRoot,
+                InstallDirectory: AppContext.BaseDirectory,
+                LaunchExecutableName: launchExecutableName,
+                StateFilePath: paths.StateFilePath,
+                Version: manifest.Version,
+                ChannelId: manifest.ChannelId,
+                RelaunchArgs: relaunchArgs);
+            string requestPath = Path.Combine(stageRoot, "apply-request.json");
+            WriteApplyRequest(requestPath, request);
+            LaunchApplyHelper(helperPath, requestPath);
+        }
+        else if (artifact.SupportsInstallerHandoff)
+        {
+            DesktopUpdateInstallerLaunchRequest request = new(
+                ParentProcessId: Environment.ProcessId,
+                StageRoot: stageRoot,
+                InstallerPath: downloadedArtifactPath,
+                StateFilePath: paths.StateFilePath,
+                Version: manifest.Version,
+                ChannelId: manifest.ChannelId);
+            string requestPath = Path.Combine(stageRoot, "installer-request.json");
+            WriteInstallerLaunchRequest(requestPath, request);
+            LaunchInstallerHelper(helperPath, requestPath);
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"Desktop update payload '{artifact.FileName}' is neither in-place applyable nor installer-launchable.");
+        }
 
         DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
         return DesktopUpdateStartupResult.ExitForApply();
@@ -200,6 +245,27 @@ public static class DesktopUpdateRuntime
             RelaunchArgs: dto.RelaunchArgs ?? []);
     }
 
+    private static DesktopUpdateInstallerLaunchRequest LoadInstallerLaunchRequest(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        InstallerLaunchRequestDto? dto = JsonSerializer.Deserialize<InstallerLaunchRequestDto>(File.ReadAllText(path, Encoding.UTF8));
+        if (dto is null
+            || string.IsNullOrWhiteSpace(dto.StageRoot)
+            || string.IsNullOrWhiteSpace(dto.InstallerPath)
+            || string.IsNullOrWhiteSpace(dto.StateFilePath))
+        {
+            throw new InvalidOperationException($"Desktop installer launch request '{path}' was invalid.");
+        }
+
+        return new DesktopUpdateInstallerLaunchRequest(
+            ParentProcessId: dto.ParentProcessId,
+            StageRoot: dto.StageRoot,
+            InstallerPath: dto.InstallerPath,
+            StateFilePath: dto.StateFilePath,
+            Version: dto.Version ?? string.Empty,
+            ChannelId: dto.ChannelId ?? string.Empty);
+    }
+
     private static async Task<int> ApplyStagedUpdateAsync(DesktopUpdateApplyRequest request, CancellationToken ct)
     {
         try
@@ -225,6 +291,40 @@ public static class DesktopUpdateRuntime
             DesktopUpdateStateStore.Save(request.StateFilePath, nextState);
             LaunchInstalledApplication(request.InstallDirectory, request.LaunchExecutableName, request.RelaunchArgs);
             TryDeleteDirectory(request.StageRoot);
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            DesktopUpdateState? priorState = DesktopUpdateStateStore.Load(request.StateFilePath);
+            if (priorState is not null)
+            {
+                DesktopUpdateStateStore.Save(request.StateFilePath, priorState with
+                {
+                    LastError = ex.Message
+                });
+            }
+
+            return 1;
+        }
+    }
+
+    private static async Task<int> LaunchInstallerAsync(DesktopUpdateInstallerLaunchRequest request, CancellationToken ct)
+    {
+        try
+        {
+            await WaitForProcessExitAsync(request.ParentProcessId, ct).ConfigureAwait(false);
+            LaunchInstaller(request.InstallerPath);
+
+            DesktopUpdateState? priorState = DesktopUpdateStateStore.Load(request.StateFilePath);
+            if (priorState is not null)
+            {
+                DesktopUpdateStateStore.Save(request.StateFilePath, priorState with
+                {
+                    ChannelId = string.IsNullOrWhiteSpace(request.ChannelId) ? priorState.ChannelId : request.ChannelId,
+                    LastError = null
+                });
+            }
+
             return 0;
         }
         catch (Exception ex)
@@ -445,6 +545,24 @@ public static class DesktopUpdateRuntime
         }
     }
 
+    private static void LaunchInstallerHelper(string helperPath, string requestPath)
+    {
+        ProcessStartInfo startInfo = new()
+        {
+            FileName = helperPath,
+            UseShellExecute = false,
+            WorkingDirectory = Path.GetDirectoryName(helperPath) ?? Path.GetTempPath()
+        };
+        startInfo.ArgumentList.Add(LaunchInstallerSwitch);
+        startInfo.ArgumentList.Add(requestPath);
+
+        Process? process = Process.Start(startInfo);
+        if (process is null)
+        {
+            throw new InvalidOperationException("Failed to launch the desktop installer helper.");
+        }
+    }
+
     private static void WriteApplyRequest(string path, DesktopUpdateApplyRequest request)
     {
         ApplyRequestDto dto = new(
@@ -457,6 +575,22 @@ public static class DesktopUpdateRuntime
             request.Version,
             request.ChannelId,
             request.RelaunchArgs.ToArray());
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, JsonSerializer.Serialize(dto, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        }), Encoding.UTF8);
+    }
+
+    private static void WriteInstallerLaunchRequest(string path, DesktopUpdateInstallerLaunchRequest request)
+    {
+        InstallerLaunchRequestDto dto = new(
+            request.ParentProcessId,
+            request.StageRoot,
+            request.InstallerPath,
+            request.StateFilePath,
+            request.Version,
+            request.ChannelId);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, JsonSerializer.Serialize(dto, new JsonSerializerOptions
         {
@@ -508,6 +642,83 @@ public static class DesktopUpdateRuntime
         }
 
         CopyDirectory(sourceDirectory, installDirectory);
+    }
+
+    private static void LaunchInstaller(string installerPath)
+    {
+        if (!File.Exists(installerPath))
+        {
+            throw new FileNotFoundException("Installer payload was not found.", installerPath);
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            StartDetachedProcess(installerPath);
+            return;
+        }
+
+        if (OperatingSystem.IsLinux())
+        {
+            if (TryStartCommand("xdg-open", installerPath)
+                || TryStartCommand("gio", "open", installerPath)
+                || TryStartCommand("pkexec", "dpkg", "-i", installerPath))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Could not launch Linux installer '{installerPath}'. Expected xdg-open, gio, or pkexec+dpkg to be available.");
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            if (TryStartCommand("open", installerPath))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException($"Could not launch macOS installer '{installerPath}' via 'open'.");
+        }
+
+        throw new InvalidOperationException($"Desktop installer launch is not supported on this platform for '{installerPath}'.");
+    }
+
+    private static void StartDetachedProcess(string path)
+    {
+        Process? process = Process.Start(new ProcessStartInfo
+        {
+            FileName = path,
+            WorkingDirectory = Path.GetDirectoryName(path) ?? Environment.CurrentDirectory,
+            UseShellExecute = true
+        });
+        if (process is null)
+        {
+            throw new InvalidOperationException($"Failed to launch process '{path}'.");
+        }
+    }
+
+    private static bool TryStartCommand(string command, params string[] args)
+    {
+        try
+        {
+            ProcessStartInfo startInfo = new()
+            {
+                FileName = command,
+                UseShellExecute = false,
+                WorkingDirectory = Path.GetTempPath()
+            };
+            foreach (string arg in args)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
+
+            Process? process = Process.Start(startInfo);
+            return process is not null;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static void CopyDirectory(string sourceDirectory, string destinationDirectory)
@@ -753,6 +964,14 @@ public static class DesktopUpdateRuntime
         string ChannelId,
         IReadOnlyList<string> RelaunchArgs);
 
+    private sealed record DesktopUpdateInstallerLaunchRequest(
+        int ParentProcessId,
+        string StageRoot,
+        string InstallerPath,
+        string StateFilePath,
+        string Version,
+        string ChannelId);
+
     private sealed record ApplyRequestDto(
         int ParentProcessId,
         string StageRoot,
@@ -763,4 +982,12 @@ public static class DesktopUpdateRuntime
         string? Version,
         string? ChannelId,
         string[]? RelaunchArgs);
+
+    private sealed record InstallerLaunchRequestDto(
+        int ParentProcessId,
+        string StageRoot,
+        string InstallerPath,
+        string StateFilePath,
+        string? Version,
+        string? ChannelId);
 }
