@@ -26,14 +26,11 @@ public sealed class DesktopCrashRuntimeTests
             CurrentDirectoryLabel: "<cwd>",
             ExceptionType: "System.Exception",
             ExceptionMessage: "boom",
-            ExceptionDetail: "System.Exception: boom",
-            InstallationId: "install-1",
-            ClaimedUserId: "user-1",
-            ClaimedSubjectId: "subject-1",
-            ClaimGrantId: "grant-1");
+            ExceptionDetail: "System.Exception: boom");
+        DesktopCrashClaimSnapshot snapshot = new("install-1", "user-1", "subject-1", "grant-1");
         scope.WriteInstallState(CreateState("install-1", "user-1", "subject-1", "grant-1", "token-1"));
 
-        object envelope = BuildEnvelope(report, "summary");
+        object envelope = BuildEnvelope(report, "summary", snapshot);
 
         Assert.AreEqual("install-1", GetEnvelopeProperty(envelope, "InstallationId"));
         Assert.AreEqual("user-1", GetEnvelopeProperty(envelope, "UserId"));
@@ -59,14 +56,11 @@ public sealed class DesktopCrashRuntimeTests
             CurrentDirectoryLabel: "<cwd>",
             ExceptionType: "System.Exception",
             ExceptionMessage: "boom",
-            ExceptionDetail: "System.Exception: boom",
-            InstallationId: "install-1",
-            ClaimedUserId: "user-1",
-            ClaimedSubjectId: "subject-1",
-            ClaimGrantId: "grant-1");
+            ExceptionDetail: "System.Exception: boom");
+        DesktopCrashClaimSnapshot snapshot = new("install-1", "user-1", "subject-1", "grant-1");
         scope.WriteInstallState(CreateState("install-1", "user-2", "subject-2", "grant-2", "token-2"));
 
-        object envelope = BuildEnvelope(report, "summary");
+        object envelope = BuildEnvelope(report, "summary", snapshot);
 
         Assert.IsNull(GetEnvelopeProperty(envelope, "InstallationId"));
         Assert.IsNull(GetEnvelopeProperty(envelope, "UserId"));
@@ -74,11 +68,38 @@ public sealed class DesktopCrashRuntimeTests
         Assert.IsNull(GetEnvelopeProperty(envelope, "InstallationGrantToken"));
     }
 
-    private static object BuildEnvelope(DesktopCrashReport report, string summary)
+    [TestMethod]
+    public void CrashReport_serialization_does_not_persist_claim_identity()
+    {
+        DesktopCrashReport report = new(
+            CrashId: "crash-3",
+            HeadId: "avalonia",
+            CapturedAtUtc: DateTimeOffset.UtcNow,
+            IsTerminating: true,
+            ApplicationVersion: "1.0.0",
+            RuntimeVersion: ".NET 10",
+            OperatingSystem: RuntimeInformation.OSDescription,
+            ProcessArchitecture: RuntimeInformation.OSArchitecture.ToString(),
+            ProcessName: "chummer",
+            BaseDirectoryLabel: "<base>",
+            CurrentDirectoryLabel: "<cwd>",
+            ExceptionType: "System.Exception",
+            ExceptionMessage: "boom",
+            ExceptionDetail: "System.Exception: boom");
+
+        string json = JsonSerializer.Serialize(report);
+
+        Assert.IsFalse(json.Contains("installationId", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(json.Contains("claimedUserId", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(json.Contains("claimedSubjectId", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(json.Contains("claimGrantId", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static object BuildEnvelope(DesktopCrashReport report, string summary, DesktopCrashClaimSnapshot? snapshot)
     {
         MethodInfo method = typeof(DesktopCrashRuntime).GetMethod("BuildEnvelope", BindingFlags.NonPublic | BindingFlags.Static)
             ?? throw new InvalidOperationException("BuildEnvelope method was not found.");
-        return method.Invoke(null, [report, summary])
+        return method.Invoke(null, [report, summary, snapshot])
             ?? throw new InvalidOperationException("BuildEnvelope returned null.");
     }
 
