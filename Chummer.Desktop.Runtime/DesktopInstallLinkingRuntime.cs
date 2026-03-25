@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Chummer.Hub.Registry.Contracts.InstallLinking;
 
 namespace Chummer.Desktop.Runtime;
 
@@ -437,68 +438,6 @@ public static class DesktopInstallLinkingRuntime
         using RSA rsa = RSA.Create(2048);
         return (rsa.ExportRSAPublicKeyPem(), rsa.ExportPkcs8PrivateKeyPem());
     }
-
-    private sealed record RedeemInstallClaimRequestDto(
-        string ClaimCode,
-        string InstallationId,
-        string HeadId,
-        string ApplicationVersion,
-        string ChannelId,
-        string Platform,
-        string Arch,
-        string? PublicKey = null,
-        string? HostLabel = null);
-
-    private sealed record RedeemInstallClaimResponseDto(
-        InstallClaimTicketResponse? Ticket,
-        ClaimedInstallationResponse? Installation,
-        InstallationGrantResponse? Grant,
-        bool AlreadyClaimed);
-
-    private sealed record InstallClaimTicketResponse(
-        string TicketId,
-        string ClaimCode,
-        string ArtifactId,
-        string ArtifactLabel,
-        string Channel,
-        string Version,
-        string InstallAccessClass,
-        string Status,
-        DateTimeOffset CreatedAtUtc,
-        DateTimeOffset ExpiresAtUtc,
-        string? UserId = null,
-        string? SubjectId = null,
-        string? ReceiptId = null,
-        string? InstallationId = null);
-
-    private sealed record ClaimedInstallationResponse(
-        string InstallationId,
-        string ArtifactId,
-        string Channel,
-        string Version,
-        string InstallAccessClass,
-        string Status,
-        DateTimeOffset CreatedAtUtc,
-        DateTimeOffset UpdatedAtUtc,
-        string? UserId = null,
-        string? SubjectId = null,
-        string? PublicKey = null,
-        string? ClaimTicketId = null,
-        string? HeadId = null,
-        string? Platform = null,
-        string? Arch = null,
-        string? HostLabel = null,
-        string? GrantId = null);
-
-    private sealed record InstallationGrantResponse(
-        string GrantId,
-        string InstallationId,
-        string Status,
-        string AccessToken,
-        DateTimeOffset IssuedAtUtc,
-        DateTimeOffset ExpiresAtUtc,
-        string? UserId = null,
-        string? SubjectId = null);
 
     private sealed record ProblemEnvelope(
         string? Title,
