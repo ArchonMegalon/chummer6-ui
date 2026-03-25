@@ -3222,6 +3222,17 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "bash scripts/run-desktop-startup-smoke.sh");
         StringAssert.Contains(workflowText, "desktop-smoke-${{ matrix.app }}-${{ matrix.rid }}");
         StringAssert.Contains(workflowText, "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS");
+        StringAssert.Contains(workflowText, "Checkout core-engine compatibility tree");
+        StringAssert.Contains(workflowText, "Checkout run-services compatibility tree");
+        StringAssert.Contains(workflowText, "Checkout ui-kit compatibility tree");
+        StringAssert.Contains(workflowText, "path: .compat/chummer-core-engine");
+        StringAssert.Contains(workflowText, "path: .compat/chummer.run-services");
+        StringAssert.Contains(workflowText, "path: .compat/chummer-ui-kit");
+        StringAssert.Contains(workflowText, "-p:ChummerUseLocalCompatibilityTree=true");
+        StringAssert.Contains(workflowText, "ChummerLocalContractsProject");
+        StringAssert.Contains(workflowText, "ChummerLocalRunContractsProject");
+        StringAssert.Contains(workflowText, "ChummerLocalUiKitProject");
+        StringAssert.Contains(workflowText, "if-no-files-found: ignore");
         StringAssert.Contains(workflowText, "bash scripts/generate-releases-manifest.sh");
         StringAssert.Contains(workflowText, "Chummer.Application/**");
         StringAssert.Contains(workflowText, "Chummer.Core/**");
