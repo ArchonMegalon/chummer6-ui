@@ -32,6 +32,11 @@ internal static class Program
                 return Uninstall(metadata);
             }
 
+            if (args.Length > 1 && string.Equals(args[0], "--smoke-install", StringComparison.OrdinalIgnoreCase))
+            {
+                return SmokeInstall(metadata, args[1]);
+            }
+
             return Install(metadata);
         }
         catch (Exception ex)
@@ -47,45 +52,25 @@ internal static class Program
 
     private static int Install(InstallerMetadata metadata)
     {
-        string targetDir = metadata.InstallDirectory;
-        string tempExtractDir = Path.Combine(Path.GetTempPath(), $"chummer-installer-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(tempExtractDir);
-        try
+        string targetDir = InstallPayload(metadata, metadata.InstallDirectory);
+        string installedInstallerPath = Path.Combine(targetDir, metadata.InstallerOutputName + ".exe");
+        File.Copy(Environment.ProcessPath!, installedInstallerPath, overwrite: true);
+
+        CreateShortcut(metadata.ShortcutPath, Path.Combine(targetDir, metadata.LaunchExecutable), metadata.DisplayName);
+        CreateShortcut(metadata.DesktopShortcutPath, Path.Combine(targetDir, metadata.LaunchExecutable), metadata.DisplayName);
+        RegisterUninstall(metadata, installedInstallerPath);
+
+        DialogResult launch = MessageBox.Show(
+            $"{metadata.DisplayName} installed to:\n{targetDir}\n\nYes: launch now\nNo: finish without launching",
+            "Install Complete",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Information);
+        if (launch == DialogResult.Yes)
         {
-            ExtractPayload(tempExtractDir);
-            EnsureLaunchExecutableExists(tempExtractDir, metadata);
-
-            if (Directory.Exists(targetDir))
-            {
-                TryDeleteDirectory(targetDir);
-            }
-
-            Directory.CreateDirectory(targetDir);
-            CopyDirectory(tempExtractDir, targetDir);
-
-            string installedInstallerPath = Path.Combine(targetDir, metadata.InstallerOutputName + ".exe");
-            File.Copy(Environment.ProcessPath!, installedInstallerPath, overwrite: true);
-
-            CreateShortcut(metadata.ShortcutPath, Path.Combine(targetDir, metadata.LaunchExecutable), metadata.DisplayName);
-            CreateShortcut(metadata.DesktopShortcutPath, Path.Combine(targetDir, metadata.LaunchExecutable), metadata.DisplayName);
-            RegisterUninstall(metadata, installedInstallerPath);
-
-            DialogResult launch = MessageBox.Show(
-                $"{metadata.DisplayName} installed to:\n{targetDir}\n\nYes: launch now\nNo: finish without launching",
-                "Install Complete",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Information);
-            if (launch == DialogResult.Yes)
-            {
-                LaunchInstalledApp(metadata);
-            }
-
-            return 0;
+            LaunchInstalledApp(metadata);
         }
-        finally
-        {
-            TryDeleteDirectory(tempExtractDir);
-        }
+
+        return 0;
     }
 
     private static int Uninstall(InstallerMetadata metadata)
@@ -100,6 +85,42 @@ internal static class Program
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
         return 0;
+    }
+
+    private static int SmokeInstall(InstallerMetadata metadata, string targetDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(targetDirectory))
+        {
+            throw new InvalidOperationException("Smoke install requires a target directory.");
+        }
+
+        InstallPayload(metadata, targetDirectory);
+        return 0;
+    }
+
+    private static string InstallPayload(InstallerMetadata metadata, string targetDirectory)
+    {
+        string targetDir = Path.GetFullPath(targetDirectory);
+        string tempExtractDir = Path.Combine(Path.GetTempPath(), $"chummer-installer-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempExtractDir);
+        try
+        {
+            ExtractPayload(tempExtractDir);
+            EnsureLaunchExecutableExists(tempExtractDir, metadata);
+
+            if (Directory.Exists(targetDir))
+            {
+                TryDeleteDirectory(targetDir);
+            }
+
+            Directory.CreateDirectory(targetDir);
+            CopyDirectory(tempExtractDir, targetDir);
+            return targetDir;
+        }
+        finally
+        {
+            TryDeleteDirectory(tempExtractDir);
+        }
     }
 
     private static void ExtractPayload(string tempExtractDir)

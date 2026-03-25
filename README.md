@@ -34,9 +34,10 @@ The work here is purification:
 Current honesty clause:
 
 - the workbench/browser/desktop lane is ready enough to ship the current early-access desktop scope
-- the release lane now emits preview installers and desktop bundles, not just loose files
+- the release lane now emits Windows `.exe`, macOS `.dmg`, and Linux `.deb` preview installers and desktop bundles, not just loose files
 - release-channel publication truth now lives downstream in `chummer6-hub-registry`; this repo emits the desktop bundle and installer recipe, not the promoted channel head
 - desktop heads can consume the canonical registry manifest for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` is configured
+- every packaged desktop head now has a startup-smoke gate and emits a bounded release-regression packet before promotion if the smoke start fails
 - explicit release evidence lives in `docs/WORKBENCH_RELEASE_SIGNOFF.md`
 - legacy compatibility cargo is explicitly isolated in `docs/COMPATIBILITY_CARGO.md` instead of being treated as active boundary truth
 - after the `chummer-play` split, presentation ownership for session/coach flows is limited to shared UI-kit primitives consumed by `chummer-play` through `Chummer.Ui.Kit`, workbench-side coach sidecars, and portal/proxy expectations for external `/session` and `/coach` hosts

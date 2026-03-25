@@ -178,8 +178,14 @@
     <ProjectReference Include="..\Chummer.Rulesets.Sr5\Chummer.Rulesets.Sr5.csproj" />
     <ProjectReference Include="..\Chummer.Rulesets.Sr6\Chummer.Rulesets.Sr6.csproj" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
+    <ProjectReference Include="$(ChummerLocalContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Avalonia.Headless" Version="11.3.7" />
     <PackageReference Include="bunit" Version="2.5.3" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
