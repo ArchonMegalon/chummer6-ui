@@ -3225,9 +3225,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "Checkout core-engine compatibility tree");
         StringAssert.Contains(workflowText, "Checkout run-services compatibility tree");
         StringAssert.Contains(workflowText, "Checkout ui-kit compatibility tree");
-        StringAssert.Contains(workflowText, "path: .compat/chummer-core-engine");
-        StringAssert.Contains(workflowText, "path: .compat/chummer.run-services");
-        StringAssert.Contains(workflowText, "path: .compat/chummer-ui-kit");
+        StringAssert.Contains(workflowText, "path: .c/core");
+        StringAssert.Contains(workflowText, "path: .c/hub");
+        StringAssert.Contains(workflowText, "path: .c/ui");
         StringAssert.Contains(workflowText, "-p:ChummerUseLocalCompatibilityTree=true");
         StringAssert.Contains(workflowText, "ChummerLocalContractsProject");
         StringAssert.Contains(workflowText, "ChummerLocalRunContractsProject");
