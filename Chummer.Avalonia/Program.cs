@@ -25,6 +25,11 @@ internal static class Program
             return 0;
         }
 
+        App.InstallLinkingStartupContext = await DesktopInstallLinkingRuntime.InitializeForStartupAsync(
+            "avalonia",
+            args,
+            CancellationToken.None).ConfigureAwait(false);
+
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

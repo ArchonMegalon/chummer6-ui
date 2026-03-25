@@ -44,6 +44,19 @@ internal static class Program
             }
         }
 
+        DesktopInstallLinkingStartupContext installLinking = await DesktopInstallLinkingRuntime.InitializeForStartupAsync(
+            "blazor-desktop",
+            args,
+            CancellationToken.None).ConfigureAwait(false);
+        if (installLinking.ClaimResult is not null)
+        {
+            Console.Error.WriteLine(installLinking.ClaimResult.Message);
+        }
+        else if (installLinking.ShouldPrompt)
+        {
+            Console.Error.WriteLine("This desktop copy is not linked yet. Copy the install claim code from your Hub account and relaunch with --install-claim-code <CODE> if you want account-aware support continuity.");
+        }
+
         PhotinoBlazorAppBuilder builder = PhotinoBlazorAppBuilder.CreateDefault(args);
         builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
         builder.RootComponents.Add<App>("app");

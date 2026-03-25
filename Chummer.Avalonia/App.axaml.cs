@@ -14,6 +14,7 @@ public partial class App : global::Avalonia.Application
 {
     private ServiceProvider? _serviceProvider;
     internal static IServiceProvider? Services { get; private set; }
+    internal static DesktopInstallLinkingStartupContext? InstallLinkingStartupContext { get; set; }
 
     public override void Initialize()
     {
@@ -36,6 +37,7 @@ public partial class App : global::Avalonia.Application
                 }
 
                 Services = null;
+                InstallLinkingStartupContext = null;
                 _serviceProvider?.Dispose();
                 _serviceProvider = null;
             };
@@ -107,6 +109,22 @@ public partial class App : global::Avalonia.Application
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Failed to display the desktop crash recovery window: {ex}");
+        }
+
+        DesktopInstallLinkingStartupContext? installLinkingContext = InstallLinkingStartupContext;
+        InstallLinkingStartupContext = null;
+        if (installLinkingContext is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to display the desktop install linking window: {ex}");
         }
     }
 }
