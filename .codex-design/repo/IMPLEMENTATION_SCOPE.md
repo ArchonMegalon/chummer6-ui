@@ -12,6 +12,8 @@ It is the repo for builders, inspectors, compare views, explain UX, moderation/a
 * explain and audit-facing UX on the workbench side
 * moderation and admin surfaces that stay outside the live play shell
 * desktop packaging, installer delivery, and workbench-side release polish
+* updater integration inside desktop heads
+* release-bundle emission for desktop artifacts
 
 ## Must not own
 
@@ -19,6 +21,7 @@ It is the repo for builders, inspectors, compare views, explain UX, moderation/a
 * offline session-ledger authority
 * engine/runtime mechanics truth
 * hosted orchestration or provider-secret ownership
+* canonical channel or update-feed truth
 * source-copied shared UI primitives that belong in `Chummer.Ui.Kit`
 
 ## Package boundary

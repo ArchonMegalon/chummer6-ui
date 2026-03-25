@@ -16,7 +16,7 @@ if ! rg -q "public interface ISessionClient|public sealed class HttpSessionClien
 fi
 
 if ! rg -q "chummer-play|Chummer.Ui.Kit|play/mobile heads now live outside this repo" \
-  README.md instructions.md chummer-presentation.design.v2.md; then
+  README.md instructions.md; then
   echo "[B5] FAIL: repo guidance does not point play/mobile ownership at the dedicated repos."
   exit 5
 fi

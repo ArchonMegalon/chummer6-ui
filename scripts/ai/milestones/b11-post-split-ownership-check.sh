@@ -54,9 +54,7 @@ if ! rg -q "CHUMMER_PORTAL_SESSION_PROXY_URL|CHUMMER_PORTAL_COACH_PROXY_URL|CHUM
 fi
 
 if ! rg -q "chummer-play|Chummer.Ui.Kit|shared UI-kit primitives|workbench-side coach sidecars|portal/proxy expectations" \
-  README.md \
-  chummer-presentation.design.v2.md \
-  AGENTS.md; then
+  README.md; then
   echo "[B11] FAIL: repo guidance no longer documents the post-split ownership map."
   exit 10
 fi

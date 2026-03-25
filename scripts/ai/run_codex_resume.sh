@@ -11,7 +11,8 @@ BOOT_FILE=".codex.resume.boot.txt"
   printf -- '- .agent-memory.md\n'
   printf -- '- AGENT_MEMORY.md\n'
   printf -- '- audit.md\n'
-  printf -- '- %s\n' "chummer-presentation.design.v2.md"
+  printf -- '- .codex-design/repo/IMPLEMENTATION_SCOPE.md\n'
+  printf -- '- .codex-design/review/REVIEW_CONTEXT.md\n'
   if [ -f AGENTS.md ]; then printf -- '- AGENTS.md\n'; fi
   printf '\n'
   cat instructions.md
