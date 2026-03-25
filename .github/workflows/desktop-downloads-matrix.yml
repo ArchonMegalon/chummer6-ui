@@ -48,9 +48,9 @@ jobs:
     name: Build ${{ matrix.app }} ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}
     env:
-      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/.compat/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj
-      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/.compat/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
-      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/.compat/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
+      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/.c/core/Chummer.Contracts/Chummer.Contracts.csproj
+      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/.c/hub/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
+      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/.c/ui/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
     strategy:
       fail-fast: false
       matrix:
@@ -93,19 +93,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-core
-          path: .compat/chummer-core-engine
+          path: .c/core
 
       - name: Checkout run-services compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-hub
-          path: .compat/chummer.run-services
+          path: .c/hub
 
       - name: Checkout ui-kit compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-ui-kit
-          path: .compat/chummer-ui-kit
+          path: .c/ui
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
