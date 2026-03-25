@@ -61,6 +61,15 @@ internal static class Program
         builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
         builder.RootComponents.Add<App>("app");
 
+        int? startupSmokeExitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(
+            "blazor-desktop",
+            args,
+            CancellationToken.None).ConfigureAwait(false);
+        if (startupSmokeExitCode is not null)
+        {
+            return startupSmokeExitCode.Value;
+        }
+
         PhotinoBlazorApp app = builder.Build();
         app.Run();
         return 0;

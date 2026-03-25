@@ -65,6 +65,17 @@ print(value)
 PY
 }
 
+macos_bundle_identifier() {
+  python3 - "$APP_KEY" "$RID" <<'PY'
+import re
+import sys
+
+app_key = re.sub(r"[^A-Za-z0-9]+", "-", sys.argv[1]).strip("-").lower() or "desktop"
+rid = re.sub(r"[^A-Za-z0-9]+", "-", sys.argv[2]).strip("-").lower() or "local"
+print(f"net.chummer6.{app_key}.{rid}")
+PY
+}
+
 linux_deb_arch() {
   case "$RID" in
     linux-x64) echo "amd64" ;;
@@ -74,6 +85,72 @@ linux_deb_arch() {
       exit 1
       ;;
   esac
+}
+
+build_macos_installer() {
+  if ! command -v hdiutil >/dev/null 2>&1; then
+    echo "hdiutil is required for macOS dmg packaging." >&2
+    exit 1
+  fi
+
+  local installer_name="chummer-$APP_KEY-$RID-installer.dmg"
+  local stage_root="$DIST_DIR/package-$APP_KEY-$RID"
+  local app_bundle="$stage_root/$APP_DISPLAY.app"
+  local contents_dir="$app_bundle/Contents"
+  local macos_dir="$contents_dir/MacOS"
+  local plist_path="$contents_dir/Info.plist"
+  local bundle_identifier
+  bundle_identifier="$(macos_bundle_identifier)"
+
+  rm -rf "$stage_root"
+  mkdir -p "$macos_dir" "$contents_dir/Resources"
+  cp -a "$PUBLISH_DIR"/. "$macos_dir"/
+
+  if [[ ! -f "$macos_dir/$LAUNCH_TARGET" ]]; then
+    echo "Launch target not found in macOS publish directory: $macos_dir/$LAUNCH_TARGET" >&2
+    exit 1
+  fi
+  chmod 0755 "$macos_dir/$LAUNCH_TARGET"
+
+  cat > "$plist_path" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleDisplayName</key>
+  <string>$APP_DISPLAY</string>
+  <key>CFBundleExecutable</key>
+  <string>$LAUNCH_TARGET</string>
+  <key>CFBundleIdentifier</key>
+  <string>$bundle_identifier</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>$APP_DISPLAY</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>$VERSION</string>
+  <key>CFBundleVersion</key>
+  <string>$VERSION</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>12.0</string>
+</dict>
+</plist>
+EOF
+
+  rm -f "$DIST_DIR/$installer_name"
+  hdiutil create \
+    -volname "$APP_DISPLAY" \
+    -srcfolder "$stage_root" \
+    -ov \
+    -format UDZO \
+    "$DIST_DIR/$installer_name" >/dev/null
+
+  rm -rf "$stage_root"
+  echo "built installer $DIST_DIR/$installer_name"
 }
 
 build_windows_installer() {
@@ -182,6 +259,9 @@ case "$RID" in
     ;;
   linux-*)
     build_linux_installer
+    ;;
+  osx-*)
+    build_macos_installer
     ;;
   *)
     echo "Unsupported installer target RID: $RID" >&2
