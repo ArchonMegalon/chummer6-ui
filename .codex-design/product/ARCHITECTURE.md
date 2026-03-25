@@ -39,12 +39,15 @@ No other repo may compute or redefine canonical mechanics.
 * relay
 * approvals
 * memory
+* relationship-plane truth
 * Coach / Spider / Director orchestration
 * play API aggregation
+* the initial bounded home for campaign continuity and product-control domains
 * account-aware download/install UX
 * service-to-service coordination
 
 It must not own duplicate mechanics, registry persistence after split, or media rendering after split.
+If campaign continuity or product control live in Hub, they do so as explicit bounded contexts with dedicated contract families, not as a license for Hub to become the hidden owner of every middle-layer concern.
 
 ### Rule 5 — Workbench and play stay separate
 
@@ -123,7 +126,7 @@ Boosting is the first use case of that platform, not a license to let Fleet abso
 
 ### Rule 14 — Participation canon starts in design, not in guide copy or helper scripts
 
-The bounded participate/booster lane is a first-class product workflow.
+The guided participation lane is a first-class product workflow.
 
 Canonical workflow truth lives in `products/chummer/PARTICIPATION_AND_BOOSTER_WORKFLOW.md`, not in:
 
@@ -179,6 +182,38 @@ Release/build/install/update authority is intentionally split:
 
 Neither EA helper scripts nor Hub-local release manifests may become the canonical build authority.
 
+### Rule 18 — Campaign continuity is a first-class product domain
+
+Chummer is not only a character builder and not only a repo graph.
+It has a first-class product middle:
+
+* runner dossier
+* crew
+* campaign
+* run
+* scene
+* objective
+* continuity snapshot
+* replay-safe event memory
+
+The initial cross-repo DTO family for that middle is `Chummer.Campaign.Contracts`.
+It starts inside `chummer6-hub` as a bounded context until a later extraction is warranted.
+UI, mobile, media, Fleet, and EA may project or consume campaign truth, but they must not redefine it.
+
+### Rule 19 — Product control is a first-class plane
+
+Crash, bug, feedback, release, and public-promise signals are not side effects.
+They form a product-control plane with first-class truth for:
+
+* support cases
+* closure status
+* decision packets
+* release-readiness facts
+* product-health and experience signals
+
+The initial DTO family for that plane is `Chummer.Control.Contracts`.
+It starts inside `chummer6-hub` as a bounded context that Hub owns for intake and closure, while Fleet consumes it for clustering and execution aids and design/governor roles consume it for governed change.
+
 ## Repo graph
 
 ```text
@@ -209,6 +244,8 @@ chummer6-mobile
 chummer6-hub
   ├─ publishes Chummer.Play.Contracts
   ├─ publishes Chummer.Run.Contracts
+  ├─ publishes Chummer.Campaign.Contracts
+  ├─ publishes Chummer.Control.Contracts
   ├─ consumes Chummer.Engine.Contracts
   ├─ consumes Chummer.Hub.Registry.Contracts
   ├─ consumes Chummer.Media.Contracts
@@ -236,14 +273,18 @@ fleet
 
 * ui -> engine contracts
 * ui -> ui-kit
+* ui -> campaign contracts
+* ui -> control contracts
 * mobile -> engine contracts
 * mobile -> play contracts
+* mobile -> campaign contracts
 * mobile -> ui-kit
 * hub -> engine contracts
 * hub -> play contracts
 * hub -> run contracts
 * hub -> registry contracts
 * hub -> media contracts
+* media-factory -> campaign contracts
 * hub-registry -> its own contracts
 * media-factory -> its own contracts
 * fleet -> mirrored design canon
@@ -380,7 +421,7 @@ This plane exists to integrate owned third-party capabilities without allowing a
 
 ## Community sponsorship plane
 
-Chummer uses one community/sponsorship spine rather than a one-off booster feature.
+Chummer uses one community/sponsorship spine rather than a one-off contribution-only feature.
 
 Canonical split:
 
@@ -397,7 +438,7 @@ Canonical split:
 * sponsor session: a bounded premium-burst sponsorship intent/execution record
 * entitlement: a durable product right granted to a user or group
 
-User accounts must not collapse into raw identity-subject rows. Groups must stay generic enough to serve booster groups now and campaign / GM-circle / creator-team surfaces later.
+User accounts must not collapse into raw identity-subject rows. Groups must stay generic enough to serve guided-contribution groups now and campaign / GM-circle / creator-team surfaces later.
 
 ### Accounting rule
 
