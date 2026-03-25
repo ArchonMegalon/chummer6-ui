@@ -8,7 +8,7 @@ Expected contents:
 - `RELEASE_CHANNEL.generated.json`
 - `releases.json`
 - `files/`
-- desktop artifacts under `files/` (for example `chummer-avalonia-win-x64-installer.exe`, `chummer-avalonia-win-x64.zip`, and `chummer-blazor-desktop-linux-x64.tar.gz`)
+- desktop artifacts under `files/` (for example `chummer-avalonia-win-x64-installer.exe` and `chummer-blazor-desktop-linux-x64-installer.deb`)
 
 Hub prefers `RELEASE_CHANNEL.generated.json` as the canonical registry-backed projection, serves `/downloads/releases.json` as the compatibility manifest, and resolves `/downloads/files/<artifact>` from the same root.
 

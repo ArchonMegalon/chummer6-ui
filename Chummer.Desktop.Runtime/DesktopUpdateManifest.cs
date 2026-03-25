@@ -56,6 +56,15 @@ public sealed record DesktopUpdateArtifact(
     public bool SupportsInPlaceApply
         => string.Equals(Extension, ".zip", StringComparison.OrdinalIgnoreCase)
             || string.Equals(Extension, ".tar.gz", StringComparison.OrdinalIgnoreCase);
+
+    public bool SupportsInstallerHandoff
+        => !SupportsInPlaceApply
+            && (string.Equals(Kind, "installer", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Extension, ".exe", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Extension, ".deb", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Extension, ".pkg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Extension, ".dmg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Extension, ".msix", StringComparison.OrdinalIgnoreCase));
 }
 
 public sealed record DesktopUpdateChannelManifest(
@@ -69,7 +78,7 @@ public sealed record DesktopUpdateChannelManifest(
 public static class DesktopUpdateManifestParser
 {
     private static readonly Regex CompatibilityArtifactPattern = new(
-        "^chummer-(?<head>avalonia|blazor-desktop)-(?<rid>[^.]+?)(?<installer>-installer)?\\.(?<ext>exe|zip|tar\\.gz|dmg|pkg|msix)$",
+        "^chummer-(?<head>avalonia|blazor-desktop)-(?<rid>[^.]+?)(?<installer>-installer)?\\.(?<ext>exe|zip|tar\\.gz|deb|dmg|pkg|msix)$",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     public static DesktopUpdateChannelManifest Parse(string json, Uri sourceUri)
@@ -107,8 +116,9 @@ public static class DesktopUpdateManifestParser
                 string.Equals(artifact.HeadId, headId, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(artifact.Platform, identity.Platform, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(artifact.Arch, identity.Arch, StringComparison.OrdinalIgnoreCase)
-                && artifact.SupportsInPlaceApply)
-            .OrderBy(artifact => KindSortKey(artifact.Kind))
+                && (artifact.SupportsInPlaceApply || artifact.SupportsInstallerHandoff))
+            .OrderBy(artifact => artifact.SupportsInPlaceApply ? 0 : 1)
+            .ThenBy(artifact => KindSortKey(artifact.Kind))
             .ThenBy(artifact => artifact.FileName, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault();
     }
@@ -243,6 +253,7 @@ public static class DesktopUpdateManifestParser
         {
             "zip" => "archive",
             "tar.gz" => "archive",
+            "deb" => "installer",
             "dmg" => "dmg",
             "pkg" => "pkg",
             "msix" => "msix",
