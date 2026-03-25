@@ -908,8 +908,7 @@ public static class DesktopUpdateRuntime
         public static DesktopUpdatePaths Create(string headId, DesktopUpdatePlatformIdentity identity)
         {
             string root = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Chummer6",
+                DesktopStateRootResolver.Resolve("Chummer6", "Chummer6"),
                 UpdateRootDirectoryName,
                 headId,
                 identity.Platform,

@@ -87,6 +87,24 @@ linux_deb_arch() {
   esac
 }
 
+linux_deb_depends() {
+  case "$APP_KEY" in
+    avalonia)
+      cat <<'EOF'
+libfontconfig1, libfreetype6, zlib1g
+EOF
+      ;;
+    blazor-desktop)
+      cat <<'EOF'
+libwebkit2gtk-4.1-0, libnotify4, libnss3, libxss1, libasound2 | libasound2t64, xdg-utils
+EOF
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
 build_macos_installer() {
   if ! command -v hdiutil >/dev/null 2>&1; then
     echo "hdiutil is required for macOS dmg packaging." >&2
@@ -202,6 +220,8 @@ build_linux_installer() {
   local install_root="$stage_root/opt/chummer6/$APP_KEY-$RID"
   local wrapper_path="$stage_root/usr/bin/chummer6-$APP_KEY"
   local desktop_path="$stage_root/usr/share/applications/chummer6-$APP_KEY.desktop"
+  local deb_depends
+  deb_depends="$(linux_deb_depends || true)"
 
   rm -rf "$stage_root"
   mkdir -p "$stage_root/DEBIAN" "$install_root" "$(dirname "$wrapper_path")" "$(dirname "$desktop_path")"
@@ -223,6 +243,9 @@ Maintainer: ArchonMegalon
 Description: $APP_DISPLAY
  Installer package for the $APP_DISPLAY head.
 EOF
+  if [[ -n "$deb_depends" ]]; then
+    printf 'Depends: %s\n' "$deb_depends" >> "$stage_root/DEBIAN/control"
+  fi
 
   cat > "$wrapper_path" <<EOF
 #!/usr/bin/env bash

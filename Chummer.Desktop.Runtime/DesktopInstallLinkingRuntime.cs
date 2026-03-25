@@ -577,7 +577,6 @@ public static class DesktopInstallLinkingRuntime
         {
             string root = Path.Combine(
                 GetStateRoot(),
-                "Chummer6",
                 StateRootDirectoryName,
                 headId,
                 identity.Platform,
@@ -588,13 +587,7 @@ public static class DesktopInstallLinkingRuntime
 
     private static string GetStateRoot()
     {
-        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        if (!string.IsNullOrWhiteSpace(localAppData))
-        {
-            return localAppData;
-        }
-
-        return Path.GetTempPath();
+        return DesktopStateRootResolver.Resolve("Chummer6", "Chummer6");
     }
 
     private static class DesktopInstallLinkingStateStore
