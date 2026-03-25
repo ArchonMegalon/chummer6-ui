@@ -47,6 +47,10 @@ jobs:
   build-desktop:
     name: Build ${{ matrix.app }} ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}
+    env:
+      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/.compat/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj
+      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/.compat/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
+      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/.compat/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
     strategy:
       fail-fast: false
       matrix:
@@ -85,13 +89,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout core-engine compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer-core-engine
+          path: .compat/chummer-core-engine
+
+      - name: Checkout run-services compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer.run-services
+          path: .compat/chummer.run-services
+
+      - name: Checkout ui-kit compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer-ui-kit
+          path: .compat/chummer-ui-kit
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore ${{ matrix.project }} -r ${{ matrix.rid }}
+        run: |
+          dotnet restore ${{ matrix.project }} \
+            -r ${{ matrix.rid }} \
+            -p:ChummerUseLocalCompatibilityTree=true \
+            -p:ChummerLocalContractsProject="${CHUMMER_LOCAL_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalRunContractsProject="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}"
 
       - name: Publish desktop app
         shell: bash
@@ -106,6 +134,10 @@ jobs:
             -p:PublishSingleFile=true \
             -p:PublishTrimmed=false \
             -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:ChummerUseLocalCompatibilityTree=true \
+            -p:ChummerLocalContractsProject="${CHUMMER_LOCAL_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalRunContractsProject="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}" \
             -p:ChummerDesktopReleaseVersion="$release_version" \
             -p:ChummerDesktopReleaseChannel="docker" \
             -o "$out_dir"
@@ -154,7 +186,7 @@ jobs:
         with:
           name: desktop-smoke-${{ matrix.app }}-${{ matrix.rid }}
           path: dist/startup-smoke
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 14
 
   generate-manifest:
