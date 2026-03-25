@@ -105,7 +105,40 @@ EOF
   esac
 }
 
+ensure_self_contained_publish() {
+  local launch_stem
+  launch_stem="$LAUNCH_TARGET"
+  if [[ "$launch_stem" == *.exe ]]; then
+    launch_stem="${launch_stem%.exe}"
+  fi
+  local runtimeconfig_path="$PUBLISH_DIR/$launch_stem.runtimeconfig.json"
+
+  if [[ ! -f "$runtimeconfig_path" ]]; then
+    return 0
+  fi
+
+  python3 - "$runtimeconfig_path" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+runtime_options = payload.get("runtimeOptions") or {}
+
+# Framework-dependent desktop publishes still carry framework/frameworks.
+# Self-contained desktop publishes should not require a shared runtime here.
+if runtime_options.get("framework") or runtime_options.get("frameworks"):
+    raise SystemExit(
+        f"framework-dependent desktop publish detected: {path}. "
+        "Re-publish with --self-contained true before building installers."
+    )
+PY
+}
+
 build_macos_installer() {
+  ensure_self_contained_publish
+
   if ! command -v hdiutil >/dev/null 2>&1; then
     echo "hdiutil is required for macOS dmg packaging." >&2
     exit 1
@@ -172,6 +205,8 @@ EOF
 }
 
 build_windows_installer() {
+  ensure_self_contained_publish
+
   local payload_zip="$DIST_DIR/chummer-$APP_KEY-$RID-payload.zip"
   local installer_name="chummer-$APP_KEY-$RID-installer.exe"
   local installer_out_dir="$DIST_DIR/installer-$APP_KEY-$RID"
@@ -211,6 +246,8 @@ build_windows_installer() {
 }
 
 build_linux_installer() {
+  ensure_self_contained_publish
+
   local deb_arch
   deb_arch="$(linux_deb_arch)"
   local deb_version
