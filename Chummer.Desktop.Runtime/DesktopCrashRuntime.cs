@@ -378,13 +378,7 @@ public static class DesktopCrashRuntime
 
     private static string GetStateRoot()
     {
-        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        if (!string.IsNullOrWhiteSpace(localAppData))
-        {
-            return Path.Combine(localAppData, "Chummer");
-        }
-
-        return Path.Combine(Path.GetTempPath(), "Chummer");
+        return DesktopStateRootResolver.Resolve("Chummer", "Chummer");
     }
 
     private static void CreateCrashBundle(string bundlePath, string reportPath, string summaryPath)

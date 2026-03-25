@@ -26,6 +26,12 @@
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="wwwroot/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>ChummerDesktopHeadId</_Parameter1>
       <_Parameter2>$(ChummerDesktopHeadId)</_Parameter2>
