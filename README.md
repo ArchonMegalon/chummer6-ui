@@ -33,8 +33,8 @@ The work here is purification:
 
 Current honesty clause:
 
-- the workbench/browser/desktop feature lane is materially release-complete for the current scope
-- the release lane now ships installer-capable desktop bundles, not just loose files
+- the workbench/browser/desktop lane is ready enough to ship the current early-access desktop scope
+- the release lane now emits preview installers and desktop bundles, not just loose files
 - release-channel publication truth now lives downstream in `chummer6-hub-registry`; this repo emits the desktop bundle and installer recipe, not the promoted channel head
 - desktop heads can consume the canonical registry manifest for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` is configured
 - explicit release evidence lives in `docs/WORKBENCH_RELEASE_SIGNOFF.md`
