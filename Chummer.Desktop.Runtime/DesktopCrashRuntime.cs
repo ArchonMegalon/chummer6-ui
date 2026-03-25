@@ -296,6 +296,7 @@ public static class DesktopCrashRuntime
         try
         {
             DesktopCrashContext context = DesktopCrashContext.Create(headId);
+            DesktopInstallLinkingState? installState = TryLoadInstallLinkingState(headId);
             string crashRoot = EnsureCrashRoot();
             string reportDirectory = Path.Combine(
                 crashRoot,
@@ -316,7 +317,11 @@ public static class DesktopCrashRuntime
                 CurrentDirectoryLabel: context.CurrentDirectoryLabel,
                 ExceptionType: exception.GetType().FullName ?? exception.GetType().Name,
                 ExceptionMessage: SanitizeText(exception.Message, context),
-                ExceptionDetail: SanitizeText(exception.ToString(), context));
+                ExceptionDetail: SanitizeText(exception.ToString(), context),
+                InstallationId: installState?.InstallationId,
+                ClaimedUserId: installState?.UserId,
+                ClaimedSubjectId: installState?.SubjectId,
+                ClaimGrantId: installState?.GrantId);
 
             string reportPath = Path.Combine(reportDirectory, CrashReportFileName);
             File.WriteAllText(reportPath, JsonSerializer.Serialize(report, JsonOptions), Encoding.UTF8);
@@ -430,7 +435,7 @@ public static class DesktopCrashRuntime
     private static DesktopCrashEnvelope BuildEnvelope(DesktopCrashReport report, string summaryText)
     {
         string platform = ResolvePlatformFromOs(report.OperatingSystem);
-        DesktopInstallLinkingState? installState = TryLoadInstallLinkingState(report.HeadId);
+        DesktopInstallLinkingState? installState = ResolveSubmissionInstallState(report);
         return new DesktopCrashEnvelope(
             CrashId: report.CrashId,
             HeadId: report.HeadId,
@@ -449,11 +454,31 @@ public static class DesktopCrashRuntime
             DesktopHead: report.HeadId,
             RuntimeHead: "desktop-runtime",
             InstallationId: installState?.InstallationId,
+            InstallationGrantToken: installState?.GrantToken,
             UserId: installState?.UserId,
             SubjectId: installState?.SubjectId,
             LastActionCategory: null,
             LogTail: BuildLogTail(summaryText, report.ExceptionDetail),
             FullDiagnosticsOptIn: false);
+    }
+
+    private static DesktopInstallLinkingState? ResolveSubmissionInstallState(DesktopCrashReport report)
+    {
+        DesktopInstallLinkingState? currentState = TryLoadInstallLinkingState(report.HeadId);
+        if (currentState is null)
+        {
+            return null;
+        }
+
+        if (!string.Equals(currentState.InstallationId, report.InstallationId, StringComparison.Ordinal)
+            || !string.Equals(currentState.UserId, report.ClaimedUserId, StringComparison.Ordinal)
+            || !string.Equals(currentState.SubjectId, report.ClaimedSubjectId, StringComparison.Ordinal)
+            || !string.Equals(currentState.GrantId, report.ClaimGrantId, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return currentState;
     }
 
     private static DesktopInstallLinkingState? TryLoadInstallLinkingState(string headId)
@@ -581,6 +606,7 @@ public static class DesktopCrashRuntime
         string? DesktopHead,
         string? RuntimeHead,
         string? InstallationId,
+        string? InstallationGrantToken,
         string? UserId,
         string? SubjectId,
         string? LastActionCategory,
