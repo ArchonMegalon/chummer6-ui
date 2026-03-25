@@ -14,11 +14,13 @@ public sealed record DesktopCrashReport(
     string CurrentDirectoryLabel,
     string ExceptionType,
     string ExceptionMessage,
-    string ExceptionDetail,
-    string? InstallationId = null,
-    string? ClaimedUserId = null,
-    string? ClaimedSubjectId = null,
-    string? ClaimGrantId = null);
+    string ExceptionDetail);
+
+public sealed record DesktopCrashClaimSnapshot(
+    string? InstallationId,
+    string? ClaimedUserId,
+    string? ClaimedSubjectId,
+    string? ClaimGrantId);
 
 public sealed record DesktopPendingCrashReport(
     DesktopCrashReport Report,
@@ -27,6 +29,7 @@ public sealed record DesktopPendingCrashReport(
     string SummaryPath,
     string BundlePath,
     string SummaryText,
+    DesktopCrashClaimSnapshot? ClaimSnapshot,
     int SubmissionAttempts,
     DateTimeOffset? LastSubmissionAttemptUtc,
     string? LastSubmissionError,

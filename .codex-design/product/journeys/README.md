@@ -14,6 +14,9 @@ Current canonical journeys:
 * `build-and-inspect-a-character.md`
 * `rejoin-after-disconnect.md`
 * `install-and-update.md`
+* `claim-install-and-close-a-support-case.md`
+* `run-a-campaign-and-return.md`
+* `organize-a-community-and-close-the-loop.md`
 * `publish-a-grounded-artifact.md`
 * `recover-from-sync-conflict.md`
 
