@@ -14,7 +14,11 @@ public sealed record DesktopCrashReport(
     string CurrentDirectoryLabel,
     string ExceptionType,
     string ExceptionMessage,
-    string ExceptionDetail);
+    string ExceptionDetail,
+    string? InstallationId = null,
+    string? ClaimedUserId = null,
+    string? ClaimedSubjectId = null,
+    string? ClaimGrantId = null);
 
 public sealed record DesktopPendingCrashReport(
     DesktopCrashReport Report,
