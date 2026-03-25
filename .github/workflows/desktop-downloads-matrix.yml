@@ -47,6 +47,9 @@ jobs:
   build-desktop:
     name: Build ${{ matrix.app }} ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: r
     env:
       CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/.c/core/Chummer.Contracts/Chummer.Contracts.csproj
       CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/.c/hub/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
@@ -88,23 +91,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          path: r
 
       - name: Checkout core-engine compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-core
+          ref: fleet/core
           path: .c/core
 
       - name: Checkout run-services compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-hub
+          ref: main
           path: .c/hub
 
       - name: Checkout ui-kit compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-ui-kit
+          ref: fleet/ui-kit
           path: .c/ui
 
       - name: Setup .NET
@@ -176,7 +184,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.app }}-${{ matrix.rid }}
-          path: dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.${{ matrix.installer_ext }}
+          path: r/dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.${{ matrix.installer_ext }}
           if-no-files-found: error
           retention-days: 14
 
@@ -185,7 +193,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: desktop-smoke-${{ matrix.app }}-${{ matrix.rid }}
-          path: dist/startup-smoke
+          path: r/dist/startup-smoke
           if-no-files-found: ignore
           retention-days: 14
 
