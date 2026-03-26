@@ -61,6 +61,24 @@ if ! rg -n 'PackageReference Include="\$\(ChummerUiKitPackageId\)" Version="\$\(
   exit 9
 fi
 
+if ! rg -n 'ChummerCampaignContractsPackageId|ChummerCampaignContractsPackageVersion|ChummerLocalCampaignContractsProject' \
+  Directory.Build.props >/dev/null; then
+  echo "[verify] FAIL: campaign-contract package plane properties are missing from Directory.Build.props."
+  exit 14
+fi
+
+if ! rg -n 'PackageReference Include="\$\(ChummerCampaignContractsPackageId\)" Version="\$\(ChummerCampaignContractsPackageVersion\)"' \
+  Chummer.Blazor/Chummer.Blazor.csproj Chummer.Tests/Chummer.Tests.csproj >/dev/null; then
+  echo "[verify] FAIL: Blazor and test projects must consume Chummer.Campaign.Contracts through the package plane fallback."
+  exit 15
+fi
+
+if rg -n 'namespace Chummer\.Campaign\.Contracts' \
+  Chummer.Blazor Chummer.Presentation Chummer.Avalonia Chummer.Tests -g '*.cs' >/dev/null; then
+  echo "[verify] FAIL: campaign contract shadows were reintroduced in the UI repo."
+  exit 16
+fi
+
 if rg -n '\b(class|record)\s+(TokenCanon|ThemeCompiler|ShellChrome|AccessibilityState|Banner|StaleStateBadge|ApprovalChip|OfflineBanner)\b|\b(static\s+)?UiAdapterPayload\s+Adapt(ShellChrome|AccessibilityState|Banner|StaleStateBadge|ApprovalChip|OfflineBanner)\s*\(' \
   Chummer.Presentation Chummer.Blazor Chummer.Avalonia Chummer.Tests -g '*.cs' >/dev/null; then
   echo "[verify] FAIL: source-copied ui-kit token/theme/shell/accessibility primitives were reintroduced."
@@ -91,5 +109,25 @@ bash scripts/ai/milestones/b12-generated-asset-dispatch-check.sh
 
 echo "[verify] checking B9 campaign journal planner/calendar guard..."
 bash scripts/ai/milestones/b9-campaign-journal-check.sh
+
+if ! rg -n 'BuildLabHandoffPanel|RulesNavigatorPanel|CreatorPublicationPanel' \
+  Chummer.Blazor/Components/Pages/Home.razor >/dev/null; then
+  echo "[verify] FAIL: home surface must compose the Build Lab handoff, Rules Navigator, and creator publication panels."
+  exit 17
+fi
+
+if ! rg -n 'data-build-lab-handoff-showcase|data-rules-navigator-showcase|data-creator-publication-showcase' \
+  Chummer.Blazor/Components/Shared/BuildLabHandoffPanel.razor \
+  Chummer.Blazor/Components/Shared/RulesNavigatorPanel.razor \
+  Chummer.Blazor/Components/Shared/CreatorPublicationPanel.razor >/dev/null; then
+  echo "[verify] FAIL: campaign spine showcase panels must keep stable rendered evidence hooks."
+  exit 18
+fi
+
+if ! rg -n 'CampaignSpineShowcaseComponentTests|BuildLabHandoffPanel_renders_dossier_and_campaign_outputs|RulesNavigatorPanel_renders_grounded_answer_and_reuse_hints|CreatorPublicationPanel_renders_trusted_publication_posture|Home_renders_build_lab_rules_and_creator_showcase_panels' \
+  Chummer.Tests/Presentation/CampaignSpineShowcaseComponentTests.cs >/dev/null; then
+  echo "[verify] FAIL: campaign spine showcase component tests are missing."
+  exit 19
+fi
 
 echo "[verify] PASS"

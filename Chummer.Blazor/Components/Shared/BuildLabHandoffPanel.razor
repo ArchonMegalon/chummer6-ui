@@ -1,0 +1,66 @@
+@using Chummer.Campaign.Contracts
+
+<section class="panel design-panel" data-build-lab-handoff-showcase="@Projection.HandoffId">
+    <header class="panel-header">
+        <div>
+            <h2>@Projection.Title</h2>
+            <p class="note">@Projection.Summary</p>
+        </div>
+        <div class="button-row compact">
+            <span>@Projection.VariantLabel</span>
+            <span>@Projection.ProgressionLabel</span>
+        </div>
+    </header>
+
+    <section class="coach-card">
+        <div class="coach-card-header">
+            <h3>Tradeoffs + progression</h3>
+            <span class="badge">@Projection.ExplainEntryId</span>
+        </div>
+        <ul class="browse-detail-lines">
+            @foreach (string line in Projection.TradeoffLines)
+            {
+                <li>@line</li>
+            }
+        </ul>
+        <p class="note">@string.Join(" | ", Projection.ProgressionOutcomes)</p>
+    </section>
+
+    <section class="coach-card">
+        <div class="coach-card-header">
+            <h3>Dossier + campaign outputs</h3>
+            <span class="badge">@Projection.Outputs.Count output(s)</span>
+        </div>
+        @foreach (PublicationSafeProjection output in Projection.Outputs)
+        {
+            <article data-build-lab-output="@output.ProjectionId">
+                <p><strong>@output.Label</strong> · @output.Kind</p>
+                <p class="note">@output.Summary</p>
+                @if (!string.IsNullOrWhiteSpace(output.ArtifactId))
+                {
+                    <p class="note">Artifact: @output.ArtifactId</p>
+                }
+            </article>
+        }
+    </section>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public BuildLabHandoffProjection Projection { get; set; } = new(
+        HandoffId: "handoff-demo",
+        DossierId: "dossier-demo",
+        CampaignId: "campaign-demo",
+        Title: "Build Lab handoff",
+        Summary: "Carry the chosen build lane into living dossier and campaign return truth.",
+        VariantLabel: "Ops-first dossier carry-forward",
+        ProgressionLabel: "25 / 50 / 100 Karma path attached",
+        ExplainEntryId: "buildlab.handoff.demo",
+        TradeoffLines: ["Role overlap stays explicit before the handoff leaves Build Lab."],
+        ProgressionOutcomes: ["Chosen variant stays attached to dossier-safe and campaign-safe outputs."],
+        Outputs:
+        [
+            new PublicationSafeProjection("projection-demo", "dossier_card", "Living dossier", "Stable runner identity.")
+        ],
+        UpdatedAtUtc: DateTimeOffset.UtcNow);
+}

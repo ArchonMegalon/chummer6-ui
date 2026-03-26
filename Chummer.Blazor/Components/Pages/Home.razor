@@ -1,5 +1,6 @@
 @page "/"
 @using Chummer.Contracts.Characters
+@using Chummer.Campaign.Contracts
 @using Chummer.Contracts.Content
 @using Chummer.Contracts.Journal
 @using Chummer.Contracts.Presentation
@@ -11,10 +12,13 @@
     <section class="panel-grid">
         <ExplainTracePanel Trace="_sampleExplainTrace" Chrome="_sampleExplainChrome" />
         <BuildLabPanel Projection="_buildLabProjection" />
+        <BuildLabHandoffPanel Projection="_buildLabHandoff" />
+        <RulesNavigatorPanel Projection="_rulesNavigator" />
         <RuntimeInspectorPanel Projection="_runtimeInspector" />
         <CampaignJournalPanel Projection="_journalPanel" />
         <ContactNetworkPanel Graph="_contactGraph" />
         <NpcPersonaStudioPanel Projection="_npcPersonaStudio" />
+        <CreatorPublicationPanel Publication="_creatorPublication" />
 
         <GmBoardFeed InterruptionBudget="_interruptionBudget"
                      CurrentSessionContext="_currentSessionContext"
@@ -375,6 +379,73 @@
         ExplainEntryId: "buildlab.showcase.concept",
         SourceDocumentId: "designer-feedback.ops-first",
         CanContinue: true);
+    private BuildLabHandoffProjection _buildLabHandoff = new(
+        HandoffId: "handoff.showcase.social-operator",
+        DossierId: "dossier.kestrel",
+        CampaignId: "campaign.downtown-burn",
+        Title: "Social Operator handoff",
+        Summary: "The chosen Build Lab lane now lands in living dossier, campaign workspace, and creator-safe recap truth.",
+        VariantLabel: "Ops-first dossier carry-forward",
+        ProgressionLabel: "25 / 50 / 100 Karma path stays attached",
+        ExplainEntryId: "buildlab.handoff.dossier.kestrel",
+        TradeoffLines:
+        [
+            "Role overlap stays explicit before the handoff leaves comparison mode.",
+            "The campaign workspace keeps the downstream continuity target visible instead of leaving the choice as a dead-end card."
+        ],
+        ProgressionOutcomes:
+        [
+            "Chosen upgrade checkpoints remain attached to the living dossier.",
+            "Export targets already point at dossier-safe and campaign-safe outputs."
+        ],
+        Outputs:
+        [
+            new PublicationSafeProjection(
+                ProjectionId: "projection.dossier-card",
+                Kind: "dossier_card",
+                Label: "Living dossier",
+                Summary: "Stable runner identity with campaign continuity attached.",
+                ArtifactId: "artifact.dossier-card"),
+            new PublicationSafeProjection(
+                ProjectionId: "projection.recap-brief",
+                Kind: "recap_brief",
+                Label: "Recap-safe brief",
+                Summary: "Campaign recap artifact ready for return flow and publication review.",
+                ArtifactId: "artifact.recap-brief")
+        ],
+        UpdatedAtUtc: new DateTimeOffset(2026, 03, 25, 19, 45, 00, TimeSpan.Zero));
+    private RulesNavigatorAnswerProjection _rulesNavigator = new(
+        EntryId: "rules.navigator.showcase",
+        Question: "Why did the campaign return stay pinned to the current rule environment?",
+        ShortAnswer: "Because the approved compatibility fingerprint is the grounded answer path for build, play, support, and publication.",
+        BeforeSummary: "Before approval, return posture is review-heavy and support has to caveat the answer path.",
+        AfterSummary: "After approval, sr6.preview.v1 becomes the one truth for Build Lab handoff, campaign continuity, and support closure.",
+        ExplainEntryId: "rules.navigator.showcase.entry",
+        ProvenanceLabel: "campaign scope · sr6.preview.v1",
+        EvidenceLines:
+        [
+            "sr6.preview.v1 is the active compatibility fingerprint for the campaign workspace.",
+            "GM readiness cues, dossier continuity, and support closure all cite the same approved rule environment.",
+            "Campaign visibility remains subordinate to the same operator and rule-environment posture."
+        ],
+        SupportReuseHints:
+        [
+            "Support can reuse this answer when a case asks which rules posture is live on the current channel.",
+            "Operator review can link the same evidence when deciding whether to freeze or reroute a campaign change."
+        ]);
+    private CreatorPublicationProjection _creatorPublication = new(
+        PublicationId: "publication.showcase.creator-packet",
+        Title: "Downtown Burn creator packet",
+        Kind: "campaign_packet",
+        Summary: "Recap, dossier-safe briefings, and creator outputs now sit on one governed publication shelf.",
+        CampaignId: "campaign.downtown-burn",
+        DossierId: "dossier.kestrel",
+        ArtifactId: "artifact.creator-packet",
+        ProvenanceSummary: "sr6.preview.v1 + recap-safe output shelf + dossier continuity receipt",
+        DiscoverySummary: "Group visibility with grounded provenance and one truthful next action for publication review.",
+        Visibility: "group",
+        PublicationStatus: "preview_ready",
+        UpdatedAtUtc: new DateTimeOffset(2026, 03, 25, 20, 05, 00, TimeSpan.Zero));
     private int _interruptionBudget = 50;
     private string _currentSessionContext = "Pass 2";
     private string _autonomyLevel = DefaultAutonomyLevel;

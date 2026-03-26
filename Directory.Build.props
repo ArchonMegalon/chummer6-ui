@@ -5,12 +5,15 @@
     <MaxCpuCount>1</MaxCpuCount>
     <ChummerContractsPackageId Condition="'$(ChummerContractsPackageId)' == ''">Chummer.Engine.Contracts</ChummerContractsPackageId>
     <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">5.225.0.0</ChummerContractsPackageVersion>
+    <ChummerCampaignContractsPackageId Condition="'$(ChummerCampaignContractsPackageId)' == ''">Chummer.Campaign.Contracts</ChummerCampaignContractsPackageId>
+    <ChummerCampaignContractsPackageVersion Condition="'$(ChummerCampaignContractsPackageVersion)' == ''">0.1.0-preview</ChummerCampaignContractsPackageVersion>
     <ChummerUiKitPackageId Condition="'$(ChummerUiKitPackageId)' == ''">Chummer.Ui.Kit</ChummerUiKitPackageId>
     <ChummerUiKitPackageVersion Condition="'$(ChummerUiKitPackageVersion)' == ''">0.1.0-preview</ChummerUiKitPackageVersion>
     <ChummerLocalContractsProject>$(MSBuildThisFileDirectory)..\chummer-core-engine\Chummer.Contracts\Chummer.Contracts.csproj</ChummerLocalContractsProject>
+    <ChummerLocalCampaignContractsProject>$(MSBuildThisFileDirectory)..\chummer.run-services\Chummer.Campaign.Contracts\Chummer.Campaign.Contracts.csproj</ChummerLocalCampaignContractsProject>
     <ChummerLocalRunContractsProject>$(MSBuildThisFileDirectory)..\chummer.run-services\Chummer.Run.Contracts\Chummer.Run.Contracts.csproj</ChummerLocalRunContractsProject>
     <ChummerLocalUiKitProject>$(MSBuildThisFileDirectory)..\chummer-ui-kit\src\Chummer.Ui.Kit\Chummer.Ui.Kit.csproj</ChummerLocalUiKitProject>
-    <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == '' and Exists('$(ChummerLocalContractsProject)') and Exists('$(ChummerLocalRunContractsProject)') and Exists('$(ChummerLocalUiKitProject)')">true</ChummerUseLocalCompatibilityTree>
+    <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == '' and Exists('$(ChummerLocalContractsProject)') and Exists('$(ChummerLocalCampaignContractsProject)') and Exists('$(ChummerLocalRunContractsProject)') and Exists('$(ChummerLocalUiKitProject)')">true</ChummerUseLocalCompatibilityTree>
     <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == ''">false</ChummerUseLocalCompatibilityTree>
   </PropertyGroup>
 </Project>
