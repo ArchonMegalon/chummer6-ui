@@ -1,0 +1,45 @@
+@using Chummer.Campaign.Contracts
+
+<section class="panel design-panel" data-creator-publication-showcase="@Publication.PublicationId">
+    <header class="panel-header">
+        <div>
+            <h2>@Publication.Title</h2>
+            <p class="note">@Publication.Summary</p>
+        </div>
+        <div class="button-row compact">
+            <span>@Publication.Visibility</span>
+            <span>@Publication.PublicationStatus</span>
+        </div>
+    </header>
+
+    <section class="coach-card">
+        <div class="coach-card-header">
+            <h3>Trusted publication posture</h3>
+            <span class="badge">@Publication.Kind</span>
+        </div>
+        <dl class="facts compact">
+            <div><dt>Artifact</dt><dd>@Publication.ArtifactId</dd></div>
+            <div><dt>Campaign</dt><dd>@Publication.CampaignId</dd></div>
+            <div><dt>Dossier</dt><dd>@(Publication.DossierId ?? "campaign-only")</dd></div>
+            <div><dt>Provenance</dt><dd>@Publication.ProvenanceSummary</dd></div>
+            <div><dt>Discovery</dt><dd>@Publication.DiscoverySummary</dd></div>
+        </dl>
+    </section>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public CreatorPublicationProjection Publication { get; set; } = new(
+        PublicationId: "publication-demo",
+        Title: "Creator packet",
+        Kind: "campaign_packet",
+        Summary: "Campaign recap and dossier-safe outputs share one publication posture.",
+        CampaignId: "campaign-demo",
+        DossierId: "dossier-demo",
+        ArtifactId: "artifact-demo",
+        ProvenanceSummary: "Approved rule fingerprint + recap-safe output shelf",
+        DiscoverySummary: "Preview-ready visibility with one truthful next action.",
+        Visibility: "group",
+        PublicationStatus: "preview_ready",
+        UpdatedAtUtc: DateTimeOffset.UtcNow);
+}
