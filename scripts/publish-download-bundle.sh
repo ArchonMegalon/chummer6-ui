@@ -43,9 +43,11 @@ if [[ ! -d "$FILES_SOURCE" ]]; then
 fi
 
 mapfile -t artifacts < <(find "$FILES_SOURCE" -maxdepth 1 -type f \
-  \( -name "chummer-avalonia-*-installer.exe" -o -name "chummer-avalonia-*-installer.deb" -o \
+  \( -name "chummer-avalonia-*.exe" -o -name "chummer-avalonia-*.zip" -o \
+     -name "chummer-avalonia-*.tar.gz" -o -name "chummer-avalonia-*-installer.exe" -o -name "chummer-avalonia-*-installer.deb" -o \
      -name "chummer-avalonia-*-installer.pkg" -o -name "chummer-avalonia-*-installer.dmg" -o \
-     -name "chummer-avalonia-*-installer.msix" -o -name "chummer-blazor-desktop-*-installer.exe" -o \
+     -name "chummer-avalonia-*-installer.msix" -o -name "chummer-blazor-desktop-*.exe" -o -name "chummer-blazor-desktop-*.zip" -o \
+     -name "chummer-blazor-desktop-*.tar.gz" -o -name "chummer-blazor-desktop-*-installer.exe" -o \
      -name "chummer-blazor-desktop-*-installer.deb" -o -name "chummer-blazor-desktop-*-installer.pkg" -o \
      -name "chummer-blazor-desktop-*-installer.dmg" -o -name "chummer-blazor-desktop-*-installer.msix" \) \
   | sort)
@@ -57,14 +59,14 @@ fi
 
 mkdir -p "$DEPLOY_DIR/files"
 find "$DEPLOY_DIR/files" -maxdepth 1 -type f \
-  \( -name "chummer-avalonia-*.zip" -o -name "chummer-avalonia-*.tar.gz" -o \
+  \( -name "chummer-avalonia-*.exe" -o -name "chummer-avalonia-*.zip" -o -name "chummer-avalonia-*.tar.gz" -o \
      -name "chummer-avalonia-*-installer.exe" -o -name "chummer-avalonia-*-installer.deb" -o \
      -name "chummer-avalonia-*-installer.pkg" -o -name "chummer-avalonia-*-installer.dmg" -o \
-     -name "chummer-avalonia-*-installer.msix" -o -name "chummer-blazor-desktop-*.zip" -o \
+     -name "chummer-avalonia-*-installer.msix" -o -name "chummer-blazor-desktop-*.exe" -o -name "chummer-blazor-desktop-*.zip" -o \
      -name "chummer-blazor-desktop-*.tar.gz" -o -name "chummer-blazor-desktop-*-installer.exe" -o \
      -name "chummer-blazor-desktop-*-installer.deb" -o -name "chummer-blazor-desktop-*-installer.pkg" -o \
      -name "chummer-blazor-desktop-*-installer.dmg" -o -name "chummer-blazor-desktop-*-installer.msix" -o \
-     -name "chummer-6-*.zip" -o -name "chummer-6-*.tar.gz" -o -name "chummer-6-*-installer.exe" -o \
+     -name "chummer-6-*.exe" -o -name "chummer-6-*.zip" -o -name "chummer-6-*.tar.gz" -o -name "chummer-6-*-installer.exe" -o \
      -name "chummer-6-*-installer.deb" -o \
      -name "chummer-6-*-installer.pkg" -o -name "chummer-6-*-installer.dmg" -o \
      -name "chummer-6-*-installer.msix" \) \

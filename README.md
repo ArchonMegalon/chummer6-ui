@@ -34,7 +34,7 @@ The work here is purification:
 Current honesty clause:
 
 - the workbench/browser/desktop lane is ready enough to ship the current early-access desktop scope
-- the release lane now emits Windows `.exe`, macOS `.dmg`, and Linux `.deb` preview installers and desktop bundles, not just loose files
+- the release lane now emits Windows installer and portable `.exe` outputs plus portable bundles, alongside macOS `.dmg` and Linux `.deb` preview installers, instead of loose files
 - release-channel publication truth now lives downstream in `chummer6-hub-registry`; this repo emits the desktop bundle and installer recipe, not the promoted channel head
 - desktop heads can consume the canonical registry manifest for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` is configured
 - every packaged desktop head now has a startup-smoke gate and emits a bounded release-regression packet before promotion if the smoke start fails

@@ -51,6 +51,27 @@ print(target)
 PY
 }
 
+build_payload_tar_gz() {
+  local target="$1"
+  python3 - "$PUBLISH_DIR" "$target" <<'PY'
+import sys
+import tarfile
+from pathlib import Path
+
+source = Path(sys.argv[1])
+target = Path(sys.argv[2])
+if not source.exists():
+    raise SystemExit(f"publish directory not found: {source}")
+if target.exists():
+    target.unlink()
+with tarfile.open(target, "w:gz") as tf:
+    for file in sorted(source.rglob("*")):
+        if file.is_file():
+            tf.add(file, arcname=file.relative_to(source))
+print(target)
+PY
+}
+
 normalize_deb_version() {
   python3 - "$VERSION" <<'PY'
 import re
@@ -134,6 +155,34 @@ if runtime_options.get("framework") or runtime_options.get("frameworks"):
         "Re-publish with --self-contained true before building installers."
     )
 PY
+}
+
+build_portable_artifacts() {
+  ensure_self_contained_publish
+
+  case "$RID" in
+    win-*)
+      local portable_exe="$DIST_DIR/chummer-$APP_KEY-$RID.exe"
+      local portable_zip="$DIST_DIR/chummer-$APP_KEY-$RID.zip"
+      if [[ ! -f "$PUBLISH_DIR/$LAUNCH_TARGET" ]]; then
+        echo "Launch target not found in Windows publish directory: $PUBLISH_DIR/$LAUNCH_TARGET" >&2
+        exit 1
+      fi
+      cp "$PUBLISH_DIR/$LAUNCH_TARGET" "$portable_exe"
+      build_payload_zip "$portable_zip"
+      echo "built portable $portable_exe"
+      echo "built archive $portable_zip"
+      ;;
+    linux-*|osx-*)
+      local portable_archive="$DIST_DIR/chummer-$APP_KEY-$RID.tar.gz"
+      build_payload_tar_gz "$portable_archive"
+      echo "built archive $portable_archive"
+      ;;
+    *)
+      echo "Unsupported portable target RID: $RID" >&2
+      exit 1
+      ;;
+  esac
 }
 
 build_macos_installer() {
@@ -315,12 +364,15 @@ EOF
 
 case "$RID" in
   win-*)
+    build_portable_artifacts
     build_windows_installer
     ;;
   linux-*)
+    build_portable_artifacts
     build_linux_installer
     ;;
   osx-*)
+    build_portable_artifacts
     build_macos_installer
     ;;
   *)
