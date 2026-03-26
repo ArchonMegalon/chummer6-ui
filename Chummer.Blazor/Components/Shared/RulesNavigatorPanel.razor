@@ -1,0 +1,52 @@
+@using Chummer.Campaign.Contracts
+
+<section class="panel design-panel" data-rules-navigator-showcase="@Projection.EntryId">
+    <header class="panel-header">
+        <div>
+            <h2>Rules Navigator</h2>
+            <p class="note">@Projection.Question</p>
+        </div>
+        <div class="button-row compact">
+            <span>@Projection.ProvenanceLabel</span>
+            <span>@Projection.ExplainEntryId</span>
+        </div>
+    </header>
+
+    <section class="coach-card">
+        <div class="coach-card-header">
+            <h3>Grounded answer</h3>
+            <span class="badge">Before / after</span>
+        </div>
+        <p><strong>@Projection.ShortAnswer</strong></p>
+        <p class="note">Before: @Projection.BeforeSummary</p>
+        <p class="note">After: @Projection.AfterSummary</p>
+    </section>
+
+    <section class="coach-card">
+        <div class="coach-card-header">
+            <h3>Evidence + reuse</h3>
+            <span class="badge">@Projection.EvidenceLines.Count evidence line(s)</span>
+        </div>
+        <ul class="browse-detail-lines">
+            @foreach (string line in Projection.EvidenceLines)
+            {
+                <li>@line</li>
+            }
+        </ul>
+        <p class="note">@string.Join(" | ", Projection.SupportReuseHints)</p>
+    </section>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public RulesNavigatorAnswerProjection Projection { get; set; } = new(
+        EntryId: "rules-demo",
+        Question: "Why is this rules posture active?",
+        ShortAnswer: "Because the same approved compatibility fingerprint drives build, play, and support.",
+        BeforeSummary: "Before approval, answers stay caveated and review-heavy.",
+        AfterSummary: "After approval, one grounded answer path stays visible everywhere.",
+        ExplainEntryId: "rules.navigator.demo",
+        ProvenanceLabel: "campaign scope · sr6.preview.v1",
+        EvidenceLines: ["sr6.preview.v1 is the active compatibility fingerprint."],
+        SupportReuseHints: ["Support can reuse this answer instead of inventing new behavior."]);
+}
