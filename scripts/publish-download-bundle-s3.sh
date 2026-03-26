@@ -67,6 +67,9 @@ fi
 bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$VERIFY_URL"
 
 artifact_count="$(find "$FILES_SOURCE" -maxdepth 1 -type f \( \
+  -name 'chummer-*.exe' -o \
+  -name 'chummer-*.zip' -o \
+  -name 'chummer-*.tar.gz' -o \
   -name 'chummer-*-installer.exe' -o \
   -name 'chummer-*-installer.deb' -o \
   -name 'chummer-*-installer.pkg' -o \

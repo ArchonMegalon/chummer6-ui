@@ -60,11 +60,15 @@ public sealed record DesktopUpdateArtifact(
     public bool SupportsInstallerHandoff
         => !SupportsInPlaceApply
             && (string.Equals(Kind, "installer", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(Extension, ".exe", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Kind, "dmg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Kind, "pkg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Kind, "msix", StringComparison.OrdinalIgnoreCase)
+                || (string.IsNullOrWhiteSpace(Kind)
+                    && string.Equals(Extension, ".exe", StringComparison.OrdinalIgnoreCase))
                 || string.Equals(Extension, ".deb", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(Extension, ".pkg", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(Extension, ".dmg", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(Extension, ".msix", StringComparison.OrdinalIgnoreCase));
+                || (string.IsNullOrWhiteSpace(Kind) && string.Equals(Extension, ".pkg", StringComparison.OrdinalIgnoreCase))
+                || (string.IsNullOrWhiteSpace(Kind) && string.Equals(Extension, ".dmg", StringComparison.OrdinalIgnoreCase))
+                || (string.IsNullOrWhiteSpace(Kind) && string.Equals(Extension, ".msix", StringComparison.OrdinalIgnoreCase)));
 }
 
 public sealed record DesktopUpdateChannelManifest(
@@ -193,9 +197,9 @@ public static class DesktopUpdateManifestParser
             string headId = match.Success ? match.Groups["head"].Value.ToLowerInvariant() : "unknown";
             string rid = match.Success ? match.Groups["rid"].Value.ToLowerInvariant() : string.Empty;
             (string platform, string arch) = RidToPlatformAndArch(rid);
-            string kind = match.Success
+            string kind = GetOptionalString(element, "kind") ?? GetOptionalString(element, "flavor") ?? (match.Success
                 ? ArtifactKind(match.Groups["ext"].Value.ToLowerInvariant(), match.Groups["installer"].Success)
-                : "artifact";
+                : "artifact");
 
             artifacts.Add(new DesktopUpdateArtifact(
                 ArtifactId: GetOptionalString(element, "id") ?? fileName,
@@ -222,9 +226,10 @@ public static class DesktopUpdateManifestParser
         return kind.ToLowerInvariant() switch
         {
             "archive" => 0,
-            "artifact" => 1,
-            "installer" => 2,
-            _ => 3
+            "portable" => 1,
+            "artifact" => 2,
+            "installer" => 3,
+            _ => 4
         };
     }
 
@@ -244,9 +249,13 @@ public static class DesktopUpdateManifestParser
 
     private static string ArtifactKind(string extension, bool installerSuffix)
     {
-        if (installerSuffix || string.Equals(extension, "exe", StringComparison.OrdinalIgnoreCase))
+        if (installerSuffix)
         {
             return "installer";
+        }
+        if (string.Equals(extension, "exe", StringComparison.OrdinalIgnoreCase))
+        {
+            return "portable";
         }
 
         return extension switch

@@ -6,7 +6,7 @@ It does not own promoted release-channel truth.
 ## What this repo owns
 
 * building desktop publish directories
-* producing Windows `.exe`, macOS `.dmg`, and Linux `.deb` desktop artifacts
+* producing Windows installer and portable `.exe` artifacts, plus portable platform bundles alongside macOS `.dmg` and Linux `.deb` desktop artifacts
 * emitting a desktop release bundle (`files/` plus release metadata) that Fleet can orchestrate
 * running startup smoke on each packaged desktop head before promotion evidence is considered complete
 * emitting bounded release-regression packets when startup smoke fails or crashes

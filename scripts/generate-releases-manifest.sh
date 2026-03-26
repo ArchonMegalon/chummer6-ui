@@ -44,6 +44,9 @@ else
   portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
   mkdir -p "$portal_files_dir"
   mapfile -t portal_artifacts < <(find "$DOWNLOADS_DIR" -maxdepth 1 -type f \( \
+    -name "chummer-*.exe" -o \
+    -name "chummer-*.zip" -o \
+    -name "chummer-*.tar.gz" -o \
     -name "chummer-*-installer.exe" -o \
     -name "chummer-*-installer.deb" -o \
     -name "chummer-*-installer.pkg" -o \
@@ -52,9 +55,9 @@ else
   \) | sort)
   if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
     rm -f \
+      "$portal_files_dir"/chummer-*.exe \
       "$portal_files_dir"/chummer-*.zip \
       "$portal_files_dir"/chummer-*.tar.gz \
-      "$portal_files_dir"/chummer-*-installer.exe \
       "$portal_files_dir"/chummer-*-installer.deb \
       "$portal_files_dir"/chummer-*-installer.pkg \
       "$portal_files_dir"/chummer-*-installer.dmg \
