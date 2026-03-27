@@ -553,7 +553,15 @@ public sealed class BlazorShellComponentTests
                 ],
                 ExplainEntryId: "buildlab.intake.concept",
                 SourceDocumentId: "source.table-profile",
-                CanContinue: true)
+                CanContinue: true,
+                NextSafeAction: "Rebind the active runtime before export.",
+                RuntimeCompatibilitySummary: "One quick-action binding still needs review.",
+                CampaignFitSummary: "Best fit is an ops-first crew with sparse matrix scenes.",
+                SupportClosureSummary: "Support can cite the same runtime fingerprint after handoff.",
+                Watchouts:
+                [
+                    "No recap-safe publication is attached yet."
+                ])
         };
 
         IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
@@ -577,6 +585,9 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Ops-first Social Operator");
         StringAssert.Contains(cut.Markup, "workflow.coach.build-ideas");
         StringAssert.Contains(cut.Markup, "Hand Off -&gt; Build Idea Card");
+        StringAssert.Contains(cut.Markup, "Decision rail");
+        StringAssert.Contains(cut.Markup, "Rebind the active runtime before export.");
+        StringAssert.Contains(cut.Markup, "Support can cite the same runtime fingerprint after handoff.");
         StringAssert.Contains(cut.Markup, "data-build-lab-export-target");
     }
 
