@@ -1,6 +1,7 @@
 #nullable enable annotations
 
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Content;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using System;
@@ -102,12 +103,52 @@ internal static class AccessibilitySignoffSmokeTests
             MaxKarma: 50,
             ContactMultiplier: 3,
             BannedWareGrades: ["Used", "Prototype"]);
+        ActiveRuntimeStatusProjection activeRuntime = new(
+            ProfileId: "official.sr6.core",
+            Title: "Official SR6 Core",
+            RulesetId: "sr6",
+            RuntimeFingerprint: "sha256:sr6-preview",
+            InstallState: ArtifactInstallStates.Installed,
+            WarningCount: 1);
+        RuntimeInspectorProjection runtimeInspector = new(
+            TargetKind: RuntimeInspectorTargetKinds.RuntimeLock,
+            TargetId: "official.sr6.core",
+            RuntimeLock: new ResolvedRuntimeLock(
+                RulesetId: "sr6",
+                ContentBundles: [],
+                RulePacks: [],
+                ProviderBindings: new Dictionary<string, string>(StringComparer.Ordinal),
+                EngineApiVersion: "1.0",
+                RuntimeFingerprint: "sha256:sr6-preview"),
+            Install: new ArtifactInstallState(
+                State: ArtifactInstallStates.Installed,
+                InstalledTargetKind: RuleProfileApplyTargetKinds.GlobalDefaults,
+                InstalledTargetId: "desktop"),
+            ResolvedRulePacks: [],
+            ProviderBindings: [],
+            CompatibilityDiagnostics:
+            [
+                new RuntimeLockCompatibilityDiagnostic(
+                    State: RuntimeLockCompatibilityStates.RebindRequired,
+                    Message: "runtime.lock.compatibility.install-runtime-drift")
+            ],
+            Warnings:
+            [
+                new RuntimeInspectorWarning(
+                    Kind: RuntimeInspectorWarningKinds.Migration,
+                    Severity: RuntimeInspectorWarningSeverityLevels.Warning,
+                    Message: "runtime.inspector.warning.migration.rebind-required")
+            ],
+            MigrationPreview: [],
+            GeneratedAtUtc: DateTimeOffset.Parse("2026-03-27T10:20:00+00:00"));
 
-        DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules);
-        RequireContains(projection.NextSafeAction, "Continue Apex");
+        DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, activeRuntime, runtimeInspector);
+        RequireContains(projection.NextSafeAction, "rebind the active profile");
         RequireContains(projection.ExplainFocus, "Explain focus:");
+        RequireContains(projection.RuntimeHealthSummary, "Official SR6 Core");
+        RequireContains(projection.RuntimeHealthSummary, "runtime drift requires a rebind");
         RequireContains(projection.ReturnTarget, "Apex");
-        RequireContains(projection.RulePosture, "fingerprint sr6.preview.v1");
+        RequireContains(projection.RulePosture, "fingerprint sha256:sr6-preview");
         RequireContains(projection.Summary, "Metatype B");
         RequireContains(projection.Summary, "SR6");
         RequireContains(projection.Summary, "Used, Prototype");
@@ -122,6 +163,7 @@ internal static class AccessibilitySignoffSmokeTests
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([], build: null, rules: null);
         RequireContains(projection.NextSafeAction, "Create or import the first dossier");
         RequireContains(projection.ExplainFocus, "Claim the install");
+        RequireContains(projection.RuntimeHealthSummary, "no active runtime profile");
         RequireContains(projection.ReturnTarget, "No workspace return target");
         RequireContains(projection.RulePosture, "Rule posture is still generic");
         if (projection.Watchouts.Count < 2)
@@ -137,9 +179,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "BuildBuildExplainBody()");
         RequireContains(source, "_buildExplainProjection.NextSafeAction");
         RequireContains(source, "_buildExplainProjection.ExplainFocus");
+        RequireContains(source, "_buildExplainProjection.RuntimeHealthSummary");
         RequireContains(source, "_buildExplainProjection.ReturnTarget");
         RequireContains(source, "_buildExplainProjection.RulePosture");
         RequireContains(source, "_buildExplainProjection.Watchouts");
+        RequireContains(source, "client.GetShellBootstrapAsync");
+        RequireContains(source, "client.GetRuntimeInspectorProfileAsync");
         RequireContains(source, "client.GetBuildAsync");
         RequireContains(source, "client.GetRulesAsync");
     }
