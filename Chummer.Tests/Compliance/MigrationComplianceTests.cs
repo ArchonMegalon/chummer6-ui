@@ -1693,13 +1693,17 @@ public class MigrationComplianceTests
         StringAssert.Contains(buildLabProjectorText, "BuildLabConceptIntakeProjection");
         StringAssert.Contains(buildLabProjectorText, "projection.Variants");
         StringAssert.Contains(buildLabProjectorText, "projection.ProgressionTimelines");
+        StringAssert.Contains(buildLabProjectorText, "projection.NextSafeAction");
+        StringAssert.Contains(buildLabProjectorText, "projection.SupportClosureSummary");
         StringAssert.Contains(sectionPaneText, "State.ActiveBuildLab");
         StringAssert.Contains(sectionPaneText, "BuildLabFieldKinds.Multiline");
         StringAssert.Contains(sectionPaneText, "Variant Comparison");
+        StringAssert.Contains(sectionPaneText, "Decision rail");
         StringAssert.Contains(sectionPaneText, "25 / 50 / 100 Karma");
         StringAssert.Contains(sectionHostText, "SetBuildLab");
         StringAssert.Contains(sectionHostText, "BuildLabVariantsList");
         StringAssert.Contains(sectionHostText, "BuildTimelineText");
+        StringAssert.Contains(sectionHostText, "Next safe action:");
         StringAssert.Contains(presentationGlobalUsingsText, "Chummer.Contracts.Presentation.BuildLabConceptIntakeProjection");
         StringAssert.Contains(testsGlobalUsingsText, "Chummer.Contracts.Rulesets.IRulesetCapabilityHost");
         Assert.IsFalse(PathExistsInCandidateRoots("Chummer.Presentation", "Contracts", "BuildLabLegacyContractsCompat.cs"));

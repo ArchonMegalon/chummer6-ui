@@ -50,7 +50,12 @@ public class WorkspaceViewStateStoreTests
                 Actions: [],
                 ExplainEntryId: "buildlab.intake",
                 SourceDocumentId: "source.profile",
-                CanContinue: true),
+                CanContinue: true,
+                NextSafeAction: "Review runtime drift before export.",
+                RuntimeCompatibilitySummary: "One runtime binding still needs review.",
+                CampaignFitSummary: "Best fit is an ops-first crew.",
+                SupportClosureSummary: "Support can reuse the same runtime fingerprint.",
+                Watchouts: ["Missing recap-safe output"]),
             ActiveBrowseWorkspace = new BrowseWorkspaceState(
                 WorkspaceId: "browse-ws",
                 WorkflowId: "workflow.browse",
@@ -106,6 +111,10 @@ public class WorkspaceViewStateStoreTests
         Assert.AreEqual("skills[1].name", restored.ActiveSectionRows[1].Path);
         Assert.IsNotNull(restored.ActiveBuildLab);
         Assert.AreEqual("Street sam", restored.ActiveBuildLab.IntakeFields[0].Value);
+        Assert.AreEqual("Review runtime drift before export.", restored.ActiveBuildLab.NextSafeAction);
+        Assert.AreEqual("One runtime binding still needs review.", restored.ActiveBuildLab.RuntimeCompatibilitySummary);
+        Assert.IsNotNull(restored.ActiveBuildLab.Watchouts);
+        Assert.AreEqual("Missing recap-safe output", restored.ActiveBuildLab.Watchouts[0]);
         Assert.IsNotNull(restored.ActiveBrowseWorkspace);
         Assert.AreEqual("armor", restored.ActiveBrowseWorkspace.QueryText);
         Assert.AreEqual("source", restored.ActiveBrowseWorkspace.Facets[0].FacetId);
