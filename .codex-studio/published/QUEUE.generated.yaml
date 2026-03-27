@@ -20,3 +20,4 @@ items:
 - Sync the approved Chummer design bundle into `ui` under `.codex-design/` and refresh repo-local review context.
 - Retire session/mobile and coach play heads from Presentation, keep workbench/UI-kit ownership there, and point the play split at the dedicated repo and API surface.
 - Replace duplicated `Chummer.Contracts` source in UI with package consumption from the canonical shared contract owner.
+source_queue_fingerprint: 97d170e1550eee4afc0af065b78cda302a97674c
