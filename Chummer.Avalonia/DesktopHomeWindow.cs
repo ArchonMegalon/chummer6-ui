@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
@@ -16,17 +17,20 @@ internal sealed class DesktopHomeWindow : Window
     private readonly DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
+    private readonly DesktopHomeBuildExplainProjection _buildExplainProjection;
 
     private DesktopHomeWindow(
         DesktopInstallLinkingState installState,
         DesktopUpdateClientStatus updateStatus,
         DesktopPreferenceState preferences,
-        IReadOnlyList<WorkspaceListItem> recentWorkspaces)
+        IReadOnlyList<WorkspaceListItem> recentWorkspaces,
+        DesktopHomeBuildExplainProjection buildExplainProjection)
     {
         _installState = installState;
         _updateStatus = updateStatus;
         _preferences = preferences;
         _recentWorkspaces = recentWorkspaces;
+        _buildExplainProjection = buildExplainProjection;
 
         Title = "Chummer Desktop Home";
         Width = 860;
@@ -69,7 +73,7 @@ internal sealed class DesktopHomeWindow : Window
                         ]),
                     CreateSection(
                         "Build and explain next",
-                        BuildBuildAndExplainSummary(),
+                        _buildExplainProjection.Summary,
                         []),
                     CreateSection(
                         "Language and trust surfaces",
@@ -106,13 +110,14 @@ internal sealed class DesktopHomeWindow : Window
         DesktopUpdateClientStatus updateStatus = DesktopUpdateRuntime.GetCurrentStatus(headId);
         DesktopPreferenceState preferences = ReadPreferences();
         IReadOnlyList<WorkspaceListItem> workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
+        DesktopHomeBuildExplainProjection buildExplainProjection = await ReadBuildExplainProjectionAsync(client, workspaces).ConfigureAwait(true);
 
         if (!ShouldShow(installContext, updateStatus, workspaces))
         {
             return;
         }
 
-        DesktopHomeWindow dialog = new(installState, updateStatus, preferences, workspaces);
+        DesktopHomeWindow dialog = new(installState, updateStatus, preferences, workspaces, buildExplainProjection);
         await dialog.ShowDialog(owner);
     }
 
@@ -150,6 +155,29 @@ internal sealed class DesktopHomeWindow : Window
             .OrderByDescending(workspace => workspace.LastUpdatedUtc)
             .Take(5)
             .ToArray();
+    }
+
+    private static async Task<DesktopHomeBuildExplainProjection> ReadBuildExplainProjectionAsync(
+        IChummerClient client,
+        IReadOnlyList<WorkspaceListItem> workspaces)
+    {
+        if (workspaces.Count == 0)
+        {
+            return DesktopHomeBuildExplainProjector.Create(workspaces, build: null, rules: null);
+        }
+
+        WorkspaceListItem leadWorkspace = workspaces[0];
+        try
+        {
+            Task<CharacterBuildSection> buildTask = client.GetBuildAsync(leadWorkspace.Id, CancellationToken.None);
+            Task<CharacterRulesSection> rulesTask = client.GetRulesAsync(leadWorkspace.Id, CancellationToken.None);
+            await Task.WhenAll(buildTask, rulesTask).ConfigureAwait(false);
+            return DesktopHomeBuildExplainProjector.Create(workspaces, buildTask.Result, rulesTask.Result);
+        }
+        catch
+        {
+            return DesktopHomeBuildExplainProjector.Create(workspaces, build: null, rules: null);
+        }
     }
 
     private string BuildIntro()
@@ -198,20 +226,6 @@ internal sealed class DesktopHomeWindow : Window
             "\n",
             _recentWorkspaces.Select(workspace =>
                 $"{workspace.Summary} · {workspace.RulesetId} · {workspace.LastUpdatedUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC"));
-    }
-
-    private string BuildBuildAndExplainSummary()
-    {
-        if (_recentWorkspaces.Count == 0)
-        {
-            return "No workspace is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.\nRules explanations and support closure stay safer once this install is claimed and the first workspace gives the desktop shell a real continuity target.";
-        }
-
-        WorkspaceListItem leadWorkspace = _recentWorkspaces[0];
-        string displayName = string.IsNullOrWhiteSpace(leadWorkspace.Summary.Name)
-            ? leadWorkspace.Id.Value
-            : leadWorkspace.Summary.Name;
-        return $"Next safe action: continue {displayName} on {leadWorkspace.RulesetId} and inspect explain traces before you export, publish, or reopen campaign work.\nBuild Lab keeps variant tradeoffs, progression rails, and overlap risks visible before the next campaign-facing handoff.\nRules explanations stay tied to the claimed install, current channel, and support path instead of drifting into detached notes.";
     }
 
     private static Border CreateSection(string title, string body, IReadOnlyList<Button> actions)

@@ -61,7 +61,7 @@ public partial class App : global::Avalonia.Application
         services.AddSingleton<IAvaloniaCoachSidecarClient>(serviceProvider =>
             new HttpAvaloniaCoachSidecarClient(serviceProvider.GetRequiredService<HttpClient>()));
         services.AddSingleton<IShellBootstrapDataProvider, ShellBootstrapDataProvider>();
-        services.AddSingleton<IRulesetShellCatalogResolver, DesktopFallbackRulesetShellCatalogResolver>();
+        services.AddSingleton<IRulesetShellCatalogResolver, CatalogOnlyRulesetShellCatalogResolver>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
         services.AddSingleton<IShellPresenter, ShellPresenter>();
         services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();

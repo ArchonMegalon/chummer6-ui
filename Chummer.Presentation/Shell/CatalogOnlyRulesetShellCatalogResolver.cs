@@ -3,7 +3,7 @@ using Chummer.Contracts.Rulesets;
 
 namespace Chummer.Presentation.Shell;
 
-internal sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalogResolver
+public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalogResolver
 {
     private static readonly IReadOnlyList<WorkflowDefinition> WorkflowDefinitions =
     [
