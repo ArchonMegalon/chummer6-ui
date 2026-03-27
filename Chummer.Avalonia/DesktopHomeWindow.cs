@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Content;
+using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
@@ -161,9 +163,28 @@ internal sealed class DesktopHomeWindow : Window
         IChummerClient client,
         IReadOnlyList<WorkspaceListItem> workspaces)
     {
+        string? rulesetId = workspaces.Count == 0 ? null : workspaces[0].RulesetId;
+        ActiveRuntimeStatusProjection? activeRuntime = null;
+        RuntimeInspectorProjection? runtimeInspector = null;
+
+        try
+        {
+            ShellBootstrapSnapshot bootstrap = await client.GetShellBootstrapAsync(rulesetId, CancellationToken.None).ConfigureAwait(false);
+            activeRuntime = bootstrap.ActiveRuntime;
+            if (activeRuntime is not null)
+            {
+                runtimeInspector = await client.GetRuntimeInspectorProfileAsync(activeRuntime.ProfileId, rulesetId ?? activeRuntime.RulesetId, CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+            activeRuntime = null;
+            runtimeInspector = null;
+        }
+
         if (workspaces.Count == 0)
         {
-            return DesktopHomeBuildExplainProjector.Create(workspaces, build: null, rules: null);
+            return DesktopHomeBuildExplainProjector.Create(workspaces, build: null, rules: null, activeRuntime, runtimeInspector);
         }
 
         WorkspaceListItem leadWorkspace = workspaces[0];
@@ -172,11 +193,11 @@ internal sealed class DesktopHomeWindow : Window
             Task<CharacterBuildSection> buildTask = client.GetBuildAsync(leadWorkspace.Id, CancellationToken.None);
             Task<CharacterRulesSection> rulesTask = client.GetRulesAsync(leadWorkspace.Id, CancellationToken.None);
             await Task.WhenAll(buildTask, rulesTask).ConfigureAwait(false);
-            return DesktopHomeBuildExplainProjector.Create(workspaces, buildTask.Result, rulesTask.Result);
+            return DesktopHomeBuildExplainProjector.Create(workspaces, buildTask.Result, rulesTask.Result, activeRuntime, runtimeInspector);
         }
         catch
         {
-            return DesktopHomeBuildExplainProjector.Create(workspaces, build: null, rules: null);
+            return DesktopHomeBuildExplainProjector.Create(workspaces, build: null, rules: null, activeRuntime, runtimeInspector);
         }
     }
 
@@ -235,6 +256,7 @@ internal sealed class DesktopHomeWindow : Window
             $"Next safe action: {_buildExplainProjection.NextSafeAction}",
             _buildExplainProjection.Summary,
             _buildExplainProjection.ExplainFocus,
+            _buildExplainProjection.RuntimeHealthSummary,
             _buildExplainProjection.ReturnTarget,
             _buildExplainProjection.RulePosture
         ];
