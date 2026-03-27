@@ -95,6 +95,44 @@
                 </section>
             </div>
 
+            @if (!string.IsNullOrWhiteSpace(buildLab.NextSafeAction)
+                || !string.IsNullOrWhiteSpace(buildLab.RuntimeCompatibilitySummary)
+                || !string.IsNullOrWhiteSpace(buildLab.CampaignFitSummary)
+                || !string.IsNullOrWhiteSpace(buildLab.SupportClosureSummary)
+                || buildLab.Watchouts is { Count: > 0 })
+            {
+                <section class="browse-detail-pane" data-build-lab-decision-rail>
+                    <h4>Decision rail</h4>
+                    @if (!string.IsNullOrWhiteSpace(buildLab.NextSafeAction))
+                    {
+                        <p><strong>@buildLab.NextSafeAction</strong></p>
+                    }
+                    <dl class="build-lab-decision-grid">
+                        @if (!string.IsNullOrWhiteSpace(buildLab.RuntimeCompatibilitySummary))
+                        {
+                            <div><dt>Runtime</dt><dd>@buildLab.RuntimeCompatibilitySummary</dd></div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(buildLab.CampaignFitSummary))
+                        {
+                            <div><dt>Campaign fit</dt><dd>@buildLab.CampaignFitSummary</dd></div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(buildLab.SupportClosureSummary))
+                        {
+                            <div><dt>Support</dt><dd>@buildLab.SupportClosureSummary</dd></div>
+                        }
+                    </dl>
+                    @if (buildLab.Watchouts is { Count: > 0 })
+                    {
+                        <ul class="note-list">
+                            @foreach (string watchout in buildLab.Watchouts)
+                            {
+                                <li>@watchout</li>
+                            }
+                        </ul>
+                    }
+                </section>
+            }
+
             @if (buildLab.Variants.Count > 0)
             {
                 <section class="browse-results-pane" data-build-lab-variants>

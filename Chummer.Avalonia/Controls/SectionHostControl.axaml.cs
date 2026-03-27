@@ -268,6 +268,31 @@ public partial class SectionHostControl : UserControl
             lines.Add($"Source: {buildLab.SourceDocumentId}");
         }
 
+        if (!string.IsNullOrWhiteSpace(buildLab.NextSafeAction))
+        {
+            lines.Add($"Next safe action: {buildLab.NextSafeAction}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildLab.RuntimeCompatibilitySummary))
+        {
+            lines.Add($"Runtime: {buildLab.RuntimeCompatibilitySummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildLab.CampaignFitSummary))
+        {
+            lines.Add($"Campaign fit: {buildLab.CampaignFitSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildLab.SupportClosureSummary))
+        {
+            lines.Add($"Support: {buildLab.SupportClosureSummary}");
+        }
+
+        if (buildLab.Watchouts is { Count: > 0 })
+        {
+            lines.Add($"Watchouts: {string.Join(" | ", buildLab.Watchouts.Take(3))}");
+        }
+
         return string.Join(Environment.NewLine, lines);
     }
 
