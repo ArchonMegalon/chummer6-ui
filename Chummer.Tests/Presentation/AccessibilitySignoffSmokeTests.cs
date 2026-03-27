@@ -17,6 +17,7 @@ internal static class AccessibilitySignoffSmokeTests
             SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation();
             GeneratedAssetReviewPanel_renders_preview_and_emits_attach_approve_archive_actions();
             BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them();
+            BlazorHome_uses_local_chummer6_flagship_media_samples();
             DesktopHomeBuildExplainProjector_uses_real_contract_state();
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
@@ -47,6 +48,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "role=\"tab\"");
         RequireContains(source, "role=\"tabpanel\"");
         RequireContains(source, "aria-controls=");
+        RequireContains(source, "data-generated-asset-image-slot-figure");
+        RequireContains(source, "data-generated-asset-flagship-rail");
+        RequireContains(source, "data-generated-asset-world-markers");
     }
 
     private static void BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them()
@@ -131,6 +135,17 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_buildExplainProjection.Watchouts");
         RequireContains(source, "client.GetBuildAsync");
         RequireContains(source, "client.GetRulesAsync");
+    }
+
+    private static void BlazorHome_uses_local_chummer6_flagship_media_samples()
+    {
+        string source = ReadSource("Chummer.Blazor/Components/Pages/Home.razor");
+        RequireContains(source, "/media/chummer6/chummer6-hero.png");
+        RequireContains(source, "/media/chummer6/karma-forge.png");
+        RequireContains(source, "/media/chummer6/horizons-index.png");
+        RequireContains(source, "flagship_poster");
+        RequireContains(source, "medscan_diagnostic");
+        RequireContains(source, "forge_review_ar");
     }
 
     private static void DesktopHead_uses_canonical_catalog_only_resolver()
