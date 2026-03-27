@@ -234,7 +234,9 @@ internal sealed class DesktopHomeWindow : Window
         [
             $"Next safe action: {_buildExplainProjection.NextSafeAction}",
             _buildExplainProjection.Summary,
-            _buildExplainProjection.ExplainFocus
+            _buildExplainProjection.ExplainFocus,
+            _buildExplainProjection.ReturnTarget,
+            _buildExplainProjection.RulePosture
         ];
 
         foreach (string watchout in _buildExplainProjection.Watchouts)

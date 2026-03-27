@@ -106,6 +106,8 @@ internal static class AccessibilitySignoffSmokeTests
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules);
         RequireContains(projection.NextSafeAction, "Continue Apex");
         RequireContains(projection.ExplainFocus, "Explain focus:");
+        RequireContains(projection.ReturnTarget, "Apex");
+        RequireContains(projection.RulePosture, "fingerprint sr6.preview.v1");
         RequireContains(projection.Summary, "Metatype B");
         RequireContains(projection.Summary, "SR6");
         RequireContains(projection.Summary, "Used, Prototype");
@@ -120,6 +122,8 @@ internal static class AccessibilitySignoffSmokeTests
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([], build: null, rules: null);
         RequireContains(projection.NextSafeAction, "Create or import the first dossier");
         RequireContains(projection.ExplainFocus, "Claim the install");
+        RequireContains(projection.ReturnTarget, "No workspace return target");
+        RequireContains(projection.RulePosture, "Rule posture is still generic");
         if (projection.Watchouts.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should keep explicit watchouts even before the first workspace exists.");
@@ -133,6 +137,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "BuildBuildExplainBody()");
         RequireContains(source, "_buildExplainProjection.NextSafeAction");
         RequireContains(source, "_buildExplainProjection.ExplainFocus");
+        RequireContains(source, "_buildExplainProjection.ReturnTarget");
+        RequireContains(source, "_buildExplainProjection.RulePosture");
         RequireContains(source, "_buildExplainProjection.Watchouts");
         RequireContains(source, "client.GetBuildAsync");
         RequireContains(source, "client.GetRulesAsync");
