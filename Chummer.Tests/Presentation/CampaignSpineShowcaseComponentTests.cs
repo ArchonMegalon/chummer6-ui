@@ -118,7 +118,7 @@ public sealed class CampaignSpineShowcaseComponentTests
             Assert.IsNotNull(cut.Find("[data-build-lab-handoff-showcase='handoff.showcase.social-operator']"));
             Assert.IsNotNull(cut.Find("[data-rules-navigator-showcase='rules.navigator.showcase']"));
             Assert.IsNotNull(cut.Find("[data-creator-publication-showcase='publication.showcase.creator-packet']"));
-            StringAssert.Contains(cut.Markup, "Build Lab handoff");
+            StringAssert.Contains(cut.Markup, "Social Operator build path");
             StringAssert.Contains(cut.Markup, "Rules Navigator");
             StringAssert.Contains(cut.Markup, "creator packet");
         });

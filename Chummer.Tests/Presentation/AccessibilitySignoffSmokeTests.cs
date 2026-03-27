@@ -18,6 +18,7 @@ internal static class AccessibilitySignoffSmokeTests
             GeneratedAssetReviewPanel_renders_preview_and_emits_attach_approve_archive_actions();
             BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them();
             BlazorHome_uses_local_chummer6_flagship_media_samples();
+            BlazorCampaignSpineShowcase_uses_customer_facing_build_path_copy();
             DesktopHomeBuildExplainProjector_uses_real_contract_state();
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
@@ -146,6 +147,17 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "flagship_poster");
         RequireContains(source, "medscan_diagnostic");
         RequireContains(source, "forge_review_ar");
+    }
+
+    private static void BlazorCampaignSpineShowcase_uses_customer_facing_build_path_copy()
+    {
+        string homeSource = ReadSource("Chummer.Blazor/Components/Pages/Home.razor");
+        RequireContains(homeSource, "Social Operator build path");
+        RequireContains(homeSource, "build-path handoff");
+
+        string panelSource = ReadSource("Chummer.Blazor/Components/Shared/BuildLabHandoffPanel.razor");
+        RequireContains(panelSource, "Title: \"Build path\"");
+        RequireContains(panelSource, "chosen build path");
     }
 
     private static void DesktopHead_uses_canonical_catalog_only_resolver()
