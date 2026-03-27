@@ -43,6 +43,47 @@
             </article>
         }
     </section>
+
+    @if (!string.IsNullOrWhiteSpace(Projection.NextSafeAction)
+        || !string.IsNullOrWhiteSpace(Projection.RuntimeCompatibilitySummary)
+        || !string.IsNullOrWhiteSpace(Projection.CampaignReturnSummary)
+        || !string.IsNullOrWhiteSpace(Projection.SupportClosureSummary)
+        || Projection.Watchouts is { Count: > 0 })
+    {
+        <section class="coach-card" data-build-lab-handoff-rail>
+            <div class="coach-card-header">
+                <h3>Campaign-safe handoff</h3>
+                <span class="badge">Closure rail</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Projection.NextSafeAction))
+            {
+                <p><strong>@Projection.NextSafeAction</strong></p>
+            }
+            <dl class="facts compact">
+                @if (!string.IsNullOrWhiteSpace(Projection.RuntimeCompatibilitySummary))
+                {
+                    <div><dt>Runtime</dt><dd>@Projection.RuntimeCompatibilitySummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Projection.CampaignReturnSummary))
+                {
+                    <div><dt>Return</dt><dd>@Projection.CampaignReturnSummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Projection.SupportClosureSummary))
+                {
+                    <div><dt>Support</dt><dd>@Projection.SupportClosureSummary</dd></div>
+                }
+            </dl>
+            @if (Projection.Watchouts is { Count: > 0 })
+            {
+                <ul class="browse-detail-lines">
+                    @foreach (string watchout in Projection.Watchouts)
+                    {
+                        <li>@watchout</li>
+                    }
+                </ul>
+            }
+        </section>
+    }
 </section>
 
 @code {

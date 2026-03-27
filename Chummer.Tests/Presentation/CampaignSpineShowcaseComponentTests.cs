@@ -14,6 +14,54 @@ namespace Chummer.Tests.Presentation;
 public sealed class CampaignSpineShowcaseComponentTests
 {
     [TestMethod]
+    public void BuildLabPanel_renders_decision_rail_and_watchouts()
+    {
+        BuildLabConceptIntakeProjection projection = new(
+            WorkspaceId: "showcase.build-lab",
+            WorkflowId: "workflow.build-lab",
+            Title: "Build Lab Intake",
+            Summary: "Grounded intake before campaign handoff.",
+            RulesetId: "sr5",
+            BuildMethod: "Priority",
+            IntakeFields:
+            [
+                new BuildLabIntakeField("concept", "Concept", BuildLabFieldKinds.Text, "Street operator")
+            ],
+            RoleBadges:
+            [
+                new BuildLabBadge("face", "Face", BuildLabBadgeKinds.Role, true)
+            ],
+            ConstraintBadges:
+            [
+                new BuildLabBadge("ops", "Ops-first", BuildLabBadgeKinds.Constraint, true)
+            ],
+            ProvenanceBadges:
+            [
+                new BuildLabBadge("runtime", "Runtime-backed", BuildLabBadgeKinds.Provenance, true)
+            ],
+            Variants: [],
+            ProgressionTimelines: [],
+            NextSafeAction: "Rebind runtime before export.",
+            RuntimeCompatibilitySummary: "One provider binding still needs review.",
+            CampaignFitSummary: "Fits sparse-ops crews.",
+            SupportClosureSummary: "Support can cite the same runtime fingerprint.",
+            Watchouts:
+            [
+                "Do not export until the runtime rebind receipt exists."
+            ]);
+
+        using var context = new BunitContext();
+        IRenderedComponent<BuildLabPanel> cut = context.Render<BuildLabPanel>(parameters => parameters
+            .Add(component => component.Projection, projection));
+
+        StringAssert.Contains(cut.Markup, "Campaign-safe decision rail");
+        StringAssert.Contains(cut.Markup, "Rebind runtime before export.");
+        StringAssert.Contains(cut.Markup, "Fits sparse-ops crews.");
+        StringAssert.Contains(cut.Markup, "Do not export until the runtime rebind receipt exists.");
+        Assert.IsNotNull(cut.Find("[data-build-lab-decision-rail]"));
+    }
+
+    [TestMethod]
     public void BuildLabHandoffPanel_renders_dossier_and_campaign_outputs()
     {
         BuildLabHandoffProjection projection = new(
@@ -37,7 +85,15 @@ public sealed class CampaignSpineShowcaseComponentTests
             [
                 new PublicationSafeProjection("projection-1", "dossier_card", "Living dossier", "Stable runner identity.", "artifact-1")
             ],
-            UpdatedAtUtc: DateTimeOffset.UtcNow);
+            UpdatedAtUtc: DateTimeOffset.UtcNow,
+            NextSafeAction: "Rebind runtime before dossier handoff.",
+            RuntimeCompatibilitySummary: "Runtime drift still needs one safe rebind.",
+            CampaignReturnSummary: "Campaign return lands on the same dossier identity.",
+            SupportClosureSummary: "Support closure can cite the same runtime fingerprint.",
+            Watchouts:
+            [
+                "Do not publish until the runtime rebind is recorded."
+            ]);
 
         using var context = new BunitContext();
         IRenderedComponent<BuildLabHandoffPanel> cut = context.Render<BuildLabHandoffPanel>(parameters => parameters
@@ -47,6 +103,9 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Living dossier");
         StringAssert.Contains(cut.Markup, "artifact-1");
         StringAssert.Contains(cut.Markup, "25 / 50 / 100 Karma path");
+        StringAssert.Contains(cut.Markup, "Campaign-safe handoff");
+        StringAssert.Contains(cut.Markup, "Rebind runtime before dossier handoff.");
+        Assert.IsNotNull(cut.Find("[data-build-lab-handoff-rail]"));
     }
 
     [TestMethod]
@@ -118,9 +177,12 @@ public sealed class CampaignSpineShowcaseComponentTests
             Assert.IsNotNull(cut.Find("[data-build-lab-handoff-showcase='handoff.showcase.social-operator']"));
             Assert.IsNotNull(cut.Find("[data-rules-navigator-showcase='rules.navigator.showcase']"));
             Assert.IsNotNull(cut.Find("[data-creator-publication-showcase='publication.showcase.creator-packet']"));
+            Assert.IsNotNull(cut.Find("[data-build-lab-decision-rail]"));
+            Assert.IsNotNull(cut.Find("[data-build-lab-handoff-rail]"));
             StringAssert.Contains(cut.Markup, "Social Operator build path");
             StringAssert.Contains(cut.Markup, "Rules Navigator");
             StringAssert.Contains(cut.Markup, "creator packet");
+            StringAssert.Contains(cut.Markup, "Campaign-safe decision rail");
         });
     }
 }
