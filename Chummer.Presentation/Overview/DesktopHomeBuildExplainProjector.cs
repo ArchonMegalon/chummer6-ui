@@ -3,7 +3,11 @@ using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
 
-public sealed record DesktopHomeBuildExplainProjection(string Summary);
+public sealed record DesktopHomeBuildExplainProjection(
+    string Summary,
+    string NextSafeAction,
+    string ExplainFocus,
+    IReadOnlyList<string> Watchouts);
 
 public static class DesktopHomeBuildExplainProjector
 {
@@ -15,7 +19,13 @@ public static class DesktopHomeBuildExplainProjector
         if (workspaces.Count == 0)
         {
             return new DesktopHomeBuildExplainProjection(
-                "No workspace is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.\nRules explanations and support closure stay safer once this install is claimed and the first workspace gives the desktop shell a real continuity target.");
+                "No workspace is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.",
+                "Create or import the first dossier before you trust this install to carry campaign continuity.",
+                "Claim the install and seed one real workspace so grounded build receipts, rule answers, and support closure all share the same continuity target.",
+                [
+                    "No grounded build lane is loaded yet for this desktop head.",
+                    "Rules explanations stay generic until the first workspace is restored into local continuity."
+                ]);
         }
 
         WorkspaceListItem leadWorkspace = workspaces[0];
@@ -26,16 +36,45 @@ public static class DesktopHomeBuildExplainProjector
         if (build is null || rules is null)
         {
             return new DesktopHomeBuildExplainProjection(
-                $"Next safe action: continue {displayName} on {leadWorkspace.RulesetId} and inspect explain traces before you export, publish, or reopen campaign work.\nBuild Lab keeps variant tradeoffs, progression rails, and overlap risks visible before the next campaign-facing handoff.\nRules explanations stay tied to the claimed install, current channel, and support path instead of drifting into detached notes.");
+                $"Continue {displayName} on {leadWorkspace.RulesetId} and inspect explain traces before you export, publish, or reopen campaign work.",
+                $"Reopen {displayName} and refresh the build and rules sections so the next action is grounded in live dossier state instead of cached workspace summary only.",
+                "Build Lab keeps variant tradeoffs, progression rails, and overlap risks visible before the next campaign-facing handoff, while Rules explanations stay tied to the claimed install, current channel, and support path.",
+                [
+                    "Build Lab is falling back to workspace summary until the build and rules sections can be read again.",
+                    "Support answers are safer after the dossier reloads the current build lane and rules posture."
+                ]);
         }
 
         string buildLane = string.IsNullOrWhiteSpace(build.BuildMethod) ? leadWorkspace.Summary.BuildMethod : build.BuildMethod;
         string priorityLadder = BuildPriorityLadder(build);
         string gameplayMode = string.IsNullOrWhiteSpace(rules.GameplayOption) ? "default gameplay posture" : rules.GameplayOption;
         string bannedWare = BuildBannedWareSummary(rules.BannedWareGrades);
+        int remainingContactPoints = Math.Max(build.ContactPoints - build.ContactPointsUsed, 0);
+        string nextSafeAction = remainingContactPoints == 0
+            ? $"Continue {displayName}, but review contact allocation before you export or hand the dossier back into campaign play."
+            : $"Continue {displayName} and inspect the grounded {buildLane} lane before you export, publish, or reopen campaign work.";
+        string explainFocus = $"Explain focus: {buildLane} with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.";
+
+        List<string> watchouts =
+        [
+            remainingContactPoints == 0
+                ? "Contact points are fully allocated, so any new social or team-facing change now forces a tradeoff."
+                : $"Contact allocation leaves {remainingContactPoints} point(s) available before the next handoff.",
+            string.Equals(bannedWare, "none", StringComparison.Ordinal)
+                ? "No banned ware grades are currently blocking the next safe build/export decision."
+                : $"Current rules posture bans {bannedWare}, so gear and upgrade choices need an explicit compatibility check."
+        ];
+
+        if (rules.MaxKarma > 0)
+        {
+            watchouts.Add($"Campaign rules cap this lane at {rules.MaxKarma} Karma before the next progression checkpoint changes.");
+        }
 
         return new DesktopHomeBuildExplainProjection(
-            $"Next safe action: continue {displayName} and inspect the grounded {buildLane} lane before you export, publish, or reopen campaign work.\nBuild posture: {buildLane} with {priorityLadder}; contact points {build.ContactPointsUsed}/{build.ContactPoints}; special track {build.TotalSpecial}.\nRules posture: {rules.GameEdition} · {rules.Settings} · {gameplayMode}; limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen; banned ware {bannedWare}.");
+            $"Build posture: {buildLane} with {priorityLadder}; contact points {build.ContactPointsUsed}/{build.ContactPoints}; special track {build.TotalSpecial}.\nRules posture: {rules.GameEdition} · {rules.Settings} · {gameplayMode}; limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen; banned ware {bannedWare}.",
+            nextSafeAction,
+            explainFocus,
+            watchouts);
     }
 
     private static string BuildPriorityLadder(CharacterBuildSection build)

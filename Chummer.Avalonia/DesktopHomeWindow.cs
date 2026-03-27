@@ -73,7 +73,7 @@ internal sealed class DesktopHomeWindow : Window
                         ]),
                     CreateSection(
                         "Build and explain next",
-                        _buildExplainProjection.Summary,
+                        BuildBuildExplainBody(),
                         []),
                     CreateSection(
                         "Language and trust surfaces",
@@ -226,6 +226,23 @@ internal sealed class DesktopHomeWindow : Window
             "\n",
             _recentWorkspaces.Select(workspace =>
                 $"{workspace.Summary} · {workspace.RulesetId} · {workspace.LastUpdatedUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC"));
+    }
+
+    private string BuildBuildExplainBody()
+    {
+        List<string> lines =
+        [
+            $"Next safe action: {_buildExplainProjection.NextSafeAction}",
+            _buildExplainProjection.Summary,
+            _buildExplainProjection.ExplainFocus
+        ];
+
+        foreach (string watchout in _buildExplainProjection.Watchouts)
+        {
+            lines.Add($"Watchout: {watchout}");
+        }
+
+        return string.Join("\n", lines);
     }
 
     private static Border CreateSection(string title, string body, IReadOnlyList<Button> actions)

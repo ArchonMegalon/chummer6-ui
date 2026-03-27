@@ -18,6 +18,7 @@ internal static class AccessibilitySignoffSmokeTests
             GeneratedAssetReviewPanel_renders_preview_and_emits_attach_approve_archive_actions();
             BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them();
             DesktopHomeBuildExplainProjector_uses_real_contract_state();
+            DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
             DesktopHead_uses_canonical_catalog_only_resolver();
             Console.WriteLine("[B13] PASS: targeted accessibility smoke runner checks passed.");
@@ -98,17 +99,36 @@ internal static class AccessibilitySignoffSmokeTests
             BannedWareGrades: ["Used", "Prototype"]);
 
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules);
-        RequireContains(projection.Summary, "continue Apex");
+        RequireContains(projection.NextSafeAction, "Continue Apex");
+        RequireContains(projection.ExplainFocus, "Explain focus:");
         RequireContains(projection.Summary, "Metatype B");
         RequireContains(projection.Summary, "SR6");
         RequireContains(projection.Summary, "Used, Prototype");
+        if (projection.Watchouts.Count < 2)
+        {
+            throw new InvalidOperationException("Desktop build/explain projection should surface multiple watchouts for the flagship home cockpit.");
+        }
+    }
+
+    private static void DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing()
+    {
+        DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([], build: null, rules: null);
+        RequireContains(projection.NextSafeAction, "Create or import the first dossier");
+        RequireContains(projection.ExplainFocus, "Claim the install");
+        if (projection.Watchouts.Count < 2)
+        {
+            throw new InvalidOperationException("Desktop build/explain projection should keep explicit watchouts even before the first workspace exists.");
+        }
     }
 
     private static void DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
         RequireContains(source, "ReadBuildExplainProjectionAsync");
-        RequireContains(source, "_buildExplainProjection.Summary");
+        RequireContains(source, "BuildBuildExplainBody()");
+        RequireContains(source, "_buildExplainProjection.NextSafeAction");
+        RequireContains(source, "_buildExplainProjection.ExplainFocus");
+        RequireContains(source, "_buildExplainProjection.Watchouts");
         RequireContains(source, "client.GetBuildAsync");
         RequireContains(source, "client.GetRulesAsync");
     }
