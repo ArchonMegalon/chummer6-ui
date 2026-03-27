@@ -68,6 +68,10 @@ internal sealed class DesktopHomeWindow : Window
                             CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
                         ]),
                     CreateSection(
+                        "Build and explain next",
+                        BuildBuildAndExplainSummary(),
+                        []),
+                    CreateSection(
                         "Language and trust surfaces",
                         $"Language: {DesktopLocalizationCatalog.GetDisplayLabel(_preferences.Language)}\nShipping locales: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}\nLanguage changes apply fully on restart during the current desktop wave.",
                         []),
@@ -194,6 +198,20 @@ internal sealed class DesktopHomeWindow : Window
             "\n",
             _recentWorkspaces.Select(workspace =>
                 $"{workspace.Summary} · {workspace.RulesetId} · {workspace.LastUpdatedUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC"));
+    }
+
+    private string BuildBuildAndExplainSummary()
+    {
+        if (_recentWorkspaces.Count == 0)
+        {
+            return "No workspace is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.\nRules explanations and support closure stay safer once this install is claimed and the first workspace gives the desktop shell a real continuity target.";
+        }
+
+        WorkspaceListItem leadWorkspace = _recentWorkspaces[0];
+        string displayName = string.IsNullOrWhiteSpace(leadWorkspace.Summary.Name)
+            ? leadWorkspace.Id.Value
+            : leadWorkspace.Summary.Name;
+        return $"Next safe action: continue {displayName} on {leadWorkspace.RulesetId} and inspect explain traces before you export, publish, or reopen campaign work.\nBuild Lab keeps variant tradeoffs, progression rails, and overlap risks visible before the next campaign-facing handoff.\nRules explanations stay tied to the claimed install, current channel, and support path instead of drifting into detached notes.";
     }
 
     private static Border CreateSection(string title, string body, IReadOnlyList<Button> actions)
