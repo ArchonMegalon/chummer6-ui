@@ -159,8 +159,17 @@ public static class DesktopInstallLinkingRuntime
 
     public static bool TryOpenAccountPortal()
     {
-        Uri uri = ResolvePublicWebAddress();
-        return DesktopCrashRuntime.TryOpenPathInShell(new Uri(uri, "/account#desktop").ToString());
+        return TryOpenPublicPortal("/account#desktop");
+    }
+
+    public static bool TryOpenSupportPortal()
+    {
+        return TryOpenPublicPortal("/account/support");
+    }
+
+    public static bool TryOpenDownloadsPortal()
+    {
+        return TryOpenPublicPortal("/downloads");
     }
 
     public static bool IsClaimed(DesktopInstallLinkingState state)
@@ -398,6 +407,12 @@ public static class DesktopInstallLinkingRuntime
         }
 
         return ResolveApiBaseAddress();
+    }
+
+    private static bool TryOpenPublicPortal(string relativePath)
+    {
+        Uri uri = ResolvePublicWebAddress();
+        return DesktopCrashRuntime.TryOpenPathInShell(new Uri(uri, relativePath).ToString());
     }
 
     private static string BuildErrorMessage(HttpResponseMessage response, string responseText)

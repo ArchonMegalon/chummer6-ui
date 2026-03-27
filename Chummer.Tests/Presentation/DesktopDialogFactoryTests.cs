@@ -38,6 +38,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("neo", DesktopDialogFieldValueParser.GetValue(dialog, "globalTheme"));
         Assert.AreEqual("de-de", DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalCompactMode"));
+        StringAssert.Contains(dialog.Message ?? string.Empty, "Phase-1 desktop language changes apply on restart.");
     }
 
     [TestMethod]
@@ -85,6 +86,24 @@ public class DesktopDialogFactoryTests
         Assert.IsNotNull(gearAddDialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "add", StringComparison.Ordinal)));
         Assert.IsNotNull(gearEditDialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)));
         Assert.IsNotNull(gearDeleteDialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_translator_lists_locked_shipping_locales()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "translator",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null);
+
+        CollectionAssert.AreEquivalent(
+            DesktopLocalizationCatalog.ShippingLanguages.Select(language => language.Code).ToArray(),
+            dialog.Fields.Where(field => field.Id.StartsWith("lang", StringComparison.Ordinal)).Select(field => field.Value).ToArray());
     }
 
     [TestMethod]

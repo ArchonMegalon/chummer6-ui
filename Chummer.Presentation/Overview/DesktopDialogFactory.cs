@@ -110,11 +110,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "global_settings" => new DesktopDialogState(
                 "dialog.global_settings",
                 "Global Settings",
-                null,
+                $"Phase-1 desktop language changes apply on restart. Shipping locales: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}",
                 [
                     new DesktopDialogField("globalUiScale", "UI Scale (%)", preferences.UiScalePercent.ToString(), "100", InputType: "number"),
                     new DesktopDialogField("globalTheme", "Theme", preferences.Theme, "classic"),
-                    new DesktopDialogField("globalLanguage", "Language", preferences.Language, "en-us"),
+                    new DesktopDialogField("globalLanguage", "Language", DesktopLocalizationCatalog.NormalizeOrDefault(preferences.Language), DesktopLocalizationCatalog.DefaultLanguage),
                     new DesktopDialogField("globalCompactMode", "Compact Mode", preferences.CompactMode ? "true" : "false", "false", InputType: "checkbox")
                 ],
                 [
@@ -149,13 +149,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "translator" => new DesktopDialogState(
                 "dialog.translator",
                 "Translator",
-                "Language catalog preview.",
-                [
-                    new DesktopDialogField("translatorSearch", "Language Search", string.Empty, "filter languages"),
-                    new DesktopDialogField("lang1", "English", "en-us", "en-us", IsReadOnly: true),
-                    new DesktopDialogField("lang2", "Deutsch", "de-de", "de-de", IsReadOnly: true),
-                    new DesktopDialogField("lang3", "Francais", "fr-fr", "fr-fr", IsReadOnly: true)
-                ],
+                $"Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}",
+                BuildTranslatorFields(),
                 [new DesktopDialogAction("close", "Close", true)]),
             "xml_editor" => new DesktopDialogState(
                 "dialog.xml_editor",
@@ -202,9 +197,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "report_bug" => new DesktopDialogState(
                 "dialog.report_bug",
-                "Report Bug",
-                "Open the issue form in your browser: https://github.com/chummer5a/chummer5a/issues/new/choose",
-                [],
+                "Support and bug reporting",
+                "Use the signed-in Hub support surface for tracked install-aware cases. GitHub is still available for public issue reporting, but the flagship desktop flow is claim-aware support closure.",
+                [
+                    new DesktopDialogField("supportHub", "Tracked support", "/account/support", "/account/support", IsReadOnly: true),
+                    new DesktopDialogField("supportPublic", "Guest support", "/contact", "/contact", IsReadOnly: true),
+                    new DesktopDialogField("supportGithub", "Public GitHub issue form", "https://github.com/chummer5a/chummer5a/issues/new/choose", "https://github.com/chummer5a/chummer5a/issues/new/choose", IsReadOnly: true)
+                ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "about" => new DesktopDialogState(
                 "dialog.about",
@@ -284,8 +283,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "update" => new DesktopDialogState(
                 "dialog.update",
                 "Check for Updates",
-                "Desktop heads check the configured registry manifest (`CHUMMER_DESKTOP_UPDATE_MANIFEST`) at startup and hand off either an in-place payload or a platform installer through the local runtime.",
-                [],
+                "Desktop heads check the configured registry manifest (`CHUMMER_DESKTOP_UPDATE_MANIFEST`) at startup, stage either an in-place payload or a platform installer, and keep install linking plus support continuity intact across the relaunch boundary.",
+                [
+                    new DesktopDialogField("updateManifest", "Manifest", Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MANIFEST") ?? string.Empty, "unset", IsReadOnly: true),
+                    new DesktopDialogField("updateAutoApply", "Auto apply", Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_AUTO_APPLY") ?? "true", "true", IsReadOnly: true),
+                    new DesktopDialogField("updateSupportPath", "Support after update", "/account/support", "/account/support", IsReadOnly: true)
+                ],
                 [new DesktopDialogAction("close", "Close", true)]),
             _ => new DesktopDialogState(
                 "dialog.generic",
@@ -644,5 +647,27 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 [],
                 [new DesktopDialogAction("close", "Close", true)])
         };
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildTranslatorFields()
+    {
+        List<DesktopDialogField> fields =
+        [
+            new DesktopDialogField("translatorSearch", "Language Search", string.Empty, "filter languages")
+        ];
+
+        int index = 1;
+        foreach (DesktopSupportedLanguage language in DesktopLocalizationCatalog.ShippingLanguages)
+        {
+            fields.Add(new DesktopDialogField(
+                $"lang{index}",
+                language.Label,
+                language.Code,
+                language.Code,
+                IsReadOnly: true));
+            index++;
+        }
+
+        return fields;
     }
 }
