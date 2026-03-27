@@ -51,6 +51,42 @@ public class DialogCoordinatorTests
         Assert.AreEqual("dark-steel", published.Preferences.Theme);
         Assert.AreEqual("de-de", published.Preferences.Language);
         Assert.IsTrue(published.Preferences.CompactMode);
+        StringAssert.Contains(published.Notice ?? string.Empty, "Restart the desktop head to fully apply");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_save_global_settings_falls_back_to_english_for_unsupported_locale()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.global_settings",
+                Title: "Global Settings",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("globalUiScale", "UI Scale", "100", "100"),
+                    new DesktopDialogField("globalTheme", "Theme", "classic", "classic"),
+                    new DesktopDialogField("globalLanguage", "Language", "es-es", "en-us"),
+                    new DesktopDialogField("globalCompactMode", "Compact", "false", "false")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("save", "Save", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("save", context, CancellationToken.None);
+
+        Assert.AreEqual(DesktopLocalizationCatalog.DefaultLanguage, published.Preferences.Language);
     }
 
     [TestMethod]

@@ -18,6 +18,22 @@ public sealed record DesktopUpdateStartupResult(
         => new(true, reason);
 }
 
+public sealed record DesktopUpdateClientStatus(
+    string HeadId,
+    string InstalledVersion,
+    string ChannelId,
+    string Platform,
+    string Arch,
+    bool UpdatesEnabled,
+    bool AutoApply,
+    string ManifestLocation,
+    DateTimeOffset? LastCheckedAtUtc,
+    string? LastManifestVersion,
+    DateTimeOffset? LastManifestPublishedAtUtc,
+    string? LastError,
+    string Status,
+    string RecommendedAction);
+
 public static class DesktopUpdateRuntime
 {
     private const string ApplySwitch = "--desktop-update-apply";
@@ -27,6 +43,71 @@ public static class DesktopUpdateRuntime
     private const string UpdateAutoApplyEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_AUTO_APPLY";
     private const string LegacyManifestEnvironmentVariable = "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL";
     private const string UpdateRootDirectoryName = "desktop-update";
+
+    public static DesktopUpdateClientStatus GetCurrentStatus(string headId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopUpdateConfiguration configuration = DesktopUpdateConfiguration.Load();
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        DesktopUpdatePaths paths = DesktopUpdatePaths.Create(headId, identity);
+        DesktopReleaseMetadata releaseMetadata = DesktopReleaseMetadata.Load(headId);
+        DesktopUpdateState? state = DesktopUpdateStateStore.Load(paths.StateFilePath);
+
+        string installedVersion = string.IsNullOrWhiteSpace(state?.InstalledVersion)
+            ? releaseMetadata.Version
+            : state!.InstalledVersion;
+        string channelId = string.IsNullOrWhiteSpace(state?.ChannelId)
+            ? releaseMetadata.ChannelId
+            : state!.ChannelId;
+
+        string status;
+        string recommendedAction;
+        if (!configuration.Enabled)
+        {
+            status = "disabled";
+            recommendedAction = "Configure the desktop update manifest before promising self-update.";
+        }
+        else if (!string.IsNullOrWhiteSpace(state?.LastError))
+        {
+            status = "attention_required";
+            recommendedAction = "Review the last update error and route support before promotion.";
+        }
+        else if (state?.LastCheckedAt is null)
+        {
+            status = "never_checked";
+            recommendedAction = "Open the desktop once with update checks enabled so the local install seeds update truth.";
+        }
+        else if (!string.IsNullOrWhiteSpace(state.LastManifestVersion)
+            && !string.Equals(installedVersion, state.LastManifestVersion, StringComparison.OrdinalIgnoreCase))
+        {
+            status = "update_available";
+            recommendedAction = configuration.AutoApply
+                ? "Restart to let the desktop head apply the next staged update."
+                : "Open Downloads or Account to review the next promoted installer.";
+        }
+        else
+        {
+            status = "current";
+            recommendedAction = "Continue into the home cockpit or your most recent workspace.";
+        }
+
+        return new DesktopUpdateClientStatus(
+            HeadId: headId,
+            InstalledVersion: installedVersion,
+            ChannelId: channelId,
+            Platform: identity.Platform,
+            Arch: identity.Arch,
+            UpdatesEnabled: configuration.Enabled,
+            AutoApply: configuration.AutoApply,
+            ManifestLocation: configuration.ManifestLocation,
+            LastCheckedAtUtc: state?.LastCheckedAt,
+            LastManifestVersion: state?.LastManifestVersion,
+            LastManifestPublishedAtUtc: state?.LastManifestPublishedAt,
+            LastError: state?.LastError,
+            Status: status,
+            RecommendedAction: recommendedAction);
+    }
 
     public static async Task<int?> TryHandleSpecialModeAsync(string[] args, CancellationToken ct)
     {

@@ -383,8 +383,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         int uiScalePercent = DesktopDialogFieldValueParser.ParseInt(dialog, "globalUiScale", context.State.Preferences.UiScalePercent);
         string theme = DesktopDialogFieldValueParser.GetValue(dialog, "globalTheme") ?? context.State.Preferences.Theme;
-        string language = DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage") ?? context.State.Preferences.Language;
+        string requestedLanguage = DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage") ?? context.State.Preferences.Language;
+        string language = DesktopLocalizationCatalog.NormalizeOrDefault(requestedLanguage);
         bool compactMode = DesktopDialogFieldValueParser.ParseBool(dialog, "globalCompactMode", context.State.Preferences.CompactMode);
+        bool languageChanged = !string.Equals(
+            DesktopLocalizationCatalog.NormalizeOrDefault(context.State.Preferences.Language),
+            language,
+            StringComparison.Ordinal);
 
         context.Publish(context.State with
         {
@@ -397,7 +402,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 Language = language,
                 CompactMode = compactMode
             },
-            Notice = "Global settings updated."
+            Notice = languageChanged
+                ? $"Global settings updated. Restart the desktop head to fully apply {DesktopLocalizationCatalog.GetDisplayLabel(language)} across shell chrome, update, and support surfaces."
+                : "Global settings updated."
         });
     }
 
