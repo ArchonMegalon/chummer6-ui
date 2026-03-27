@@ -6,6 +6,15 @@
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
+    <ProjectReference Include="$(ChummerLocalContractsProject)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
+    <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Chummer.Presentation\Chummer.Presentation.csproj" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="AccessibilitySignoffSmokeTests.cs" />
   </ItemGroup>

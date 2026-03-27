@@ -1,5 +1,8 @@
 #nullable enable annotations
 
+using Chummer.Contracts.Characters;
+using Chummer.Contracts.Workspaces;
+using Chummer.Presentation.Overview;
 using System;
 using System.IO;
 
@@ -14,6 +17,9 @@ internal static class AccessibilitySignoffSmokeTests
             SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation();
             GeneratedAssetReviewPanel_renders_preview_and_emits_attach_approve_archive_actions();
             BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them();
+            DesktopHomeBuildExplainProjector_uses_real_contract_state();
+            DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
+            DesktopHead_uses_canonical_catalog_only_resolver();
             Console.WriteLine("[B13] PASS: targeted accessibility smoke runner checks passed.");
             return 0;
         }
@@ -50,9 +56,84 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "aria-live=\"polite\"");
     }
 
+    private static void DesktopHomeBuildExplainProjector_uses_real_contract_state()
+    {
+        WorkspaceListItem workspace = new(
+            new CharacterWorkspaceId("workspace-1"),
+            new CharacterFileSummary(
+                Name: "Apex",
+                Alias: "Alias",
+                Metatype: "Human",
+                BuildMethod: "Priority",
+                CreatedVersion: "6.0",
+                AppVersion: "6.0",
+                Karma: 0,
+                Nuyen: 0,
+                Created: true),
+            DateTimeOffset.Parse("2026-03-27T10:15:00+00:00"),
+            "sr6.preview.v1",
+            HasSavedWorkspace: true);
+        CharacterBuildSection build = new(
+            BuildMethod: "Priority",
+            PriorityMetatype: "B",
+            PriorityAttributes: "A",
+            PrioritySpecial: "D",
+            PrioritySkills: "C",
+            PriorityResources: "E",
+            PriorityTalent: "Magic",
+            SumToTen: 10,
+            Special: 4,
+            TotalSpecial: 6,
+            TotalAttributes: 24,
+            ContactPoints: 10,
+            ContactPointsUsed: 6);
+        CharacterRulesSection rules = new(
+            GameEdition: "SR6",
+            Settings: "Seattle Nights",
+            GameplayOption: "Prime runner preview",
+            GameplayOptionQualityLimit: 2,
+            MaxNuyen: 450000,
+            MaxKarma: 50,
+            ContactMultiplier: 3,
+            BannedWareGrades: ["Used", "Prototype"]);
+
+        DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules);
+        RequireContains(projection.Summary, "continue Apex");
+        RequireContains(projection.Summary, "Metatype B");
+        RequireContains(projection.Summary, "SR6");
+        RequireContains(projection.Summary, "Used, Prototype");
+    }
+
+    private static void DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        RequireContains(source, "ReadBuildExplainProjectionAsync");
+        RequireContains(source, "_buildExplainProjection.Summary");
+        RequireContains(source, "client.GetBuildAsync");
+        RequireContains(source, "client.GetRulesAsync");
+    }
+
+    private static void DesktopHead_uses_canonical_catalog_only_resolver()
+    {
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "CatalogOnlyRulesetShellCatalogResolver");
+
+        string? repoRoot = FindRepoRoot();
+        if (string.IsNullOrWhiteSpace(repoRoot))
+        {
+            throw new InvalidOperationException("Could not locate the repository root for desktop runtime checks.");
+        }
+
+        string duplicateResolverPath = Path.Combine(repoRoot, "Chummer.Desktop.Runtime", "DesktopFallbackRulesetShellCatalogResolver.cs");
+        if (File.Exists(duplicateResolverPath))
+        {
+            throw new InvalidOperationException("Desktop runtime should not keep a duplicate fallback ruleset shell resolver.");
+        }
+    }
+
     private static string ReadSource(string relativePath)
     {
-        string? cursor = Directory.GetCurrentDirectory();
+        string? cursor = FindRepoRoot();
         while (!string.IsNullOrWhiteSpace(cursor))
         {
             string candidate = Path.Combine(cursor, relativePath);
@@ -66,6 +147,35 @@ internal static class AccessibilitySignoffSmokeTests
         }
 
         throw new FileNotFoundException($"Could not locate required source file: {relativePath}");
+    }
+
+    private static string? FindRepoRoot()
+    {
+        string?[] startingPoints =
+        {
+            Directory.GetCurrentDirectory(),
+            AppContext.BaseDirectory,
+            AppDomain.CurrentDomain.BaseDirectory
+        };
+
+        foreach (string? startingPoint in startingPoints)
+        {
+            string? cursor = startingPoint;
+            while (!string.IsNullOrWhiteSpace(cursor))
+            {
+                bool hasPresentationProject = File.Exists(Path.Combine(cursor, "Chummer.Presentation", "Chummer.Presentation.csproj"));
+                bool hasBlazorShell = File.Exists(Path.Combine(cursor, "Chummer.Blazor", "Components", "Shell", "SectionPane.razor"));
+                if (hasPresentationProject && hasBlazorShell)
+                {
+                    return cursor;
+                }
+
+                DirectoryInfo? parent = Directory.GetParent(cursor);
+                cursor = parent?.FullName;
+            }
+        }
+
+        return null;
     }
 
     private static void RequireContains(string source, string expected)
