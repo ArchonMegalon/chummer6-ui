@@ -1,3 +1,4 @@
+using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
@@ -20,6 +21,8 @@ public interface IChummerClient
     Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct);
 
     Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct);
+
+    Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct);
 
     Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct);
 

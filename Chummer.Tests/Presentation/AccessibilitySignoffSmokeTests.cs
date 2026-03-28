@@ -1,5 +1,6 @@
 #nullable enable annotations
 
+using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Workspaces;
@@ -21,8 +22,10 @@ internal static class AccessibilitySignoffSmokeTests
             BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them();
             BlazorHome_uses_local_chummer6_flagship_media_samples();
             BlazorCampaignSpineShowcase_uses_customer_facing_build_path_copy();
+            DesktopHomeCampaignProjector_uses_real_campaign_restore_truth();
             DesktopHomeBuildExplainProjector_uses_real_contract_state();
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
+            DesktopHome_wires_the_campaign_projection_into_the_summary_panel();
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
             DesktopHome_exposes_claim_aware_install_and_update_actions();
             DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance();
@@ -64,6 +67,218 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "data-gm-board-stale-banner");
         RequireContains(source, "role=\"status\"");
         RequireContains(source, "aria-live=\"polite\"");
+    }
+
+    private static void DesktopHomeCampaignProjector_uses_real_campaign_restore_truth()
+    {
+        RuleEnvironmentRef environment = new(
+            EnvironmentId: "env.seattle",
+            OwnerScope: "campaign:campaign-1",
+            CompatibilityFingerprint: "sha256:campaign",
+            ApprovalState: "approved",
+            SourcePacks: ["core"],
+            HouseRulePacks: ["seattle-streets"],
+            OptionToggles: ["prime_runner"]);
+        ContinuitySnapshotRef continuity = new(
+            SnapshotId: "snapshot-1",
+            CapturedAtUtc: DateTimeOffset.Parse("2026-03-27T12:00:00+00:00"),
+            Summary: "Run recap and downtime packet captured.",
+            RestoreState: "ready",
+            SessionId: "run-1",
+            SceneId: "scene-1",
+            RecapArtifactId: "artifact-recap");
+        RunnerDossierProjection dossier = new(
+            DossierId: "dossier-1",
+            RunnerHandle: "apex",
+            DisplayName: "Apex",
+            Status: DossierStatuses.Active,
+            OwnerUserId: "user-1",
+            CrewId: "crew-1",
+            CampaignId: "campaign-1",
+            CurrentRunId: "run-1",
+            CurrentSceneId: "scene-1",
+            RuleEnvironment: environment,
+            LatestContinuity: continuity,
+            BuildReceiptIds: ["build-receipt-1"],
+            SnapshotIds: ["snapshot-1"],
+            Projections:
+            [
+                new PublicationSafeProjection("projection-1", "dossier_card", "Living dossier", "Ready for campaign return.")
+            ],
+            CreatedAtUtc: DateTimeOffset.Parse("2026-03-20T12:00:00+00:00"),
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:10:00+00:00"));
+        CampaignProjection campaign = new(
+            CampaignId: "campaign-1",
+            GroupId: "group-1",
+            Name: "Neon Nights",
+            Status: CampaignStatuses.Active,
+            Visibility: "private",
+            Summary: "Seattle campaign continuity is grounded and ready to resume.",
+            RuleEnvironment: environment,
+            ActiveRunId: "run-1",
+            CrewIds: ["crew-1"],
+            DossierIds: ["dossier-1"],
+            RunIds: ["run-1"],
+            LatestContinuity: continuity,
+            CreatedAtUtc: DateTimeOffset.Parse("2026-03-20T12:00:00+00:00"),
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:10:00+00:00"));
+        RunProjection run = new(
+            RunId: "run-1",
+            CampaignId: "campaign-1",
+            Title: "Cold Veins",
+            Status: RunStatuses.Active,
+            Summary: "The extraction is mid-stream and ready to recover on the next claimed device.",
+            ActiveSceneId: "scene-1",
+            Objectives:
+            [
+                new ObjectiveProjection("objective-1", "Recover the courier", "active", "high", "Primary extraction target is still active.", DateTimeOffset.Parse("2026-03-27T12:05:00+00:00"))
+            ],
+            Scenes:
+            [
+                new SceneProjection("scene-1", "run-1", "Dockside handoff", "r3", "active", "Current scene is pinned for return.", DateTimeOffset.Parse("2026-03-27T12:06:00+00:00"))
+            ],
+            LatestContinuity: continuity,
+            CreatedAtUtc: DateTimeOffset.Parse("2026-03-20T12:00:00+00:00"),
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:10:00+00:00"));
+        CrewProjection crew = new(
+            CrewId: "crew-1",
+            Name: "Night Shift",
+            Visibility: "private",
+            GroupId: "group-1",
+            CampaignId: "campaign-1",
+            Members:
+            [
+                new CrewAssignmentProjection("user-1", "dossier-1", "player", "ready", DateTimeOffset.Parse("2026-03-20T12:00:00+00:00"))
+            ],
+            CreatedAtUtc: DateTimeOffset.Parse("2026-03-20T12:00:00+00:00"),
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:00:00+00:00"));
+        CampaignWorkspaceProjection workspace = new(
+            WorkspaceId: "workspace-1",
+            CampaignId: "campaign-1",
+            CampaignName: "Neon Nights",
+            Visibility: "private",
+            RuleEnvironment: environment,
+            Crews: [crew],
+            Dossiers: [dossier],
+            Runs: [run],
+            RecapShelf:
+            [
+                new PublicationSafeProjection("recap-1", "recap", "Run recap", "Return packet is ready.")
+            ],
+            ReadinessCues:
+            [
+                new CampaignReadinessCue("cue-1", "warning", "Rule drift review", "One local override still needs an explicit review before you trust the next export.")
+            ],
+            LatestContinuity: continuity,
+            ReturnSummary: "Return to Neon Nights via Dockside handoff with Apex pinned to the active run.");
+        BuildLabHandoffProjection handoff = new(
+            HandoffId: "handoff-1",
+            DossierId: "dossier-1",
+            CampaignId: "campaign-1",
+            Title: "Social Operator build path",
+            Summary: "Build path handoff is ready for the next campaign return.",
+            VariantLabel: "social-operator",
+            ProgressionLabel: "prime",
+            ExplainEntryId: "rules-1",
+            TradeoffLines: ["Trade one gear slot for team-facing coverage."],
+            ProgressionOutcomes: ["Campaign return packet keeps the same continuity target."],
+            Outputs:
+            [
+                new PublicationSafeProjection("output-1", "build_receipt", "Build receipt", "Grounded for the current runtime.")
+            ],
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:07:00+00:00"),
+            NextSafeAction: "Review the build path receipt before you reopen the campaign workspace.",
+            RuntimeCompatibilitySummary: "Runtime sha256:campaign is still compatible with this handoff.",
+            CampaignReturnSummary: "Build handoff stays attached to Neon Nights and the current return snapshot.",
+            SupportClosureSummary: "The linked install can verify whether the next promoted fix landed before the run resumes.",
+            Watchouts: ["Confirm the rule drift review before you export the updated dossier."]);
+        RulesNavigatorAnswerProjection rules = new(
+            EntryId: "rules-1",
+            Question: "How does the Seattle Streets override affect this return?",
+            ShortAnswer: "It keeps the active handoff legal after restore.",
+            BeforeSummary: "Baseline core rules would block the edge case.",
+            AfterSummary: "Seattle Streets approves the current return path for this dossier.",
+            ExplainEntryId: "explain-1",
+            ProvenanceLabel: "campaign environment",
+            EvidenceLines: ["Seattle Streets override is approved for this campaign workspace."],
+            SupportReuseHints: ["Support can reuse the current rule-environment receipt when the reporter verifies the fix."]);
+        LegacyMigrationReceiptProjection migration = new(
+            ReceiptId: "migration-1",
+            SourceKind: "legacy_xml",
+            SourceId: "legacy-1",
+            TargetDossierId: "dossier-1",
+            TargetCampaignId: "campaign-1",
+            Summary: "Legacy import remained campaign-compatible.",
+            Fields:
+            [
+                new LegacyMigrationFieldProjection("field-1", "contacts", "mapped", "Contacts aligned with the current campaign workspace.")
+            ],
+            ImportedAtUtc: DateTimeOffset.Parse("2026-03-21T12:00:00+00:00"));
+        CreatorPublicationProjection publication = new(
+            PublicationId: "publication-1",
+            Title: "Neon Nights recap",
+            Kind: "recap",
+            Summary: "Public recap packet is ready.",
+            CampaignId: "campaign-1",
+            DossierId: "dossier-1",
+            ArtifactId: "artifact-recap",
+            ProvenanceSummary: "Campaign provenance is grounded.",
+            DiscoverySummary: "Visible to invited players.",
+            Visibility: "private",
+            PublicationStatus: "ready",
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:08:00+00:00"));
+        WorkspaceRestoreProjection restore = new(
+            RestoreId: "restore-1",
+            UserId: "user-1",
+            RecentDossiers: [dossier],
+            RecentCampaigns: [campaign],
+            RecentRuleEnvironments: [environment],
+            RecentArtifacts:
+            [
+                new RestoreArtifactProjection("artifact-recap", "Run recap", "recap", "Ready to reconnect the latest continuity packet.", Channel: "preview", Version: "0.9.0")
+            ],
+            Entitlements:
+            [
+                new RestoreEntitlementProjection("entitlement-1", "Preview desktop", "install", "active", "Desktop preview stays enabled for this campaign return.")
+            ],
+            ClaimedDevices:
+            [
+                new ClaimedDeviceRestoreProjection("install-1", "play_tablet", "windows", "avalonia", "preview", "Rigger tablet", "Ready to restore the current campaign workspace.")
+            ],
+            ConflictSummaries:
+            [
+                "One cloud-only snapshot is newer than the local cache."
+            ],
+            LocalOnlyNotes:
+            [
+                "Keep the GM-only notes on the claimed desktop instead of the travel tablet."
+            ],
+            GeneratedAtUtc: DateTimeOffset.Parse("2026-03-27T12:09:00+00:00"));
+
+        DesktopHomeCampaignProjection projection = DesktopHomeCampaignProjector.Create(
+            new AccountCampaignSummary(
+                Dossiers: [dossier],
+                Campaigns: [campaign],
+                Runs: [run],
+                Crews: [crew],
+                Workspaces: [workspace],
+                CommunityOperations: [],
+                BuildLabHandoffs: [handoff],
+                RulesNavigator: [rules],
+                MigrationReceipts: [migration],
+                CreatorPublications: [publication],
+                Restore: restore));
+
+        RequireContains(projection.Summary, "Return to Neon Nights");
+        RequireContains(projection.NextSafeAction, "Resolve the restore conflict");
+        RequireContains(projection.RestoreSummary, "Restore packet:");
+        RequireContains(projection.DeviceRoleSummary, "play_tablet");
+        RequireContains(projection.SupportClosureSummary, "The linked install can verify");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign return:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Build handoff:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Rules follow-through:");
+        RequireContains(string.Join("\n", projection.Watchouts), "cloud-only snapshot");
+        RequireContains(string.Join("\n", projection.Watchouts), "GM-only notes");
     }
 
     private static void DesktopHomeBuildExplainProjector_uses_real_contract_state()
@@ -245,6 +460,29 @@ internal static class AccessibilitySignoffSmokeTests
         {
             throw new InvalidOperationException("Desktop build/explain projection should keep explicit watchouts even before the first workspace exists.");
         }
+    }
+
+    private static void DesktopHome_wires_the_campaign_projection_into_the_summary_panel()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        RequireContains(source, "ReadCampaignProjectionAsync");
+        RequireContains(source, "BuildCampaignBody()");
+        RequireContains(source, "_campaignProjection.NextSafeAction");
+        RequireContains(source, "_campaignProjection.Summary");
+        RequireContains(source, "_campaignProjection.RestoreSummary");
+        RequireContains(source, "_campaignProjection.DeviceRoleSummary");
+        RequireContains(source, "_campaignProjection.SupportClosureSummary");
+        RequireContains(source, "_campaignProjection.ReadinessHighlights");
+        RequireContains(source, "_campaignProjection.Watchouts");
+        RequireContains(source, "CreateCampaignActions()");
+        RequireContains(source, "\"Campaign return and restore\"");
+        RequireContains(source, "Open current campaign workspace");
+        RequireContains(source, "client.GetAccountCampaignSummaryAsync");
+
+        string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeCampaignProjector.cs");
+        RequireContains(projectorSource, "Campaign return:");
+        RequireContains(projectorSource, "Support closure:");
+        RequireContains(projectorSource, "Claimed device posture:");
     }
 
     private static void DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel()
