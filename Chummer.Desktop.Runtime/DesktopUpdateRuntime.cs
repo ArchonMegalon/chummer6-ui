@@ -32,7 +32,15 @@ public sealed record DesktopUpdateClientStatus(
     DateTimeOffset? LastManifestPublishedAtUtc,
     string? LastError,
     string Status,
-    string RecommendedAction);
+    string RecommendedAction,
+    string? RolloutState = null,
+    string? RolloutReason = null,
+    string? SupportabilityState = null,
+    string? SupportabilitySummary = null,
+    string? KnownIssueSummary = null,
+    string? FixAvailabilitySummary = null,
+    string? ProofStatus = null,
+    DateTimeOffset? ProofGeneratedAtUtc = null);
 
 public static class DesktopUpdateRuntime
 {
@@ -86,6 +94,11 @@ public static class DesktopUpdateRuntime
                 ? "Restart to let the desktop head apply the next staged update."
                 : "Open Downloads or Account to review the next promoted installer.";
         }
+        else if (RequiresReleaseAttention(state))
+        {
+            status = "attention_required";
+            recommendedAction = BuildReleaseAttentionAction(state);
+        }
         else
         {
             status = "current";
@@ -106,7 +119,62 @@ public static class DesktopUpdateRuntime
             LastManifestPublishedAtUtc: state?.LastManifestPublishedAt,
             LastError: state?.LastError,
             Status: status,
-            RecommendedAction: recommendedAction);
+            RecommendedAction: recommendedAction,
+            RolloutState: state?.LastRolloutState,
+            RolloutReason: state?.LastRolloutReason,
+            SupportabilityState: state?.LastSupportabilityState,
+            SupportabilitySummary: state?.LastSupportabilitySummary,
+            KnownIssueSummary: state?.LastKnownIssueSummary,
+            FixAvailabilitySummary: state?.LastFixAvailabilitySummary,
+            ProofStatus: state?.LastProofStatus,
+            ProofGeneratedAtUtc: state?.LastProofGeneratedAt);
+    }
+
+    private static bool RequiresReleaseAttention(DesktopUpdateState? state)
+    {
+        if (state is null)
+        {
+            return false;
+        }
+
+        if (string.Equals(state.LastProofStatus, "failed", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (string.Equals(state.LastSupportabilityState, "review_required", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.Equals(state.LastRolloutState, "paused", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(state.LastRolloutState, "revoked", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildReleaseAttentionAction(DesktopUpdateState? state)
+    {
+        if (state is null)
+        {
+            return "Open Downloads and Support before relying on this release.";
+        }
+
+        if (string.Equals(state.LastProofStatus, "failed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Open Downloads and Support before relying on this release because the latest local release proof failed.";
+        }
+
+        if (string.Equals(state.LastSupportabilityState, "review_required", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Review supportability on Downloads or Support before continuing campaign work on this release.";
+        }
+
+        if (string.Equals(state.LastRolloutState, "paused", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(state.LastRolloutState, "revoked", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Do not rely on this release until Downloads confirms the current rollout posture.";
+        }
+
+        return "Open Downloads and Support before relying on this release.";
     }
 
     public static async Task<int?> TryHandleSpecialModeAsync(string[] args, CancellationToken ct)
@@ -207,6 +275,14 @@ public static class DesktopUpdateRuntime
             LastCheckedAt = DateTimeOffset.UtcNow,
             LastManifestVersion = manifest.Version,
             LastManifestPublishedAt = manifest.PublishedAt,
+            LastRolloutState = manifest.RolloutState,
+            LastRolloutReason = manifest.RolloutReason,
+            LastSupportabilityState = manifest.SupportabilityState,
+            LastSupportabilitySummary = manifest.SupportabilitySummary,
+            LastKnownIssueSummary = manifest.KnownIssueSummary,
+            LastFixAvailabilitySummary = manifest.FixAvailabilitySummary,
+            LastProofStatus = manifest.ProofStatus,
+            LastProofGeneratedAt = manifest.ProofGeneratedAt,
             LastError = artifact is null ? $"No compatible desktop update payload was available for {headId} {identity.Platform}/{identity.Arch}." : null
         };
 
@@ -1009,7 +1085,15 @@ public static class DesktopUpdateRuntime
         DateTimeOffset? LastCheckedAt,
         string? LastManifestVersion,
         DateTimeOffset? LastManifestPublishedAt,
-        string? LastError);
+        string? LastError,
+        string? LastRolloutState = null,
+        string? LastRolloutReason = null,
+        string? LastSupportabilityState = null,
+        string? LastSupportabilitySummary = null,
+        string? LastKnownIssueSummary = null,
+        string? LastFixAvailabilitySummary = null,
+        string? LastProofStatus = null,
+        DateTimeOffset? LastProofGeneratedAt = null);
 
     private static class DesktopUpdateStateStore
     {
