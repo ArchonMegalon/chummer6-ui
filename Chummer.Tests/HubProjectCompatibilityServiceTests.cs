@@ -119,6 +119,14 @@ public class HubProjectCompatibilityServiceTests
         Assert.IsNotNull(matrix);
         Assert.AreEqual(HubCatalogItemKinds.BuildKit, matrix.Kind);
         Assert.IsTrue(matrix.Rows.Any(row => row.Kind == HubProjectCompatibilityRowKinds.SessionRuntime && row.State == HubProjectCompatibilityStates.Blocked));
+        Assert.IsTrue(matrix.Rows.Any(row =>
+            row.Kind == HubProjectCompatibilityRowKinds.CampaignReturn
+            && row.State == HubProjectCompatibilityStates.Compatible
+            && row.Notes?.Contains("selected workspace or campaign lane", StringComparison.Ordinal) == true));
+        Assert.IsTrue(matrix.Rows.Any(row =>
+            row.Kind == HubProjectCompatibilityRowKinds.SupportClosure
+            && row.State == HubProjectCompatibilityStates.Compatible
+            && row.Notes?.Contains("Support closure can cite", StringComparison.Ordinal) == true));
         Assert.IsNotNull(matrix.Capabilities);
         Assert.IsEmpty(matrix.Capabilities);
     }
@@ -162,6 +170,12 @@ public class HubProjectCompatibilityServiceTests
             && row.CurrentValue == ArtifactInstallStates.Pinned
             && row.Notes == "workspace-1"));
         Assert.IsTrue(matrix.Rows.Any(row => row.Kind == HubProjectCompatibilityRowKinds.Capabilities && row.CurrentValue == "2"));
+        Assert.IsTrue(matrix.Rows.Any(row =>
+            row.Kind == HubProjectCompatibilityRowKinds.CampaignReturn
+            && row.Notes?.Contains("workspace-1", StringComparison.Ordinal) == true));
+        Assert.IsTrue(matrix.Rows.Any(row =>
+            row.Kind == HubProjectCompatibilityRowKinds.SupportClosure
+            && row.Notes?.Contains("runtime fingerprint sha256:core", StringComparison.Ordinal) == true));
         Assert.IsNotNull(matrix.Capabilities);
         Assert.IsTrue(matrix.Capabilities.Any(capability =>
             capability.CapabilityId == RulePackCapabilityIds.DeriveStat
@@ -203,6 +217,14 @@ public class HubProjectCompatibilityServiceTests
             row.Kind == HubProjectCompatibilityRowKinds.SessionRuntime
             && row.State == HubProjectCompatibilityStates.ReviewRequired
             && row.Notes?.Contains("must be rebound", StringComparison.Ordinal) == true));
+        Assert.IsTrue(matrix.Rows.Any(row =>
+            row.Kind == HubProjectCompatibilityRowKinds.CampaignReturn
+            && row.State == HubProjectCompatibilityStates.ReviewRequired
+            && row.Notes?.Contains("runtime review", StringComparison.Ordinal) == true));
+        Assert.IsTrue(matrix.Rows.Any(row =>
+            row.Kind == HubProjectCompatibilityRowKinds.SupportClosure
+            && row.State == HubProjectCompatibilityStates.ReviewRequired
+            && row.Notes?.Contains("rebind", StringComparison.Ordinal) == true));
     }
 
     private static RulesetPluginRegistry CreatePluginRegistry() =>
