@@ -108,9 +108,8 @@ echo "[B13] executing targeted regression smoke runner..."
 if [[ "$runtime_tests_required" == "1" ]]; then
   if ! bash -lc '
     set -euo pipefail
-    source scripts/ai/_env.sh
-    dotnet build "'"$test_project"'" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false
-    dotnet run --project "'"$test_project"'" --no-build --nologo --verbosity quiet
+    scripts/ai/with-package-plane.sh build "'"$test_project"'" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false
+    scripts/ai/with-package-plane.sh run --project "'"$test_project"'" --no-build --nologo --verbosity quiet
   '; then
     echo "[B13] FAIL: required targeted smoke runner execution failed."
     exit 4
@@ -119,9 +118,8 @@ else
   echo "[B13] note: CHUMMER_B13_TESTS_REQUIRED is not 1; executing smoke runner anyway for strict signoff drift protection."
   bash -lc '
     set -euo pipefail
-    source scripts/ai/_env.sh
-    dotnet build "'"$test_project"'" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false
-    dotnet run --project "'"$test_project"'" --no-build --nologo --verbosity quiet
+    scripts/ai/with-package-plane.sh build "'"$test_project"'" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false
+    scripts/ai/with-package-plane.sh run --project "'"$test_project"'" --no-build --nologo --verbosity quiet
   '
 fi
 
