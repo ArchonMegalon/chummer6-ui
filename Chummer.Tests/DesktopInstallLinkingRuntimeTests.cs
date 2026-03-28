@@ -38,11 +38,21 @@ public sealed class DesktopInstallLinkingRuntimeTests
                 LastManifestPublishedAtUtc: DateTimeOffset.Parse("2026-03-28T13:55:00+00:00"),
                 LastError: "Manifest signature mismatch.",
                 Status: "attention_required",
-                RecommendedAction: "Review the promoted preview and route support before retrying."));
+                RecommendedAction: "Review the promoted preview and route support before retrying.",
+                RolloutState: "local_docker_preview",
+                SupportabilityState: "local_docker_proven",
+                SupportabilitySummary: "Local proof passed for install, build, and support closure.",
+                KnownIssueSummary: "Portable artifact is still preview-only on this channel.",
+                FixAvailabilitySummary: "Only verify fixes after this install can see the promoted archive.",
+                ProofStatus: "passed",
+                ProofGeneratedAtUtc: DateTimeOffset.Parse("2026-03-28T13:56:00+00:00")));
 
         StringAssert.Contains(path, "title=Desktop%20update%20posture%20needs%20review%20for%20avalonia", StringComparison.Ordinal);
         StringAssert.Contains(path, "Manifest%20signature%20mismatch.", StringComparison.Ordinal);
         StringAssert.Contains(path, "applicationVersion=6.0.1-preview", StringComparison.Ordinal);
+        StringAssert.Contains(path, "Supportability%3A%20local_docker_proven", StringComparison.Ordinal);
+        StringAssert.Contains(path, "Local%20release%20proof%3A%20passed", StringComparison.Ordinal);
+        StringAssert.Contains(path, "Fix%20availability%3A%20Only%20verify%20fixes%20after%20this%20install%20can%20see%20the%20promoted%20archive.", StringComparison.Ordinal);
     }
 
     [TestMethod]

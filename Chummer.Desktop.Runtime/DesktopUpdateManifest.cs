@@ -77,6 +77,14 @@ public sealed record DesktopUpdateChannelManifest(
     string Status,
     DateTimeOffset? PublishedAt,
     IReadOnlyList<DesktopUpdateArtifact> Artifacts,
+    string? RolloutState,
+    string? RolloutReason,
+    string? SupportabilityState,
+    string? SupportabilitySummary,
+    string? KnownIssueSummary,
+    string? FixAvailabilitySummary,
+    string? ProofStatus,
+    DateTimeOffset? ProofGeneratedAt,
     Uri SourceUri);
 
 public static class DesktopUpdateManifestParser
@@ -170,6 +178,14 @@ public static class DesktopUpdateManifestParser
             Status: GetOptionalString(root, "status") ?? "published",
             PublishedAt: GetOptionalDateTimeOffset(root, "publishedAt"),
             Artifacts: artifacts,
+            RolloutState: GetOptionalString(root, "rolloutState"),
+            RolloutReason: GetOptionalString(root, "rolloutReason"),
+            SupportabilityState: GetOptionalString(root, "supportabilityState"),
+            SupportabilitySummary: GetOptionalString(root, "supportabilitySummary"),
+            KnownIssueSummary: GetOptionalString(root, "knownIssueSummary"),
+            FixAvailabilitySummary: GetOptionalString(root, "fixAvailabilitySummary"),
+            ProofStatus: GetOptionalString(root, "releaseProof", "status"),
+            ProofGeneratedAt: GetOptionalDateTimeOffset(root, "releaseProof", "generatedAt"),
             SourceUri: sourceUri);
     }
 
@@ -218,6 +234,14 @@ public static class DesktopUpdateManifestParser
             Status: GetOptionalString(root, "status") ?? "published",
             PublishedAt: GetOptionalDateTimeOffset(root, "publishedAt"),
             Artifacts: artifacts,
+            RolloutState: GetOptionalString(root, "rolloutState"),
+            RolloutReason: GetOptionalString(root, "rolloutReason"),
+            SupportabilityState: GetOptionalString(root, "supportabilityState"),
+            SupportabilitySummary: GetOptionalString(root, "supportabilitySummary"),
+            KnownIssueSummary: GetOptionalString(root, "knownIssueSummary"),
+            FixAvailabilitySummary: GetOptionalString(root, "fixAvailabilitySummary"),
+            ProofStatus: GetOptionalString(root, "releaseProof", "status"),
+            ProofGeneratedAt: GetOptionalDateTimeOffset(root, "releaseProof", "generatedAt"),
             SourceUri: sourceUri);
     }
 
@@ -285,6 +309,16 @@ public static class DesktopUpdateManifestParser
         };
     }
 
+    private static string? GetOptionalString(JsonElement element, string propertyName, string nestedPropertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out JsonElement property) || property.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return GetOptionalString(property, nestedPropertyName);
+    }
+
     private static DateTimeOffset? GetOptionalDateTimeOffset(JsonElement element, string propertyName)
     {
         string? raw = GetOptionalString(element, propertyName);
@@ -296,5 +330,15 @@ public static class DesktopUpdateManifestParser
         return DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out DateTimeOffset parsed)
             ? parsed
             : null;
+    }
+
+    private static DateTimeOffset? GetOptionalDateTimeOffset(JsonElement element, string propertyName, string nestedPropertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out JsonElement property) || property.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return GetOptionalDateTimeOffset(property, nestedPropertyName);
     }
 }

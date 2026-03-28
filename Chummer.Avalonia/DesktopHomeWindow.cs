@@ -345,6 +345,13 @@ internal sealed class DesktopHomeWindow : Window
         IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests)
         => DesktopHomeCampaignProjector.Create(campaignSummary, campaignWorkspaceDigests);
 
+    private static async Task<DesktopHomeCampaignProjection> ReadCampaignProjectionAsync(IChummerClient client)
+    {
+        AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(false);
+        IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(false);
+        return ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests);
+    }
+
     private static async Task<DesktopHomeSupportProjection> ReadSupportProjectionAsync(
         IChummerClient client,
         DesktopInstallLinkingState installState)
@@ -428,6 +435,13 @@ internal sealed class DesktopHomeWindow : Window
             return "A promoted update is ready for this install. Review the update posture before you jump back into campaign work.";
         }
 
+        if (string.Equals(_updateStatus.Status, "attention_required", StringComparison.Ordinal)
+            && (!string.IsNullOrWhiteSpace(_updateStatus.SupportabilityState)
+                || !string.IsNullOrWhiteSpace(_updateStatus.ProofStatus)))
+        {
+            return "This desktop head is linked, but the current release posture needs review before you trust update, support, and campaign continuity on this install.";
+        }
+
         if (_campaignProjection.Watchouts.Count > 0)
         {
             return "This desktop head is linked and current enough to continue, but the campaign return lane has watchouts to review before you reopen work.";
@@ -490,7 +504,29 @@ internal sealed class DesktopHomeWindow : Window
         string error = string.IsNullOrWhiteSpace(_updateStatus.LastError)
             ? "None"
             : _updateStatus.LastError;
-        return $"Status: {_updateStatus.Status}\nInstalled: {_updateStatus.InstalledVersion}\nManifest: {manifestVersion}\nManifest published: {manifestPublished} UTC\nChannel: {_updateStatus.ChannelId}\nLast checked: {lastChecked} UTC\nAuto apply: {_updateStatus.AutoApply}\nRecommended action: {_updateStatus.RecommendedAction}\nLast error: {error}";
+        string supportabilityState = string.IsNullOrWhiteSpace(_updateStatus.SupportabilityState)
+            ? "Unknown"
+            : _updateStatus.SupportabilityState;
+        string supportabilitySummary = string.IsNullOrWhiteSpace(_updateStatus.SupportabilitySummary)
+            ? "No supportability summary published yet."
+            : _updateStatus.SupportabilitySummary;
+        string proofStatus = string.IsNullOrWhiteSpace(_updateStatus.ProofStatus)
+            ? "Unknown"
+            : _updateStatus.ProofStatus;
+        string proofGenerated = _updateStatus.ProofGeneratedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? "Unknown";
+        string rolloutState = string.IsNullOrWhiteSpace(_updateStatus.RolloutState)
+            ? "Unknown"
+            : _updateStatus.RolloutState;
+        string rolloutReason = string.IsNullOrWhiteSpace(_updateStatus.RolloutReason)
+            ? "None"
+            : _updateStatus.RolloutReason;
+        string knownIssues = string.IsNullOrWhiteSpace(_updateStatus.KnownIssueSummary)
+            ? "None published"
+            : _updateStatus.KnownIssueSummary;
+        string fixAvailability = string.IsNullOrWhiteSpace(_updateStatus.FixAvailabilitySummary)
+            ? "No fix guidance published yet."
+            : _updateStatus.FixAvailabilitySummary;
+        return $"Status: {_updateStatus.Status}\nInstalled: {_updateStatus.InstalledVersion}\nManifest: {manifestVersion}\nManifest published: {manifestPublished} UTC\nChannel: {_updateStatus.ChannelId}\nLast checked: {lastChecked} UTC\nAuto apply: {_updateStatus.AutoApply}\nRelease posture: {rolloutState}\nRollout reason: {rolloutReason}\nSupportability: {supportabilityState}\nSupportability summary: {supportabilitySummary}\nLocal release proof: {proofStatus}\nProof generated: {proofGenerated} UTC\nKnown issues: {knownIssues}\nFix availability: {fixAvailability}\nRecommended action: {_updateStatus.RecommendedAction}\nLast error: {error}";
     }
 
     private string BuildWorkspaceSummary()
@@ -744,9 +780,11 @@ internal sealed class DesktopHomeWindow : Window
             IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
                 ?? throw new InvalidOperationException("Desktop home refresh requires an IChummerClient instance."));
             _recentWorkspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
-            _campaignProjection = await ReadCampaignProjectionAsync(client).ConfigureAwait(true);
+            AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(true);
+            IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(true);
+            _campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests);
             _supportProjection = await ReadSupportProjectionAsync(client, _installState).ConfigureAwait(true);
-            _buildExplainProjection = await ReadBuildExplainProjectionAsync(client, _recentWorkspaces).ConfigureAwait(true);
+            _buildExplainProjection = await ReadBuildExplainProjectionAsync(client, _recentWorkspaces, campaignSummary).ConfigureAwait(true);
         }
         catch
         {

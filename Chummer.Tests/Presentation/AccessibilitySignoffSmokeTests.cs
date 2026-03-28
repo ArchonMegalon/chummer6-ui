@@ -738,6 +738,10 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "RefreshHomeStateAsync()");
         RequireContains(source, "Last claim attempt:");
         RequireContains(source, "Manifest published:");
+        RequireContains(source, "Release posture:");
+        RequireContains(source, "Supportability:");
+        RequireContains(source, "Local release proof:");
+        RequireContains(source, "Fix availability:");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForUpdate");
     }
