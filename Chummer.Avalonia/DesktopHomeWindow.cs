@@ -18,11 +18,13 @@ internal sealed class DesktopHomeWindow : Window
     private DesktopInstallLinkingState _installState;
     private DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;
-    private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
-    private readonly DesktopHomeBuildExplainProjection _buildExplainProjection;
+    private IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
+    private DesktopHomeBuildExplainProjection _buildExplainProjection;
     private readonly TextBlock _introText;
     private readonly TextBlock _installSummaryText;
     private readonly TextBlock _updateSummaryText;
+    private readonly TextBlock _buildExplainText;
+    private readonly TextBlock _workspaceSummaryText;
     private readonly StackPanel _installActionsRow;
     private readonly StackPanel _updateActionsRow;
     private readonly StackPanel _buildActionsRow;
@@ -66,6 +68,18 @@ internal sealed class DesktopHomeWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _buildExplainText = new TextBlock
+        {
+            Text = BuildBuildExplainBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _workspaceSummaryText = new TextBlock
+        {
+            Text = BuildWorkspaceSummary(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
         _installActionsRow = CreateActionRow(CreateInstallActions());
         _updateActionsRow = CreateActionRow(CreateUpdateActions());
         _buildActionsRow = CreateActionRow(CreateBuildExplainActions());
@@ -96,7 +110,7 @@ internal sealed class DesktopHomeWindow : Window
                         _updateActionsRow),
                     CreateSection(
                         "Build and explain next",
-                        BuildBuildExplainBody(),
+                        _buildExplainText,
                         _buildActionsRow),
                     CreateSection(
                         "Language and trust surfaces",
@@ -104,7 +118,7 @@ internal sealed class DesktopHomeWindow : Window
                         []),
                     CreateSection(
                         "Recent workspaces",
-                        BuildWorkspaceSummary(),
+                        _workspaceSummaryText,
                         _workspaceActionsRow),
                     new StackPanel
                     {
@@ -514,16 +528,30 @@ internal sealed class DesktopHomeWindow : Window
 
         DesktopInstallLinkingWindow dialog = new(context);
         await dialog.ShowDialog(this);
-        RefreshHomeState();
+        await RefreshHomeStateAsync();
     }
 
-    private void RefreshHomeState()
+    private async Task RefreshHomeStateAsync()
     {
         _installState = DesktopInstallLinkingRuntime.LoadOrCreateState(_installState.HeadId);
         _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(_installState.HeadId);
+        try
+        {
+            IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
+                ?? throw new InvalidOperationException("Desktop home refresh requires an IChummerClient instance."));
+            _recentWorkspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
+            _buildExplainProjection = await ReadBuildExplainProjectionAsync(client, _recentWorkspaces).ConfigureAwait(true);
+        }
+        catch
+        {
+            // Keep the last rendered workspace and build/explain posture if refresh cannot reach the client.
+        }
+
         _introText.Text = BuildIntro();
         _installSummaryText.Text = BuildInstallSummary();
         _updateSummaryText.Text = BuildUpdateSummary();
+        _buildExplainText.Text = BuildBuildExplainBody();
+        _workspaceSummaryText.Text = BuildWorkspaceSummary();
         ResetActionRow(_installActionsRow, CreateInstallActions());
         ResetActionRow(_updateActionsRow, CreateUpdateActions());
         ResetActionRow(_buildActionsRow, CreateBuildExplainActions());

@@ -265,6 +265,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "Open current workspace");
         RequireContains(source, "Open work follow-through");
         RequireContains(source, "Open work support");
+        RequireContains(source, "_buildExplainText");
+        RequireContains(source, "_workspaceSummaryText");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkPortal()");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_recentWorkspaces[0].Id.Value)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace");
@@ -293,7 +295,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "Open install support");
         RequireContains(source, "Open update support");
         RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
-        RequireContains(source, "RefreshHomeState();");
+        RequireContains(source, "RefreshHomeStateAsync()");
         RequireContains(source, "Last claim attempt:");
         RequireContains(source, "Manifest published:");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
