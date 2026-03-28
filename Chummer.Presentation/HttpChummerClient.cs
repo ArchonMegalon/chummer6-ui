@@ -244,6 +244,69 @@ public sealed class HttpChummerClient : IChummerClient
         return projection;
     }
 
+    public async Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct)
+    {
+        string path = "/api/buildkits";
+        string? normalizedRuleset = RulesetDefaults.NormalizeOptional(rulesetId);
+        if (normalizedRuleset is not null)
+        {
+            path += $"?ruleset={Uri.EscapeDataString(normalizedRuleset)}";
+        }
+
+        BuildKitCatalogResponse response = await GetRequiredAsync<BuildKitCatalogResponse>(path, ct);
+        return response.Entries
+            .Select(static entry => new DesktopBuildPathSuggestion(
+                BuildKitId: entry.Manifest.BuildKitId,
+                Title: entry.Manifest.Title,
+                Targets: entry.Manifest.Targets,
+                TrustTier: entry.Manifest.TrustTier,
+                Visibility: entry.Visibility))
+            .ToArray();
+    }
+
+    public async Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(
+        string buildKitId,
+        CharacterWorkspaceId workspaceId,
+        string? rulesetId,
+        CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(buildKitId);
+
+        string path = $"/api/hub/projects/buildkit/{Uri.EscapeDataString(buildKitId)}/install-preview";
+        string? normalizedRuleset = RulesetDefaults.NormalizeOptional(rulesetId);
+        if (normalizedRuleset is not null)
+        {
+            path += $"?ruleset={Uri.EscapeDataString(normalizedRuleset)}";
+        }
+
+        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
+            path,
+            new RuleProfileApplyTarget(RuleProfileApplyTargetKinds.Workspace, workspaceId.Value),
+            ct);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Build path preview failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        BuildKitInstallPreviewResponse? payload = await response.Content.ReadFromJsonAsync<BuildKitInstallPreviewResponse>(ct);
+        if (payload is null)
+        {
+            throw new InvalidOperationException($"Build path preview for '{buildKitId}' was empty.");
+        }
+
+        return new DesktopBuildPathPreview(
+            State: payload.State,
+            RuntimeFingerprint: payload.RuntimeFingerprint,
+            ChangeSummaries: payload.Changes.Select(static change => change.Summary).ToArray(),
+            DiagnosticMessages: payload.Diagnostics.Select(static diagnostic => diagnostic.Message).ToArray(),
+            RequiresConfirmation: payload.RequiresConfirmation);
+    }
+
     public async Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
     {
         JsonNode? response = await _httpClient.GetFromJsonAsync<JsonNode>($"/api/workspaces/{id.Value}/sections/{sectionId}", ct);
@@ -520,6 +583,29 @@ public sealed class HttpChummerClient : IChummerClient
             ? parsedFormat
             : WorkspaceDocumentFormat.NativeXml;
     }
+
+    private sealed record BuildKitCatalogResponse(
+        int Count,
+        IReadOnlyList<BuildKitRegistryEntry> Entries);
+
+    private sealed record BuildKitInstallPreviewResponse(
+        string State,
+        string? RuntimeFingerprint,
+        IReadOnlyList<BuildKitInstallPreviewChange> Changes,
+        IReadOnlyList<BuildKitInstallPreviewDiagnostic> Diagnostics,
+        bool RequiresConfirmation);
+
+    private sealed record BuildKitInstallPreviewChange(
+        string Kind,
+        string Summary,
+        string? SubjectId = null,
+        bool RequiresConfirmation = false);
+
+    private sealed record BuildKitInstallPreviewDiagnostic(
+        string Kind,
+        string Severity,
+        string Message,
+        string? SubjectId = null);
 
     private async Task<T> GetRequiredAsync<T>(string path, CancellationToken ct)
     {

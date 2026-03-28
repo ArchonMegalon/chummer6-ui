@@ -181,13 +181,19 @@ internal sealed class DesktopHomeWindow : Window
         IReadOnlyList<WorkspaceListItem> workspaces)
     {
         string? rulesetId = workspaces.Count == 0 ? null : workspaces[0].RulesetId;
+        string? effectiveRulesetId = rulesetId;
         ActiveRuntimeStatusProjection? activeRuntime = null;
         RuntimeInspectorProjection? runtimeInspector = null;
+        DesktopBuildPathSuggestion? buildPathSuggestion = null;
+        DesktopBuildPathPreview? buildPathPreview = null;
 
         try
         {
             ShellBootstrapSnapshot bootstrap = await client.GetShellBootstrapAsync(rulesetId, CancellationToken.None).ConfigureAwait(false);
             activeRuntime = bootstrap.ActiveRuntime;
+            effectiveRulesetId = string.IsNullOrWhiteSpace(bootstrap.ActiveRulesetId)
+                ? bootstrap.RulesetId
+                : bootstrap.ActiveRulesetId;
             if (activeRuntime is not null)
             {
                 runtimeInspector = await client.GetRuntimeInspectorProfileAsync(activeRuntime.ProfileId, rulesetId ?? activeRuntime.RulesetId, CancellationToken.None).ConfigureAwait(false);
@@ -199,9 +205,35 @@ internal sealed class DesktopHomeWindow : Window
             runtimeInspector = null;
         }
 
+        try
+        {
+            IReadOnlyList<DesktopBuildPathSuggestion> suggestions = await client.GetBuildPathSuggestionsAsync(effectiveRulesetId, CancellationToken.None).ConfigureAwait(false);
+            buildPathSuggestion = SelectLeadBuildPath(suggestions);
+            if (buildPathSuggestion is not null && workspaces.Count > 0)
+            {
+                buildPathPreview = await client.GetBuildPathPreviewAsync(
+                    buildPathSuggestion.BuildKitId,
+                    workspaces[0].Id,
+                    effectiveRulesetId,
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+            buildPathSuggestion = null;
+            buildPathPreview = null;
+        }
+
         if (workspaces.Count == 0)
         {
-            return DesktopHomeBuildExplainProjector.Create(workspaces, build: null, rules: null, activeRuntime, runtimeInspector);
+            return DesktopHomeBuildExplainProjector.Create(
+                workspaces,
+                build: null,
+                rules: null,
+                activeRuntime,
+                runtimeInspector,
+                buildPathSuggestion,
+                buildPathPreview);
         }
 
         WorkspaceListItem leadWorkspace = workspaces[0];
@@ -210,12 +242,34 @@ internal sealed class DesktopHomeWindow : Window
             Task<CharacterBuildSection> buildTask = client.GetBuildAsync(leadWorkspace.Id, CancellationToken.None);
             Task<CharacterRulesSection> rulesTask = client.GetRulesAsync(leadWorkspace.Id, CancellationToken.None);
             await Task.WhenAll(buildTask, rulesTask).ConfigureAwait(false);
-            return DesktopHomeBuildExplainProjector.Create(workspaces, buildTask.Result, rulesTask.Result, activeRuntime, runtimeInspector);
+            return DesktopHomeBuildExplainProjector.Create(
+                workspaces,
+                buildTask.Result,
+                rulesTask.Result,
+                activeRuntime,
+                runtimeInspector,
+                buildPathSuggestion,
+                buildPathPreview);
         }
         catch
         {
-            return DesktopHomeBuildExplainProjector.Create(workspaces, build: null, rules: null, activeRuntime, runtimeInspector);
+            return DesktopHomeBuildExplainProjector.Create(
+                workspaces,
+                build: null,
+                rules: null,
+                activeRuntime,
+                runtimeInspector,
+                buildPathSuggestion,
+                buildPathPreview);
         }
+    }
+
+    private static DesktopBuildPathSuggestion? SelectLeadBuildPath(IReadOnlyList<DesktopBuildPathSuggestion> suggestions)
+    {
+        return suggestions
+            .OrderByDescending(static suggestion => suggestion.BuildKitId.Contains("starter", StringComparison.OrdinalIgnoreCase))
+            .ThenBy(static suggestion => suggestion.Title, StringComparer.Ordinal)
+            .FirstOrDefault();
     }
 
     private string BuildIntro()
