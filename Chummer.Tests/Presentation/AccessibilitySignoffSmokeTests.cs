@@ -260,6 +260,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_buildExplainProjection.CompatibilityReceipts");
         RequireContains(source, "_buildExplainProjection.BuildPathComparisons");
         RequireContains(source, "_buildExplainProjection.Watchouts");
+        RequireContains(source, "CreateBuildExplainActions()");
+        RequireContains(source, "Open work follow-through");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkPortal()");
         RequireContains(source, "client.GetShellBootstrapAsync");
         RequireContains(source, "client.GetRuntimeInspectorProfileAsync");
         RequireContains(source, "client.GetBuildPathSuggestionsAsync");
