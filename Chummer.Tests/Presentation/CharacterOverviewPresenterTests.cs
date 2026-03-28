@@ -8,6 +8,7 @@ using System;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
@@ -1059,6 +1060,9 @@ public class CharacterOverviewPresenterTests
                 .ToArray();
             return Task.FromResult(workspaces);
         }
+
+        public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
+            => Task.FromResult<AccountCampaignSummary?>(null);
 
         public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
