@@ -1,6 +1,7 @@
 @using Chummer.Contracts.Content
 @using Chummer.Contracts.Rulesets
 @using Chummer.Presentation.Overview
+@using Chummer.Presentation.UiKit
 
 <section class="panel design-panel">
     <header class="panel-header">
@@ -115,16 +116,16 @@
                 <table class="section-table">
                     <thead>
                         <tr>
-                            <th>Bundle</th>
-                            <th>Ruleset</th>
-                            <th>Version</th>
-                            <th>Assets</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("bundle", "Bundle"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("bundle", "Bundle"))">Bundle</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("ruleset", "Ruleset"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("ruleset", "Ruleset"))">Ruleset</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("version", "Version"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("version", "Version"))">Version</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("assets", "Assets"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("assets", "Assets"))">Assets</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (ContentBundleDescriptor bundle in Projection.RuntimeLock.ContentBundles)
                         {
-                            <tr>
+                            <tr class="@(ChummerPatternBoundary.DenseRowClass($"bundle-{bundle.BundleId}"))" @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"bundle-{bundle.BundleId}"))">
                                 <td>@bundle.Title</td>
                                 <td>@bundle.RulesetId</td>
                                 <td>@bundle.Version</td>
@@ -179,18 +180,20 @@
                 <table class="section-table">
                     <thead>
                         <tr>
-                            <th>RulePack</th>
-                            <th>Trust</th>
-                            <th>Bindings</th>
-                            <th>Warnings</th>
-                            <th>Migration</th>
-                            <th>Capabilities</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("rulepack", "RulePack"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("rulepack", "RulePack"))">RulePack</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("trust", "Trust"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("trust", "Trust"))">Trust</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("bindings", "Bindings"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("bindings", "Bindings"))">Bindings</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("warnings", "Warnings"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("warnings", "Warnings"))">Warnings</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("migration", "Migration"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("migration", "Migration"))">Migration</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("capabilities", "Capabilities"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("capabilities", "Capabilities"))">Capabilities</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (RuntimeInspectorRulePackEntry rulePack in Projection.ResolvedRulePacks)
                         {
-                            <tr data-runtime-rulepack-row="@rulePack.RulePack.Id">
+                            <tr class="@(ChummerPatternBoundary.DenseRowClass($"rulepack-{rulePack.RulePack.Id}"))"
+                                @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"rulepack-{rulePack.RulePack.Id}"))"
+                                data-runtime-rulepack-row="@rulePack.RulePack.Id">
                                 <td>
                                     <strong>@rulePack.Title</strong>
                                     <div class="meta">@rulePack.RulePack.Id@("@")@rulePack.RulePack.Version · @rulePack.SourceKind</div>
@@ -221,16 +224,17 @@
                 <table class="section-table">
                     <thead>
                         <tr>
-                            <th>Capability</th>
-                            <th>Provider</th>
-                            <th>Pack</th>
-                            <th>Session Safe</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("capability", "Capability"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("capability", "Capability"))">Capability</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("provider", "Provider"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("provider", "Provider"))">Provider</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("pack", "Pack"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("pack", "Pack"))">Pack</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("session-safe", "Session Safe"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("session-safe", "Session Safe"))">Session Safe</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (RuntimeInspectorProviderBinding binding in Projection.ProviderBindings)
                         {
-                            <tr>
+                            <tr class="@(ChummerPatternBoundary.DenseRowClass($"binding-{binding.CapabilityId}", explainAffinity: binding.SessionSafe, muted: !binding.SessionSafe))"
+                                @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"binding-{binding.CapabilityId}", explainAffinity: binding.SessionSafe, muted: !binding.SessionSafe))">
                                 <td>@binding.CapabilityId</td>
                                 <td>@binding.ProviderId</td>
                                 <td>@(binding.PackId ?? "(none)")</td>
@@ -343,17 +347,18 @@
                 <table class="section-table">
                     <thead>
                         <tr>
-                            <th>Capability</th>
-                            <th>Invocation</th>
-                            <th>Provider</th>
-                            <th>Flags</th>
-                            <th>Gas</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("descriptor-capability", "Capability"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("descriptor-capability", "Capability"))">Capability</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("invocation", "Invocation"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("invocation", "Invocation"))">Invocation</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("descriptor-provider", "Provider"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("descriptor-provider", "Provider"))">Provider</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("flags", "Flags"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("flags", "Flags"))">Flags</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("gas", "Gas"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("gas", "Gas"))">Gas</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (RuntimeInspectorCapabilityDescriptorProjection descriptor in Projection.CapabilityDescriptors)
                         {
-                            <tr>
+                            <tr class="@(ChummerPatternBoundary.DenseRowClass($"descriptor-{descriptor.CapabilityId}", explainAffinity: descriptor.Explainable, muted: !descriptor.SessionSafe))"
+                                @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"descriptor-{descriptor.CapabilityId}", explainAffinity: descriptor.Explainable, muted: !descriptor.SessionSafe))">
                                 <td>@descriptor.Title</td>
                                 <td>@descriptor.InvocationKind</td>
                                 <td>@(descriptor.ProviderId ?? "(none)")</td>

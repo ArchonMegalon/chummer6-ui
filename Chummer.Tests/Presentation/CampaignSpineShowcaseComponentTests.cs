@@ -105,6 +105,8 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "25 / 50 / 100 Karma path");
         StringAssert.Contains(cut.Markup, "Campaign-safe handoff");
         StringAssert.Contains(cut.Markup, "Rebind runtime before dossier handoff.");
+        StringAssert.Contains(cut.Markup, "chummer-explain-chip");
+        StringAssert.Contains(cut.Markup, "chummer-card-artifact");
         Assert.IsNotNull(cut.Find("[data-build-lab-handoff-rail]"));
     }
 
@@ -137,6 +139,7 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Why did this rule posture change?");
         StringAssert.Contains(cut.Markup, "Before approval");
         StringAssert.Contains(cut.Markup, "Support can reuse this answer.");
+        StringAssert.Contains(cut.Markup, "chummer-explain-chip");
     }
 
     [TestMethod]

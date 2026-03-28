@@ -1,4 +1,5 @@
 @using Chummer.Presentation.Overview
+@using Chummer.Presentation.UiKit
 
 <section class="panel design-panel">
     <header class="panel-header">
@@ -8,7 +9,8 @@
         </div>
         @if (Projection is not null)
         {
-            <span class="badge">@Projection.Personas.Count personas · @Projection.Policies.Count policies</span>
+            <span class="@(ChummerPatternBoundary.ExplainChipClass($"{Projection.Personas.Count} personas · {Projection.Policies.Count} policies", "NPC persona inventory summary"))"
+                  @attributes="@(ChummerPatternBoundary.ExplainChipAttributes($"{Projection.Personas.Count} personas · {Projection.Policies.Count} policies", "NPC persona inventory summary"))">@Projection.Personas.Count personas · @Projection.Policies.Count policies</span>
         }
     </header>
 
@@ -22,11 +24,14 @@
             <h3>Persona Selection</h3>
             @foreach (NpcPersonaDescriptorState persona in Projection.Personas)
             {
-                <p data-npc-persona="@persona.PersonaId">
+                <p class="@(ChummerPatternBoundary.DenseRowClass($"persona-{persona.PersonaId}", selected: persona.IsSelected, explainAffinity: persona.EvidenceFirst))"
+                   @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"persona-{persona.PersonaId}", selected: persona.IsSelected, explainAffinity: persona.EvidenceFirst))"
+                   data-npc-persona="@persona.PersonaId">
                     @(persona.IsSelected ? "[selected] " : string.Empty)@persona.Label
                     · @persona.PersonaId
                     · @(persona.EvidenceFirst ? "evidence-first" : "balanced")
-                    · @persona.ApprovalState
+                    · <span class="@(ChummerPatternBoundary.ApprovalChipClass(persona.ApprovalState, persona.ApprovalState))"
+                            @attributes="@(ChummerPatternBoundary.ApprovalChipAttributes(persona.ApprovalState, persona.ApprovalState))">@persona.ApprovalState</span>
                 </p>
             }
         </div>
@@ -56,12 +61,15 @@
             {
                 @foreach (NpcPersonaRoutePolicyState policy in Projection.Policies)
                 {
-                    <p data-npc-policy="@policy.RouteType">
+                    <p class="@(ChummerPatternBoundary.DenseRowClass($"policy-{policy.RouteType}", explainAffinity: true, muted: !string.Equals(policy.ApprovalState, "approved", StringComparison.OrdinalIgnoreCase)))"
+                       @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"policy-{policy.RouteType}", explainAffinity: true, muted: !string.Equals(policy.ApprovalState, "approved", StringComparison.OrdinalIgnoreCase)))"
+                       data-npc-policy="@policy.RouteType">
                         @policy.RouteType
                         · @(string.IsNullOrWhiteSpace(policy.RouteClassId) ? "class:none" : $"class:{policy.RouteClassId}")
                         · @(string.IsNullOrWhiteSpace(policy.PrimaryProviderId) ? "provider:none" : $"provider:{policy.PrimaryProviderId}")
                         · @(string.IsNullOrWhiteSpace(policy.PersonaId) ? "persona:none" : $"persona:{policy.PersonaId}")
-                        · @policy.ApprovalState
+                        · <span class="@(ChummerPatternBoundary.ApprovalChipClass(policy.ApprovalState, policy.ApprovalState))"
+                                @attributes="@(ChummerPatternBoundary.ApprovalChipAttributes(policy.ApprovalState, policy.ApprovalState))">@policy.ApprovalState</span>
                     </p>
                 }
             }
