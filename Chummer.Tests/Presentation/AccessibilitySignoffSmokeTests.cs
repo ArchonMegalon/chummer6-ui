@@ -261,8 +261,11 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_buildExplainProjection.BuildPathComparisons");
         RequireContains(source, "_buildExplainProjection.Watchouts");
         RequireContains(source, "CreateBuildExplainActions()");
+        RequireContains(source, "CreateWorkspaceActions()");
+        RequireContains(source, "Open current workspace");
         RequireContains(source, "Open work follow-through");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkPortal()");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_recentWorkspaces[0].Id.Value)");
         RequireContains(source, "client.GetShellBootstrapAsync");
         RequireContains(source, "client.GetRuntimeInspectorProfileAsync");
         RequireContains(source, "client.GetBuildPathSuggestionsAsync");
@@ -284,6 +287,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "CreateUpdateActions()");
         RequireContains(source, "Link this copy");
         RequireContains(source, "Open devices and access");
+        RequireContains(source, "Open current workspace");
         RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
         RequireContains(source, "RefreshHomeState();");
         RequireContains(source, "Last claim attempt:");
