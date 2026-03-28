@@ -2,6 +2,7 @@ using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
+using Chummer.Campaign.Contracts;
 
 namespace Chummer.Presentation.Overview;
 
@@ -22,12 +23,17 @@ public static class DesktopHomeBuildExplainProjector
         IReadOnlyList<WorkspaceListItem> workspaces,
         CharacterBuildSection? build,
         CharacterRulesSection? rules,
+        AccountCampaignSummary? campaignSummary = null,
         ActiveRuntimeStatusProjection? activeRuntime = null,
         RuntimeInspectorProjection? runtimeInspector = null,
         IReadOnlyList<DesktopBuildPathCandidate>? buildPathCandidates = null)
     {
         string runtimeHealthSummary = BuildRuntimeHealthSummary(activeRuntime, runtimeInspector);
         DesktopBuildPathCandidate? leadBuildPath = buildPathCandidates?.FirstOrDefault();
+        IReadOnlyList<string> campaignReceipts = BuildCampaignReceipts(campaignSummary);
+        IReadOnlyList<string> campaignWatchouts = BuildCampaignWatchouts(campaignSummary);
+        string? campaignNextSafeAction = BuildCampaignNextSafeAction(campaignSummary);
+        string? campaignExplainFocus = BuildCampaignExplainFocus(campaignSummary);
 
         if (workspaces.Count == 0)
         {
@@ -36,15 +42,20 @@ public static class DesktopHomeBuildExplainProjector
                 "Compatibility receipt: no grounded runtime fingerprint is attached yet, so campaign-safe build and explain proof still needs the first claimed workspace."
             ];
             compatibilityReceipts.AddRange(BuildBuildPathReceipts(leadBuildPath));
+            compatibilityReceipts.AddRange(campaignReceipts);
 
             return new DesktopHomeBuildExplainProjection(
                 "No workspace is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.",
                 leadBuildPath is null
-                    ? "Create or import the first dossier before you trust this install to carry campaign continuity."
-                    : $"Create or import the first dossier, then review the recommended {leadBuildPath.Suggestion.Title} build path before you trust this install to carry campaign continuity.",
+                    ? campaignNextSafeAction
+                        ?? "Create or import the first dossier before you trust this install to carry campaign continuity."
+                    : campaignNextSafeAction
+                        ?? $"Create or import the first dossier, then review the recommended {leadBuildPath.Suggestion.Title} build path before you trust this install to carry campaign continuity.",
                 leadBuildPath is null
-                    ? "Claim the install and seed one real workspace so grounded build receipts, rule answers, and support closure all share the same continuity target."
-                    : $"Claim the install, seed one real workspace, and hand the suggested {leadBuildPath.Suggestion.Title} build path into a grounded receipt before you reopen campaign work.",
+                    ? campaignExplainFocus
+                        ?? "Claim the install and seed one real workspace so grounded build receipts, rule answers, and support closure all share the same continuity target."
+                    : campaignExplainFocus
+                        ?? $"Claim the install, seed one real workspace, and hand the suggested {leadBuildPath.Suggestion.Title} build path into a grounded receipt before you reopen campaign work.",
                 runtimeHealthSummary,
                 "No workspace return target is pinned yet.",
                 "Rule posture is still generic until the first workspace restores a grounded runtime fingerprint.",
@@ -80,16 +91,22 @@ public static class DesktopHomeBuildExplainProjector
             return new DesktopHomeBuildExplainProjection(
                 $"Continue {displayName} on {leadWorkspace.RulesetId} and inspect explain traces before you export, publish, or reopen campaign work.",
                 ResolveRefreshAction(displayName, runtimeInspector)
+                    ?? campaignNextSafeAction
                     ?? $"Reopen {displayName} and refresh the build and rules sections so the next action is grounded in live dossier state instead of cached workspace summary only.",
-                "Build Lab keeps variant tradeoffs, progression rails, and overlap risks visible before the next campaign-facing handoff, while Rules explanations stay tied to the claimed install, current channel, and support path.",
+                campaignExplainFocus
+                    ?? "Build Lab keeps variant tradeoffs, progression rails, and overlap risks visible before the next campaign-facing handoff, while Rules explanations stay tied to the claimed install, current channel, and support path.",
                 runtimeHealthSummary,
                 $"Return target: {displayName} on runtime {runtimeFingerprint}.",
                 $"Rule posture: runtime fingerprint {runtimeFingerprint} is pinned, but the live rules section still needs a refresh before you trust drift-sensitive decisions.",
                 BuildCompatibilityReceipts(runtimeInspector, runtimeFingerprint)
                     .Concat(buildPathReceipts)
+                    .Concat(campaignReceipts)
                     .ToArray(),
                 BuildBuildPathComparisons(buildPathCandidates),
-                fallbackWatchouts);
+                fallbackWatchouts
+                    .Concat(campaignWatchouts)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray());
         }
 
         string buildLane = string.IsNullOrWhiteSpace(build.BuildMethod) ? leadWorkspace.Summary.BuildMethod : build.BuildMethod;
@@ -100,10 +117,16 @@ public static class DesktopHomeBuildExplainProjector
         string nextSafeAction = ResolveRefreshAction(displayName, runtimeInspector) ?? (remainingContactPoints == 0
             ? $"Continue {displayName}, but review contact allocation before you export or hand the dossier back into campaign play."
             : $"Continue {displayName} and inspect the grounded {buildLane} lane before you export, publish, or reopen campaign work.");
+        if (!string.IsNullOrWhiteSpace(campaignNextSafeAction) && string.IsNullOrWhiteSpace(ResolveRefreshAction(displayName, runtimeInspector)))
+        {
+            nextSafeAction = campaignNextSafeAction!;
+        }
         string buildPathFocus = leadBuildPath is null
             ? string.Empty
             : $" Build path focus: {leadBuildPath.Suggestion.Title} keeps the next grounded handoff explicit.";
-        string explainFocus = $"Explain focus: {buildLane} with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.{buildPathFocus}";
+        string explainFocus = !string.IsNullOrWhiteSpace(campaignExplainFocus)
+            ? $"Explain focus: {buildLane} with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.{buildPathFocus} {campaignExplainFocus}".Trim()
+            : $"Explain focus: {buildLane} with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.{buildPathFocus}";
         string returnTarget = $"Return target: {displayName} on runtime {runtimeFingerprint}.";
         string installState = string.IsNullOrWhiteSpace(activeRuntime?.InstallState)
             ? "workspace-only"
@@ -131,6 +154,7 @@ public static class DesktopHomeBuildExplainProjector
         }
 
         watchouts.AddRange(BuildRuntimeWatchouts(runtimeInspector));
+        watchouts.AddRange(campaignWatchouts);
 
         return new DesktopHomeBuildExplainProjection(
             $"Build posture: {buildLane} with {priorityLadder}; contact points {build.ContactPointsUsed}/{build.ContactPoints}; special track {build.TotalSpecial}.\nRules posture: {rules.GameEdition} · {rules.Settings} · {gameplayMode}; limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen; banned ware {bannedWare}.",
@@ -141,6 +165,7 @@ public static class DesktopHomeBuildExplainProjector
             rulePosture,
             BuildCompatibilityReceipts(runtimeInspector, runtimeFingerprint)
                 .Concat(buildPathReceipts)
+                .Concat(campaignReceipts)
                 .ToArray(),
             BuildBuildPathComparisons(buildPathCandidates),
             watchouts
@@ -148,6 +173,177 @@ public static class DesktopHomeBuildExplainProjector
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray());
     }
+
+    private static IReadOnlyList<string> BuildCampaignReceipts(AccountCampaignSummary? campaignSummary)
+    {
+        if (campaignSummary is null)
+        {
+            return [];
+        }
+
+        BuildLabHandoffProjection? leadHandoff = campaignSummary.BuildLabHandoffs
+            .OrderByDescending(static handoff => handoff.UpdatedAtUtc)
+            .FirstOrDefault();
+        RulesNavigatorAnswerProjection? leadRulesAnswer = campaignSummary.RulesNavigator.FirstOrDefault();
+        LegacyMigrationReceiptProjection? leadMigration = campaignSummary.MigrationReceipts
+            .OrderByDescending(static receipt => receipt.ImportedAtUtc)
+            .FirstOrDefault();
+        CreatorPublicationProjection? leadPublication = campaignSummary.CreatorPublications
+            .OrderByDescending(static publication => publication.UpdatedAtUtc)
+            .FirstOrDefault();
+
+        List<string> receipts = [];
+
+        if (leadHandoff is not null)
+        {
+            receipts.Add($"Build Lab handoff: {leadHandoff.Title} — {leadHandoff.Summary}");
+            if (!string.IsNullOrWhiteSpace(leadHandoff.RuntimeCompatibilitySummary))
+            {
+                receipts.Add($"Build Lab runtime: {leadHandoff.RuntimeCompatibilitySummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(leadHandoff.CampaignReturnSummary))
+            {
+                receipts.Add($"Build Lab return: {leadHandoff.CampaignReturnSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(leadHandoff.SupportClosureSummary))
+            {
+                receipts.Add($"Build Lab support: {leadHandoff.SupportClosureSummary}");
+            }
+        }
+
+        if (leadRulesAnswer is not null)
+        {
+            receipts.Add($"Rules navigator: {leadRulesAnswer.Question} — {leadRulesAnswer.ShortAnswer}");
+            if (!string.IsNullOrWhiteSpace(leadRulesAnswer.AfterSummary))
+            {
+                receipts.Add($"Rules after: {leadRulesAnswer.AfterSummary}");
+            }
+        }
+
+        if (leadMigration is not null)
+        {
+            receipts.Add($"Migration receipt: {leadMigration.Summary}");
+        }
+
+        if (leadPublication is not null)
+        {
+            receipts.Add($"Publication receipt: {leadPublication.Title} — {leadPublication.ProvenanceSummary}");
+        }
+
+        return receipts
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static IReadOnlyList<string> BuildCampaignWatchouts(AccountCampaignSummary? campaignSummary)
+    {
+        if (campaignSummary is null)
+        {
+            return [];
+        }
+
+        BuildLabHandoffProjection? leadHandoff = campaignSummary.BuildLabHandoffs
+            .OrderByDescending(static handoff => handoff.UpdatedAtUtc)
+            .FirstOrDefault();
+        LegacyMigrationReceiptProjection? leadMigration = campaignSummary.MigrationReceipts
+            .OrderByDescending(static receipt => receipt.ImportedAtUtc)
+            .FirstOrDefault();
+        CreatorPublicationProjection? leadPublication = campaignSummary.CreatorPublications
+            .OrderByDescending(static publication => publication.UpdatedAtUtc)
+            .FirstOrDefault();
+
+        List<string> watchouts = [];
+        if (leadHandoff?.Watchouts is not null)
+        {
+            watchouts.AddRange(leadHandoff.Watchouts);
+        }
+
+        LegacyMigrationFieldProjection? migrationAttention = leadMigration?.Fields.FirstOrDefault(static field => NeedsAttentionStatus(field.Status));
+        if (migrationAttention is not null)
+        {
+            watchouts.Add($"Migration watchout: {migrationAttention.Label} is {migrationAttention.Status} — {migrationAttention.Summary}");
+        }
+
+        if (leadPublication is not null && NeedsAttentionStatus(leadPublication.PublicationStatus))
+        {
+            watchouts.Add($"Publication watchout: {leadPublication.Title} is {leadPublication.PublicationStatus} — {leadPublication.DiscoverySummary}");
+        }
+
+        return watchouts
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string? BuildCampaignNextSafeAction(AccountCampaignSummary? campaignSummary)
+    {
+        if (campaignSummary is null)
+        {
+            return null;
+        }
+
+        BuildLabHandoffProjection? leadHandoff = campaignSummary.BuildLabHandoffs
+            .OrderByDescending(static handoff => handoff.UpdatedAtUtc)
+            .FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(leadHandoff?.NextSafeAction))
+        {
+            return leadHandoff.NextSafeAction;
+        }
+
+        RulesNavigatorAnswerProjection? leadRulesAnswer = campaignSummary.RulesNavigator.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(leadRulesAnswer?.AfterSummary))
+        {
+            return $"Review the grounded rules answer before the next handoff: {leadRulesAnswer.AfterSummary}";
+        }
+
+        return null;
+    }
+
+    private static string? BuildCampaignExplainFocus(AccountCampaignSummary? campaignSummary)
+    {
+        if (campaignSummary is null)
+        {
+            return null;
+        }
+
+        BuildLabHandoffProjection? leadHandoff = campaignSummary.BuildLabHandoffs
+            .OrderByDescending(static handoff => handoff.UpdatedAtUtc)
+            .FirstOrDefault();
+        RulesNavigatorAnswerProjection? leadRulesAnswer = campaignSummary.RulesNavigator.FirstOrDefault();
+
+        if (leadHandoff is null && leadRulesAnswer is null)
+        {
+            return null;
+        }
+
+        List<string> parts = [];
+        if (!string.IsNullOrWhiteSpace(leadHandoff?.Summary))
+        {
+            parts.Add($"Campaign handoff: {leadHandoff.Summary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(leadRulesAnswer?.BeforeSummary))
+        {
+            parts.Add($"Rules question: {leadRulesAnswer.BeforeSummary}");
+        }
+
+        return string.Join(" ", parts);
+    }
+
+    private static bool NeedsAttentionStatus(string? status)
+        => !string.IsNullOrWhiteSpace(status)
+           && !status.Equals("healthy", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("info", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("ok", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("ready", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("published", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("safe", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("mapped", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("approved", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("active", StringComparison.OrdinalIgnoreCase);
 
     private static IReadOnlyList<string> BuildBuildPathReceipts(
         DesktopBuildPathCandidate? buildPathCandidate)
