@@ -54,8 +54,13 @@ Legacy root `chummer-presentation.design*.md` files remain only as compatibility
 
 ## Verification
 
-Run:
+Run repo-local restore/build/test flows through the package-plane helpers so shared contracts resolve through published feeds or an explicit compatibility tree, instead of ambient sibling-project auto-detection:
 
 ```bash
+bash scripts/ai/restore.sh Chummer.Tests/Chummer.Tests.csproj -p:TargetFramework=net10.0
+bash scripts/ai/build.sh Chummer.Blazor/Chummer.Blazor.csproj
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj -f net10.0 -p:TargetFramework=net10.0
 bash scripts/ai/verify.sh
 ```
+
+If you intentionally want the mounted sibling compatibility tree instead of the local package feed, pass `-p:ChummerUseLocalCompatibilityTree=true` explicitly.

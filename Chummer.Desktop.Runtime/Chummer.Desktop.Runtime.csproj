@@ -9,14 +9,11 @@
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalHubRegistryContractsProject)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Chummer.Hub.Registry.Contracts">
-      <HintPath>..\..\chummer-hub-registry\Chummer.Hub.Registry.Contracts\bin\$(Configuration)\net10.0\Chummer.Hub.Registry.Contracts.dll</HintPath>
-    </Reference>
+    <PackageReference Include="$(ChummerHubRegistryContractsPackageId)" Version="$(ChummerHubRegistryContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
