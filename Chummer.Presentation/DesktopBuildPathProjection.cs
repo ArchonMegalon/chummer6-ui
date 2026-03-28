@@ -13,3 +13,7 @@ public sealed record DesktopBuildPathPreview(
     IReadOnlyList<string> ChangeSummaries,
     IReadOnlyList<string> DiagnosticMessages,
     bool RequiresConfirmation);
+
+public sealed record DesktopBuildPathCandidate(
+    DesktopBuildPathSuggestion Suggestion,
+    DesktopBuildPathPreview? Preview);

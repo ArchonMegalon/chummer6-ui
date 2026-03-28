@@ -184,8 +184,7 @@ internal sealed class DesktopHomeWindow : Window
         string? effectiveRulesetId = rulesetId;
         ActiveRuntimeStatusProjection? activeRuntime = null;
         RuntimeInspectorProjection? runtimeInspector = null;
-        DesktopBuildPathSuggestion? buildPathSuggestion = null;
-        DesktopBuildPathPreview? buildPathPreview = null;
+        IReadOnlyList<DesktopBuildPathCandidate> buildPathCandidates = [];
 
         try
         {
@@ -208,20 +207,11 @@ internal sealed class DesktopHomeWindow : Window
         try
         {
             IReadOnlyList<DesktopBuildPathSuggestion> suggestions = await client.GetBuildPathSuggestionsAsync(effectiveRulesetId, CancellationToken.None).ConfigureAwait(false);
-            buildPathSuggestion = SelectLeadBuildPath(suggestions);
-            if (buildPathSuggestion is not null && workspaces.Count > 0)
-            {
-                buildPathPreview = await client.GetBuildPathPreviewAsync(
-                    buildPathSuggestion.BuildKitId,
-                    workspaces[0].Id,
-                    effectiveRulesetId,
-                    CancellationToken.None).ConfigureAwait(false);
-            }
+            buildPathCandidates = await ReadBuildPathCandidatesAsync(client, effectiveRulesetId, workspaces, suggestions).ConfigureAwait(false);
         }
         catch
         {
-            buildPathSuggestion = null;
-            buildPathPreview = null;
+            buildPathCandidates = [];
         }
 
         if (workspaces.Count == 0)
@@ -232,8 +222,7 @@ internal sealed class DesktopHomeWindow : Window
                 rules: null,
                 activeRuntime,
                 runtimeInspector,
-                buildPathSuggestion,
-                buildPathPreview);
+                buildPathCandidates);
         }
 
         WorkspaceListItem leadWorkspace = workspaces[0];
@@ -248,8 +237,7 @@ internal sealed class DesktopHomeWindow : Window
                 rulesTask.Result,
                 activeRuntime,
                 runtimeInspector,
-                buildPathSuggestion,
-                buildPathPreview);
+                buildPathCandidates);
         }
         catch
         {
@@ -259,17 +247,58 @@ internal sealed class DesktopHomeWindow : Window
                 rules: null,
                 activeRuntime,
                 runtimeInspector,
-                buildPathSuggestion,
-                buildPathPreview);
+                buildPathCandidates);
         }
     }
 
-    private static DesktopBuildPathSuggestion? SelectLeadBuildPath(IReadOnlyList<DesktopBuildPathSuggestion> suggestions)
+    private static async Task<IReadOnlyList<DesktopBuildPathCandidate>> ReadBuildPathCandidatesAsync(
+        IChummerClient client,
+        string? rulesetId,
+        IReadOnlyList<WorkspaceListItem> workspaces,
+        IReadOnlyList<DesktopBuildPathSuggestion> suggestions)
     {
-        return suggestions
+        DesktopBuildPathSuggestion[] selectedSuggestions = suggestions
             .OrderByDescending(static suggestion => suggestion.BuildKitId.Contains("starter", StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(static suggestion => string.Equals(suggestion.TrustTier, ArtifactTrustTiers.Curated, StringComparison.OrdinalIgnoreCase))
             .ThenBy(static suggestion => suggestion.Title, StringComparer.Ordinal)
-            .FirstOrDefault();
+            .Take(3)
+            .ToArray();
+
+        if (selectedSuggestions.Length == 0)
+        {
+            return [];
+        }
+
+        if (workspaces.Count == 0)
+        {
+            return selectedSuggestions
+                .Select(static suggestion => new DesktopBuildPathCandidate(suggestion, Preview: null))
+                .ToArray();
+        }
+
+        CharacterWorkspaceId workspaceId = workspaces[0].Id;
+        Task<DesktopBuildPathCandidate>[] tasks = selectedSuggestions
+            .Select(async suggestion =>
+            {
+                DesktopBuildPathPreview? preview;
+                try
+                {
+                    preview = await client.GetBuildPathPreviewAsync(
+                        suggestion.BuildKitId,
+                        workspaceId,
+                        rulesetId,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                catch
+                {
+                    preview = null;
+                }
+
+                return new DesktopBuildPathCandidate(suggestion, preview);
+            })
+            .ToArray();
+
+        return await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     private string BuildIntro()
@@ -375,6 +404,11 @@ internal sealed class DesktopHomeWindow : Window
         foreach (string receipt in _buildExplainProjection.CompatibilityReceipts)
         {
             lines.Add(receipt);
+        }
+
+        foreach (string comparison in _buildExplainProjection.BuildPathComparisons)
+        {
+            lines.Add(comparison);
         }
 
         foreach (string watchout in _buildExplainProjection.Watchouts)
