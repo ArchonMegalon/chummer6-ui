@@ -178,6 +178,21 @@ public static class DesktopHomeBuildExplainProjector
             receipts.Add($"Build path diagnostic: {firstDiagnostic}");
         }
 
+        if (!string.IsNullOrWhiteSpace(buildPathPreview?.RuntimeCompatibilitySummary))
+        {
+            receipts.Add($"Build path runtime: {buildPathPreview.RuntimeCompatibilitySummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildPathPreview?.CampaignReturnSummary))
+        {
+            receipts.Add($"Build path return: {buildPathPreview.CampaignReturnSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildPathPreview?.SupportClosureSummary))
+        {
+            receipts.Add($"Build path support: {buildPathPreview.SupportClosureSummary}");
+        }
+
         return receipts;
     }
 

@@ -12,7 +12,10 @@ public sealed record DesktopBuildPathPreview(
     string? RuntimeFingerprint,
     IReadOnlyList<string> ChangeSummaries,
     IReadOnlyList<string> DiagnosticMessages,
-    bool RequiresConfirmation);
+    bool RequiresConfirmation,
+    string? RuntimeCompatibilitySummary = null,
+    string? CampaignReturnSummary = null,
+    string? SupportClosureSummary = null);
 
 public sealed record DesktopBuildPathCandidate(
     DesktopBuildPathSuggestion Suggestion,

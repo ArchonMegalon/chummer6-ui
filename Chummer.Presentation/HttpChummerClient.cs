@@ -329,7 +329,10 @@ public sealed class HttpChummerClient : IChummerClient
             RuntimeFingerprint: payload.RuntimeFingerprint,
             ChangeSummaries: payload.Changes.Select(static change => change.Summary).ToArray(),
             DiagnosticMessages: payload.Diagnostics.Select(static diagnostic => diagnostic.Message).ToArray(),
-            RequiresConfirmation: payload.RequiresConfirmation);
+            RequiresConfirmation: payload.RequiresConfirmation,
+            RuntimeCompatibilitySummary: payload.RuntimeCompatibilitySummary,
+            CampaignReturnSummary: payload.CampaignReturnSummary,
+            SupportClosureSummary: payload.SupportClosureSummary);
     }
 
     public async Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
@@ -618,7 +621,10 @@ public sealed class HttpChummerClient : IChummerClient
         string? RuntimeFingerprint,
         IReadOnlyList<BuildKitInstallPreviewChange> Changes,
         IReadOnlyList<BuildKitInstallPreviewDiagnostic> Diagnostics,
-        bool RequiresConfirmation);
+        bool RequiresConfirmation,
+        string? RuntimeCompatibilitySummary = null,
+        string? CampaignReturnSummary = null,
+        string? SupportClosureSummary = null);
 
     private sealed record BuildKitInstallPreviewChange(
         string Kind,

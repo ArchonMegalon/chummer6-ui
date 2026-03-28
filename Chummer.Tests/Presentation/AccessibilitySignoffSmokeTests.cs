@@ -379,7 +379,10 @@ internal static class AccessibilitySignoffSmokeTests
                     [
                         "This BuildKit is ready to flow through the workbench and into a compatible runtime receipt."
                     ],
-                    RequiresConfirmation: true)),
+                    RequiresConfirmation: true,
+                    RuntimeCompatibilitySummary: "The grounded campaign/profile runtime is already compatible with this build receipt.",
+                    CampaignReturnSummary: "The emitted build receipt can return through the selected workspace after review.",
+                    SupportClosureSummary: "Support closure can cite the same runtime and build receipt once the handoff lands.")),
             new DesktopBuildPathCandidate(
                 new DesktopBuildPathSuggestion(
                     BuildKitId: "street-sam-starter",
@@ -398,7 +401,8 @@ internal static class AccessibilitySignoffSmokeTests
                     [
                         "Street Sam Starter still needs manual review before it lands."
                     ],
-                    RequiresConfirmation: false))
+                    RequiresConfirmation: false,
+                    RuntimeCompatibilitySummary: "Runtime review is still required before the fallback handoff is campaign-safe."))
         ];
 
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, activeRuntime, runtimeInspector, buildPathCandidates);
@@ -416,6 +420,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Compatibility receipt:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "profile rebind");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path receipt: Edge Runner Starter is ready");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path runtime:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path return:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path support:");
         if (projection.BuildPathComparisons.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should compare multiple grounded build paths in the flagship home cockpit.");
@@ -519,6 +526,9 @@ internal static class AccessibilitySignoffSmokeTests
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeBuildExplainProjector.cs");
         RequireContains(projectorSource, "Compatibility receipt:");
         RequireContains(projectorSource, "Build path receipt:");
+        RequireContains(projectorSource, "Build path runtime:");
+        RequireContains(projectorSource, "Build path return:");
+        RequireContains(projectorSource, "Build path support:");
         RequireContains(projectorSource, "Build path compare:");
     }
 
