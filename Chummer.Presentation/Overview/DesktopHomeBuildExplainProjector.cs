@@ -11,6 +11,7 @@ public sealed record DesktopHomeBuildExplainProjection(
     string RuntimeHealthSummary,
     string ReturnTarget,
     string RulePosture,
+    IReadOnlyList<string> CompatibilityReceipts,
     IReadOnlyList<string> Watchouts);
 
 public static class DesktopHomeBuildExplainProjector
@@ -33,6 +34,9 @@ public static class DesktopHomeBuildExplainProjector
                 runtimeHealthSummary,
                 "No workspace return target is pinned yet.",
                 "Rule posture is still generic until the first workspace restores a grounded runtime fingerprint.",
+                [
+                    "Compatibility receipt: no grounded runtime fingerprint is attached yet, so campaign-safe build and explain proof still needs the first claimed workspace."
+                ],
                 [
                     "No grounded build lane is loaded yet for this desktop head.",
                     "Rules explanations stay generic until the first workspace is restored into local continuity."
@@ -66,6 +70,7 @@ public static class DesktopHomeBuildExplainProjector
                 runtimeHealthSummary,
                 $"Return target: {displayName} on runtime {runtimeFingerprint}.",
                 $"Rule posture: runtime fingerprint {runtimeFingerprint} is pinned, but the live rules section still needs a refresh before you trust drift-sensitive decisions.",
+                BuildCompatibilityReceipts(runtimeInspector, runtimeFingerprint),
                 fallbackWatchouts);
         }
 
@@ -108,6 +113,7 @@ public static class DesktopHomeBuildExplainProjector
             runtimeHealthSummary,
             returnTarget,
             rulePosture,
+            BuildCompatibilityReceipts(runtimeInspector, runtimeFingerprint),
             watchouts
                 .Where(static item => !string.IsNullOrWhiteSpace(item))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -257,5 +263,59 @@ public static class DesktopHomeBuildExplainProjector
                 yield return "Provider bindings changed recently, so explain answers should be reviewed before you trust them in support or publication.";
             }
         }
+    }
+
+    private static IReadOnlyList<string> BuildCompatibilityReceipts(RuntimeInspectorProjection? runtimeInspector, string runtimeFingerprint)
+    {
+        if (runtimeInspector is null)
+        {
+            return
+            [
+                $"Compatibility receipt: runtime inspector details are still loading for fingerprint {runtimeFingerprint}, so drift-sensitive decisions should stay review-only."
+            ];
+        }
+
+        List<string> receipts = [];
+        if (runtimeInspector.CompatibilityDiagnostics.Count == 0)
+        {
+            receipts.Add($"Compatibility receipt: fingerprint {runtimeFingerprint} is aligned with the current workspace and no runtime drift is active.");
+        }
+
+        foreach (RuntimeLockCompatibilityDiagnostic diagnostic in runtimeInspector.CompatibilityDiagnostics)
+        {
+            if (string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.RebindRequired, StringComparison.Ordinal))
+            {
+                receipts.Add("Compatibility receipt: runtime drift requires a profile rebind before the next campaign return, export, or publication handoff.");
+            }
+            else if (string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.MissingPack, StringComparison.Ordinal))
+            {
+                receipts.Add("Compatibility receipt: at least one required rule pack is missing, so grounded build and explain answers are incomplete.");
+            }
+            else if (string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.EngineApiMismatch, StringComparison.Ordinal))
+            {
+                receipts.Add("Compatibility receipt: engine API mismatch blocks a safe handoff until the runtime and rules content converge again.");
+            }
+            else if (!string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.Compatible, StringComparison.Ordinal))
+            {
+                receipts.Add($"Compatibility receipt: {diagnostic.Message}");
+            }
+        }
+
+        foreach (RuntimeInspectorWarning warning in runtimeInspector.Warnings)
+        {
+            if (string.Equals(warning.Kind, RuntimeInspectorWarningKinds.Migration, StringComparison.Ordinal))
+            {
+                receipts.Add("Compatibility receipt: migration guidance is active, so the next campaign-facing handoff should stay explicitly review-required.");
+            }
+            else if (string.Equals(warning.Kind, RuntimeInspectorWarningKinds.ProviderBinding, StringComparison.Ordinal))
+            {
+                receipts.Add("Compatibility receipt: provider bindings changed recently, so explain answers should be rechecked before you trust them in support or publication.");
+            }
+        }
+
+        return receipts
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 }

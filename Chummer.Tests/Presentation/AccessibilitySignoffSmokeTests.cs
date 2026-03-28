@@ -150,6 +150,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projection.RuntimeHealthSummary, "runtime drift requires a rebind");
         RequireContains(projection.ReturnTarget, "Apex");
         RequireContains(projection.RulePosture, "fingerprint sha256:sr6-preview");
+        if (projection.CompatibilityReceipts.Count < 2)
+        {
+            throw new InvalidOperationException("Desktop build/explain projection should surface explicit compatibility receipts for the flagship home cockpit.");
+        }
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Compatibility receipt:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "profile rebind");
         RequireContains(projection.Summary, "Metatype B");
         RequireContains(projection.Summary, "SR6");
         RequireContains(projection.Summary, "Used, Prototype");
@@ -167,6 +173,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projection.RuntimeHealthSummary, "no active runtime profile");
         RequireContains(projection.ReturnTarget, "No workspace return target");
         RequireContains(projection.RulePosture, "Rule posture is still generic");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "no grounded runtime fingerprint");
         if (projection.Watchouts.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should keep explicit watchouts even before the first workspace exists.");
@@ -183,11 +190,15 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_buildExplainProjection.RuntimeHealthSummary");
         RequireContains(source, "_buildExplainProjection.ReturnTarget");
         RequireContains(source, "_buildExplainProjection.RulePosture");
+        RequireContains(source, "_buildExplainProjection.CompatibilityReceipts");
         RequireContains(source, "_buildExplainProjection.Watchouts");
         RequireContains(source, "client.GetShellBootstrapAsync");
         RequireContains(source, "client.GetRuntimeInspectorProfileAsync");
         RequireContains(source, "client.GetBuildAsync");
         RequireContains(source, "client.GetRulesAsync");
+
+        string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeBuildExplainProjector.cs");
+        RequireContains(projectorSource, "Compatibility receipt:");
     }
 
     private static void DesktopHome_exposes_claim_aware_install_and_update_actions()
