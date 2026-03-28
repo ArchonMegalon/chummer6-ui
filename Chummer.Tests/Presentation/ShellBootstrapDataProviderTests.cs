@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
@@ -308,6 +309,9 @@ public class ShellBootstrapDataProviderTests
             ListWorkspacesCalls++;
             return Task.FromResult(Workspaces);
         }
+
+        public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
+            => Task.FromResult<AccountCampaignSummary?>(null);
 
         public Task<ShellBootstrapSnapshot> GetShellBootstrapAsync(string? rulesetId, CancellationToken ct)
         {

@@ -12,10 +12,12 @@
   </PropertyGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalCampaignContractsProject)" />
     <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
+    <PackageReference Include="$(ChummerCampaignContractsPackageId)" Version="$(ChummerCampaignContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.7" />

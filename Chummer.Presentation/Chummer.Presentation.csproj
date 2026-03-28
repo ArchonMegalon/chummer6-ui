@@ -6,11 +6,13 @@
   </PropertyGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalCampaignContractsProject)" />
     <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
     <ProjectReference Include="$(ChummerLocalUiKitProject)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
+    <PackageReference Include="$(ChummerCampaignContractsPackageId)" Version="$(ChummerCampaignContractsPackageVersion)" />
     <PackageReference Include="$(ChummerUiKitPackageId)" Version="$(ChummerUiKitPackageVersion)" />
   </ItemGroup>
 </Project>

@@ -1,3 +1,4 @@
+using Chummer.Campaign.Contracts;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -111,6 +112,30 @@ public sealed class HttpChummerClient : IChummerClient
                 RulesetId: NormalizeRulesetId(workspace.RulesetId),
                 HasSavedWorkspace: workspace.HasSavedWorkspace))
             .ToArray();
+    }
+
+    public async Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
+    {
+        using HttpResponseMessage response = await _httpClient.GetAsync("/api/v1/campaign-spine/me", ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Campaign spine request failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        AccountCampaignSummary? payload = await response.Content.ReadFromJsonAsync<AccountCampaignSummary>(ct);
+        if (payload is null)
+        {
+            throw new InvalidOperationException("Campaign spine response was empty.");
+        }
+
+        return payload;
     }
 
     public async Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)

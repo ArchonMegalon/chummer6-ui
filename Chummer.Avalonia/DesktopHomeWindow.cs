@@ -19,14 +19,17 @@ internal sealed class DesktopHomeWindow : Window
     private DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;
     private IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
+    private DesktopHomeCampaignProjection _campaignProjection;
     private DesktopHomeBuildExplainProjection _buildExplainProjection;
     private readonly TextBlock _introText;
     private readonly TextBlock _installSummaryText;
     private readonly TextBlock _updateSummaryText;
+    private readonly TextBlock _campaignText;
     private readonly TextBlock _buildExplainText;
     private readonly TextBlock _workspaceSummaryText;
     private readonly StackPanel _installActionsRow;
     private readonly StackPanel _updateActionsRow;
+    private readonly StackPanel _campaignActionsRow;
     private readonly StackPanel _buildActionsRow;
     private readonly StackPanel _workspaceActionsRow;
 
@@ -35,12 +38,14 @@ internal sealed class DesktopHomeWindow : Window
         DesktopUpdateClientStatus updateStatus,
         DesktopPreferenceState preferences,
         IReadOnlyList<WorkspaceListItem> recentWorkspaces,
+        DesktopHomeCampaignProjection campaignProjection,
         DesktopHomeBuildExplainProjection buildExplainProjection)
     {
         _installState = installState;
         _updateStatus = updateStatus;
         _preferences = preferences;
         _recentWorkspaces = recentWorkspaces;
+        _campaignProjection = campaignProjection;
         _buildExplainProjection = buildExplainProjection;
 
         Title = "Chummer Desktop Home";
@@ -68,6 +73,12 @@ internal sealed class DesktopHomeWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _campaignText = new TextBlock
+        {
+            Text = BuildCampaignBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
         _buildExplainText = new TextBlock
         {
             Text = BuildBuildExplainBody(),
@@ -82,6 +93,7 @@ internal sealed class DesktopHomeWindow : Window
 
         _installActionsRow = CreateActionRow(CreateInstallActions());
         _updateActionsRow = CreateActionRow(CreateUpdateActions());
+        _campaignActionsRow = CreateActionRow(CreateCampaignActions());
         _buildActionsRow = CreateActionRow(CreateBuildExplainActions());
         _workspaceActionsRow = CreateActionRow(CreateWorkspaceActions());
 
@@ -108,6 +120,10 @@ internal sealed class DesktopHomeWindow : Window
                         "Update posture",
                         _updateSummaryText,
                         _updateActionsRow),
+                    CreateSection(
+                        "Campaign return and restore",
+                        _campaignText,
+                        _campaignActionsRow),
                     CreateSection(
                         "Build and explain next",
                         _buildExplainText,
@@ -147,6 +163,7 @@ internal sealed class DesktopHomeWindow : Window
         DesktopUpdateClientStatus updateStatus = DesktopUpdateRuntime.GetCurrentStatus(headId);
         DesktopPreferenceState preferences = ReadPreferences();
         IReadOnlyList<WorkspaceListItem> workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
+        DesktopHomeCampaignProjection campaignProjection = await ReadCampaignProjectionAsync(client).ConfigureAwait(true);
         DesktopHomeBuildExplainProjection buildExplainProjection = await ReadBuildExplainProjectionAsync(client, workspaces).ConfigureAwait(true);
 
         if (!ShouldShow(installContext, updateStatus, workspaces))
@@ -154,7 +171,7 @@ internal sealed class DesktopHomeWindow : Window
             return;
         }
 
-        DesktopHomeWindow dialog = new(installState, updateStatus, preferences, workspaces, buildExplainProjection);
+        DesktopHomeWindow dialog = new(installState, updateStatus, preferences, workspaces, campaignProjection, buildExplainProjection);
         await dialog.ShowDialog(owner);
     }
 
@@ -269,6 +286,19 @@ internal sealed class DesktopHomeWindow : Window
         }
     }
 
+    private static async Task<DesktopHomeCampaignProjection> ReadCampaignProjectionAsync(IChummerClient client)
+    {
+        try
+        {
+            return DesktopHomeCampaignProjector.Create(
+                await client.GetAccountCampaignSummaryAsync(CancellationToken.None).ConfigureAwait(false));
+        }
+        catch
+        {
+            return DesktopHomeCampaignProjector.Create(summary: null);
+        }
+    }
+
     private static async Task<IReadOnlyList<DesktopBuildPathCandidate>> ReadBuildPathCandidatesAsync(
         IChummerClient client,
         string? rulesetId,
@@ -336,7 +366,14 @@ internal sealed class DesktopHomeWindow : Window
             return "A promoted update is ready for this install. Review the update posture before you jump back into campaign work.";
         }
 
-        return "This desktop head is linked, current enough to continue, and ready to drop back into recent workspaces.";
+        if (_campaignProjection.Watchouts.Count > 0)
+        {
+            return "This desktop head is linked and current enough to continue, but the campaign return lane has watchouts to review before you reopen work.";
+        }
+
+        return string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+            ? "This desktop head is linked, current enough to continue, and ready to drop back into recent workspaces."
+            : "This desktop head is linked, current enough to continue, and ready to drop back into the current campaign workspace.";
     }
 
     private string BuildInstallSummary()
@@ -407,6 +444,30 @@ internal sealed class DesktopHomeWindow : Window
                 $"{workspace.Summary} · {workspace.RulesetId} · {workspace.LastUpdatedUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC"));
     }
 
+    private string BuildCampaignBody()
+    {
+        List<string> lines =
+        [
+            $"Next safe action: {_campaignProjection.NextSafeAction}",
+            _campaignProjection.Summary,
+            _campaignProjection.RestoreSummary,
+            _campaignProjection.DeviceRoleSummary,
+            _campaignProjection.SupportClosureSummary
+        ];
+
+        foreach (string highlight in _campaignProjection.ReadinessHighlights)
+        {
+            lines.Add(highlight);
+        }
+
+        foreach (string watchout in _campaignProjection.Watchouts)
+        {
+            lines.Add($"Watchout: {watchout}");
+        }
+
+        return string.Join("\n", lines);
+    }
+
     private string BuildBuildExplainBody()
     {
         List<string> lines =
@@ -467,6 +528,29 @@ internal sealed class DesktopHomeWindow : Window
         return actions;
     }
 
+    private IReadOnlyList<Button> CreateCampaignActions()
+    {
+        List<Button> actions =
+        [
+            !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+                ? CreateButton("Open current campaign workspace", OpenCampaignWorkspace, isPrimary: true)
+                : _recentWorkspaces.Count > 0
+                    ? CreateButton("Open current workspace", OpenCurrentWorkspace, isPrimary: true)
+                    : DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                        ? CreateButton("Open work follow-through", static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true)
+                        : CreateButton("Link this copy", OpenInstallLinkingAsync, isPrimary: true)
+        ];
+
+        actions.Add(CreateButton(
+            DesktopInstallLinkingRuntime.IsClaimed(_installState) ? "Open devices and access" : "Open account",
+            static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal()));
+        actions.Add(CreateButton(
+            _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId) ? "Open work support" : "Open install support",
+            _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId) ? OpenWorkspaceSupport : OpenInstallSupport));
+
+        return actions;
+    }
+
     private IReadOnlyList<Button> CreateBuildExplainActions()
     {
         List<Button> actions = [];
@@ -508,6 +592,11 @@ internal sealed class DesktopHomeWindow : Window
         => _recentWorkspaces.Count > 0
            && DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_recentWorkspaces[0].Id.Value);
 
+    private bool OpenCampaignWorkspace()
+        => !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+           ? DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_campaignProjection.LeadWorkspaceId!)
+           : OpenCurrentWorkspace();
+
     private bool OpenInstallSupport()
         => DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_installState);
 
@@ -540,6 +629,7 @@ internal sealed class DesktopHomeWindow : Window
             IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
                 ?? throw new InvalidOperationException("Desktop home refresh requires an IChummerClient instance."));
             _recentWorkspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
+            _campaignProjection = await ReadCampaignProjectionAsync(client).ConfigureAwait(true);
             _buildExplainProjection = await ReadBuildExplainProjectionAsync(client, _recentWorkspaces).ConfigureAwait(true);
         }
         catch
@@ -550,10 +640,12 @@ internal sealed class DesktopHomeWindow : Window
         _introText.Text = BuildIntro();
         _installSummaryText.Text = BuildInstallSummary();
         _updateSummaryText.Text = BuildUpdateSummary();
+        _campaignText.Text = BuildCampaignBody();
         _buildExplainText.Text = BuildBuildExplainBody();
         _workspaceSummaryText.Text = BuildWorkspaceSummary();
         ResetActionRow(_installActionsRow, CreateInstallActions());
         ResetActionRow(_updateActionsRow, CreateUpdateActions());
+        ResetActionRow(_campaignActionsRow, CreateCampaignActions());
         ResetActionRow(_buildActionsRow, CreateBuildExplainActions());
         ResetActionRow(_workspaceActionsRow, CreateWorkspaceActions());
     }
