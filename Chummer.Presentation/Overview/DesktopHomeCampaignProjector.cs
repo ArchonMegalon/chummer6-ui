@@ -16,7 +16,8 @@ public static class DesktopHomeCampaignProjector
 {
     public static DesktopHomeCampaignProjection Create(
         AccountCampaignSummary? summary,
-        IReadOnlyList<CampaignWorkspaceDigestProjection>? workspaceDigests = null)
+        IReadOnlyList<CampaignWorkspaceDigestProjection>? workspaceDigests = null,
+        DesktopHomeCampaignServerPlane? serverPlane = null)
     {
         CampaignWorkspaceDigestProjection? leadDigest = workspaceDigests?
             .OrderByDescending(static digest => digest.UpdatedAtUtc)
@@ -45,14 +46,22 @@ public static class DesktopHomeCampaignProjector
         if (summary is null && leadDigest is not null)
         {
             return new DesktopHomeCampaignProjection(
-                $"Campaign posture: {leadDigest.ReturnSummary} {leadDigest.ActiveSceneSummary ?? string.Empty}".Trim(),
-                leadDigest.NextSafeAction,
-                "Restore packet: the calmer workspace digest is present, but the full account-backed restore packet still needs a refresh.",
+                $"Campaign posture: {leadDigest.ReturnSummary} {(serverPlane?.RunboardSummary ?? leadDigest.ActiveSceneSummary ?? string.Empty)} {serverPlane?.SessionReadinessSummary ?? string.Empty}".Trim(),
+                string.IsNullOrWhiteSpace(serverPlane?.NextSafeAction) ? leadDigest.NextSafeAction : serverPlane.NextSafeAction,
+                serverPlane is null
+                    ? "Restore packet: the calmer workspace digest is present, but the full account-backed restore packet still needs a refresh."
+                    : $"Restore packet: {serverPlane.RestoreSummary}",
                 $"Claimed device posture: {leadDigest.DeviceRoleSummary}",
-                $"Support closure: {leadDigest.SupportClosureSummary}",
-                LeadWorkspaceId: leadDigest.WorkspaceId,
-                ReadinessHighlights: FinalizeLines(leadDigest.ReadinessHighlights),
-                Watchouts: FinalizeLines(leadDigest.Watchouts));
+                serverPlane is null || serverPlane.SupportHighlights.Count == 0
+                    ? $"Support closure: {leadDigest.SupportClosureSummary}"
+                    : $"Support closure: {leadDigest.SupportClosureSummary} Support lane: {serverPlane.SupportHighlights[0]}",
+                LeadWorkspaceId: serverPlane?.WorkspaceId ?? leadDigest.WorkspaceId,
+                ReadinessHighlights: FinalizeLines(
+                    leadDigest.ReadinessHighlights
+                        .Concat(serverPlane?.ReadinessHighlights ?? [])
+                        .Concat((serverPlane?.SupportHighlights ?? []).Select(static line => $"Support lane: {line}"))
+                        .Concat((serverPlane?.DecisionNotices ?? []).Select(static line => $"Decision notice: {line}"))),
+                Watchouts: FinalizeLines(leadDigest.Watchouts.Concat(serverPlane?.Watchouts ?? [])));
         }
 
         AccountCampaignSummary groundedSummary = summary!;
@@ -82,22 +91,40 @@ public static class DesktopHomeCampaignProjector
         string summaryLine = leadWorkspace is null
             ? $"Campaign posture: {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard lane(s) are attached to this account, but no current campaign workspace return target is pinned yet."
             : $"Campaign posture: {(leadDigest?.ReturnSummary ?? leadWorkspace.ReturnSummary)} {(leadDigest?.ActiveSceneSummary ?? leadWorkspace.ActiveSceneSummary) ?? string.Empty} {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard lane(s) stay attached to the same account-backed continuity packet.";
+        if (!string.IsNullOrWhiteSpace(serverPlane?.SessionReadinessSummary))
+        {
+            summaryLine = $"{summaryLine} {serverPlane.SessionReadinessSummary}".Trim();
+        }
 
-        string nextSafeAction = !string.IsNullOrWhiteSpace(leadDigest?.NextSafeAction)
+        string nextSafeAction = !string.IsNullOrWhiteSpace(serverPlane?.NextSafeAction)
+            ? serverPlane.NextSafeAction
+            : !string.IsNullOrWhiteSpace(leadDigest?.NextSafeAction)
             ? leadDigest.NextSafeAction
             : ResolveNextSafeAction(groundedSummary, leadWorkspace, leadHandoff, restore);
-        string restoreSummary = $"Restore packet: {restore.RecentDossiers.Count} recent dossier(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentArtifacts.Count} reconnectable artifact(s), and {restore.ClaimedDevices.Count} claimed device(s) were generated at {restore.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
+        string restoreSummary = serverPlane is null
+            ? $"Restore packet: {restore.RecentDossiers.Count} recent dossier(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentArtifacts.Count} reconnectable artifact(s), and {restore.ClaimedDevices.Count} claimed device(s) were generated at {restore.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC."
+            : $"Restore packet: {serverPlane.RestoreSummary}";
         string deviceRoleSummary = leadDigest is null
             ? BuildClaimedDeviceSummary(claimedDevices, restore.ClaimedDevices.Count)
             : $"Claimed device posture: {leadDigest.DeviceRoleSummary}";
         string supportClosureSummary = leadDigest is null
             ? ResolveSupportClosureSummary(leadHandoff, leadRulesAnswer)
             : $"Support closure: {leadDigest.SupportClosureSummary}";
+        if (serverPlane is not null && serverPlane.SupportHighlights.Count > 0)
+        {
+            supportClosureSummary = $"{supportClosureSummary} Support lane: {serverPlane.SupportHighlights[0]}";
+        }
 
         List<string> readinessHighlights = [];
         if (leadDigest is not null)
         {
             readinessHighlights.AddRange(leadDigest.ReadinessHighlights);
+        }
+        if (serverPlane is not null)
+        {
+            readinessHighlights.AddRange(serverPlane.ReadinessHighlights);
+            readinessHighlights.AddRange(serverPlane.SupportHighlights.Select(static line => $"Support lane: {line}"));
+            readinessHighlights.AddRange(serverPlane.DecisionNotices.Select(static line => $"Decision notice: {line}"));
         }
 
         if (leadWorkspace is not null)
@@ -144,6 +171,10 @@ public static class DesktopHomeCampaignProjector
         if (leadDigest is not null)
         {
             watchouts.AddRange(leadDigest.Watchouts);
+        }
+        if (serverPlane is not null)
+        {
+            watchouts.AddRange(serverPlane.Watchouts);
         }
 
         watchouts.AddRange(restore.ConflictSummaries);
@@ -289,6 +320,6 @@ public static class DesktopHomeCampaignProjector
             .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Select(static line => line.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(9)
+            .Take(14)
             .ToArray();
 }

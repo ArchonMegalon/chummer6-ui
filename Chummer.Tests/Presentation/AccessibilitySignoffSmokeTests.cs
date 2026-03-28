@@ -295,10 +295,23 @@ internal static class AccessibilitySignoffSmokeTests
                 MigrationReceipts: [migration],
                 CreatorPublications: [publication],
                 Restore: restore),
-            [digest]);
+            [digest],
+            new DesktopHomeCampaignServerPlane(
+                WorkspaceId: workspace.WorkspaceId,
+                SessionReadinessSummary: "Server plane says the session return is green and the claimed install is aligned.",
+                RestoreSummary: "The restore rail stays attached to the claimed install and current continuity packet.",
+                PublicationSummary: "Two publication-safe recap packets are ready for the same campaign lane.",
+                RosterSummary: "One dossier and one crew are ready to reopen.",
+                RunboardSummary: "Runboard keeps the active scene and objective pressure visible from the same shared campaign lane.",
+                NextSafeAction: "Server-plane next safe action keeps the follow-through explicit.",
+                ReadinessHighlights: ["Server plane highlight: the roster is current."],
+                Watchouts: ["Server plane watchout: verify the preview tablet before resuming GM-only notes."],
+                SupportHighlights: ["Released: the fix lane stays attached to the same claimed install."],
+                DecisionNotices: ["install_role: preview_scout stays attached to windows/avalonia on preview."],
+                GeneratedAtUtc: DateTimeOffset.Parse("2026-03-27T12:11:00+00:00")));
 
         RequireContains(projection.Summary, "Digest return summary");
-        RequireContains(projection.NextSafeAction, "Open the calmer workspace digest");
+        RequireContains(projection.Summary, "Digest return summary");
         RequireContains(projection.RestoreSummary, "Restore packet:");
         RequireContains(projection.DeviceRoleSummary, "play_tablet");
         RequireContains(projection.SupportClosureSummary, "calmer digest keeps the fix lane");
@@ -311,8 +324,13 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Migration continuity:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication trust:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Change packet:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Server plane highlight:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Support lane:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Decision notice:");
+        RequireContains(projection.NextSafeAction, "Server-plane next safe action");
         RequireContains(string.Join("\n", projection.Watchouts), "cloud-only snapshot");
         RequireContains(string.Join("\n", projection.Watchouts), "GM-only notes");
+        RequireContains(string.Join("\n", projection.Watchouts), "Server plane watchout:");
     }
 
     private static void DesktopHomeBuildExplainProjector_uses_real_contract_state()
@@ -645,6 +663,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "client.GetAccountCampaignSummaryAsync");
         RequireContains(source, "client.GetCampaignWorkspaceDigestsAsync");
         RequireContains(source, "ReadCampaignWorkspaceDigestsAsync");
+        RequireContains(source, "ReadCampaignWorkspaceServerPlaneAsync");
+        RequireContains(source, "GetCampaignWorkspaceServerPlaneAsync");
 
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeCampaignProjector.cs");
         RequireContains(projectorSource, "Campaign return:");
@@ -653,6 +673,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Migration continuity:");
         RequireContains(projectorSource, "Publication trust:");
         RequireContains(projectorSource, "CampaignWorkspaceDigestProjection");
+        RequireContains(projectorSource, "Support lane:");
+        RequireContains(projectorSource, "Decision notice:");
+        RequireContains(projectorSource, "DesktopHomeCampaignServerPlane");
     }
 
     private static void DesktopHome_wires_the_support_projection_into_the_summary_panel()
