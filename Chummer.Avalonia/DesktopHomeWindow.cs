@@ -25,6 +25,7 @@ internal sealed class DesktopHomeWindow : Window
     private readonly TextBlock _updateSummaryText;
     private readonly StackPanel _installActionsRow;
     private readonly StackPanel _updateActionsRow;
+    private readonly StackPanel _buildActionsRow;
 
     private DesktopHomeWindow(
         DesktopInstallLinkingState installState,
@@ -66,6 +67,7 @@ internal sealed class DesktopHomeWindow : Window
 
         _installActionsRow = CreateActionRow(CreateInstallActions());
         _updateActionsRow = CreateActionRow(CreateUpdateActions());
+        _buildActionsRow = CreateActionRow(CreateBuildExplainActions());
 
         Content = new Border
         {
@@ -93,7 +95,7 @@ internal sealed class DesktopHomeWindow : Window
                     CreateSection(
                         "Build and explain next",
                         BuildBuildExplainBody(),
-                        []),
+                        _buildActionsRow),
                     CreateSection(
                         "Language and trust surfaces",
                         $"Language: {DesktopLocalizationCatalog.GetDisplayLabel(_preferences.Language)}\nShipping locales: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}\nLanguage changes apply fully on restart during the current desktop wave.",
@@ -449,6 +451,23 @@ internal sealed class DesktopHomeWindow : Window
             actions.Add(CreateButton("Open support", static () => DesktopInstallLinkingRuntime.TryOpenSupportPortal()));
         }
 
+        return actions;
+    }
+
+    private IReadOnlyList<Button> CreateBuildExplainActions()
+    {
+        List<Button> actions = [];
+
+        if (_recentWorkspaces.Count > 0)
+        {
+            actions.Add(CreateButton("Open work follow-through", static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true));
+        }
+        else
+        {
+            actions.Add(CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true));
+        }
+
+        actions.Add(CreateButton("Open support", static () => DesktopInstallLinkingRuntime.TryOpenSupportPortal()));
         return actions;
     }
 
