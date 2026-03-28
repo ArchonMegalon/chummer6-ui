@@ -131,6 +131,59 @@ public sealed class HttpChummerClientBuildPathTests
         Assert.AreEqual(0, compatibilityRequestCount);
     }
 
+    [TestMethod]
+    public async Task Support_case_digests_use_presented_home_projection_endpoint()
+    {
+        StrictHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.Method == HttpMethod.Get
+                && request.RequestUri?.PathAndQuery == "/api/v1/support/cases/me/presented")
+            {
+                return JsonResponse("""
+[
+  {
+    "caseId": "case-123",
+    "title": "Preview update did not carry the fix",
+    "summary": "Reporter still needs one final confirmation step.",
+    "statusLabel": "Released",
+    "stageLabel": "Released",
+    "nextSafeAction": "Open downloads or update this linked install to pick up the reporter-ready fix.",
+    "closureSummary": "The fix reached preview 0.6.3-smoke.",
+    "verificationSummary": "After you update on the affected install, confirm whether the fix worked here.",
+    "detailHref": "/account/support/case-123",
+    "primaryActionLabel": "Open downloads",
+    "primaryActionHref": "/downloads",
+    "updatedLabel": "2026-03-28 16:05 UTC",
+    "fixedReleaseLabel": "preview 0.6.3-smoke",
+    "affectedInstallSummary": "This case stays attached to the linked avalonia install.",
+    "followUpLaneSummary": "Follow-up stays inside Account > Support for this signed-in report.",
+    "releaseProgressSummary": "The fix reached preview 0.6.3-smoke.",
+    "reporterActionNeeded": false,
+    "canVerifyFix": true
+  }
+]
+""");
+            }
+
+            throw new InvalidOperationException($"Unexpected request: {request.Method} {request.RequestUri}");
+        });
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        HttpChummerClient client = new(httpClient);
+
+        IReadOnlyList<DesktopHomeSupportDigest> digests = await client.GetDesktopHomeSupportDigestsAsync(CancellationToken.None);
+
+        Assert.AreEqual(1, digests.Count);
+        Assert.AreEqual("case-123", digests[0].CaseId);
+        Assert.AreEqual("Open downloads", digests[0].PrimaryActionLabel);
+        Assert.AreEqual("/downloads", digests[0].PrimaryActionHref);
+        Assert.AreEqual("preview 0.6.3-smoke", digests[0].FixedReleaseLabel);
+        Assert.IsTrue(digests[0].CanVerifyFix);
+    }
+
     private static HttpResponseMessage JsonResponse(string json)
         => new(HttpStatusCode.OK)
         {

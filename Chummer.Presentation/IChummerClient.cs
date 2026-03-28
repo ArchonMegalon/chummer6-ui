@@ -4,6 +4,7 @@ using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation.Overview;
 using System.Text.Json.Nodes;
 
 namespace Chummer.Presentation;
@@ -23,6 +24,8 @@ public interface IChummerClient
     Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct);
 
     Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct);
+
+    Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct);
 
     Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct);
 

@@ -191,6 +191,9 @@ public class WorkspacePersistenceServiceTests
         public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
             => Task.FromResult<AccountCampaignSummary?>(null);
 
+        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<DesktopHomeSupportDigest>>([]);
+
         public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => throw new NotImplementedException();
 
         public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();

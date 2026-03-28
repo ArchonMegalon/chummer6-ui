@@ -10,6 +10,7 @@ using Chummer.Contracts.Hub;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Presentation;
 
@@ -137,6 +138,32 @@ public sealed class HttpChummerClient : IChummerClient
         }
 
         return payload;
+    }
+
+    public async Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
+    {
+        using HttpResponseMessage response = await _httpClient.GetAsync("/api/v1/support/cases/me/presented", ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            return Array.Empty<DesktopHomeSupportDigest>();
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Support case digest request failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        DesktopHomeSupportDigestDto[]? payload = await response.Content.ReadFromJsonAsync<DesktopHomeSupportDigestDto[]>(ct);
+        if (payload is null || payload.Length == 0)
+        {
+            return Array.Empty<DesktopHomeSupportDigest>();
+        }
+
+        return payload
+            .Select(static item => item.ToProjection())
+            .ToArray();
     }
 
     public async Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
@@ -698,6 +725,48 @@ public sealed class HttpChummerClient : IChummerClient
         string Severity,
         string Message,
         string? SubjectId = null);
+
+    private sealed record DesktopHomeSupportDigestDto(
+        string CaseId,
+        string Title,
+        string Summary,
+        string StatusLabel,
+        string StageLabel,
+        string NextSafeAction,
+        string ClosureSummary,
+        string VerificationSummary,
+        string DetailHref,
+        string PrimaryActionLabel,
+        string PrimaryActionHref,
+        string UpdatedLabel,
+        string? FixedReleaseLabel,
+        string? AffectedInstallSummary,
+        string FollowUpLaneSummary,
+        string ReleaseProgressSummary,
+        bool ReporterActionNeeded,
+        bool CanVerifyFix)
+    {
+        public DesktopHomeSupportDigest ToProjection()
+            => new(
+                CaseId,
+                Title,
+                Summary,
+                StatusLabel,
+                StageLabel,
+                NextSafeAction,
+                ClosureSummary,
+                VerificationSummary,
+                DetailHref,
+                PrimaryActionLabel,
+                PrimaryActionHref,
+                UpdatedLabel,
+                FixedReleaseLabel,
+                AffectedInstallSummary,
+                FollowUpLaneSummary,
+                ReleaseProgressSummary,
+                ReporterActionNeeded,
+                CanVerifyFix);
+    }
 
     private async Task<T> GetRequiredAsync<T>(string path, CancellationToken ct)
     {
