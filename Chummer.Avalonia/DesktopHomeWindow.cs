@@ -15,11 +15,16 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopHomeWindow : Window
 {
-    private readonly DesktopInstallLinkingState _installState;
-    private readonly DesktopUpdateClientStatus _updateStatus;
+    private DesktopInstallLinkingState _installState;
+    private DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
     private readonly DesktopHomeBuildExplainProjection _buildExplainProjection;
+    private readonly TextBlock _introText;
+    private readonly TextBlock _installSummaryText;
+    private readonly TextBlock _updateSummaryText;
+    private readonly StackPanel _installActionsRow;
+    private readonly StackPanel _updateActionsRow;
 
     private DesktopHomeWindow(
         DesktopInstallLinkingState installState,
@@ -41,6 +46,27 @@ internal sealed class DesktopHomeWindow : Window
         MinHeight = 520;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
+        _introText = new TextBlock
+        {
+            Text = BuildIntro(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _installSummaryText = new TextBlock
+        {
+            Text = BuildInstallSummary(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _updateSummaryText = new TextBlock
+        {
+            Text = BuildUpdateSummary(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _installActionsRow = CreateActionRow(CreateInstallActions());
+        _updateActionsRow = CreateActionRow(CreateUpdateActions());
+
         Content = new Border
         {
             Padding = new Thickness(22),
@@ -55,24 +81,15 @@ internal sealed class DesktopHomeWindow : Window
                         FontSize = 24,
                         FontWeight = FontWeight.SemiBold
                     },
-                    new TextBlock
-                    {
-                        Text = BuildIntro(),
-                        TextWrapping = TextWrapping.Wrap
-                    },
+                    _introText,
                     CreateSection(
                         "Install and support",
-                        BuildInstallSummary(),
-                        [
-                            CreateButton("Open account", static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal()),
-                            CreateButton("Open support", static () => DesktopInstallLinkingRuntime.TryOpenSupportPortal())
-                        ]),
+                        _installSummaryText,
+                        _installActionsRow),
                     CreateSection(
                         "Update posture",
-                        BuildUpdateSummary(),
-                        [
-                            CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
-                        ]),
+                        _updateSummaryText,
+                        _updateActionsRow),
                     CreateSection(
                         "Build and explain next",
                         BuildBuildExplainBody(),
@@ -205,6 +222,11 @@ internal sealed class DesktopHomeWindow : Window
     {
         if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
+            if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
+            {
+                return "This flagship desktop head is still running as a guest because the last claim attempt failed. Link this copy from home before you rely on install-aware support, fix notices, or roaming continuity.";
+            }
+
             return "This flagship desktop head is ready to continue as a guest, but the account-aware path is the recommended route if you want install-aware support, fix notices, and roaming continuity.";
         }
 
@@ -218,10 +240,44 @@ internal sealed class DesktopHomeWindow : Window
 
     private string BuildInstallSummary()
     {
-        string linked = DesktopInstallLinkingRuntime.IsClaimed(_installState)
-            ? $"Linked to account. Grant expires {_installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")} UTC."
-            : "Not linked yet. Support and closure stay stronger once the install is claimed.";
-        return $"Install ID: {_installState.InstallationId}\nHead: {_installState.HeadId}\nVersion: {_installState.ApplicationVersion}\nChannel: {_installState.ChannelId}\nPlatform: {_installState.Platform}/{_installState.Arch}\nStatus: {linked}";
+        List<string> lines =
+        [
+            $"Install ID: {_installState.InstallationId}",
+            $"Head: {_installState.HeadId}",
+            $"Version: {_installState.ApplicationVersion}",
+            $"Channel: {_installState.ChannelId}",
+            $"Platform: {_installState.Platform}/{_installState.Arch}"
+        ];
+
+        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            lines.Add($"Status: Linked to account. Grant expires {_installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")} UTC.");
+        }
+        else
+        {
+            lines.Add("Status: Not linked yet. Support and closure stay stronger once the install is claimed.");
+            if (_installState.LastPromptDismissedAtUtc is not null)
+            {
+                lines.Add($"Last guest defer: {_installState.LastPromptDismissedAtUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.");
+            }
+        }
+
+        if (_installState.LastClaimAttemptUtc is not null)
+        {
+            lines.Add($"Last claim attempt: {_installState.LastClaimAttemptUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_installState.LastClaimMessage))
+        {
+            lines.Add($"Hub message: {_installState.LastClaimMessage}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
+        {
+            lines.Add($"Claim error: {_installState.LastClaimError}");
+        }
+
+        return string.Join("\n", lines);
     }
 
     private string BuildUpdateSummary()
@@ -230,10 +286,11 @@ internal sealed class DesktopHomeWindow : Window
         string manifestVersion = string.IsNullOrWhiteSpace(_updateStatus.LastManifestVersion)
             ? "Unknown"
             : _updateStatus.LastManifestVersion;
+        string manifestPublished = _updateStatus.LastManifestPublishedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? "Unknown";
         string error = string.IsNullOrWhiteSpace(_updateStatus.LastError)
             ? "None"
             : _updateStatus.LastError;
-        return $"Status: {_updateStatus.Status}\nInstalled: {_updateStatus.InstalledVersion}\nManifest: {manifestVersion}\nChannel: {_updateStatus.ChannelId}\nLast checked: {lastChecked} UTC\nAuto apply: {_updateStatus.AutoApply}\nRecommended action: {_updateStatus.RecommendedAction}\nLast error: {error}";
+        return $"Status: {_updateStatus.Status}\nInstalled: {_updateStatus.InstalledVersion}\nManifest: {manifestVersion}\nManifest published: {manifestPublished} UTC\nChannel: {_updateStatus.ChannelId}\nLast checked: {lastChecked} UTC\nAuto apply: {_updateStatus.AutoApply}\nRecommended action: {_updateStatus.RecommendedAction}\nLast error: {error}";
     }
 
     private string BuildWorkspaceSummary()
@@ -269,7 +326,75 @@ internal sealed class DesktopHomeWindow : Window
         return string.Join("\n", lines);
     }
 
+    private IReadOnlyList<Button> CreateInstallActions()
+    {
+        List<Button> actions =
+        [
+            CreateButton(
+                DesktopInstallLinkingRuntime.IsClaimed(_installState) ? "Open devices and access" : "Open account",
+                static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+        ];
+
+        if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Insert(0, CreateButton("Link this copy", OpenInstallLinkingAsync, isPrimary: true));
+        }
+
+        actions.Add(CreateButton("Open support", static () => DesktopInstallLinkingRuntime.TryOpenSupportPortal()));
+        return actions;
+    }
+
+    private IReadOnlyList<Button> CreateUpdateActions()
+    {
+        List<Button> actions =
+        [
+            CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
+        ];
+
+        if (!string.Equals(_updateStatus.Status, "current", StringComparison.Ordinal))
+        {
+            actions.Add(CreateButton("Open support", static () => DesktopInstallLinkingRuntime.TryOpenSupportPortal()));
+        }
+
+        return actions;
+    }
+
+    private async Task OpenInstallLinkingAsync()
+    {
+        DesktopInstallLinkingStartupContext context = new(
+            State: _installState,
+            ClaimResult: null,
+            StartupClaimCode: null,
+            ShouldPrompt: true,
+            PromptReason: "desktop_home");
+
+        DesktopInstallLinkingWindow dialog = new(context);
+        await dialog.ShowDialog(this);
+        RefreshHomeState();
+    }
+
+    private void RefreshHomeState()
+    {
+        _installState = DesktopInstallLinkingRuntime.LoadOrCreateState(_installState.HeadId);
+        _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(_installState.HeadId);
+        _introText.Text = BuildIntro();
+        _installSummaryText.Text = BuildInstallSummary();
+        _updateSummaryText.Text = BuildUpdateSummary();
+        ResetActionRow(_installActionsRow, CreateInstallActions());
+        ResetActionRow(_updateActionsRow, CreateUpdateActions());
+    }
+
     private static Border CreateSection(string title, string body, IReadOnlyList<Button> actions)
+        => CreateSection(
+            title,
+            new TextBlock
+            {
+                Text = body,
+                TextWrapping = TextWrapping.Wrap
+            },
+            CreateActionRow(actions));
+
+    private static Border CreateSection(string title, Control body, Control? actionContent)
     {
         StackPanel content = new()
         {
@@ -282,28 +407,13 @@ internal sealed class DesktopHomeWindow : Window
                     FontWeight = FontWeight.SemiBold,
                     FontSize = 18
                 },
-                new TextBlock
-                {
-                    Text = body,
-                    TextWrapping = TextWrapping.Wrap
-                }
+                body
             }
         };
 
-        if (actions.Count > 0)
+        if (actionContent is not null)
         {
-            StackPanel actionRow = new()
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 10
-            };
-
-            foreach (Button action in actions)
-            {
-                actionRow.Children.Add(action);
-            }
-
-            content.Children.Add(actionRow);
+            content.Children.Add(actionContent);
         }
 
         return new Border
@@ -317,16 +427,57 @@ internal sealed class DesktopHomeWindow : Window
         };
     }
 
-    private static Button CreateButton(string label, Func<bool> action, bool closeWindow = false)
+    private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
+    {
+        StackPanel actionRow = new()
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10
+        };
+
+        foreach (Button action in actions)
+        {
+            actionRow.Children.Add(action);
+        }
+
+        return actionRow;
+    }
+
+    private static void ResetActionRow(StackPanel actionRow, IReadOnlyList<Button> actions)
+    {
+        actionRow.Children.Clear();
+        foreach (Button action in actions)
+        {
+            actionRow.Children.Add(action);
+        }
+    }
+
+    private static Button CreateButton(string label, Func<bool> action, bool closeWindow = false, bool isPrimary = false)
+        => CreateButton(
+            label,
+            () =>
+            {
+                action();
+                return Task.CompletedTask;
+            },
+            closeWindow,
+            isPrimary);
+
+    private static Button CreateButton(string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false)
     {
         Button button = new()
         {
             Content = label,
             MinWidth = 120
         };
-        button.Click += (_, _) =>
+        if (isPrimary)
         {
-            action();
+            button.FontWeight = FontWeight.SemiBold;
+        }
+
+        button.Click += async (_, _) =>
+        {
+            await action().ConfigureAwait(true);
             if (closeWindow && TopLevel.GetTopLevel(button) is Window window)
             {
                 window.Close();
