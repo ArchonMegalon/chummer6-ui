@@ -23,6 +23,7 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHomeBuildExplainProjector_uses_real_contract_state();
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
+            DesktopHome_exposes_claim_aware_install_and_update_actions();
             DesktopHead_uses_canonical_catalog_only_resolver();
             Console.WriteLine("[B13] PASS: targeted accessibility smoke runner checks passed.");
             return 0;
@@ -187,6 +188,19 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "client.GetRuntimeInspectorProfileAsync");
         RequireContains(source, "client.GetBuildAsync");
         RequireContains(source, "client.GetRulesAsync");
+    }
+
+    private static void DesktopHome_exposes_claim_aware_install_and_update_actions()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        RequireContains(source, "CreateInstallActions()");
+        RequireContains(source, "CreateUpdateActions()");
+        RequireContains(source, "Link this copy");
+        RequireContains(source, "Open devices and access");
+        RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
+        RequireContains(source, "RefreshHomeState();");
+        RequireContains(source, "Last claim attempt:");
+        RequireContains(source, "Manifest published:");
     }
 
     private static void BlazorHome_uses_local_chummer6_flagship_media_samples()
