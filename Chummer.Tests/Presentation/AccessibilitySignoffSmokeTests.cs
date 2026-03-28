@@ -422,10 +422,88 @@ internal static class AccessibilitySignoffSmokeTests
                     RuntimeCompatibilitySummary: "Runtime review is still required before the fallback handoff is campaign-safe."))
         ];
 
-        DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, activeRuntime, runtimeInspector, buildPathCandidates);
+        BuildLabHandoffProjection handoff = new(
+            HandoffId: "handoff-1",
+            DossierId: "dossier-1",
+            CampaignId: "campaign-1",
+            Title: "Prime runner handoff",
+            Summary: "The next grounded handoff keeps build, runtime, and campaign return aligned.",
+            VariantLabel: "Prime runner preview",
+            ProgressionLabel: "Street launch",
+            ExplainEntryId: "explain-1",
+            TradeoffLines: ["Trade a late armor bump for cleaner campaign re-entry."],
+            ProgressionOutcomes: ["The runner stays campaign-ready after the handoff."],
+            Outputs: [],
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T10:21:00+00:00"),
+            NextSafeAction: "Review the grounded handoff before you publish or return to campaign play.",
+            RuntimeCompatibilitySummary: "The campaign handoff still matches the current runtime fingerprint.",
+            CampaignReturnSummary: "The handoff can return through the current campaign workspace once confirmed.",
+            SupportClosureSummary: "Support can cite the same handoff if verification fails.",
+            Watchouts: ["The handoff still needs an explicit campaign confirmation click."]);
+        RulesNavigatorAnswerProjection rulesAnswer = new(
+            EntryId: "rules-1",
+            Question: "Can this runner re-enter the campaign under the current rule environment?",
+            ShortAnswer: "Yes, after the runtime rebind and handoff confirmation.",
+            BeforeSummary: "The grounded dossier still needs one compatibility review.",
+            AfterSummary: "The current rule environment stays valid after the handoff is confirmed.",
+            ExplainEntryId: "rules-explain-1",
+            ProvenanceLabel: "Campaign spine",
+            EvidenceLines: ["The runtime fingerprint already matches the campaign workspace."],
+            SupportReuseHints: ["Support can reuse the same rules answer after the runner returns."]);
+        LegacyMigrationReceiptProjection migration = new(
+            ReceiptId: "migration-1",
+            SourceKind: "legacy",
+            SourceId: "legacy-dossier-1",
+            TargetDossierId: "dossier-1",
+            TargetCampaignId: "campaign-1",
+            Summary: "Legacy migration already mapped the dossier into the preview campaign lane.",
+            Fields:
+            [
+                new LegacyMigrationFieldProjection("field-1", "Legacy contacts", "mapped", "The contact mapping already matches the preview runtime.")
+            ],
+            ImportedAtUtc: DateTimeOffset.Parse("2026-03-27T10:18:00+00:00"));
+        CreatorPublicationProjection publication = new(
+            PublicationId: "publication-1",
+            Title: "Prime runner dossier",
+            Kind: "dossier",
+            Summary: "The creator lane is ready to emit the next trusted dossier projection.",
+            CampaignId: "campaign-1",
+            DossierId: "dossier-1",
+            ArtifactId: "artifact-1",
+            DiscoverySummary: "The publication stays private until the grounded handoff lands.",
+            ProvenanceSummary: "Publication lineage already points at the same campaign-safe dossier.",
+            Visibility: "private",
+            PublicationStatus: "ready",
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T10:22:00+00:00"));
+        AccountCampaignSummary campaignSummary = new(
+            Dossiers: [],
+            Campaigns: [],
+            Runs: [],
+            Crews: [],
+            Workspaces: [],
+            CommunityOperations: [],
+            BuildLabHandoffs: [handoff],
+            RulesNavigator: [rulesAnswer],
+            MigrationReceipts: [migration],
+            CreatorPublications: [publication],
+            Restore: new WorkspaceRestoreProjection(
+                RestoreId: "restore-1",
+                UserId: "user-1",
+                RecentDossiers: [],
+                RecentCampaigns: [],
+                RecentRuleEnvironments: [],
+                RecentArtifacts: [],
+                Entitlements: [],
+                ClaimedDevices: [],
+                ConflictSummaries: [],
+                LocalOnlyNotes: [],
+                GeneratedAtUtc: DateTimeOffset.Parse("2026-03-27T10:23:00+00:00")));
+
+        DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, campaignSummary, activeRuntime, runtimeInspector, buildPathCandidates);
         RequireContains(projection.NextSafeAction, "rebind the active profile");
         RequireContains(projection.ExplainFocus, "Explain focus:");
         RequireContains(projection.ExplainFocus, "Build path focus: Edge Runner Starter");
+        RequireContains(projection.ExplainFocus, "Campaign handoff:");
         RequireContains(projection.RuntimeHealthSummary, "Official SR6 Core");
         RequireContains(projection.RuntimeHealthSummary, "runtime drift requires a rebind");
         RequireContains(projection.ReturnTarget, "Apex");
@@ -440,6 +518,10 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path runtime:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path return:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path support:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab handoff:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Rules navigator:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Migration receipt:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Publication receipt:");
         if (projection.BuildPathComparisons.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should compare multiple grounded build paths in the flagship home cockpit.");
@@ -453,6 +535,7 @@ internal static class AccessibilitySignoffSmokeTests
         {
             throw new InvalidOperationException("Desktop build/explain projection should surface multiple watchouts for the flagship home cockpit.");
         }
+        RequireContains(string.Join("\n", projection.Watchouts), "campaign confirmation click");
     }
 
     private static void DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing()
@@ -604,6 +687,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "client.GetBuildPathPreviewAsync");
         RequireContains(source, "client.GetBuildAsync");
         RequireContains(source, "client.GetRulesAsync");
+        RequireContains(source, "ReadCampaignSummaryAsync");
 
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeBuildExplainProjector.cs");
         RequireContains(projectorSource, "Compatibility receipt:");
@@ -612,6 +696,10 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Build path return:");
         RequireContains(projectorSource, "Build path support:");
         RequireContains(projectorSource, "Build path compare:");
+        RequireContains(projectorSource, "Build Lab handoff:");
+        RequireContains(projectorSource, "Rules navigator:");
+        RequireContains(projectorSource, "Migration receipt:");
+        RequireContains(projectorSource, "Publication receipt:");
     }
 
     private static void DesktopHome_exposes_claim_aware_install_and_update_actions()

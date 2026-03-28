@@ -6,6 +6,7 @@ using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
+using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
@@ -179,9 +180,10 @@ internal sealed class DesktopHomeWindow : Window
         DesktopUpdateClientStatus updateStatus = DesktopUpdateRuntime.GetCurrentStatus(headId);
         DesktopPreferenceState preferences = ReadPreferences();
         IReadOnlyList<WorkspaceListItem> workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
-        DesktopHomeCampaignProjection campaignProjection = await ReadCampaignProjectionAsync(client).ConfigureAwait(true);
+        AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(true);
+        DesktopHomeCampaignProjection campaignProjection = ReadCampaignProjection(campaignSummary);
         DesktopHomeSupportProjection supportProjection = await ReadSupportProjectionAsync(client, installState).ConfigureAwait(true);
-        DesktopHomeBuildExplainProjection buildExplainProjection = await ReadBuildExplainProjectionAsync(client, workspaces).ConfigureAwait(true);
+        DesktopHomeBuildExplainProjection buildExplainProjection = await ReadBuildExplainProjectionAsync(client, workspaces, campaignSummary).ConfigureAwait(true);
 
         if (!ShouldShow(installContext, updateStatus, workspaces, supportProjection))
         {
@@ -236,7 +238,8 @@ internal sealed class DesktopHomeWindow : Window
 
     private static async Task<DesktopHomeBuildExplainProjection> ReadBuildExplainProjectionAsync(
         IChummerClient client,
-        IReadOnlyList<WorkspaceListItem> workspaces)
+        IReadOnlyList<WorkspaceListItem> workspaces,
+        AccountCampaignSummary? campaignSummary)
     {
         string? rulesetId = workspaces.Count == 0 ? null : workspaces[0].RulesetId;
         string? effectiveRulesetId = rulesetId;
@@ -278,6 +281,7 @@ internal sealed class DesktopHomeWindow : Window
                 workspaces,
                 build: null,
                 rules: null,
+                campaignSummary,
                 activeRuntime,
                 runtimeInspector,
                 buildPathCandidates);
@@ -293,6 +297,7 @@ internal sealed class DesktopHomeWindow : Window
                 workspaces,
                 buildTask.Result,
                 rulesTask.Result,
+                campaignSummary,
                 activeRuntime,
                 runtimeInspector,
                 buildPathCandidates);
@@ -303,24 +308,27 @@ internal sealed class DesktopHomeWindow : Window
                 workspaces,
                 build: null,
                 rules: null,
+                campaignSummary,
                 activeRuntime,
                 runtimeInspector,
                 buildPathCandidates);
         }
     }
 
-    private static async Task<DesktopHomeCampaignProjection> ReadCampaignProjectionAsync(IChummerClient client)
+    private static async Task<AccountCampaignSummary?> ReadCampaignSummaryAsync(IChummerClient client)
     {
         try
         {
-            return DesktopHomeCampaignProjector.Create(
-                await client.GetAccountCampaignSummaryAsync(CancellationToken.None).ConfigureAwait(false));
+            return await client.GetAccountCampaignSummaryAsync(CancellationToken.None).ConfigureAwait(false);
         }
         catch
         {
-            return DesktopHomeCampaignProjector.Create(summary: null);
+            return null;
         }
     }
+
+    private static DesktopHomeCampaignProjection ReadCampaignProjection(AccountCampaignSummary? campaignSummary)
+        => DesktopHomeCampaignProjector.Create(campaignSummary);
 
     private static async Task<DesktopHomeSupportProjection> ReadSupportProjectionAsync(
         IChummerClient client,
