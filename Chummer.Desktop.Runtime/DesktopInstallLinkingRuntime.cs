@@ -263,6 +263,15 @@ public static class DesktopInstallLinkingRuntime
                         updateStatus.LastManifestPublishedAtUtc is null
                             ? null
                             : $"Manifest published: {updateStatus.LastManifestPublishedAtUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
+                        string.IsNullOrWhiteSpace(updateStatus.RolloutState) ? null : $"Release posture: {updateStatus.RolloutState}",
+                        string.IsNullOrWhiteSpace(updateStatus.SupportabilityState) ? null : $"Supportability: {updateStatus.SupportabilityState}",
+                        string.IsNullOrWhiteSpace(updateStatus.SupportabilitySummary) ? null : $"Supportability summary: {updateStatus.SupportabilitySummary}",
+                        string.IsNullOrWhiteSpace(updateStatus.KnownIssueSummary) ? null : $"Known issues: {updateStatus.KnownIssueSummary}",
+                        string.IsNullOrWhiteSpace(updateStatus.FixAvailabilitySummary) ? null : $"Fix availability: {updateStatus.FixAvailabilitySummary}",
+                        string.IsNullOrWhiteSpace(updateStatus.ProofStatus) ? null : $"Local release proof: {updateStatus.ProofStatus}",
+                        updateStatus.ProofGeneratedAtUtc is null
+                            ? null
+                            : $"Proof generated: {updateStatus.ProofGeneratedAtUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
                         $"Recommended action: {updateStatus.RecommendedAction}",
                         string.IsNullOrWhiteSpace(updateStatus.LastError) ? null : $"Last error: {updateStatus.LastError}"
                     }.Where(static item => !string.IsNullOrWhiteSpace(item))),
