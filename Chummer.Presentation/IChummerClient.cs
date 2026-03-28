@@ -25,6 +25,8 @@ public interface IChummerClient
 
     Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct);
 
+    Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct);
+
     Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct);
 
     Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct);
