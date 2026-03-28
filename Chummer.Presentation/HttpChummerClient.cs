@@ -6,6 +6,7 @@ using System.Linq;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
+using Chummer.Contracts.Hub;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
@@ -324,15 +325,30 @@ public sealed class HttpChummerClient : IChummerClient
             throw new InvalidOperationException($"Build path preview for '{buildKitId}' was empty.");
         }
 
+        BuildKitCompatibilityResponse? compatibility = null;
+        if (string.IsNullOrWhiteSpace(payload.RuntimeCompatibilitySummary)
+            || string.IsNullOrWhiteSpace(payload.CampaignReturnSummary)
+            || string.IsNullOrWhiteSpace(payload.SupportClosureSummary))
+        {
+            compatibility = await GetBuildKitCompatibilityAsync(buildKitId, rulesetId, ct);
+        }
+
         return new DesktopBuildPathPreview(
             State: payload.State,
             RuntimeFingerprint: payload.RuntimeFingerprint,
             ChangeSummaries: payload.Changes.Select(static change => change.Summary).ToArray(),
             DiagnosticMessages: payload.Diagnostics.Select(static diagnostic => diagnostic.Message).ToArray(),
             RequiresConfirmation: payload.RequiresConfirmation,
-            RuntimeCompatibilitySummary: payload.RuntimeCompatibilitySummary,
-            CampaignReturnSummary: payload.CampaignReturnSummary,
-            SupportClosureSummary: payload.SupportClosureSummary);
+            RuntimeCompatibilitySummary: FirstNonBlank(
+                payload.RuntimeCompatibilitySummary,
+                GetCompatibilityNotes(compatibility, HubProjectCompatibilityRowKinds.RuntimeRequirements),
+                GetCompatibilityNotes(compatibility, HubProjectCompatibilityRowKinds.SessionRuntime)),
+            CampaignReturnSummary: FirstNonBlank(
+                payload.CampaignReturnSummary,
+                GetCompatibilityNotes(compatibility, HubProjectCompatibilityRowKinds.CampaignReturn)),
+            SupportClosureSummary: FirstNonBlank(
+                payload.SupportClosureSummary,
+                GetCompatibilityNotes(compatibility, HubProjectCompatibilityRowKinds.SupportClosure)));
     }
 
     public async Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
@@ -612,6 +628,38 @@ public sealed class HttpChummerClient : IChummerClient
             : WorkspaceDocumentFormat.NativeXml;
     }
 
+    private async Task<BuildKitCompatibilityResponse?> GetBuildKitCompatibilityAsync(
+        string buildKitId,
+        string? rulesetId,
+        CancellationToken ct)
+    {
+        string path = $"/api/hub/projects/buildkit/{Uri.EscapeDataString(buildKitId)}/compatibility";
+        string? normalizedRuleset = RulesetDefaults.NormalizeOptional(rulesetId);
+        if (normalizedRuleset is not null)
+        {
+            path += $"?ruleset={Uri.EscapeDataString(normalizedRuleset)}";
+        }
+
+        using HttpResponseMessage response = await _httpClient.GetAsync(path, ct);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Build path compatibility failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        return await response.Content.ReadFromJsonAsync<BuildKitCompatibilityResponse>(ct);
+    }
+
+    private static string? GetCompatibilityNotes(BuildKitCompatibilityResponse? compatibility, string kind)
+        => compatibility?.Rows.FirstOrDefault(row => string.Equals(row.Kind, kind, StringComparison.Ordinal))?.Notes;
+
+    private static string? FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
     private sealed record BuildKitCatalogResponse(
         int Count,
         IReadOnlyList<BuildKitRegistryEntry> Entries);
@@ -625,6 +673,19 @@ public sealed class HttpChummerClient : IChummerClient
         string? RuntimeCompatibilitySummary = null,
         string? CampaignReturnSummary = null,
         string? SupportClosureSummary = null);
+
+    private sealed record BuildKitCompatibilityResponse(
+        string Kind,
+        string ItemId,
+        IReadOnlyList<BuildKitCompatibilityRow> Rows);
+
+    private sealed record BuildKitCompatibilityRow(
+        string Kind,
+        string Label,
+        string State,
+        string CurrentValue,
+        string? RequiredValue = null,
+        string? Notes = null);
 
     private sealed record BuildKitInstallPreviewChange(
         string Kind,
