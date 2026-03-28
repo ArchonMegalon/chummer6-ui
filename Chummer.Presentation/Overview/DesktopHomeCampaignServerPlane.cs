@@ -20,6 +20,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
     DesktopHomeRosterReadinessDto RosterReadiness,
     IReadOnlyList<DesktopHomeCampaignReadinessCueDto> ReadinessCues,
     IReadOnlyList<DesktopHomeWorkspaceChangePacketDto> ChangePackets,
+    IReadOnlyList<DesktopHomeRosterTransferDto> RosterTransfers,
     IReadOnlyList<DesktopHomeDossierFreshnessCueDto> DossierFreshness,
     IReadOnlyList<DesktopHomeRuleEnvironmentHealthCueDto> RuleEnvironmentHealth,
     DesktopHomeRunboardSummaryDto? Runboard,
@@ -55,6 +56,9 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
         readinessHighlights.AddRange(ChangePackets
             .Take(2)
             .Select(static packet => $"{packet.Label} — {packet.Summary}"));
+        readinessHighlights.AddRange(RosterTransfers
+            .Take(2)
+            .Select(static transfer => $"Roster transfer: {transfer.RunnerHandle} — {transfer.Summary}"));
 
         List<string> watchouts = [];
         watchouts.AddRange(DossierFreshness
@@ -132,6 +136,10 @@ public sealed record DesktopHomeCampaignReadinessCueDto(
 
 public sealed record DesktopHomeWorkspaceChangePacketDto(
     string Label,
+    string Summary);
+
+public sealed record DesktopHomeRosterTransferDto(
+    string RunnerHandle,
     string Summary);
 
 public sealed record DesktopHomeDossierFreshnessCueDto(

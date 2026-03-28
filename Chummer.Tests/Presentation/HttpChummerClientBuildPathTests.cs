@@ -217,6 +217,12 @@ public sealed class HttpChummerClientBuildPathTests
       "summary": "The latest recap-safe snapshot is current."
     }
   ],
+  "rosterTransfers": [
+    {
+      "runnerHandle": "APEX",
+      "summary": "APEX moved into Thursday Crew Relay with governed ownership receipts attached."
+    }
+  ],
   "dossierFreshness": [
     {
       "runnerHandle": "APEX",
@@ -273,6 +279,7 @@ public sealed class HttpChummerClientBuildPathTests
         Assert.AreEqual("workspace-123", projection.WorkspaceId);
         Assert.AreEqual("Open the shared campaign view.", projection.NextSafeAction);
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Roster: One dossier is ready.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Roster transfer: APEX — APEX moved into Thursday Crew Relay with governed ownership receipts attached.");
         CollectionAssert.Contains(projection.SupportHighlights.ToArray(), "Released: The fix reached the same claimed install.");
         CollectionAssert.Contains(projection.DecisionNotices.ToArray(), "install_role: preview_scout stays attached to windows/avalonia on preview.");
     }
