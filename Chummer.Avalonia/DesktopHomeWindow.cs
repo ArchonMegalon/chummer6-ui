@@ -182,7 +182,9 @@ internal sealed class DesktopHomeWindow : Window
         IReadOnlyList<WorkspaceListItem> workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
         AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(true);
         IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(true);
-        DesktopHomeCampaignProjection campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests);
+        string? leadWorkspaceId = ResolveLeadWorkspaceId(campaignSummary, campaignWorkspaceDigests);
+        DesktopHomeCampaignServerPlane? campaignServerPlane = await ReadCampaignWorkspaceServerPlaneAsync(client, leadWorkspaceId).ConfigureAwait(true);
+        DesktopHomeCampaignProjection campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane);
         DesktopHomeSupportProjection supportProjection = await ReadSupportProjectionAsync(client, installState).ConfigureAwait(true);
         DesktopHomeBuildExplainProjection buildExplainProjection = await ReadBuildExplainProjectionAsync(client, workspaces, campaignSummary).ConfigureAwait(true);
 
@@ -342,14 +344,46 @@ internal sealed class DesktopHomeWindow : Window
 
     private static DesktopHomeCampaignProjection ReadCampaignProjection(
         AccountCampaignSummary? campaignSummary,
-        IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests)
-        => DesktopHomeCampaignProjector.Create(campaignSummary, campaignWorkspaceDigests);
+        IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests,
+        DesktopHomeCampaignServerPlane? campaignServerPlane = null)
+        => DesktopHomeCampaignProjector.Create(campaignSummary, campaignWorkspaceDigests, campaignServerPlane);
 
     private static async Task<DesktopHomeCampaignProjection> ReadCampaignProjectionAsync(IChummerClient client)
     {
         AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(false);
         IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(false);
-        return ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests);
+        string? leadWorkspaceId = ResolveLeadWorkspaceId(campaignSummary, campaignWorkspaceDigests);
+        DesktopHomeCampaignServerPlane? campaignServerPlane = await ReadCampaignWorkspaceServerPlaneAsync(client, leadWorkspaceId).ConfigureAwait(false);
+        return ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane);
+    }
+
+    private static string? ResolveLeadWorkspaceId(
+        AccountCampaignSummary? campaignSummary,
+        IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests)
+        => campaignSummary?.Workspaces
+               .OrderByDescending(static workspace => workspace.LatestContinuity?.CapturedAtUtc ?? DateTimeOffset.MinValue)
+               .Select(static workspace => workspace.WorkspaceId)
+               .FirstOrDefault()
+           ?? campaignWorkspaceDigests
+               .OrderByDescending(static digest => digest.UpdatedAtUtc)
+               .Select(static digest => digest.WorkspaceId)
+               .FirstOrDefault();
+
+    private static async Task<DesktopHomeCampaignServerPlane?> ReadCampaignWorkspaceServerPlaneAsync(IChummerClient client, string? workspaceId)
+    {
+        if (string.IsNullOrWhiteSpace(workspaceId) || client is not HttpChummerClient httpClient)
+        {
+            return null;
+        }
+
+        try
+        {
+            return await httpClient.GetCampaignWorkspaceServerPlaneAsync(workspaceId, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static async Task<DesktopHomeSupportProjection> ReadSupportProjectionAsync(
@@ -782,7 +816,9 @@ internal sealed class DesktopHomeWindow : Window
             _recentWorkspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
             AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(true);
             IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(true);
-            _campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests);
+            string? leadWorkspaceId = ResolveLeadWorkspaceId(campaignSummary, campaignWorkspaceDigests);
+            DesktopHomeCampaignServerPlane? campaignServerPlane = await ReadCampaignWorkspaceServerPlaneAsync(client, leadWorkspaceId).ConfigureAwait(true);
+            _campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane);
             _supportProjection = await ReadSupportProjectionAsync(client, _installState).ConfigureAwait(true);
             _buildExplainProjection = await ReadBuildExplainProjectionAsync(client, _recentWorkspaces, campaignSummary).ConfigureAwait(true);
         }

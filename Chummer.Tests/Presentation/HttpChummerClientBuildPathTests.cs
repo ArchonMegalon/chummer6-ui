@@ -184,6 +184,99 @@ public sealed class HttpChummerClientBuildPathTests
         Assert.IsTrue(digests[0].CanVerifyFix);
     }
 
+    [TestMethod]
+    public async Task Campaign_workspace_server_plane_uses_the_hub_projection_endpoint()
+    {
+        StrictHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.Method == HttpMethod.Get
+                && request.RequestUri?.PathAndQuery == "/api/v1/campaign-spine/me/workspaces/workspace-123/server-plane")
+            {
+                return JsonResponse("""
+{
+  "workspace": {
+    "workspaceId": "workspace-123"
+  },
+  "campaignSummary": {
+    "sessionReadinessSummary": "Session return is green.",
+    "restoreSummary": "Restore follows the claimed install.",
+    "publicationSummary": "One recap-safe output is ready."
+  },
+  "rosterReadiness": {
+    "summary": "One dossier is ready."
+  },
+  "readinessCues": [
+    {
+      "title": "Rule environment approved",
+      "summary": "The campaign fingerprint is pinned."
+    }
+  ],
+  "changePackets": [
+    {
+      "label": "Continuity snapshot",
+      "summary": "The latest recap-safe snapshot is current."
+    }
+  ],
+  "dossierFreshness": [
+    {
+      "runnerHandle": "APEX",
+      "severity": "ready",
+      "summary": "The dossier is current."
+    }
+  ],
+  "ruleEnvironmentHealth": [
+    {
+      "title": "Campaign rule environment",
+      "severity": "ready",
+      "summary": "The rule fingerprint is approved."
+    }
+  ],
+  "runboard": {
+    "activeSceneSummary": "The active scene is still pinned.",
+    "objectiveSummary": "One objective still needs attention.",
+    "returnSummary": "Return through the shared campaign lane."
+  },
+  "continuityConflicts": [],
+  "supportClosures": [
+    {
+      "stageLabel": "Released",
+      "summary": "The fix reached the same claimed install."
+    }
+  ],
+  "knownIssues": [],
+  "decisionNotices": [
+    {
+      "kind": "install_role",
+      "summary": "preview_scout stays attached to windows/avalonia on preview."
+    }
+  ],
+  "nextSafeAction": {
+    "summary": "Open the shared campaign view."
+  },
+  "generatedAtUtc": "2026-03-28T18:12:00Z"
+}
+""");
+            }
+
+            throw new InvalidOperationException($"Unexpected request: {request.Method} {request.RequestUri}");
+        });
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        HttpChummerClient client = new(httpClient);
+
+        DesktopHomeCampaignServerPlane? projection = await client.GetCampaignWorkspaceServerPlaneAsync("workspace-123", CancellationToken.None);
+
+        Assert.IsNotNull(projection);
+        Assert.AreEqual("workspace-123", projection.WorkspaceId);
+        Assert.AreEqual("Open the shared campaign view.", projection.NextSafeAction);
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Roster: One dossier is ready.");
+        CollectionAssert.Contains(projection.SupportHighlights.ToArray(), "Released: The fix reached the same claimed install.");
+        CollectionAssert.Contains(projection.DecisionNotices.ToArray(), "install_role: preview_scout stays attached to windows/avalonia on preview.");
+    }
+
     private static HttpResponseMessage JsonResponse(string json)
         => new(HttpStatusCode.OK)
         {

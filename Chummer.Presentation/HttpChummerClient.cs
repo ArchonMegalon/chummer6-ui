@@ -159,6 +159,29 @@ public sealed class HttpChummerClient : IChummerClient
         return payload ?? Array.Empty<CampaignWorkspaceDigestProjection>();
     }
 
+    public async Task<DesktopHomeCampaignServerPlane?> GetCampaignWorkspaceServerPlaneAsync(string workspaceId, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workspaceId);
+
+        using HttpResponseMessage response = await _httpClient.GetAsync(
+            $"/api/v1/campaign-spine/me/workspaces/{Uri.EscapeDataString(workspaceId)}/server-plane",
+            ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Campaign workspace server-plane request failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        DesktopHomeCampaignServerPlaneDto? payload = await response.Content.ReadFromJsonAsync<DesktopHomeCampaignServerPlaneDto>(ct);
+        return payload?.ToProjection();
+    }
+
     public async Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
     {
         using HttpResponseMessage response = await _httpClient.GetAsync("/api/v1/support/cases/me/presented", ct);
