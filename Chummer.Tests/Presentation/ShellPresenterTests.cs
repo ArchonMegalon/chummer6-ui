@@ -14,6 +14,7 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
+using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -528,6 +529,9 @@ public class ShellPresenterTests
 
         public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
             => Task.FromResult<AccountCampaignSummary?>(null);
+
+        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<DesktopHomeSupportDigest>>([]);
 
         public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct)
             => Task.FromResult(Preferences);
