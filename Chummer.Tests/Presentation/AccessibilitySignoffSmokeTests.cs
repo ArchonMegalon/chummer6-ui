@@ -347,6 +347,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projection.Summary, "Digest return summary");
         RequireContains(projection.Summary, "Digest return summary");
         RequireContains(projection.RestoreSummary, "Restore packet:");
+        RequireContains(projection.RestoreSummary, "bounded offline use");
         RequireContains(projection.DeviceRoleSummary, "play_tablet");
         RequireContains(projection.SupportClosureSummary, "calmer digest keeps the fix lane");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Digest highlight:");
@@ -357,6 +358,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Rules follow-through:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Migration continuity:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication trust:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Prefetch inventory:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Claimed device:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Change packet:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Roster transfer:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Server plane highlight:");

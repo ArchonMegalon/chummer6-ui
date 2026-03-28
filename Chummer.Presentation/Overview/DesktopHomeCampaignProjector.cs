@@ -101,9 +101,10 @@ public static class DesktopHomeCampaignProjector
             : !string.IsNullOrWhiteSpace(leadDigest?.NextSafeAction)
             ? leadDigest.NextSafeAction
             : ResolveNextSafeAction(groundedSummary, leadWorkspace, leadHandoff, restore);
+        string restoreInventorySummary = BuildRestoreInventorySummary(restore);
         string restoreSummary = serverPlane is null
-            ? $"Restore packet: {restore.RecentDossiers.Count} recent dossier(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentArtifacts.Count} reconnectable artifact(s), and {restore.ClaimedDevices.Count} claimed device(s) were generated at {restore.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC."
-            : $"Restore packet: {serverPlane.RestoreSummary}";
+            ? $"Restore packet: {restoreInventorySummary}"
+            : $"Restore packet: {serverPlane.RestoreSummary} {restoreInventorySummary}".Trim();
         string deviceRoleSummary = leadDigest is null
             ? BuildClaimedDeviceSummary(claimedDevices, restore.ClaimedDevices.Count)
             : $"Claimed device posture: {leadDigest.DeviceRoleSummary}";
@@ -155,6 +156,10 @@ public static class DesktopHomeCampaignProjector
         {
             readinessHighlights.Add($"Publication trust: {leadPublication.Title} — {leadPublication.ProvenanceSummary}");
         }
+
+        readinessHighlights.Add($"Prefetch inventory: {DescribePrefetchInventory(restore)}");
+        readinessHighlights.AddRange(
+            claimedDevices.Select(static device => $"Claimed device: {device.HostLabel} — {device.RestoreSummary}"));
 
         readinessHighlights.AddRange(
             leadWorkspace?.ReadinessCues
@@ -283,6 +288,12 @@ public static class DesktopHomeCampaignProjector
         return $"Claimed device posture: {summary}";
     }
 
+    private static string BuildRestoreInventorySummary(WorkspaceRestoreProjection restore)
+        => $"{DescribePrefetchInventory(restore)} are staged for bounded offline use across {restore.ClaimedDevices.Count} claimed device(s), generated at {restore.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
+
+    private static string DescribePrefetchInventory(WorkspaceRestoreProjection restore)
+        => $"{restore.RecentDossiers.Count} recent dossier(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentRuleEnvironments.Count} rule environment(s), and {restore.RecentArtifacts.Count} reconnectable artifact(s)";
+
     private static string ResolveSupportClosureSummary(
         BuildLabHandoffProjection? leadHandoff,
         RulesNavigatorAnswerProjection? leadRulesAnswer)
@@ -325,6 +336,6 @@ public static class DesktopHomeCampaignProjector
             .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Select(static line => line.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(14)
+            .Take(16)
             .ToArray();
 }
