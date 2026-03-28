@@ -172,6 +172,11 @@ public static class DesktopInstallLinkingRuntime
         return TryOpenPublicPortal("/downloads");
     }
 
+    public static bool TryOpenWorkPortal()
+    {
+        return TryOpenPublicPortal("/account/work");
+    }
+
     public static bool IsClaimed(DesktopInstallLinkingState state)
         => string.Equals(state.Status, ClaimedStatus, StringComparison.OrdinalIgnoreCase)
            && !string.IsNullOrWhiteSpace(state.GrantToken);
