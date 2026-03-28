@@ -556,8 +556,14 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "Shipping locales:");
         RequireContains(source, "Open Downloads");
         RequireContains(source, "Open Support");
+        RequireContains(source, "Open Work");
+        RequireContains(source, "Last claim attempt:");
+        RequireContains(source, "Hub message:");
+        RequireContains(source, "Claim error:");
+        RequireContains(source, "Next safe action:");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortal()");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_state)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkPortal()");
     }
 
     private static void BlazorHome_uses_local_chummer6_flagship_media_samples()
