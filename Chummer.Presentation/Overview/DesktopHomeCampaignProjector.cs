@@ -43,6 +43,12 @@ public static class DesktopHomeCampaignProjector
             .OrderByDescending(static handoff => handoff.UpdatedAtUtc)
             .FirstOrDefault();
         RulesNavigatorAnswerProjection? leadRulesAnswer = summary.RulesNavigator.FirstOrDefault();
+        LegacyMigrationReceiptProjection? leadMigration = summary.MigrationReceipts
+            .OrderByDescending(static receipt => receipt.ImportedAtUtc)
+            .FirstOrDefault();
+        CreatorPublicationProjection? leadPublication = summary.CreatorPublications
+            .OrderByDescending(static publication => publication.UpdatedAtUtc)
+            .FirstOrDefault();
         WorkspaceRestoreProjection restore = summary.Restore;
         ClaimedDeviceRestoreProjection[] claimedDevices = restore.ClaimedDevices
             .Where(static device => !string.IsNullOrWhiteSpace(device.InstallationId))
@@ -74,6 +80,16 @@ public static class DesktopHomeCampaignProjector
             readinessHighlights.Add($"Rules follow-through: {leadRulesAnswer.AfterSummary}");
         }
 
+        if (!string.IsNullOrWhiteSpace(leadMigration?.Summary))
+        {
+            readinessHighlights.Add($"Migration continuity: {leadMigration.Summary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(leadPublication?.ProvenanceSummary))
+        {
+            readinessHighlights.Add($"Publication trust: {leadPublication.Title} — {leadPublication.ProvenanceSummary}");
+        }
+
         readinessHighlights.AddRange(
             leadWorkspace?.ReadinessCues
                 .Take(3)
@@ -94,6 +110,18 @@ public static class DesktopHomeCampaignProjector
                 leadWorkspace.ReadinessCues
                     .Where(static cue => NeedsAttention(cue.Severity))
                     .Select(static cue => $"{cue.Title}: {cue.Summary}"));
+        }
+
+        LegacyMigrationFieldProjection? migrationAttentionField = leadMigration?.Fields.FirstOrDefault(static field => NeedsAttentionStatus(field.Status));
+        if (migrationAttentionField is not null)
+        {
+            watchouts.Add($"Migration watchout: {migrationAttentionField.Label} is {migrationAttentionField.Status} — {migrationAttentionField.Summary}");
+        }
+
+        if (leadPublication is not null && NeedsAttentionStatus(leadPublication.PublicationStatus))
+        {
+            watchouts.Add(
+                $"Publication watchout: {leadPublication.Title} is {leadPublication.PublicationStatus} — {leadPublication.DiscoverySummary}");
         }
 
         return new DesktopHomeCampaignProjection(
@@ -189,6 +217,18 @@ public static class DesktopHomeCampaignProjector
            && !severity.Equals("info", StringComparison.OrdinalIgnoreCase)
            && !severity.Equals("ok", StringComparison.OrdinalIgnoreCase)
            && !severity.Equals("ready", StringComparison.OrdinalIgnoreCase);
+
+    private static bool NeedsAttentionStatus(string? status)
+        => !string.IsNullOrWhiteSpace(status)
+           && !status.Equals("healthy", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("info", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("ok", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("ready", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("published", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("safe", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("mapped", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("approved", StringComparison.OrdinalIgnoreCase)
+           && !status.Equals("active", StringComparison.OrdinalIgnoreCase);
 
     private static IReadOnlyList<string> FinalizeLines(IEnumerable<string> lines)
         => lines

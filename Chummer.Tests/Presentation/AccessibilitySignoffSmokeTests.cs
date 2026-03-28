@@ -277,6 +277,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign return:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Build handoff:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Rules follow-through:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Migration continuity:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication trust:");
         RequireContains(string.Join("\n", projection.Watchouts), "cloud-only snapshot");
         RequireContains(string.Join("\n", projection.Watchouts), "GM-only notes");
     }
@@ -490,6 +492,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Campaign return:");
         RequireContains(projectorSource, "Support closure:");
         RequireContains(projectorSource, "Claimed device posture:");
+        RequireContains(projectorSource, "Migration continuity:");
+        RequireContains(projectorSource, "Publication trust:");
     }
 
     private static void DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel()
