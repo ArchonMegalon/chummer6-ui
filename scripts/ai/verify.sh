@@ -61,6 +61,9 @@ if ! rg -n 'PackageReference Include="\$\(ChummerUiKitPackageId\)" Version="\$\(
   exit 9
 fi
 
+echo "[verify] checking MIG-095 workspace benchmark ownership guard..."
+bash scripts/ai/milestones/mig-095-benchmark-ownership-check.sh
+
 if ! rg -n 'ChummerCampaignContractsPackageId|ChummerCampaignContractsPackageVersion|ChummerLocalCampaignContractsProject' \
   Directory.Build.props >/dev/null; then
   echo "[verify] FAIL: campaign-contract package plane properties are missing from Directory.Build.props."
