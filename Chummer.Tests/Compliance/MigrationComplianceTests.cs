@@ -5025,6 +5025,42 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Dense_explain_and_status_consumers_route_through_ui_kit_boundary_shim()
+    {
+        string patternBoundaryPath = FindPath("Chummer.Presentation", "UiKit", "ChummerPatternBoundary.cs");
+        string patternBoundaryText = File.ReadAllText(patternBoundaryPath);
+        string runtimeInspectorPath = FindPath("Chummer.Blazor", "Components", "Shared", "RuntimeInspectorPanel.razor");
+        string runtimeInspectorText = File.ReadAllText(runtimeInspectorPath);
+        string buildLabHandoffPath = FindPath("Chummer.Blazor", "Components", "Shared", "BuildLabHandoffPanel.razor");
+        string buildLabHandoffText = File.ReadAllText(buildLabHandoffPath);
+        string rulesNavigatorPath = FindPath("Chummer.Blazor", "Components", "Shared", "RulesNavigatorPanel.razor");
+        string rulesNavigatorText = File.ReadAllText(rulesNavigatorPath);
+        string npcPersonaPath = FindPath("Chummer.Blazor", "Components", "Shared", "NpcPersonaStudioPanel.razor");
+        string npcPersonaText = File.ReadAllText(npcPersonaPath);
+        string gmBoardPath = FindPath("Chummer.Blazor", "Components", "Shared", "GmBoardFeed.razor");
+        string gmBoardText = File.ReadAllText(gmBoardPath);
+
+        StringAssert.Contains(patternBoundaryText, "PackageId = \"Chummer.Ui.Kit\"");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptDenseTableHeader");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptDenseRowMetadata");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptExplainChip");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptApprovalChip");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptStaleStateBadge");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptSpiderStatusCard");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptArtifactStatusCard");
+
+        StringAssert.Contains(runtimeInspectorText, "ChummerPatternBoundary.DenseHeaderClass");
+        StringAssert.Contains(runtimeInspectorText, "ChummerPatternBoundary.DenseRowClass");
+        StringAssert.Contains(buildLabHandoffText, "ChummerPatternBoundary.ExplainChipClass");
+        StringAssert.Contains(buildLabHandoffText, "ChummerPatternBoundary.ArtifactStatusCardClass");
+        StringAssert.Contains(rulesNavigatorText, "ChummerPatternBoundary.ExplainChipClass");
+        StringAssert.Contains(npcPersonaText, "ChummerPatternBoundary.ApprovalChipClass");
+        StringAssert.Contains(npcPersonaText, "ChummerPatternBoundary.DenseRowClass");
+        StringAssert.Contains(gmBoardText, "ChummerPatternBoundary.SpiderStatusCardClass");
+        StringAssert.Contains(gmBoardText, "ChummerPatternBoundary.StaleBadgeClass");
+    }
+
+    [TestMethod]
     public void Dual_heads_wire_keyboard_shortcuts_for_core_commands()
     {
         string blazorShellPath = FindPath("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor");
