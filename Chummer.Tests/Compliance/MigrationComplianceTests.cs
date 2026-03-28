@@ -3007,6 +3007,37 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Package_plane_defaults_stay_explicit_and_repo_local_helpers_use_them()
+    {
+        string propsPath = FindPath("Directory.Build.props");
+        string propsText = File.ReadAllText(propsPath);
+        string buildScriptText = File.ReadAllText(FindPath("scripts", "ai", "build.sh"));
+        string testScriptText = File.ReadAllText(FindPath("scripts", "ai", "test.sh"));
+        string restoreScriptText = File.ReadAllText(FindPath("scripts", "ai", "restore.sh"));
+        string helperScriptText = File.ReadAllText(FindPath("scripts", "ai", "with-package-plane.sh"));
+        string desktopRuntimeProjectText = File.ReadAllText(FindPath("Chummer.Desktop.Runtime", "Chummer.Desktop.Runtime.csproj"));
+
+        StringAssert.Contains(propsText, "<ChummerUseLocalCompatibilityTree Condition=\"'$(ChummerUseLocalCompatibilityTree)' == ''\">false</ChummerUseLocalCompatibilityTree>");
+        StringAssert.Contains(propsText, "<ChummerRunContractsPackageId Condition=\"'$(ChummerRunContractsPackageId)' == ''\">Chummer.Run.Contracts</ChummerRunContractsPackageId>");
+        StringAssert.Contains(propsText, "<ChummerRunContractsPackageVersion Condition=\"'$(ChummerRunContractsPackageVersion)' == ''\">0.1.0-preview</ChummerRunContractsPackageVersion>");
+        StringAssert.Contains(propsText, "<ChummerHubRegistryContractsPackageId Condition=\"'$(ChummerHubRegistryContractsPackageId)' == ''\">Chummer.Hub.Registry.Contracts</ChummerHubRegistryContractsPackageId>");
+        StringAssert.Contains(propsText, "<ChummerHubRegistryContractsPackageVersion Condition=\"'$(ChummerHubRegistryContractsPackageVersion)' == ''\">0.1.0-preview</ChummerHubRegistryContractsPackageVersion>");
+        StringAssert.Contains(buildScriptText, "with-package-plane.sh");
+        StringAssert.Contains(testScriptText, "with-package-plane.sh");
+        StringAssert.Contains(restoreScriptText, "with-package-plane.sh");
+        StringAssert.Contains(helperScriptText, "missing local compatibility-tree owner projects:");
+        StringAssert.Contains(helperScriptText, "CHUMMER_PUBLISHED_FEED_SOURCES");
+        StringAssert.Contains(helperScriptText, "Chummer.Run.Contracts");
+        StringAssert.Contains(helperScriptText, "Chummer.Hub.Registry.Contracts");
+        StringAssert.Contains(helperScriptText, "-p:ChummerUseLocalCompatibilityTree=true");
+        StringAssert.Contains(desktopRuntimeProjectText, "ProjectReference Include=\"$(ChummerLocalHubRegistryContractsProject)\"");
+        StringAssert.Contains(desktopRuntimeProjectText, "PackageReference Include=\"$(ChummerHubRegistryContractsPackageId)\" Version=\"$(ChummerHubRegistryContractsPackageVersion)\"");
+        Assert.IsFalse(
+            desktopRuntimeProjectText.Contains("HintPath>..\\..\\chummer-hub-registry", StringComparison.Ordinal),
+            "desktop runtime must not depend on sibling hub-registry build outputs.");
+    }
+
+    [TestMethod]
     public void Blazor_desktop_host_project_is_present_and_photino_backed()
     {
         string projectPath = FindPath("Chummer.Blazor.Desktop", "Chummer.Blazor.Desktop.csproj");

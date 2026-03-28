@@ -26,6 +26,47 @@ fi
 echo "[verify] checking contract package consumption..."
 bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 
+if ! rg -n '<ChummerUseLocalCompatibilityTree Condition="'\''\$\(ChummerUseLocalCompatibilityTree\)'\'' == '\'''\''">false</ChummerUseLocalCompatibilityTree>' \
+  Directory.Build.props >/dev/null; then
+  echo "[verify] FAIL: the local compatibility tree must be opt-in instead of the ambient default."
+  exit 20
+fi
+
+if ! rg -n 'ChummerRunContractsPackageId|ChummerRunContractsPackageVersion|ChummerHubRegistryContractsPackageId|ChummerHubRegistryContractsPackageVersion|ChummerLocalHubRegistryContractsProject' \
+  Directory.Build.props >/dev/null; then
+  echo "[verify] FAIL: run-service and hub-registry contract package-plane properties are missing from Directory.Build.props."
+  exit 21
+fi
+
+if ! rg -n 'with-package-plane\.sh' \
+  scripts/ai/build.sh scripts/ai/test.sh scripts/ai/restore.sh \
+  scripts/ai/milestones/b13-accessibility-signoff-check.sh \
+  scripts/test-blazor-components.sh scripts/build-desktop-installer.sh >/dev/null; then
+  echo "[verify] FAIL: repo-local build, test, restore, and installer flows must route through the package-plane helper."
+  exit 22
+fi
+
+if ! rg -n 'PackageReference Include="\$\(ChummerHubRegistryContractsPackageId\)" Version="\$\(ChummerHubRegistryContractsPackageVersion\)"' \
+  Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj >/dev/null; then
+  echo "[verify] FAIL: desktop runtime must consume hub-registry contracts through the package plane fallback."
+  exit 23
+fi
+
+if ! rg -n 'PackageReference Include="\$\(ChummerRunContractsPackageId\)" Version="\$\(ChummerRunContractsPackageVersion\)"' \
+  Chummer.Presentation/Chummer.Presentation.csproj \
+  Chummer.Blazor/Chummer.Blazor.csproj \
+  Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj \
+  Chummer.Avalonia/Chummer.Avalonia.csproj \
+  Chummer.Tests/Chummer.Tests.csproj >/dev/null; then
+  echo "[verify] FAIL: workbench projects must consume run contracts through the package plane fallback."
+  exit 25
+fi
+
+if rg -n 'HintPath>.*chummer-hub-registry' Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj >/dev/null; then
+  echo "[verify] FAIL: desktop runtime must not depend on sibling hub-registry build artifacts."
+  exit 24
+fi
+
 if [ -d Chummer.Session.Web ] || [ -d Chummer.Coach.Web ]; then
   echo "[verify] FAIL: play/mobile heads still exist in the presentation repo."
   exit 7

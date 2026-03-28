@@ -263,7 +263,7 @@ build_windows_installer() {
   build_payload_zip "$payload_zip"
 
   rm -rf "$installer_out_dir"
-  dotnet publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
+  "$REPO_ROOT/scripts/ai/with-package-plane.sh" publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
     -c Release \
     -r "$RID" \
     --self-contained true \
