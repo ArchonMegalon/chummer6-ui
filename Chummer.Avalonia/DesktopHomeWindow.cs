@@ -318,6 +318,11 @@ internal sealed class DesktopHomeWindow : Window
             _buildExplainProjection.RulePosture
         ];
 
+        foreach (string receipt in _buildExplainProjection.CompatibilityReceipts)
+        {
+            lines.Add(receipt);
+        }
+
         foreach (string watchout in _buildExplainProjection.Watchouts)
         {
             lines.Add($"Watchout: {watchout}");
