@@ -144,26 +144,49 @@ internal static class AccessibilitySignoffSmokeTests
             ],
             MigrationPreview: [],
             GeneratedAtUtc: DateTimeOffset.Parse("2026-03-27T10:20:00+00:00"));
-        DesktopBuildPathSuggestion buildPathSuggestion = new(
-            BuildKitId: "edge-runner-starter",
-            Title: "Edge Runner Starter",
-            Targets: ["sr6"],
-            TrustTier: ArtifactTrustTiers.Curated,
-            Visibility: ArtifactVisibilityModes.Public);
-        DesktopBuildPathPreview buildPathPreview = new(
-            State: "ready",
-            RuntimeFingerprint: "sha256:sr6-preview",
-            ChangeSummaries:
-            [
-                "Validate a compatible runtime before you apply this BuildKit: runtime sha256:sr6-preview with no extra rule packs."
-            ],
-            DiagnosticMessages:
-            [
-                "This BuildKit is ready to flow through the workbench and into a compatible runtime receipt."
-            ],
-            RequiresConfirmation: true);
+        DesktopBuildPathCandidate[] buildPathCandidates =
+        [
+            new DesktopBuildPathCandidate(
+                new DesktopBuildPathSuggestion(
+                    BuildKitId: "edge-runner-starter",
+                    Title: "Edge Runner Starter",
+                    Targets: ["sr6"],
+                    TrustTier: ArtifactTrustTiers.Curated,
+                    Visibility: ArtifactVisibilityModes.Public),
+                new DesktopBuildPathPreview(
+                    State: "ready",
+                    RuntimeFingerprint: "sha256:sr6-preview",
+                    ChangeSummaries:
+                    [
+                        "Validate a compatible runtime before you apply this BuildKit: runtime sha256:sr6-preview with no extra rule packs."
+                    ],
+                    DiagnosticMessages:
+                    [
+                        "This BuildKit is ready to flow through the workbench and into a compatible runtime receipt."
+                    ],
+                    RequiresConfirmation: true)),
+            new DesktopBuildPathCandidate(
+                new DesktopBuildPathSuggestion(
+                    BuildKitId: "street-sam-starter",
+                    Title: "Street Sam Starter",
+                    Targets: ["sr6"],
+                    TrustTier: ArtifactTrustTiers.Curated,
+                    Visibility: ArtifactVisibilityModes.Public),
+                new DesktopBuildPathPreview(
+                    State: "review",
+                    RuntimeFingerprint: "sha256:sr6-preview",
+                    ChangeSummaries:
+                    [
+                        "Street Sam Starter keeps the armor-first path visible for the same dossier."
+                    ],
+                    DiagnosticMessages:
+                    [
+                        "Street Sam Starter still needs manual review before it lands."
+                    ],
+                    RequiresConfirmation: false))
+        ];
 
-        DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, activeRuntime, runtimeInspector, buildPathSuggestion, buildPathPreview);
+        DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, activeRuntime, runtimeInspector, buildPathCandidates);
         RequireContains(projection.NextSafeAction, "rebind the active profile");
         RequireContains(projection.ExplainFocus, "Explain focus:");
         RequireContains(projection.ExplainFocus, "Build path focus: Edge Runner Starter");
@@ -178,6 +201,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Compatibility receipt:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "profile rebind");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path receipt: Edge Runner Starter is ready");
+        if (projection.BuildPathComparisons.Count < 2)
+        {
+            throw new InvalidOperationException("Desktop build/explain projection should compare multiple grounded build paths in the flagship home cockpit.");
+        }
+        RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Edge Runner Starter");
+        RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Street Sam Starter");
         RequireContains(projection.Summary, "Metatype B");
         RequireContains(projection.Summary, "SR6");
         RequireContains(projection.Summary, "Used, Prototype");
@@ -193,12 +222,17 @@ internal static class AccessibilitySignoffSmokeTests
             [],
             build: null,
             rules: null,
-            buildPathSuggestion: new DesktopBuildPathSuggestion(
-                BuildKitId: "street-sam-starter",
-                Title: "Street Sam Starter",
-                Targets: ["sr5"],
-                TrustTier: ArtifactTrustTiers.Curated,
-                Visibility: ArtifactVisibilityModes.Public));
+            buildPathCandidates:
+            [
+                new DesktopBuildPathCandidate(
+                    new DesktopBuildPathSuggestion(
+                        BuildKitId: "street-sam-starter",
+                        Title: "Street Sam Starter",
+                        Targets: ["sr5"],
+                        TrustTier: ArtifactTrustTiers.Curated,
+                        Visibility: ArtifactVisibilityModes.Public),
+                    Preview: null)
+            ]);
         RequireContains(projection.NextSafeAction, "Create or import the first dossier");
         RequireContains(projection.ExplainFocus, "Claim the install");
         RequireContains(projection.RuntimeHealthSummary, "no active runtime profile");
@@ -206,6 +240,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projection.RulePosture, "Rule posture is still generic");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "no grounded runtime fingerprint");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path receipt: Street Sam Starter is available");
+        RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Street Sam Starter");
         if (projection.Watchouts.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should keep explicit watchouts even before the first workspace exists.");
@@ -223,10 +258,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_buildExplainProjection.ReturnTarget");
         RequireContains(source, "_buildExplainProjection.RulePosture");
         RequireContains(source, "_buildExplainProjection.CompatibilityReceipts");
+        RequireContains(source, "_buildExplainProjection.BuildPathComparisons");
         RequireContains(source, "_buildExplainProjection.Watchouts");
         RequireContains(source, "client.GetShellBootstrapAsync");
         RequireContains(source, "client.GetRuntimeInspectorProfileAsync");
         RequireContains(source, "client.GetBuildPathSuggestionsAsync");
+        RequireContains(source, "ReadBuildPathCandidatesAsync");
         RequireContains(source, "client.GetBuildPathPreviewAsync");
         RequireContains(source, "client.GetBuildAsync");
         RequireContains(source, "client.GetRulesAsync");
@@ -234,6 +271,7 @@ internal static class AccessibilitySignoffSmokeTests
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeBuildExplainProjector.cs");
         RequireContains(projectorSource, "Compatibility receipt:");
         RequireContains(projectorSource, "Build path receipt:");
+        RequireContains(projectorSource, "Build path compare:");
     }
 
     private static void DesktopHome_exposes_claim_aware_install_and_update_actions()

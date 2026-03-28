@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Desktop.Runtime;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
 
