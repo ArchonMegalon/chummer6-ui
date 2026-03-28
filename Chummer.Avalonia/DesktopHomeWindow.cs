@@ -20,16 +20,19 @@ internal sealed class DesktopHomeWindow : Window
     private readonly DesktopPreferenceState _preferences;
     private IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
     private DesktopHomeCampaignProjection _campaignProjection;
+    private DesktopHomeSupportProjection _supportProjection;
     private DesktopHomeBuildExplainProjection _buildExplainProjection;
     private readonly TextBlock _introText;
     private readonly TextBlock _installSummaryText;
     private readonly TextBlock _updateSummaryText;
     private readonly TextBlock _campaignText;
+    private readonly TextBlock _supportText;
     private readonly TextBlock _buildExplainText;
     private readonly TextBlock _workspaceSummaryText;
     private readonly StackPanel _installActionsRow;
     private readonly StackPanel _updateActionsRow;
     private readonly StackPanel _campaignActionsRow;
+    private readonly StackPanel _supportActionsRow;
     private readonly StackPanel _buildActionsRow;
     private readonly StackPanel _workspaceActionsRow;
 
@@ -39,6 +42,7 @@ internal sealed class DesktopHomeWindow : Window
         DesktopPreferenceState preferences,
         IReadOnlyList<WorkspaceListItem> recentWorkspaces,
         DesktopHomeCampaignProjection campaignProjection,
+        DesktopHomeSupportProjection supportProjection,
         DesktopHomeBuildExplainProjection buildExplainProjection)
     {
         _installState = installState;
@@ -46,6 +50,7 @@ internal sealed class DesktopHomeWindow : Window
         _preferences = preferences;
         _recentWorkspaces = recentWorkspaces;
         _campaignProjection = campaignProjection;
+        _supportProjection = supportProjection;
         _buildExplainProjection = buildExplainProjection;
 
         Title = "Chummer Desktop Home";
@@ -79,6 +84,12 @@ internal sealed class DesktopHomeWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _supportText = new TextBlock
+        {
+            Text = BuildSupportBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
         _buildExplainText = new TextBlock
         {
             Text = BuildBuildExplainBody(),
@@ -94,6 +105,7 @@ internal sealed class DesktopHomeWindow : Window
         _installActionsRow = CreateActionRow(CreateInstallActions());
         _updateActionsRow = CreateActionRow(CreateUpdateActions());
         _campaignActionsRow = CreateActionRow(CreateCampaignActions());
+        _supportActionsRow = CreateActionRow(CreateSupportActions());
         _buildActionsRow = CreateActionRow(CreateBuildExplainActions());
         _workspaceActionsRow = CreateActionRow(CreateWorkspaceActions());
 
@@ -124,6 +136,10 @@ internal sealed class DesktopHomeWindow : Window
                         "Campaign return and restore",
                         _campaignText,
                         _campaignActionsRow),
+                    CreateSection(
+                        "Support closure and fix notices",
+                        _supportText,
+                        _supportActionsRow),
                     CreateSection(
                         "Build and explain next",
                         _buildExplainText,
@@ -164,21 +180,23 @@ internal sealed class DesktopHomeWindow : Window
         DesktopPreferenceState preferences = ReadPreferences();
         IReadOnlyList<WorkspaceListItem> workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
         DesktopHomeCampaignProjection campaignProjection = await ReadCampaignProjectionAsync(client).ConfigureAwait(true);
+        DesktopHomeSupportProjection supportProjection = await ReadSupportProjectionAsync(client, installState).ConfigureAwait(true);
         DesktopHomeBuildExplainProjection buildExplainProjection = await ReadBuildExplainProjectionAsync(client, workspaces).ConfigureAwait(true);
 
-        if (!ShouldShow(installContext, updateStatus, workspaces))
+        if (!ShouldShow(installContext, updateStatus, workspaces, supportProjection))
         {
             return;
         }
 
-        DesktopHomeWindow dialog = new(installState, updateStatus, preferences, workspaces, campaignProjection, buildExplainProjection);
+        DesktopHomeWindow dialog = new(installState, updateStatus, preferences, workspaces, campaignProjection, supportProjection, buildExplainProjection);
         await dialog.ShowDialog(owner);
     }
 
     private static bool ShouldShow(
         DesktopInstallLinkingStartupContext? installContext,
         DesktopUpdateClientStatus updateStatus,
-        IReadOnlyList<WorkspaceListItem> workspaces)
+        IReadOnlyList<WorkspaceListItem> workspaces,
+        DesktopHomeSupportProjection supportProjection)
     {
         if (installContext?.ShouldPrompt == true)
         {
@@ -186,6 +204,11 @@ internal sealed class DesktopHomeWindow : Window
         }
 
         if (!string.Equals(updateStatus.Status, "current", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (supportProjection.NeedsAttention)
         {
             return true;
         }
@@ -296,6 +319,22 @@ internal sealed class DesktopHomeWindow : Window
         catch
         {
             return DesktopHomeCampaignProjector.Create(summary: null);
+        }
+    }
+
+    private static async Task<DesktopHomeSupportProjection> ReadSupportProjectionAsync(
+        IChummerClient client,
+        DesktopInstallLinkingState installState)
+    {
+        try
+        {
+            return DesktopHomeSupportProjector.Create(
+                await client.GetDesktopHomeSupportDigestsAsync(CancellationToken.None).ConfigureAwait(false),
+                DesktopInstallLinkingRuntime.IsClaimed(installState));
+        }
+        catch
+        {
+            return DesktopHomeSupportProjector.Create(Array.Empty<DesktopHomeSupportDigest>(), DesktopInstallLinkingRuntime.IsClaimed(installState));
         }
     }
 
@@ -468,6 +507,22 @@ internal sealed class DesktopHomeWindow : Window
         return string.Join("\n", lines);
     }
 
+    private string BuildSupportBody()
+    {
+        List<string> lines =
+        [
+            $"Next safe action: {_supportProjection.NextSafeAction}",
+            _supportProjection.Summary
+        ];
+
+        foreach (string highlight in _supportProjection.Highlights)
+        {
+            lines.Add(highlight);
+        }
+
+        return string.Join("\n", lines);
+    }
+
     private string BuildBuildExplainBody()
     {
         List<string> lines =
@@ -569,6 +624,34 @@ internal sealed class DesktopHomeWindow : Window
         return actions;
     }
 
+    private IReadOnlyList<Button> CreateSupportActions()
+    {
+        if (!_supportProjection.HasTrackedCase)
+        {
+            return
+            [
+                CreateButton("Open install support", OpenInstallSupport, isPrimary: true),
+                DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                    ? CreateButton("Open account", static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+                    : CreateButton("Link this copy", OpenInstallLinkingAsync)
+            ];
+        }
+
+        List<Button> actions =
+        [
+            CreateButton(_supportProjection.PrimaryActionLabel ?? "Open tracked case", OpenPrimarySupportFollowThrough, isPrimary: true)
+        ];
+
+        if (!string.IsNullOrWhiteSpace(_supportProjection.DetailHref)
+            && !string.Equals(_supportProjection.DetailHref, _supportProjection.PrimaryActionHref, StringComparison.OrdinalIgnoreCase))
+        {
+            actions.Add(CreateButton("Open tracked case", OpenTrackedSupportCase));
+        }
+
+        actions.Add(CreateButton("Open install support", OpenInstallSupport));
+        return actions;
+    }
+
     private IReadOnlyList<Button> CreateWorkspaceActions()
     {
         if (_recentWorkspaces.Count == 0)
@@ -600,6 +683,15 @@ internal sealed class DesktopHomeWindow : Window
     private bool OpenInstallSupport()
         => DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_installState);
 
+    private bool OpenTrackedSupportCase()
+        => !string.IsNullOrWhiteSpace(_supportProjection.DetailHref)
+           && DesktopInstallLinkingRuntime.TryOpenRelativePortal(_supportProjection.DetailHref!);
+
+    private bool OpenPrimarySupportFollowThrough()
+        => !string.IsNullOrWhiteSpace(_supportProjection.PrimaryActionHref)
+           ? DesktopInstallLinkingRuntime.TryOpenRelativePortal(_supportProjection.PrimaryActionHref!)
+           : OpenTrackedSupportCase();
+
     private bool OpenUpdateSupport()
         => DesktopInstallLinkingRuntime.TryOpenSupportPortalForUpdate(_installState, _updateStatus);
 
@@ -630,6 +722,7 @@ internal sealed class DesktopHomeWindow : Window
                 ?? throw new InvalidOperationException("Desktop home refresh requires an IChummerClient instance."));
             _recentWorkspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
             _campaignProjection = await ReadCampaignProjectionAsync(client).ConfigureAwait(true);
+            _supportProjection = await ReadSupportProjectionAsync(client, _installState).ConfigureAwait(true);
             _buildExplainProjection = await ReadBuildExplainProjectionAsync(client, _recentWorkspaces).ConfigureAwait(true);
         }
         catch
@@ -641,11 +734,13 @@ internal sealed class DesktopHomeWindow : Window
         _installSummaryText.Text = BuildInstallSummary();
         _updateSummaryText.Text = BuildUpdateSummary();
         _campaignText.Text = BuildCampaignBody();
+        _supportText.Text = BuildSupportBody();
         _buildExplainText.Text = BuildBuildExplainBody();
         _workspaceSummaryText.Text = BuildWorkspaceSummary();
         ResetActionRow(_installActionsRow, CreateInstallActions());
         ResetActionRow(_updateActionsRow, CreateUpdateActions());
         ResetActionRow(_campaignActionsRow, CreateCampaignActions());
+        ResetActionRow(_supportActionsRow, CreateSupportActions());
         ResetActionRow(_buildActionsRow, CreateBuildExplainActions());
         ResetActionRow(_workspaceActionsRow, CreateWorkspaceActions());
     }

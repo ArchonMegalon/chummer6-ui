@@ -1064,6 +1064,9 @@ public class CharacterOverviewPresenterTests
         public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
             => Task.FromResult<AccountCampaignSummary?>(null);
 
+        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<DesktopHomeSupportDigest>>([]);
+
         public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
             if (ThrowOnCloseWorkspace)

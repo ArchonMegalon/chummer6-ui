@@ -23,9 +23,11 @@ internal static class AccessibilitySignoffSmokeTests
             BlazorHome_uses_local_chummer6_flagship_media_samples();
             BlazorCampaignSpineShowcase_uses_customer_facing_build_path_copy();
             DesktopHomeCampaignProjector_uses_real_campaign_restore_truth();
+            DesktopHomeSupportProjector_uses_real_support_case_truth();
             DesktopHomeBuildExplainProjector_uses_real_contract_state();
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
             DesktopHome_wires_the_campaign_projection_into_the_summary_panel();
+            DesktopHome_wires_the_support_projection_into_the_summary_panel();
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
             DesktopHome_exposes_claim_aware_install_and_update_actions();
             DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance();
@@ -484,6 +486,47 @@ internal static class AccessibilitySignoffSmokeTests
         }
     }
 
+    private static void DesktopHomeSupportProjector_uses_real_support_case_truth()
+    {
+        DesktopHomeSupportProjection projection = DesktopHomeSupportProjector.Create(
+        [
+            new DesktopHomeSupportDigest(
+                CaseId: "case-123",
+                Title: "Preview update did not carry the fix",
+                Summary: "The tracked case is attached to the linked install and still needs one final reporter-side confirmation step.",
+                StatusLabel: "Released",
+                StageLabel: "Released",
+                NextSafeAction: "Open downloads or update this linked install to pick up the reporter-ready fix.",
+                ClosureSummary: "The fix reached preview 0.6.3-smoke.",
+                VerificationSummary: "After you update on the affected install, confirm whether the fix worked here.",
+                DetailHref: "/account/support/case-123",
+                PrimaryActionLabel: "Open downloads",
+                PrimaryActionHref: "/downloads",
+                UpdatedLabel: "2026-03-28 16:05 UTC",
+                FixedReleaseLabel: "preview 0.6.3-smoke",
+                AffectedInstallSummary: "This case stays attached to the linked avalonia · linux x64 · preview 0.6.2-smoke install (install-smoke-001).",
+                FollowUpLaneSummary: "Follow-up stays inside Account > Support for this signed-in report.",
+                ReleaseProgressSummary: "The fix reached preview 0.6.3-smoke. Update or reinstall on the affected device to pick it up.",
+                ReporterActionNeeded: false,
+                CanVerifyFix: true)
+        ],
+        installClaimed: true);
+
+        RequireContains(projection.Summary, "Tracked case:");
+        RequireContains(projection.Summary, "Preview update did not carry the fix");
+        RequireContains(projection.NextSafeAction, "Open downloads");
+        RequireContains(string.Join("\n", projection.Highlights), "Stage: Released");
+        RequireContains(string.Join("\n", projection.Highlights), "Release progress:");
+        RequireContains(string.Join("\n", projection.Highlights), "Verification:");
+        RequireContains(string.Join("\n", projection.Highlights), "Fixed release: preview 0.6.3-smoke");
+        RequireContains(string.Join("\n", projection.Highlights), "Affected install:");
+        RequireContains(string.Join("\n", projection.Highlights), "Follow-up:");
+        if (!projection.NeedsAttention || !projection.HasTrackedCase)
+        {
+            throw new InvalidOperationException("Desktop support projection should mark reporter-verification follow-through as attention-worthy when a tracked fix is ready.");
+        }
+    }
+
     private static void DesktopHome_wires_the_campaign_projection_into_the_summary_panel()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
@@ -507,6 +550,28 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Claimed device posture:");
         RequireContains(projectorSource, "Migration continuity:");
         RequireContains(projectorSource, "Publication trust:");
+    }
+
+    private static void DesktopHome_wires_the_support_projection_into_the_summary_panel()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        RequireContains(source, "ReadSupportProjectionAsync");
+        RequireContains(source, "BuildSupportBody()");
+        RequireContains(source, "_supportProjection.NextSafeAction");
+        RequireContains(source, "_supportProjection.Summary");
+        RequireContains(source, "_supportProjection.Highlights");
+        RequireContains(source, "CreateSupportActions()");
+        RequireContains(source, "\"Support closure and fix notices\"");
+        RequireContains(source, "OpenPrimarySupportFollowThrough");
+        RequireContains(source, "OpenTrackedSupportCase");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal");
+        RequireContains(source, "client.GetDesktopHomeSupportDigestsAsync");
+
+        string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeSupportProjector.cs");
+        RequireContains(projectorSource, "Tracked case:");
+        RequireContains(projectorSource, "Release progress:");
+        RequireContains(projectorSource, "Verification:");
+        RequireContains(projectorSource, "Affected install:");
     }
 
     private static void DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel()

@@ -163,6 +163,16 @@ public static class DesktopInstallLinkingRuntime
         return TryOpenPublicPortal("/account#desktop");
     }
 
+    public static bool TryOpenRelativePortal(string relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            return false;
+        }
+
+        return TryOpenPublicPortal(relativePath.Trim());
+    }
+
     public static bool TryOpenSupportPortal()
     {
         return TryOpenPublicPortal("/account/support");
