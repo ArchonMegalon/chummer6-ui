@@ -585,6 +585,16 @@ public class ShellPresenterTests
             return Task.FromResult<RuntimeInspectorProjection?>(null);
         }
 
+        public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct)
+        {
+            return Task.FromResult<IReadOnlyList<DesktopBuildPathSuggestion>>([]);
+        }
+
+        public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct)
+        {
+            return Task.FromResult<DesktopBuildPathPreview?>(null);
+        }
+
         public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => throw new NotImplementedException();
 
         public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();

@@ -1,6 +1,7 @@
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation;
 
 namespace Chummer.Presentation.Overview;
 
@@ -21,22 +22,32 @@ public static class DesktopHomeBuildExplainProjector
         CharacterBuildSection? build,
         CharacterRulesSection? rules,
         ActiveRuntimeStatusProjection? activeRuntime = null,
-        RuntimeInspectorProjection? runtimeInspector = null)
+        RuntimeInspectorProjection? runtimeInspector = null,
+        DesktopBuildPathSuggestion? buildPathSuggestion = null,
+        DesktopBuildPathPreview? buildPathPreview = null)
     {
         string runtimeHealthSummary = BuildRuntimeHealthSummary(activeRuntime, runtimeInspector);
 
         if (workspaces.Count == 0)
         {
+            List<string> compatibilityReceipts =
+            [
+                "Compatibility receipt: no grounded runtime fingerprint is attached yet, so campaign-safe build and explain proof still needs the first claimed workspace."
+            ];
+            compatibilityReceipts.AddRange(BuildBuildPathReceipts(buildPathSuggestion, buildPathPreview));
+
             return new DesktopHomeBuildExplainProjection(
                 "No workspace is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.",
-                "Create or import the first dossier before you trust this install to carry campaign continuity.",
-                "Claim the install and seed one real workspace so grounded build receipts, rule answers, and support closure all share the same continuity target.",
+                buildPathSuggestion is null
+                    ? "Create or import the first dossier before you trust this install to carry campaign continuity."
+                    : $"Create or import the first dossier, then review the recommended {buildPathSuggestion.Title} build path before you trust this install to carry campaign continuity.",
+                buildPathSuggestion is null
+                    ? "Claim the install and seed one real workspace so grounded build receipts, rule answers, and support closure all share the same continuity target."
+                    : $"Claim the install, seed one real workspace, and hand the suggested {buildPathSuggestion.Title} build path into a grounded receipt before you reopen campaign work.",
                 runtimeHealthSummary,
                 "No workspace return target is pinned yet.",
                 "Rule posture is still generic until the first workspace restores a grounded runtime fingerprint.",
-                [
-                    "Compatibility receipt: no grounded runtime fingerprint is attached yet, so campaign-safe build and explain proof still needs the first claimed workspace."
-                ],
+                compatibilityReceipts,
                 [
                     "No grounded build lane is loaded yet for this desktop head.",
                     "Rules explanations stay generic until the first workspace is restored into local continuity."
@@ -50,6 +61,8 @@ public static class DesktopHomeBuildExplainProjector
         string runtimeFingerprint = string.IsNullOrWhiteSpace(activeRuntime?.RuntimeFingerprint)
             ? leadWorkspace.RulesetId
             : activeRuntime!.RuntimeFingerprint;
+
+        IReadOnlyList<string> buildPathReceipts = BuildBuildPathReceipts(buildPathSuggestion, buildPathPreview);
 
         if (build is null || rules is null)
         {
@@ -70,7 +83,9 @@ public static class DesktopHomeBuildExplainProjector
                 runtimeHealthSummary,
                 $"Return target: {displayName} on runtime {runtimeFingerprint}.",
                 $"Rule posture: runtime fingerprint {runtimeFingerprint} is pinned, but the live rules section still needs a refresh before you trust drift-sensitive decisions.",
-                BuildCompatibilityReceipts(runtimeInspector, runtimeFingerprint),
+                BuildCompatibilityReceipts(runtimeInspector, runtimeFingerprint)
+                    .Concat(buildPathReceipts)
+                    .ToArray(),
                 fallbackWatchouts);
         }
 
@@ -82,7 +97,10 @@ public static class DesktopHomeBuildExplainProjector
         string nextSafeAction = ResolveRefreshAction(displayName, runtimeInspector) ?? (remainingContactPoints == 0
             ? $"Continue {displayName}, but review contact allocation before you export or hand the dossier back into campaign play."
             : $"Continue {displayName} and inspect the grounded {buildLane} lane before you export, publish, or reopen campaign work.");
-        string explainFocus = $"Explain focus: {buildLane} with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.";
+        string buildPathFocus = buildPathSuggestion is null
+            ? string.Empty
+            : $" Build path focus: {buildPathSuggestion.Title} keeps the next grounded handoff explicit.";
+        string explainFocus = $"Explain focus: {buildLane} with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.{buildPathFocus}";
         string returnTarget = $"Return target: {displayName} on runtime {runtimeFingerprint}.";
         string installState = string.IsNullOrWhiteSpace(activeRuntime?.InstallState)
             ? "workspace-only"
@@ -104,6 +122,11 @@ public static class DesktopHomeBuildExplainProjector
             watchouts.Add($"Campaign rules cap this lane at {rules.MaxKarma} Karma before the next progression checkpoint changes.");
         }
 
+        if (buildPathPreview?.RequiresConfirmation == true)
+        {
+            watchouts.Add("The recommended build path still requires explicit confirmation before the grounded receipt can be emitted.");
+        }
+
         watchouts.AddRange(BuildRuntimeWatchouts(runtimeInspector));
 
         return new DesktopHomeBuildExplainProjection(
@@ -113,11 +136,44 @@ public static class DesktopHomeBuildExplainProjector
             runtimeHealthSummary,
             returnTarget,
             rulePosture,
-            BuildCompatibilityReceipts(runtimeInspector, runtimeFingerprint),
+            BuildCompatibilityReceipts(runtimeInspector, runtimeFingerprint)
+                .Concat(buildPathReceipts)
+                .ToArray(),
             watchouts
                 .Where(static item => !string.IsNullOrWhiteSpace(item))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray());
+    }
+
+    private static IReadOnlyList<string> BuildBuildPathReceipts(
+        DesktopBuildPathSuggestion? buildPathSuggestion,
+        DesktopBuildPathPreview? buildPathPreview)
+    {
+        if (buildPathSuggestion is null)
+        {
+            return [];
+        }
+
+        List<string> receipts =
+        [
+            buildPathPreview is null
+                ? $"Build path receipt: {buildPathSuggestion.Title} is available for {string.Join(", ", buildPathSuggestion.Targets)} once a grounded workspace is ready."
+                : $"Build path receipt: {buildPathSuggestion.Title} is {buildPathPreview.State} for this workspace on runtime {buildPathPreview.RuntimeFingerprint ?? "pending"}."
+        ];
+
+        string? firstChange = buildPathPreview?.ChangeSummaries.FirstOrDefault(summary => !string.IsNullOrWhiteSpace(summary));
+        if (!string.IsNullOrWhiteSpace(firstChange))
+        {
+            receipts.Add($"Build path change: {firstChange}");
+        }
+
+        string? firstDiagnostic = buildPathPreview?.DiagnosticMessages.FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
+        if (!string.IsNullOrWhiteSpace(firstDiagnostic))
+        {
+            receipts.Add($"Build path diagnostic: {firstDiagnostic}");
+        }
+
+        return receipts;
     }
 
     private static string BuildPriorityLadder(CharacterBuildSection build)

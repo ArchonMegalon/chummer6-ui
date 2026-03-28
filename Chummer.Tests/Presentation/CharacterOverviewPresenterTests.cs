@@ -970,6 +970,38 @@ public class CharacterOverviewPresenterTests
             return Task.FromResult(projection);
         }
 
+        public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct)
+        {
+            string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+            IReadOnlyList<DesktopBuildPathSuggestion> suggestions =
+            [
+                new DesktopBuildPathSuggestion(
+                    BuildKitId: string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal) ? "edge-runner-starter" : "street-sam-starter",
+                    Title: string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal) ? "Edge Runner Starter" : "Street Sam Starter",
+                    Targets: [normalizedRulesetId],
+                    TrustTier: ArtifactTrustTiers.Curated,
+                    Visibility: ArtifactVisibilityModes.Public)
+            ];
+            return Task.FromResult(suggestions);
+        }
+
+        public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct)
+        {
+            DesktopBuildPathPreview preview = new(
+                State: "ready",
+                RuntimeFingerprint: "sha256:core",
+                ChangeSummaries:
+                [
+                    "Validate a compatible runtime before you apply this BuildKit: runtime sha256:core with no extra rule packs."
+                ],
+                DiagnosticMessages:
+                [
+                    "This BuildKit is ready to flow through the workbench and into a compatible runtime receipt."
+                ],
+                RequiresConfirmation: true);
+            return Task.FromResult<DesktopBuildPathPreview?>(preview);
+        }
+
         public void SeedWorkspace(
             string workspaceId,
             string name,
