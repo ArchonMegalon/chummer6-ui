@@ -264,8 +264,10 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "CreateWorkspaceActions()");
         RequireContains(source, "Open current workspace");
         RequireContains(source, "Open work follow-through");
+        RequireContains(source, "Open work support");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkPortal()");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_recentWorkspaces[0].Id.Value)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace");
         RequireContains(source, "client.GetShellBootstrapAsync");
         RequireContains(source, "client.GetRuntimeInspectorProfileAsync");
         RequireContains(source, "client.GetBuildPathSuggestionsAsync");
@@ -288,10 +290,14 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "Link this copy");
         RequireContains(source, "Open devices and access");
         RequireContains(source, "Open current workspace");
+        RequireContains(source, "Open install support");
+        RequireContains(source, "Open update support");
         RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
         RequireContains(source, "RefreshHomeState();");
         RequireContains(source, "Last claim attempt:");
         RequireContains(source, "Manifest published:");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForUpdate");
     }
 
     private static void DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance()
