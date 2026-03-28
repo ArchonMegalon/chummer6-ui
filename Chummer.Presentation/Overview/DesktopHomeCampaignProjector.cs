@@ -14,9 +14,15 @@ public sealed record DesktopHomeCampaignProjection(
 
 public static class DesktopHomeCampaignProjector
 {
-    public static DesktopHomeCampaignProjection Create(AccountCampaignSummary? summary)
+    public static DesktopHomeCampaignProjection Create(
+        AccountCampaignSummary? summary,
+        IReadOnlyList<CampaignWorkspaceDigestProjection>? workspaceDigests = null)
     {
-        if (summary is null)
+        CampaignWorkspaceDigestProjection? leadDigest = workspaceDigests?
+            .OrderByDescending(static digest => digest.UpdatedAtUtc)
+            .FirstOrDefault();
+
+        if (summary is null && leadDigest is null)
         {
             return new DesktopHomeCampaignProjection(
                 "No signed-in campaign spine is loaded yet. Link this copy and open the account-aware route before you trust desktop restore, continuity, or install-specific closure.",
@@ -36,35 +42,64 @@ public static class DesktopHomeCampaignProjector
                 ]);
         }
 
-        CampaignWorkspaceProjection? leadWorkspace = summary.Workspaces
+        if (summary is null && leadDigest is not null)
+        {
+            return new DesktopHomeCampaignProjection(
+                $"Campaign posture: {leadDigest.ReturnSummary} {leadDigest.ActiveSceneSummary ?? string.Empty}".Trim(),
+                leadDigest.NextSafeAction,
+                "Restore packet: the calmer workspace digest is present, but the full account-backed restore packet still needs a refresh.",
+                $"Claimed device posture: {leadDigest.DeviceRoleSummary}",
+                $"Support closure: {leadDigest.SupportClosureSummary}",
+                LeadWorkspaceId: leadDigest.WorkspaceId,
+                ReadinessHighlights: FinalizeLines(leadDigest.ReadinessHighlights),
+                Watchouts: FinalizeLines(leadDigest.Watchouts));
+        }
+
+        AccountCampaignSummary groundedSummary = summary!;
+
+        CampaignWorkspaceProjection? leadWorkspace = groundedSummary.Workspaces
             .OrderByDescending(static workspace => workspace.LatestContinuity?.CapturedAtUtc ?? DateTimeOffset.MinValue)
             .FirstOrDefault();
-        BuildLabHandoffProjection? leadHandoff = summary.BuildLabHandoffs
+        leadDigest ??= workspaceDigests?
+            .FirstOrDefault(digest => string.Equals(digest.WorkspaceId, leadWorkspace?.WorkspaceId, StringComparison.OrdinalIgnoreCase))
+            ?? workspaceDigests?.OrderByDescending(static digest => digest.UpdatedAtUtc).FirstOrDefault();
+        BuildLabHandoffProjection? leadHandoff = groundedSummary.BuildLabHandoffs
             .OrderByDescending(static handoff => handoff.UpdatedAtUtc)
             .FirstOrDefault();
-        RulesNavigatorAnswerProjection? leadRulesAnswer = summary.RulesNavigator.FirstOrDefault();
-        LegacyMigrationReceiptProjection? leadMigration = summary.MigrationReceipts
+        RulesNavigatorAnswerProjection? leadRulesAnswer = groundedSummary.RulesNavigator.FirstOrDefault();
+        LegacyMigrationReceiptProjection? leadMigration = groundedSummary.MigrationReceipts
             .OrderByDescending(static receipt => receipt.ImportedAtUtc)
             .FirstOrDefault();
-        CreatorPublicationProjection? leadPublication = summary.CreatorPublications
+        CreatorPublicationProjection? leadPublication = groundedSummary.CreatorPublications
             .OrderByDescending(static publication => publication.UpdatedAtUtc)
             .FirstOrDefault();
-        WorkspaceRestoreProjection restore = summary.Restore;
+        WorkspaceRestoreProjection restore = groundedSummary.Restore;
         ClaimedDeviceRestoreProjection[] claimedDevices = restore.ClaimedDevices
             .Where(static device => !string.IsNullOrWhiteSpace(device.InstallationId))
             .Take(2)
             .ToArray();
 
         string summaryLine = leadWorkspace is null
-            ? $"Campaign posture: {summary.Dossiers.Count} dossier(s), {summary.Campaigns.Count} campaign(s), and {summary.Runs.Count} runboard lane(s) are attached to this account, but no current campaign workspace return target is pinned yet."
-            : $"Campaign posture: {leadWorkspace.ReturnSummary} {leadWorkspace.ActiveSceneSummary ?? string.Empty} {summary.Dossiers.Count} dossier(s), {summary.Campaigns.Count} campaign(s), and {summary.Runs.Count} runboard lane(s) stay attached to the same account-backed continuity packet.";
+            ? $"Campaign posture: {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard lane(s) are attached to this account, but no current campaign workspace return target is pinned yet."
+            : $"Campaign posture: {(leadDigest?.ReturnSummary ?? leadWorkspace.ReturnSummary)} {(leadDigest?.ActiveSceneSummary ?? leadWorkspace.ActiveSceneSummary) ?? string.Empty} {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard lane(s) stay attached to the same account-backed continuity packet.";
 
-        string nextSafeAction = ResolveNextSafeAction(summary, leadWorkspace, leadHandoff, restore);
+        string nextSafeAction = !string.IsNullOrWhiteSpace(leadDigest?.NextSafeAction)
+            ? leadDigest.NextSafeAction
+            : ResolveNextSafeAction(groundedSummary, leadWorkspace, leadHandoff, restore);
         string restoreSummary = $"Restore packet: {restore.RecentDossiers.Count} recent dossier(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentArtifacts.Count} reconnectable artifact(s), and {restore.ClaimedDevices.Count} claimed device(s) were generated at {restore.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
-        string deviceRoleSummary = BuildClaimedDeviceSummary(claimedDevices, restore.ClaimedDevices.Count);
-        string supportClosureSummary = ResolveSupportClosureSummary(leadHandoff, leadRulesAnswer);
+        string deviceRoleSummary = leadDigest is null
+            ? BuildClaimedDeviceSummary(claimedDevices, restore.ClaimedDevices.Count)
+            : $"Claimed device posture: {leadDigest.DeviceRoleSummary}";
+        string supportClosureSummary = leadDigest is null
+            ? ResolveSupportClosureSummary(leadHandoff, leadRulesAnswer)
+            : $"Support closure: {leadDigest.SupportClosureSummary}";
 
         List<string> readinessHighlights = [];
+        if (leadDigest is not null)
+        {
+            readinessHighlights.AddRange(leadDigest.ReadinessHighlights);
+        }
+
         if (leadWorkspace is not null)
         {
             readinessHighlights.Add($"Campaign return: {leadWorkspace.ReturnSummary}");
@@ -106,6 +141,11 @@ public static class DesktopHomeCampaignProjector
             ?? []);
 
         List<string> watchouts = [];
+        if (leadDigest is not null)
+        {
+            watchouts.AddRange(leadDigest.Watchouts);
+        }
+
         watchouts.AddRange(restore.ConflictSummaries);
         watchouts.AddRange(restore.LocalOnlyNotes);
         if (leadHandoff?.Watchouts is not null)
@@ -139,7 +179,7 @@ public static class DesktopHomeCampaignProjector
             restoreSummary,
             deviceRoleSummary,
             supportClosureSummary,
-            LeadWorkspaceId: leadWorkspace?.WorkspaceId,
+            LeadWorkspaceId: leadDigest?.WorkspaceId ?? leadWorkspace?.WorkspaceId,
             ReadinessHighlights: FinalizeLines(readinessHighlights),
             Watchouts: FinalizeLines(watchouts));
     }

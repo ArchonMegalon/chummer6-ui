@@ -181,7 +181,8 @@ internal sealed class DesktopHomeWindow : Window
         DesktopPreferenceState preferences = ReadPreferences();
         IReadOnlyList<WorkspaceListItem> workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
         AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(true);
-        DesktopHomeCampaignProjection campaignProjection = ReadCampaignProjection(campaignSummary);
+        IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(true);
+        DesktopHomeCampaignProjection campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests);
         DesktopHomeSupportProjection supportProjection = await ReadSupportProjectionAsync(client, installState).ConfigureAwait(true);
         DesktopHomeBuildExplainProjection buildExplainProjection = await ReadBuildExplainProjectionAsync(client, workspaces, campaignSummary).ConfigureAwait(true);
 
@@ -327,8 +328,22 @@ internal sealed class DesktopHomeWindow : Window
         }
     }
 
-    private static DesktopHomeCampaignProjection ReadCampaignProjection(AccountCampaignSummary? campaignSummary)
-        => DesktopHomeCampaignProjector.Create(campaignSummary);
+    private static async Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> ReadCampaignWorkspaceDigestsAsync(IChummerClient client)
+    {
+        try
+        {
+            return await client.GetCampaignWorkspaceDigestsAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch
+        {
+            return Array.Empty<CampaignWorkspaceDigestProjection>();
+        }
+    }
+
+    private static DesktopHomeCampaignProjection ReadCampaignProjection(
+        AccountCampaignSummary? campaignSummary,
+        IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests)
+        => DesktopHomeCampaignProjector.Create(campaignSummary, campaignWorkspaceDigests);
 
     private static async Task<DesktopHomeSupportProjection> ReadSupportProjectionAsync(
         IChummerClient client,

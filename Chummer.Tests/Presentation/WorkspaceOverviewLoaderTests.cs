@@ -66,6 +66,9 @@ public class WorkspaceOverviewLoaderTests
         public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
             => Task.FromResult<AccountCampaignSummary?>(null);
 
+        public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<CampaignWorkspaceDigestProjection>>(Array.Empty<CampaignWorkspaceDigestProjection>());
+
         public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
             => Task.FromResult<IReadOnlyList<DesktopHomeSupportDigest>>([]);
 

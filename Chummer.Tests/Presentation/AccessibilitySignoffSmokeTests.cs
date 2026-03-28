@@ -268,6 +268,20 @@ internal static class AccessibilitySignoffSmokeTests
             ],
             GeneratedAtUtc: DateTimeOffset.Parse("2026-03-27T12:09:00+00:00"));
 
+        CampaignWorkspaceDigestProjection digest = new(
+            WorkspaceId: workspace.WorkspaceId,
+            CampaignId: workspace.CampaignId,
+            CampaignName: workspace.CampaignName,
+            ReturnSummary: "Digest return summary keeps the calmer follow-through lane visible.",
+            RuleEnvironmentSummary: "campaign scope · approved · fp:campaign",
+            DeviceRoleSummary: "play_tablet on windows/avalonia (preview)",
+            SupportClosureSummary: "The calmer digest keeps the fix lane attached to the same claimed device.",
+            ActiveSceneSummary: "Scene digest keeps the current run summary visible.",
+            NextSafeAction: "Open the calmer workspace digest and continue from the pinned campaign lane.",
+            ReadinessHighlights: ["Digest highlight: return packet is current."],
+            Watchouts: ["Digest watchout: confirm the claimed device before reopening GM-only notes."],
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:10:00+00:00"));
+
         DesktopHomeCampaignProjection projection = DesktopHomeCampaignProjector.Create(
             new AccountCampaignSummary(
                 Dossiers: [dossier],
@@ -280,13 +294,16 @@ internal static class AccessibilitySignoffSmokeTests
                 RulesNavigator: [rules],
                 MigrationReceipts: [migration],
                 CreatorPublications: [publication],
-                Restore: restore));
+                Restore: restore),
+            [digest]);
 
-        RequireContains(projection.Summary, "Return to Neon Nights");
-        RequireContains(projection.NextSafeAction, "Resolve the restore conflict");
+        RequireContains(projection.Summary, "Digest return summary");
+        RequireContains(projection.NextSafeAction, "Open the calmer workspace digest");
         RequireContains(projection.RestoreSummary, "Restore packet:");
         RequireContains(projection.DeviceRoleSummary, "play_tablet");
-        RequireContains(projection.SupportClosureSummary, "The linked install can verify");
+        RequireContains(projection.SupportClosureSummary, "calmer digest keeps the fix lane");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Digest highlight:");
+        RequireContains(string.Join("\n", projection.Watchouts), "Digest watchout:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign return:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Current scene:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Build handoff:");
@@ -626,6 +643,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "\"Campaign return and restore\"");
         RequireContains(source, "Open current campaign workspace");
         RequireContains(source, "client.GetAccountCampaignSummaryAsync");
+        RequireContains(source, "client.GetCampaignWorkspaceDigestsAsync");
+        RequireContains(source, "ReadCampaignWorkspaceDigestsAsync");
 
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeCampaignProjector.cs");
         RequireContains(projectorSource, "Campaign return:");
@@ -633,6 +652,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Claimed device posture:");
         RequireContains(projectorSource, "Migration continuity:");
         RequireContains(projectorSource, "Publication trust:");
+        RequireContains(projectorSource, "CampaignWorkspaceDigestProjection");
     }
 
     private static void DesktopHome_wires_the_support_projection_into_the_summary_panel()
