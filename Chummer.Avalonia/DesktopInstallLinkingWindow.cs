@@ -65,6 +65,11 @@ internal sealed class DesktopInstallLinkingWindow : Window
                         Text = "Chummer keeps the binary canonical. Linking happens through an install claim code and a Hub-issued installation grant instead of mutating the installer per user.",
                         TextWrapping = TextWrapping.Wrap
                     },
+                    new TextBlock
+                    {
+                        Text = $"Shipping locales: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}. Install, update, and support trust flows should stay aligned across this desktop wave.",
+                        TextWrapping = TextWrapping.Wrap
+                    },
                     _summaryText,
                     new TextBlock
                     {
@@ -81,6 +86,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
                         Children =
                         {
                             CreateButton("Copy Install ID", CopyInstallIdAsync),
+                            CreateButton("Open Downloads", OpenDownloadsAsync),
+                            CreateButton("Open Support", OpenSupportAsync),
                             CreateButton("Open Account", OpenAccountAsync),
                             CreateButton("Link This Copy", LinkAsync, isDefault: true),
                             CreateButton("Continue as Guest", ContinueAsGuestAsync)
@@ -153,6 +160,34 @@ internal sealed class DesktopInstallLinkingWindow : Window
         else
         {
             SetStatus("Unable to open the Hub account page from this host.");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OpenDownloadsAsync()
+    {
+        if (DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
+        {
+            SetStatus("Opened downloads so you can review the current release and installer posture before linking.");
+        }
+        else
+        {
+            SetStatus("Unable to open downloads from this host.");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OpenSupportAsync()
+    {
+        if (DesktopInstallLinkingRuntime.TryOpenSupportPortal())
+        {
+            SetStatus("Opened support so you can keep the install-aware closure path nearby while linking this copy.");
+        }
+        else
+        {
+            SetStatus("Unable to open support from this host.");
         }
 
         return Task.CompletedTask;
