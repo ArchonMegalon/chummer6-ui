@@ -166,6 +166,11 @@ public static class DesktopHomeCampaignProjector
                 .Take(2)
                 .Select(static packet => $"Change packet: {packet.Label} — {packet.Summary}")
             ?? []);
+        readinessHighlights.AddRange(
+            leadWorkspace?.RosterTransfers?
+                .Take(2)
+                .Select(static transfer => $"Roster transfer: {transfer.Summary}")
+            ?? []);
 
         List<string> watchouts = [];
         if (leadDigest is not null)

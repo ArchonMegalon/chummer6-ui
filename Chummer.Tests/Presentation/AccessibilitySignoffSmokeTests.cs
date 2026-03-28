@@ -183,6 +183,40 @@ internal static class AccessibilitySignoffSmokeTests
                     Label: "Active scene",
                     Summary: "Dockside handoff is live and still pinned to the courier extraction.",
                     UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:06:00+00:00"))
+            ],
+            RosterTransfers:
+            [
+                new RosterTransferProjection(
+                    TransferId: "transfer-1",
+                    DossierId: "dossier-1",
+                    RunnerHandle: "APEX",
+                    PreviousOwnerUserId: "user-1",
+                    CurrentOwnerUserId: "user-2",
+                    SourceGroupId: "group-1",
+                    SourceGroupName: "Neon Nights",
+                    SourceCampaignId: "campaign-1",
+                    SourceCampaignName: "Neon Nights",
+                    SourceCrewId: "crew-1",
+                    SourceCrewName: "Neon Nights crew",
+                    TargetGroupId: "group-2",
+                    TargetGroupName: "Thursday Crew Relay",
+                    TargetCampaignId: "campaign-2",
+                    TargetCampaignName: "Thursday Crew Relay",
+                    TargetCrewId: "crew-2",
+                    TargetCrewName: "Thursday Crew Relay crew",
+                    InitiatedByUserId: "user-gm",
+                    Summary: "APEX moved into Thursday Crew Relay with governed ownership receipts attached.",
+                    AuditLines:
+                    [
+                        "GM moved the dossier into Thursday Crew Relay.",
+                        "Ownership moved with the same dossier id preserved."
+                    ],
+                    Receipts:
+                    [
+                        new CampaignConsequenceReceipt("group-1", "source_group", "Neon Nights"),
+                        new CampaignConsequenceReceipt("group-2", "target_group", "Thursday Crew Relay")
+                    ],
+                    TransferredAtUtc: DateTimeOffset.Parse("2026-03-27T12:06:30+00:00"))
             ]);
         BuildLabHandoffProjection handoff = new(
             HandoffId: "handoff-1",
@@ -324,6 +358,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Migration continuity:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication trust:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Change packet:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Roster transfer:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Server plane highlight:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Support lane:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Decision notice:");
