@@ -140,6 +140,25 @@ public sealed class HttpChummerClient : IChummerClient
         return payload;
     }
 
+    public async Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct)
+    {
+        using HttpResponseMessage response = await _httpClient.GetAsync("/api/v1/campaign-spine/me/workspace-digests", ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            return Array.Empty<CampaignWorkspaceDigestProjection>();
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Campaign workspace digest request failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        CampaignWorkspaceDigestProjection[]? payload = await response.Content.ReadFromJsonAsync<CampaignWorkspaceDigestProjection[]>(ct);
+        return payload ?? Array.Empty<CampaignWorkspaceDigestProjection>();
+    }
+
     public async Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
     {
         using HttpResponseMessage response = await _httpClient.GetAsync("/api/v1/support/cases/me/presented", ct);
