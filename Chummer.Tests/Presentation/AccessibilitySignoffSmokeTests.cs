@@ -170,7 +170,18 @@ internal static class AccessibilitySignoffSmokeTests
                 new CampaignReadinessCue("cue-1", "warning", "Rule drift review", "One local override still needs an explicit review before you trust the next export.")
             ],
             LatestContinuity: continuity,
-            ReturnSummary: "Return to Neon Nights via Dockside handoff with Apex pinned to the active run.");
+            ReturnSummary: "Return to Neon Nights via Dockside handoff with Apex pinned to the active run.",
+            ActiveSceneSummary: "Midnight Extraction is currently on Dockside handoff (r3). Recover the courier stays active with high pressure.",
+            NextSafeAction: "Resume Dockside handoff before you fan the recap-safe output out to the rest of the crew.",
+            ChangePackets:
+            [
+                new WorkspaceChangePacketProjection(
+                    PacketId: "packet-1",
+                    Kind: "scene",
+                    Label: "Active scene",
+                    Summary: "Dockside handoff is live and still pinned to the courier extraction.",
+                    UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:06:00+00:00"))
+            ]);
         BuildLabHandoffProjection handoff = new(
             HandoffId: "handoff-1",
             DossierId: "dossier-1",
@@ -275,10 +286,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projection.DeviceRoleSummary, "play_tablet");
         RequireContains(projection.SupportClosureSummary, "The linked install can verify");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign return:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Current scene:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Build handoff:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Rules follow-through:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Migration continuity:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication trust:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Change packet:");
         RequireContains(string.Join("\n", projection.Watchouts), "cloud-only snapshot");
         RequireContains(string.Join("\n", projection.Watchouts), "GM-only notes");
     }

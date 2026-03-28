@@ -57,7 +57,7 @@ public static class DesktopHomeCampaignProjector
 
         string summaryLine = leadWorkspace is null
             ? $"Campaign posture: {summary.Dossiers.Count} dossier(s), {summary.Campaigns.Count} campaign(s), and {summary.Runs.Count} runboard lane(s) are attached to this account, but no current campaign workspace return target is pinned yet."
-            : $"Campaign posture: {leadWorkspace.ReturnSummary} {summary.Dossiers.Count} dossier(s), {summary.Campaigns.Count} campaign(s), and {summary.Runs.Count} runboard lane(s) stay attached to the same account-backed continuity packet.";
+            : $"Campaign posture: {leadWorkspace.ReturnSummary} {leadWorkspace.ActiveSceneSummary ?? string.Empty} {summary.Dossiers.Count} dossier(s), {summary.Campaigns.Count} campaign(s), and {summary.Runs.Count} runboard lane(s) stay attached to the same account-backed continuity packet.";
 
         string nextSafeAction = ResolveNextSafeAction(summary, leadWorkspace, leadHandoff, restore);
         string restoreSummary = $"Restore packet: {restore.RecentDossiers.Count} recent dossier(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentArtifacts.Count} reconnectable artifact(s), and {restore.ClaimedDevices.Count} claimed device(s) were generated at {restore.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
@@ -68,6 +68,10 @@ public static class DesktopHomeCampaignProjector
         if (leadWorkspace is not null)
         {
             readinessHighlights.Add($"Campaign return: {leadWorkspace.ReturnSummary}");
+            if (!string.IsNullOrWhiteSpace(leadWorkspace.ActiveSceneSummary))
+            {
+                readinessHighlights.Add($"Current scene: {leadWorkspace.ActiveSceneSummary}");
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(leadHandoff?.CampaignReturnSummary))
@@ -94,6 +98,11 @@ public static class DesktopHomeCampaignProjector
             leadWorkspace?.ReadinessCues
                 .Take(3)
                 .Select(static cue => $"Readiness cue: {cue.Title} — {cue.Summary}")
+            ?? []);
+        readinessHighlights.AddRange(
+            leadWorkspace?.ChangePackets?
+                .Take(2)
+                .Select(static packet => $"Change packet: {packet.Label} — {packet.Summary}")
             ?? []);
 
         List<string> watchouts = [];
@@ -145,6 +154,11 @@ public static class DesktopHomeCampaignProjector
         if (!string.IsNullOrWhiteSpace(firstConflict))
         {
             return $"Resolve the restore conflict before you trust this copy for campaign return: {firstConflict}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(leadWorkspace?.NextSafeAction))
+        {
+            return leadWorkspace.NextSafeAction!;
         }
 
         CampaignReadinessCue? attentionCue = leadWorkspace?.ReadinessCues.FirstOrDefault(static cue => NeedsAttention(cue.Severity));
@@ -235,6 +249,6 @@ public static class DesktopHomeCampaignProjector
             .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Select(static line => line.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(5)
+            .Take(9)
             .ToArray();
 }
