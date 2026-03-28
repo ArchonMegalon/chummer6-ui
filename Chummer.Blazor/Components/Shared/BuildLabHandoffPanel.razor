@@ -1,4 +1,5 @@
 @using Chummer.Campaign.Contracts
+@using Chummer.Presentation.UiKit
 
 <section class="panel design-panel" data-build-lab-handoff-showcase="@Projection.HandoffId">
     <header class="panel-header">
@@ -15,7 +16,8 @@
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Tradeoffs + progression</h3>
-            <span class="badge">@Projection.ExplainEntryId</span>
+            <span class="@(ChummerPatternBoundary.ExplainChipClass(Projection.ExplainEntryId, "Build Lab handoff explain entry", active: true))"
+                  @attributes="@(ChummerPatternBoundary.ExplainChipAttributes(Projection.ExplainEntryId, "Build Lab handoff explain entry", active: true))">@Projection.ExplainEntryId</span>
         </div>
         <ul class="browse-detail-lines">
             @foreach (string line in Projection.TradeoffLines)
@@ -33,7 +35,9 @@
         </div>
         @foreach (PublicationSafeProjection output in Projection.Outputs)
         {
-            <article data-build-lab-output="@output.ProjectionId">
+            <article class="@(ChummerPatternBoundary.ArtifactStatusCardClass(output.Label, output.Kind, string.IsNullOrWhiteSpace(output.ArtifactId) ? "pending" : "available", available: !string.IsNullOrWhiteSpace(output.ArtifactId)))"
+                     @attributes="@(ChummerPatternBoundary.ArtifactStatusCardAttributes(output.Label, output.Kind, string.IsNullOrWhiteSpace(output.ArtifactId) ? "pending" : "available", available: !string.IsNullOrWhiteSpace(output.ArtifactId)))"
+                     data-build-lab-output="@output.ProjectionId">
                 <p><strong>@output.Label</strong> · @output.Kind</p>
                 <p class="note">@output.Summary</p>
                 @if (!string.IsNullOrWhiteSpace(output.ArtifactId))

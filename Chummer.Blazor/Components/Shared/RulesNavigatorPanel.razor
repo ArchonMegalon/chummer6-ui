@@ -1,4 +1,5 @@
 @using Chummer.Campaign.Contracts
+@using Chummer.Presentation.UiKit
 
 <section class="panel design-panel" data-rules-navigator-showcase="@Projection.EntryId">
     <header class="panel-header">
@@ -7,15 +8,18 @@
             <p class="note">@Projection.Question</p>
         </div>
         <div class="button-row compact">
-            <span>@Projection.ProvenanceLabel</span>
-            <span>@Projection.ExplainEntryId</span>
+            <span class="@(ChummerPatternBoundary.ExplainChipClass(Projection.ProvenanceLabel, "Rules navigator provenance label"))"
+                  @attributes="@(ChummerPatternBoundary.ExplainChipAttributes(Projection.ProvenanceLabel, "Rules navigator provenance label"))">@Projection.ProvenanceLabel</span>
+            <span class="@(ChummerPatternBoundary.ExplainChipClass(Projection.ExplainEntryId, "Rules navigator explain entry", active: true))"
+                  @attributes="@(ChummerPatternBoundary.ExplainChipAttributes(Projection.ExplainEntryId, "Rules navigator explain entry", active: true))">@Projection.ExplainEntryId</span>
         </div>
     </header>
 
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Grounded answer</h3>
-            <span class="badge">Before / after</span>
+            <span class="@(ChummerPatternBoundary.ExplainChipClass("Before / after", "Rules navigator before and after diff"))"
+                  @attributes="@(ChummerPatternBoundary.ExplainChipAttributes("Before / after", "Rules navigator before and after diff"))">Before / after</span>
         </div>
         <p><strong>@Projection.ShortAnswer</strong></p>
         <p class="note">Before: @Projection.BeforeSummary</p>
@@ -25,7 +29,8 @@
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Evidence + reuse</h3>
-            <span class="badge">@Projection.EvidenceLines.Count evidence line(s)</span>
+            <span class="@(ChummerPatternBoundary.ExplainChipClass($"{Projection.EvidenceLines.Count} evidence line(s)", "Rules navigator evidence line count"))"
+                  @attributes="@(ChummerPatternBoundary.ExplainChipAttributes($"{Projection.EvidenceLines.Count} evidence line(s)", "Rules navigator evidence line count"))">@Projection.EvidenceLines.Count evidence line(s)</span>
         </div>
         <ul class="browse-detail-lines">
             @foreach (string line in Projection.EvidenceLines)

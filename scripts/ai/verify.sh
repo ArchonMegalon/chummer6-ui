@@ -79,7 +79,7 @@ if rg -n 'namespace Chummer\.Campaign\.Contracts' \
   exit 16
 fi
 
-if rg -n '\b(class|record)\s+(TokenCanon|ThemeCompiler|ShellChrome|AccessibilityState|Banner|StaleStateBadge|ApprovalChip|OfflineBanner)\b|\b(static\s+)?UiAdapterPayload\s+Adapt(ShellChrome|AccessibilityState|Banner|StaleStateBadge|ApprovalChip|OfflineBanner)\s*\(' \
+if rg -n '\b(class|record)\s+(TokenCanon|ThemeCompiler|ShellChrome|AccessibilityState|Banner|StaleStateBadge|ApprovalChip|OfflineBanner|DenseTableHeader|DenseRowMetadata|ExplainChip|SpiderStatusCard|ArtifactStatusCard)\b|\b(static\s+)?UiAdapterPayload\s+Adapt(ShellChrome|AccessibilityState|Banner|StaleStateBadge|ApprovalChip|OfflineBanner|DenseTableHeader|DenseRowMetadata|ExplainChip|SpiderStatusCard|ArtifactStatusCard)\s*\(' \
   Chummer.Presentation Chummer.Blazor Chummer.Avalonia Chummer.Tests -g '*.cs' >/dev/null; then
   echo "[verify] FAIL: source-copied ui-kit token/theme/shell/accessibility primitives were reintroduced."
   exit 10

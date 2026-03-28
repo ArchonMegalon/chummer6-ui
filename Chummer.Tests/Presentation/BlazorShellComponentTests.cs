@@ -639,6 +639,7 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Lock trace lane");
         StringAssert.Contains(cut.Markup, "Pinned");
         StringAssert.Contains(cut.Markup, "Spider muted for 15 min");
+        StringAssert.Contains(cut.Markup, "chummer-card-spider");
         Assert.IsFalse(cut.Markup.Contains("chat-log", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -683,6 +684,7 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Invalidated by context shift.");
         StringAssert.Contains(cut.Markup, "Generated for Pass 2");
         StringAssert.Contains(cut.Markup, "Refresh trace lane");
+        StringAssert.Contains(cut.Markup, "chummer-badge-stale");
         Assert.IsTrue(cut.Find("[data-gm-board-primary-action='spider-1']").HasAttribute("disabled"));
     }
 
@@ -1174,6 +1176,8 @@ public sealed class BlazorShellComponentTests
         Assert.IsNotNull(cut.Find("[data-runtime-hub-diagnostics]"));
         Assert.HasCount(2, cut.FindAll("[data-runtime-rulepack-row]"));
         StringAssert.Contains(cut.Find("[data-runtime-rulepack-row='house.magic']").TextContent, "1");
+        StringAssert.Contains(cut.Markup, "chummer-dense-header");
+        StringAssert.Contains(cut.Markup, "chummer-dense-row");
     }
 
     [TestMethod]
@@ -1274,6 +1278,8 @@ public sealed class BlazorShellComponentTests
         Assert.IsNotNull(cut.Find("[data-npc-persona-approval]"));
         StringAssert.Contains(cut.Markup, "Decker Contact");
         StringAssert.Contains(cut.Markup, "Draft vs Approved");
+        StringAssert.Contains(cut.Markup, "chummer-chip-approved");
+        StringAssert.Contains(cut.Markup, "chummer-dense-row");
     }
 
     [TestMethod]
