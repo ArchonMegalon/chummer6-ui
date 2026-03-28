@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Chummer.Hub.Registry.Contracts.InstallLinking;
+using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Desktop.Runtime;
 
@@ -167,6 +168,25 @@ public static class DesktopInstallLinkingRuntime
         return TryOpenPublicPortal("/account/support");
     }
 
+    public static bool TryOpenSupportPortalForInstall(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return TryOpenPublicPortal(BuildSupportPortalRelativePathForInstall(state));
+    }
+
+    public static bool TryOpenSupportPortalForUpdate(DesktopInstallLinkingState state, DesktopUpdateClientStatus updateStatus)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(updateStatus);
+        return TryOpenPublicPortal(BuildSupportPortalRelativePathForUpdate(state, updateStatus));
+    }
+
+    public static bool TryOpenSupportPortalForWorkspace(DesktopInstallLinkingState state, WorkspaceListItem? workspace)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return TryOpenPublicPortal(BuildSupportPortalRelativePathForWorkspace(state, workspace));
+    }
+
     public static bool TryOpenDownloadsPortal()
     {
         return TryOpenPublicPortal("/downloads");
@@ -185,6 +205,99 @@ public static class DesktopInstallLinkingRuntime
         }
 
         return TryOpenPublicPortal($"/account/work/workspaces/{Uri.EscapeDataString(workspaceId.Trim())}");
+    }
+
+    public static string BuildSupportPortalRelativePathForInstall(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return BuildSupportPortalRelativePath(
+            new SupportPortalPrefill(
+                Kind: "install_help",
+                Title: $"Desktop install handoff needs support for {state.HeadId}",
+                Summary: $"This desktop install is {state.Status} on {state.ChannelId} {state.ApplicationVersion}.",
+                Detail: string.Join(
+                    "\n",
+                    new[]
+                    {
+                        $"Install ID: {state.InstallationId}",
+                        $"Head: {state.HeadId}",
+                        $"Version: {state.ApplicationVersion}",
+                        $"Channel: {state.ChannelId}",
+                        $"Platform: {state.Platform}/{state.Arch}",
+                        string.IsNullOrWhiteSpace(state.LastClaimMessage) ? null : $"Hub message: {state.LastClaimMessage}",
+                        string.IsNullOrWhiteSpace(state.LastClaimError) ? null : $"Claim error: {state.LastClaimError}"
+                    }.Where(static item => !string.IsNullOrWhiteSpace(item))),
+                InstallationId: state.InstallationId,
+                ApplicationVersion: state.ApplicationVersion,
+                ReleaseChannel: state.ChannelId,
+                HeadId: state.HeadId,
+                Platform: state.Platform,
+                Arch: state.Arch));
+    }
+
+    public static string BuildSupportPortalRelativePathForUpdate(DesktopInstallLinkingState state, DesktopUpdateClientStatus updateStatus)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(updateStatus);
+        return BuildSupportPortalRelativePath(
+            new SupportPortalPrefill(
+                Kind: "install_help",
+                Title: $"Desktop update posture needs review for {updateStatus.HeadId}",
+                Summary: $"This desktop install is {updateStatus.Status} on {updateStatus.ChannelId} {updateStatus.InstalledVersion}.",
+                Detail: string.Join(
+                    "\n",
+                    new[]
+                    {
+                        $"Install ID: {state.InstallationId}",
+                        $"Manifest: {updateStatus.LastManifestVersion ?? "unknown"}",
+                        updateStatus.LastManifestPublishedAtUtc is null
+                            ? null
+                            : $"Manifest published: {updateStatus.LastManifestPublishedAtUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
+                        $"Recommended action: {updateStatus.RecommendedAction}",
+                        string.IsNullOrWhiteSpace(updateStatus.LastError) ? null : $"Last error: {updateStatus.LastError}"
+                    }.Where(static item => !string.IsNullOrWhiteSpace(item))),
+                InstallationId: state.InstallationId,
+                ApplicationVersion: updateStatus.InstalledVersion,
+                ReleaseChannel: updateStatus.ChannelId,
+                HeadId: updateStatus.HeadId,
+                Platform: updateStatus.Platform,
+                Arch: updateStatus.Arch));
+    }
+
+    public static string BuildSupportPortalRelativePathForWorkspace(DesktopInstallLinkingState state, WorkspaceListItem? workspace)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (workspace is null)
+        {
+            return BuildSupportPortalRelativePathForInstall(state);
+        }
+
+        string workspaceName = string.IsNullOrWhiteSpace(workspace.Summary.Name)
+            ? workspace.Id.Value
+            : workspace.Summary.Name;
+        return BuildSupportPortalRelativePath(
+            new SupportPortalPrefill(
+                Kind: "bug_report",
+                Title: $"Workspace follow-through needs help for {workspaceName}",
+                Summary: $"Current workspace {workspaceName} on {workspace.RulesetId} needs support from the desktop home cockpit.",
+                Detail: string.Join(
+                    "\n",
+                    new[]
+                    {
+                        $"Workspace: {workspaceName}",
+                        $"Workspace ID: {workspace.Id.Value}",
+                        $"Ruleset: {workspace.RulesetId}",
+                        $"Build method: {workspace.Summary.BuildMethod}",
+                        $"Install ID: {state.InstallationId}",
+                        $"Head: {state.HeadId}",
+                        $"Version: {state.ApplicationVersion}"
+                    }.Where(static item => !string.IsNullOrWhiteSpace(item))),
+                InstallationId: state.InstallationId,
+                ApplicationVersion: state.ApplicationVersion,
+                ReleaseChannel: state.ChannelId,
+                HeadId: state.HeadId,
+                Platform: state.Platform,
+                Arch: state.Arch));
     }
 
     public static bool IsClaimed(DesktopInstallLinkingState state)
@@ -430,6 +543,34 @@ public static class DesktopInstallLinkingRuntime
         return DesktopCrashRuntime.TryOpenPathInShell(new Uri(uri, relativePath).ToString());
     }
 
+    private static string BuildSupportPortalRelativePath(SupportPortalPrefill prefill)
+    {
+        List<string> query = [];
+        AppendQueryParameter(query, "kind", prefill.Kind);
+        AppendQueryParameter(query, "title", prefill.Title);
+        AppendQueryParameter(query, "summary", prefill.Summary);
+        AppendQueryParameter(query, "detail", prefill.Detail);
+        AppendQueryParameter(query, "installationId", prefill.InstallationId);
+        AppendQueryParameter(query, "applicationVersion", prefill.ApplicationVersion);
+        AppendQueryParameter(query, "releaseChannel", prefill.ReleaseChannel);
+        AppendQueryParameter(query, "headId", prefill.HeadId);
+        AppendQueryParameter(query, "platform", prefill.Platform);
+        AppendQueryParameter(query, "arch", prefill.Arch);
+        return query.Count == 0
+            ? "/contact"
+            : $"/contact?{string.Join("&", query)}";
+    }
+
+    private static void AppendQueryParameter(List<string> query, string key, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        query.Add($"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value.Trim())}");
+    }
+
     private static string BuildErrorMessage(HttpResponseMessage response, string responseText)
     {
         try
@@ -468,6 +609,18 @@ public static class DesktopInstallLinkingRuntime
         using RSA rsa = RSA.Create(2048);
         return (rsa.ExportRSAPublicKeyPem(), rsa.ExportPkcs8PrivateKeyPem());
     }
+
+    private sealed record SupportPortalPrefill(
+        string? Kind,
+        string? Title,
+        string? Summary,
+        string? Detail,
+        string? InstallationId,
+        string? ApplicationVersion,
+        string? ReleaseChannel,
+        string? HeadId,
+        string? Platform,
+        string? Arch);
 
     private sealed record ProblemEnvelope(
         string? Title,
