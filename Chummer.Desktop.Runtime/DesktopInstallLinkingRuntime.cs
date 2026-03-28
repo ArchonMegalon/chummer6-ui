@@ -177,6 +177,16 @@ public static class DesktopInstallLinkingRuntime
         return TryOpenPublicPortal("/account/work");
     }
 
+    public static bool TryOpenWorkspacePortal(string workspaceId)
+    {
+        if (string.IsNullOrWhiteSpace(workspaceId))
+        {
+            return TryOpenWorkPortal();
+        }
+
+        return TryOpenPublicPortal($"/account/work/workspaces/{Uri.EscapeDataString(workspaceId.Trim())}");
+    }
+
     public static bool IsClaimed(DesktopInstallLinkingState state)
         => string.Equals(state.Status, ClaimedStatus, StringComparison.OrdinalIgnoreCase)
            && !string.IsNullOrWhiteSpace(state.GrantToken);

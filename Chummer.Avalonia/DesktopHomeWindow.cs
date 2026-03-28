@@ -26,6 +26,7 @@ internal sealed class DesktopHomeWindow : Window
     private readonly StackPanel _installActionsRow;
     private readonly StackPanel _updateActionsRow;
     private readonly StackPanel _buildActionsRow;
+    private readonly StackPanel _workspaceActionsRow;
 
     private DesktopHomeWindow(
         DesktopInstallLinkingState installState,
@@ -68,6 +69,7 @@ internal sealed class DesktopHomeWindow : Window
         _installActionsRow = CreateActionRow(CreateInstallActions());
         _updateActionsRow = CreateActionRow(CreateUpdateActions());
         _buildActionsRow = CreateActionRow(CreateBuildExplainActions());
+        _workspaceActionsRow = CreateActionRow(CreateWorkspaceActions());
 
         Content = new Border
         {
@@ -103,7 +105,7 @@ internal sealed class DesktopHomeWindow : Window
                     CreateSection(
                         "Recent workspaces",
                         BuildWorkspaceSummary(),
-                        []),
+                        _workspaceActionsRow),
                     new StackPanel
                     {
                         Orientation = Orientation.Horizontal,
@@ -460,7 +462,8 @@ internal sealed class DesktopHomeWindow : Window
 
         if (_recentWorkspaces.Count > 0)
         {
-            actions.Add(CreateButton("Open work follow-through", static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true));
+            actions.Add(CreateButton("Open current workspace", OpenCurrentWorkspace, isPrimary: true));
+            actions.Add(CreateButton("Open work follow-through", static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()));
         }
         else
         {
@@ -470,6 +473,29 @@ internal sealed class DesktopHomeWindow : Window
         actions.Add(CreateButton("Open support", static () => DesktopInstallLinkingRuntime.TryOpenSupportPortal()));
         return actions;
     }
+
+    private IReadOnlyList<Button> CreateWorkspaceActions()
+    {
+        if (_recentWorkspaces.Count == 0)
+        {
+            return
+            [
+                CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true),
+                CreateButton("Open support", static () => DesktopInstallLinkingRuntime.TryOpenSupportPortal())
+            ];
+        }
+
+        return
+        [
+            CreateButton("Open current workspace", OpenCurrentWorkspace, isPrimary: true),
+            CreateButton("Open work follow-through", static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()),
+            CreateButton("Open support", static () => DesktopInstallLinkingRuntime.TryOpenSupportPortal())
+        ];
+    }
+
+    private bool OpenCurrentWorkspace()
+        => _recentWorkspaces.Count > 0
+           && DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_recentWorkspaces[0].Id.Value);
 
     private async Task OpenInstallLinkingAsync()
     {
