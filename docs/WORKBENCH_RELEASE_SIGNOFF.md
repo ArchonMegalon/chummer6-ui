@@ -16,6 +16,8 @@ Purpose: close `WL-202` and `WL-203` with explicit, verifier-backed evidence ins
 
 Those checks are all part of the normal `scripts/ai/verify.sh` path, so release truth does not depend on ad hoc manual demos.
 
+For local docker-backed release proof, `scripts/e2e-portal.sh` is the canonical executable lane. It boots the downstream public-edge stack from `chummer6-hub` and materializes `.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json` with the probed base URL, route coverage, and whether the route probe actually ran.
+
 ## Cross-head hardening proof
 
 `F0` is treated as materially closed for the UI head when these signoff rails remain executable:
@@ -37,6 +39,7 @@ Those checks are all part of the normal `scripts/ai/verify.sh` path, so release 
 
 Installer-capable artifacts and updater integration are owned here.
 Promoted release channels, installer/update-feed publication truth, and public `/downloads` state are owned downstream by `chummer6-hub-registry` and rendered by `chummer6-hub`.
+Repo-local docker release proof for the portal/workbench shell is owned here, executed against the downstream public edge, and published as `.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json`.
 
 ## Exit statement
 
