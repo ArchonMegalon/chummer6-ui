@@ -20,7 +20,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         ArgumentNullException.ThrowIfNull(context);
 
         _state = context.State;
-        Title = "Link this copy";
+        Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title");
         Width = 760;
         Height = 520;
         MinWidth = 620;
@@ -56,25 +56,25 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 {
                     new TextBlock
                     {
-                        Text = "Link this desktop copy to your account",
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.heading"),
                         FontSize = 22,
                         FontWeight = FontWeight.SemiBold,
                         TextWrapping = TextWrapping.Wrap
                     },
                     new TextBlock
                     {
-                        Text = "Chummer keeps the binary canonical. Linking happens through an install claim code and a Hub-issued installation grant instead of mutating the installer per user.",
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary"),
                         TextWrapping = TextWrapping.Wrap
                     },
                     new TextBlock
                     {
-                        Text = $"Shipping locales: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}. Install, update, and support trust flows should stay aligned across this desktop wave.",
+                        Text = DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.shipping_locales", languageCode: null, DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
                         TextWrapping = TextWrapping.Wrap
                     },
                     _summaryText,
                     new TextBlock
                     {
-                        Text = "Install claim code",
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label"),
                         FontWeight = FontWeight.SemiBold
                     },
                     _claimCodeBox,
@@ -86,14 +86,16 @@ internal sealed class DesktopInstallLinkingWindow : Window
                         Spacing = 10,
                         Children =
                         {
-                            CreateButton("Copy Install ID", CopyInstallIdAsync),
-                            CreateButton("Open Downloads", OpenDownloadsAsync),
-                            CreateButton("Open Support", OpenSupportAsync),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id"), CopyInstallIdAsync),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads"), OpenDownloadsAsync),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support"), OpenSupportAsync),
                             CreateButton(
-                                DesktopInstallLinkingRuntime.IsClaimed(_state) ? "Open Work" : "Open Account",
+                                DesktopInstallLinkingRuntime.IsClaimed(_state)
+                                    ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work")
+                                    : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account"),
                                 OpenFollowThroughAsync),
-                            CreateButton("Link This Copy", LinkAsync, isDefault: true),
-                            CreateButton("Continue as Guest", ContinueAsGuestAsync)
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy"), LinkAsync, isDefault: true),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_guest"), ContinueAsGuestAsync)
                         }
                     }
                 }
