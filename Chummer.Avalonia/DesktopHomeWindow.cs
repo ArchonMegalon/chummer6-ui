@@ -120,37 +120,37 @@ internal sealed class DesktopHomeWindow : Window
                 {
                     new TextBlock
                     {
-                        Text = "Desktop home cockpit",
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.home.title", _preferences.Language),
                         FontSize = 24,
                         FontWeight = FontWeight.SemiBold
                     },
                     _introText,
                     CreateSection(
-                        "Install and support",
+                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.install_support", _preferences.Language),
                         _installSummaryText,
                         _installActionsRow),
                     CreateSection(
-                        "Update posture",
+                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.update_posture", _preferences.Language),
                         _updateSummaryText,
                         _updateActionsRow),
                     CreateSection(
-                        "Campaign return and restore",
+                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.campaign_return", _preferences.Language),
                         _campaignText,
                         _campaignActionsRow),
                     CreateSection(
-                        "Support closure and fix notices",
+                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.support_closure", _preferences.Language),
                         _supportText,
                         _supportActionsRow),
                     CreateSection(
-                        "Build and explain next",
+                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.build_explain", _preferences.Language),
                         _buildExplainText,
                         _buildActionsRow),
                     CreateSection(
-                        "Language and trust surfaces",
+                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.language_trust", _preferences.Language),
                         $"Language: {DesktopLocalizationCatalog.GetDisplayLabel(_preferences.Language)}\nShipping locales: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}\nLanguage changes apply fully on restart during the current desktop wave.",
                         []),
                     CreateSection(
-                        "Recent workspaces",
+                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.recent_workspaces", _preferences.Language),
                         _workspaceSummaryText,
                         _workspaceActionsRow),
                     new StackPanel

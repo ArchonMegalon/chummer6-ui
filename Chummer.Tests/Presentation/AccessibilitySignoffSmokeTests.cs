@@ -640,7 +640,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_campaignProjection.ReadinessHighlights");
         RequireContains(source, "_campaignProjection.Watchouts");
         RequireContains(source, "CreateCampaignActions()");
-        RequireContains(source, "\"Campaign return and restore\"");
+        RequireContains(source, "desktop.home.section.campaign_return");
         RequireContains(source, "Open current campaign workspace");
         RequireContains(source, "client.GetAccountCampaignSummaryAsync");
         RequireContains(source, "client.GetCampaignWorkspaceDigestsAsync");
@@ -664,7 +664,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_supportProjection.Summary");
         RequireContains(source, "_supportProjection.Highlights");
         RequireContains(source, "CreateSupportActions()");
-        RequireContains(source, "\"Support closure and fix notices\"");
+        RequireContains(source, "desktop.home.section.support_closure");
         RequireContains(source, "OpenPrimarySupportFollowThrough");
         RequireContains(source, "OpenTrackedSupportCase");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal");
@@ -692,6 +692,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_buildExplainProjection.Watchouts");
         RequireContains(source, "CreateBuildExplainActions()");
         RequireContains(source, "CreateWorkspaceActions()");
+        RequireContains(source, "desktop.home.section.build_explain");
+        RequireContains(source, "desktop.home.section.recent_workspaces");
         RequireContains(source, "Open current workspace");
         RequireContains(source, "Open work follow-through");
         RequireContains(source, "Open work support");
@@ -743,10 +745,12 @@ internal static class AccessibilitySignoffSmokeTests
     private static void DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopInstallLinkingWindow.cs");
-        RequireContains(source, "Shipping locales:");
-        RequireContains(source, "Open Downloads");
-        RequireContains(source, "Open Support");
-        RequireContains(source, "Open Work");
+        RequireContains(source, "desktop.install_link.shipping_locales");
+        RequireContains(source, "desktop.install_link.button.open_downloads");
+        RequireContains(source, "desktop.install_link.button.open_support");
+        RequireContains(source, "desktop.install_link.button.open_work");
+        RequireContains(source, "desktop.install_link.title");
+        RequireContains(source, "GetRequiredString");
         RequireContains(source, "Last claim attempt:");
         RequireContains(source, "Hub message:");
         RequireContains(source, "Claim error:");

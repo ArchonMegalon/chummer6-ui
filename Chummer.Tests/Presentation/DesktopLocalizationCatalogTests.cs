@@ -21,4 +21,17 @@ public class DesktopLocalizationCatalogTests
             new[] { "en-us", "de-de", "fr-fr", "ja-jp", "pt-br", "zh-cn" },
             DesktopLocalizationCatalog.ShippingLanguages.Select(language => language.Code).ToArray());
     }
+
+    [TestMethod]
+    public void RequiredTrustSurfaceKeys_resolve_for_every_shipping_language()
+    {
+        foreach (string key in DesktopLocalizationCatalog.RequiredTrustSurfaceKeys())
+        {
+            foreach (string languageCode in DesktopLocalizationCatalog.ShippingLanguages.Select(language => language.Code))
+            {
+                string value = DesktopLocalizationCatalog.GetRequiredString(key, languageCode);
+                Assert.IsFalse(string.IsNullOrWhiteSpace(value), $"Expected trust-surface localization for {key} / {languageCode}.");
+            }
+        }
+    }
 }
