@@ -89,7 +89,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
                             CreateButton("Copy Install ID", CopyInstallIdAsync),
                             CreateButton("Open Downloads", OpenDownloadsAsync),
                             CreateButton("Open Support", OpenSupportAsync),
-                            CreateButton("Open Account", OpenAccountAsync),
+                            CreateButton(
+                                DesktopInstallLinkingRuntime.IsClaimed(_state) ? "Open Work" : "Open Account",
+                                OpenFollowThroughAsync),
                             CreateButton("Link This Copy", LinkAsync, isDefault: true),
                             CreateButton("Continue as Guest", ContinueAsGuestAsync)
                         }
@@ -152,15 +154,29 @@ internal sealed class DesktopInstallLinkingWindow : Window
         SetStatus("Copied the installation id to the clipboard.");
     }
 
-    private Task OpenAccountAsync()
+    private Task OpenFollowThroughAsync()
     {
-        if (DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+        if (DesktopInstallLinkingRuntime.IsClaimed(_state))
         {
-            SetStatus("Opened your Hub account so you can review or copy the install claim code.");
+            if (DesktopInstallLinkingRuntime.TryOpenWorkPortal())
+            {
+                SetStatus("Opened the account-aware work route so you can confirm restore, support, and update follow-through on this claimed install.");
+            }
+            else
+            {
+                SetStatus("Unable to open the account-aware work route from this host.");
+            }
         }
         else
         {
-            SetStatus("Unable to open the Hub account page from this host.");
+            if (DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+            {
+                SetStatus("Opened your Hub account so you can review or copy the install claim code.");
+            }
+            else
+            {
+                SetStatus("Unable to open the Hub account page from this host.");
+            }
         }
 
         return Task.CompletedTask;
@@ -182,9 +198,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private Task OpenSupportAsync()
     {
-        if (DesktopInstallLinkingRuntime.TryOpenSupportPortal())
+        if (DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_state))
         {
-            SetStatus("Opened support so you can keep the install-aware closure path nearby while linking this copy.");
+            SetStatus("Opened install-aware support so the closure path stays tied to this exact copy while you link it.");
         }
         else
         {
@@ -256,6 +272,37 @@ internal sealed class DesktopInstallLinkingWindow : Window
         string claimStatus = DesktopInstallLinkingRuntime.IsClaimed(state)
             ? $"Linked. Grant expires {state.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")} UTC."
             : "Not linked yet. You can keep using this copy as a guest.";
-        return $"Installation ID: {state.InstallationId}\nHead: {state.HeadId}\nVersion: {state.ApplicationVersion}\nChannel: {state.ChannelId}\nPlatform: {state.Platform}/{state.Arch}\nStatus: {claimStatus}";
+
+        List<string> lines =
+        [
+            $"Installation ID: {state.InstallationId}",
+            $"Head: {state.HeadId}",
+            $"Version: {state.ApplicationVersion}",
+            $"Channel: {state.ChannelId}",
+            $"Platform: {state.Platform}/{state.Arch}",
+            $"Status: {claimStatus}"
+        ];
+
+        if (state.LastClaimAttemptUtc is not null)
+        {
+            lines.Add($"Last claim attempt: {state.LastClaimAttemptUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.LastClaimMessage))
+        {
+            lines.Add($"Hub message: {state.LastClaimMessage}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.LastClaimError))
+        {
+            lines.Add($"Claim error: {state.LastClaimError}");
+        }
+
+        lines.Add(
+            DesktopInstallLinkingRuntime.IsClaimed(state)
+                ? "Next safe action: open the account-aware work route and confirm restore, update, and support follow-through from this claimed install."
+                : "Next safe action: copy the installation id, redeem the Hub claim code, and keep install-aware support open until the grant lands.");
+
+        return string.Join("\n", lines);
     }
 }
