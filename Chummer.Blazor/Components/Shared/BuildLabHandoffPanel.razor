@@ -28,6 +28,30 @@
         <p class="note">@string.Join(" | ", Projection.ProgressionOutcomes)</p>
     </section>
 
+    @if (!string.IsNullOrWhiteSpace(Projection.PlannerCoverageSummary)
+        || Projection.PlannerCoverageLines is { Count: > 0 })
+    {
+        <section class="coach-card" data-build-lab-handoff-planner-coverage>
+            <div class="coach-card-header">
+                <h3>Planner coverage</h3>
+                <span class="badge">Follow-through</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Projection.PlannerCoverageSummary))
+            {
+                <p><strong>@Projection.PlannerCoverageSummary</strong></p>
+            }
+            @if (Projection.PlannerCoverageLines is { Count: > 0 })
+            {
+                <ul class="browse-detail-lines">
+                    @foreach (string line in Projection.PlannerCoverageLines)
+                    {
+                        <li>@line</li>
+                    }
+                </ul>
+            }
+        </section>
+    }
+
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Dossier + campaign outputs</h3>
@@ -107,5 +131,13 @@
         [
             new PublicationSafeProjection("projection-demo", "dossier_card", "Living dossier", "Stable runner identity.")
         ],
-        UpdatedAtUtc: DateTimeOffset.UtcNow);
+        UpdatedAtUtc: DateTimeOffset.UtcNow,
+        PlannerCoverageSummary: "2 of 4 build follow-through checkpoints are already grounded.",
+        PlannerCoverageLines:
+        [
+            "Campaign continuity: no governed campaign workspace is attached yet, so the handoff still lands on the living dossier first.",
+            "Outputs: 1 dossier or campaign-safe output is already attached to the handoff.",
+            "Restore posture: no restore conflicts are currently blocking replay-safe handoff follow-through.",
+            "Claimed install: no linked device is attached yet for install-aware follow-through."
+        ]);
 }

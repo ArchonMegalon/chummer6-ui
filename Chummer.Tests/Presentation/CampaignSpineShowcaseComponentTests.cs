@@ -167,6 +167,14 @@ public sealed class CampaignSpineShowcaseComponentTests
             RuntimeCompatibilitySummary: "Runtime drift still needs one safe rebind.",
             CampaignReturnSummary: "Campaign return lands on the same dossier identity.",
             SupportClosureSummary: "Support closure can cite the same runtime fingerprint.",
+            PlannerCoverageSummary: "4 of 4 build follow-through checkpoints are already grounded.",
+            PlannerCoverageLines:
+            [
+                "Campaign continuity: Neon Nights is already attached as the governed return lane for this handoff.",
+                "Outputs: 1 dossier or campaign-safe output is already attached to the handoff.",
+                "Restore posture: no restore conflicts are currently blocking replay-safe handoff follow-through.",
+                "Claimed install: 1 linked device is already attached for install-aware follow-through."
+            ],
             Watchouts:
             [
                 "Do not publish until the runtime rebind is recorded."
@@ -181,10 +189,14 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "artifact-1");
         StringAssert.Contains(cut.Markup, "25 / 50 / 100 Karma path");
         StringAssert.Contains(cut.Markup, "Campaign-safe handoff");
+        StringAssert.Contains(cut.Markup, "Planner coverage");
+        StringAssert.Contains(cut.Markup, "4 of 4 build follow-through checkpoints are already grounded.");
+        StringAssert.Contains(cut.Markup, "Campaign continuity: Neon Nights is already attached as the governed return lane for this handoff.");
         StringAssert.Contains(cut.Markup, "Rebind runtime before dossier handoff.");
         StringAssert.Contains(cut.Markup, "chummer-explain-chip");
         StringAssert.Contains(cut.Markup, "chummer-card-artifact");
         Assert.IsNotNull(cut.Find("[data-build-lab-handoff-rail]"));
+        Assert.IsNotNull(cut.Find("[data-build-lab-handoff-planner-coverage]"));
     }
 
     [TestMethod]
