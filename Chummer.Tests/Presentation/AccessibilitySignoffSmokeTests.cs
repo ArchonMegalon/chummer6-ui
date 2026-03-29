@@ -337,6 +337,10 @@ internal static class AccessibilitySignoffSmokeTests
                 PublicationSummary: "Two publication-safe recap packets are ready for the same campaign lane.",
                 RosterSummary: "One dossier and one crew are ready to reopen.",
                 RunboardSummary: "Runboard keeps the active scene and objective pressure visible from the same shared campaign lane.",
+                TravelModeSummary: "Two claimed devices can reopen Neon Nights, but one travel lane still needs a grounded checkpoint before the next safehouse handoff.",
+                TravelPrefetchInventorySummary: "2 dossiers, 1 campaign, 1 rule environment, and the recap-safe packet stay bounded to the staged travel cache.",
+                CampaignMemorySummary: "The governed memory lane keeps Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.",
+                CampaignMemoryReturnSummary: "Return through Dockside handoff so the same workspace reopens the courier chase without a lossy recap jump.",
                 NextSafeAction: "Server-plane next safe action keeps the follow-through explicit.",
                 ReadinessHighlights: ["Server plane highlight: the roster is current."],
                 Watchouts: ["Server plane watchout: verify the preview tablet before resuming GM-only notes."],
@@ -362,6 +366,10 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Claimed device:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Change packet:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Roster transfer:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Travel mode:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Travel inventory:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign memory:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign memory return:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Server plane highlight:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Support lane:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Decision notice:");
@@ -715,7 +723,17 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "CampaignWorkspaceDigestProjection");
         RequireContains(projectorSource, "Support lane:");
         RequireContains(projectorSource, "Decision notice:");
+        RequireContains(projectorSource, "Travel mode:");
+        RequireContains(projectorSource, "Travel inventory:");
+        RequireContains(projectorSource, "Campaign memory:");
+        RequireContains(projectorSource, "Campaign memory return:");
         RequireContains(projectorSource, "DesktopHomeCampaignServerPlane");
+
+        string serverPlaneSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeCampaignServerPlane.cs");
+        RequireContains(serverPlaneSource, "TravelModeSummary");
+        RequireContains(serverPlaneSource, "TravelPrefetchInventorySummary");
+        RequireContains(serverPlaneSource, "CampaignMemorySummary");
+        RequireContains(serverPlaneSource, "CampaignMemoryReturnSummary");
     }
 
     private static void DesktopHome_wires_the_support_projection_into_the_summary_panel()
