@@ -132,6 +132,78 @@ public sealed class HttpChummerClientBuildPathTests
     }
 
     [TestMethod]
+    public async Task Build_path_preview_uses_session_runtime_fallback_when_runtime_requirements_summary_is_missing()
+    {
+        StrictHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.Method == HttpMethod.Post
+                && request.RequestUri?.PathAndQuery == "/api/hub/projects/buildkit/shadow-brief/install-preview?ruleset=sr6")
+            {
+                return JsonResponse("""
+{
+  "state": "ready",
+  "runtimeFingerprint": "sha256:campaign",
+  "changes": [],
+  "diagnostics": [],
+  "requiresConfirmation": true
+}
+""");
+            }
+
+            if (request.Method == HttpMethod.Get
+                && request.RequestUri?.PathAndQuery == "/api/hub/projects/buildkit/shadow-brief/compatibility?ruleset=sr6")
+            {
+                return JsonResponse("""
+{
+  "kind": "buildkit",
+  "itemId": "shadow-brief",
+  "rows": [
+    {
+      "kind": "session-runtime",
+      "label": "Session Runtime Bundle",
+      "state": "blocked",
+      "currentValue": "workbench-first",
+      "notes": "Apply this build path in the workbench first, then hand the emitted build receipt into a compatible runtime and rule environment that match: sr6: sha256:campaign; no extra rule packs. No extra prompt resolution or grounded action staging is required. Next safe action: Apply this build path in the workbench, emit the build receipt, and hand it into the selected workspace."
+    },
+    {
+      "kind": "campaign-return",
+      "label": "Campaign Return",
+      "state": "compatible",
+      "currentValue": "compatible",
+      "notes": "The emitted build receipt can return through the selected workspace after review."
+    },
+    {
+      "kind": "support-closure",
+      "label": "Support Closure",
+      "state": "compatible",
+      "currentValue": "compatible",
+      "notes": "Support closure can cite the same runtime and build receipt once the handoff lands."
+    }
+  ]
+}
+""");
+            }
+
+            throw new InvalidOperationException($"Unexpected request: {request.Method} {request.RequestUri}");
+        });
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        HttpChummerClient client = new(httpClient);
+
+        DesktopBuildPathPreview? preview = await client.GetBuildPathPreviewAsync("shadow-brief", new CharacterWorkspaceId("workspace-1"), "sr6", CancellationToken.None);
+
+        Assert.IsNotNull(preview);
+        Assert.IsNotNull(preview.RuntimeCompatibilitySummary);
+        StringAssert.Contains(preview.RuntimeCompatibilitySummary, "Next safe action:");
+        StringAssert.Contains(preview.RuntimeCompatibilitySummary, "hand it into the selected workspace");
+        Assert.AreEqual("The emitted build receipt can return through the selected workspace after review.", preview.CampaignReturnSummary);
+        Assert.AreEqual("Support closure can cite the same runtime and build receipt once the handoff lands.", preview.SupportClosureSummary);
+    }
+
+    [TestMethod]
     public async Task Support_case_digests_use_presented_home_projection_endpoint()
     {
         StrictHttpMessageHandler handler = new((request, _) =>
