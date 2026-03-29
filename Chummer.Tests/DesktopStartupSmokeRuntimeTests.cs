@@ -59,21 +59,45 @@ public sealed class DesktopStartupSmokeRuntimeTests
     }
 
     [TestMethod]
-    public async Task TryHandleAsync_throws_when_force_crash_is_enabled()
+    public async Task TryHandleAsync_returns_one_when_force_crash_is_enabled()
     {
         string? priorForceCrash = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_FORCE_CRASH");
 
         try
         {
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_FORCE_CRASH", "true");
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => DesktopStartupSmokeRuntime.TryHandleAsync(
+            int? exitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(
                 "avalonia",
                 ["--startup-smoke"],
-                CancellationToken.None)).ConfigureAwait(false);
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual(1, exitCode);
         }
         finally
         {
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_FORCE_CRASH", priorForceCrash);
+        }
+    }
+
+    [TestMethod]
+    public async Task TryHandleAsync_returns_one_for_invalid_receipt_path()
+    {
+        string invalidReceiptPath = "receipt.json";
+        string? priorReceiptPath = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT", invalidReceiptPath);
+            int? exitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(
+                "avalonia",
+                ["--startup-smoke"],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual(1, exitCode);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT", priorReceiptPath);
         }
     }
 }
