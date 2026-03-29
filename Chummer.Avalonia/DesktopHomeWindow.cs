@@ -685,7 +685,7 @@ internal sealed class DesktopHomeWindow : Window
                 : _recentWorkspaces.Count > 0
                     ? CreateButton("Open current workspace", OpenCurrentWorkspace, isPrimary: true)
                     : DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                        ? CreateButton("Open work follow-through", static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true)
+                        ? CreateButton(CreateNextSafeActionButtonLabel(_campaignProjection.NextSafeAction, "Open campaign follow-through"), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true)
                         : CreateButton("Link this copy", OpenInstallLinkingAsync, isPrimary: true)
         ];
 
@@ -706,11 +706,17 @@ internal sealed class DesktopHomeWindow : Window
         if (_recentWorkspaces.Count > 0)
         {
             actions.Add(CreateButton("Open current workspace", OpenCurrentWorkspace, isPrimary: true));
-            actions.Add(CreateButton("Open work follow-through", static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()));
+            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, "Open build follow-through"), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()));
+        }
+        else if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, "Open build follow-through"), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true));
+            actions.Add(CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
         }
         else
         {
-            actions.Add(CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true));
+            actions.Add(CreateButton("Link this copy", OpenInstallLinkingAsync, isPrimary: true));
+            actions.Add(CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
         }
 
         actions.Add(CreateButton("Open work support", OpenWorkspaceSupport));
@@ -759,9 +765,30 @@ internal sealed class DesktopHomeWindow : Window
         return
         [
             CreateButton("Open current workspace", OpenCurrentWorkspace, isPrimary: true),
-            CreateButton("Open work follow-through", static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()),
+            CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, "Open workspace follow-through"), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()),
             CreateButton("Open work support", OpenWorkspaceSupport)
         ];
+    }
+
+    private static string CreateNextSafeActionButtonLabel(string nextSafeAction, string fallbackLabel)
+    {
+        if (string.IsNullOrWhiteSpace(nextSafeAction))
+        {
+            return fallbackLabel;
+        }
+
+        string trimmed = nextSafeAction.Trim();
+        int delimiter = trimmed.IndexOfAny([',', '.', ';']);
+        string clause = delimiter > 0 ? trimmed[..delimiter] : trimmed;
+        clause = clause.Trim();
+        if (clause.Length > 44)
+        {
+            clause = $"{clause[..41].TrimEnd()}...";
+        }
+
+        return string.IsNullOrWhiteSpace(clause)
+            ? fallbackLabel
+            : $"Next: {clause}";
     }
 
     private bool OpenCurrentWorkspace()

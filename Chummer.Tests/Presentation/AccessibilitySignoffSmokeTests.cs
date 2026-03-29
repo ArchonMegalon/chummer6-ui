@@ -776,8 +776,11 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.home.section.build_explain");
         RequireContains(source, "desktop.home.section.recent_workspaces");
         RequireContains(source, "Open current workspace");
-        RequireContains(source, "Open work follow-through");
+        RequireContains(source, "CreateNextSafeActionButtonLabel(_campaignProjection.NextSafeAction, \"Open campaign follow-through\")");
+        RequireContains(source, "CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, \"Open build follow-through\")");
+        RequireContains(source, "CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, \"Open workspace follow-through\")");
         RequireContains(source, "Open work support");
+        RequireContains(source, "Next: ");
         RequireContains(source, "_buildExplainText");
         RequireContains(source, "_workspaceSummaryText");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkPortal()");
@@ -805,6 +808,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Rules navigator:");
         RequireContains(projectorSource, "Migration receipt:");
         RequireContains(projectorSource, "Publication receipt:");
+        RequireDoesNotContain(source, "Open work follow-through");
     }
 
     private static void DesktopHome_exposes_claim_aware_install_and_update_actions()
@@ -939,6 +943,14 @@ internal static class AccessibilitySignoffSmokeTests
         if (!source.Contains(expected, StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"Expected to find '{expected}' in smoke target source.");
+        }
+    }
+
+    private static void RequireDoesNotContain(string source, string unexpected)
+    {
+        if (source.Contains(unexpected, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Expected not to find '{unexpected}' in smoke target source.");
         }
     }
 }
