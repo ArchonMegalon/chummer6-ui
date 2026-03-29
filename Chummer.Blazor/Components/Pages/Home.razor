@@ -459,6 +459,23 @@
         [
             "Support can reuse this answer when a case asks which rules posture is live on the current channel.",
             "Operator review can link the same evidence when deciding whether to freeze or reroute a campaign change."
+        ],
+        Diffs:
+        [
+            new RulesetEnvironmentDiffProjection(
+                DiffId: "rules.navigator.showcase:return",
+                Label: "Campaign return",
+                BeforeSummary: "Before approval, return posture is review-heavy and support has to caveat the answer path.",
+                AfterSummary: "After approval, sr6.preview.v1 becomes the one truth for build-path handoff, campaign continuity, and support closure.",
+                ReasonSummary: "Campaign continuity and support closure both reuse the same approved compatibility fingerprint.",
+                ExplainEntryId: "rules.navigator.showcase.entry:return"),
+            new RulesetEnvironmentDiffProjection(
+                DiffId: "rules.navigator.showcase:readiness",
+                Label: "Campaign readiness",
+                BeforeSummary: "Before the rule environment is explicit, readiness cues can drift away from the live return path.",
+                AfterSummary: "After approval, readiness cues stay tied to sr6.preview.v1 instead of a side calculation.",
+                ReasonSummary: "GM readiness cues, dossier continuity, and support closure all cite the same approved rule environment.",
+                ExplainEntryId: "rules.navigator.showcase.entry:readiness")
         ]);
     private CreatorPublicationProjection _creatorPublication = new(
         PublicationId: "publication.showcase.creator-packet",

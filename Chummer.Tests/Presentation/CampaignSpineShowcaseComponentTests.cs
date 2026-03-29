@@ -5,6 +5,7 @@ using Bunit;
 using Chummer.Blazor.Components.Pages;
 using Chummer.Blazor.Components.Shared;
 using Chummer.Campaign.Contracts;
+using Chummer.Contracts.Rulesets;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using BunitContext = Bunit.BunitContext;
 
@@ -195,6 +196,16 @@ public sealed class CampaignSpineShowcaseComponentTests
             SupportReuseHints:
             [
                 "Support can reuse this answer."
+            ],
+            Diffs:
+            [
+                new RulesetEnvironmentDiffProjection(
+                    DiffId: "rules-1:return",
+                    Label: "Campaign return",
+                    BeforeSummary: "Before approval, the answer path was caveated.",
+                    AfterSummary: "After approval, the rule environment is grounded everywhere.",
+                    ReasonSummary: "Campaign continuity reuses the approved compatibility fingerprint.",
+                    ExplainEntryId: "rules.navigator.1:return")
             ]);
 
         using var context = new BunitContext();
@@ -204,6 +215,8 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Rules Navigator");
         StringAssert.Contains(cut.Markup, "Why did this rule posture change?");
         StringAssert.Contains(cut.Markup, "Before approval");
+        StringAssert.Contains(cut.Markup, "Campaign return");
+        StringAssert.Contains(cut.Markup, "Campaign continuity reuses the approved compatibility fingerprint.");
         StringAssert.Contains(cut.Markup, "Support can reuse this answer.");
         StringAssert.Contains(cut.Markup, "chummer-explain-chip");
     }
