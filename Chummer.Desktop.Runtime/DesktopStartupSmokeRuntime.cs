@@ -32,43 +32,50 @@ public static class DesktopStartupSmokeRuntime
         cancellationToken.ThrowIfCancellationRequested();
         await Task.Yield();
 
-        if (ParseBool(Environment.GetEnvironmentVariable(StartupSmokeForceCrashEnvironmentVariable)))
+        try
         {
-            throw new InvalidOperationException("Startup smoke forced a crash for OODA verification.");
+            if (ParseBool(Environment.GetEnvironmentVariable(StartupSmokeForceCrashEnvironmentVariable)))
+            {
+                throw new InvalidOperationException("Startup smoke forced a crash for OODA verification.");
+            }
+
+            Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+            DateTimeOffset startedAt = DateTimeOffset.UtcNow;
+            string readyCheckpoint = Environment.GetEnvironmentVariable(StartupSmokeReadyCheckpointEnvironmentVariable)
+                ?? "pre_ui_event_loop";
+            DesktopStartupSmokeReceipt receipt = new(
+                HeadId: ReadAssemblyMetadata(assembly, "ChummerDesktopHeadId") ?? headId,
+                Version: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion")
+                    ?? assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                    ?? assembly.GetName().Version?.ToString()
+                    ?? string.Empty,
+                ChannelId: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseChannel") ?? "local",
+                Platform: DetectPlatform(),
+                Arch: DetectArchitecture(),
+                ReadyCheckpoint: readyCheckpoint,
+                HostClass: Environment.GetEnvironmentVariable(StartupSmokeHostClassEnvironmentVariable) ?? Environment.MachineName,
+                ProcessPath: Environment.ProcessPath ?? AppContext.BaseDirectory,
+                Framework: RuntimeInformation.FrameworkDescription,
+                OperatingSystem: RuntimeInformation.OSDescription,
+                RecordedAtUtc: DateTimeOffset.UtcNow,
+                StartedAtUtc: startedAt,
+                CompletedAtUtc: DateTimeOffset.UtcNow);
+
+            string? receiptPath = Environment.GetEnvironmentVariable(StartupSmokeReceiptEnvironmentVariable);
+            if (!string.IsNullOrWhiteSpace(receiptPath))
+            {
+                WriteReceipt(receiptPath, receipt);
+            }
+
+            Console.Out.WriteLine(
+                $"startup smoke ready: head={receipt.HeadId} platform={receipt.Platform} arch={receipt.Arch} checkpoint={receipt.ReadyCheckpoint}");
+            return 0;
         }
-
-        Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
-        DateTimeOffset startedAt = DateTimeOffset.UtcNow;
-        string readyCheckpoint = Environment.GetEnvironmentVariable(StartupSmokeReadyCheckpointEnvironmentVariable)
-            ?? "pre_ui_event_loop";
-        DesktopStartupSmokeReceipt receipt = new(
-            HeadId: ReadAssemblyMetadata(assembly, "ChummerDesktopHeadId") ?? headId,
-            Version: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion")
-                ?? assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-                ?? assembly.GetName().Version?.ToString()
-                ?? string.Empty,
-            ChannelId: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseChannel") ?? "local",
-            Platform: DetectPlatform(),
-            Arch: DetectArchitecture(),
-            ReadyCheckpoint: readyCheckpoint,
-            HostClass: Environment.GetEnvironmentVariable(StartupSmokeHostClassEnvironmentVariable) ?? Environment.MachineName,
-            ProcessPath: Environment.ProcessPath ?? AppContext.BaseDirectory,
-            Framework: RuntimeInformation.FrameworkDescription,
-            OperatingSystem: RuntimeInformation.OSDescription,
-            RecordedAtUtc: DateTimeOffset.UtcNow,
-            StartedAtUtc: startedAt,
-            CompletedAtUtc: DateTimeOffset.UtcNow);
-
-        string? receiptPath = Environment.GetEnvironmentVariable(StartupSmokeReceiptEnvironmentVariable);
-        if (!string.IsNullOrWhiteSpace(receiptPath))
+        catch (Exception ex)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(receiptPath)!);
-            File.WriteAllText(receiptPath, JsonSerializer.Serialize(receipt, JsonOptions), Encoding.UTF8);
+            Console.Error.WriteLine($"Startup smoke failed: {ex.Message}");
+            return 1;
         }
-
-        Console.Out.WriteLine(
-            $"startup smoke ready: head={receipt.HeadId} platform={receipt.Platform} arch={receipt.Arch} checkpoint={receipt.ReadyCheckpoint}");
-        return 0;
     }
 
     private static bool ParseBool(string? value)
@@ -117,6 +124,18 @@ public static class DesktopStartupSmokeRuntime
             .GetCustomAttributes<AssemblyMetadataAttribute>()
             .FirstOrDefault(attribute => string.Equals(attribute.Key, key, StringComparison.Ordinal))?
             .Value;
+    }
+
+    private static void WriteReceipt(string receiptPath, DesktopStartupSmokeReceipt receipt)
+    {
+        string? receiptDirectory = Path.GetDirectoryName(receiptPath);
+        if (string.IsNullOrWhiteSpace(receiptDirectory))
+        {
+            throw new InvalidOperationException($"Startup smoke receipt path was invalid: '{receiptPath}'.");
+        }
+
+        Directory.CreateDirectory(receiptDirectory);
+        File.WriteAllText(receiptPath, JsonSerializer.Serialize(receipt, JsonOptions), Encoding.UTF8);
     }
 
     public sealed record DesktopStartupSmokeReceipt(
