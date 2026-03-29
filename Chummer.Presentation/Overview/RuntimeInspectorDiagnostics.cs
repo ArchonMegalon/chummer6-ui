@@ -59,15 +59,22 @@ public static class RuntimeInspectorDiagnostics
     {
         ArgumentNullException.ThrowIfNull(projection);
 
+        string?[] lines =
+        [
+            $"Install target: {FormatInstallTarget(projection.Install)}",
+            $"Profile source: {projection.ProfileSourceKind}",
+            projection.Promotion is null
+                ? null
+                : $"Promotion: {projection.Promotion.PublicationStatus} / {projection.Promotion.UpdateChannel}",
+            projection.Promotion?.RollbackSummary,
+            $"Session-safe bindings: {CountProfileSessionSafeBindings(projection)}/{projection.ProviderBindings.Count}",
+            $"Attention items: {CountProfileAttentionItems(projection)}",
+            $"Generated: {projection.GeneratedAtUtc.UtcDateTime:u}"
+        ];
+
         return string.Join(
             Environment.NewLine,
-            [
-                $"Install target: {FormatInstallTarget(projection.Install)}",
-                $"Profile source: {projection.ProfileSourceKind}",
-                $"Session-safe bindings: {CountProfileSessionSafeBindings(projection)}/{projection.ProviderBindings.Count}",
-                $"Attention items: {CountProfileAttentionItems(projection)}",
-                $"Generated: {projection.GeneratedAtUtc.UtcDateTime:u}"
-            ]);
+            lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
     }
 
     public static string BuildRulePackDiagnosticsSummary(RuntimeInspectorProjection projection)
