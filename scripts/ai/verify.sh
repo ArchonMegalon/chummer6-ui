@@ -26,6 +26,9 @@ fi
 echo "[verify] checking contract package consumption..."
 bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 
+echo "[verify] checking desktop runtime resilience regression guard..."
+bash scripts/ai/test.sh Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj -v minimal
+
 if ! rg -n '<ChummerUseLocalCompatibilityTree Condition="'\''\$\(ChummerUseLocalCompatibilityTree\)'\'' == '\'''\''">false</ChummerUseLocalCompatibilityTree>' \
   Directory.Build.props >/dev/null; then
   echo "[verify] FAIL: the local compatibility tree must be opt-in instead of the ambient default."
