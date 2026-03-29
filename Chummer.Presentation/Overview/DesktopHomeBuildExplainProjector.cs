@@ -1,5 +1,6 @@
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
+using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
 using Chummer.Campaign.Contracts;
@@ -229,6 +230,12 @@ public static class DesktopHomeBuildExplainProjector
             if (!string.IsNullOrWhiteSpace(leadRulesAnswer.AfterSummary))
             {
                 receipts.Add($"Rules after: {leadRulesAnswer.AfterSummary}");
+            }
+
+            RulesetEnvironmentDiffProjection? leadRulesDiff = leadRulesAnswer.Diffs?.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(leadRulesDiff?.AfterSummary))
+            {
+                receipts.Add($"Rules diff: {leadRulesDiff.Label} — {leadRulesDiff.AfterSummary}");
             }
         }
 
