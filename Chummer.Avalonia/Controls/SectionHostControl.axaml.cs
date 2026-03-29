@@ -51,6 +51,7 @@ public partial class SectionHostControl : UserControl
             BuildLabConstraintsList.ItemsSource = Array.Empty<string>();
             BuildLabProvenanceBox.Text = string.Empty;
             BuildLabVariantsList.ItemsSource = Array.Empty<string>();
+            BuildLabCoverageBox.Text = string.Empty;
             BuildLabTimelinesBox.Text = string.Empty;
             BuildLabExportPayloadsBox.Text = string.Empty;
             BuildLabExportTargetsList.ItemsSource = Array.Empty<string>();
@@ -67,6 +68,7 @@ public partial class SectionHostControl : UserControl
         BuildLabVariantsList.ItemsSource = buildLab.Variants
             .Select(BuildVariantLine)
             .ToArray();
+        BuildLabCoverageBox.Text = BuildCoverageText(buildLab);
         BuildLabTimelinesBox.Text = BuildTimelineText(buildLab);
         BuildLabExportPayloadsBox.Text = BuildExportPayloadText(buildLab);
         BuildLabExportTargetsList.ItemsSource = buildLab.ExportTargets
@@ -307,6 +309,73 @@ public partial class SectionHostControl : UserControl
         return $"{variant.Label} ({variant.TableFit}){metrics}{warnings}";
     }
 
+    private static string BuildCoverageText(BuildLabConceptIntakeState buildLab)
+    {
+        List<string> lines = [];
+
+        int optimizerReadyVariants = 0;
+        foreach (BuildLabVariantProjection variant in buildLab.Variants)
+        {
+            List<string> signals = [];
+
+            string coverageMetrics = string.Join(
+                " · ",
+                variant.Metrics
+                    .Where(IsCoverageMetric)
+                    .Select(metric => $"{metric.Label}: {metric.Value}"));
+            if (!string.IsNullOrWhiteSpace(coverageMetrics))
+            {
+                signals.Add(coverageMetrics);
+            }
+
+            if (variant.OverlapBadges.Count > 0)
+            {
+                signals.Add($"Overlap: {string.Join(" | ", variant.OverlapBadges.Select(badge => badge.Label))}");
+            }
+
+            if (signals.Count == 0)
+            {
+                continue;
+            }
+
+            optimizerReadyVariants++;
+            lines.Add($"{variant.Label}: {string.Join(" · ", signals)}");
+        }
+
+        foreach (BuildLabProgressionTimeline timeline in buildLab.ProgressionTimelines)
+        {
+            BuildLabProgressionStep? strongestCoverageStep = null;
+            foreach (BuildLabProgressionStep step in timeline.Steps)
+            {
+                if (step.Outcomes.Any(IsCoverageMetric))
+                {
+                    strongestCoverageStep = step;
+                }
+            }
+
+            if (strongestCoverageStep is null)
+            {
+                lines.Add($"{timeline.Title}: {timeline.Steps.Count} checkpoint(s) keep the planner ready for handoff.");
+                continue;
+            }
+
+            string coverageOutcomes = string.Join(
+                " | ",
+                strongestCoverageStep.Outcomes
+                    .Where(IsCoverageMetric)
+                    .Select(metric => $"{metric.Label}: {metric.Value}"));
+            lines.Add($"{timeline.Title}: strongest coverage checkpoint at {strongestCoverageStep.KarmaTarget} Karma · {coverageOutcomes}");
+        }
+
+        if (lines.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        lines.Insert(0, $"Planner + team coverage · {optimizerReadyVariants} optimizer-ready variant(s) · {buildLab.ProgressionTimelines.Count} progression timeline(s)");
+        return string.Join(Environment.NewLine, lines);
+    }
+
     private static string BuildTimelineText(BuildLabConceptIntakeState buildLab)
     {
         if (buildLab.ProgressionTimelines.Count == 0)
@@ -333,6 +402,12 @@ public partial class SectionHostControl : UserControl
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static bool IsCoverageMetric(BuildLabVariantMetric metric)
+    {
+        return metric.Label.Contains("coverage", StringComparison.OrdinalIgnoreCase)
+            || metric.Label.Contains("role", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildExportPayloadText(BuildLabConceptIntakeState buildLab)
