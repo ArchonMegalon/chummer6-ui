@@ -247,7 +247,7 @@ public sealed class DesktopUpdateRuntimeTests
               "status": "published",
               "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
               "artifacts": [
-                {
+            {
                   "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
                   "head": "avalonia",
                   "platform": "{{identity.Platform}}",
@@ -255,7 +255,7 @@ public sealed class DesktopUpdateRuntimeTests
                   "kind": "archive",
                   "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}.zip",
                   "downloadUrl": "{{payloadPath.Replace("\\", "/")}}",
-                  "sizeBytes": 99,
+                  "sizeBytes": 12,
                   "sha256": "sha256:badbadsum"
                 }
               ]
