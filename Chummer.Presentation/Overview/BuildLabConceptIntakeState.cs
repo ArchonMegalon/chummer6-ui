@@ -27,7 +27,8 @@ public sealed record BuildLabConceptIntakeState(
     string? RuntimeCompatibilitySummary = null,
     string? CampaignFitSummary = null,
     string? SupportClosureSummary = null,
-    IReadOnlyList<string>? Watchouts = null);
+    IReadOnlyList<string>? Watchouts = null,
+    BuildLabTeamCoverageProjection? TeamCoverage = null);
 
 public static class BuildLabConceptIntakeProjector
 {
@@ -72,6 +73,7 @@ public static class BuildLabConceptIntakeProjector
             RuntimeCompatibilitySummary: projection.RuntimeCompatibilitySummary,
             CampaignFitSummary: projection.CampaignFitSummary,
             SupportClosureSummary: projection.SupportClosureSummary,
-            Watchouts: projection.Watchouts?.ToArray() ?? []);
+            Watchouts: projection.Watchouts?.ToArray() ?? [],
+            TeamCoverage: projection.TeamCoverage);
     }
 }

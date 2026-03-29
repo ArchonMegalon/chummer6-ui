@@ -241,6 +241,11 @@
 
     private static bool HasPlannerCoverageSignals(BuildLabConceptIntakeProjection projection)
     {
+        if (projection.TeamCoverage is not null)
+        {
+            return true;
+        }
+
         if (projection.ProgressionTimelines.Count > 0)
         {
             return true;
@@ -259,6 +264,11 @@
 
     private static string BuildPlannerCoverageBadge(BuildLabConceptIntakeProjection projection)
     {
+        if (projection.TeamCoverage is { } teamCoverage)
+        {
+            return $"{teamCoverage.CoveredRoleTags?.Count ?? 0} covered · {teamCoverage.MissingRoleTags.Count} missing · {teamCoverage.DuplicateRoleTags?.Count ?? 0} duplicate";
+        }
+
         int optimizerReadyVariants = 0;
         foreach (BuildLabVariantProjection variant in projection.Variants)
         {
@@ -279,6 +289,11 @@
 
     private static string BuildPlannerCoverageSummary(BuildLabConceptIntakeProjection projection)
     {
+        if (projection.TeamCoverage is { } teamCoverage)
+        {
+            return teamCoverage.Summary;
+        }
+
         int optimizerReadyVariants = 0;
         foreach (BuildLabVariantProjection variant in projection.Variants)
         {
@@ -294,6 +309,7 @@
     private static IReadOnlyList<string> BuildPlannerCoverageLines(BuildLabConceptIntakeProjection projection)
     {
         List<string> lines = [];
+        lines.AddRange(BuildTeamCoverageLines(projection.TeamCoverage));
 
         foreach (BuildLabVariantProjection variant in projection.Variants)
         {
@@ -350,6 +366,58 @@
     private static bool HasCoverageSignals(BuildLabVariantProjection variant)
     {
         return variant.OverlapBadges.Count > 0 || variant.Metrics.Any(IsCoverageMetric);
+    }
+
+    private static IReadOnlyList<string> BuildTeamCoverageLines(BuildLabTeamCoverageProjection? teamCoverage)
+    {
+        if (teamCoverage is null)
+        {
+            return [];
+        }
+
+        List<string> lines = [];
+        if (!string.IsNullOrWhiteSpace(teamCoverage.CoverageSummary))
+        {
+            lines.Add($"Coverage: {teamCoverage.CoverageSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.RolePressureSummary))
+        {
+            lines.Add($"Role pressure: {teamCoverage.RolePressureSummary}");
+        }
+
+        if (teamCoverage.CoveredRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Covered roles: {FormatRoleTags(teamCoverage.CoveredRoleTags)}");
+        }
+
+        if (teamCoverage.MissingRoleTags.Count > 0)
+        {
+            lines.Add($"Missing roles: {FormatRoleTags(teamCoverage.MissingRoleTags)}");
+        }
+
+        if (teamCoverage.DuplicateRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Duplicate roles: {FormatRoleTags(teamCoverage.DuplicateRoleTags)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.ExplainEntryId))
+        {
+            lines.Add($"Explain: {teamCoverage.ExplainEntryId}");
+        }
+
+        return lines;
+    }
+
+    private static string FormatRoleTags(IEnumerable<string> roleTags)
+        => string.Join(" | ", roleTags.Select(FormatRoleTag));
+
+    private static string FormatRoleTag(string roleTag)
+    {
+        string normalized = roleTag.Replace('-', ' ').Replace('_', ' ').Trim();
+        return string.IsNullOrWhiteSpace(normalized)
+            ? roleTag
+            : System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
     }
 
     private static bool IsCoverageMetric(BuildLabVariantMetric metric)

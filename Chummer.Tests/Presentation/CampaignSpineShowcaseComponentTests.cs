@@ -96,6 +96,14 @@ public sealed class CampaignSpineShowcaseComponentTests
             RuntimeCompatibilitySummary: "One provider binding still needs review.",
             CampaignFitSummary: "Fits sparse-ops crews.",
             SupportClosureSummary: "Support can cite the same runtime fingerprint.",
+            TeamCoverage: new BuildLabTeamCoverageProjection(
+                Summary: "2 of 3 required crew roles are covered before handoff; one deliberate face overlap stays visible while astral support remains missing.",
+                CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign handoff.",
+                RolePressureSummary: "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
+                MissingRoleTags: ["astral"],
+                CoveredRoleTags: ["face", "legwork"],
+                DuplicateRoleTags: ["face"],
+                ExplainEntryId: "buildlab.teamcoverage.ops-first"),
             Watchouts:
             [
                 "Do not export until the runtime rebind receipt exists."
@@ -110,6 +118,9 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Fits sparse-ops crews.");
         StringAssert.Contains(cut.Markup, "Do not export until the runtime rebind receipt exists.");
         StringAssert.Contains(cut.Markup, "Planner + team coverage");
+        StringAssert.Contains(cut.Markup, "Covered roles: Face | Legwork");
+        StringAssert.Contains(cut.Markup, "Missing roles: Astral");
+        StringAssert.Contains(cut.Markup, "Duplicate roles: Face");
         StringAssert.Contains(cut.Markup, "Light face overlap");
         StringAssert.Contains(cut.Markup, "strongest coverage checkpoint at 100 Karma");
         Assert.IsNotNull(cut.Find("[data-build-lab-decision-rail]"));
