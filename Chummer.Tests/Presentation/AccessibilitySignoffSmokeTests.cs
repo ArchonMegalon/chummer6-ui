@@ -592,6 +592,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path return:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path support:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab handoff:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab tradeoff:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab progression:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Rules navigator:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Migration receipt:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Publication receipt:");
@@ -780,6 +782,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Build path support:");
         RequireContains(projectorSource, "Build path compare:");
         RequireContains(projectorSource, "Build Lab handoff:");
+        RequireContains(projectorSource, "Build Lab tradeoff:");
+        RequireContains(projectorSource, "Build Lab progression:");
         RequireContains(projectorSource, "Rules navigator:");
         RequireContains(projectorSource, "Migration receipt:");
         RequireContains(projectorSource, "Publication receipt:");
