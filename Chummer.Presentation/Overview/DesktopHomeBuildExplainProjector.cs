@@ -222,6 +222,16 @@ public static class DesktopHomeBuildExplainProjector
             {
                 receipts.Add($"Build Lab support: {leadHandoff.SupportClosureSummary}");
             }
+
+            if (!string.IsNullOrWhiteSpace(leadHandoff.PlannerCoverageSummary))
+            {
+                receipts.Add($"Build Lab coverage: {leadHandoff.PlannerCoverageSummary}");
+            }
+
+            if (leadHandoff.PlannerCoverageLines is { Count: > 0 })
+            {
+                receipts.Add($"Build Lab coverage detail: {leadHandoff.PlannerCoverageLines[0]}");
+            }
         }
 
         if (leadRulesAnswer is not null)

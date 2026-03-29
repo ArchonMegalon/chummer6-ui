@@ -520,6 +520,14 @@ internal static class AccessibilitySignoffSmokeTests
             RuntimeCompatibilitySummary: "The campaign handoff still matches the current runtime fingerprint.",
             CampaignReturnSummary: "The handoff can return through the current campaign workspace once confirmed.",
             SupportClosureSummary: "Support can cite the same handoff if verification fails.",
+            PlannerCoverageSummary: "4 of 4 build follow-through checkpoints are already grounded.",
+            PlannerCoverageLines:
+            [
+                "Campaign continuity: Apex is already attached as the governed return lane for this handoff.",
+                "Outputs: no dossier or campaign-safe output is attached yet, so export and recap proof are still pending.",
+                "Restore posture: no restore conflicts are currently blocking replay-safe handoff follow-through.",
+                "Claimed install: no linked device is attached yet for install-aware follow-through."
+            ],
             Watchouts: ["The handoff still needs an explicit campaign confirmation click."]);
         RulesNavigatorAnswerProjection rulesAnswer = new(
             EntryId: "rules-1",
@@ -602,6 +610,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab handoff:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab tradeoff:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab progression:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab coverage:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab coverage detail:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Rules navigator:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Migration receipt:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Publication receipt:");
@@ -805,6 +815,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Build Lab handoff:");
         RequireContains(projectorSource, "Build Lab tradeoff:");
         RequireContains(projectorSource, "Build Lab progression:");
+        RequireContains(projectorSource, "Build Lab coverage:");
+        RequireContains(projectorSource, "Build Lab coverage detail:");
         RequireContains(projectorSource, "Rules navigator:");
         RequireContains(projectorSource, "Migration receipt:");
         RequireContains(projectorSource, "Publication receipt:");
