@@ -133,6 +133,11 @@ public class WorkspaceSectionRendererTests
         Assert.AreEqual("next-variants", result.ActiveBuildLab.Actions[0].ActionId);
         Assert.AreEqual("variant.social", result.ActiveBuildLab.Variants[0].VariantId);
         Assert.AreEqual(100, result.ActiveBuildLab.ProgressionTimelines[0].Steps[^1].KarmaTarget);
+        Assert.IsNotNull(result.ActiveBuildLab.TeamCoverage);
+        Assert.AreEqual("buildlab.teamcoverage.ops-first", result.ActiveBuildLab.TeamCoverage!.ExplainEntryId);
+        CollectionAssert.AreEqual(new[] { "face", "legwork" }, result.ActiveBuildLab.TeamCoverage.CoveredRoleTags!.ToArray());
+        CollectionAssert.AreEqual(new[] { "astral" }, result.ActiveBuildLab.TeamCoverage.MissingRoleTags.ToArray());
+        CollectionAssert.AreEqual(new[] { "face" }, result.ActiveBuildLab.TeamCoverage.DuplicateRoleTags!.ToArray());
         Assert.AreEqual("payload.social", result.ActiveBuildLab.ExportPayloads[0].PayloadId);
         Assert.AreEqual("target.build-idea-card", result.ActiveBuildLab.ExportTargets[0].TargetId);
         Assert.IsNull(result.ActiveBrowseWorkspace);
@@ -678,6 +683,16 @@ public class WorkspaceSectionRendererTests
                             }
                         }
                     }
+                },
+                ["TeamCoverage"] = new JsonObject
+                {
+                    ["Summary"] = "2 of 3 required crew roles are covered before handoff; one deliberate face overlap stays visible while astral support remains missing.",
+                    ["CoverageSummary"] = "Coverage score stays stable with Face and Legwork already covered before the first campaign handoff.",
+                    ["RolePressureSummary"] = "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
+                    ["MissingRoleTags"] = new JsonArray("astral"),
+                    ["CoveredRoleTags"] = new JsonArray("face", "legwork"),
+                    ["DuplicateRoleTags"] = new JsonArray("face"),
+                    ["ExplainEntryId"] = "buildlab.teamcoverage.ops-first"
                 },
                 ["ExportPayloads"] = new JsonArray
                 {

@@ -295,6 +295,15 @@
                 ],
                 SourceDocumentId: "designer-feedback.ops-first")
         ],
+        TeamCoverage:
+        new BuildLabTeamCoverageProjection(
+            Summary: "2 of 3 required crew roles are covered before handoff; one deliberate face overlap stays visible while astral support remains missing.",
+            CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign handoff.",
+            RolePressureSummary: "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
+            MissingRoleTags: ["astral"],
+            CoveredRoleTags: ["face", "legwork"],
+            DuplicateRoleTags: ["face"],
+            ExplainEntryId: "buildlab.teamcoverage.ops-first"),
         ExportPayloads:
         [
             new BuildLabExportPayload(
