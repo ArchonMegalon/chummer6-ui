@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -9,6 +10,8 @@ namespace Chummer.Desktop.Installer;
 
 internal static class Program
 {
+    private const string PreferredPayloadResourceName = "ChummerInstaller.Payload.zip";
+
     [STAThread]
     private static int Main(string[] args)
     {
@@ -106,7 +109,8 @@ internal static class Program
         try
         {
             ExtractPayload(tempExtractDir);
-            EnsureLaunchExecutableExists(tempExtractDir, metadata);
+            string payloadRoot = FindPayloadRoot(tempExtractDir, metadata.LaunchExecutable);
+            EnsureLaunchExecutableInRoot(payloadRoot, metadata.LaunchExecutable);
 
             if (Directory.Exists(targetDir))
             {
@@ -114,7 +118,7 @@ internal static class Program
             }
 
             Directory.CreateDirectory(targetDir);
-            CopyDirectory(tempExtractDir, targetDir);
+            CopyDirectory(payloadRoot, targetDir);
             return targetDir;
         }
         finally
@@ -126,30 +130,174 @@ internal static class Program
     private static void ExtractPayload(string tempExtractDir)
     {
         Assembly assembly = Assembly.GetExecutingAssembly();
-        using Stream? payload = assembly.GetManifestResourceStream("ChummerInstaller.Payload.zip");
-        if (payload is null)
-        {
-            throw new InvalidOperationException("Embedded desktop payload was not found.");
-        }
+        string payloadZipPath = Path.Combine(tempExtractDir, "payload.zip");
 
-        string zipPath = Path.Combine(tempExtractDir, "payload.zip");
-        using (FileStream zipFile = File.Create(zipPath))
+        using Stream payload = OpenPayloadStream(assembly);
+
+        using (FileStream zipFile = File.Create(payloadZipPath))
         {
             payload.CopyTo(zipFile);
         }
 
-        ZipFile.ExtractToDirectory(zipPath, tempExtractDir, overwriteFiles: true);
-        File.Delete(zipPath);
+        ZipFile.ExtractToDirectory(payloadZipPath, tempExtractDir, overwriteFiles: true);
+        File.Delete(payloadZipPath);
     }
 
-    private static void EnsureLaunchExecutableExists(string tempExtractDir, InstallerMetadata metadata)
+    private static Stream OpenPayloadStream(Assembly assembly)
     {
-        string launchPath = Path.Combine(tempExtractDir, metadata.LaunchExecutable);
+        string? embeddedPayloadResource = FindPayloadResource(assembly);
+        if (embeddedPayloadResource is not null)
+        {
+            Stream? stream = assembly.GetManifestResourceStream(embeddedPayloadResource);
+            if (stream is null)
+            {
+                string? names = FormatResourceNames(assembly);
+                throw new InvalidOperationException(
+                    $"Embedded desktop payload '{embeddedPayloadResource}' could not be opened. Embedded resources: {names}.");
+            }
+
+            return stream;
+        }
+
+        string baseDirectory = AppContext.BaseDirectory;
+        string[] sidecarPayloads = Directory
+            .EnumerateFiles(baseDirectory, "*.zip", SearchOption.TopDirectoryOnly)
+            .Where(name => IsPayloadZipName(Path.GetFileName(name)))
+            .OrderBy(name => Path.GetFileName(name), StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (sidecarPayloads.Length > 0)
+        {
+            return File.OpenRead(sidecarPayloads[0]);
+        }
+
+        string resourceNames = FormatResourceNames(assembly);
+        string? sidecarSummary = sidecarPayloads.Length > 0
+            ? string.Join(", ", sidecarPayloads.Select(Path.GetFileName))
+            : "<none>";
+        throw new InvalidOperationException(
+            $"Embedded desktop payload was not found. Expected '{PreferredPayloadResourceName}'. " +
+            $"Embedded resources: {resourceNames}. " +
+            $"Checked {baseDirectory} for sidecar payloads: {sidecarSummary}.");
+    }
+
+    private static string FindPayloadRoot(string tempExtractDir, string launchExecutable)
+    {
+        string? launchPath = FindLaunchExecutablePath(tempExtractDir, launchExecutable);
+        if (launchPath is null)
+        {
+            string topEntries = SummarizePayloadEntries(tempExtractDir);
+            string target = Path.Combine(tempExtractDir, launchExecutable);
+            throw new InvalidOperationException(
+                $"The bundled desktop payload did not contain '{launchExecutable}'. " +
+                $"Searched from '{tempExtractDir}'. " +
+                $"Expected '{target}' was not found. " +
+                $"Payload sample: {topEntries}");
+        }
+
+        return Path.GetDirectoryName(launchPath)!;
+    }
+
+    private static string? FindLaunchExecutablePath(string payloadRoot, string launchExecutable)
+    {
+        string directPath = Path.Combine(payloadRoot, launchExecutable);
+        if (File.Exists(directPath))
+        {
+            return directPath;
+        }
+
+        string? match = null;
+        foreach (string file in Directory.EnumerateFiles(payloadRoot, "*", SearchOption.AllDirectories))
+        {
+            string fileName = Path.GetFileName(file);
+            if (!string.Equals(fileName, launchExecutable, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (match is null || file.Length < match.Length)
+            {
+                match = file;
+            }
+        }
+
+        return match;
+    }
+
+    private static void EnsureLaunchExecutableInRoot(string payloadRoot, string launchExecutable)
+    {
+        string launchPath = Path.Combine(payloadRoot, launchExecutable);
         if (!File.Exists(launchPath))
         {
             throw new InvalidOperationException(
-                $"The bundled desktop payload did not contain '{metadata.LaunchExecutable}'.");
+                $"The bundled desktop payload did not contain '{launchExecutable}'.");
         }
+    }
+
+    private static string? FindPayloadResource(Assembly assembly)
+    {
+        string[] resourceNames = assembly.GetManifestResourceNames();
+        string? exactMatch = resourceNames.FirstOrDefault(
+            name => string.Equals(name, PreferredPayloadResourceName, StringComparison.Ordinal));
+        if (exactMatch is not null)
+        {
+            return exactMatch;
+        }
+
+        string? suffixMatch = resourceNames.FirstOrDefault(
+            static name => name.EndsWith(".Payload.zip", StringComparison.OrdinalIgnoreCase));
+        if (suffixMatch is not null)
+        {
+            return suffixMatch;
+        }
+
+        string? candidateMatch = resourceNames.FirstOrDefault(
+            static name => IsPayloadZipName(name));
+        if (candidateMatch is not null)
+        {
+            return candidateMatch;
+        }
+
+        return null;
+    }
+
+    private static string FormatResourceNames(Assembly assembly)
+    {
+        string[] resourceNames = assembly.GetManifestResourceNames();
+        if (resourceNames.Length == 0)
+        {
+            return "<none>";
+        }
+
+        Array.Sort(resourceNames, StringComparer.OrdinalIgnoreCase);
+        return string.Join(", ", resourceNames);
+    }
+
+    private static bool IsPayloadZipName(string name)
+    {
+        return string.Equals(Path.GetFileName(name), "Payload.zip", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "payload.zip", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".Payload.zip", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".payload.zip", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith("-payload.zip", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Payload", StringComparison.OrdinalIgnoreCase)
+            && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string SummarizePayloadEntries(string payloadRoot)
+    {
+        if (!Directory.Exists(payloadRoot))
+        {
+            return "<missing>";
+        }
+
+        StringBuilder summary = new StringBuilder();
+        summary.Append("root=[");
+        IEnumerable<string> topEntries = Directory.EnumerateFileSystemEntries(payloadRoot, "*", SearchOption.TopDirectoryOnly)
+            .Take(40)
+            .Select(path => Path.GetFileName(path) ?? string.Empty);
+        summary.AppendJoin(", ", topEntries);
+        summary.Append(']');
+        return summary.ToString();
     }
 
     private static void CopyDirectory(string sourceDir, string targetDir)
