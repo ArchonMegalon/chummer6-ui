@@ -145,10 +145,27 @@
                         @foreach (BuildLabProgressionStep step in timeline.Steps)
                         {
                             <li>
-                                @step.KarmaTarget Karma · @step.Label · @step.Summary
+                                <strong>@step.KarmaTarget Karma</strong> · @step.Label · @step.Summary
                                 @if (step.Outcomes.Count > 0)
                                 {
                                     <span> · @string.Join(" | ", step.Outcomes.Select(metric => $"{metric.Label}: {metric.Value}"))</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(step.ExplainEntryId))
+                                {
+                                    <span> · Explain: @step.ExplainEntryId</span>
+                                }
+                                @if (step.MilestoneBadges.Count > 0 || step.RiskBadges.Count > 0)
+                                {
+                                    <div class="build-lab-chip-group" data-build-lab-timeline-step-badges="@step.StepId">
+                                        @foreach (BuildLabBadge badge in step.MilestoneBadges)
+                                        {
+                                            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                                        }
+                                        @foreach (BuildLabBadge badge in step.RiskBadges)
+                                        {
+                                            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                                        }
+                                    </div>
                                 }
                             </li>
                         }
