@@ -16,9 +16,11 @@
     <AssemblyAttribute Include="Microsoft.VisualStudio.TestTools.UnitTesting.DoNotParallelizeAttribute" />
   </ItemGroup>
   <PropertyGroup>
-    <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
+    <TargetFrameworks Condition="'$(RunDesktopUpdateTestsOnly)' == 'true' and '$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TargetFrameworks)' == ''">net10.0;net10.0-windows</TargetFrameworks>
     <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <RunDesktopUpdateTestsOnly Condition="'$(RunDesktopUpdateTestsOnly)' == ''">false</RunDesktopUpdateTestsOnly>
 	<Configurations>Debug;Release;Debuggable Release</Configurations>
 	<AnalysisLevel>latest-minimum</AnalysisLevel>
 	<NeutralLanguage>en-US</NeutralLanguage>
@@ -39,6 +41,13 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <Compile Remove="ChummerTest.cs" />
     <Compile Remove="XmlNodeExtensionsTests.cs" />
+    <Compile Remove="Presentation\obj\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RunDesktopUpdateTestsOnly)' == 'true'">
+    <Compile Remove="**\*.cs" />
+    <Compile Include="DesktopUpdateManifestParserTests.cs" />
+    <Compile Include="DesktopUpdateRuntimeTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
@@ -164,19 +173,19 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Chummer.Avalonia\Chummer.Avalonia.csproj" />
-    <ProjectReference Include="..\Chummer.Api\Chummer.Api.csproj" />
-    <ProjectReference Include="..\Chummer.Application\Chummer.Application.csproj" />
+    <ProjectReference Include="..\Chummer.Api\Chummer.Api.csproj" Condition="Exists('..\\Chummer.Api\\Chummer.Api.csproj')" />
+    <ProjectReference Include="..\Chummer.Application\Chummer.Application.csproj" Condition="Exists('..\\Chummer.Application\\Chummer.Application.csproj')" />
     <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj" />
-    <ProjectReference Include="..\Chummer.Core\Chummer.Core.csproj" />
-    <ProjectReference Include="..\Chummer.Hub.Web\Chummer.Hub.Web.csproj" />
-    <ProjectReference Include="..\Chummer.Infrastructure.Browser\Chummer.Infrastructure.Browser.csproj" />
-    <ProjectReference Include="..\Chummer.Infrastructure\Chummer.Infrastructure.csproj" />
-    <ProjectReference Include="..\Chummer.Portal\Chummer.Portal.csproj" />
+    <ProjectReference Include="..\Chummer.Core\Chummer.Core.csproj" Condition="Exists('..\\Chummer.Core\\Chummer.Core.csproj')" />
+    <ProjectReference Include="..\Chummer.Hub.Web\Chummer.Hub.Web.csproj" Condition="Exists('..\\Chummer.Hub.Web\\Chummer.Hub.Web.csproj')" />
+    <ProjectReference Include="..\Chummer.Infrastructure.Browser\Chummer.Infrastructure.Browser.csproj" Condition="Exists('..\\Chummer.Infrastructure.Browser\\Chummer.Infrastructure.Browser.csproj')" />
+    <ProjectReference Include="..\Chummer.Infrastructure\Chummer.Infrastructure.csproj" Condition="Exists('..\\Chummer.Infrastructure\\Chummer.Infrastructure.csproj')" />
+    <ProjectReference Include="..\Chummer.Portal\Chummer.Portal.csproj" Condition="Exists('..\\Chummer.Portal\\Chummer.Portal.csproj')" />
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
-    <ProjectReference Include="..\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj" />
-    <ProjectReference Include="..\Chummer.Rulesets.Sr4\Chummer.Rulesets.Sr4.csproj" />
-    <ProjectReference Include="..\Chummer.Rulesets.Sr5\Chummer.Rulesets.Sr5.csproj" />
-    <ProjectReference Include="..\Chummer.Rulesets.Sr6\Chummer.Rulesets.Sr6.csproj" />
+    <ProjectReference Include="..\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj" Condition="Exists('..\\Chummer.Rulesets.Hosting\\Chummer.Rulesets.Hosting.csproj')" />
+    <ProjectReference Include="..\Chummer.Rulesets.Sr4\Chummer.Rulesets.Sr4.csproj" Condition="Exists('..\\Chummer.Rulesets.Sr4\\Chummer.Rulesets.Sr4.csproj')" />
+    <ProjectReference Include="..\Chummer.Rulesets.Sr5\Chummer.Rulesets.Sr5.csproj" Condition="Exists('..\\Chummer.Rulesets.Sr5\\Chummer.Rulesets.Sr5.csproj')" />
+    <ProjectReference Include="..\Chummer.Rulesets.Sr6\Chummer.Rulesets.Sr6.csproj" Condition="Exists('..\\Chummer.Rulesets.Sr6\\Chummer.Rulesets.Sr6.csproj')" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalCampaignContractsProject)" />

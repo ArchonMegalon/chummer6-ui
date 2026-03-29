@@ -1,4 +1,8 @@
+#nullable enable
+
+using System;
 using Chummer.Desktop.Runtime;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests;
 
