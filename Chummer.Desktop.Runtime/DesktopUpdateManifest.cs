@@ -158,7 +158,7 @@ public static class DesktopUpdateManifestParser
             string fileName = GetOptionalString(element, "fileName") ?? Path.GetFileName(GetOptionalString(element, "downloadUrl") ?? string.Empty);
             string downloadUrl = GetOptionalString(element, "downloadUrl") ?? string.Empty;
             string? updateFeedUrl = GetOptionalString(element, "updateFeedUrl");
-            string? sha256 = GetOptionalString(element, "sha256");
+            string? sha256 = NormalizeSha256(GetOptionalString(element, "sha256"));
             long? sizeBytes = GetOptionalLong(element, "sizeBytes");
             if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(downloadUrl))
             {
@@ -232,7 +232,7 @@ public static class DesktopUpdateManifestParser
                 FileName: fileName,
                 DownloadUrl: rawUrl,
                 UpdateFeedUrl: null,
-                Sha256: GetOptionalString(element, "sha256"),
+                Sha256: NormalizeSha256(GetOptionalString(element, "sha256")),
                 SizeBytes: GetOptionalLong(element, "sizeBytes")));
         }
 
@@ -364,5 +364,21 @@ public static class DesktopUpdateManifestParser
                 when !string.IsNullOrWhiteSpace(property.GetString()) && long.TryParse(property.GetString(), out long parsed) => parsed,
             _ => null
         };
+    }
+
+    private static string? NormalizeSha256(string? rawSha256)
+    {
+        if (string.IsNullOrWhiteSpace(rawSha256))
+        {
+            return null;
+        }
+
+        string normalized = rawSha256.Trim();
+        if (normalized.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = normalized["sha256:".Length..];
+        }
+
+        return normalized;
     }
 }
