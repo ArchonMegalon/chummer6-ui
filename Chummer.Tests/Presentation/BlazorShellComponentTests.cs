@@ -1159,6 +1159,14 @@ public sealed class BlazorShellComponentTests
                 ],
                 GeneratedAtUtc: new DateTimeOffset(2026, 03, 09, 8, 0, 0, TimeSpan.Zero),
                 ProfileSourceKind: RegistryEntrySourceKinds.OverlayDerivedProfile,
+                Promotion: new RuntimeInspectorPromotionProjection(
+                    PublicationStatus: RuleProfilePublicationStatuses.Published,
+                    Visibility: ArtifactVisibilityModes.CampaignShared,
+                    UpdateChannel: RuleProfileUpdateChannels.CampaignPinned,
+                    PromotionSummary: "Campaign-pinned rule environment is published with campaign-shared visibility and stays on the campaign-approved rail until broader promotion is chosen.",
+                    RollbackSummary: "Rollback can re-pin sha256:sr5-runtime-fingerprint on workspace:workspace-1 while the next promotion is reviewed.",
+                    LineageSummary: "Overlay-derived profile compiles on top of the governed runtime lock instead of forking a local shadow rule environment.",
+                    PublishedAtUtc: new DateTimeOffset(2026, 03, 08, 7, 0, 0, TimeSpan.Zero)),
                 CapabilityDescriptors:
                 [
                     new RuntimeInspectorCapabilityDescriptorProjection(
@@ -1187,6 +1195,9 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Review State");
         StringAssert.Contains(cut.Markup, "refresh pending");
         StringAssert.Contains(cut.Markup, "Session-safe Bindings");
+        StringAssert.Contains(cut.Markup, "Update Channel");
+        StringAssert.Contains(cut.Markup, "campaign-pinned");
+        StringAssert.Contains(cut.Markup, "Rollback can re-pin sha256:sr5-runtime-fingerprint");
         StringAssert.Contains(cut.Markup, "attention");
         Assert.IsNotNull(cut.Find("[data-runtime-hub-diagnostics]"));
         Assert.HasCount(2, cut.FindAll("[data-runtime-rulepack-row]"));
