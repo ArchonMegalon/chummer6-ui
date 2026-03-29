@@ -75,8 +75,14 @@ public sealed class CampaignSpineShowcaseComponentTests
                             "Opener",
                             "Table-ready lead.",
                             Outcomes: [],
-                            MilestoneBadges: [],
-                            RiskBadges: [],
+                            MilestoneBadges:
+                            [
+                                new BuildLabBadge("25", "25 Karma", BuildLabBadgeKinds.Milestone, true)
+                            ],
+                            RiskBadges:
+                            [
+                                new BuildLabBadge("astral-gap", "Astral gap", BuildLabBadgeKinds.Risk)
+                            ],
                             ExplainEntryId: "buildlab.timeline.social-25"),
                         new BuildLabProgressionStep(
                             "social-100",
@@ -124,8 +130,12 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Duplicate roles: Face");
         StringAssert.Contains(cut.Markup, "Light face overlap");
         StringAssert.Contains(cut.Markup, "strongest coverage checkpoint at 100 Karma");
+        StringAssert.Contains(cut.Markup, "buildlab.timeline.social-25");
+        StringAssert.Contains(cut.Markup, "25 Karma");
+        StringAssert.Contains(cut.Markup, "Astral gap");
         Assert.IsNotNull(cut.Find("[data-build-lab-decision-rail]"));
         Assert.IsNotNull(cut.Find("[data-build-lab-optimizer-rail]"));
+        Assert.IsNotNull(cut.Find("[data-build-lab-timeline-step-badges='social-25']"));
     }
 
     [TestMethod]
