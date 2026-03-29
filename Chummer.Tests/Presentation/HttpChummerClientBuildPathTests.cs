@@ -328,6 +328,21 @@ public sealed class HttpChummerClientBuildPathTests
       "summary": "preview_scout stays attached to windows/avalonia on preview."
     }
   ],
+  "travelMode": {
+    "status": "warning",
+    "summary": "Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.",
+    "prefetchInventorySummary": "2 dossiers, 1 campaign, 1 rule environment, and governed prep packets stay bounded to the staged travel cache."
+  },
+  "campaignMemory": {
+    "label": "Long-lived campaign memory",
+    "summary": "The governed memory lane keeps the Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.",
+    "returnSummary": "Return through the Dockside handoff so the same workspace can reopen the courier chase without a lossy recap jump.",
+    "nextSafeAction": "Reopen the Dockside handoff before you trust a second device with the same recap lane.",
+    "evidenceLines": [
+      "Continuity snapshot still points at Dockside handoff.",
+      "Downtime follow-through remains attached to the same recap lane."
+    ]
+  },
   "nextSafeAction": {
     "summary": "Open the shared campaign view."
   },
@@ -350,10 +365,17 @@ public sealed class HttpChummerClientBuildPathTests
         Assert.IsNotNull(projection);
         Assert.AreEqual("workspace-123", projection.WorkspaceId);
         Assert.AreEqual("Open the shared campaign view.", projection.NextSafeAction);
+        Assert.AreEqual("Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.", projection.TravelModeSummary);
+        Assert.AreEqual("The governed memory lane keeps the Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.", projection.CampaignMemorySummary);
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Roster: One dossier is ready.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Roster transfer: APEX — APEX moved into Thursday Crew Relay with governed ownership receipts attached.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Travel mode: Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Travel inventory: 2 dossiers, 1 campaign, 1 rule environment, and governed prep packets stay bounded to the staged travel cache.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Campaign memory: The governed memory lane keeps the Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Campaign memory return: Return through the Dockside handoff so the same workspace can reopen the courier chase without a lossy recap jump.");
         CollectionAssert.Contains(projection.SupportHighlights.ToArray(), "Released: The fix reached the same claimed install.");
         CollectionAssert.Contains(projection.DecisionNotices.ToArray(), "install_role: preview_scout stays attached to windows/avalonia on preview.");
+        CollectionAssert.Contains(projection.Watchouts.ToArray(), "Travel mode: Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.");
     }
 
     private static HttpResponseMessage JsonResponse(string json)

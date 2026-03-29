@@ -7,6 +7,10 @@ public sealed record DesktopHomeCampaignServerPlane(
     string PublicationSummary,
     string RosterSummary,
     string? RunboardSummary,
+    string? TravelModeSummary,
+    string? TravelPrefetchInventorySummary,
+    string? CampaignMemorySummary,
+    string? CampaignMemoryReturnSummary,
     string NextSafeAction,
     IReadOnlyList<string> ReadinessHighlights,
     IReadOnlyList<string> Watchouts,
@@ -28,6 +32,8 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
     IReadOnlyList<DesktopHomeSupportClosureCueDto> SupportClosures,
     IReadOnlyList<DesktopHomeKnownIssueCueDto> KnownIssues,
     IReadOnlyList<DesktopHomeDecisionNoticeDto> DecisionNotices,
+    DesktopHomeTravelModeDto? TravelMode,
+    DesktopHomeCampaignMemoryDto? CampaignMemory,
     DesktopHomeNextSafeActionCueDto NextSafeAction,
     DateTimeOffset GeneratedAtUtc)
 {
@@ -50,6 +56,31 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             readinessHighlights.Add($"Objectives: {Runboard.ObjectiveSummary}");
         }
 
+        if (!string.IsNullOrWhiteSpace(TravelMode?.Summary))
+        {
+            readinessHighlights.Add($"Travel mode: {TravelMode.Summary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(TravelMode?.PrefetchInventorySummary))
+        {
+            readinessHighlights.Add($"Travel inventory: {TravelMode.PrefetchInventorySummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(CampaignMemory?.Summary))
+        {
+            readinessHighlights.Add($"Campaign memory: {CampaignMemory.Summary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(CampaignMemory?.ReturnSummary))
+        {
+            readinessHighlights.Add($"Campaign memory return: {CampaignMemory.ReturnSummary}");
+        }
+
+        if (CampaignMemory?.EvidenceLines.Count > 0)
+        {
+            readinessHighlights.Add($"Campaign memory evidence: {CampaignMemory.EvidenceLines[0]}");
+        }
+
         readinessHighlights.AddRange(ReadinessCues
             .Take(3)
             .Select(static cue => $"{cue.Title} — {cue.Summary}"));
@@ -69,6 +100,10 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             .Select(static cue => $"{cue.Title}: {cue.Summary}"));
         watchouts.AddRange(ContinuityConflicts.Select(static cue => cue.Summary));
         watchouts.AddRange(KnownIssues.Select(static cue => cue.Summary));
+        if (NeedsAttention(TravelMode?.Status))
+        {
+            watchouts.Add($"Travel mode: {TravelMode!.Summary}");
+        }
 
         IReadOnlyList<string> supportHighlights = SupportClosures
             .Take(3)
@@ -97,6 +132,10 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             PublicationSummary: CampaignSummary.PublicationSummary,
             RosterSummary: RosterReadiness.Summary,
             RunboardSummary: string.IsNullOrWhiteSpace(runboardSummary) ? null : runboardSummary,
+            TravelModeSummary: NormalizeOptional(TravelMode?.Summary),
+            TravelPrefetchInventorySummary: NormalizeOptional(TravelMode?.PrefetchInventorySummary),
+            CampaignMemorySummary: NormalizeOptional(CampaignMemory?.Summary),
+            CampaignMemoryReturnSummary: NormalizeOptional(CampaignMemory?.ReturnSummary),
             NextSafeAction: NextSafeAction.Summary,
             ReadinessHighlights: FinalizeLines(readinessHighlights),
             Watchouts: FinalizeLines(watchouts),
@@ -117,8 +156,11 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             .Where(static item => !string.IsNullOrWhiteSpace(item))
             .Select(static item => item.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(8)
+            .Take(12)
             .ToArray();
+
+    private static string? NormalizeOptional(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
 
 public sealed record DesktopHomeWorkspaceSummaryDto(string WorkspaceId);
@@ -168,5 +210,17 @@ public sealed record DesktopHomeKnownIssueCueDto(string Summary);
 public sealed record DesktopHomeDecisionNoticeDto(
     string Kind,
     string Summary);
+
+public sealed record DesktopHomeTravelModeDto(
+    string Status,
+    string Summary,
+    string PrefetchInventorySummary);
+
+public sealed record DesktopHomeCampaignMemoryDto(
+    string Label,
+    string Summary,
+    string ReturnSummary,
+    string NextSafeAction,
+    IReadOnlyList<string> EvidenceLines);
 
 public sealed record DesktopHomeNextSafeActionCueDto(string Summary);

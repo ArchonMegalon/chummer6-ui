@@ -127,6 +127,25 @@ public static class DesktopHomeCampaignProjector
             readinessHighlights.AddRange(serverPlane.ReadinessHighlights);
             readinessHighlights.AddRange(serverPlane.SupportHighlights.Select(static line => $"Support lane: {line}"));
             readinessHighlights.AddRange(serverPlane.DecisionNotices.Select(static line => $"Decision notice: {line}"));
+            if (!string.IsNullOrWhiteSpace(serverPlane.TravelModeSummary))
+            {
+                readinessHighlights.Add($"Travel mode: {serverPlane.TravelModeSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.TravelPrefetchInventorySummary))
+            {
+                readinessHighlights.Add($"Travel inventory: {serverPlane.TravelPrefetchInventorySummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.CampaignMemorySummary))
+            {
+                readinessHighlights.Add($"Campaign memory: {serverPlane.CampaignMemorySummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.CampaignMemoryReturnSummary))
+            {
+                readinessHighlights.Add($"Campaign memory return: {serverPlane.CampaignMemoryReturnSummary}");
+            }
         }
 
         if (leadWorkspace is not null)
@@ -342,6 +361,6 @@ public static class DesktopHomeCampaignProjector
             .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Select(static line => line.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(16)
+            .Take(24)
             .ToArray();
 }
