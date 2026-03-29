@@ -13,7 +13,7 @@
                 Padding="8"
                 BorderThickness="1"
                 BorderBrush="#CBD5E1">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
             <TextBlock x:Name="BuildLabSummaryText"
                        Text="Build Lab intake"
                        FontWeight="Bold"
@@ -45,23 +45,28 @@
               </ListBox.ItemsPanel>
             </ListBox>
             <TextBox Grid.Row="5"
-                     x:Name="BuildLabTimelinesBox"
+                     x:Name="BuildLabCoverageBox"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      IsReadOnly="True" />
             <TextBox Grid.Row="6"
+                     x:Name="BuildLabTimelinesBox"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
+            <TextBox Grid.Row="7"
                      x:Name="BuildLabExportPayloadsBox"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      IsReadOnly="True" />
-            <ListBox Grid.Row="7" x:Name="BuildLabExportTargetsList" Height="96">
+            <ListBox Grid.Row="8" x:Name="BuildLabExportTargetsList" Height="96">
               <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                   <VirtualizingStackPanel />
                 </ItemsPanelTemplate>
               </ListBox.ItemsPanel>
             </ListBox>
-            <ListBox Grid.Row="8" x:Name="BuildLabActionsList" Height="56">
+            <ListBox Grid.Row="9" x:Name="BuildLabActionsList" Height="56">
               <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                   <VirtualizingStackPanel />

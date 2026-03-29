@@ -39,8 +39,59 @@ public sealed class CampaignSpineShowcaseComponentTests
             [
                 new BuildLabBadge("runtime", "Runtime-backed", BuildLabBadgeKinds.Provenance, true)
             ],
-            Variants: [],
-            ProgressionTimelines: [],
+            Variants:
+            [
+                new BuildLabVariantProjection(
+                    VariantId: "variant.social",
+                    Label: "Social Operator",
+                    Summary: "Fastest ops-first lane.",
+                    TableFit: "Ops-first",
+                    RoleBadges: [],
+                    Metrics:
+                    [
+                        new BuildLabVariantMetric("coverage", "Coverage", "Improved")
+                    ],
+                    Warnings: [],
+                    OverlapBadges:
+                    [
+                        new BuildLabBadge("face-overlap", "Light face overlap", BuildLabBadgeKinds.Overlap)
+                    ],
+                    Actions: [],
+                    ExplainEntryId: "buildlab.variant.social")
+            ],
+            ProgressionTimelines:
+            [
+                new BuildLabProgressionTimeline(
+                    TimelineId: "timeline.social",
+                    Title: "Social Operator Ladder",
+                    Summary: "25 / 50 / 100 Karma checkpoints.",
+                    VariantId: "variant.social",
+                    Steps:
+                    [
+                        new BuildLabProgressionStep(
+                            "social-25",
+                            25,
+                            "Opener",
+                            "Table-ready lead.",
+                            Outcomes: [],
+                            MilestoneBadges: [],
+                            RiskBadges: [],
+                            ExplainEntryId: "buildlab.timeline.social-25"),
+                        new BuildLabProgressionStep(
+                            "social-100",
+                            100,
+                            "Anchor",
+                            "Campaign-ready anchor.",
+                            Outcomes:
+                            [
+                                new BuildLabVariantMetric("coverage", "Coverage", "Broad")
+                            ],
+                            MilestoneBadges: [],
+                            RiskBadges: [],
+                            ExplainEntryId: "buildlab.timeline.social-100")
+                    ],
+                    SourceDocumentId: "source.timeline")
+            ],
             NextSafeAction: "Rebind runtime before export.",
             RuntimeCompatibilitySummary: "One provider binding still needs review.",
             CampaignFitSummary: "Fits sparse-ops crews.",
@@ -58,7 +109,11 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Rebind runtime before export.");
         StringAssert.Contains(cut.Markup, "Fits sparse-ops crews.");
         StringAssert.Contains(cut.Markup, "Do not export until the runtime rebind receipt exists.");
+        StringAssert.Contains(cut.Markup, "Planner + team coverage");
+        StringAssert.Contains(cut.Markup, "Light face overlap");
+        StringAssert.Contains(cut.Markup, "strongest coverage checkpoint at 100 Karma");
         Assert.IsNotNull(cut.Find("[data-build-lab-decision-rail]"));
+        Assert.IsNotNull(cut.Find("[data-build-lab-optimizer-rail]"));
     }
 
     [TestMethod]
