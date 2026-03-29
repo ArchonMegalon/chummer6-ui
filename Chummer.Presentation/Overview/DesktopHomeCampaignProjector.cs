@@ -1,4 +1,5 @@
 using Chummer.Campaign.Contracts;
+using Chummer.Contracts.Rulesets;
 
 namespace Chummer.Presentation.Overview;
 
@@ -142,7 +143,12 @@ public static class DesktopHomeCampaignProjector
             readinessHighlights.Add($"Build handoff: {leadHandoff.CampaignReturnSummary}");
         }
 
-        if (!string.IsNullOrWhiteSpace(leadRulesAnswer?.AfterSummary))
+        RulesetEnvironmentDiffProjection? leadRulesDiff = leadRulesAnswer?.Diffs?.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(leadRulesDiff?.AfterSummary))
+        {
+            readinessHighlights.Add($"Rules diff: {leadRulesDiff.Label} — {leadRulesDiff.AfterSummary}");
+        }
+        else if (!string.IsNullOrWhiteSpace(leadRulesAnswer?.AfterSummary))
         {
             readinessHighlights.Add($"Rules follow-through: {leadRulesAnswer.AfterSummary}");
         }

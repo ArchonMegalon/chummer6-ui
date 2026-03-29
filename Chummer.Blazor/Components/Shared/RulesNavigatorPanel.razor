@@ -1,4 +1,5 @@
 @using Chummer.Campaign.Contracts
+@using Chummer.Contracts.Rulesets
 @using Chummer.Presentation.UiKit
 
 <section class="panel design-panel" data-rules-navigator-showcase="@Projection.EntryId">
@@ -18,12 +19,33 @@
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Grounded answer</h3>
-            <span class="@(ChummerPatternBoundary.ExplainChipClass("Before / after", "Rules navigator before and after diff"))"
-                  @attributes="@(ChummerPatternBoundary.ExplainChipAttributes("Before / after", "Rules navigator before and after diff"))">Before / after</span>
+            <span class="@(ChummerPatternBoundary.ExplainChipClass(GetDiffChipLabel(), "Rules navigator before and after diff"))"
+                  @attributes="@(ChummerPatternBoundary.ExplainChipAttributes(GetDiffChipLabel(), "Rules navigator before and after diff"))">@GetDiffChipLabel()</span>
         </div>
         <p><strong>@Projection.ShortAnswer</strong></p>
-        <p class="note">Before: @Projection.BeforeSummary</p>
-        <p class="note">After: @Projection.AfterSummary</p>
+        @if (Projection.Diffs is { Count: > 0 })
+        {
+            <ul class="browse-detail-lines">
+                @foreach (RulesetEnvironmentDiffProjection diff in Projection.Diffs)
+                {
+                    <li>
+                        <strong>@diff.Label</strong>
+                        <span> Before: @diff.BeforeSummary</span>
+                        <span> After: @diff.AfterSummary</span>
+                        <span> Why: @diff.ReasonSummary</span>
+                        @if (!string.IsNullOrWhiteSpace(diff.ExplainEntryId))
+                        {
+                            <span> Explain: @diff.ExplainEntryId</span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="note">Before: @Projection.BeforeSummary</p>
+            <p class="note">After: @Projection.AfterSummary</p>
+        }
     </section>
 
     <section class="coach-card">
@@ -53,5 +75,20 @@
         ExplainEntryId: "rules.navigator.demo",
         ProvenanceLabel: "campaign scope · sr6.preview.v1",
         EvidenceLines: ["sr6.preview.v1 is the active compatibility fingerprint."],
-        SupportReuseHints: ["Support can reuse this answer instead of inventing new behavior."]);
+        SupportReuseHints: ["Support can reuse this answer instead of inventing new behavior."],
+        Diffs:
+        [
+            new RulesetEnvironmentDiffProjection(
+                DiffId: "rules.navigator.demo:return",
+                Label: "Campaign return",
+                BeforeSummary: "Before approval, answers stay caveated and review-heavy.",
+                AfterSummary: "After approval, one grounded answer path stays visible everywhere.",
+                ReasonSummary: "The campaign return stays pinned to the approved compatibility fingerprint.",
+                ExplainEntryId: "rules.navigator.demo:return")
+        ]);
+
+    private string GetDiffChipLabel()
+        => Projection.Diffs is { Count: > 0 }
+            ? $"{Projection.Diffs.Count} before/after diff(s)"
+            : "Before / after";
 }
