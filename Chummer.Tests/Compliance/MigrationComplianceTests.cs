@@ -1700,8 +1700,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(sectionPaneText, "Variant Comparison");
         StringAssert.Contains(sectionPaneText, "Decision rail");
         StringAssert.Contains(sectionPaneText, "25 / 50 / 100 Karma");
+        StringAssert.Contains(sectionPaneText, "Planner + team coverage");
         StringAssert.Contains(sectionHostText, "SetBuildLab");
         StringAssert.Contains(sectionHostText, "BuildLabVariantsList");
+        StringAssert.Contains(sectionHostText, "BuildLabCoverageBox");
+        StringAssert.Contains(sectionHostText, "BuildCoverageText");
         StringAssert.Contains(sectionHostText, "BuildTimelineText");
         StringAssert.Contains(sectionHostText, "Next safe action:");
         StringAssert.Contains(presentationGlobalUsingsText, "Chummer.Contracts.Presentation.BuildLabConceptIntakeProjection");
