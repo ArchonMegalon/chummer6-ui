@@ -26,6 +26,7 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHomeSupportProjector_uses_real_support_case_truth();
             DesktopHomeBuildExplainProjector_uses_real_contract_state();
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
+            FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions();
             DesktopHome_wires_the_campaign_projection_into_the_summary_panel();
             DesktopHome_wires_the_support_projection_into_the_summary_panel();
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
@@ -717,7 +718,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_campaignProjection.Watchouts");
         RequireContains(source, "CreateCampaignActions()");
         RequireContains(source, "desktop.home.section.campaign_return");
-        RequireContains(source, "Open current campaign workspace");
+        RequireContains(source, "desktop.home.button.open_current_campaign_workspace");
         RequireContains(source, "client.GetAccountCampaignSummaryAsync");
         RequireContains(source, "client.GetCampaignWorkspaceDigestsAsync");
         RequireContains(source, "ReadCampaignWorkspaceDigestsAsync");
@@ -785,11 +786,11 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "CreateWorkspaceActions()");
         RequireContains(source, "desktop.home.section.build_explain");
         RequireContains(source, "desktop.home.section.recent_workspaces");
-        RequireContains(source, "Open current workspace");
-        RequireContains(source, "CreateNextSafeActionButtonLabel(_campaignProjection.NextSafeAction, \"Open campaign follow-through\")");
-        RequireContains(source, "CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, \"Open build follow-through\")");
-        RequireContains(source, "CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, \"Open workspace follow-through\")");
-        RequireContains(source, "Open work support");
+        RequireContains(source, "desktop.home.button.open_current_workspace");
+        RequireContains(source, "desktop.home.button.open_campaign_followthrough");
+        RequireContains(source, "desktop.home.button.open_build_followthrough");
+        RequireContains(source, "desktop.home.button.open_workspace_followthrough");
+        RequireContains(source, "desktop.home.button.open_work_support");
         RequireContains(source, "Next: ");
         RequireContains(source, "_buildExplainText");
         RequireContains(source, "_workspaceSummaryText");
@@ -823,24 +824,60 @@ internal static class AccessibilitySignoffSmokeTests
         RequireDoesNotContain(source, "Open work follow-through");
     }
 
+    private static void FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions()
+    {
+        string toolStripMarkup = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml");
+        RequireContains(toolStripMarkup, "Desktop Home");
+        RequireContains(toolStripMarkup, "Link This Copy");
+        RequireContains(toolStripMarkup, "Open Support");
+        RequireContains(toolStripMarkup, "DesktopHomeButton_OnClick");
+        RequireContains(toolStripMarkup, "InstallLinkingButton_OnClick");
+        RequireContains(toolStripMarkup, "SupportButton_OnClick");
+
+        string toolStripSource = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml.cs");
+        RequireContains(toolStripSource, "DesktopHomeRequested");
+        RequireContains(toolStripSource, "InstallLinkingRequested");
+        RequireContains(toolStripSource, "SupportRequested");
+
+        string bindingSource = ReadSource("Chummer.Avalonia/MainWindow.ControlBinding.cs");
+        RequireContains(bindingSource, "onDesktopHomeRequested");
+        RequireContains(bindingSource, "onInstallLinkingRequested");
+        RequireContains(bindingSource, "onSupportRequested");
+        RequireContains(bindingSource, "toolStrip.DesktopHomeRequested +=");
+        RequireContains(bindingSource, "toolStrip.InstallLinkingRequested +=");
+        RequireContains(bindingSource, "toolStrip.SupportRequested +=");
+
+        string eventHandlerSource = ReadSource("Chummer.Avalonia/MainWindow.EventHandlers.cs");
+        RequireContains(eventHandlerSource, "ToolStrip_OnDesktopHomeRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnInstallLinkingRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnSupportRequested");
+        RequireContains(eventHandlerSource, "DesktopHomeWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "DesktopInstallLinkingWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
+
+        string desktopHomeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        RequireContains(desktopHomeSource, "public static async Task ShowAsync(Window owner, string headId)");
+
+        string installLinkSource = ReadSource("Chummer.Avalonia/DesktopInstallLinkingWindow.cs");
+        RequireContains(installLinkSource, "public static async Task ShowAsync(Window owner, string headId)");
+    }
+
     private static void DesktopHome_exposes_claim_aware_install_and_update_actions()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
         RequireContains(source, "CreateInstallActions()");
         RequireContains(source, "CreateUpdateActions()");
-        RequireContains(source, "Link this copy");
-        RequireContains(source, "Open devices and access");
-        RequireContains(source, "Open current workspace");
-        RequireContains(source, "Open install support");
-        RequireContains(source, "Open update support");
+        RequireContains(source, "desktop.install_link.button.link_copy");
+        RequireContains(source, "desktop.home.button.open_devices_access");
+        RequireContains(source, "desktop.home.button.open_current_workspace");
+        RequireContains(source, "desktop.home.button.open_install_support");
+        RequireContains(source, "desktop.home.button.open_update_support");
         RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
         RequireContains(source, "RefreshHomeStateAsync()");
-        RequireContains(source, "Last claim attempt:");
-        RequireContains(source, "Manifest published:");
-        RequireContains(source, "Release posture:");
-        RequireContains(source, "Supportability:");
-        RequireContains(source, "Local release proof:");
-        RequireContains(source, "Fix availability:");
+        RequireContains(source, "desktop.home.install_summary.last_claim_attempt");
+        RequireContains(source, "desktop.home.update_summary");
+        RequireContains(source, "desktop.home.value.no_supportability_summary");
+        RequireContains(source, "desktop.home.value.no_fix_guidance");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForUpdate");
     }
@@ -854,10 +891,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.install_link.button.open_work");
         RequireContains(source, "desktop.install_link.title");
         RequireContains(source, "GetRequiredString");
-        RequireContains(source, "Last claim attempt:");
-        RequireContains(source, "Hub message:");
-        RequireContains(source, "Claim error:");
-        RequireContains(source, "Next safe action:");
+        RequireContains(source, "desktop.install_link.claim_code_watermark");
+        RequireContains(source, "desktop.install_link.summary.last_claim_attempt");
+        RequireContains(source, "desktop.install_link.summary.hub_message");
+        RequireContains(source, "desktop.install_link.summary.claim_error");
+        RequireContains(source, "desktop.install_link.summary.next_safe_action_claimed");
+        RequireContains(source, "desktop.install_link.summary.next_safe_action_guest");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_state)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkPortal()");

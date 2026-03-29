@@ -1,11 +1,16 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.ToolStripControl">
-  <StackPanel Orientation="Horizontal" Spacing="8">
-    <Button Content="Import Character File" Width="170" Click="ImportFileButton_OnClick" />
-    <Button Content="Import Raw XML" Width="130" Click="ImportRawButton_OnClick" />
-    <Button Content="Save Workspace" Width="140" Click="SaveButton_OnClick" />
-    <Button Content="Close Active Workspace" Width="190" Click="CloseWorkspaceButton_OnClick" />
-    <TextBlock x:Name="StatusText" VerticalAlignment="Center" Text="State: idle" />
-  </StackPanel>
+  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+    <WrapPanel Grid.Column="0" Orientation="Horizontal" ItemHeight="36">
+      <Button Content="Desktop Home" Width="130" Click="DesktopHomeButton_OnClick" />
+      <Button Content="Link This Copy" Width="130" Click="InstallLinkingButton_OnClick" />
+      <Button Content="Open Support" Width="130" Click="SupportButton_OnClick" />
+      <Button Content="Import Character File" Width="170" Click="ImportFileButton_OnClick" />
+      <Button Content="Import Raw XML" Width="130" Click="ImportRawButton_OnClick" />
+      <Button Content="Save Workspace" Width="140" Click="SaveButton_OnClick" />
+      <Button Content="Close Active Workspace" Width="190" Click="CloseWorkspaceButton_OnClick" />
+    </WrapPanel>
+    <TextBlock x:Name="StatusText" Grid.Column="1" VerticalAlignment="Center" Text="State: idle" />
+  </Grid>
 </UserControl>

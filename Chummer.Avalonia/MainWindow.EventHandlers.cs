@@ -2,6 +2,7 @@ using System.Text;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Chummer.Contracts.Workspaces;
+using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Shell;
 
 namespace Chummer.Avalonia;
@@ -59,6 +60,48 @@ public partial class MainWindow
         await RunUiActionAsync(
             () => _interactionCoordinator.SaveAsync(CancellationToken.None),
             "save workspace");
+    }
+
+    private async void ToolStrip_OnDesktopHomeRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopHomeWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip);
+            },
+            "open desktop home");
+    }
+
+    private async void ToolStrip_OnInstallLinkingRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopInstallLinkingWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowInstallLinkingReviewed(_controls.ToolStrip);
+            },
+            "open install linking");
+    }
+
+    private async void ToolStrip_OnSupportRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            () =>
+            {
+                DesktopInstallLinkingState state = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+                if (DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(state))
+                {
+                    MainWindowFeedbackCoordinator.ShowInstallSupportOpened(_controls.ToolStrip);
+                }
+                else
+                {
+                    MainWindowFeedbackCoordinator.ShowInstallSupportUnavailable(_controls.ToolStrip);
+                }
+
+                return Task.CompletedTask;
+            },
+            "open install support");
     }
 
     private async void ToolStrip_OnCloseWorkspaceRequested(object? sender, EventArgs e)

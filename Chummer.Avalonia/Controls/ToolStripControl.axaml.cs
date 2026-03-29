@@ -14,6 +14,9 @@ public partial class ToolStripControl : UserControl
     public event EventHandler? ImportRawRequested;
     public event EventHandler? SaveRequested;
     public event EventHandler? CloseWorkspaceRequested;
+    public event EventHandler? DesktopHomeRequested;
+    public event EventHandler? InstallLinkingRequested;
+    public event EventHandler? SupportRequested;
 
     public void SetState(ToolStripState state)
     {
@@ -28,6 +31,21 @@ public partial class ToolStripControl : UserControl
     private void ImportFileButton_OnClick(object? sender, RoutedEventArgs e)
     {
         ImportFileRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void DesktopHomeButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        DesktopHomeRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void InstallLinkingButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        InstallLinkingRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void SupportButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        SupportRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void ImportRawButton_OnClick(object? sender, RoutedEventArgs e)

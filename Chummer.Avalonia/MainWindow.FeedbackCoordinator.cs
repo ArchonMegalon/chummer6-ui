@@ -19,6 +19,26 @@ internal static class MainWindowFeedbackCoordinator
         toolStrip.SetStatusText("State: no active workspace to close.");
     }
 
+    public static void ShowDesktopHomeReviewed(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText("State: desktop home reviewed.");
+    }
+
+    public static void ShowInstallLinkingReviewed(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText("State: install linking reviewed.");
+    }
+
+    public static void ShowInstallSupportOpened(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText("State: opened install-aware support.");
+    }
+
+    public static void ShowInstallSupportUnavailable(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText("State: install-aware support is unavailable on this host.");
+    }
+
     public static void ShowDownloadUnavailable(SectionHostControl sectionHost)
     {
         sectionHost.SetNotice("Notice: download requested but file save is unavailable on this platform.");

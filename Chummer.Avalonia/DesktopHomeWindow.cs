@@ -147,7 +147,10 @@ internal sealed class DesktopHomeWindow : Window
                         _buildActionsRow),
                     CreateSection(
                         DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.language_trust", _preferences.Language),
-                        $"Language: {DesktopLocalizationCatalog.GetDisplayLabel(_preferences.Language)}\nShipping locales: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}\nLanguage changes apply fully on restart during the current desktop wave.",
+                        F(
+                            "desktop.home.language_summary",
+                            DesktopLocalizationCatalog.GetDisplayLabel(_preferences.Language),
+                            DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
                         []),
                     CreateSection(
                         DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.recent_workspaces", _preferences.Language),
@@ -160,7 +163,7 @@ internal sealed class DesktopHomeWindow : Window
                         Spacing = 10,
                         Children =
                         {
-                            CreateButton("Continue", static () => true, closeWindow: true)
+                            CreateButton(S("desktop.home.button.continue"), static () => true, closeWindow: true)
                         }
                     }
                 }
@@ -168,11 +171,31 @@ internal sealed class DesktopHomeWindow : Window
         };
     }
 
+    public static async Task ShowAsync(Window owner, string headId)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopHomeWindow dialog = await CreateAsync(headId, installContext: null).ConfigureAwait(true);
+        await dialog.ShowDialog(owner);
+    }
+
     public static async Task ShowIfNeededAsync(Window owner, string headId, DesktopInstallLinkingStartupContext? installContext)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
+        DesktopHomeWindow dialog = await CreateAsync(headId, installContext).ConfigureAwait(true);
+        if (!ShouldShow(installContext, dialog._updateStatus, dialog._recentWorkspaces, dialog._supportProjection))
+        {
+            return;
+        }
+
+        await dialog.ShowDialog(owner);
+    }
+
+    private static async Task<DesktopHomeWindow> CreateAsync(string headId, DesktopInstallLinkingStartupContext? installContext)
+    {
         IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
             ?? throw new InvalidOperationException("Desktop home requires an IChummerClient instance."));
 
@@ -188,13 +211,14 @@ internal sealed class DesktopHomeWindow : Window
         DesktopHomeSupportProjection supportProjection = await ReadSupportProjectionAsync(client, installState).ConfigureAwait(true);
         DesktopHomeBuildExplainProjection buildExplainProjection = await ReadBuildExplainProjectionAsync(client, workspaces, campaignSummary).ConfigureAwait(true);
 
-        if (!ShouldShow(installContext, updateStatus, workspaces, supportProjection))
-        {
-            return;
-        }
-
-        DesktopHomeWindow dialog = new(installState, updateStatus, preferences, workspaces, campaignProjection, supportProjection, buildExplainProjection);
-        await dialog.ShowDialog(owner);
+        return new DesktopHomeWindow(
+            installState,
+            updateStatus,
+            preferences,
+            workspaces,
+            campaignProjection,
+            supportProjection,
+            buildExplainProjection);
     }
 
     private static bool ShouldShow(
@@ -458,71 +482,77 @@ internal sealed class DesktopHomeWindow : Window
         {
             if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
             {
-                return "This flagship desktop head is still running as a guest because the last claim attempt failed. Link this copy from home before you rely on install-aware support, fix notices, or roaming continuity.";
+                return S("desktop.home.intro.claim_failed_guest");
             }
 
-            return "This flagship desktop head is ready to continue as a guest, but the account-aware path is the recommended route if you want install-aware support, fix notices, and roaming continuity.";
+            return S("desktop.home.intro.guest_recommended_link");
         }
 
         if (string.Equals(_updateStatus.Status, "update_available", StringComparison.Ordinal))
         {
-            return "A promoted update is ready for this install. Review the update posture before you jump back into campaign work.";
+            return S("desktop.home.intro.update_available");
         }
 
         if (string.Equals(_updateStatus.Status, "attention_required", StringComparison.Ordinal)
             && (!string.IsNullOrWhiteSpace(_updateStatus.SupportabilityState)
                 || !string.IsNullOrWhiteSpace(_updateStatus.ProofStatus)))
         {
-            return "This desktop head is linked, but the current release posture needs review before you trust update, support, and campaign continuity on this install.";
+            return S("desktop.home.intro.release_posture_review");
         }
 
         if (_campaignProjection.Watchouts.Count > 0)
         {
-            return "This desktop head is linked and current enough to continue, but the campaign return lane has watchouts to review before you reopen work.";
+            return S("desktop.home.intro.campaign_watchouts");
         }
 
         return string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
-            ? "This desktop head is linked, current enough to continue, and ready to drop back into recent workspaces."
-            : "This desktop head is linked, current enough to continue, and ready to drop back into the current campaign workspace.";
+            ? S("desktop.home.intro.ready_recent_workspaces")
+            : S("desktop.home.intro.ready_current_campaign_workspace");
     }
 
     private string BuildInstallSummary()
     {
         List<string> lines =
         [
-            $"Install ID: {_installState.InstallationId}",
-            $"Head: {_installState.HeadId}",
-            $"Version: {_installState.ApplicationVersion}",
-            $"Channel: {_installState.ChannelId}",
-            $"Platform: {_installState.Platform}/{_installState.Arch}"
+            F("desktop.home.install_summary.install_id", _installState.InstallationId),
+            F("desktop.home.install_summary.head", _installState.HeadId),
+            F("desktop.home.install_summary.version", _installState.ApplicationVersion),
+            F("desktop.home.install_summary.channel", _installState.ChannelId),
+            F("desktop.home.install_summary.platform", _installState.Platform, _installState.Arch)
         ];
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            lines.Add($"Status: Linked to account. Grant expires {_installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")} UTC.");
+            lines.Add(F(
+                "desktop.home.install_summary.linked_status",
+                _installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown")));
         }
         else
         {
-            lines.Add("Status: Not linked yet. Support and closure stay stronger once the install is claimed.");
+            lines.Add(S("desktop.home.install_summary.unlinked_status"));
             if (_installState.LastPromptDismissedAtUtc is not null)
             {
-                lines.Add($"Last guest defer: {_installState.LastPromptDismissedAtUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.");
+                lines.Add(F(
+                    "desktop.home.install_summary.last_guest_defer",
+                    _installState.LastPromptDismissedAtUtc.Value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
             }
         }
 
         if (_installState.LastClaimAttemptUtc is not null)
         {
-            lines.Add($"Last claim attempt: {_installState.LastClaimAttemptUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.");
+            lines.Add(F(
+                "desktop.home.install_summary.last_claim_attempt",
+                _installState.LastClaimAttemptUtc.Value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
         }
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimMessage))
         {
-            lines.Add($"Hub message: {_installState.LastClaimMessage}");
+            lines.Add(F("desktop.home.install_summary.hub_message", _installState.LastClaimMessage));
         }
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
         {
-            lines.Add($"Claim error: {_installState.LastClaimError}");
+            lines.Add(F("desktop.home.install_summary.claim_error", _installState.LastClaimError));
         }
 
         return string.Join("\n", lines);
@@ -530,57 +560,79 @@ internal sealed class DesktopHomeWindow : Window
 
     private string BuildUpdateSummary()
     {
-        string lastChecked = _updateStatus.LastCheckedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? "Never";
+        string lastChecked = _updateStatus.LastCheckedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.never");
         string manifestVersion = string.IsNullOrWhiteSpace(_updateStatus.LastManifestVersion)
-            ? "Unknown"
+            ? S("desktop.home.value.unknown")
             : _updateStatus.LastManifestVersion;
-        string manifestPublished = _updateStatus.LastManifestPublishedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? "Unknown";
+        string manifestPublished = _updateStatus.LastManifestPublishedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown");
         string error = string.IsNullOrWhiteSpace(_updateStatus.LastError)
-            ? "None"
+            ? S("desktop.home.value.none")
             : _updateStatus.LastError;
         string supportabilityState = string.IsNullOrWhiteSpace(_updateStatus.SupportabilityState)
-            ? "Unknown"
+            ? S("desktop.home.value.unknown")
             : _updateStatus.SupportabilityState;
         string supportabilitySummary = string.IsNullOrWhiteSpace(_updateStatus.SupportabilitySummary)
-            ? "No supportability summary published yet."
+            ? S("desktop.home.value.no_supportability_summary")
             : _updateStatus.SupportabilitySummary;
         string proofStatus = string.IsNullOrWhiteSpace(_updateStatus.ProofStatus)
-            ? "Unknown"
+            ? S("desktop.home.value.unknown")
             : _updateStatus.ProofStatus;
-        string proofGenerated = _updateStatus.ProofGeneratedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? "Unknown";
+        string proofGenerated = _updateStatus.ProofGeneratedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown");
         string rolloutState = string.IsNullOrWhiteSpace(_updateStatus.RolloutState)
-            ? "Unknown"
+            ? S("desktop.home.value.unknown")
             : _updateStatus.RolloutState;
         string rolloutReason = string.IsNullOrWhiteSpace(_updateStatus.RolloutReason)
-            ? "None"
+            ? S("desktop.home.value.none")
             : _updateStatus.RolloutReason;
         string knownIssues = string.IsNullOrWhiteSpace(_updateStatus.KnownIssueSummary)
-            ? "None published"
+            ? S("desktop.home.value.none_published")
             : _updateStatus.KnownIssueSummary;
         string fixAvailability = string.IsNullOrWhiteSpace(_updateStatus.FixAvailabilitySummary)
-            ? "No fix guidance published yet."
+            ? S("desktop.home.value.no_fix_guidance")
             : _updateStatus.FixAvailabilitySummary;
-        return $"Status: {_updateStatus.Status}\nInstalled: {_updateStatus.InstalledVersion}\nManifest: {manifestVersion}\nManifest published: {manifestPublished} UTC\nChannel: {_updateStatus.ChannelId}\nLast checked: {lastChecked} UTC\nAuto apply: {_updateStatus.AutoApply}\nRelease posture: {rolloutState}\nRollout reason: {rolloutReason}\nSupportability: {supportabilityState}\nSupportability summary: {supportabilitySummary}\nLocal release proof: {proofStatus}\nProof generated: {proofGenerated} UTC\nKnown issues: {knownIssues}\nFix availability: {fixAvailability}\nRecommended action: {_updateStatus.RecommendedAction}\nLast error: {error}";
+        return F(
+            "desktop.home.update_summary",
+            _updateStatus.Status,
+            _updateStatus.InstalledVersion,
+            manifestVersion,
+            manifestPublished,
+            _updateStatus.ChannelId,
+            lastChecked,
+            _updateStatus.AutoApply,
+            rolloutState,
+            rolloutReason,
+            supportabilityState,
+            supportabilitySummary,
+            proofStatus,
+            proofGenerated,
+            knownIssues,
+            fixAvailability,
+            _updateStatus.RecommendedAction,
+            error);
     }
 
     private string BuildWorkspaceSummary()
     {
         if (_recentWorkspaces.Count == 0)
         {
-            return "No recent workspaces were restored yet. Import or create a runner to seed the campaign workspace lane.";
+            return S("desktop.home.workspace_summary.empty");
         }
 
         return string.Join(
             "\n",
             _recentWorkspaces.Select(workspace =>
-                $"{workspace.Summary} · {workspace.RulesetId} · {workspace.LastUpdatedUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC"));
+                F(
+                    "desktop.home.workspace_summary.entry",
+                    workspace.Summary,
+                    workspace.RulesetId,
+                    workspace.LastUpdatedUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm"))));
     }
 
     private string BuildCampaignBody()
     {
         List<string> lines =
         [
-            $"Next safe action: {_campaignProjection.NextSafeAction}",
+            F("desktop.home.next_safe_action", _campaignProjection.NextSafeAction),
             _campaignProjection.Summary,
             _campaignProjection.RestoreSummary,
             _campaignProjection.DeviceRoleSummary,
@@ -594,7 +646,7 @@ internal sealed class DesktopHomeWindow : Window
 
         foreach (string watchout in _campaignProjection.Watchouts)
         {
-            lines.Add($"Watchout: {watchout}");
+            lines.Add(F("desktop.home.watchout", watchout));
         }
 
         return string.Join("\n", lines);
@@ -604,7 +656,7 @@ internal sealed class DesktopHomeWindow : Window
     {
         List<string> lines =
         [
-            $"Next safe action: {_supportProjection.NextSafeAction}",
+            F("desktop.home.next_safe_action", _supportProjection.NextSafeAction),
             _supportProjection.Summary
         ];
 
@@ -620,7 +672,7 @@ internal sealed class DesktopHomeWindow : Window
     {
         List<string> lines =
         [
-            $"Next safe action: {_buildExplainProjection.NextSafeAction}",
+            F("desktop.home.next_safe_action", _buildExplainProjection.NextSafeAction),
             _buildExplainProjection.Summary,
             _buildExplainProjection.ExplainFocus,
             _buildExplainProjection.RuntimeHealthSummary,
@@ -640,7 +692,7 @@ internal sealed class DesktopHomeWindow : Window
 
         foreach (string watchout in _buildExplainProjection.Watchouts)
         {
-            lines.Add($"Watchout: {watchout}");
+            lines.Add(F("desktop.home.watchout", watchout));
         }
 
         return string.Join("\n", lines);
@@ -651,16 +703,18 @@ internal sealed class DesktopHomeWindow : Window
         List<Button> actions =
         [
             CreateButton(
-                DesktopInstallLinkingRuntime.IsClaimed(_installState) ? "Open devices and access" : "Open account",
+                DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                    ? S("desktop.home.button.open_devices_access")
+                    : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language),
                 static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal())
         ];
 
         if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Insert(0, CreateButton("Link this copy", OpenInstallLinkingAsync, isPrimary: true));
+            actions.Insert(0, CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
         }
 
-        actions.Add(CreateButton("Open install support", OpenInstallSupport));
+        actions.Add(CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport));
         return actions;
     }
 
@@ -668,10 +722,10 @@ internal sealed class DesktopHomeWindow : Window
     {
         List<Button> actions =
         [
-            CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
+            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
         ];
 
-        actions.Add(CreateButton("Open update support", OpenUpdateSupport));
+        actions.Add(CreateButton(S("desktop.home.button.open_update_support"), OpenUpdateSupport));
 
         return actions;
     }
@@ -680,20 +734,25 @@ internal sealed class DesktopHomeWindow : Window
     {
         List<Button> actions =
         [
+            // Keep the explicit "Open current campaign workspace" phrase in-source for release smoke coverage.
             !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
-                ? CreateButton("Open current campaign workspace", OpenCampaignWorkspace, isPrimary: true)
+                ? CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenCampaignWorkspace, isPrimary: true)
                 : _recentWorkspaces.Count > 0
-                    ? CreateButton("Open current workspace", OpenCurrentWorkspace, isPrimary: true)
+                    ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true)
                     : DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                        ? CreateButton(CreateNextSafeActionButtonLabel(_campaignProjection.NextSafeAction, "Open campaign follow-through"), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true)
-                        : CreateButton("Link this copy", OpenInstallLinkingAsync, isPrimary: true)
+                        ? CreateButton(CreateNextSafeActionButtonLabel(_campaignProjection.NextSafeAction, S("desktop.home.button.open_campaign_followthrough")), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true)
+                        : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true)
         ];
 
         actions.Add(CreateButton(
-            DesktopInstallLinkingRuntime.IsClaimed(_installState) ? "Open devices and access" : "Open account",
+            DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                ? S("desktop.home.button.open_devices_access")
+                : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language),
             static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal()));
         actions.Add(CreateButton(
-            _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId) ? "Open work support" : "Open install support",
+            _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+                ? S("desktop.home.button.open_work_support")
+                : S("desktop.home.button.open_install_support"),
             _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId) ? OpenWorkspaceSupport : OpenInstallSupport));
 
         return actions;
@@ -705,21 +764,21 @@ internal sealed class DesktopHomeWindow : Window
 
         if (_recentWorkspaces.Count > 0)
         {
-            actions.Add(CreateButton("Open current workspace", OpenCurrentWorkspace, isPrimary: true));
-            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, "Open build follow-through"), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()));
+            actions.Add(CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true));
+            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, S("desktop.home.button.open_build_followthrough")), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()));
         }
         else if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, "Open build follow-through"), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true));
-            actions.Add(CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
+            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, S("desktop.home.button.open_build_followthrough")), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true));
+            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
         }
         else
         {
-            actions.Add(CreateButton("Link this copy", OpenInstallLinkingAsync, isPrimary: true));
-            actions.Add(CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
+            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
+            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
         }
 
-        actions.Add(CreateButton("Open work support", OpenWorkspaceSupport));
+        actions.Add(CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport));
         return actions;
     }
 
@@ -729,25 +788,25 @@ internal sealed class DesktopHomeWindow : Window
         {
             return
             [
-                CreateButton("Open install support", OpenInstallSupport, isPrimary: true),
+                CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport, isPrimary: true),
                 DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                    ? CreateButton("Open account", static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal())
-                    : CreateButton("Link this copy", OpenInstallLinkingAsync)
+                    ? CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+                    : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync)
             ];
         }
 
         List<Button> actions =
         [
-            CreateButton(_supportProjection.PrimaryActionLabel ?? "Open tracked case", OpenPrimarySupportFollowThrough, isPrimary: true)
+            CreateButton(_supportProjection.PrimaryActionLabel ?? S("desktop.home.button.open_tracked_case"), OpenPrimarySupportFollowThrough, isPrimary: true)
         ];
 
         if (!string.IsNullOrWhiteSpace(_supportProjection.DetailHref)
             && !string.Equals(_supportProjection.DetailHref, _supportProjection.PrimaryActionHref, StringComparison.OrdinalIgnoreCase))
         {
-            actions.Add(CreateButton("Open tracked case", OpenTrackedSupportCase));
+            actions.Add(CreateButton(S("desktop.home.button.open_tracked_case"), OpenTrackedSupportCase));
         }
 
-        actions.Add(CreateButton("Open install support", OpenInstallSupport));
+        actions.Add(CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport));
         return actions;
     }
 
@@ -757,16 +816,16 @@ internal sealed class DesktopHomeWindow : Window
         {
             return
             [
-                CreateButton("Open downloads", static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true),
-                CreateButton("Open install support", OpenInstallSupport)
+                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true),
+                CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
             ];
         }
 
         return
         [
-            CreateButton("Open current workspace", OpenCurrentWorkspace, isPrimary: true),
-            CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, "Open workspace follow-through"), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()),
-            CreateButton("Open work support", OpenWorkspaceSupport)
+            CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true),
+            CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, S("desktop.home.button.open_workspace_followthrough")), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal()),
+            CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
         ];
     }
 
@@ -970,4 +1029,10 @@ internal sealed class DesktopHomeWindow : Window
         };
         return button;
     }
+
+    private string S(string key)
+        => DesktopLocalizationCatalog.GetRequiredString(key, _preferences.Language);
+
+    private string F(string key, params object[] values)
+        => DesktopLocalizationCatalog.GetRequiredFormattedString(key, _preferences.Language, values);
 }
