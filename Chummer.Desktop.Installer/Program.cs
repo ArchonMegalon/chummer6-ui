@@ -161,7 +161,7 @@ internal static class Program
 
         string baseDirectory = AppContext.BaseDirectory;
         string[] sidecarPayloads = Directory
-            .EnumerateFiles(baseDirectory, "*.zip", SearchOption.TopDirectoryOnly)
+            .EnumerateFiles(baseDirectory, "*.zip", SearchOption.AllDirectories)
             .Where(name => IsPayloadZipName(Path.GetFileName(name)))
             .OrderBy(name => Path.GetFileName(name), StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -172,7 +172,7 @@ internal static class Program
 
         string resourceNames = FormatResourceNames(assembly);
         string? sidecarSummary = sidecarPayloads.Length > 0
-            ? string.Join(", ", sidecarPayloads.Select(Path.GetFileName))
+            ? string.Join(", ", sidecarPayloads.Select(path => path))
             : "<none>";
         throw new InvalidOperationException(
             $"Embedded desktop payload was not found. Expected '{PreferredPayloadResourceName}'. " +

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -40,7 +41,12 @@ public sealed record DesktopUpdateClientStatus(
     string? KnownIssueSummary = null,
     string? FixAvailabilitySummary = null,
     string? ProofStatus = null,
-    DateTimeOffset? ProofGeneratedAtUtc = null);
+    DateTimeOffset? ProofGeneratedAtUtc = null,
+    string? PendingUpdateVersion = null,
+    string? PendingUpdateChannelId = null,
+    DateTimeOffset? LastUpdateLaunchAttemptAtUtc = null,
+    DateTimeOffset? RollbackWindowStartedAtUtc = null,
+    DateTimeOffset? RollbackWindowExpiresAtUtc = null);
 
 public static class DesktopUpdateRuntime
 {
@@ -57,6 +63,7 @@ public static class DesktopUpdateRuntime
     private const int StartupManifestBackoffMinutes = 2;
     private const int StartupDownloadBackoffMinutes = 5;
     private const int StartupApplyBackoffMinutes = 10;
+    private const int RollbackWindowDays = 1;
 
     public static DesktopUpdateClientStatus GetCurrentStatus(string headId)
     {
@@ -129,11 +136,16 @@ public static class DesktopUpdateRuntime
             RolloutState: state?.LastRolloutState,
             RolloutReason: state?.LastRolloutReason,
             SupportabilityState: state?.LastSupportabilityState,
-            SupportabilitySummary: state?.LastSupportabilitySummary,
-            KnownIssueSummary: state?.LastKnownIssueSummary,
-            FixAvailabilitySummary: state?.LastFixAvailabilitySummary,
-            ProofStatus: state?.LastProofStatus,
-            ProofGeneratedAtUtc: state?.LastProofGeneratedAt);
+                SupportabilitySummary: state?.LastSupportabilitySummary,
+                KnownIssueSummary: state?.LastKnownIssueSummary,
+                FixAvailabilitySummary: state?.LastFixAvailabilitySummary,
+                ProofStatus: state?.LastProofStatus,
+                ProofGeneratedAtUtc: state?.LastProofGeneratedAt,
+                PendingUpdateVersion: state?.PendingUpdateVersion,
+                PendingUpdateChannelId: state?.PendingUpdateChannelId,
+                LastUpdateLaunchAttemptAtUtc: state?.LastUpdateLaunchAttemptAtUtc,
+                RollbackWindowStartedAtUtc: state?.RollbackWindowStartedAtUtc,
+                RollbackWindowExpiresAtUtc: state?.RollbackWindowExpiresAtUtc);
     }
 
     private static bool RequiresReleaseAttention(DesktopUpdateState? state)
@@ -181,6 +193,114 @@ public static class DesktopUpdateRuntime
         }
 
         return "Open Downloads and Support before relying on this release.";
+    }
+
+    private static IReadOnlyList<DesktopUpdateArtifact> SelectCompatibleArtifacts(
+        DesktopUpdateChannelManifest manifest,
+        string headId,
+        DesktopUpdatePlatformIdentity identity)
+    {
+        return manifest.Artifacts
+            .Where(artifact =>
+                string.Equals(artifact.HeadId, headId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(artifact.Platform, identity.Platform, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(artifact.Arch, identity.Arch, StringComparison.OrdinalIgnoreCase)
+                && (artifact.SupportsInPlaceApply || artifact.SupportsInstallerHandoff))
+            .OrderBy(artifact => artifact.SupportsInPlaceApply ? 0 : 1)
+            .ThenBy(artifact => ArtifactKindSortKey(artifact.Kind))
+            .ThenBy(artifact => artifact.FileName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static int ArtifactKindSortKey(string kind)
+    {
+        return kind.ToLowerInvariant() switch
+        {
+            "archive" => 0,
+            "installer" => 1,
+            "dmg" => 2,
+            "pkg" => 3,
+            "deb" => 4,
+            "msix" => 5,
+            _ => 6
+        };
+    }
+
+    private static bool IsRolloutBlocked(string? rolloutState)
+    {
+        return string.Equals(rolloutState, "paused", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(rolloutState, "revoked", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildRolloutBlockedMessage(string? rolloutState, string? rolloutReason)
+    {
+        if (!string.IsNullOrWhiteSpace(rolloutReason))
+        {
+            return $"Desktop update was skipped because rollout is {rolloutState}. {rolloutReason}";
+        }
+
+        if (string.IsNullOrWhiteSpace(rolloutState))
+        {
+            return "Desktop update was skipped because rollout is blocked by registry posture.";
+        }
+
+        return $"Desktop update was skipped because rollout is {rolloutState}.";
+    }
+
+    private static void ValidateArtifactIntegrity(string filePath, DesktopUpdateArtifact artifact)
+    {
+        if (artifact.SizeBytes is not null)
+        {
+            long observedSize = GetFileSize(filePath);
+            if (observedSize != artifact.SizeBytes.Value)
+            {
+                throw new InvalidOperationException(
+                    $"Desktop update artifact '{artifact.FileName}' failed size validation. Expected {artifact.SizeBytes} bytes, observed {observedSize} bytes.");
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(artifact.Sha256))
+        {
+            return;
+        }
+
+        string expectedSha256 = NormalizeSha256(artifact.Sha256);
+        if (string.IsNullOrWhiteSpace(expectedSha256))
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifact.FileName}' has an invalid checksum format.");
+        }
+
+        string observedSha256 = ComputeSha256(filePath);
+        if (!string.Equals(observedSha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifact.FileName}' failed checksum validation. " +
+                $"Expected '{expectedSha256}', observed '{observedSha256}'.");
+        }
+    }
+
+    private static long GetFileSize(string path)
+    {
+        return new FileInfo(path).Length;
+    }
+
+    private static string NormalizeSha256(string rawSha256)
+    {
+        string normalized = rawSha256.Trim();
+        if (normalized.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = normalized["sha256:".Length..];
+        }
+
+        return normalized;
+    }
+
+    private static string ComputeSha256(string path)
+    {
+        using FileStream stream = File.OpenRead(path);
+        byte[] hash = SHA256.HashData(stream);
+        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
     public static async Task<int?> TryHandleSpecialModeAsync(string[] args, CancellationToken ct)
@@ -329,7 +449,11 @@ public static class DesktopUpdateRuntime
                 LastKnownIssueSummary = manifest.KnownIssueSummary,
                 LastFixAvailabilitySummary = manifest.FixAvailabilitySummary,
                 LastProofStatus = manifest.ProofStatus,
-                LastProofGeneratedAt = manifest.ProofGeneratedAt
+                LastProofGeneratedAt = manifest.ProofGeneratedAt,
+                PendingUpdateVersion = null,
+                PendingUpdateChannelId = null,
+                PendingUpdatePreparedAtUtc = null,
+                LastUpdateLaunchAttemptAtUtc = null
             };
 
             string installedVersion = string.IsNullOrWhiteSpace(updatedState.InstalledVersion)
@@ -379,8 +503,22 @@ public static class DesktopUpdateRuntime
                 return DesktopUpdateStartupResult.Continue("auto_apply_disabled");
             }
 
-            DesktopUpdateArtifact? artifact = DesktopUpdateManifestParser.SelectPreferredArtifact(manifest, headId, identity);
-            if (artifact is null)
+            if (IsRolloutBlocked(manifest.RolloutState))
+            {
+                updatedState = updatedState with
+                {
+                    LastError = BuildRolloutBlockedMessage(manifest.RolloutState, manifest.RolloutReason),
+                    LastFailureReason = "rollout_blocked",
+                    LastFailureAtUtc = null,
+                    RetryAttempt = 0,
+                    NextRetryAtUtc = null
+                };
+                DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                return DesktopUpdateStartupResult.Continue("rollout_blocked");
+            }
+
+            IReadOnlyList<DesktopUpdateArtifact> artifacts = SelectCompatibleArtifacts(manifest, headId, identity);
+            if (artifacts.Count == 0)
             {
                 updatedState = updatedState with
                 {
@@ -435,90 +573,109 @@ public static class DesktopUpdateRuntime
                 return DesktopUpdateStartupResult.Continue("helper_invalid_state");
             }
 
-            string stageRoot = Path.Combine(paths.TempRoot, $"stage-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(stageRoot);
-            string downloadedArtifactPath = Path.Combine(stageRoot, artifact.FileName);
-
-            try
+            List<string> artifactFailureSummaries = [];
+            for (int artifactAttempt = 0; artifactAttempt < artifacts.Count; artifactAttempt++)
             {
-                Uri downloadUri = ResolveArtifactUri(manifest.SourceUri, artifact);
-                await DownloadArtifactAsync(downloadUri, downloadedArtifactPath, ct).ConfigureAwait(false);
+                DesktopUpdateArtifact artifact = artifacts[artifactAttempt];
+                string stageRoot = Path.Combine(paths.TempRoot, $"stage-{Guid.NewGuid():N}");
+                string downloadedArtifactPath = Path.Combine(stageRoot, artifact.FileName);
 
-                string helperPath = CopyProcessExecutableToHelper(processPath, paths.TempRoot);
-                if (artifact.SupportsInPlaceApply)
+                try
                 {
-                    string payloadRoot = Path.Combine(stageRoot, "payload");
-                    Directory.CreateDirectory(payloadRoot);
-                    ExtractArchive(downloadedArtifactPath, payloadRoot);
+                    Uri downloadUri = ResolveArtifactUri(manifest.SourceUri, artifact);
+                    Directory.CreateDirectory(stageRoot);
+                    await DownloadArtifactAsync(downloadUri, downloadedArtifactPath, ct).ConfigureAwait(false);
+                    ValidateArtifactIntegrity(downloadedArtifactPath, artifact);
 
-                    string payloadInstallRoot = NormalizePayloadRoot(payloadRoot, launchExecutableName);
-                    if (!File.Exists(Path.Combine(payloadInstallRoot, launchExecutableName)))
+                    string helperPath = CopyProcessExecutableToHelper(processPath, paths.TempRoot);
+                    if (artifact.SupportsInPlaceApply)
+                    {
+                        string payloadRoot = Path.Combine(stageRoot, "payload");
+                        Directory.CreateDirectory(payloadRoot);
+                        ExtractArchive(downloadedArtifactPath, payloadRoot);
+
+                        string payloadInstallRoot = NormalizePayloadRoot(payloadRoot, launchExecutableName);
+                        if (!File.Exists(Path.Combine(payloadInstallRoot, launchExecutableName)))
+                        {
+                            throw new InvalidOperationException(
+                                $"The staged desktop payload did not contain '{launchExecutableName}'.");
+                        }
+
+                        DesktopUpdateApplyRequest request = new(
+                            ParentProcessId: Environment.ProcessId,
+                            StageRoot: stageRoot,
+                            PayloadRoot: payloadInstallRoot,
+                            InstallDirectory: AppContext.BaseDirectory,
+                            LaunchExecutableName: launchExecutableName,
+                            StateFilePath: paths.StateFilePath,
+                            Version: manifest.Version,
+                            ChannelId: manifest.ChannelId,
+                            RelaunchArgs: relaunchArgs);
+                        string requestPath = Path.Combine(stageRoot, "apply-request.json");
+                        WriteApplyRequest(requestPath, request);
+                        LaunchApplyHelper(helperPath, requestPath);
+                    }
+                    else if (artifact.SupportsInstallerHandoff)
+                    {
+                        DesktopUpdateInstallerLaunchRequest request = new(
+                            ParentProcessId: Environment.ProcessId,
+                            StageRoot: stageRoot,
+                            InstallerPath: downloadedArtifactPath,
+                            StateFilePath: paths.StateFilePath,
+                            Version: manifest.Version,
+                            ChannelId: manifest.ChannelId);
+                        string requestPath = Path.Combine(stageRoot, "installer-request.json");
+                        WriteInstallerLaunchRequest(requestPath, request);
+                        LaunchInstallerHelper(helperPath, requestPath);
+                    }
+                    else
                     {
                         throw new InvalidOperationException(
-                            $"The staged desktop payload did not contain '{launchExecutableName}'.");
+                            $"Desktop update payload '{artifact.FileName}' is neither in-place applyable nor installer-launchable.");
                     }
 
-                    DesktopUpdateApplyRequest request = new(
-                        ParentProcessId: Environment.ProcessId,
-                        StageRoot: stageRoot,
-                        PayloadRoot: payloadInstallRoot,
-                        InstallDirectory: AppContext.BaseDirectory,
-                        LaunchExecutableName: launchExecutableName,
-                        StateFilePath: paths.StateFilePath,
-                        Version: manifest.Version,
-                        ChannelId: manifest.ChannelId,
-                        RelaunchArgs: relaunchArgs);
-                    string requestPath = Path.Combine(stageRoot, "apply-request.json");
-                    WriteApplyRequest(requestPath, request);
-                    LaunchApplyHelper(helperPath, requestPath);
+                    DateTimeOffset scheduledAt = DateTimeOffset.UtcNow;
+                    DateTimeOffset rollbackWindowExpiresAt = scheduledAt.AddDays(RollbackWindowDays);
+                    DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState with
+                    {
+                        LastError = null,
+                        LastFailureReason = null,
+                        LastFailureAtUtc = null,
+                        RetryAttempt = 0,
+                        NextRetryAtUtc = null,
+                        PendingUpdateVersion = manifest.Version,
+                        PendingUpdateChannelId = manifest.ChannelId,
+                        PendingUpdatePreparedAtUtc = scheduledAt,
+                        LastUpdateLaunchAttemptAtUtc = null,
+                        RollbackWindowStartedAtUtc = scheduledAt,
+                        RollbackWindowExpiresAtUtc = rollbackWindowExpiresAt
+                    });
+                    return DesktopUpdateStartupResult.ExitForApply();
                 }
-                else if (artifact.SupportsInstallerHandoff)
+                catch (Exception ex)
                 {
-                    DesktopUpdateInstallerLaunchRequest request = new(
-                        ParentProcessId: Environment.ProcessId,
-                        StageRoot: stageRoot,
-                        InstallerPath: downloadedArtifactPath,
-                        StateFilePath: paths.StateFilePath,
-                        Version: manifest.Version,
-                        ChannelId: manifest.ChannelId);
-                    string requestPath = Path.Combine(stageRoot, "installer-request.json");
-                    WriteInstallerLaunchRequest(requestPath, request);
-                    LaunchInstallerHelper(helperPath, requestPath);
-                }
-                else
-                {
-                    throw new InvalidOperationException(
-                        $"Desktop update payload '{artifact.FileName}' is neither in-place applyable nor installer-launchable.");
-                }
-
-                DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState with
-                {
-                    LastError = null,
-                    LastFailureReason = null,
-                    LastFailureAtUtc = now,
-                    RetryAttempt = 0,
-                    NextRetryAtUtc = null
-                });
-                return DesktopUpdateStartupResult.ExitForApply();
-            }
-            catch (Exception ex)
-            {
-                DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState with
-                {
-                    LastError = BuildUpdateFailureMessage(ex),
-                    LastFailureReason = "update_apply_failed",
-                    LastFailureAtUtc = now,
-                    RetryAttempt = updatedState.RetryAttempt + 1,
-                    NextRetryAtUtc = CalculateBackoffTime(updatedState.RetryAttempt + 1)
-                });
-                TryDeleteDirectory(stageRoot);
-                if (File.Exists(downloadedArtifactPath))
-                {
+                    TryDeleteDirectory(stageRoot);
                     TryDeleteFile(downloadedArtifactPath);
-                }
+                    artifactFailureSummaries.Add($"{artifact.FileName}: {BuildUpdateFailureMessage(ex)}");
 
-                return DesktopUpdateStartupResult.Continue("update_schedule_failed");
+                    if (artifactAttempt + 1 < artifacts.Count)
+                    {
+                        continue;
+                    }
+
+                    DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState with
+                    {
+                        LastError = string.Join(" | ", artifactFailureSummaries),
+                        LastFailureReason = "update_apply_failed",
+                        LastFailureAtUtc = now,
+                        RetryAttempt = updatedState.RetryAttempt + 1,
+                        NextRetryAtUtc = CalculateBackoffTime(updatedState.RetryAttempt + 1)
+                    });
+                    return DesktopUpdateStartupResult.Continue("update_schedule_failed");
+                }
             }
+
+            return DesktopUpdateStartupResult.Continue("update_schedule_failed");
         }
         catch (Exception ex)
         {
@@ -594,6 +751,7 @@ public static class DesktopUpdateRuntime
             await WaitForProcessExitAsync(request.ParentProcessId, ct).ConfigureAwait(false);
             ReplaceInstallDirectory(request.PayloadRoot, request.InstallDirectory);
             DesktopUpdateState? priorState = DesktopUpdateStateStore.Load(request.StateFilePath);
+            DateTimeOffset now = DateTimeOffset.UtcNow;
             DesktopUpdateState nextState = (priorState ?? new DesktopUpdateState(
                 HeadId: string.Empty,
                 Platform: string.Empty,
@@ -607,7 +765,15 @@ public static class DesktopUpdateRuntime
             {
                 InstalledVersion = request.Version,
                 ChannelId = request.ChannelId,
-                LastError = null
+                LastError = null,
+                LastFailureReason = null,
+                LastFailureAtUtc = null,
+                PendingUpdateVersion = null,
+                PendingUpdateChannelId = null,
+                PendingUpdatePreparedAtUtc = null,
+                LastUpdateLaunchAttemptAtUtc = now,
+                RollbackWindowStartedAtUtc = priorState?.RollbackWindowStartedAtUtc,
+                RollbackWindowExpiresAtUtc = priorState?.RollbackWindowExpiresAtUtc
             };
             DesktopUpdateStateStore.Save(request.StateFilePath, nextState);
             LaunchInstalledApplication(request.InstallDirectory, request.LaunchExecutableName, request.RelaunchArgs);
@@ -642,7 +808,13 @@ public static class DesktopUpdateRuntime
                 DesktopUpdateStateStore.Save(request.StateFilePath, priorState with
                 {
                     ChannelId = string.IsNullOrWhiteSpace(request.ChannelId) ? priorState.ChannelId : request.ChannelId,
-                    LastError = null
+                    LastError = null,
+                    LastFailureReason = null,
+                    LastFailureAtUtc = null,
+                    LastUpdateLaunchAttemptAtUtc = DateTimeOffset.UtcNow,
+                    PendingUpdateVersion = null,
+                    PendingUpdateChannelId = null,
+                    PendingUpdatePreparedAtUtc = null
                 });
             }
 
@@ -1364,7 +1536,13 @@ public static class DesktopUpdateRuntime
         string? LastFailureReason = null,
         DateTimeOffset? LastFailureAtUtc = null,
         int RetryAttempt = 0,
-        DateTimeOffset? NextRetryAtUtc = null);
+        DateTimeOffset? NextRetryAtUtc = null,
+        string? PendingUpdateVersion = null,
+        string? PendingUpdateChannelId = null,
+        DateTimeOffset? PendingUpdatePreparedAtUtc = null,
+        DateTimeOffset? LastUpdateLaunchAttemptAtUtc = null,
+        DateTimeOffset? RollbackWindowStartedAtUtc = null,
+        DateTimeOffset? RollbackWindowExpiresAtUtc = null);
 
     private static class DesktopUpdateStateStore
     {

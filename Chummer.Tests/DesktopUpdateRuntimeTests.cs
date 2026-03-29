@@ -170,6 +170,226 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling()
+    {
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-blocked-{Guid.NewGuid():N}.json");
+        string manifestJson = $$"""
+            {
+              "channelId": "preview",
+              "version": "{{version}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "rolloutState": "revoked",
+              "rolloutReason": "Emergency revoke from Registry.",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
+                  "head": "avalonia",
+                  "platform": "{{identity.Platform}}",
+                  "arch": "{{identity.Arch}}",
+                  "kind": "archive",
+                  "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}.zip",
+                  "downloadUrl": "/tmp/does-not-matter/blocked.zip"
+                }
+              ]
+            }
+            """;
+        File.WriteAllText(manifestPath, manifestJson);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("rollout_blocked", result.Reason);
+
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Assert.IsTrue(File.Exists(statePath));
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.AreEqual("rollout_blocked", GetStringProperty(state.RootElement, "lastFailureReason"));
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastError") ?? string.Empty, "revoked");
+        }
+        finally
+        {
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_rejects_artifact_that_fails_checksum_validation()
+    {
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-size-{Guid.NewGuid():N}.zip");
+        File.WriteAllText(payloadPath, "payload-data");
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-checksum-{Guid.NewGuid():N}.json");
+        string manifestJson = $$"""
+            {
+              "channelId": "preview",
+              "version": "{{version}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
+                  "head": "avalonia",
+                  "platform": "{{identity.Platform}}",
+                  "arch": "{{identity.Arch}}",
+                  "kind": "archive",
+                  "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}.zip",
+                  "downloadUrl": "{{payloadPath.Replace("\\", "/")}}",
+                  "sizeBytes": 99,
+                  "sha256": "sha256:badbadsum"
+                }
+              ]
+            }
+            """;
+        File.WriteAllText(manifestPath, manifestJson);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("update_schedule_failed", result.Reason);
+
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Assert.IsTrue(File.Exists(statePath));
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.AreEqual("update_apply_failed", GetStringProperty(state.RootElement, "lastFailureReason"));
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastError") ?? string.Empty, "checksum");
+        }
+        finally
+        {
+            if (File.Exists(payloadPath))
+            {
+                File.Delete(payloadPath);
+            }
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_falls_back_between_matching_artifacts_on_failures()
+    {
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string firstPayloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-fallback-1-{Guid.NewGuid():N}.zip");
+        string secondPayloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-fallback-2-{Guid.NewGuid():N}.zip");
+        File.WriteAllText(firstPayloadPath, "primary-payload");
+        File.WriteAllText(secondPayloadPath, "secondary-payload");
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-fallback-{Guid.NewGuid():N}.json");
+        string manifestJson = $$"""
+            {
+              "channelId": "preview",
+              "version": "{{version}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
+                  "head": "avalonia",
+                  "platform": "{{identity.Platform}}",
+                  "arch": "{{identity.Arch}}",
+                  "kind": "archive",
+                  "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}-primary.zip",
+                  "downloadUrl": "{{firstPayloadPath.Replace("\\", "/")}}",
+                  "sizeBytes": 8,
+                  "sha256": "sha256:wrong"
+                },
+                {
+                  "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
+                  "head": "avalonia",
+                  "platform": "{{identity.Platform}}",
+                  "arch": "{{identity.Arch}}",
+                  "kind": "archive",
+                  "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}-secondary.zip",
+                  "downloadUrl": "{{secondPayloadPath.Replace("\\", "/")}}",
+                  "sizeBytes": 15,
+                  "sha256": "sha256:wrong"
+                }
+              ]
+            }
+            """;
+        File.WriteAllText(manifestPath, manifestJson);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("update_schedule_failed", result.Reason);
+
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Assert.IsTrue(File.Exists(statePath));
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            string? lastError = GetStringProperty(state.RootElement, "lastError");
+            Assert.IsTrue((lastError ?? string.Empty).Contains("primary", StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue((lastError ?? string.Empty).Contains("secondary", StringComparison.OrdinalIgnoreCase));
+            Assert.AreEqual("update_apply_failed", GetStringProperty(state.RootElement, "lastFailureReason"));
+        }
+        finally
+        {
+            if (File.Exists(firstPayloadPath))
+            {
+                File.Delete(firstPayloadPath);
+            }
+            if (File.Exists(secondPayloadPath))
+            {
+                File.Delete(secondPayloadPath);
+            }
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
     public async Task CheckAndScheduleStartupUpdateAsync_returns_helper_unavailable_when_override_is_not_packaged_like()
     {
         string helperPath = Path.Combine(Path.GetTempPath(), $"desktop-update-helper-outside-base-{Guid.NewGuid():N}.exe");
