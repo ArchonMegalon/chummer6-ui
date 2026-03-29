@@ -81,6 +81,15 @@
                 <div><dt>Ruleset</dt><dd>@Projection.RuntimeLock.RulesetId</dd></div>
                 <div><dt>Engine API</dt><dd>@Projection.RuntimeLock.EngineApiVersion</dd></div>
                 <div><dt>Profile Source</dt><dd>@Projection.ProfileSourceKind</dd></div>
+                @if (Projection.Promotion is not null)
+                {
+                    <div><dt>Publication</dt><dd>@Projection.Promotion.PublicationStatus</dd></div>
+                    <div><dt>Visibility</dt><dd>@Projection.Promotion.Visibility</dd></div>
+                    <div><dt>Update Channel</dt><dd>@Projection.Promotion.UpdateChannel</dd></div>
+                    <div><dt>Published</dt><dd>@(Projection.Promotion.PublishedAtUtc?.ToLocalTime().ToString("u") ?? "not published yet")</dd></div>
+                    <div><dt>Rollback</dt><dd>@Projection.Promotion.RollbackSummary</dd></div>
+                    <div><dt>Lineage</dt><dd>@Projection.Promotion.LineageSummary</dd></div>
+                }
                 <div><dt>Provider Coverage</dt><dd>@Projection.ProviderBindings.Count bindings across @(Projection.CapabilityDescriptors?.Count ?? 0) capability descriptors</dd></div>
                 <div><dt>Summary</dt><dd>@RuntimeInspectorDiagnostics.BuildProfileDiagnosticsSummary(Projection)</dd></div>
             </dl>
