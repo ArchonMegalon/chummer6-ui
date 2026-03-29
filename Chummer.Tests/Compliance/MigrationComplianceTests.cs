@@ -1689,10 +1689,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(buildLabContractsText, "public sealed record BuildLabActionDescriptor");
         StringAssert.Contains(buildLabContractsText, "public sealed record BuildLabVariantProjection");
         StringAssert.Contains(buildLabContractsText, "public sealed record BuildLabProgressionTimeline");
+        StringAssert.Contains(buildLabContractsText, "public sealed record BuildLabTeamCoverageProjection");
         StringAssert.Contains(buildLabProjectorText, "BuildLabConceptIntakeProjector");
         StringAssert.Contains(buildLabProjectorText, "BuildLabConceptIntakeProjection");
         StringAssert.Contains(buildLabProjectorText, "projection.Variants");
         StringAssert.Contains(buildLabProjectorText, "projection.ProgressionTimelines");
+        StringAssert.Contains(buildLabProjectorText, "projection.TeamCoverage");
         StringAssert.Contains(buildLabProjectorText, "projection.NextSafeAction");
         StringAssert.Contains(buildLabProjectorText, "projection.SupportClosureSummary");
         StringAssert.Contains(sectionPaneText, "State.ActiveBuildLab");

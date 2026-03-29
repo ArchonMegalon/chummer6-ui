@@ -267,6 +267,23 @@
                 </section>
             }
 
+            @if (HasPlannerCoverageSignals(buildLab))
+            {
+                <section class="browse-detail-pane" data-build-lab-optimizer-rail>
+                    <div class="coach-card-header">
+                        <h4>Planner + team coverage</h4>
+                        <span class="badge">@BuildPlannerCoverageBadge(buildLab)</span>
+                    </div>
+                    <p><strong>@BuildPlannerCoverageSummary(buildLab)</strong></p>
+                    <ul class="browse-detail-lines">
+                        @foreach (string line in BuildPlannerCoverageLines(buildLab))
+                        {
+                            <li>@line</li>
+                        }
+                    </ul>
+                </section>
+            }
+
             @if (buildLab.Actions.Count > 0)
             {
                 <section class="browse-results-pane" data-build-lab-export>
@@ -709,6 +726,160 @@
         => string.IsNullOrWhiteSpace(payloadId)
             ? null
             : buildLab.ExportPayloads.FirstOrDefault(payload => string.Equals(payload.PayloadId, payloadId, StringComparison.Ordinal));
+
+    private static bool HasPlannerCoverageSignals(BuildLabConceptIntakeState buildLab)
+    {
+        if (buildLab.TeamCoverage is not null)
+        {
+            return true;
+        }
+
+        if (buildLab.ProgressionTimelines.Count > 0)
+        {
+            return true;
+        }
+
+        return buildLab.Variants.Any(HasCoverageSignals);
+    }
+
+    private static string BuildPlannerCoverageBadge(BuildLabConceptIntakeState buildLab)
+    {
+        if (buildLab.TeamCoverage is { } teamCoverage)
+        {
+            return $"{teamCoverage.CoveredRoleTags?.Count ?? 0} covered · {teamCoverage.MissingRoleTags.Count} missing · {teamCoverage.DuplicateRoleTags?.Count ?? 0} duplicate";
+        }
+
+        int optimizerReadyVariants = buildLab.Variants.Count(HasCoverageSignals);
+        int checkpoints = buildLab.ProgressionTimelines.Sum(static timeline => timeline.Steps.Count);
+        return $"{optimizerReadyVariants} variant(s) · {checkpoints} checkpoint(s)";
+    }
+
+    private static string BuildPlannerCoverageSummary(BuildLabConceptIntakeState buildLab)
+    {
+        if (buildLab.TeamCoverage is { } teamCoverage)
+        {
+            return teamCoverage.Summary;
+        }
+
+        int optimizerReadyVariants = buildLab.Variants.Count(HasCoverageSignals);
+        return $"{optimizerReadyVariants} optimizer-ready variant(s) across {buildLab.ProgressionTimelines.Count} progression timeline(s).";
+    }
+
+    private static IReadOnlyList<string> BuildPlannerCoverageLines(BuildLabConceptIntakeState buildLab)
+    {
+        List<string> lines = [];
+        lines.AddRange(BuildTeamCoverageLines(buildLab.TeamCoverage));
+
+        foreach (BuildLabVariantProjection variant in buildLab.Variants)
+        {
+            List<string> signals = [];
+            string coverageMetrics = string.Join(
+                " | ",
+                variant.Metrics
+                    .Where(IsCoverageMetric)
+                    .Select(metric => $"{metric.Label}: {metric.Value}{(string.IsNullOrWhiteSpace(metric.Delta) ? string.Empty : $" ({metric.Delta})")}"));
+            if (!string.IsNullOrWhiteSpace(coverageMetrics))
+            {
+                signals.Add(coverageMetrics);
+            }
+
+            if (variant.OverlapBadges.Count > 0)
+            {
+                signals.Add($"Overlap: {string.Join(" | ", variant.OverlapBadges.Select(badge => badge.Label))}");
+            }
+
+            if (signals.Count > 0)
+            {
+                lines.Add($"{variant.Label}: {string.Join(" · ", signals)}");
+            }
+        }
+
+        foreach (BuildLabProgressionTimeline timeline in buildLab.ProgressionTimelines)
+        {
+            BuildLabProgressionStep? strongestCoverageStep = null;
+            foreach (BuildLabProgressionStep step in timeline.Steps)
+            {
+                if (step.Outcomes.Any(IsCoverageMetric))
+                {
+                    strongestCoverageStep = step;
+                }
+            }
+
+            if (strongestCoverageStep is null)
+            {
+                lines.Add($"{timeline.Title}: {timeline.Steps.Count} checkpoint(s) keep the plan ready for handoff.");
+                continue;
+            }
+
+            string coverageOutcomes = string.Join(
+                " | ",
+                strongestCoverageStep.Outcomes
+                    .Where(IsCoverageMetric)
+                    .Select(metric => $"{metric.Label}: {metric.Value}"));
+            lines.Add($"{timeline.Title}: strongest coverage checkpoint at {strongestCoverageStep.KarmaTarget} Karma · {coverageOutcomes}");
+        }
+
+        return lines;
+    }
+
+    private static IReadOnlyList<string> BuildTeamCoverageLines(BuildLabTeamCoverageProjection? teamCoverage)
+    {
+        if (teamCoverage is null)
+        {
+            return [];
+        }
+
+        List<string> lines = [];
+        if (!string.IsNullOrWhiteSpace(teamCoverage.CoverageSummary))
+        {
+            lines.Add($"Coverage: {teamCoverage.CoverageSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.RolePressureSummary))
+        {
+            lines.Add($"Role pressure: {teamCoverage.RolePressureSummary}");
+        }
+
+        if (teamCoverage.CoveredRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Covered roles: {FormatRoleTags(teamCoverage.CoveredRoleTags)}");
+        }
+
+        if (teamCoverage.MissingRoleTags.Count > 0)
+        {
+            lines.Add($"Missing roles: {FormatRoleTags(teamCoverage.MissingRoleTags)}");
+        }
+
+        if (teamCoverage.DuplicateRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Duplicate roles: {FormatRoleTags(teamCoverage.DuplicateRoleTags)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.ExplainEntryId))
+        {
+            lines.Add($"Explain: {teamCoverage.ExplainEntryId}");
+        }
+
+        return lines;
+    }
+
+    private static bool HasCoverageSignals(BuildLabVariantProjection variant)
+        => variant.OverlapBadges.Count > 0 || variant.Metrics.Any(IsCoverageMetric);
+
+    private static bool IsCoverageMetric(BuildLabVariantMetric metric)
+        => metric.Label.Contains("coverage", StringComparison.OrdinalIgnoreCase)
+            || metric.Label.Contains("role", StringComparison.OrdinalIgnoreCase);
+
+    private static string FormatRoleTags(IEnumerable<string> roleTags)
+        => string.Join(" | ", roleTags.Select(FormatRoleTag));
+
+    private static string FormatRoleTag(string roleTag)
+    {
+        string normalized = roleTag.Replace('-', ' ').Replace('_', ' ').Trim();
+        return string.IsNullOrWhiteSpace(normalized)
+            ? roleTag
+            : System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
+    }
 
     private static string BuildBuildLabActionLabel(BuildLabActionDescriptor action, BuildLabExportTarget? target)
         => target is null

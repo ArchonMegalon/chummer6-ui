@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Overview;
+using System.Globalization;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -312,6 +313,7 @@ public partial class SectionHostControl : UserControl
     private static string BuildCoverageText(BuildLabConceptIntakeState buildLab)
     {
         List<string> lines = [];
+        AppendTeamCoverageLines(lines, buildLab.TeamCoverage);
 
         int optimizerReadyVariants = 0;
         foreach (BuildLabVariantProjection variant in buildLab.Variants)
@@ -376,6 +378,44 @@ public partial class SectionHostControl : UserControl
         return string.Join(Environment.NewLine, lines);
     }
 
+    private static void AppendTeamCoverageLines(List<string> lines, BuildLabTeamCoverageProjection? teamCoverage)
+    {
+        if (teamCoverage is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.CoverageSummary))
+        {
+            lines.Add($"Coverage: {teamCoverage.CoverageSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.RolePressureSummary))
+        {
+            lines.Add($"Role pressure: {teamCoverage.RolePressureSummary}");
+        }
+
+        if (teamCoverage.CoveredRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Covered roles: {FormatRoleTags(teamCoverage.CoveredRoleTags)}");
+        }
+
+        if (teamCoverage.MissingRoleTags.Count > 0)
+        {
+            lines.Add($"Missing roles: {FormatRoleTags(teamCoverage.MissingRoleTags)}");
+        }
+
+        if (teamCoverage.DuplicateRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Duplicate roles: {FormatRoleTags(teamCoverage.DuplicateRoleTags)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.ExplainEntryId))
+        {
+            lines.Add($"Explain: {teamCoverage.ExplainEntryId}");
+        }
+    }
+
     private static string BuildTimelineText(BuildLabConceptIntakeState buildLab)
     {
         if (buildLab.ProgressionTimelines.Count == 0)
@@ -408,6 +448,17 @@ public partial class SectionHostControl : UserControl
     {
         return metric.Label.Contains("coverage", StringComparison.OrdinalIgnoreCase)
             || metric.Label.Contains("role", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string FormatRoleTags(IEnumerable<string> roleTags)
+        => string.Join(" | ", roleTags.Select(FormatRoleTag));
+
+    private static string FormatRoleTag(string roleTag)
+    {
+        string normalized = roleTag.Replace('-', ' ').Replace('_', ' ').Trim();
+        return string.IsNullOrWhiteSpace(normalized)
+            ? roleTag
+            : CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
     }
 
     private static string BuildExportPayloadText(BuildLabConceptIntakeState buildLab)

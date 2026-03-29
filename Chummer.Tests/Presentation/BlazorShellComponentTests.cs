@@ -558,6 +558,14 @@ public sealed class BlazorShellComponentTests
                 RuntimeCompatibilitySummary: "One quick-action binding still needs review.",
                 CampaignFitSummary: "Best fit is an ops-first crew with sparse matrix scenes.",
                 SupportClosureSummary: "Support can cite the same runtime fingerprint after handoff.",
+                TeamCoverage: new BuildLabTeamCoverageProjection(
+                    Summary: "2 of 3 required crew roles are covered before handoff; one deliberate face overlap stays visible while astral support remains missing.",
+                    CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign handoff.",
+                    RolePressureSummary: "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
+                    MissingRoleTags: ["astral"],
+                    CoveredRoleTags: ["face", "legwork"],
+                    DuplicateRoleTags: ["face"],
+                    ExplainEntryId: "buildlab.teamcoverage.ops-first"),
                 Watchouts:
                 [
                     "No recap-safe publication is attached yet."
@@ -586,6 +594,9 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "workflow.coach.build-ideas");
         StringAssert.Contains(cut.Markup, "Hand Off -&gt; Build Idea Card");
         StringAssert.Contains(cut.Markup, "Planner + team coverage");
+        StringAssert.Contains(cut.Markup, "Covered roles: Face | Legwork");
+        StringAssert.Contains(cut.Markup, "Missing roles: Astral");
+        StringAssert.Contains(cut.Markup, "Duplicate roles: Face");
         StringAssert.Contains(cut.Markup, "Light face overlap");
         StringAssert.Contains(cut.Markup, "strongest coverage checkpoint at 100 Karma");
         StringAssert.Contains(cut.Markup, "Decision rail");
