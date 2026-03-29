@@ -197,6 +197,16 @@ public static class DesktopHomeBuildExplainProjector
         if (leadHandoff is not null)
         {
             receipts.Add($"Build Lab handoff: {leadHandoff.Title} — {leadHandoff.Summary}");
+            if (leadHandoff.TradeoffLines.Count > 0)
+            {
+                receipts.Add($"Build Lab tradeoff: {leadHandoff.TradeoffLines[0]}");
+            }
+
+            if (leadHandoff.ProgressionOutcomes.Count > 0)
+            {
+                receipts.Add($"Build Lab progression: {leadHandoff.ProgressionOutcomes[0]}");
+            }
+
             if (!string.IsNullOrWhiteSpace(leadHandoff.RuntimeCompatibilitySummary))
             {
                 receipts.Add($"Build Lab runtime: {leadHandoff.RuntimeCompatibilitySummary}");
