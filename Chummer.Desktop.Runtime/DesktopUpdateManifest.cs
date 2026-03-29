@@ -38,7 +38,9 @@ public sealed record DesktopUpdateArtifact(
     string Kind,
     string FileName,
     string DownloadUrl,
-    string? UpdateFeedUrl)
+    string? UpdateFeedUrl,
+    string? Sha256,
+    long? SizeBytes)
 {
     public string Extension
     {
@@ -156,6 +158,8 @@ public static class DesktopUpdateManifestParser
             string fileName = GetOptionalString(element, "fileName") ?? Path.GetFileName(GetOptionalString(element, "downloadUrl") ?? string.Empty);
             string downloadUrl = GetOptionalString(element, "downloadUrl") ?? string.Empty;
             string? updateFeedUrl = GetOptionalString(element, "updateFeedUrl");
+            string? sha256 = GetOptionalString(element, "sha256");
+            long? sizeBytes = GetOptionalLong(element, "sizeBytes");
             if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(downloadUrl))
             {
                 continue;
@@ -169,7 +173,9 @@ public static class DesktopUpdateManifestParser
                 Kind: kind,
                 FileName: fileName,
                 DownloadUrl: downloadUrl,
-                UpdateFeedUrl: updateFeedUrl));
+                UpdateFeedUrl: updateFeedUrl,
+                Sha256: sha256,
+                SizeBytes: sizeBytes));
         }
 
         return new DesktopUpdateChannelManifest(
@@ -225,7 +231,9 @@ public static class DesktopUpdateManifestParser
                 Kind: kind,
                 FileName: fileName,
                 DownloadUrl: rawUrl,
-                UpdateFeedUrl: null));
+                UpdateFeedUrl: null,
+                Sha256: GetOptionalString(element, "sha256"),
+                SizeBytes: GetOptionalLong(element, "sizeBytes")));
         }
 
         return new DesktopUpdateChannelManifest(
@@ -340,5 +348,21 @@ public static class DesktopUpdateManifestParser
         }
 
         return GetOptionalDateTimeOffset(property, nestedPropertyName);
+    }
+
+    private static long? GetOptionalLong(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out JsonElement property))
+        {
+            return null;
+        }
+
+        return property.ValueKind switch
+        {
+            JsonValueKind.Number when property.TryGetInt64(out long value) => value,
+            JsonValueKind.String
+                when !string.IsNullOrWhiteSpace(property.GetString()) && long.TryParse(property.GetString(), out long parsed) => parsed,
+            _ => null
+        };
     }
 }
