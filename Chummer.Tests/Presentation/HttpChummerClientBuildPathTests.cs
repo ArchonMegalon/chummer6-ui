@@ -587,6 +587,77 @@ public sealed class HttpChummerClientBuildPathTests
         StringAssert.Contains(projection.PublicationSummary, "Artifact shelf: Dockside creator packet is already attached on the creator shelf with shared visibility.");
     }
 
+    [TestMethod]
+    public async Task GetPortableExchangePreviewAsync_maps_receipt_formats_and_watchouts()
+    {
+        StrictHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.Method == HttpMethod.Post
+                && request.RequestUri?.PathAndQuery == "/api/v1/ai/interop/export")
+            {
+                return JsonResponse("""
+{
+  "campaignId": "campaign-123",
+  "manifest": {
+    "characterCount": 1,
+    "npcCount": 1,
+    "sessionCount": 1,
+    "encounterCount": 1,
+    "prepCount": 2,
+    "totalCount": 6
+  },
+  "compatibility": {
+    "formatId": "chummer.portable-campaign.v1",
+    "compatibilityState": "compatible-with-warnings",
+    "contextSummary": "Campaign Dockside is portable, but the package does not yet pin a live session cutover.",
+    "receiptSummary": "Portable dossier/campaign exchange is ready for inspect-only review or merge, while governed replace stays review-required until a live session export is pinned.",
+    "nextSafeAction": "Open inspect-only first or export again with a pinned session before you authorize governed replace on another surface.",
+    "supportedExchangeFormats": [
+      "chummer.portable-dossier.v1",
+      "chummer.portable-campaign.v1"
+    ],
+    "notes": [
+      {
+        "code": "format-identity",
+        "severity": "info",
+        "summary": "Package format chummer.portable-campaign.v1 stays on interop_export_v1/1.0.0."
+      },
+      {
+        "code": "session-binding-required-for-replace",
+        "severity": "warning",
+        "summary": "No live session binding was requested, so replace should wait for a session-scoped export even though inspect-only and merge remain safe."
+      }
+    ]
+  }
+}
+""");
+            }
+
+            throw new InvalidOperationException($"Unexpected request: {request.Method} {request.RequestUri}");
+        });
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        HttpChummerClient client = new(httpClient);
+
+        DesktopHomePortableExchangePreview? preview = await client.GetPortableExchangePreviewAsync("campaign-123", CancellationToken.None);
+
+        Assert.IsNotNull(preview);
+        Assert.AreEqual("campaign-123", preview.CampaignId);
+        Assert.AreEqual("compatible-with-warnings", preview.CompatibilityState);
+        Assert.AreEqual("Campaign Dockside is portable, but the package does not yet pin a live session cutover.", preview.ContextSummary);
+        Assert.AreEqual("Portable dossier/campaign exchange is ready for inspect-only review or merge, while governed replace stays review-required until a live session export is pinned.", preview.ReceiptSummary);
+        Assert.AreEqual("Open inspect-only first or export again with a pinned session before you authorize governed replace on another surface.", preview.NextSafeAction);
+        Assert.AreEqual("6 portable asset(s): 1 dossier(s), 1 NPC(s), 1 session bundle(s), 1 encounter packet(s), 2 governed prep packet(s).", preview.AssetScopeSummary);
+        CollectionAssert.AreEqual(
+            new[] { "chummer.portable-dossier.v1", "chummer.portable-campaign.v1" },
+            preview.SupportedExchangeFormats.ToArray());
+        CollectionAssert.Contains(preview.Highlights.ToArray(), "Package format chummer.portable-campaign.v1 stays on interop_export_v1/1.0.0.");
+        CollectionAssert.Contains(preview.Watchouts.ToArray(), "No live session binding was requested, so replace should wait for a session-scoped export even though inspect-only and merge remain safe.");
+    }
+
     private static HttpResponseMessage JsonResponse(string json)
         => new(HttpStatusCode.OK)
         {

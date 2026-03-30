@@ -377,7 +377,24 @@ internal static class AccessibilitySignoffSmokeTests
                 Watchouts: ["Server plane watchout: verify the preview tablet before resuming GM-only notes."],
                 SupportHighlights: ["Released: the fix lane stays attached to the same claimed install."],
                 DecisionNotices: ["install_role: preview_scout stays attached to windows/avalonia on preview."],
-                GeneratedAtUtc: DateTimeOffset.Parse("2026-03-27T12:11:00+00:00")));
+                GeneratedAtUtc: DateTimeOffset.Parse("2026-03-27T12:11:00+00:00")),
+            new DesktopHomePortableExchangePreview(
+                CampaignId: workspace.CampaignId,
+                CompatibilityState: "compatible-with-warnings",
+                ContextSummary: "Campaign Neon Nights is portable, but the package does not yet pin a live session cutover.",
+                ReceiptSummary: "Portable dossier/campaign exchange is ready for inspect-only review or merge, while governed replace stays review-required until a live session export is pinned.",
+                NextSafeAction: "Open inspect-only first or export again with a pinned session before you authorize governed replace on another surface.",
+                AssetScopeSummary: "5 portable asset(s): 1 dossier(s), 1 NPC(s), 1 session bundle(s), 1 encounter packet(s), 1 governed prep packet(s).",
+                SupportedExchangeFormats: ["chummer.portable-dossier.v1", "chummer.portable-campaign.v1"],
+                Highlights:
+                [
+                    "Package format chummer.portable-campaign.v1 stays on interop_export_v1/1.0.0.",
+                    "Every asset keeps payload-hash provenance, export identity, and campaign pointers on the same governed receipt."
+                ],
+                Watchouts:
+                [
+                    "No live session binding was requested, so replace should wait for a session-scoped export even though inspect-only and merge remain safe."
+                ]));
 
         RequireContains(projection.Summary, "Digest return summary");
         RequireContains(projection.Summary, "Digest return summary");
@@ -410,12 +427,18 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "First-session proof:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign memory:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign memory return:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Portable exchange:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Exchange context:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Exchange asset scope:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Exchange formats:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Exchange note:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Server plane highlight:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Support lane:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Decision notice:");
         RequireContains(projection.NextSafeAction, "Server-plane next safe action");
         RequireContains(string.Join("\n", projection.Watchouts), "cloud-only snapshot");
         RequireContains(string.Join("\n", projection.Watchouts), "GM-only notes");
+        RequireContains(string.Join("\n", projection.Watchouts), "Portable exchange:");
         RequireContains(string.Join("\n", projection.Watchouts), "Server plane watchout:");
     }
 
@@ -768,6 +791,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "ReadCampaignWorkspaceDigestsAsync");
         RequireContains(source, "ReadCampaignWorkspaceServerPlaneAsync");
         RequireContains(source, "GetCampaignWorkspaceServerPlaneAsync");
+        RequireContains(source, "ReadPortableExchangePreviewAsync");
+        RequireContains(source, "GetPortableExchangePreviewAsync");
         RequireContains(source, "OpenCampaignWorkspaceAsync()");
         RequireContains(source, "OpenArtifactShelfView");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
@@ -778,6 +803,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Support closure:");
         RequireContains(projectorSource, "Claimed device posture:");
         RequireContains(projectorSource, "Migration continuity:");
+        RequireContains(projectorSource, "Portable exchange:");
+        RequireContains(projectorSource, "Exchange formats:");
         RequireContains(projectorSource, "Publication trust:");
         RequireContains(projectorSource, "CampaignWorkspaceDigestProjection");
         RequireContains(projectorSource, "Support lane:");
