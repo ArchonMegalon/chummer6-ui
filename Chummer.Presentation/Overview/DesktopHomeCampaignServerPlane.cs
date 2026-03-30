@@ -1,3 +1,5 @@
+using Chummer.Campaign.Contracts;
+
 namespace Chummer.Presentation.Overview;
 
 public sealed record DesktopHomeCampaignServerPlane(
@@ -11,6 +13,7 @@ public sealed record DesktopHomeCampaignServerPlane(
     string? TravelPrefetchInventorySummary,
     string? CampaignMemorySummary,
     string? CampaignMemoryReturnSummary,
+    FirstPlayableSessionProjection? FirstPlayableSession,
     string NextSafeAction,
     IReadOnlyList<string> ReadinessHighlights,
     IReadOnlyList<string> Watchouts,
@@ -34,6 +37,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
     IReadOnlyList<DesktopHomeKnownIssueCueDto> KnownIssues,
     IReadOnlyList<DesktopHomeDecisionNoticeDto> DecisionNotices,
     DesktopHomeTravelModeDto? TravelMode,
+    FirstPlayableSessionProjection? FirstPlayableSession,
     DesktopHomeCampaignMemoryDto? CampaignMemory,
     DesktopHomeNextSafeActionCueDto NextSafeAction,
     DateTimeOffset GeneratedAtUtc)
@@ -76,6 +80,24 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
         if (!string.IsNullOrWhiteSpace(CampaignMemory?.ReturnSummary))
         {
             readinessHighlights.Add($"Campaign memory return: {CampaignMemory.ReturnSummary}");
+        }
+
+        if (FirstPlayableSession is not null)
+        {
+            readinessHighlights.Add($"First session: {FirstPlayableSession.CampaignStartSummary}");
+            readinessHighlights.Add($"Legal runner: {FirstPlayableSession.RuleReadySummary}");
+            readinessHighlights.Add($"Understandable return: {FirstPlayableSession.ReturnLaneSummary}");
+            readinessHighlights.Add($"Campaign-ready lane: {FirstPlayableSession.CampaignReadySummary}");
+
+            if (!string.IsNullOrWhiteSpace(FirstPlayableSession.NextSafeAction))
+            {
+                readinessHighlights.Add($"Starter lane next: {FirstPlayableSession.NextSafeAction}");
+            }
+
+            if (FirstPlayableSession.EvidenceLines.Count > 0)
+            {
+                readinessHighlights.Add($"First-session proof: {FirstPlayableSession.EvidenceLines[0]}");
+            }
         }
 
         if (CampaignMemory?.EvidenceLines.Count > 0)
@@ -159,6 +181,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             TravelPrefetchInventorySummary: NormalizeOptional(TravelMode?.PrefetchInventorySummary),
             CampaignMemorySummary: NormalizeOptional(CampaignMemory?.Summary),
             CampaignMemoryReturnSummary: NormalizeOptional(CampaignMemory?.ReturnSummary),
+            FirstPlayableSession: FirstPlayableSession,
             NextSafeAction: NextSafeAction.Summary,
             ReadinessHighlights: FinalizeLines(readinessHighlights),
             Watchouts: FinalizeLines(watchouts),
@@ -226,7 +249,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             .Where(static item => !string.IsNullOrWhiteSpace(item))
             .Select(static item => item.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(12)
+            .Take(24)
             .ToArray();
 
     private static string? NormalizeOptional(string? value)
