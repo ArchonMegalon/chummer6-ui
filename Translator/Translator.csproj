@@ -1,13 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <OutputType>WinExe</OutputType>
     <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
 	<Configurations>Debug;Release;Debuggable Release</Configurations>
     <EmbeddedResourceUseDependentUponConvention>true</EmbeddedResourceUseDependentUponConvention>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AssemblyVersion>5.225.0.0</AssemblyVersion>
     <FileVersion>5.225.0.0</FileVersion>
@@ -81,7 +83,7 @@
     <Content Include="translator.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)Chummer\Chummer.csproj" />
+    <ProjectReference Include="..\Chummer\Chummer.csproj" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

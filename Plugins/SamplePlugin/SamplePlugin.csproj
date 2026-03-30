@@ -1,12 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFramework Condition="'$(OS)' == 'Windows_NT'">net10.0-windows7.0</TargetFramework>
+    <TargetFramework Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
-    <UseWindowsForms>true</UseWindowsForms>
-    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <UseWindowsForms Condition="'$(OS)' == 'Windows_NT'">true</UseWindowsForms>
+    <EnableWindowsTargeting Condition="'$(OS)' == 'Windows_NT'">true</EnableWindowsTargeting>
+    <ImportWindowsDesktopTargets Condition="'$(OS)' == 'Windows_NT'">true</ImportWindowsDesktopTargets>
 	<Configurations>Debug;Release;Debuggable Release</Configurations>
     <EmbeddedResourceUseDependentUponConvention>true</EmbeddedResourceUseDependentUponConvention>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.InteropServices.ComVisible">
@@ -81,14 +86,14 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <PreBuildEvent>echo Statement 1: mkdir "$(TargetDir)Plugins\SamplePlugin\"
 mkdir "$(TargetDir)Plugins\SamplePlugin\"
 echo Statement 2: mkdir "$(SolutionDir)Chummer\bin\$(ConfigurationName)\Plugins\SamplePlugin\"
 mkdir "$(SolutionDir)Chummer\bin\$(ConfigurationName)\Plugins\SamplePlugin\"
 Exit 0</PreBuildEvent>
   </PropertyGroup>
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <PostBuildEvent>echo Statement 1: copy "$(TargetDir)*" "$(TargetDir)Plugins\SamplePlugin\" /Y
 copy "$(TargetDir)$(TargetName).*" "$(TargetDir)Plugins\SamplePlugin\" /Y
 echo ----------------------------------------------------------------------------------------------------

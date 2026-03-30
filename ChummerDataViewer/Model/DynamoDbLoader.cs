@@ -187,7 +187,7 @@ namespace ChummerDataViewer.Model
                 };
             }
 
-            return _client.Scan(request);
+            return _client.ScanAsync(request).GetAwaiter().GetResult();
         }
 
         public event StatusChangedEvent StatusChanged;
