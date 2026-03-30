@@ -18,6 +18,7 @@
     <ChummerLocalHubRegistryContractsProject>$(MSBuildThisFileDirectory)..\chummer-hub-registry\Chummer.Hub.Registry.Contracts\Chummer.Hub.Registry.Contracts.csproj</ChummerLocalHubRegistryContractsProject>
     <ChummerLocalRunContractsProject>$(MSBuildThisFileDirectory)..\chummer.run-services\Chummer.Run.Contracts\Chummer.Run.Contracts.csproj</ChummerLocalRunContractsProject>
     <ChummerLocalUiKitProject>$(MSBuildThisFileDirectory)..\chummer-ui-kit\src\Chummer.Ui.Kit\Chummer.Ui.Kit.csproj</ChummerLocalUiKitProject>
+    <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == '' and Exists('$(MSBuildThisFileDirectory)..\\chummer-core-engine\\Chummer.Contracts\\Chummer.Contracts.csproj') and Exists('$(MSBuildThisFileDirectory)..\\chummer.run-services\\Chummer.Campaign.Contracts\\Chummer.Campaign.Contracts.csproj') and Exists('$(MSBuildThisFileDirectory)..\\chummer.run-services\\Chummer.Run.Contracts\\Chummer.Run.Contracts.csproj') and Exists('$(MSBuildThisFileDirectory)..\\chummer-hub-registry\\Chummer.Hub.Registry.Contracts\\Chummer.Hub.Registry.Contracts.csproj') and Exists('$(MSBuildThisFileDirectory)..\\chummer-ui-kit\\src\\Chummer.Ui.Kit\\Chummer.Ui.Kit.csproj')">true</ChummerUseLocalCompatibilityTree>
     <ChummerUseLocalCompatibilityTree Condition="'$(ChummerUseLocalCompatibilityTree)' == ''">false</ChummerUseLocalCompatibilityTree>
   </PropertyGroup>
 </Project>

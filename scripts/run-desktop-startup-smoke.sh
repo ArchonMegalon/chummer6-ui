@@ -127,10 +127,46 @@ run_windows_smoke() {
   run_head_smoke "$INSTALL_ROOT/$LAUNCH_TARGET"
 }
 
+run_linux_smoke_deb() {
+  run_head_smoke "$UNPACK_ROOT/opt/chummer6/$APP_KEY-$RID/$LAUNCH_TARGET"
+}
+
+run_linux_smoke_archive() {
+  local launch_path_candidates=(
+    "$UNPACK_ROOT/$LAUNCH_TARGET"
+    "$UNPACK_ROOT/$APP_KEY-$RID/$LAUNCH_TARGET"
+    "$UNPACK_ROOT/opt/chummer6/$APP_KEY-$RID/$LAUNCH_TARGET"
+    "$UNPACK_ROOT/opt/chummer6/$APP_KEY/$LAUNCH_TARGET"
+  )
+
+  for candidate in "${launch_path_candidates[@]}"; do
+    if [[ -f "$candidate" ]]; then
+      run_head_smoke "$candidate"
+      return
+    fi
+  done
+
+  echo "Launch target missing for startup smoke. Checked candidates: ${launch_path_candidates[*]}" >&2
+  return 1
+}
+
 run_linux_smoke() {
   UNPACK_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-linux-smoke.XXXXXX")"
-  dpkg-deb -x "$ARTIFACT_PATH" "$UNPACK_ROOT" >>"$LOG_PATH" 2>&1
-  run_head_smoke "$UNPACK_ROOT/opt/chummer6/$APP_KEY-$RID/$LAUNCH_TARGET"
+
+  case "$ARTIFACT_PATH" in
+    *.deb)
+      dpkg-deb -x "$ARTIFACT_PATH" "$UNPACK_ROOT" >>"$LOG_PATH" 2>&1
+      run_linux_smoke_deb
+      ;;
+    *.tar|*.tar.gz|*.tgz)
+      tar -xf "$ARTIFACT_PATH" -C "$UNPACK_ROOT" >>"$LOG_PATH" 2>&1
+      run_linux_smoke_archive
+      ;;
+    *)
+      echo "Unsupported Linux artifact format: $ARTIFACT_PATH" >&2
+      return 1
+      ;;
+  esac
 }
 
 run_macos_smoke() {

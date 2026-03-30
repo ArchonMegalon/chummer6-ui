@@ -2,17 +2,15 @@
 
 Status: compatibility alias
 
-Authoritative canon moved to:
+This legacy root file remains only as a compatibility alias.
+Authoritative repo truth lives in:
 
 - `.codex-design/repo/IMPLEMENTATION_SCOPE.md`
 - `.codex-design/review/REVIEW_CONTEXT.md`
 
-This legacy root path remains only so older tools, logs, and links still resolve.
+Read those mirrored files first for the active presentation boundary.
 
-After the `chummer-play` split, Presentation ownership for session/coach flows is limited to shared seams:
+Compatibility markers:
 
-- shared UI-kit primitives consumed by `chummer-play` through `Chummer.Ui.Kit`
-- workbench-side coach sidecars
-- portal/proxy expectations for external `/session` and `/coach` hosts
-
-Active repo truth lives in `README.md`, `.codex-design/repo/IMPLEMENTATION_SCOPE.md`, and `.codex-design/review/REVIEW_CONTEXT.md`.
+- After the `chummer-play` split
+- portal/proxy expectations
