@@ -108,6 +108,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
         if (leadRecapShelfEntry is not null)
         {
             readinessHighlights.Add($"Artifact audience: {HumanizeAudience(leadRecapShelfEntry.Audience)}");
+            readinessHighlights.Add($"Artifact shelf views: {HumanizeAudience(leadRecapShelfEntry.Audience)} stay browseable from the same governed shelf.");
 
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.OwnershipSummary))
             {
