@@ -245,6 +245,48 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void ResultPanel_renders_last_portability_activity_details()
+    {
+        CharacterOverviewState state = CharacterOverviewState.Empty with
+        {
+            Notice = "Portable export prepared.",
+            LatestPortabilityActivity = new WorkspacePortabilityActivity(
+                "Last portable export",
+                new WorkspacePortabilityReceipt(
+                    FormatId: WorkspacePortabilityFormatIds.PortableDossierV1,
+                    CompatibilityState: WorkspacePortabilityCompatibilityStates.CompatibleWithWarnings,
+                    ContextSummary: "Runner Blue is packaged as a portable dossier on sr5.",
+                    ReceiptSummary: "Portable export is ready, but inspect the package before merge or governed replace on a receiving surface.",
+                    ProvenanceSummary: "Portable package portable-ws-1 captured payload hash abcdef123456 from workspace ws-1 at 2026-03-30T00:00:00.0000000+00:00.",
+                    PayloadSha256: "abcdef1234567890",
+                    NextSafeAction: "Open inspect-only first on the receiving surface and verify the missing sections before merge or replace.",
+                    SupportedExchangeModes:
+                    [
+                        WorkspacePortabilityExchangeModes.InspectOnly,
+                        WorkspacePortabilityExchangeModes.Merge,
+                        WorkspacePortabilityExchangeModes.Replace
+                    ],
+                    Notes:
+                    [
+                        new WorkspacePortabilityNote(
+                            Code: "section-coverage",
+                            Severity: WorkspacePortabilityNoteSeverities.Warning,
+                            Summary: "Portable package is missing contacts; receiving surfaces should inspect before governed replace.")
+                    ]))
+        };
+
+        using var context = new BunitContext();
+        IRenderedComponent<ResultPanel> cut = context.Render<ResultPanel>(parameters => parameters
+            .Add(component => component.State, state));
+
+        StringAssert.Contains(cut.Markup, "Last portable export");
+        StringAssert.Contains(cut.Markup, "Runner Blue is packaged as a portable dossier on sr5.");
+        StringAssert.Contains(cut.Markup, "Open inspect-only first on the receiving surface");
+        StringAssert.Contains(cut.Markup, "inspect-only, merge, replace");
+        StringAssert.Contains(cut.Markup, "Portable package is missing contacts");
+    }
+
+    [TestMethod]
     public void SectionPane_switches_between_placeholder_and_section_payload()
     {
         using var context = new BunitContext();
