@@ -783,6 +783,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(serverPlaneSource, "TravelPrefetchInventorySummary");
         RequireContains(serverPlaneSource, "CampaignMemorySummary");
         RequireContains(serverPlaneSource, "CampaignMemoryReturnSummary");
+        RequireContains(serverPlaneSource, "Artifact trust:");
     }
 
     private static void DesktopCampaignWorkspace_is_a_real_top_level_surface()

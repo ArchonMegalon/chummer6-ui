@@ -120,6 +120,12 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
                     $"Artifact publication: {HumanizeState(leadRecapShelfEntry.PublicationState, "Ready")} — {leadRecapShelfEntry.PublicationSummary}");
             }
 
+            if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.TrustBand))
+            {
+                readinessHighlights.Add(
+                    $"Artifact trust: {HumanizeState(leadRecapShelfEntry.TrustBand, "Draft")} — {(leadRecapShelfEntry.Discoverable ? "Eligible now" : "Still bounded")}");
+            }
+
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.NextSafeAction))
             {
                 readinessHighlights.Add($"Artifact next: {leadRecapShelfEntry.NextSafeAction}");
@@ -300,6 +306,8 @@ public sealed record DesktopHomeRecapShelfEntryDto(
     string? Audience,
     string? OwnershipSummary,
     string? PublicationState,
+    string? TrustBand,
+    bool Discoverable,
     string? PublicationSummary,
     string? NextSafeAction);
 
