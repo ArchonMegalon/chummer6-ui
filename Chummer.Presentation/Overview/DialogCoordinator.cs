@@ -357,7 +357,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             ActiveDialog = null,
             Error = null,
-            Notice = successNotice
+            Notice = stateAfterImport.Notice ?? successNotice
         });
     }
 

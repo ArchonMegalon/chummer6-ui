@@ -99,7 +99,13 @@ public sealed class HttpChummerClient : IChummerClient
         if (payload is null || string.IsNullOrWhiteSpace(payload.Id))
             throw new InvalidOperationException("Import response did not include a workspace id.");
 
-        return new WorkspaceImportResult(new CharacterWorkspaceId(payload.Id), payload.Summary, NormalizeRulesetId(payload.RulesetId));
+        return new WorkspaceImportResult(
+            Id: new CharacterWorkspaceId(payload.Id),
+            Summary: payload.Summary,
+            RulesetId: NormalizeRulesetId(payload.RulesetId),
+            ImportReceiptId: payload.ImportReceiptId ?? string.Empty,
+            ImportedAtUtc: payload.ImportedAtUtc,
+            Portability: payload.Portability);
     }
 
     public async Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct)
@@ -675,7 +681,10 @@ public sealed class HttpChummerClient : IChummerClient
                 ContentBase64: payload.ContentBase64 ?? string.Empty,
                 FileName: payload.FileName ?? $"{payload.Id}-export.json",
                 DocumentLength: payload.DocumentLength,
-                RulesetId: NormalizeRulesetId(payload.RulesetId)),
+                RulesetId: NormalizeRulesetId(payload.RulesetId),
+                PackageId: payload.PackageId ?? string.Empty,
+                ExportedAtUtc: payload.ExportedAtUtc,
+                Portability: payload.Portability),
             Error: null);
     }
 
