@@ -492,6 +492,8 @@ public sealed class HttpChummerClientBuildPathTests
       "audience": "personal,campaign,creator",
       "ownershipSummary": "Dockside keeps the same governed artifact on the signed-in account path instead of forking a shadow copy.",
       "publicationState": "preview_ready",
+      "trustBand": "review-pending",
+      "discoverable": false,
       "publicationSummary": "Dockside creator packet is already attached on the creator shelf with shared visibility.",
       "nextSafeAction": "Open creator publication status before you widen the artifact audience."
     }
@@ -576,6 +578,7 @@ public sealed class HttpChummerClientBuildPathTests
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact audience: My stuff, Campaign stuff, Published stuff");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact ownership: Dockside keeps the same governed artifact on the signed-in account path instead of forking a shadow copy.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact publication: Preview Ready — Dockside creator packet is already attached on the creator shelf with shared visibility.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact trust: Review Pending — Still bounded");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact next: Open creator publication status before you widen the artifact audience.");
         CollectionAssert.Contains(projection.SupportHighlights.ToArray(), "Released: The fix reached the same claimed install.");
         CollectionAssert.Contains(projection.DecisionNotices.ToArray(), "install_role: preview_scout stays attached to windows/avalonia on preview.");
