@@ -142,6 +142,10 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.Build);
         Assert.IsNotNull(presenter.State.Movement);
         Assert.IsNotNull(presenter.State.Awakening);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import ready:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import completed");
+        Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
+        Assert.AreEqual("Last portable import", presenter.State.LatestPortabilityActivity?.Title);
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
         Assert.AreEqual("BLUE", presenter.State.Profile.Alias);
     }
@@ -166,6 +170,10 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.Build);
         Assert.IsNotNull(presenter.State.Movement);
         Assert.IsNotNull(presenter.State.Awakening);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import ready:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import completed");
+        Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
+        Assert.AreEqual("Last portable import", presenter.State.LatestPortabilityActivity?.Title);
     }
 
     [TestMethod]
@@ -444,7 +452,10 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.PendingExport);
         Assert.AreEqual(WorkspaceDocumentFormat.Json, presenter.State.PendingExport?.Format);
         StringAssert.EndsWith(presenter.State.PendingExport?.FileName ?? string.Empty, "-export.json");
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Export prepared:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable export prepared:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable export is ready");
+        Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
+        Assert.AreEqual("Last portable export", presenter.State.LatestPortabilityActivity?.Title);
         string payload = Encoding.UTF8.GetString(Convert.FromBase64String(presenter.State.PendingExport!.ContentBase64));
         StringAssert.Contains(payload, "\"Summary\"");
         StringAssert.Contains(payload, "\"Profile\"");
@@ -1035,9 +1046,10 @@ public class CharacterOverviewPresenterTests
         {
             LastImportedDocument = document;
             SeedWorkspace("ws-1", "Imported", _alias);
+            DateTimeOffset importedAtUtc = DateTimeOffset.Parse("2026-03-30T12:00:00+00:00");
             WorkspaceImportResult result = new(
-                new CharacterWorkspaceId("ws-1"),
-                new CharacterFileSummary(
+                Id: new CharacterWorkspaceId("ws-1"),
+                Summary: new CharacterFileSummary(
                     Name: "Imported",
                     Alias: _alias,
                     Metatype: "Ork",
@@ -1047,7 +1059,32 @@ public class CharacterOverviewPresenterTests
                     Karma: 0m,
                     Nuyen: 0m,
                     Created: true),
-                RulesetDefaults.NormalizeOptional(document.RulesetId) ?? string.Empty);
+                RulesetId: RulesetDefaults.NormalizeOptional(document.RulesetId) ?? string.Empty,
+                ImportReceiptId: "import-ws-1-abc123",
+                ImportedAtUtc: importedAtUtc,
+                Portability: new WorkspacePortabilityReceipt(
+                    FormatId: document.Format == WorkspaceDocumentFormat.Json
+                        ? WorkspacePortabilityFormatIds.PortableDossierV1
+                        : WorkspacePortabilityFormatIds.NativeWorkspaceXmlV1,
+                    CompatibilityState: WorkspacePortabilityCompatibilityStates.Compatible,
+                    ContextSummary: "Imported runner is now governed dossier truth.",
+                    ReceiptSummary: "Portable import completed as governed dossier truth and is ready for normal use or portable export.",
+                    ProvenanceSummary: $"Import receipt import-ws-1-abc123 captured payload hash abc123 at {importedAtUtc:O}.",
+                    PayloadSha256: "abc123",
+                    NextSafeAction: "Use the workspace normally or export it when you need a governed handoff.",
+                    SupportedExchangeModes:
+                    [
+                        WorkspacePortabilityExchangeModes.InspectOnly,
+                        WorkspacePortabilityExchangeModes.Merge,
+                        WorkspacePortabilityExchangeModes.Replace
+                    ],
+                    Notes:
+                    [
+                        new WorkspacePortabilityNote(
+                            Code: "format-identity",
+                            Severity: WorkspacePortabilityNoteSeverities.Info,
+                            Summary: "Imported native workspace XML on the governed dossier rail.")
+                    ]));
 
             return Task.FromResult(result);
         }
@@ -1552,6 +1589,7 @@ public class CharacterOverviewPresenterTests
 
             string json = JsonSerializer.Serialize(bundle);
             byte[] payloadBytes = Encoding.UTF8.GetBytes(json);
+            DateTimeOffset exportedAtUtc = DateTimeOffset.Parse("2026-03-30T12:05:00+00:00");
             return Task.FromResult(new CommandResult<WorkspaceExportReceipt>(
                 Success: true,
                 Value: new WorkspaceExportReceipt(
@@ -1560,7 +1598,30 @@ public class CharacterOverviewPresenterTests
                     ContentBase64: Convert.ToBase64String(payloadBytes),
                     FileName: $"{id.Value}-export.json",
                     DocumentLength: payloadBytes.Length,
-                    RulesetId: RulesetDefaults.Sr5),
+                    RulesetId: RulesetDefaults.Sr5,
+                    PackageId: "portable-ws-export-abc123",
+                    ExportedAtUtc: exportedAtUtc,
+                    Portability: new WorkspacePortabilityReceipt(
+                        FormatId: WorkspacePortabilityFormatIds.PortableDossierV1,
+                        CompatibilityState: WorkspacePortabilityCompatibilityStates.Compatible,
+                        ContextSummary: "Runner export is packaged as a portable dossier.",
+                        ReceiptSummary: "Portable export is ready for inspect-only, merge, or governed replace on a receiving surface.",
+                        ProvenanceSummary: $"Portable package portable-ws-export-abc123 captured payload hash abc123 at {exportedAtUtc:O}.",
+                        PayloadSha256: "abc123",
+                        NextSafeAction: "Share the package or inspect it first on the receiving surface.",
+                        SupportedExchangeModes:
+                        [
+                            WorkspacePortabilityExchangeModes.InspectOnly,
+                            WorkspacePortabilityExchangeModes.Merge,
+                            WorkspacePortabilityExchangeModes.Replace
+                        ],
+                        Notes:
+                        [
+                            new WorkspacePortabilityNote(
+                                Code: "format-identity",
+                                Severity: WorkspacePortabilityNoteSeverities.Info,
+                                Summary: "Package format chummer.portable-dossier.v1 stays attached to governed dossier truth.")
+                        ])),
                 Error: null));
         }
 
