@@ -3327,6 +3327,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(manifestScriptText, "\"url\": f\"/downloads/files/{artifact.name}\"");
         StringAssert.Contains(startupSmokeScriptText, "release_smoke_start_failure");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT");
+        StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET");
+        StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT");
         StringAssert.Contains(startupSmokeScriptText, "--smoke-install");
         StringAssert.Contains(startupSmokeScriptText, "hdiutil attach");

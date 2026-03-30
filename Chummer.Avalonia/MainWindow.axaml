@@ -6,7 +6,7 @@
         Height="860"
         MinWidth="1000"
         MinHeight="680"
-        Title="Chummer Avalonia Head"
+        Title="Chummer Desktop"
         KeyDown="Window_OnKeyDown">
   <Window.Styles>
     <Style Selector="Button.menu-button.active-menu">

@@ -3,13 +3,13 @@
              x:Class="Chummer.Avalonia.Controls.ToolStripControl">
   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
     <WrapPanel Grid.Column="0" Orientation="Horizontal" ItemHeight="36">
-      <Button Content="Desktop Home" Width="130" Click="DesktopHomeButton_OnClick" />
-      <Button Content="Link This Copy" Width="130" Click="InstallLinkingButton_OnClick" />
-      <Button Content="Open Support" Width="130" Click="SupportButton_OnClick" />
-      <Button Content="Import Character File" Width="170" Click="ImportFileButton_OnClick" />
-      <Button Content="Import Raw XML" Width="130" Click="ImportRawButton_OnClick" />
-      <Button Content="Save Workspace" Width="140" Click="SaveButton_OnClick" />
-      <Button Content="Close Active Workspace" Width="190" Click="CloseWorkspaceButton_OnClick" />
+      <Button x:Name="DesktopHomeButton" Content="Desktop Home" Width="130" Click="DesktopHomeButton_OnClick" />
+      <Button x:Name="InstallLinkingButton" Content="Link This Copy" Width="130" Click="InstallLinkingButton_OnClick" />
+      <Button x:Name="SupportButton" Content="Open Support" Width="130" Click="SupportButton_OnClick" />
+      <Button x:Name="ImportFileButton" Content="Import Character File" Width="170" Click="ImportFileButton_OnClick" />
+      <Button x:Name="ImportRawButton" Content="Import Raw XML" Width="130" Click="ImportRawButton_OnClick" />
+      <Button x:Name="SaveButton" Content="Save Workspace" Width="140" Click="SaveButton_OnClick" />
+      <Button x:Name="CloseWorkspaceButton" Content="Close Active Workspace" Width="190" Click="CloseWorkspaceButton_OnClick" />
     </WrapPanel>
     <TextBlock x:Name="StatusText" Grid.Column="1" VerticalAlignment="Center" Text="State: idle" />
   </Grid>

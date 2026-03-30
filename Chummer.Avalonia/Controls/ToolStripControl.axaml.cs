@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -8,6 +9,7 @@ public partial class ToolStripControl : UserControl
     public ToolStripControl()
     {
         InitializeComponent();
+        ApplyLocalization();
     }
 
     public event EventHandler? ImportFileRequested;
@@ -26,6 +28,19 @@ public partial class ToolStripControl : UserControl
     public void SetStatusText(string statusText)
     {
         StatusText.Text = statusText;
+    }
+
+    private void ApplyLocalization()
+    {
+        string language = DesktopLocalizationCatalog.GetCurrentLanguage();
+        DesktopHomeButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
+        InstallLinkingButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language);
+        SupportButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language);
+        ImportFileButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language);
+        ImportRawButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language);
+        SaveButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.save_workspace", language);
+        CloseWorkspaceButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.close_active_workspace", language);
+        StatusText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.status_idle", language);
     }
 
     private void ImportFileButton_OnClick(object? sender, RoutedEventArgs e)

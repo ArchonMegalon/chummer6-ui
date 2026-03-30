@@ -1,4 +1,5 @@
 using Chummer.Avalonia.Controls;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
 
@@ -6,37 +7,37 @@ internal static class MainWindowFeedbackCoordinator
 {
     public static void ShowImportRawRequired(ToolStripControl toolStrip)
     {
-        toolStrip.SetStatusText("State: provide debug XML content before importing.");
+        toolStrip.SetStatusText(S("desktop.shell.feedback.import_raw_required"));
     }
 
     public static void ShowImportFileUnavailable(ToolStripControl toolStrip)
     {
-        toolStrip.SetStatusText("State: file picker unavailable on this platform.");
+        toolStrip.SetStatusText(S("desktop.shell.feedback.import_file_unavailable"));
     }
 
     public static void ShowNoActiveWorkspace(ToolStripControl toolStrip)
     {
-        toolStrip.SetStatusText("State: no active workspace to close.");
+        toolStrip.SetStatusText(S("desktop.shell.feedback.no_active_workspace"));
     }
 
     public static void ShowDesktopHomeReviewed(ToolStripControl toolStrip)
     {
-        toolStrip.SetStatusText("State: desktop home reviewed.");
+        toolStrip.SetStatusText(S("desktop.shell.feedback.desktop_home_reviewed"));
     }
 
     public static void ShowInstallLinkingReviewed(ToolStripControl toolStrip)
     {
-        toolStrip.SetStatusText("State: install linking reviewed.");
+        toolStrip.SetStatusText(S("desktop.shell.feedback.install_linking_reviewed"));
     }
 
     public static void ShowInstallSupportOpened(ToolStripControl toolStrip)
     {
-        toolStrip.SetStatusText("State: opened install-aware support.");
+        toolStrip.SetStatusText(S("desktop.shell.feedback.install_support_opened"));
     }
 
     public static void ShowInstallSupportUnavailable(ToolStripControl toolStrip)
     {
-        toolStrip.SetStatusText("State: install-aware support is unavailable on this host.");
+        toolStrip.SetStatusText(S("desktop.shell.feedback.install_support_unavailable"));
     }
 
     public static void ShowDownloadUnavailable(SectionHostControl sectionHost)
@@ -102,15 +103,27 @@ internal static class MainWindowFeedbackCoordinator
         Exception ex)
     {
         toolStrip.SetState(new ToolStripState(
-            $"State: error - {operationName} failed: {ex.Message}"));
+            F("desktop.shell.feedback.operation_failed_state", operationName, ex.Message)));
         sectionHost.SetState(shellFrame.SectionHostState with
         {
-            Notice = $"Notice: {operationName} failed."
+            Notice = F("desktop.shell.feedback.operation_failed_notice", operationName)
         });
         statusStrip.SetState(shellFrame.ChromeState.StatusStrip with
         {
-            ServiceState = "Service: error",
-            TimeState = $"Time: {DateTimeOffset.UtcNow:u}"
+            ServiceState = DesktopLocalizationCatalog.GetRequiredFormattedString(
+                "desktop.shell.status.service",
+                DesktopLocalizationCatalog.GetCurrentLanguage(),
+                S("desktop.shell.state.value.error")),
+            TimeState = DesktopLocalizationCatalog.GetRequiredFormattedString(
+                "desktop.shell.status.time",
+                DesktopLocalizationCatalog.GetCurrentLanguage(),
+                DateTimeOffset.UtcNow.ToString("u"))
         });
     }
+
+    private static string S(string key)
+        => DesktopLocalizationCatalog.GetRequiredString(key, DesktopLocalizationCatalog.GetCurrentLanguage());
+
+    private static string F(string key, params object[] values)
+        => DesktopLocalizationCatalog.GetRequiredFormattedString(key, DesktopLocalizationCatalog.GetCurrentLanguage(), values);
 }
