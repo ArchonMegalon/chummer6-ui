@@ -315,6 +315,17 @@ public sealed class HttpChummerClientBuildPathTests
     "returnSummary": "Return through the shared campaign lane."
   },
   "continuityConflicts": [],
+  "recapShelf": [
+    {
+      "label": "Dockside aftermath packet",
+      "summary": "The same recap-safe packet now feeds campaign return and creator publication follow-through.",
+      "audience": "personal,campaign,creator",
+      "ownershipSummary": "Dockside keeps the same governed artifact on the signed-in account path instead of forking a shadow copy.",
+      "publicationState": "preview_ready",
+      "publicationSummary": "Dockside creator packet is already attached on the creator shelf with shared visibility.",
+      "nextSafeAction": "Open creator publication status before you widen the artifact audience."
+    }
+  ],
   "supportClosures": [
     {
       "stageLabel": "Released",
@@ -373,9 +384,14 @@ public sealed class HttpChummerClientBuildPathTests
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Travel inventory: 2 dossiers, 1 campaign, 1 rule environment, and governed prep packets stay bounded to the staged travel cache.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Campaign memory: The governed memory lane keeps the Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Campaign memory return: Return through the Dockside handoff so the same workspace can reopen the courier chase without a lossy recap jump.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact audience: My stuff, Campaign stuff, Published stuff");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact ownership: Dockside keeps the same governed artifact on the signed-in account path instead of forking a shadow copy.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact publication: Preview Ready — Dockside creator packet is already attached on the creator shelf with shared visibility.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact next: Open creator publication status before you widen the artifact audience.");
         CollectionAssert.Contains(projection.SupportHighlights.ToArray(), "Released: The fix reached the same claimed install.");
         CollectionAssert.Contains(projection.DecisionNotices.ToArray(), "install_role: preview_scout stays attached to windows/avalonia on preview.");
         CollectionAssert.Contains(projection.Watchouts.ToArray(), "Travel mode: Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.");
+        StringAssert.Contains(projection.PublicationSummary, "Artifact shelf: Dockside creator packet is already attached on the creator shelf with shared visibility.");
     }
 
     private static HttpResponseMessage JsonResponse(string json)
