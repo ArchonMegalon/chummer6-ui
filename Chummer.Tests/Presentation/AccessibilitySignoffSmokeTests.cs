@@ -760,13 +760,18 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "CreateCampaignActions()");
         RequireContains(source, "desktop.home.section.campaign_return");
         RequireContains(source, "desktop.home.button.open_current_campaign_workspace");
+        RequireContains(source, "desktop.home.button.open_my_artifacts");
+        RequireContains(source, "desktop.home.button.open_campaign_artifacts");
+        RequireContains(source, "desktop.home.button.open_published_artifacts");
         RequireContains(source, "client.GetAccountCampaignSummaryAsync");
         RequireContains(source, "client.GetCampaignWorkspaceDigestsAsync");
         RequireContains(source, "ReadCampaignWorkspaceDigestsAsync");
         RequireContains(source, "ReadCampaignWorkspaceServerPlaneAsync");
         RequireContains(source, "GetCampaignWorkspaceServerPlaneAsync");
         RequireContains(source, "OpenCampaignWorkspaceAsync()");
+        RequireContains(source, "OpenArtifactShelfView");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal($\"/artifacts?view={Uri.EscapeDataString(view)}\")");
 
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeCampaignProjector.cs");
         RequireContains(projectorSource, "Campaign return:");
@@ -792,6 +797,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(serverPlaneSource, "CampaignMemorySummary");
         RequireContains(serverPlaneSource, "CampaignMemoryReturnSummary");
         RequireContains(serverPlaneSource, "Artifact trust:");
+        RequireContains(serverPlaneSource, "Artifact shelf views:");
     }
 
     private static void DesktopCampaignWorkspace_is_a_real_top_level_surface()

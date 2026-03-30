@@ -707,6 +707,9 @@ internal sealed class DesktopHomeWindow : Window
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
             actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync));
+            actions.Add(CreateButton(S("desktop.home.button.open_my_artifacts"), () => OpenArtifactShelfView("personal")));
+            actions.Add(CreateButton(S("desktop.home.button.open_campaign_artifacts"), () => OpenArtifactShelfView("campaign")));
+            actions.Add(CreateButton(S("desktop.home.button.open_published_artifacts"), () => OpenArtifactShelfView("creator")));
         }
         else
         {
@@ -948,6 +951,10 @@ internal sealed class DesktopHomeWindow : Window
 
         return DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId);
     }
+
+    private bool OpenArtifactShelfView(string view)
+        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
+           && DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/artifacts?view={Uri.EscapeDataString(view)}");
 
     private Task OpenBuildFollowThroughAsync()
     {
