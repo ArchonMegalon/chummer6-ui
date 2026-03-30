@@ -17,6 +17,7 @@ public partial class ToolStripControl : UserControl
     public event EventHandler? SaveRequested;
     public event EventHandler? CloseWorkspaceRequested;
     public event EventHandler? DesktopHomeRequested;
+    public event EventHandler? CampaignWorkspaceRequested;
     public event EventHandler? InstallLinkingRequested;
     public event EventHandler? SupportRequested;
 
@@ -34,6 +35,7 @@ public partial class ToolStripControl : UserControl
     {
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
         DesktopHomeButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
+        CampaignWorkspaceButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language);
         InstallLinkingButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language);
         SupportButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language);
         ImportFileButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language);
@@ -51,6 +53,11 @@ public partial class ToolStripControl : UserControl
     private void DesktopHomeButton_OnClick(object? sender, RoutedEventArgs e)
     {
         DesktopHomeRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void CampaignWorkspaceButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        CampaignWorkspaceRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void InstallLinkingButton_OnClick(object? sender, RoutedEventArgs e)

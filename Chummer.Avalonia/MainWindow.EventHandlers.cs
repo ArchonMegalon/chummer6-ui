@@ -73,6 +73,17 @@ public partial class MainWindow
             "open desktop home");
     }
 
+    private async void ToolStrip_OnCampaignWorkspaceRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
+            },
+            "open campaign workspace");
+    }
+
     private async void ToolStrip_OnInstallLinkingRequested(object? sender, EventArgs e)
     {
         await RunUiActionAsync(
