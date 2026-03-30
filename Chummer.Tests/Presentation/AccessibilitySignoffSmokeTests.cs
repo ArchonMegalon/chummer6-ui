@@ -28,6 +28,13 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
             FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions();
             DesktopCampaignWorkspace_is_a_real_top_level_surface();
+            DesktopUpdateSurface_is_a_real_top_level_surface();
+            DesktopSupportSurface_is_a_real_top_level_surface();
+            DesktopSupportCaseSurface_is_a_real_top_level_surface();
+            DesktopDevicesAccessSurface_is_a_real_top_level_surface();
+            DesktopReportSurface_is_a_real_top_level_surface();
+            DesktopCrashRecoverySurface_is_a_real_top_level_surface();
+            DesktopPreferencePersistence_is_restart_safe_for_flagship_shell_and_native_surfaces();
             DesktopHome_degrades_gracefully_when_workspace_bootstrap_is_unavailable();
             DesktopHome_wires_the_campaign_projection_into_the_summary_panel();
             DesktopHome_wires_the_support_projection_into_the_summary_panel();
@@ -276,6 +283,8 @@ internal static class AccessibilitySignoffSmokeTests
             DiscoverySummary: "Visible to invited players.",
             Visibility: "private",
             PublicationStatus: "ready",
+            TrustBand: "review-pending",
+            Discoverable: false,
             UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:08:00+00:00"));
         WorkspaceRestoreProjection restore = new(
             RestoreId: "restore-1",
@@ -566,6 +575,8 @@ internal static class AccessibilitySignoffSmokeTests
             ProvenanceSummary: "Publication lineage already points at the same campaign-safe dossier.",
             Visibility: "private",
             PublicationStatus: "ready",
+            TrustBand: "review-pending",
+            Discoverable: false,
             UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T10:22:00+00:00"));
         AccountCampaignSummary campaignSummary = new(
             Dossiers: [],
@@ -774,14 +785,215 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "ReadSupportProjectionAsync");
         RequireContains(source, "DesktopHomeCampaignProjector.Create");
         RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
+        RequireContains(source, "desktop.home.button.open_report_issue");
+        RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopSupportCaseWindow.ShowAsync(this, _installState.HeadId, _supportProjection)");
+        RequireContains(source, "OpenCampaignFollowThroughAsync");
+        RequireContains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "OpenWorkspaceInDesktopShellAsync");
+        RequireContains(source, "mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
+        RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
+
+        string navigationSource = ReadSource("Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs");
+        RequireContains(navigationSource, "OpenWorkspaceFromDesktopSurfaceAsync");
+        RequireContains(navigationSource, "_interactionCoordinator.SwitchWorkspaceAsync");
+        RequireContains(navigationSource, "RunUiActionAsync");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
         RequireContains(appSource, "CHUMMER_DESKTOP_STARTUP_SURFACE");
         RequireContains(appSource, "campaign_workspace");
         RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopUpdateSurface_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopUpdateWindow.cs");
+        RequireContains(source, "public static async Task ShowAsync(Window owner, string headId)");
+        RequireContains(source, "desktop.update.title");
+        RequireContains(source, "desktop.update.heading");
+        RequireContains(source, "desktop.update.section.current");
+        RequireContains(source, "desktop.update.section.follow_through");
+        RequireContains(source, "desktop.update.section.install");
+        RequireContains(source, "desktop.update.button.check_now");
+        RequireContains(source, "desktop.update.button.refresh");
+        RequireContains(source, "desktop.update.checking");
+        RequireContains(source, "desktop.update.checked");
+        RequireContains(source, "desktop.update.apply_scheduled");
+        RequireContains(source, "DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync");
+        RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForUpdate");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()");
+        RequireContains(source, "new ScrollViewer");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "string.Equals(startupSurface, \"update\"");
+        RequireContains(appSource, "DesktopUpdateWindow.ShowAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopSupportSurface_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopSupportWindow.cs");
+        RequireContains(source, "public static async Task ShowAsync(Window owner, string headId)");
+        RequireContains(source, "desktop.support.title");
+        RequireContains(source, "desktop.support.heading");
+        RequireContains(source, "desktop.support.section.case");
+        RequireContains(source, "desktop.support.section.release");
+        RequireContains(source, "desktop.support.section.follow_through");
+        RequireContains(source, "desktop.support.button.refresh");
+        RequireContains(source, "desktop.support.status.current");
+        RequireContains(source, "desktop.support.status.refresh_failed");
+        RequireContains(source, "ReadSupportProjectionAsync");
+        RequireContains(source, "client.GetDesktopHomeSupportDigestsAsync");
+        RequireContains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopUpdateWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopSupportCaseWindow.ShowAsync(this, _installState.HeadId, _supportProjection)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForUpdate");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
+        RequireContains(source, "new ScrollViewer");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "string.Equals(startupSurface, \"support\"");
+        RequireContains(appSource, "DesktopSupportWindow.ShowAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopSupportCaseSurface_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopSupportCaseWindow.cs");
+        RequireContains(source, "public static async Task ShowAsync(Window owner, string headId, DesktopHomeSupportProjection supportProjection)");
+        RequireContains(source, "public static async Task ShowPreviewAsync(Window owner, string headId)");
+        RequireContains(source, "desktop.support_case.title");
+        RequireContains(source, "desktop.support_case.heading");
+        RequireContains(source, "desktop.support_case.section.summary");
+        RequireContains(source, "desktop.support_case.section.timeline");
+        RequireContains(source, "desktop.support_case.section.follow_through");
+        RequireContains(source, "desktop.support_case.button.refresh");
+        RequireContains(source, "desktop.support_case.status.current");
+        RequireContains(source, "desktop.support_case.status.preview");
+        RequireContains(source, "client.GetDesktopHomeSupportDigestsAsync");
+        RequireContains(source, "client.GetDesktopSupportCaseDetailsAsync");
+        RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopUpdateWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "CreatePreviewSupportProjection");
+        RequireContains(source, "CreatePreviewSupportCaseDetails");
+        RequireContains(source, "new ScrollViewer");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "string.Equals(startupSurface, \"support_case\"");
+        RequireContains(appSource, "DesktopSupportCaseWindow.ShowPreviewAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopDevicesAccessSurface_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopDevicesAccessWindow.cs");
+        RequireContains(source, "public static async Task ShowAsync(Window owner, string headId)");
+        RequireContains(source, "desktop.devices.title");
+        RequireContains(source, "desktop.devices.heading");
+        RequireContains(source, "desktop.devices.section.current");
+        RequireContains(source, "desktop.devices.section.claimed");
+        RequireContains(source, "desktop.devices.section.claims");
+        RequireContains(source, "desktop.devices.section.follow_through");
+        RequireContains(source, "client.GetDesktopInstallLinkingSummaryAsync");
+        RequireContains(source, "client.GetAccountCampaignSummaryAsync");
+        RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopUpdateWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
+        RequireContains(source, "new ScrollViewer");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "string.Equals(startupSurface, \"devices_access\"");
+        RequireContains(appSource, "DesktopDevicesAccessWindow.ShowAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopReportSurface_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopReportIssueWindow.cs");
+        RequireContains(source, "public static async Task ShowAsync(Window owner, string headId)");
+        RequireContains(source, "desktop.report.title");
+        RequireContains(source, "desktop.report.heading");
+        RequireContains(source, "desktop.report.section.context");
+        RequireContains(source, "desktop.report.section.bug");
+        RequireContains(source, "desktop.report.section.feedback");
+        RequireContains(source, "desktop.report.button.open_bug");
+        RequireContains(source, "desktop.report.button.copy_bug");
+        RequireContains(source, "desktop.report.button.open_feedback");
+        RequireContains(source, "desktop.report.button.copy_feedback");
+        RequireContains(source, "desktop.report.status.bug_opened");
+        RequireContains(source, "desktop.report.status.feedback_opened");
+        RequireContains(source, "BuildBugDraftText()");
+        RequireContains(source, "BuildFeedbackDraftText()");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForBugReport");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForFeedback");
+        RequireContains(source, "new ScrollViewer");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "string.Equals(startupSurface, \"report_issue\"");
+        RequireContains(appSource, "DesktopReportIssueWindow.ShowAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopCrashRecoverySurface_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopCrashRecoveryWindow.cs");
+        RequireContains(source, "public static async Task<bool> TryShowPendingAsync(Window owner)");
+        RequireContains(source, "public static async Task ShowPreviewAsync(Window owner, string headId)");
+        RequireContains(source, "desktop.crash.title");
+        RequireContains(source, "desktop.crash.heading");
+        RequireContains(source, "desktop.crash.section.summary");
+        RequireContains(source, "desktop.crash.section.recovery");
+        RequireContains(source, "desktop.crash.button.retry_send");
+        RequireContains(source, "desktop.crash.button.keep_local_only");
+        RequireContains(source, "desktop.home.button.open_report_issue");
+        RequireContains(source, "desktop.home.button.open_support_center");
+        RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _pending.Report.HeadId)");
+        RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _pending.Report.HeadId)");
+        RequireContains(source, "DesktopCrashRuntime.TryAcknowledgePendingCrashReport");
+        RequireContains(source, "CreatePreviewPendingCrashReport");
+        RequireContains(source, "new ScrollViewer");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "string.Equals(startupSurface, \"crash_recovery\"");
+        RequireContains(appSource, "DesktopCrashRecoveryWindow.ShowPreviewAsync(owner, \"avalonia\")");
+        RequireContains(appSource, "DesktopCrashRecoveryWindow.TryShowPendingAsync(owner)");
+    }
+
+    private static void DesktopPreferencePersistence_is_restart_safe_for_flagship_shell_and_native_surfaces()
+    {
+        string runtimeSource = ReadSource("Chummer.Desktop.Runtime/DesktopPreferenceRuntime.cs");
+        RequireContains(runtimeSource, "public static class DesktopPreferenceRuntime");
+        RequireContains(runtimeSource, "LoadOrCreateState");
+        RequireContains(runtimeSource, "SaveState");
+        RequireContains(runtimeSource, "preferences");
+        RequireContains(runtimeSource, "state.json");
+
+        string localizationSource = ReadSource("Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs");
+        RequireContains(localizationSource, "SetCurrentLanguageOverride");
+        RequireContains(localizationSource, "_currentLanguageOverride");
+        RequireContains(localizationSource, "GetCurrentLanguage()");
+
+        string presenterSource = ReadSource("Chummer.Presentation/Overview/CharacterOverviewPresenter.cs");
+        RequireContains(presenterSource, "DesktopPreferenceStateRuntime.Current");
+        RequireContains(presenterSource, "Preferences = preferences");
+
+        string mainWindowSource = ReadSource("Chummer.Avalonia/MainWindow.axaml.cs");
+        RequireContains(mainWindowSource, "DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId)");
+        RequireContains(mainWindowSource, "DesktopLocalizationCatalog.SetCurrentLanguageOverride(_persistedPreferences.Language)");
+
+        string mainWindowPreferenceSource = ReadSource("Chummer.Avalonia/MainWindow.PreferenceState.cs");
+        RequireContains(mainWindowPreferenceSource, "DesktopPreferenceRuntime.SaveState(DesktopHeadId, normalized)");
+        RequireContains(mainWindowPreferenceSource, "DesktopPreferenceStateRuntime.Normalize(state.Preferences)");
+
+        string desktopHomeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        RequireContains(desktopHomeSource, "DesktopPreferenceRuntime.LoadOrCreateState(headId)");
+
+        string installLinkSource = ReadSource("Chummer.Avalonia/DesktopInstallLinkingWindow.cs");
+        RequireContains(installLinkSource, "DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId).Language");
     }
 
     private static void DesktopHome_wires_the_support_projection_into_the_summary_panel()
@@ -796,14 +1008,18 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.home.section.support_closure");
         RequireContains(source, "OpenPrimarySupportFollowThrough");
         RequireContains(source, "OpenTrackedSupportCase");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal");
+        RequireContains(source, "DesktopSupportCaseWindow.ShowAsync(this, _installState.HeadId, _supportProjection)");
+        RequireContains(source, "DesktopUpdateWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "client.GetDesktopHomeSupportDigestsAsync");
+        RequireContains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)");
 
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeSupportProjector.cs");
         RequireContains(projectorSource, "Tracked case:");
         RequireContains(projectorSource, "Release progress:");
         RequireContains(projectorSource, "Verification:");
         RequireContains(projectorSource, "Affected install:");
+        RequireContains(projectorSource, "InstallReadinessSummary");
+        RequireContains(projectorSource, "NeedsInstallUpdate");
     }
 
     private static void DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel()
@@ -831,9 +1047,14 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "Next: ");
         RequireContains(source, "_buildExplainText");
         RequireContains(source, "_workspaceSummaryText");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkPortal()");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_recentWorkspaces[0].Id.Value)");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace");
+        RequireContains(source, "OpenCampaignFollowThroughAsync");
+        RequireContains(source, "OpenBuildFollowThroughAsync");
+        RequireContains(source, "OpenWorkspaceFollowThroughAsync");
+        RequireContains(source, "OpenWorkspaceInDesktopShellAsync");
+        RequireContains(source, "mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId)");
+        RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "client.GetShellBootstrapAsync");
         RequireContains(source, "client.GetRuntimeInspectorProfileAsync");
         RequireContains(source, "client.GetBuildPathSuggestionsAsync");
@@ -866,22 +1087,31 @@ internal static class AccessibilitySignoffSmokeTests
         string toolStripMarkup = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml");
         RequireContains(toolStripMarkup, "x:Name=\"DesktopHomeButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"CampaignWorkspaceButton\"");
+        RequireContains(toolStripMarkup, "x:Name=\"UpdateStatusButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"InstallLinkingButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"SupportButton\"");
+        RequireContains(toolStripMarkup, "x:Name=\"ReportIssueButton\"");
         RequireContains(toolStripMarkup, "DesktopHomeButton_OnClick");
         RequireContains(toolStripMarkup, "CampaignWorkspaceButton_OnClick");
+        RequireContains(toolStripMarkup, "UpdateStatusButton_OnClick");
         RequireContains(toolStripMarkup, "InstallLinkingButton_OnClick");
         RequireContains(toolStripMarkup, "SupportButton_OnClick");
+        RequireContains(toolStripMarkup, "ReportIssueButton_OnClick");
 
         string toolStripSource = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml.cs");
         RequireContains(toolStripSource, "DesktopHomeRequested");
         RequireContains(toolStripSource, "CampaignWorkspaceRequested");
+        RequireContains(toolStripSource, "UpdateStatusRequested");
         RequireContains(toolStripSource, "InstallLinkingRequested");
         RequireContains(toolStripSource, "SupportRequested");
+        RequireContains(toolStripSource, "ReportIssueRequested");
         RequireContains(toolStripSource, "desktop.shell.tool.desktop_home");
         RequireContains(toolStripSource, "desktop.shell.tool.campaign_workspace");
+        RequireContains(toolStripSource, "desktop.shell.tool.update_status");
         RequireContains(toolStripSource, "desktop.shell.tool.link_copy");
         RequireContains(toolStripSource, "desktop.shell.tool.open_support");
+        RequireContains(toolStripSource, "desktop.shell.tool.report_issue");
+        RequireContains(toolStripSource, "desktop.shell.tool.settings");
         RequireContains(toolStripSource, "desktop.shell.tool.status_idle");
 
         string menuBarMarkup = ReadSource("Chummer.Avalonia/Controls/ShellMenuBarControl.axaml");
@@ -902,27 +1132,42 @@ internal static class AccessibilitySignoffSmokeTests
         string bindingSource = ReadSource("Chummer.Avalonia/MainWindow.ControlBinding.cs");
         RequireContains(bindingSource, "onDesktopHomeRequested");
         RequireContains(bindingSource, "onCampaignWorkspaceRequested");
+        RequireContains(bindingSource, "onUpdateStatusRequested");
         RequireContains(bindingSource, "onInstallLinkingRequested");
         RequireContains(bindingSource, "onSupportRequested");
+        RequireContains(bindingSource, "onReportIssueRequested");
+        RequireContains(bindingSource, "onSettingsRequested");
         RequireContains(bindingSource, "toolStrip.DesktopHomeRequested +=");
         RequireContains(bindingSource, "toolStrip.CampaignWorkspaceRequested +=");
+        RequireContains(bindingSource, "toolStrip.UpdateStatusRequested +=");
         RequireContains(bindingSource, "toolStrip.InstallLinkingRequested +=");
         RequireContains(bindingSource, "toolStrip.SupportRequested +=");
+        RequireContains(bindingSource, "toolStrip.ReportIssueRequested +=");
+        RequireContains(bindingSource, "toolStrip.SettingsRequested +=");
 
         string eventHandlerSource = ReadSource("Chummer.Avalonia/MainWindow.EventHandlers.cs");
         RequireContains(eventHandlerSource, "ToolStrip_OnDesktopHomeRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnCampaignWorkspaceRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnUpdateStatusRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnInstallLinkingRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnSupportRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnReportIssueRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnSettingsRequested");
         RequireContains(eventHandlerSource, "DesktopHomeWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "DesktopUpdateWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "DesktopSupportWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "DesktopReportIssueWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopInstallLinkingWindow.ShowAsync(this, \"avalonia\")");
-        RequireContains(eventHandlerSource, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
+        RequireContains(eventHandlerSource, "_interactionCoordinator.ExecuteCommandAsync(\"global_settings\", CancellationToken.None)");
 
         string desktopHomeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
         RequireContains(desktopHomeSource, "public static async Task ShowAsync(Window owner, string headId)");
         RequireContains(desktopHomeSource, "DesktopLocalizationCatalog.GetRequiredString(\"desktop.home.title\"");
         RequireContains(desktopHomeSource, "new ScrollViewer");
+        RequireContains(desktopHomeSource, "CreateLanguageActions()");
+        RequireContains(desktopHomeSource, "desktop.home.button.open_settings");
+        RequireContains(desktopHomeSource, "mainWindow.OpenDesktopCommandFromSurfaceAsync(\"global_settings\", \"open global settings\")");
 
         string installLinkSource = ReadSource("Chummer.Avalonia/DesktopInstallLinkingWindow.cs");
         RequireContains(installLinkSource, "public static async Task ShowAsync(Window owner, string headId)");
@@ -932,6 +1177,14 @@ internal static class AccessibilitySignoffSmokeTests
 
         string mainWindowSource = ReadSource("Chummer.Avalonia/MainWindow.axaml.cs");
         RequireContains(mainWindowSource, "desktop.shell.window_title");
+
+        string navigationSource = ReadSource("Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs");
+        RequireContains(navigationSource, "OpenDesktopCommandFromSurfaceAsync");
+        RequireContains(navigationSource, "_interactionCoordinator.ExecuteCommandAsync");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "string.Equals(startupSurface, \"settings\"");
+        RequireContains(appSource, "owner.OpenDesktopCommandFromSurfaceAsync(\"global_settings\", \"open global settings\")");
     }
 
     private static void DesktopHome_degrades_gracefully_when_workspace_bootstrap_is_unavailable()
@@ -950,6 +1203,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.install_link.button.link_copy");
         RequireContains(source, "desktop.home.button.open_devices_access");
         RequireContains(source, "desktop.home.button.open_current_workspace");
+        RequireContains(source, "desktop.home.button.open_update_status");
+        RequireContains(source, "desktop.home.button.open_support_center");
+        RequireContains(source, "desktop.home.button.open_report_issue");
         RequireContains(source, "desktop.home.button.open_install_support");
         RequireContains(source, "desktop.home.button.open_update_support");
         RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
@@ -958,6 +1214,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.home.update_summary");
         RequireContains(source, "desktop.home.value.no_supportability_summary");
         RequireContains(source, "desktop.home.value.no_fix_guidance");
+        RequireContains(source, "OpenUpdateWindowAsync()");
+        RequireContains(source, "OpenSupportWindowAsync()");
+        RequireContains(source, "OpenReportIssueWindowAsync()");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForUpdate");
     }
@@ -969,6 +1228,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.install_link.button.open_downloads");
         RequireContains(source, "desktop.install_link.button.open_support");
         RequireContains(source, "desktop.install_link.button.open_work");
+        RequireContains(source, "desktop.home.button.open_report_issue");
         RequireContains(source, "desktop.install_link.title");
         RequireContains(source, "GetRequiredString");
         RequireContains(source, "desktop.install_link.claim_code_watermark");
@@ -978,8 +1238,11 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.install_link.summary.next_safe_action_claimed");
         RequireContains(source, "desktop.install_link.summary.next_safe_action_guest");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_state)");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkPortal()");
+        RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _state.HeadId)");
+        RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _state.HeadId)");
+        RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(ownerWindow, _state.HeadId)");
+        RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _state.HeadId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenAccountPortal()");
     }
 
     private static void BlazorHome_uses_local_chummer6_flagship_media_samples()

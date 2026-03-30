@@ -403,8 +403,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 CompactMode = compactMode
             },
             Notice = languageChanged
-                ? $"Global settings updated. Restart the desktop head to fully apply {DesktopLocalizationCatalog.GetDisplayLabel(language)} across shell chrome, update, and support surfaces."
-                : "Global settings updated."
+                ? DesktopLocalizationCatalog.GetRequiredFormattedString(
+                    "desktop.dialog.global_settings.notice.updated_restart",
+                    language,
+                    DesktopLocalizationCatalog.GetDisplayLabel(language))
+                : DesktopLocalizationCatalog.GetRequiredString(
+                    "desktop.dialog.global_settings.notice.updated",
+                    language)
         });
     }
 
@@ -427,7 +432,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 HouseRulesEnabled = houseRules,
                 CharacterNotes = notes
             },
-            Notice = "Character settings updated."
+            Notice = DesktopLocalizationCatalog.GetRequiredString(
+                "desktop.dialog.character_settings.notice.updated",
+                context.State.Preferences.Language)
         });
     }
 

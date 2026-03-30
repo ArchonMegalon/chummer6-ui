@@ -30,14 +30,29 @@ internal static class MainWindowFeedbackCoordinator
         toolStrip.SetStatusText(S("desktop.shell.feedback.campaign_workspace_reviewed"));
     }
 
+    public static void ShowUpdateReviewed(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText(S("desktop.shell.feedback.update_reviewed"));
+    }
+
     public static void ShowInstallLinkingReviewed(ToolStripControl toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.install_linking_reviewed"));
     }
 
-    public static void ShowInstallSupportOpened(ToolStripControl toolStrip)
+    public static void ShowSupportReviewed(ToolStripControl toolStrip)
     {
-        toolStrip.SetStatusText(S("desktop.shell.feedback.install_support_opened"));
+        toolStrip.SetStatusText(S("desktop.shell.feedback.support_reviewed"));
+    }
+
+    public static void ShowReportIssueReviewed(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText(S("desktop.shell.feedback.report_issue_reviewed"));
+    }
+
+    public static void ShowSettingsReviewed(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText(S("desktop.shell.feedback.settings_reviewed"));
     }
 
     public static void ShowInstallSupportUnavailable(ToolStripControl toolStrip)
@@ -47,12 +62,12 @@ internal static class MainWindowFeedbackCoordinator
 
     public static void ShowDownloadUnavailable(SectionHostControl sectionHost)
     {
-        sectionHost.SetNotice("Notice: download requested but file save is unavailable on this platform.");
+        sectionHost.SetNotice(S("desktop.shell.notice.download_unavailable"));
     }
 
     public static void ShowDownloadCancelled(SectionHostControl sectionHost)
     {
-        sectionHost.SetNotice("Notice: download canceled.");
+        sectionHost.SetNotice(S("desktop.shell.notice.download_cancelled"));
     }
 
     public static void ShowDownloadCompleted(
@@ -60,17 +75,17 @@ internal static class MainWindowFeedbackCoordinator
         string? notice,
         string fallbackFileName)
     {
-        sectionHost.SetNotice(notice ?? $"Notice: downloaded {fallbackFileName}.");
+        sectionHost.SetNotice(notice ?? F("desktop.shell.notice.download_completed", fallbackFileName));
     }
 
     public static void ShowExportUnavailable(SectionHostControl sectionHost)
     {
-        sectionHost.SetNotice("Notice: export requested but file save is unavailable on this platform.");
+        sectionHost.SetNotice(S("desktop.shell.notice.export_unavailable"));
     }
 
     public static void ShowExportCancelled(SectionHostControl sectionHost)
     {
-        sectionHost.SetNotice("Notice: export canceled.");
+        sectionHost.SetNotice(S("desktop.shell.notice.export_cancelled"));
     }
 
     public static void ShowExportCompleted(
@@ -78,17 +93,17 @@ internal static class MainWindowFeedbackCoordinator
         string? notice,
         string fallbackFileName)
     {
-        sectionHost.SetNotice(notice ?? $"Notice: exported {fallbackFileName}.");
+        sectionHost.SetNotice(notice ?? F("desktop.shell.notice.export_completed", fallbackFileName));
     }
 
     public static void ShowPrintUnavailable(SectionHostControl sectionHost)
     {
-        sectionHost.SetNotice("Notice: print preview requested but file save is unavailable on this platform.");
+        sectionHost.SetNotice(S("desktop.shell.notice.print_unavailable"));
     }
 
     public static void ShowPrintCancelled(SectionHostControl sectionHost)
     {
-        sectionHost.SetNotice("Notice: print preview canceled.");
+        sectionHost.SetNotice(S("desktop.shell.notice.print_cancelled"));
     }
 
     public static void ShowPrintCompleted(
@@ -96,7 +111,7 @@ internal static class MainWindowFeedbackCoordinator
         string? notice,
         string fallbackFileName)
     {
-        sectionHost.SetNotice(notice ?? $"Notice: saved print preview {fallbackFileName}.");
+        sectionHost.SetNotice(notice ?? F("desktop.shell.notice.print_completed", fallbackFileName));
     }
 
     public static void ApplyUiActionFailure(

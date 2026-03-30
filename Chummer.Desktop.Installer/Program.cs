@@ -11,6 +11,7 @@ namespace Chummer.Desktop.Installer;
 internal static class Program
 {
     private const string PreferredPayloadResourceName = "ChummerInstaller.Payload.zip";
+    private const string PreferredPayloadMetadataKey = "ChummerInstallerPayloadResourceName";
 
     [STAThread]
     private static int Main(string[] args)
@@ -30,6 +31,8 @@ internal static class Program
         try
         {
             InstallerMetadata metadata = InstallerMetadata.Load();
+            string? payloadPathOverride = ResolvePayloadPathOverride(args);
+
             if (args.Length > 0 && string.Equals(args[0], "--uninstall", StringComparison.OrdinalIgnoreCase))
             {
                 return Uninstall(metadata);
@@ -37,10 +40,10 @@ internal static class Program
 
             if (args.Length > 1 && string.Equals(args[0], "--smoke-install", StringComparison.OrdinalIgnoreCase))
             {
-                return SmokeInstall(metadata, args[1]);
+                return SmokeInstall(metadata, args[1], payloadPathOverride);
             }
 
-            return Install(metadata);
+            return Install(metadata, payloadPathOverride);
         }
         catch (Exception ex)
         {
@@ -53,9 +56,9 @@ internal static class Program
         }
     }
 
-    private static int Install(InstallerMetadata metadata)
+    private static int Install(InstallerMetadata metadata, string? payloadPathOverride)
     {
-        string targetDir = InstallPayload(metadata, metadata.InstallDirectory);
+        string targetDir = InstallPayload(metadata, metadata.InstallDirectory, payloadPathOverride);
         string installedInstallerPath = Path.Combine(targetDir, metadata.InstallerOutputName + ".exe");
         File.Copy(Environment.ProcessPath!, installedInstallerPath, overwrite: true);
 
@@ -90,25 +93,25 @@ internal static class Program
         return 0;
     }
 
-    private static int SmokeInstall(InstallerMetadata metadata, string targetDirectory)
+    private static int SmokeInstall(InstallerMetadata metadata, string targetDirectory, string? payloadPathOverride)
     {
         if (string.IsNullOrWhiteSpace(targetDirectory))
         {
             throw new InvalidOperationException("Smoke install requires a target directory.");
         }
 
-        InstallPayload(metadata, targetDirectory);
+        InstallPayload(metadata, targetDirectory, payloadPathOverride);
         return 0;
     }
 
-    private static string InstallPayload(InstallerMetadata metadata, string targetDirectory)
+    private static string InstallPayload(InstallerMetadata metadata, string targetDirectory, string? payloadPathOverride)
     {
         string targetDir = Path.GetFullPath(targetDirectory);
         string tempExtractDir = Path.Combine(Path.GetTempPath(), $"chummer-installer-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempExtractDir);
         try
         {
-            ExtractPayload(tempExtractDir);
+            ExtractPayload(tempExtractDir, payloadPathOverride);
             string payloadRoot = FindPayloadRoot(tempExtractDir, metadata.LaunchExecutable);
             EnsureLaunchExecutableInRoot(payloadRoot, metadata.LaunchExecutable);
 
@@ -127,12 +130,12 @@ internal static class Program
         }
     }
 
-    private static void ExtractPayload(string tempExtractDir)
+    private static void ExtractPayload(string tempExtractDir, string? payloadPathOverride)
     {
         Assembly assembly = Assembly.GetExecutingAssembly();
         string payloadZipPath = Path.Combine(tempExtractDir, "payload.zip");
 
-        using Stream payload = OpenPayloadStream(assembly);
+        using Stream payload = OpenPayloadStream(assembly, payloadPathOverride);
 
         using (FileStream zipFile = File.Create(payloadZipPath))
         {
@@ -143,41 +146,211 @@ internal static class Program
         File.Delete(payloadZipPath);
     }
 
-    private static Stream OpenPayloadStream(Assembly assembly)
+    private static Stream OpenPayloadStream(Assembly assembly, string? payloadPathOverride = null)
     {
+        List<string> failureReports = new();
+        string baseDirectory = AppContext.BaseDirectory;
+
+        if (!string.IsNullOrWhiteSpace(payloadPathOverride))
+        {
+            if (TryOpenPayloadFile(payloadPathOverride, "command line/environment override", out Stream? overrideStream, out string? overrideFailure))
+            {
+                return overrideStream!;
+            }
+
+            failureReports.Add($"1) {overrideFailure}");
+        }
+
         string? embeddedPayloadResource = FindPayloadResource(assembly);
         if (embeddedPayloadResource is not null)
         {
-            Stream? stream = assembly.GetManifestResourceStream(embeddedPayloadResource);
-            if (stream is null)
+            if (TryOpenPayloadResource(assembly, embeddedPayloadResource, out Stream? resourceStream, out string? resourceFailure))
             {
-                string? names = FormatResourceNames(assembly);
-                throw new InvalidOperationException(
-                    $"Embedded desktop payload '{embeddedPayloadResource}' could not be opened. Embedded resources: {names}.");
+                RecordPayloadResolution("embedded-resource", failureReports);
+                return resourceStream!;
             }
 
-            return stream;
+            string resourceTrace = $"embedded resource '{embeddedPayloadResource}'";
+            failureReports.Add($"2) {resourceTrace} failed: {resourceFailure}");
         }
 
-        string baseDirectory = AppContext.BaseDirectory;
-        string[] sidecarPayloads = Directory
-            .EnumerateFiles(baseDirectory, "*.zip", SearchOption.AllDirectories)
-            .Where(name => IsPayloadZipName(Path.GetFileName(name)))
-            .OrderBy(name => Path.GetFileName(name), StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        if (sidecarPayloads.Length > 0)
+        string[] sidecarPayloads = FindPayloadSidecars(baseDirectory).ToArray();
+        for (int i = 0; i < sidecarPayloads.Length; i++)
         {
-            return File.OpenRead(sidecarPayloads[0]);
+            string candidate = sidecarPayloads[i];
+            if (TryOpenPayloadFile(candidate, $"sidecar payload candidate #{i + 1}", out Stream? sidecarStream, out string? sidecarFailure))
+            {
+                RecordPayloadResolution($"sidecar:{candidate}", failureReports);
+                return sidecarStream!;
+            }
+
+            failureReports.Add($"3.{i + 1}) {sidecarFailure}");
         }
 
         string resourceNames = FormatResourceNames(assembly);
-        string? sidecarSummary = sidecarPayloads.Length > 0
-            ? string.Join(", ", sidecarPayloads.Select(path => path))
+        string failureSummary = failureReports.Count > 0
+            ? string.Join("; ", failureReports)
+            : "<none>";
+        string sidecarSummary = sidecarPayloads.Length > 0
+            ? string.Join(", ", sidecarPayloads)
             : "<none>";
         throw new InvalidOperationException(
             $"Embedded desktop payload was not found. Expected '{PreferredPayloadResourceName}'. " +
             $"Embedded resources: {resourceNames}. " +
-            $"Checked {baseDirectory} for sidecar payloads: {sidecarSummary}.");
+            $"Checked {baseDirectory} for sidecar payloads: {sidecarSummary}. " +
+            $"Discovery trace: {failureSummary}");
+    }
+
+    private static bool TryOpenPayloadFile(string payloadPath, string context, out Stream? payloadStream, out string? failure)
+    {
+        payloadStream = null;
+        failure = null;
+
+        string candidate;
+        try
+        {
+            candidate = Path.GetFullPath(payloadPath);
+        }
+        catch (ArgumentException ex)
+        {
+            failure = $"{context} payload path was malformed: '{payloadPath}'. {ex.Message}";
+            return false;
+        }
+
+        try
+        {
+            payloadStream = File.OpenRead(candidate);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            failure = $"{context} payload path could not be opened: '{candidate}'. {ex.Message}";
+            return false;
+        }
+    }
+
+    private static bool TryOpenPayloadResource(Assembly assembly, string payloadResourceName, out Stream? payloadStream, out string? failure)
+    {
+        payloadStream = null;
+        failure = null;
+
+        try
+        {
+            payloadStream = assembly.GetManifestResourceStream(payloadResourceName);
+            if (payloadStream is null)
+            {
+                failure = $"Embedded resource '{payloadResourceName}' was not found in this assembly.";
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            failure = $"Embedded resource '{payloadResourceName}' could not be opened. {ex.Message}";
+            return false;
+        }
+    }
+
+    private static string? ResolvePayloadPathOverride(string[] args)
+    {
+        string? overridePath = null;
+
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (!string.Equals(args[i], "--payload-path", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(args[i], "--payload", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            overridePath = args[i + 1];
+        }
+
+        if (string.IsNullOrWhiteSpace(overridePath))
+        {
+            overridePath = Environment.GetEnvironmentVariable("CHUMMER_INSTALLER_PAYLOAD_PATH");
+        }
+
+        return string.IsNullOrWhiteSpace(overridePath) ? null : overridePath;
+    }
+
+    private static void RecordPayloadResolution(string chosenSource, IReadOnlyCollection<string> attempts)
+    {
+        if (attempts.Count == 0)
+        {
+            return;
+        }
+
+        string tracePath = Path.Combine(Path.GetTempPath(), "chummer-desktop-installer-payload-trace.log");
+        string traceLine = $"[{DateTime.UtcNow:O}] selected={chosenSource}; recovery={string.Join("; ", attempts)}";
+        try
+        {
+            File.AppendAllText(tracePath, traceLine + Environment.NewLine);
+        }
+        catch
+        {
+            // Do not fail installer resolution if trace persistence is unavailable.
+        }
+    }
+
+    private static IEnumerable<string> FindPayloadSidecars(string baseDirectory)
+    {
+        if (!Directory.Exists(baseDirectory))
+        {
+            return Array.Empty<string>();
+        }
+
+        try
+        {
+            return Directory
+                .EnumerateFiles(baseDirectory, "*.zip", SearchOption.AllDirectories)
+                .Where(name => IsPayloadZipName(Path.GetFileName(name)))
+                .Select(name => new { Name = name, Score = ScorePayloadCandidate(name) })
+                .OrderByDescending(entry => entry.Score)
+                .ThenBy(entry => Path.GetFileName(entry.Name), StringComparer.OrdinalIgnoreCase)
+                .Select(entry => entry.Name)
+                .ToArray();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Array.Empty<string>();
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return Array.Empty<string>();
+        }
+        catch (IOException)
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    private static int ScorePayloadCandidate(string path)
+    {
+        string fileName = Path.GetFileName(path);
+        if (string.Equals(fileName, "Payload.zip", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fileName, "payload.zip", StringComparison.OrdinalIgnoreCase))
+        {
+            return 10;
+        }
+
+        if (fileName.EndsWith("-payload.zip", StringComparison.OrdinalIgnoreCase))
+        {
+            return 8;
+        }
+
+        if (fileName.IndexOf("installer", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return 6;
+        }
+
+        if (fileName.IndexOf("payload", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return 4;
+        }
+
+        return 1;
     }
 
     private static string FindPayloadRoot(string tempExtractDir, string launchExecutable)
@@ -236,6 +409,20 @@ internal static class Program
     private static string? FindPayloadResource(Assembly assembly)
     {
         string[] resourceNames = assembly.GetManifestResourceNames();
+        string? preferredResourceFromMetadata = assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(attribute => string.Equals(attribute.Key, PreferredPayloadMetadataKey, StringComparison.Ordinal))
+            ?.Value;
+        if (!string.IsNullOrWhiteSpace(preferredResourceFromMetadata))
+        {
+            string? exactMetadataMatch = Array.Find(resourceNames, resourceName =>
+                string.Equals(resourceName, preferredResourceFromMetadata, StringComparison.OrdinalIgnoreCase));
+            if (exactMetadataMatch is not null)
+            {
+                return exactMetadataMatch;
+            }
+        }
+
         string? exactMatch = resourceNames.FirstOrDefault(
             name => string.Equals(name, PreferredPayloadResourceName, StringComparison.Ordinal));
         if (exactMatch is not null)

@@ -46,8 +46,12 @@
 
   <ItemGroup Condition="'$(RunDesktopUpdateTestsOnly)' == 'true'">
     <Compile Remove="**\*.cs" />
+    <Compile Include="DesktopCrashRuntimeTests.cs" />
+    <Compile Include="DesktopPreferenceRuntimeTests.cs" />
     <Compile Include="DesktopUpdateManifestParserTests.cs" />
     <Compile Include="DesktopUpdateRuntimeTests.cs" />
+    <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />
+    <Compile Include="Presentation\HttpChummerClientBuildPathTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">

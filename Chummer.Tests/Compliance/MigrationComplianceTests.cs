@@ -4817,10 +4817,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(feedbackText, "public static void ShowPrintUnavailable");
         StringAssert.Contains(feedbackText, "public static void ShowPrintCancelled");
         StringAssert.Contains(feedbackText, "public static void ShowPrintCompleted");
+        StringAssert.Contains(feedbackText, "public static void ShowReportIssueReviewed");
         StringAssert.Contains(feedbackText, "public static void ApplyUiActionFailure(");
         StringAssert.Contains(eventHandlersText, "MainWindowFeedbackCoordinator.ShowImportRawRequired(_controls.ToolStrip);");
         StringAssert.Contains(eventHandlersText, "MainWindowFeedbackCoordinator.ShowImportFileUnavailable(_controls.ToolStrip);");
         StringAssert.Contains(eventHandlersText, "MainWindowFeedbackCoordinator.ShowNoActiveWorkspace(_controls.ToolStrip);");
+        StringAssert.Contains(eventHandlersText, "MainWindowFeedbackCoordinator.ShowReportIssueReviewed(_controls.ToolStrip);");
         StringAssert.Contains(downloadsText, "MainWindowFeedbackCoordinator.ShowDownloadUnavailable(_controls.SectionHost);");
         StringAssert.Contains(downloadsText, "MainWindowFeedbackCoordinator.ShowDownloadCancelled(_controls.SectionHost);");
         StringAssert.Contains(downloadsText, "MainWindowFeedbackCoordinator.ShowDownloadCompleted(");

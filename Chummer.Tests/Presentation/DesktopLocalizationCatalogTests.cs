@@ -34,4 +34,29 @@ public class DesktopLocalizationCatalogTests
             }
         }
     }
+
+    [TestMethod]
+    public void Non_default_locales_never_return_unmarked_english_values_on_seeded_keys()
+    {
+        string[] seededKeys =
+        [
+            "desktop.shell.menu.file",
+            "desktop.shell.tool.desktop_home",
+            "desktop.home.section.install_support",
+            "desktop.home.title",
+            "desktop.support.title"
+        ];
+
+        foreach (string languageCode in DesktopLocalizationCatalog.ShippingLanguages
+                     .Select(language => language.Code)
+                     .Where(language => !string.Equals(language, DesktopLocalizationCatalog.DefaultLanguage, StringComparison.Ordinal)))
+        {
+            foreach (string key in seededKeys)
+            {
+                string localizedValue = DesktopLocalizationCatalog.GetRequiredString(key, languageCode);
+                string enValue = DesktopLocalizationCatalog.GetRequiredString(key, DesktopLocalizationCatalog.DefaultLanguage);
+                Assert.AreNotEqual(enValue, localizedValue, $"Expected locale-distinct value for {key} / {languageCode}.");
+            }
+        }
+    }
 }

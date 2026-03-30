@@ -536,6 +536,12 @@ public class ShellPresenterTests
         public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
             => Task.FromResult<IReadOnlyList<DesktopHomeSupportDigest>>([]);
 
+        public Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct)
+            => Task.FromResult<DesktopSupportCaseDetails?>(null);
+
+        public Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct)
+            => Task.FromResult(DesktopInstallLinkingSummaryProjection.Empty);
+
         public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct)
             => Task.FromResult(Preferences);
 

@@ -197,6 +197,12 @@ public class WorkspacePersistenceServiceTests
         public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
             => Task.FromResult<IReadOnlyList<DesktopHomeSupportDigest>>([]);
 
+        public Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct)
+            => Task.FromResult<DesktopSupportCaseDetails?>(null);
+
+        public Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct)
+            => Task.FromResult(DesktopInstallLinkingSummaryProjection.Empty);
+
         public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => throw new NotImplementedException();
 
         public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();

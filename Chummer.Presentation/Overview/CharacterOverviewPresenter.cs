@@ -78,10 +78,12 @@ public sealed partial class CharacterOverviewPresenter : ICharacterOverviewPrese
 
     public async Task InitializeAsync(CancellationToken ct)
     {
+        DesktopPreferenceState preferences = DesktopPreferenceStateRuntime.Current;
         Publish(State with
         {
             IsBusy = true,
-            Error = null
+            Error = null,
+            Preferences = preferences
         });
 
         try
