@@ -188,6 +188,22 @@ public static class DesktopHomeCampaignProjector
             readinessHighlights.Add($"Publication trust: {leadPublication.Title} — {leadPublication.ProvenanceSummary}");
         }
 
+        if (leadPublication is not null)
+        {
+            readinessHighlights.Add(
+                $"Publication visibility: {HumanizeValue(leadPublication.Visibility, "Private")} — {(leadPublication.Discoverable ? "Eligible now" : "Still bounded")}");
+
+            if (!string.IsNullOrWhiteSpace(leadPublication.LineageSummary))
+            {
+                readinessHighlights.Add($"Publication lineage: {leadPublication.LineageSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(leadPublication.NextSafeAction))
+            {
+                readinessHighlights.Add($"Publication next: {leadPublication.NextSafeAction}");
+            }
+        }
+
         readinessHighlights.Add($"Prefetch inventory: {DescribePrefetchInventory(restore)}");
         readinessHighlights.AddRange(
             claimedDevices.Select(static device => $"Claimed device: {device.HostLabel} — {device.RestoreSummary}"));
@@ -372,6 +388,17 @@ public static class DesktopHomeCampaignProjector
         }
 
         return "Support closure: fixes, notices, and verification stay attached to the claimed install, current channel, and the campaign workspace you reopen from this home cockpit.";
+    }
+
+    private static string HumanizeValue(string? value, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return fallback;
+        }
+
+        return System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(
+            value.Replace('_', ' ').Replace('-', ' '));
     }
 
     private static bool NeedsAttention(string? severity)

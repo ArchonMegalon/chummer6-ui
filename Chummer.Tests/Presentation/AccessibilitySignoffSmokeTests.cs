@@ -300,7 +300,9 @@ internal static class AccessibilitySignoffSmokeTests
             PublicationStatus: "ready",
             TrustBand: "review-pending",
             Discoverable: false,
-            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:08:00+00:00"));
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:08:00+00:00"),
+            NextSafeAction: "Review creator publication status before you widen the audience beyond the guided recap lane.",
+            LineageSummary: "Dockside recap stays chained to the same governed publication lineage without a shadow export.");
         WorkspaceRestoreProjection restore = new(
             RestoreId: "restore-1",
             UserId: "user-1",
@@ -391,6 +393,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Rules follow-through:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Migration continuity:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication trust:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication visibility:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication lineage:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication next:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Prefetch inventory:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Claimed device:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Change packet:");
@@ -776,6 +781,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Travel inventory:");
         RequireContains(projectorSource, "Campaign memory:");
         RequireContains(projectorSource, "Campaign memory return:");
+        RequireContains(projectorSource, "Publication visibility:");
+        RequireContains(projectorSource, "Publication lineage:");
+        RequireContains(projectorSource, "Publication next:");
         RequireContains(projectorSource, "DesktopHomeCampaignServerPlane");
 
         string serverPlaneSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeCampaignServerPlane.cs");
