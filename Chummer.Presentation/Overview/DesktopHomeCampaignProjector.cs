@@ -59,6 +59,7 @@ public static class DesktopHomeCampaignProjector
                 LeadWorkspaceId: serverPlane?.WorkspaceId ?? leadDigest.WorkspaceId,
                 ReadinessHighlights: FinalizeLines(
                     leadDigest.ReadinessHighlights
+                        .Concat(BuildFirstPlayableSessionHighlights(serverPlane?.FirstPlayableSession ?? leadDigest.FirstPlayableSession))
                         .Concat(serverPlane?.ReadinessHighlights ?? [])
                         .Concat((serverPlane?.SupportHighlights ?? []).Select(static line => $"Support lane: {line}"))
                         .Concat((serverPlane?.DecisionNotices ?? []).Select(static line => $"Decision notice: {line}"))),
@@ -83,6 +84,9 @@ public static class DesktopHomeCampaignProjector
         CreatorPublicationProjection? leadPublication = groundedSummary.CreatorPublications
             .OrderByDescending(static publication => publication.UpdatedAtUtc)
             .FirstOrDefault();
+        FirstPlayableSessionProjection? leadFirstPlayableSession = serverPlane?.FirstPlayableSession
+            ?? leadWorkspace?.FirstPlayableSession
+            ?? leadDigest?.FirstPlayableSession;
         WorkspaceRestoreProjection restore = groundedSummary.Restore;
         ClaimedDeviceRestoreProjection[] claimedDevices = restore.ClaimedDevices
             .Where(static device => !string.IsNullOrWhiteSpace(device.InstallationId))
@@ -101,7 +105,7 @@ public static class DesktopHomeCampaignProjector
             ? serverPlane.NextSafeAction
             : !string.IsNullOrWhiteSpace(leadDigest?.NextSafeAction)
             ? leadDigest.NextSafeAction
-            : ResolveNextSafeAction(groundedSummary, leadWorkspace, leadHandoff, restore);
+            : ResolveNextSafeAction(groundedSummary, leadWorkspace, leadDigest, leadHandoff, restore);
         string restoreInventorySummary = BuildRestoreInventorySummary(restore);
         string restoreSummary = serverPlane is null
             ? $"Restore packet: {restoreInventorySummary}"
@@ -156,6 +160,8 @@ public static class DesktopHomeCampaignProjector
                 readinessHighlights.Add($"Current scene: {leadWorkspace.ActiveSceneSummary}");
             }
         }
+
+        readinessHighlights.AddRange(BuildFirstPlayableSessionHighlights(leadFirstPlayableSession));
 
         if (!string.IsNullOrWhiteSpace(leadHandoff?.CampaignReturnSummary))
         {
@@ -253,6 +259,7 @@ public static class DesktopHomeCampaignProjector
     private static string ResolveNextSafeAction(
         AccountCampaignSummary summary,
         CampaignWorkspaceProjection? leadWorkspace,
+        CampaignWorkspaceDigestProjection? leadDigest,
         BuildLabHandoffProjection? leadHandoff,
         WorkspaceRestoreProjection restore)
     {
@@ -265,6 +272,13 @@ public static class DesktopHomeCampaignProjector
         if (!string.IsNullOrWhiteSpace(leadWorkspace?.NextSafeAction))
         {
             return leadWorkspace.NextSafeAction!;
+        }
+
+        string? firstPlayableNextSafeAction = leadWorkspace?.FirstPlayableSession?.NextSafeAction
+            ?? leadDigest?.FirstPlayableSession?.NextSafeAction;
+        if (!string.IsNullOrWhiteSpace(firstPlayableNextSafeAction))
+        {
+            return firstPlayableNextSafeAction!;
         }
 
         CampaignReadinessCue? attentionCue = leadWorkspace?.ReadinessCues.FirstOrDefault(static cue => NeedsAttention(cue.Severity));
@@ -289,6 +303,29 @@ public static class DesktopHomeCampaignProjector
         }
 
         return "Link this copy and seed one campaign-facing workspace before you trust desktop return and restore continuity.";
+    }
+
+    private static IEnumerable<string> BuildFirstPlayableSessionHighlights(FirstPlayableSessionProjection? firstPlayableSession)
+    {
+        if (firstPlayableSession is null)
+        {
+            yield break;
+        }
+
+        yield return $"First session: {firstPlayableSession.CampaignStartSummary}";
+        yield return $"Legal runner: {firstPlayableSession.RuleReadySummary}";
+        yield return $"Understandable return: {firstPlayableSession.ReturnLaneSummary}";
+        yield return $"Campaign-ready lane: {firstPlayableSession.CampaignReadySummary}";
+
+        if (!string.IsNullOrWhiteSpace(firstPlayableSession.NextSafeAction))
+        {
+            yield return $"Starter lane next: {firstPlayableSession.NextSafeAction}";
+        }
+
+        if (firstPlayableSession.EvidenceLines.Count > 0)
+        {
+            yield return $"First-session proof: {firstPlayableSession.EvidenceLines[0]}";
+        }
     }
 
     private static string BuildClaimedDeviceSummary(
@@ -361,6 +398,6 @@ public static class DesktopHomeCampaignProjector
             .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Select(static line => line.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(24)
+            .Take(32)
             .ToArray();
 }

@@ -514,6 +514,19 @@ public sealed class HttpChummerClientBuildPathTests
     "summary": "Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.",
     "prefetchInventorySummary": "2 dossiers, 1 campaign, 1 rule environment, and governed prep packets stay bounded to the staged travel cache."
   },
+  "firstPlayableSession": {
+    "sessionId": "starter-123",
+    "label": "Starter lane",
+    "summary": "Starter lane is ready to land the first playable session without repo-only setup.",
+    "campaignStartSummary": "The first playable session can start from Dockside without repo-only setup.",
+    "ruleReadySummary": "The starter build stays legal under the approved Seattle Streets environment.",
+    "returnLaneSummary": "Claimed-device restore and Dockside return stay readable after the first session.",
+    "campaignReadySummary": "The same workspace is ready for the next full campaign handoff after the starter session.",
+    "nextSafeAction": "Start the first playable session before you widen the workspace beyond the guided starter lane.",
+    "evidenceLines": [
+      "Starter build, restore packet, and campaign lane all point at the same Dockside kickoff."
+    ]
+  },
   "campaignMemory": {
     "label": "Long-lived campaign memory",
     "summary": "The governed memory lane keeps the Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.",
@@ -552,6 +565,12 @@ public sealed class HttpChummerClientBuildPathTests
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Roster transfer: APEX — APEX moved into Thursday Crew Relay with governed ownership receipts attached.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Travel mode: Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Travel inventory: 2 dossiers, 1 campaign, 1 rule environment, and governed prep packets stay bounded to the staged travel cache.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "First session: The first playable session can start from Dockside without repo-only setup.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Legal runner: The starter build stays legal under the approved Seattle Streets environment.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Understandable return: Claimed-device restore and Dockside return stay readable after the first session.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Campaign-ready lane: The same workspace is ready for the next full campaign handoff after the starter session.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Starter lane next: Start the first playable session before you widen the workspace beyond the guided starter lane.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "First-session proof: Starter build, restore packet, and campaign lane all point at the same Dockside kickoff.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Campaign memory: The governed memory lane keeps the Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Campaign memory return: Return through the Dockside handoff so the same workspace can reopen the courier chase without a lossy recap jump.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Artifact audience: My stuff, Campaign stuff, Published stuff");

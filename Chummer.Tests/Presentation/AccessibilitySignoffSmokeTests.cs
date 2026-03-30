@@ -164,6 +164,20 @@ internal static class AccessibilitySignoffSmokeTests
             ],
             CreatedAtUtc: DateTimeOffset.Parse("2026-03-20T12:00:00+00:00"),
             UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:00:00+00:00"));
+        FirstPlayableSessionProjection firstPlayableSession = new(
+            SessionId: "starter-1",
+            Label: "Starter lane",
+            Summary: "Starter lane is ready to land the first playable session without a repo-only detour.",
+            CampaignStartSummary: "The first playable session can start from Dockside without repo-only setup.",
+            RuleReadySummary: "The starter build stays legal under the approved Seattle Streets environment.",
+            ReturnLaneSummary: "Claimed-device restore and Dockside return stay readable after the first session.",
+            CampaignReadySummary: "The same workspace is ready for the next full campaign handoff after the starter session.",
+            NextSafeAction: "Start the first playable session before you widen the workspace beyond the guided starter lane.",
+            EvidenceLines:
+            [
+                "Starter build, restore packet, and campaign lane all point at the same Dockside kickoff."
+            ],
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:06:45+00:00"));
         CampaignWorkspaceProjection workspace = new(
             WorkspaceId: "workspace-1",
             CampaignId: "campaign-1",
@@ -227,7 +241,8 @@ internal static class AccessibilitySignoffSmokeTests
                         new CampaignConsequenceReceipt("group-2", "target_group", "Thursday Crew Relay")
                     ],
                     TransferredAtUtc: DateTimeOffset.Parse("2026-03-27T12:06:30+00:00"))
-            ]);
+            ],
+            FirstPlayableSession: firstPlayableSession);
         BuildLabHandoffProjection handoff = new(
             HandoffId: "handoff-1",
             DossierId: "dossier-1",
@@ -326,7 +341,8 @@ internal static class AccessibilitySignoffSmokeTests
             NextSafeAction: "Open the calmer workspace digest and continue from the pinned campaign lane.",
             ReadinessHighlights: ["Digest highlight: return packet is current."],
             Watchouts: ["Digest watchout: confirm the claimed device before reopening GM-only notes."],
-            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:10:00+00:00"));
+            UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:10:00+00:00"),
+            FirstPlayableSession: firstPlayableSession);
 
         DesktopHomeCampaignProjection projection = DesktopHomeCampaignProjector.Create(
             new AccountCampaignSummary(
@@ -353,6 +369,7 @@ internal static class AccessibilitySignoffSmokeTests
                 TravelPrefetchInventorySummary: "2 dossiers, 1 campaign, 1 rule environment, and the recap-safe packet stay bounded to the staged travel cache.",
                 CampaignMemorySummary: "The governed memory lane keeps Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.",
                 CampaignMemoryReturnSummary: "Return through Dockside handoff so the same workspace reopens the courier chase without a lossy recap jump.",
+                FirstPlayableSession: firstPlayableSession,
                 NextSafeAction: "Server-plane next safe action keeps the follow-through explicit.",
                 ReadinessHighlights: ["Server plane highlight: the roster is current."],
                 Watchouts: ["Server plane watchout: verify the preview tablet before resuming GM-only notes."],
@@ -380,6 +397,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Roster transfer:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Travel mode:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Travel inventory:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "First session:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Legal runner:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Understandable return:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign-ready lane:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Starter lane next:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "First-session proof:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign memory:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign memory return:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Server plane highlight:");
