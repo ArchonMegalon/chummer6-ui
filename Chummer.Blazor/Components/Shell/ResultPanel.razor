@@ -1,6 +1,17 @@
 <section class="panel results">
     <h2>Result</h2>
     <p class="note">@(State.Notice ?? "Ready.")</p>
+    @if (State.LatestPortabilityActivity is { } portability)
+    {
+        <p class="hint"><strong>@portability.Title:</strong> @portability.Receipt.ReceiptSummary</p>
+        <p class="hint"><strong>Context:</strong> @portability.Receipt.ContextSummary</p>
+        <p class="hint"><strong>Next safe action:</strong> @portability.Receipt.NextSafeAction</p>
+        <p class="hint"><strong>Exchange modes:</strong> @string.Join(", ", portability.Receipt.SupportedExchangeModes)</p>
+        @if (portability.Receipt.Notes.Count > 0)
+        {
+            <p class="hint"><strong>Notes:</strong> @string.Join(" ", portability.Receipt.Notes.Select(note => note.Summary).Take(2))</p>
+        }
+    }
     <p class="hint">UI: @State.Preferences.UiScalePercent% / @State.Preferences.Theme / @State.Preferences.Language</p>
     <p class="hint">Character: @State.Preferences.CharacterPriority, Ratio @State.Preferences.KarmaNuyenRatio, House Rules @(State.Preferences.HouseRulesEnabled ? "On" : "Off")</p>
     @if (!string.IsNullOrWhiteSpace(State.Error))

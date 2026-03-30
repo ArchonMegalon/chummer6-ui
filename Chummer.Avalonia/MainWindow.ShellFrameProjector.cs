@@ -44,7 +44,7 @@ internal static class MainWindowShellFrameProjector
                     TimeState: DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.shell.status.time", language, DateTimeOffset.UtcNow.ToString("u")),
                     ComplianceState: ShellStatusTextFormatter.BuildComplianceState(shellSurface, state.Preferences))),
             SectionHostState: new SectionHostState(
-                Notice: $"Notice: {(shellSurface.Notice ?? "Ready.")}",
+                Notice: BuildSectionNotice(state, shellSurface),
                 PreviewJson: state.ActiveSectionJson ?? string.Empty,
                 Rows: state.ActiveSectionRows
                     .Select(row => new SectionRowDisplayItem(row.Path, row.Value))
@@ -64,6 +64,39 @@ internal static class MainWindowShellFrameProjector
                 ActiveActionId: state.ActiveActionId,
                 WorkflowSurfaces: ProjectWorkflowSurfaces(shellSurface)),
             WorkspaceActionsById: workspaceActionsById);
+    }
+
+    private static string BuildSectionNotice(CharacterOverviewState state, ShellSurfaceState shellSurface)
+    {
+        string notice = $"Notice: {(shellSurface.Notice ?? "Ready.")}";
+        WorkspacePortabilityActivity? portability = state.LatestPortabilityActivity;
+        if (portability is null)
+        {
+            return notice;
+        }
+
+        List<string> lines =
+        [
+            notice,
+            $"{portability.Title}: {portability.Receipt.ReceiptSummary}",
+            $"Context: {portability.Receipt.ContextSummary}",
+            $"Next safe action: {portability.Receipt.NextSafeAction}"
+        ];
+
+        if (portability.Receipt.SupportedExchangeModes.Count > 0)
+        {
+            lines.Add($"Exchange modes: {string.Join(", ", portability.Receipt.SupportedExchangeModes)}");
+        }
+
+        string? watchout = portability.Receipt.Notes
+            .FirstOrDefault(note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase))
+            ?.Summary;
+        if (!string.IsNullOrWhiteSpace(watchout))
+        {
+            lines.Add($"Watchout: {watchout}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
     }
 
     private static string BuildToolStripStatusText(
