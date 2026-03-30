@@ -182,6 +182,32 @@ public sealed class HttpChummerClient : IChummerClient
         return payload?.ToProjection();
     }
 
+    public async Task<DesktopHomePortableExchangePreview?> GetPortableExchangePreviewAsync(string campaignId, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(campaignId);
+
+        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
+            "/api/v1/ai/interop/export",
+            new PortableExchangePreviewRequestDto(
+                CampaignId: campaignId,
+                RequestedBy: "desktop.home"),
+            ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Portable exchange preview request failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        PortableExchangePreviewResponseDto? payload = await response.Content.ReadFromJsonAsync<PortableExchangePreviewResponseDto>(ct);
+        return payload?.ToProjection();
+    }
+
     public async Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
     {
         using HttpResponseMessage response = await _httpClient.GetAsync("/api/v1/support/cases/me/presented", ct);
@@ -689,6 +715,13 @@ public sealed class HttpChummerClient : IChummerClient
         return RulesetDefaults.NormalizeOptional(rulesetId) ?? string.Empty;
     }
 
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
+    }
+
     private static string? NormalizeTabId(string? tabId)
     {
         return string.IsNullOrWhiteSpace(tabId)
@@ -1082,6 +1115,104 @@ public sealed class HttpChummerClient : IChummerClient
                 Status,
                 IssuedAtUtc,
                 ExpiresAtUtc);
+    }
+
+    private sealed record PortableExchangePreviewRequestDto(
+        string CampaignId,
+        string RequestedBy);
+
+    private sealed record PortableExchangePreviewResponseDto(
+        string CampaignId,
+        PortableExchangeManifestDto Manifest,
+        PortableExchangeCompatibilityDto Compatibility)
+    {
+        public DesktopHomePortableExchangePreview ToProjection()
+        {
+            IReadOnlyList<string> highlightNotes = (Compatibility.Notes ?? [])
+                .Where(static note => string.Equals(note.Severity, "info", StringComparison.OrdinalIgnoreCase))
+                .Select(static note => note.Summary)
+                .ToArray();
+            IReadOnlyList<string> watchoutNotes = (Compatibility.Notes ?? [])
+                .Where(static note => !string.Equals(note.Severity, "info", StringComparison.OrdinalIgnoreCase))
+                .Select(static note => note.Summary)
+                .ToArray();
+
+            return new DesktopHomePortableExchangePreview(
+                CampaignId: CampaignId,
+                CompatibilityState: NormalizeOptional(Compatibility.CompatibilityState) ?? "compatible-with-warnings",
+                ContextSummary: NormalizeOptional(Compatibility.ContextSummary) ?? "Portable dossier and campaign exchange stays governed on the hosted interop rail.",
+                ReceiptSummary: NormalizeOptional(Compatibility.ReceiptSummary) ?? "Portable dossier/campaign exchange is available from the hosted interop rail.",
+                NextSafeAction: NormalizeOptional(Compatibility.NextSafeAction) ?? "Open inspect-only first before you hand the package to another surface.",
+                AssetScopeSummary: BuildPortableExchangeAssetScopeSummary(Manifest),
+                SupportedExchangeFormats: NormalizePortableExchangeFormats(Compatibility.SupportedExchangeFormats),
+                Highlights: highlightNotes,
+                Watchouts: watchoutNotes);
+        }
+    }
+
+    private sealed record PortableExchangeManifestDto(
+        int CharacterCount,
+        int NpcCount,
+        int SessionCount,
+        int EncounterCount,
+        int PrepCount,
+        int TotalCount);
+
+    private sealed record PortableExchangeCompatibilityDto(
+        string? FormatId,
+        string? CompatibilityState,
+        string? ContextSummary,
+        string? ReceiptSummary,
+        string? NextSafeAction,
+        IReadOnlyList<string>? SupportedExchangeFormats,
+        IReadOnlyList<PortableExchangeCompatibilityNoteDto>? Notes);
+
+    private sealed record PortableExchangeCompatibilityNoteDto(
+        string Code,
+        string Severity,
+        string Summary);
+
+    private static string BuildPortableExchangeAssetScopeSummary(PortableExchangeManifestDto manifest)
+    {
+        List<string> parts = [];
+
+        if (manifest.CharacterCount > 0)
+        {
+            parts.Add($"{manifest.CharacterCount} dossier(s)");
+        }
+
+        if (manifest.NpcCount > 0)
+        {
+            parts.Add($"{manifest.NpcCount} NPC(s)");
+        }
+
+        if (manifest.SessionCount > 0)
+        {
+            parts.Add($"{manifest.SessionCount} session bundle(s)");
+        }
+
+        if (manifest.EncounterCount > 0)
+        {
+            parts.Add($"{manifest.EncounterCount} encounter packet(s)");
+        }
+
+        if (manifest.PrepCount > 0)
+        {
+            parts.Add($"{manifest.PrepCount} governed prep packet(s)");
+        }
+
+        return parts.Count == 0
+            ? "No portable asset families are currently attached to this exchange rail."
+            : $"{manifest.TotalCount} portable asset(s): {string.Join(", ", parts)}.";
+    }
+
+    private static IReadOnlyList<string> NormalizePortableExchangeFormats(IReadOnlyList<string>? formats)
+    {
+        return (formats ?? [])
+            .Where(static format => !string.IsNullOrWhiteSpace(format))
+            .Select(static format => format.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     private async Task<T> GetRequiredAsync<T>(string path, CancellationToken ct)

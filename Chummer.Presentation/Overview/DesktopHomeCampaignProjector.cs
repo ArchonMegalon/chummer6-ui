@@ -18,7 +18,8 @@ public static class DesktopHomeCampaignProjector
     public static DesktopHomeCampaignProjection Create(
         AccountCampaignSummary? summary,
         IReadOnlyList<CampaignWorkspaceDigestProjection>? workspaceDigests = null,
-        DesktopHomeCampaignServerPlane? serverPlane = null)
+        DesktopHomeCampaignServerPlane? serverPlane = null,
+        DesktopHomePortableExchangePreview? portableExchange = null)
     {
         CampaignWorkspaceDigestProjection? leadDigest = workspaceDigests?
             .OrderByDescending(static digest => digest.UpdatedAtUtc)
@@ -61,9 +62,13 @@ public static class DesktopHomeCampaignProjector
                     leadDigest.ReadinessHighlights
                         .Concat(BuildFirstPlayableSessionHighlights(serverPlane?.FirstPlayableSession ?? leadDigest.FirstPlayableSession))
                         .Concat(serverPlane?.ReadinessHighlights ?? [])
+                        .Concat(BuildPortableExchangeHighlights(portableExchange))
                         .Concat((serverPlane?.SupportHighlights ?? []).Select(static line => $"Support lane: {line}"))
                         .Concat((serverPlane?.DecisionNotices ?? []).Select(static line => $"Decision notice: {line}"))),
-                Watchouts: FinalizeLines(leadDigest.Watchouts.Concat(serverPlane?.Watchouts ?? [])));
+                Watchouts: FinalizeLines(
+                    leadDigest.Watchouts
+                        .Concat(serverPlane?.Watchouts ?? [])
+                        .Concat(BuildPortableExchangeWatchouts(portableExchange))));
         }
 
         AccountCampaignSummary groundedSummary = summary!;
@@ -152,6 +157,8 @@ public static class DesktopHomeCampaignProjector
             }
         }
 
+        readinessHighlights.AddRange(BuildPortableExchangeHighlights(portableExchange));
+
         if (leadWorkspace is not null)
         {
             readinessHighlights.Add($"Campaign return: {leadWorkspace.ReturnSummary}");
@@ -233,6 +240,8 @@ public static class DesktopHomeCampaignProjector
         {
             watchouts.AddRange(serverPlane.Watchouts);
         }
+
+        watchouts.AddRange(BuildPortableExchangeWatchouts(portableExchange));
 
         watchouts.AddRange(restore.ConflictSummaries);
         watchouts.AddRange(restore.LocalOnlyNotes);
@@ -344,6 +353,46 @@ public static class DesktopHomeCampaignProjector
         }
     }
 
+    private static IEnumerable<string> BuildPortableExchangeHighlights(DesktopHomePortableExchangePreview? portableExchange)
+    {
+        if (portableExchange is null)
+        {
+            yield break;
+        }
+
+        yield return $"Portable exchange: {portableExchange.ReceiptSummary}";
+        yield return $"Exchange context: {portableExchange.ContextSummary}";
+        yield return $"Exchange asset scope: {portableExchange.AssetScopeSummary}";
+
+        if (portableExchange.SupportedExchangeFormats.Count > 0)
+        {
+            yield return $"Exchange formats: {string.Join(", ", portableExchange.SupportedExchangeFormats)}";
+        }
+
+        foreach (string highlight in portableExchange.Highlights.Take(2))
+        {
+            yield return $"Exchange note: {highlight}";
+        }
+    }
+
+    private static IEnumerable<string> BuildPortableExchangeWatchouts(DesktopHomePortableExchangePreview? portableExchange)
+    {
+        if (portableExchange is null)
+        {
+            yield break;
+        }
+
+        if (NeedsAttentionStatus(portableExchange.CompatibilityState))
+        {
+            yield return $"Portable exchange: {portableExchange.NextSafeAction}";
+        }
+
+        foreach (string watchout in portableExchange.Watchouts)
+        {
+            yield return $"Portable exchange: {watchout}";
+        }
+    }
+
     private static string BuildClaimedDeviceSummary(
         IReadOnlyList<ClaimedDeviceRestoreProjection> claimedDevices,
         int totalDeviceCount)
@@ -425,6 +474,6 @@ public static class DesktopHomeCampaignProjector
             .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Select(static line => line.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(32)
+            .Take(40)
             .ToArray();
 }
