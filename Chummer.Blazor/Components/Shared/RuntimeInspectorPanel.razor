@@ -86,13 +86,25 @@
                     <div><dt>Publication</dt><dd>@Projection.Promotion.PublicationStatus</dd></div>
                     <div><dt>Visibility</dt><dd>@Projection.Promotion.Visibility</dd></div>
                     <div><dt>Update Channel</dt><dd>@Projection.Promotion.UpdateChannel</dd></div>
+                    <div><dt>Current Stage</dt><dd>@FormatPromotionStage(Projection.Promotion.CurrentStage)</dd></div>
+                    <div><dt>Promote To</dt><dd>@FormatPromotionStage(Projection.Promotion.PromotionTargetStage)</dd></div>
                     <div><dt>Published</dt><dd>@(Projection.Promotion.PublishedAtUtc?.ToLocalTime().ToString("u") ?? "not published yet")</dd></div>
+                    <div><dt>Promotion</dt><dd>@Projection.Promotion.PromotionSummary</dd></div>
                     <div><dt>Rollback</dt><dd>@Projection.Promotion.RollbackSummary</dd></div>
                     <div><dt>Lineage</dt><dd>@Projection.Promotion.LineageSummary</dd></div>
                 }
                 <div><dt>Provider Coverage</dt><dd>@Projection.ProviderBindings.Count bindings across @(Projection.CapabilityDescriptors?.Count ?? 0) capability descriptors</dd></div>
                 <div><dt>Summary</dt><dd>@RuntimeInspectorDiagnostics.BuildProfileDiagnosticsSummary(Projection)</dd></div>
             </dl>
+            @if (Projection.Promotion is not null)
+            {
+                <ul class="browse-detail-lines">
+                    @foreach (var stage in BuildPromotionFlow(Projection.Promotion))
+                    {
+                        <li><strong>@stage.Label</strong><span> @stage.Status:</span><span> @stage.Summary</span></li>
+                    }
+                </ul>
+            }
         </article>
 
         <article class="panel trace-card" data-runtime-hub-diagnostics>
@@ -447,4 +459,64 @@
             RuntimeInspectorWarningSeverityLevels.Warning => "coach-badge warn",
             _ => "coach-badge error"
         };
+}
+
+@code {
+    private static IReadOnlyList<(string Label, string Status, string Summary)> BuildPromotionFlow(RuntimeInspectorPromotionProjection promotion)
+    {
+        string currentStage = promotion.CurrentStage ?? string.Empty;
+        string targetStage = promotion.PromotionTargetStage ?? string.Empty;
+
+        return
+        [
+            BuildPromotionFlowStage(RuntimeInspectorPromotionStages.Sandbox, "Sandbox", currentStage, targetStage, "Keep the rule environment bounded while preview work, local validation, and compatibility proof settle."),
+            BuildPromotionFlowStage(RuntimeInspectorPromotionStages.CampaignApproved, "Campaign-approved", currentStage, targetStage, "Bind the same fingerprint to governed campaign truth so build, play, and support stop drifting."),
+            BuildPromotionFlowStage(RuntimeInspectorPromotionStages.Published, "Published", currentStage, targetStage, "Promote the governed fingerprint for broader reuse only after the rollback and lineage posture are already explicit.")
+        ];
+    }
+
+    private static (string Label, string Status, string Summary) BuildPromotionFlowStage(
+        string stageId,
+        string label,
+        string currentStage,
+        string targetStage,
+        string summary)
+    {
+        string status = string.Equals(stageId, currentStage, StringComparison.Ordinal)
+            ? "current"
+            : string.Equals(stageId, targetStage, StringComparison.Ordinal)
+                ? "next"
+                : IsCompletedPromotionStage(stageId, currentStage)
+                    ? "completed"
+                    : "pending";
+
+        return (label, status, summary);
+    }
+
+    private static string FormatPromotionStage(string? stage)
+    {
+        return stage switch
+        {
+            RuntimeInspectorPromotionStages.Sandbox => "Sandbox",
+            RuntimeInspectorPromotionStages.CampaignApproved => "Campaign-approved",
+            RuntimeInspectorPromotionStages.Published => "Published",
+            _ => string.IsNullOrWhiteSpace(stage) ? "Not staged" : stage
+        };
+    }
+
+    private static bool IsCompletedPromotionStage(string stageId, string currentStage)
+    {
+        return GetPromotionStageOrder(stageId) < GetPromotionStageOrder(currentStage);
+    }
+
+    private static int GetPromotionStageOrder(string? stageId)
+    {
+        return stageId switch
+        {
+            RuntimeInspectorPromotionStages.Sandbox => 0,
+            RuntimeInspectorPromotionStages.CampaignApproved => 1,
+            RuntimeInspectorPromotionStages.Published => 2,
+            _ => -1
+        };
+    }
 }

@@ -66,6 +66,9 @@ public static class RuntimeInspectorDiagnostics
             projection.Promotion is null
                 ? null
                 : $"Promotion: {projection.Promotion.PublicationStatus} / {projection.Promotion.UpdateChannel}",
+            projection.Promotion is null
+                ? null
+                : $"Lifecycle: {FormatPromotionStage(projection.Promotion.CurrentStage)} -> {FormatPromotionStage(projection.Promotion.PromotionTargetStage)}",
             projection.Promotion?.RollbackSummary,
             $"Session-safe bindings: {CountProfileSessionSafeBindings(projection)}/{projection.ProviderBindings.Count}",
             $"Attention items: {CountProfileAttentionItems(projection)}",
@@ -142,6 +145,17 @@ public static class RuntimeInspectorDiagnostics
         return string.IsNullOrWhiteSpace(install.InstalledTargetId)
             ? install.InstalledTargetKind
             : $"{install.InstalledTargetKind}:{install.InstalledTargetId}";
+    }
+
+    public static string FormatPromotionStage(string? stage)
+    {
+        return stage switch
+        {
+            RuntimeInspectorPromotionStages.Sandbox => "sandbox",
+            RuntimeInspectorPromotionStages.CampaignApproved => "campaign-approved",
+            RuntimeInspectorPromotionStages.Published => "published",
+            _ => string.IsNullOrWhiteSpace(stage) ? "not-staged" : stage
+        };
     }
 
     private static bool MatchesRulePack(RuntimeInspectorRulePackEntry rulePack, string? subjectId)
