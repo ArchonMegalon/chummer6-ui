@@ -72,6 +72,7 @@ public partial class MainWindow : Window
             onSaveRequested: ToolStrip_OnSaveRequested,
             onCloseWorkspaceRequested: ToolStrip_OnCloseWorkspaceRequested,
             onDesktopHomeRequested: ToolStrip_OnDesktopHomeRequested,
+            onCampaignWorkspaceRequested: ToolStrip_OnCampaignWorkspaceRequested,
             onInstallLinkingRequested: ToolStrip_OnInstallLinkingRequested,
             onSupportRequested: ToolStrip_OnSupportRequested,
             onRuntimeInspectorRequested: SummaryHeader_OnRuntimeInspectorRequested,

@@ -27,6 +27,7 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHomeBuildExplainProjector_uses_real_contract_state();
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
             FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions();
+            DesktopCampaignWorkspace_is_a_real_top_level_surface();
             DesktopHome_degrades_gracefully_when_workspace_bootstrap_is_unavailable();
             DesktopHome_wires_the_campaign_projection_into_the_summary_panel();
             DesktopHome_wires_the_support_projection_into_the_summary_panel();
@@ -725,6 +726,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "ReadCampaignWorkspaceDigestsAsync");
         RequireContains(source, "ReadCampaignWorkspaceServerPlaneAsync");
         RequireContains(source, "GetCampaignWorkspaceServerPlaneAsync");
+        RequireContains(source, "OpenCampaignWorkspaceAsync()");
+        RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
 
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeCampaignProjector.cs");
         RequireContains(projectorSource, "Campaign return:");
@@ -746,6 +749,39 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(serverPlaneSource, "TravelPrefetchInventorySummary");
         RequireContains(serverPlaneSource, "CampaignMemorySummary");
         RequireContains(serverPlaneSource, "CampaignMemoryReturnSummary");
+    }
+
+    private static void DesktopCampaignWorkspace_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs");
+        RequireContains(source, "public static async Task ShowAsync(Window owner, string headId)");
+        RequireContains(source, "desktop.campaign.title");
+        RequireContains(source, "desktop.campaign.heading");
+        RequireContains(source, "desktop.campaign.section.runboard");
+        RequireContains(source, "desktop.campaign.section.restore");
+        RequireContains(source, "desktop.campaign.section.support");
+        RequireContains(source, "desktop.campaign.section.recent_workspaces");
+        RequireContains(source, "desktop.campaign.button.refresh");
+        RequireContains(source, "desktop.campaign.status.local_fallback");
+        RequireContains(source, "desktop.campaign.status.refresh_failed");
+        RequireContains(source, "new ScrollViewer");
+        RequireContains(source, "BuildReadinessBody()");
+        RequireContains(source, "BuildRestoreBody()");
+        RequireContains(source, "BuildSupportBody()");
+        RequireContains(source, "ReadCampaignSummaryAsync");
+        RequireContains(source, "ReadCampaignWorkspaceDigestsAsync");
+        RequireContains(source, "ReadCampaignWorkspaceServerPlaneAsync");
+        RequireContains(source, "ReadSupportProjectionAsync");
+        RequireContains(source, "DesktopHomeCampaignProjector.Create");
+        RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "CHUMMER_DESKTOP_STARTUP_SURFACE");
+        RequireContains(appSource, "campaign_workspace");
+        RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, \"avalonia\")");
     }
 
     private static void DesktopHome_wires_the_support_projection_into_the_summary_panel()
@@ -829,17 +865,21 @@ internal static class AccessibilitySignoffSmokeTests
     {
         string toolStripMarkup = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml");
         RequireContains(toolStripMarkup, "x:Name=\"DesktopHomeButton\"");
+        RequireContains(toolStripMarkup, "x:Name=\"CampaignWorkspaceButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"InstallLinkingButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"SupportButton\"");
         RequireContains(toolStripMarkup, "DesktopHomeButton_OnClick");
+        RequireContains(toolStripMarkup, "CampaignWorkspaceButton_OnClick");
         RequireContains(toolStripMarkup, "InstallLinkingButton_OnClick");
         RequireContains(toolStripMarkup, "SupportButton_OnClick");
 
         string toolStripSource = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml.cs");
         RequireContains(toolStripSource, "DesktopHomeRequested");
+        RequireContains(toolStripSource, "CampaignWorkspaceRequested");
         RequireContains(toolStripSource, "InstallLinkingRequested");
         RequireContains(toolStripSource, "SupportRequested");
         RequireContains(toolStripSource, "desktop.shell.tool.desktop_home");
+        RequireContains(toolStripSource, "desktop.shell.tool.campaign_workspace");
         RequireContains(toolStripSource, "desktop.shell.tool.link_copy");
         RequireContains(toolStripSource, "desktop.shell.tool.open_support");
         RequireContains(toolStripSource, "desktop.shell.tool.status_idle");
@@ -861,23 +901,28 @@ internal static class AccessibilitySignoffSmokeTests
 
         string bindingSource = ReadSource("Chummer.Avalonia/MainWindow.ControlBinding.cs");
         RequireContains(bindingSource, "onDesktopHomeRequested");
+        RequireContains(bindingSource, "onCampaignWorkspaceRequested");
         RequireContains(bindingSource, "onInstallLinkingRequested");
         RequireContains(bindingSource, "onSupportRequested");
         RequireContains(bindingSource, "toolStrip.DesktopHomeRequested +=");
+        RequireContains(bindingSource, "toolStrip.CampaignWorkspaceRequested +=");
         RequireContains(bindingSource, "toolStrip.InstallLinkingRequested +=");
         RequireContains(bindingSource, "toolStrip.SupportRequested +=");
 
         string eventHandlerSource = ReadSource("Chummer.Avalonia/MainWindow.EventHandlers.cs");
         RequireContains(eventHandlerSource, "ToolStrip_OnDesktopHomeRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnCampaignWorkspaceRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnInstallLinkingRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnSupportRequested");
         RequireContains(eventHandlerSource, "DesktopHomeWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopInstallLinkingWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
 
         string desktopHomeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
         RequireContains(desktopHomeSource, "public static async Task ShowAsync(Window owner, string headId)");
         RequireContains(desktopHomeSource, "DesktopLocalizationCatalog.GetRequiredString(\"desktop.home.title\"");
+        RequireContains(desktopHomeSource, "new ScrollViewer");
 
         string installLinkSource = ReadSource("Chummer.Avalonia/DesktopInstallLinkingWindow.cs");
         RequireContains(installLinkSource, "public static async Task ShowAsync(Window owner, string headId)");
