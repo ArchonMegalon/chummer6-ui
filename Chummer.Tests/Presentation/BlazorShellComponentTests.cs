@@ -1160,7 +1160,6 @@ public sealed class BlazorShellComponentTests
                 GeneratedAtUtc: new DateTimeOffset(2026, 03, 09, 8, 0, 0, TimeSpan.Zero),
                 ProfileSourceKind: RegistryEntrySourceKinds.OverlayDerivedProfile,
                 Promotion: new RuntimeInspectorPromotionProjection(
-                    LifecycleStage: RuntimeInspectorPromotionStages.CampaignApproved,
                     PublicationStatus: RuleProfilePublicationStatuses.Published,
                     Visibility: ArtifactVisibilityModes.CampaignShared,
                     UpdateChannel: RuleProfileUpdateChannels.CampaignPinned,
