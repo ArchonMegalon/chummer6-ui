@@ -97,6 +97,9 @@ to_native_path() {
 run_head_smoke() {
   local launch_path="$1"
   local receipt_path="$RECEIPT_PATH"
+  local packet_path="$PACKET_PATH"
+  local artifact_sha
+  artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
 
   if [[ ! -f "$launch_path" ]]; then
     echo "Launch target missing for startup smoke: $launch_path" >&2
@@ -105,9 +108,12 @@ run_head_smoke() {
 
   if command -v cygpath >/dev/null 2>&1; then
     receipt_path="$(to_native_path "$receipt_path")"
+    packet_path="$(to_native_path "$packet_path")"
   fi
 
   CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
+  CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
+  CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS="$HOST_CLASS" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
   "$launch_path" --startup-smoke >>"$LOG_PATH" 2>&1

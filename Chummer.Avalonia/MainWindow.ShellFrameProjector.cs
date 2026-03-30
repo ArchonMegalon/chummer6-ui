@@ -15,6 +15,7 @@ internal static class MainWindowShellFrameProjector
         ShellSurfaceState shellSurface,
         ICommandAvailabilityEvaluator commandAvailabilityEvaluator)
     {
+        string language = DesktopLocalizationCatalog.NormalizeOrDefault(state.Preferences.Language);
         ActiveWorkspaceContext workspaceContext = ResolveActiveWorkspaceContext(shellSurface);
         IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById = BuildWorkspaceActionLookup(shellSurface.WorkspaceActions);
         CommandPaletteItem[] commands = ProjectCommands(state, shellSurface, commandAvailabilityEvaluator);
@@ -22,14 +23,14 @@ internal static class MainWindowShellFrameProjector
         return new MainWindowShellFrame(
             HeaderState: new MainWindowHeaderState(
                 ToolStrip: new ToolStripState(
-                    BuildToolStripStatusText(state, shellSurface, workspaceContext)),
+                    BuildToolStripStatusText(state, shellSurface, workspaceContext, language)),
                 MenuBar: new MenuBarState(
                     OpenMenuId: shellSurface.OpenMenuId,
                     KnownMenuIds: shellSurface.MenuRoots.Select(menu => menu.Id).ToArray(),
                     IsBusy: state.IsBusy)),
             ChromeState: new MainWindowChromeState(
                 WorkspaceStrip: new WorkspaceStripState(
-                    $"Workspace: {(workspaceContext.ActiveWorkspaceId?.Value ?? "none")} (open: {workspaceContext.OpenWorkspaceCount}, {workspaceContext.ActiveWorkspaceSaveStatus})"),
+                    BuildWorkspaceStripText(workspaceContext, language)),
                 SummaryHeader: new SummaryHeaderState(
                     Name: state.Profile?.Name,
                     Alias: state.Profile?.Alias,
@@ -38,9 +39,9 @@ internal static class MainWindowShellFrameProjector
                     RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime),
                     CanInspectRuntime: shellSurface.ActiveRuntime is not null),
                 StatusStrip: new StatusStripState(
-                    CharacterState: $"Character: {(workspaceContext.ActiveWorkspaceId is null ? "none" : "loaded")}",
-                    ServiceState: $"Service: {(shellSurface.Error is null ? "online" : "error")}",
-                    TimeState: $"Time: {DateTimeOffset.UtcNow:u}",
+                    CharacterState: BuildCharacterStateText(workspaceContext, language),
+                    ServiceState: BuildServiceStateText(shellSurface, language),
+                    TimeState: DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.shell.status.time", language, DateTimeOffset.UtcNow.ToString("u")),
                     ComplianceState: ShellStatusTextFormatter.BuildComplianceState(shellSurface, state.Preferences))),
             SectionHostState: new SectionHostState(
                 Notice: $"Notice: {(shellSurface.Notice ?? "Ready.")}",
@@ -68,15 +69,55 @@ internal static class MainWindowShellFrameProjector
     private static string BuildToolStripStatusText(
         CharacterOverviewState state,
         ShellSurfaceState shellSurface,
-        ActiveWorkspaceContext workspaceContext)
+        ActiveWorkspaceContext workspaceContext,
+        string language)
     {
         if (shellSurface.Error is not null)
         {
-            return $"State: error - {shellSurface.Error}";
+            return DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.shell.state.error", language, shellSurface.Error);
         }
 
-        return $"State: {(state.IsBusy ? "busy" : "ready")}, workspace={(workspaceContext.ActiveWorkspaceId?.Value ?? "none")}, open={workspaceContext.OpenWorkspaceCount}, saved={state.HasSavedWorkspace}, last-command={(shellSurface.LastCommandId ?? "none")}";
+        return DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.state.snapshot",
+            language,
+            DesktopLocalizationCatalog.GetRequiredString(
+                state.IsBusy ? "desktop.shell.state.value.busy" : "desktop.shell.state.value.ready",
+                language),
+            workspaceContext.ActiveWorkspaceId?.Value ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language),
+            workspaceContext.OpenWorkspaceCount,
+            state.HasSavedWorkspace
+                ? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.saved", language)
+                : DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.unsaved", language),
+            shellSurface.LastCommandId ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language));
     }
+
+    private static string BuildWorkspaceStripText(ActiveWorkspaceContext workspaceContext, string language)
+        => DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.workspace_strip.summary",
+            language,
+            workspaceContext.ActiveWorkspaceId?.Value ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language),
+            workspaceContext.OpenWorkspaceCount,
+            LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language));
+
+    private static string BuildCharacterStateText(ActiveWorkspaceContext workspaceContext, string language)
+        => DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.status.character",
+            language,
+            DesktopLocalizationCatalog.GetRequiredString(
+                workspaceContext.ActiveWorkspaceId is null
+                    ? "desktop.shell.value.none"
+                    : "desktop.shell.state.value.loaded",
+                language));
+
+    private static string BuildServiceStateText(ShellSurfaceState shellSurface, string language)
+        => DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.status.service",
+            language,
+            DesktopLocalizationCatalog.GetRequiredString(
+                shellSurface.Error is null
+                    ? "desktop.shell.state.value.online"
+                    : "desktop.shell.state.value.error",
+                language));
 
     private static ActiveWorkspaceContext ResolveActiveWorkspaceContext(ShellSurfaceState shellSurface)
     {
@@ -89,6 +130,14 @@ internal static class MainWindowShellFrameProjector
             : activeWorkspace.HasSavedWorkspace ? "saved" : "unsaved";
         return new ActiveWorkspaceContext(activeWorkspaceId, openWorkspaceCount, activeWorkspaceSaveStatus);
     }
+
+    private static string LocalizeSaveStatus(string saveStatus, string language)
+        => saveStatus switch
+        {
+            "saved" => DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.saved", language),
+            "unsaved" => DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.unsaved", language),
+            _ => DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.na", language)
+        };
 
     private static CommandPaletteItem[] ProjectCommands(
         CharacterOverviewState state,

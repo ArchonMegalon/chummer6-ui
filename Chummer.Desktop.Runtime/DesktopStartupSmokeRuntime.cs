@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -9,6 +10,8 @@ public static class DesktopStartupSmokeRuntime
 {
     private const string StartupSmokeSwitch = "--startup-smoke";
     private const string StartupSmokeReceiptEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT";
+    private const string StartupSmokeFailurePacketEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET";
+    private const string StartupSmokeArtifactDigestEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST";
     private const string StartupSmokeHostClassEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS";
     private const string StartupSmokeReadyCheckpointEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT";
     private const string StartupSmokeForceCrashEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_FORCE_CRASH";
@@ -32,6 +35,9 @@ public static class DesktopStartupSmokeRuntime
         cancellationToken.ThrowIfCancellationRequested();
         await Task.Yield();
 
+        DateTimeOffset startedAt = DateTimeOffset.UtcNow;
+        DesktopStartupSmokeContext context = BuildContext(headId, startedAt);
+
         try
         {
             if (ParseBool(Environment.GetEnvironmentVariable(StartupSmokeForceCrashEnvironmentVariable)))
@@ -39,26 +45,21 @@ public static class DesktopStartupSmokeRuntime
                 throw new InvalidOperationException("Startup smoke forced a crash for OODA verification.");
             }
 
-            Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
-            DateTimeOffset startedAt = DateTimeOffset.UtcNow;
-            string readyCheckpoint = Environment.GetEnvironmentVariable(StartupSmokeReadyCheckpointEnvironmentVariable)
-                ?? "pre_ui_event_loop";
             DesktopStartupSmokeReceipt receipt = new(
-                HeadId: ReadAssemblyMetadata(assembly, "ChummerDesktopHeadId") ?? headId,
-                Version: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion")
-                    ?? assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-                    ?? assembly.GetName().Version?.ToString()
-                    ?? string.Empty,
-                ChannelId: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseChannel") ?? "local",
-                Platform: DetectPlatform(),
-                Arch: DetectArchitecture(),
-                ReadyCheckpoint: readyCheckpoint,
-                HostClass: Environment.GetEnvironmentVariable(StartupSmokeHostClassEnvironmentVariable) ?? Environment.MachineName,
-                ProcessPath: Environment.ProcessPath ?? AppContext.BaseDirectory,
-                Framework: RuntimeInformation.FrameworkDescription,
-                OperatingSystem: RuntimeInformation.OSDescription,
+                HeadId: context.HeadId,
+                Version: context.Version,
+                ChannelId: context.ChannelId,
+                Platform: context.Platform,
+                Arch: context.Arch,
+                ReadyCheckpoint: context.ReadyCheckpoint,
+                HostClass: context.HostClass,
+                ProcessPath: context.ProcessPath,
+                ArtifactDigest: context.ArtifactDigest,
+                ArtifactDigestSource: context.ArtifactDigestSource,
+                Framework: context.Framework,
+                OperatingSystem: context.OperatingSystem,
                 RecordedAtUtc: DateTimeOffset.UtcNow,
-                StartedAtUtc: startedAt,
+                StartedAtUtc: context.StartedAtUtc,
                 CompletedAtUtc: DateTimeOffset.UtcNow);
 
             string? receiptPath = Environment.GetEnvironmentVariable(StartupSmokeReceiptEnvironmentVariable);
@@ -74,6 +75,12 @@ public static class DesktopStartupSmokeRuntime
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Startup smoke failed: {ex.Message}");
+            string? packetPath = TryWriteFailurePacket(context, ex, exitCode: 1);
+            if (!string.IsNullOrWhiteSpace(packetPath))
+            {
+                Console.Error.WriteLine($"Startup smoke failure packet: {packetPath}");
+            }
+
             return 1;
         }
     }
@@ -84,6 +91,55 @@ public static class DesktopStartupSmokeRuntime
             || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
             || string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase)
             || string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static DesktopStartupSmokeContext BuildContext(string headId, DateTimeOffset startedAtUtc)
+    {
+        Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+        string processPath = Environment.ProcessPath ?? AppContext.BaseDirectory;
+        (string? artifactDigest, string artifactDigestSource) = ResolveArtifactDigest(processPath);
+        return new DesktopStartupSmokeContext(
+            HeadId: ReadAssemblyMetadata(assembly, "ChummerDesktopHeadId") ?? headId,
+            Version: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion")
+                ?? assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                ?? assembly.GetName().Version?.ToString()
+                ?? string.Empty,
+            ChannelId: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseChannel") ?? "local",
+            Platform: DetectPlatform(),
+            Arch: DetectArchitecture(),
+            ReadyCheckpoint: Environment.GetEnvironmentVariable(StartupSmokeReadyCheckpointEnvironmentVariable) ?? "pre_ui_event_loop",
+            HostClass: Environment.GetEnvironmentVariable(StartupSmokeHostClassEnvironmentVariable) ?? Environment.MachineName,
+            ProcessPath: processPath,
+            ArtifactDigest: artifactDigest,
+            ArtifactDigestSource: artifactDigestSource,
+            Framework: RuntimeInformation.FrameworkDescription,
+            OperatingSystem: RuntimeInformation.OSDescription,
+            StartedAtUtc: startedAtUtc);
+    }
+
+    private static (string? ArtifactDigest, string ArtifactDigestSource) ResolveArtifactDigest(string processPath)
+    {
+        string? configuredDigest = Environment.GetEnvironmentVariable(StartupSmokeArtifactDigestEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(configuredDigest))
+        {
+            return (NormalizeSha256Digest(configuredDigest), "environment");
+        }
+
+        if (string.IsNullOrWhiteSpace(processPath) || !File.Exists(processPath))
+        {
+            return (null, "unavailable");
+        }
+
+        try
+        {
+            using FileStream stream = File.OpenRead(processPath);
+            using SHA256 sha256 = SHA256.Create();
+            return ($"sha256:{Convert.ToHexString(sha256.ComputeHash(stream)).ToLowerInvariant()}", "process_path");
+        }
+        catch
+        {
+            return (null, "unavailable");
+        }
     }
 
     private static string DetectPlatform()
@@ -138,6 +194,126 @@ public static class DesktopStartupSmokeRuntime
         File.WriteAllText(receiptPath, JsonSerializer.Serialize(receipt, JsonOptions), Encoding.UTF8);
     }
 
+    private static string? TryWriteFailurePacket(DesktopStartupSmokeContext context, Exception ex, int exitCode)
+    {
+        string? failurePacketPath = ResolveFailurePacketPath();
+        if (string.IsNullOrWhiteSpace(failurePacketPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            WriteFailurePacket(failurePacketPath, BuildFailurePacket(context, ex, exitCode));
+            return failurePacketPath;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? ResolveFailurePacketPath()
+    {
+        string? explicitPath = Environment.GetEnvironmentVariable(StartupSmokeFailurePacketEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(explicitPath))
+        {
+            return explicitPath;
+        }
+
+        string? receiptPath = Environment.GetEnvironmentVariable(StartupSmokeReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(receiptPath))
+        {
+            return null;
+        }
+
+        string? receiptDirectory = Path.GetDirectoryName(receiptPath);
+        string? receiptFileName = Path.GetFileNameWithoutExtension(receiptPath);
+        string? receiptExtension = Path.GetExtension(receiptPath);
+        if (string.IsNullOrWhiteSpace(receiptDirectory) || string.IsNullOrWhiteSpace(receiptFileName))
+        {
+            return null;
+        }
+
+        string extension = string.IsNullOrWhiteSpace(receiptExtension) ? ".json" : receiptExtension;
+        return Path.Combine(receiptDirectory, $"{receiptFileName}.failure{extension}");
+    }
+
+    private static DesktopStartupSmokeFailurePacket BuildFailurePacket(
+        DesktopStartupSmokeContext context,
+        Exception ex,
+        int exitCode)
+    {
+        string[] logTail = BuildLogTail(ex);
+        string fingerprintSource = string.Join(
+            "|",
+            context.HeadId,
+            context.Platform,
+            context.Arch,
+            context.ReadyCheckpoint,
+            ex.GetType().FullName ?? ex.GetType().Name,
+            ex.Message,
+            string.Join("\n", logTail));
+        using SHA256 sha256 = SHA256.Create();
+        string fingerprint = Convert.ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(fingerprintSource)))
+            .ToLowerInvariant()[..16];
+
+        return new DesktopStartupSmokeFailurePacket(
+            SignalClass: "release_smoke_start_failure",
+            HeadId: context.HeadId,
+            Version: context.Version,
+            ChannelId: context.ChannelId,
+            Platform: context.Platform,
+            Arch: context.Arch,
+            ReadyCheckpoint: context.ReadyCheckpoint,
+            HostClass: context.HostClass,
+            ProcessPath: context.ProcessPath,
+            ArtifactDigest: context.ArtifactDigest,
+            ArtifactDigestSource: context.ArtifactDigestSource,
+            Framework: context.Framework,
+            OperatingSystem: context.OperatingSystem,
+            ExitCode: exitCode,
+            ErrorType: ex.GetType().FullName ?? ex.GetType().Name,
+            ErrorMessage: ex.Message,
+            CrashFingerprint: fingerprint,
+            LogTail: logTail,
+            RecordedAtUtc: DateTimeOffset.UtcNow,
+            StartedAtUtc: context.StartedAtUtc,
+            OodaRecommendation: "freeze_or_fix_before_promotion");
+    }
+
+    private static string[] BuildLogTail(Exception ex)
+        => ex.ToString()
+            .Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)
+            .Select(static line => line.Trim())
+            .Where(static line => line.Length > 0)
+            .TakeLast(20)
+            .Select(static line => line.Length <= 240 ? line : $"{line[..237]}...")
+            .ToArray();
+
+    private static void WriteFailurePacket(string packetPath, DesktopStartupSmokeFailurePacket packet)
+    {
+        string? packetDirectory = Path.GetDirectoryName(packetPath);
+        if (string.IsNullOrWhiteSpace(packetDirectory))
+        {
+            throw new InvalidOperationException($"Startup smoke failure packet path was invalid: '{packetPath}'.");
+        }
+
+        Directory.CreateDirectory(packetDirectory);
+        File.WriteAllText(packetPath, JsonSerializer.Serialize(packet, JsonOptions), Encoding.UTF8);
+    }
+
+    private static string NormalizeSha256Digest(string digest)
+    {
+        string trimmed = digest.Trim();
+        if (trimmed.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"sha256:{trimmed["sha256:".Length..].Trim()}";
+        }
+
+        return $"sha256:{trimmed}";
+    }
+
     public sealed record DesktopStartupSmokeReceipt(
         string HeadId,
         string Version,
@@ -147,9 +323,49 @@ public static class DesktopStartupSmokeRuntime
         string ReadyCheckpoint,
         string HostClass,
         string ProcessPath,
+        string? ArtifactDigest,
+        string ArtifactDigestSource,
         string Framework,
         string OperatingSystem,
         DateTimeOffset RecordedAtUtc,
         DateTimeOffset StartedAtUtc,
         DateTimeOffset CompletedAtUtc);
+
+    private sealed record DesktopStartupSmokeContext(
+        string HeadId,
+        string Version,
+        string ChannelId,
+        string Platform,
+        string Arch,
+        string ReadyCheckpoint,
+        string HostClass,
+        string ProcessPath,
+        string? ArtifactDigest,
+        string ArtifactDigestSource,
+        string Framework,
+        string OperatingSystem,
+        DateTimeOffset StartedAtUtc);
+
+    public sealed record DesktopStartupSmokeFailurePacket(
+        string SignalClass,
+        string HeadId,
+        string Version,
+        string ChannelId,
+        string Platform,
+        string Arch,
+        string ReadyCheckpoint,
+        string HostClass,
+        string ProcessPath,
+        string? ArtifactDigest,
+        string ArtifactDigestSource,
+        string Framework,
+        string OperatingSystem,
+        int ExitCode,
+        string ErrorType,
+        string ErrorMessage,
+        IReadOnlyList<string> LogTail,
+        string CrashFingerprint,
+        DateTimeOffset RecordedAtUtc,
+        DateTimeOffset StartedAtUtc,
+        string OodaRecommendation);
 }

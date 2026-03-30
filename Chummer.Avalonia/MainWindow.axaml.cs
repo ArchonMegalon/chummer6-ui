@@ -41,6 +41,9 @@ public partial class MainWindow : Window
         CharacterOverviewViewModelAdapter adapter)
     {
         InitializeComponent();
+        Title = DesktopLocalizationCatalog.GetRequiredString(
+            "desktop.shell.window_title",
+            DesktopLocalizationCatalog.GetCurrentLanguage());
 
         _shellPresenter = shellPresenter;
         _commandAvailabilityEvaluator = commandAvailabilityEvaluator;
