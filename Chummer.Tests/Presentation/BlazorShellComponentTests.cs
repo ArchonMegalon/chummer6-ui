@@ -1160,13 +1160,16 @@ public sealed class BlazorShellComponentTests
                 GeneratedAtUtc: new DateTimeOffset(2026, 03, 09, 8, 0, 0, TimeSpan.Zero),
                 ProfileSourceKind: RegistryEntrySourceKinds.OverlayDerivedProfile,
                 Promotion: new RuntimeInspectorPromotionProjection(
+                    LifecycleStage: RuntimeInspectorPromotionStages.CampaignApproved,
                     PublicationStatus: RuleProfilePublicationStatuses.Published,
                     Visibility: ArtifactVisibilityModes.CampaignShared,
                     UpdateChannel: RuleProfileUpdateChannels.CampaignPinned,
                     PromotionSummary: "Campaign-pinned rule environment is published with campaign-shared visibility and stays on the campaign-approved rail until broader promotion is chosen.",
                     RollbackSummary: "Rollback can re-pin sha256:sr5-runtime-fingerprint on workspace:workspace-1 while the next promotion is reviewed.",
                     LineageSummary: "Overlay-derived profile compiles on top of the governed runtime lock instead of forking a local shadow rule environment.",
-                    PublishedAtUtc: new DateTimeOffset(2026, 03, 08, 7, 0, 0, TimeSpan.Zero)),
+                    PublishedAtUtc: new DateTimeOffset(2026, 03, 08, 7, 0, 0, TimeSpan.Zero),
+                    CurrentStage: RuntimeInspectorPromotionStages.CampaignApproved,
+                    PromotionTargetStage: RuntimeInspectorPromotionStages.Published),
                 CapabilityDescriptors:
                 [
                     new RuntimeInspectorCapabilityDescriptorProjection(
@@ -1197,6 +1200,10 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Session-safe Bindings");
         StringAssert.Contains(cut.Markup, "Update Channel");
         StringAssert.Contains(cut.Markup, "campaign-pinned");
+        StringAssert.Contains(cut.Markup, "Current Stage");
+        StringAssert.Contains(cut.Markup, "Campaign-approved");
+        StringAssert.Contains(cut.Markup, "Promote To");
+        StringAssert.Contains(cut.Markup, "Published");
         StringAssert.Contains(cut.Markup, "Rollback can re-pin sha256:sr5-runtime-fingerprint");
         StringAssert.Contains(cut.Markup, "attention");
         Assert.IsNotNull(cut.Find("[data-runtime-hub-diagnostics]"));
