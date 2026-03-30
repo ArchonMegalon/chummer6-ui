@@ -197,6 +197,36 @@ public static class DesktopInstallLinkingRuntime
         return TryOpenPublicPortal(BuildSupportPortalRelativePathForWorkspace(state, workspace));
     }
 
+    public static bool TryOpenSupportPortalForBugReport(
+        DesktopInstallLinkingState state,
+        DesktopUpdateClientStatus? updateStatus,
+        string title,
+        string expectedBehavior,
+        string actualBehavior,
+        string reproSteps,
+        string? evidenceNote = null)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return TryOpenPublicPortal(BuildSupportPortalRelativePathForBugReport(
+            state,
+            updateStatus,
+            title,
+            expectedBehavior,
+            actualBehavior,
+            reproSteps,
+            evidenceNote));
+    }
+
+    public static bool TryOpenSupportPortalForFeedback(
+        DesktopInstallLinkingState state,
+        DesktopUpdateClientStatus? updateStatus,
+        string summary,
+        string detail)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return TryOpenPublicPortal(BuildSupportPortalRelativePathForFeedback(state, updateStatus, summary, detail));
+    }
+
     public static bool TryOpenDownloadsPortal()
     {
         return TryOpenPublicPortal("/downloads");
@@ -311,6 +341,74 @@ public static class DesktopInstallLinkingRuntime
                         $"Head: {state.HeadId}",
                         $"Version: {state.ApplicationVersion}"
                     }.Where(static item => !string.IsNullOrWhiteSpace(item))),
+                InstallationId: state.InstallationId,
+                ApplicationVersion: state.ApplicationVersion,
+                ReleaseChannel: state.ChannelId,
+                HeadId: state.HeadId,
+                Platform: state.Platform,
+                Arch: state.Arch));
+    }
+
+    public static string BuildSupportPortalRelativePathForBugReport(
+        DesktopInstallLinkingState state,
+        DesktopUpdateClientStatus? updateStatus,
+        string title,
+        string expectedBehavior,
+        string actualBehavior,
+        string reproSteps,
+        string? evidenceNote = null)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        string normalizedTitle = string.IsNullOrWhiteSpace(title)
+            ? $"Desktop bug report for {state.HeadId}"
+            : title.Trim();
+        string normalizedActualBehavior = NormalizeSupportDraftField(actualBehavior);
+        return BuildSupportPortalRelativePath(
+            new SupportPortalPrefill(
+                Kind: "bug_report",
+                Title: normalizedTitle,
+                Summary: $"Bug report from {state.HeadId}: {normalizedActualBehavior}",
+                Detail: string.Join(
+                    "\n",
+                    BuildSupportDraftContextLines(
+                        state,
+                        updateStatus,
+                        $"Expected: {NormalizeSupportDraftField(expectedBehavior)}",
+                        $"Actual: {normalizedActualBehavior}",
+                        $"Repro: {NormalizeSupportDraftField(reproSteps)}",
+                        string.IsNullOrWhiteSpace(evidenceNote) ? null : $"Evidence: {evidenceNote.Trim()}")),
+                InstallationId: state.InstallationId,
+                ApplicationVersion: state.ApplicationVersion,
+                ReleaseChannel: state.ChannelId,
+                HeadId: state.HeadId,
+                Platform: state.Platform,
+                Arch: state.Arch));
+    }
+
+    public static string BuildSupportPortalRelativePathForFeedback(
+        DesktopInstallLinkingState state,
+        DesktopUpdateClientStatus? updateStatus,
+        string summary,
+        string detail)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        string normalizedSummary = NormalizeSupportDraftField(summary);
+        return BuildSupportPortalRelativePath(
+            new SupportPortalPrefill(
+                Kind: "feedback",
+                Title: string.IsNullOrWhiteSpace(summary)
+                    ? $"Desktop feedback for {state.HeadId}"
+                    : $"Desktop feedback: {summary.Trim()}",
+                Summary: normalizedSummary,
+                Detail: string.Join(
+                    "\n",
+                    BuildSupportDraftContextLines(
+                        state,
+                        updateStatus,
+                        $"Feedback: {normalizedSummary}",
+                        $"Detail: {NormalizeSupportDraftField(detail)}")),
                 InstallationId: state.InstallationId,
                 ApplicationVersion: state.ApplicationVersion,
                 ReleaseChannel: state.ChannelId,
@@ -612,6 +710,70 @@ public static class DesktopInstallLinkingRuntime
 
         return $"Hub install linking returned {(int)response.StatusCode} {response.ReasonPhrase}.";
     }
+
+    private static IReadOnlyList<string> BuildSupportDraftContextLines(
+        DesktopInstallLinkingState state,
+        DesktopUpdateClientStatus? updateStatus,
+        params string?[] primaryLines)
+    {
+        List<string> lines = [];
+        foreach (string? line in primaryLines)
+        {
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                lines.Add(line.Trim());
+            }
+        }
+
+        lines.Add($"Install ID: {state.InstallationId}");
+        lines.Add($"Head: {state.HeadId}");
+        lines.Add($"Version: {state.ApplicationVersion}");
+        lines.Add($"Channel: {state.ChannelId}");
+        lines.Add($"Platform: {state.Platform}/{state.Arch}");
+
+        if (!string.IsNullOrWhiteSpace(state.LastClaimMessage))
+        {
+            lines.Add($"Hub message: {state.LastClaimMessage}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.LastClaimError))
+        {
+            lines.Add($"Claim error: {state.LastClaimError}");
+        }
+
+        if (updateStatus is not null)
+        {
+            lines.Add($"Release status: {updateStatus.Status}");
+            lines.Add($"Recommended action: {updateStatus.RecommendedAction}");
+
+            if (!string.IsNullOrWhiteSpace(updateStatus.LastManifestVersion))
+            {
+                lines.Add($"Manifest: {updateStatus.LastManifestVersion}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(updateStatus.SupportabilityState))
+            {
+                lines.Add($"Supportability: {updateStatus.SupportabilityState}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(updateStatus.KnownIssueSummary))
+            {
+                lines.Add($"Known issues: {updateStatus.KnownIssueSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(updateStatus.LastError))
+            {
+                lines.Add($"Last error: {updateStatus.LastError}");
+            }
+        }
+
+        return lines;
+    }
+
+    private static string NormalizeSupportDraftField(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? "Not provided."
+            : value.Trim();
 
     private static string? NormalizeClaimCode(string? value)
     {

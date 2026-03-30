@@ -29,6 +29,10 @@ public interface IChummerClient
 
     Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct);
 
+    Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct);
+
+    Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct);
+
     Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct);
 
     Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct);

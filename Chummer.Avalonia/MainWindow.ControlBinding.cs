@@ -23,8 +23,11 @@ internal static class MainWindowControlBinder
         EventHandler onCloseWorkspaceRequested,
         EventHandler onDesktopHomeRequested,
         EventHandler onCampaignWorkspaceRequested,
+        EventHandler onUpdateStatusRequested,
         EventHandler onInstallLinkingRequested,
         EventHandler onSupportRequested,
+        EventHandler onReportIssueRequested,
+        EventHandler onSettingsRequested,
         EventHandler onRuntimeInspectorRequested,
         EventHandler<string> onMenuSelected,
         EventHandler<string> onWorkspaceSelected,
@@ -41,8 +44,11 @@ internal static class MainWindowControlBinder
         toolStrip.CloseWorkspaceRequested += onCloseWorkspaceRequested;
         toolStrip.DesktopHomeRequested += onDesktopHomeRequested;
         toolStrip.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
+        toolStrip.UpdateStatusRequested += onUpdateStatusRequested;
         toolStrip.InstallLinkingRequested += onInstallLinkingRequested;
         toolStrip.SupportRequested += onSupportRequested;
+        toolStrip.ReportIssueRequested += onReportIssueRequested;
+        toolStrip.SettingsRequested += onSettingsRequested;
         summaryHeader.RuntimeInspectorRequested += onRuntimeInspectorRequested;
         menuBar.MenuSelected += onMenuSelected;
         navigatorPane.WorkspaceSelected += onWorkspaceSelected;

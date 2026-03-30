@@ -5,8 +5,11 @@
     <WrapPanel Grid.Column="0" Orientation="Horizontal" ItemHeight="36">
       <Button x:Name="DesktopHomeButton" Content="Desktop Home" Width="130" Click="DesktopHomeButton_OnClick" />
       <Button x:Name="CampaignWorkspaceButton" Content="Campaign Workspace" Width="160" Click="CampaignWorkspaceButton_OnClick" />
+      <Button x:Name="UpdateStatusButton" Content="Update Status" Width="140" Click="UpdateStatusButton_OnClick" />
       <Button x:Name="InstallLinkingButton" Content="Link This Copy" Width="130" Click="InstallLinkingButton_OnClick" />
       <Button x:Name="SupportButton" Content="Open Support" Width="130" Click="SupportButton_OnClick" />
+      <Button x:Name="ReportIssueButton" Content="Report Issue" Width="130" Click="ReportIssueButton_OnClick" />
+      <Button x:Name="SettingsButton" Content="Settings" Width="120" Click="SettingsButton_OnClick" />
       <Button x:Name="ImportFileButton" Content="Import Character File" Width="170" Click="ImportFileButton_OnClick" />
       <Button x:Name="ImportRawButton" Content="Import Raw XML" Width="130" Click="ImportRawButton_OnClick" />
       <Button x:Name="SaveButton" Content="Save Workspace" Width="140" Click="SaveButton_OnClick" />

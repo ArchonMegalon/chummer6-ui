@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Chummer.Contracts.Presentation;
+using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Chummer.Presentation.UiKit;
@@ -10,6 +11,7 @@ namespace Chummer.Avalonia;
 public partial class MainWindow : Window
 {
     private static readonly string UiKitShellChromeAdapterMarker = ShellChromeBoundary.RootClass;
+    private const string DesktopHeadId = "avalonia";
     private readonly IShellPresenter _shellPresenter;
     private readonly ICommandAvailabilityEvaluator _commandAvailabilityEvaluator;
     private readonly IShellSurfaceResolver _shellSurfaceResolver;
@@ -20,6 +22,7 @@ public partial class MainWindow : Window
     private readonly MainWindowLifecycleCoordinator _lifecycleCoordinator;
     private readonly MainWindowTransientStateCoordinator _transientStateCoordinator;
     private readonly MainWindowControls _controls;
+    private DesktopPreferenceState _persistedPreferences;
 
     public MainWindow()
         : this(
@@ -40,10 +43,13 @@ public partial class MainWindow : Window
         IAvaloniaCoachSidecarClient coachSidecarClient,
         CharacterOverviewViewModelAdapter adapter)
     {
+        _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
+        DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
+        DesktopLocalizationCatalog.SetCurrentLanguageOverride(_persistedPreferences.Language);
         InitializeComponent();
         Title = DesktopLocalizationCatalog.GetRequiredString(
             "desktop.shell.window_title",
-            DesktopLocalizationCatalog.GetCurrentLanguage());
+            _persistedPreferences.Language);
 
         _shellPresenter = shellPresenter;
         _commandAvailabilityEvaluator = commandAvailabilityEvaluator;
@@ -73,8 +79,11 @@ public partial class MainWindow : Window
             onCloseWorkspaceRequested: ToolStrip_OnCloseWorkspaceRequested,
             onDesktopHomeRequested: ToolStrip_OnDesktopHomeRequested,
             onCampaignWorkspaceRequested: ToolStrip_OnCampaignWorkspaceRequested,
+            onUpdateStatusRequested: ToolStrip_OnUpdateStatusRequested,
             onInstallLinkingRequested: ToolStrip_OnInstallLinkingRequested,
             onSupportRequested: ToolStrip_OnSupportRequested,
+            onReportIssueRequested: ToolStrip_OnReportIssueRequested,
+            onSettingsRequested: ToolStrip_OnSettingsRequested,
             onRuntimeInspectorRequested: SummaryHeader_OnRuntimeInspectorRequested,
             onMenuSelected: MenuBar_OnMenuSelected,
             onWorkspaceSelected: NavigatorPane_OnWorkspaceSelected,

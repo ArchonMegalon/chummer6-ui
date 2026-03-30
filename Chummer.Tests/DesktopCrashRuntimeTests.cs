@@ -1,7 +1,12 @@
+#nullable enable annotations
+
+using System;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Chummer.Desktop.Runtime;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests;
 

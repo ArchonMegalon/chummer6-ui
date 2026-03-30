@@ -208,6 +208,46 @@ public sealed class HttpChummerClient : IChummerClient
             .ToArray();
     }
 
+    public async Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(caseId);
+
+        using HttpResponseMessage response = await _httpClient.GetAsync($"/api/v1/support/cases/{Uri.EscapeDataString(caseId)}", ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Support case detail request failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        DesktopSupportCaseDetailsDto? payload = await response.Content.ReadFromJsonAsync<DesktopSupportCaseDetailsDto>(ct);
+        return payload?.ToProjection();
+    }
+
+    public async Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct)
+    {
+        using HttpResponseMessage response = await _httpClient.GetAsync("/api/v1/install-linking/me", ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            return DesktopInstallLinkingSummaryProjection.Empty;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Install linking summary request failed with HTTP {(int)response.StatusCode}.");
+        }
+
+        DesktopInstallLinkingSummaryDto? payload = await response.Content.ReadFromJsonAsync<DesktopInstallLinkingSummaryDto>(ct);
+        return payload?.ToProjection() ?? DesktopInstallLinkingSummaryProjection.Empty;
+    }
+
     public async Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         using HttpResponseMessage response = await _httpClient.DeleteAsync($"/api/workspaces/{id.Value}", ct);
@@ -786,7 +826,11 @@ public sealed class HttpChummerClient : IChummerClient
         string FollowUpLaneSummary,
         string ReleaseProgressSummary,
         bool ReporterActionNeeded,
-        bool CanVerifyFix)
+        bool CanVerifyFix,
+        string? InstallReadinessSummary = null,
+        bool FixReadyOnLinkedInstall = false,
+        bool NeedsInstallUpdate = false,
+        bool NeedsLinkedInstall = false)
     {
         public DesktopHomeSupportDigest ToProjection()
             => new(
@@ -807,7 +851,237 @@ public sealed class HttpChummerClient : IChummerClient
                 FollowUpLaneSummary,
                 ReleaseProgressSummary,
                 ReporterActionNeeded,
-                CanVerifyFix);
+                CanVerifyFix,
+                InstallReadinessSummary ?? string.Empty,
+                FixReadyOnLinkedInstall,
+                NeedsInstallUpdate,
+                NeedsLinkedInstall);
+    }
+
+    private sealed record DesktopSupportCaseDetailsDto(
+        string CaseId,
+        string ClusterKey,
+        string Kind,
+        string Status,
+        string Title,
+        string Summary,
+        string Detail,
+        string CandidateOwnerRepo,
+        bool DesignImpactSuspected,
+        DateTimeOffset CreatedAtUtc,
+        DateTimeOffset UpdatedAtUtc,
+        string Source,
+        string? ReporterEmail = null,
+        string? ReporterUserId = null,
+        string? ReporterSubjectId = null,
+        string? InstallationId = null,
+        string? ApplicationVersion = null,
+        string? ReleaseChannel = null,
+        string? HeadId = null,
+        string? Platform = null,
+        string? Arch = null,
+        string? FixedVersion = null,
+        string? FixedChannel = null,
+        DateTimeOffset? ReleasedToReporterChannelAtUtc = null,
+        DateTimeOffset? UserNotifiedAtUtc = null,
+        string? ReporterVerificationState = null,
+        string? ReporterVerificationNote = null,
+        DateTimeOffset? ReporterVerifiedAtUtc = null,
+        DesktopSupportCaseTimelineEntryDto[]? Timeline = null,
+        DesktopSupportCaseAttachmentDto[]? Attachments = null)
+    {
+        public DesktopSupportCaseDetails ToProjection()
+            => new(
+                CaseId,
+                Kind,
+                Status,
+                Title,
+                Summary,
+                Detail,
+                CandidateOwnerRepo,
+                DesignImpactSuspected,
+                CreatedAtUtc,
+                UpdatedAtUtc,
+                Source,
+                ReporterEmail,
+                InstallationId,
+                ApplicationVersion,
+                ReleaseChannel,
+                HeadId,
+                Platform,
+                Arch,
+                FixedVersion,
+                FixedChannel,
+                ReleasedToReporterChannelAtUtc,
+                UserNotifiedAtUtc,
+                ReporterVerificationState,
+                ReporterVerificationNote,
+                ReporterVerifiedAtUtc,
+                (Timeline ?? []).Select(static item => item.ToProjection()).ToArray(),
+                (Attachments ?? []).Select(static item => item.ToProjection()).ToArray());
+    }
+
+    private sealed record DesktopSupportCaseTimelineEntryDto(
+        string EventId,
+        string Status,
+        string Summary,
+        DateTimeOffset OccurredAtUtc,
+        string? Actor = null)
+    {
+        public DesktopSupportCaseTimelineEntry ToProjection()
+            => new(
+                EventId,
+                Status,
+                Summary,
+                OccurredAtUtc,
+                Actor);
+    }
+
+    private sealed record DesktopSupportCaseAttachmentDto(
+        string AttachmentId,
+        string FileName,
+        string ContentType,
+        long SizeBytes,
+        DateTimeOffset UploadedAtUtc,
+        string? DownloadHref = null)
+    {
+        public DesktopSupportCaseAttachment ToProjection()
+            => new(
+                AttachmentId,
+                FileName,
+                ContentType,
+                SizeBytes,
+                UploadedAtUtc,
+                DownloadHref);
+    }
+
+    private sealed record DesktopInstallLinkingSummaryDto(
+        DesktopRecentInstallReceiptDto[]? RecentReceipts,
+        DesktopPendingClaimTicketDto[]? PendingClaimTickets,
+        DesktopClaimedInstallProjectionDto[]? ClaimedInstallations,
+        DesktopInstallationGrantProjectionDto[]? ActiveGrants)
+    {
+        public DesktopInstallLinkingSummaryProjection ToProjection()
+            => new(
+                RecentReceipts: (RecentReceipts ?? [])
+                    .Select(static item => item.ToProjection())
+                    .ToArray(),
+                PendingClaimTickets: (PendingClaimTickets ?? [])
+                    .Select(static item => item.ToProjection())
+                    .ToArray(),
+                ClaimedInstallations: (ClaimedInstallations ?? [])
+                    .Select(static item => item.ToProjection())
+                    .ToArray(),
+                ActiveGrants: (ActiveGrants ?? [])
+                    .Select(static item => item.ToProjection())
+                    .ToArray());
+    }
+
+    private sealed record DesktopRecentInstallReceiptDto(
+        string ReceiptId,
+        string ArtifactLabel,
+        string Channel,
+        string Version,
+        string Head,
+        string Platform,
+        string Arch,
+        string Kind,
+        string InstallAccessClass,
+        DateTimeOffset IssuedAtUtc,
+        string? ClaimTicketId = null,
+        string? ClaimCode = null,
+        DateTimeOffset? ClaimTicketExpiresAtUtc = null)
+    {
+        public DesktopRecentInstallReceipt ToProjection()
+            => new(
+                ReceiptId,
+                ArtifactLabel,
+                Channel,
+                Version,
+                Head,
+                Platform,
+                Arch,
+                Kind,
+                InstallAccessClass,
+                IssuedAtUtc,
+                ClaimTicketId,
+                ClaimCode,
+                ClaimTicketExpiresAtUtc);
+    }
+
+    private sealed record DesktopPendingClaimTicketDto(
+        string TicketId,
+        string ClaimCode,
+        string ArtifactLabel,
+        string Channel,
+        string Version,
+        string InstallAccessClass,
+        string Status,
+        DateTimeOffset CreatedAtUtc,
+        DateTimeOffset ExpiresAtUtc,
+        string? InstallationId = null)
+    {
+        public DesktopPendingClaimTicket ToProjection()
+            => new(
+                TicketId,
+                ClaimCode,
+                ArtifactLabel,
+                Channel,
+                Version,
+                InstallAccessClass,
+                Status,
+                CreatedAtUtc,
+                ExpiresAtUtc,
+                InstallationId);
+    }
+
+    private sealed record DesktopClaimedInstallProjectionDto(
+        string InstallationId,
+        string Channel,
+        string Version,
+        string InstallAccessClass,
+        string Status,
+        DateTimeOffset CreatedAtUtc,
+        DateTimeOffset UpdatedAtUtc,
+        string? ClaimTicketId = null,
+        string? HeadId = null,
+        string? Platform = null,
+        string? Arch = null,
+        string? HostLabel = null,
+        string? GrantId = null)
+    {
+        public DesktopClaimedInstallProjection ToProjection()
+            => new(
+                InstallationId,
+                Channel,
+                Version,
+                InstallAccessClass,
+                Status,
+                CreatedAtUtc,
+                UpdatedAtUtc,
+                ClaimTicketId,
+                HeadId,
+                Platform,
+                Arch,
+                HostLabel,
+                GrantId);
+    }
+
+    private sealed record DesktopInstallationGrantProjectionDto(
+        string GrantId,
+        string InstallationId,
+        string Status,
+        string? AccessToken,
+        DateTimeOffset IssuedAtUtc,
+        DateTimeOffset ExpiresAtUtc)
+    {
+        public DesktopInstallationGrantProjection ToProjection()
+            => new(
+                GrantId,
+                InstallationId,
+                Status,
+                IssuedAtUtc,
+                ExpiresAtUtc);
     }
 
     private async Task<T> GetRequiredAsync<T>(string path, CancellationToken ct)

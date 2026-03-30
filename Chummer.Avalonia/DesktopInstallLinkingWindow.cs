@@ -21,7 +21,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         ArgumentNullException.ThrowIfNull(context);
 
         _state = context.State;
-        _language = DesktopLocalizationCatalog.GetCurrentLanguage();
+        _language = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId).Language;
         Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language);
         Width = 760;
         Height = 520;
@@ -91,6 +91,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
                             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
                             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_report_issue", _language), OpenReportIssueAsync),
                             CreateButton(
                                 DesktopInstallLinkingRuntime.IsClaimed(_state)
                                     ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
@@ -179,25 +180,23 @@ internal sealed class DesktopInstallLinkingWindow : Window
     {
         if (DesktopInstallLinkingRuntime.IsClaimed(_state))
         {
-            if (DesktopInstallLinkingRuntime.TryOpenWorkPortal())
+            Window? ownerWindow = Owner as Window;
+            if (ownerWindow is not null)
             {
-                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_work_route", _language));
+                Close();
+                return DesktopCampaignWorkspaceWindow.ShowAsync(ownerWindow, _state.HeadId);
             }
-            else
-            {
-                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_work_route", _language));
-            }
+
+            return DesktopCampaignWorkspaceWindow.ShowAsync(this, _state.HeadId);
+        }
+
+        if (DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
         }
         else
         {
-            if (DesktopInstallLinkingRuntime.TryOpenAccountPortal())
-            {
-                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
-            }
-            else
-            {
-                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
-            }
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
         }
 
         return Task.CompletedTask;
@@ -219,16 +218,12 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private Task OpenSupportAsync()
     {
-        if (DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_state))
-        {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_support", _language));
-        }
-        else
-        {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_support", _language));
-        }
+        return DesktopSupportWindow.ShowAsync(this, _state.HeadId);
+    }
 
-        return Task.CompletedTask;
+    private Task OpenReportIssueAsync()
+    {
+        return DesktopReportIssueWindow.ShowAsync(this, _state.HeadId);
     }
 
     private async Task LinkAsync()

@@ -19,10 +19,12 @@
     <ChummerInstallerPublisher Condition="'$(ChummerInstallerPublisher)' == ''">ArchonMegalon</ChummerInstallerPublisher>
     <ChummerInstallerShortcutName Condition="'$(ChummerInstallerShortcutName)' == ''">Chummer6</ChummerInstallerShortcutName>
     <ChummerInstallerOutputName Condition="'$(ChummerInstallerOutputName)' == ''">Chummer6Installer</ChummerInstallerOutputName>
+    <ChummerInstallerPayloadResourceName Condition="'$(ChummerInstallerPayloadResourceName)' == ''">ChummerInstaller.Payload.zip</ChummerInstallerPayloadResourceName>
+    <ChummerInstallerPayloadRequired Condition="'$(ChummerInstallerPayloadRequired)' == ''">true</ChummerInstallerPayloadRequired>
   </PropertyGroup>
 
   <ItemGroup Condition="Exists('$(InstallerPayloadZip)')">
-    <EmbeddedResource Include="$(InstallerPayloadZip)" LogicalName="ChummerInstaller.Payload.zip" />
+    <EmbeddedResource Include="$(InstallerPayloadZip)" LogicalName="$(ChummerInstallerPayloadResourceName)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -58,5 +60,13 @@
       <_Parameter1>ChummerInstallerOutputName</_Parameter1>
       <_Parameter2>$(ChummerInstallerOutputName)</_Parameter2>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerInstallerPayloadResourceName</_Parameter1>
+      <_Parameter2>$(ChummerInstallerPayloadResourceName)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
+
+  <Target Name="ValidateInstallerPayload" BeforeTargets="CoreCompile" Condition="'$(ChummerInstallerPayloadRequired)' == 'true'">
+    <Error Condition="!Exists('$(InstallerPayloadZip)')" Text="Chummer.Installer payload was not found. Set -p:InstallerPayloadZip=&lt;path to publish archive&gt; before publishing." />
+  </Target>
 </Project>

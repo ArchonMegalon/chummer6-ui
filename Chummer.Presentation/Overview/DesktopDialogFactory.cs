@@ -64,6 +64,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string? rulesetId,
         RuntimeInspectorProjection? runtimeInspector = null)
     {
+        string language = DesktopLocalizationCatalog.NormalizeOrDefault(preferences.Language);
+        string S(string key) => DesktopLocalizationCatalog.GetRequiredString(key, language);
+        string F(string key, params object[] values) => DesktopLocalizationCatalog.GetRequiredFormattedString(key, language, values);
         string name = profile?.Name ?? "(none)";
         string alias = profile?.Alias ?? string.Empty;
         string workspace = currentWorkspace?.Value ?? "(none)";
@@ -109,17 +112,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "global_settings" => new DesktopDialogState(
                 "dialog.global_settings",
-                "Global Settings",
-                $"Phase-1 desktop language changes apply on restart. Shipping locales: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}",
+                S("desktop.dialog.global_settings.title"),
+                F("desktop.dialog.global_settings.message", DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
                 [
-                    new DesktopDialogField("globalUiScale", "UI Scale (%)", preferences.UiScalePercent.ToString(), "100", InputType: "number"),
-                    new DesktopDialogField("globalTheme", "Theme", preferences.Theme, "classic"),
-                    new DesktopDialogField("globalLanguage", "Language", DesktopLocalizationCatalog.NormalizeOrDefault(preferences.Language), DesktopLocalizationCatalog.DefaultLanguage),
-                    new DesktopDialogField("globalCompactMode", "Compact Mode", preferences.CompactMode ? "true" : "false", "false", InputType: "checkbox")
+                    new DesktopDialogField("globalUiScale", S("desktop.dialog.global_settings.field.ui_scale"), preferences.UiScalePercent.ToString(), "100", InputType: "number"),
+                    new DesktopDialogField("globalTheme", S("desktop.dialog.global_settings.field.theme"), preferences.Theme, "classic"),
+                    new DesktopDialogField("globalLanguage", S("desktop.dialog.global_settings.field.language"), DesktopLocalizationCatalog.NormalizeOrDefault(preferences.Language), DesktopLocalizationCatalog.DefaultLanguage),
+                    new DesktopDialogField("globalCompactMode", S("desktop.dialog.global_settings.field.compact_mode"), preferences.CompactMode ? "true" : "false", "false", InputType: "checkbox")
                 ],
                 [
-                    new DesktopDialogAction("save", "Save", true),
-                    new DesktopDialogAction("cancel", "Cancel")
+                    new DesktopDialogAction("save", S("desktop.dialog.action.save"), true),
+                    new DesktopDialogAction("cancel", S("desktop.dialog.action.cancel"))
                 ]),
             "switch_ruleset" => new DesktopDialogState(
                 "dialog.switch_ruleset",
@@ -148,10 +151,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "translator" => new DesktopDialogState(
                 "dialog.translator",
-                "Translator",
-                $"Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: {DesktopLocalizationCatalog.BuildSupportedLanguageSummary()}",
-                BuildTranslatorFields(),
-                [new DesktopDialogAction("close", "Close", true)]),
+                S("desktop.dialog.translator.title"),
+                F("desktop.dialog.translator.message", DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
+                BuildTranslatorFields(language),
+                [new DesktopDialogAction("close", S("desktop.dialog.action.close"), true)]),
             "xml_editor" => new DesktopDialogState(
                 "dialog.xml_editor",
                 "XML Editor",
@@ -649,21 +652,25 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
     }
 
-    private static IReadOnlyList<DesktopDialogField> BuildTranslatorFields()
+    private static IReadOnlyList<DesktopDialogField> BuildTranslatorFields(string language)
     {
         List<DesktopDialogField> fields =
         [
-            new DesktopDialogField("translatorSearch", "Language Search", string.Empty, "filter languages")
+            new DesktopDialogField(
+                "translatorSearch",
+                DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.translator.field.search", language),
+                string.Empty,
+                DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.translator.field.search_placeholder", language))
         ];
 
         int index = 1;
-        foreach (DesktopSupportedLanguage language in DesktopLocalizationCatalog.ShippingLanguages)
+        foreach (DesktopSupportedLanguage shippingLanguage in DesktopLocalizationCatalog.ShippingLanguages)
         {
             fields.Add(new DesktopDialogField(
                 $"lang{index}",
-                language.Label,
-                language.Code,
-                language.Code,
+                shippingLanguage.Label,
+                shippingLanguage.Code,
+                shippingLanguage.Code,
                 IsReadOnly: true));
             index++;
         }
