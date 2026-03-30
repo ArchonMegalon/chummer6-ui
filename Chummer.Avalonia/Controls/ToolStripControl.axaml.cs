@@ -18,8 +18,11 @@ public partial class ToolStripControl : UserControl
     public event EventHandler? CloseWorkspaceRequested;
     public event EventHandler? DesktopHomeRequested;
     public event EventHandler? CampaignWorkspaceRequested;
+    public event EventHandler? UpdateStatusRequested;
     public event EventHandler? InstallLinkingRequested;
     public event EventHandler? SupportRequested;
+    public event EventHandler? ReportIssueRequested;
+    public event EventHandler? SettingsRequested;
 
     public void SetState(ToolStripState state)
     {
@@ -36,8 +39,11 @@ public partial class ToolStripControl : UserControl
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
         DesktopHomeButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
         CampaignWorkspaceButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language);
+        UpdateStatusButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.update_status", language);
         InstallLinkingButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language);
         SupportButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language);
+        ReportIssueButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.report_issue", language);
+        SettingsButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language);
         ImportFileButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language);
         ImportRawButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language);
         SaveButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.save_workspace", language);
@@ -60,6 +66,11 @@ public partial class ToolStripControl : UserControl
         CampaignWorkspaceRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    private void UpdateStatusButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        UpdateStatusRequested?.Invoke(this, EventArgs.Empty);
+    }
+
     private void InstallLinkingButton_OnClick(object? sender, RoutedEventArgs e)
     {
         InstallLinkingRequested?.Invoke(this, EventArgs.Empty);
@@ -68,6 +79,16 @@ public partial class ToolStripControl : UserControl
     private void SupportButton_OnClick(object? sender, RoutedEventArgs e)
     {
         SupportRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ReportIssueButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        ReportIssueRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void SettingsButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        SettingsRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void ImportRawButton_OnClick(object? sender, RoutedEventArgs e)

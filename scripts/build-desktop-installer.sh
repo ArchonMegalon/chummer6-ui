@@ -257,6 +257,7 @@ build_windows_installer() {
   ensure_self_contained_publish
 
   local payload_zip="$DIST_DIR/chummer-$APP_KEY-$RID-payload.zip"
+  local payload_resource_name="ChummerInstaller.Payload.zip"
   local installer_name="chummer-$APP_KEY-$RID-installer.exe"
   local installer_out_dir="$DIST_DIR/installer-$APP_KEY-$RID"
 
@@ -273,6 +274,7 @@ build_windows_installer() {
     -p:IncludeNativeLibrariesForSelfExtract=true \
     -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
     -p:InstallerPayloadZip="$payload_zip" \
+    -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
     -p:ChummerInstallerAppId="$APP_KEY-$RID" \
     -p:ChummerInstallerDisplayName="$APP_DISPLAY" \
     -p:ChummerInstallerInstallDirName="$INSTALL_DIR_NAME-$RID" \

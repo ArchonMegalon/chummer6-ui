@@ -159,7 +159,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             ?? throw new InvalidOperationException("Desktop campaign workspace requires an IChummerClient instance."));
 
         DesktopInstallLinkingState installState = DesktopInstallLinkingRuntime.LoadOrCreateState(headId);
-        DesktopPreferenceState preferences = ReadPreferences();
+        DesktopPreferenceState preferences = ReadPreferences(installState.HeadId);
         IReadOnlyList<WorkspaceListItem> workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
         AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(true);
         IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(true);
@@ -177,11 +177,8 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             supportProjection);
     }
 
-    private static DesktopPreferenceState ReadPreferences()
-        => DesktopPreferenceState.Default with
-        {
-            Language = DesktopLocalizationCatalog.GetCurrentLanguage()
-        };
+    private static DesktopPreferenceState ReadPreferences(string headId)
+        => DesktopPreferenceRuntime.LoadOrCreateState(headId);
 
     private static async Task<IReadOnlyList<WorkspaceListItem>> ReadWorkspacesAsync(IChummerClient client)
     {
@@ -458,7 +455,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         return DesktopInstallLinkingRuntime.IsClaimed(_installState)
             ?
             [
-                CreateButton(S("desktop.home.button.open_campaign_followthrough"), static () => DesktopInstallLinkingRuntime.TryOpenWorkPortal(), isPrimary: true),
+                CreateButton(S("desktop.home.button.open_campaign_followthrough"), OpenCampaignFollowThroughAsync, isPrimary: true),
                 CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
             ]
             :
@@ -473,7 +470,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         List<Button> actions =
         [
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? CreateButton(S("desktop.home.button.open_devices_access"), static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal(), isPrimary: true)
+                ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
             CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
         ];
@@ -501,16 +498,17 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         }
         else
         {
-            actions.Add(CreateButton(
-                _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
-                    ? S("desktop.home.button.open_work_support")
-                    : S("desktop.home.button.open_install_support"),
-                _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
-                    ? OpenWorkspaceSupport
-                    : OpenInstallSupport,
-                isPrimary: true));
+            if (_recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
+            {
+                actions.Add(CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport, isPrimary: true));
+            }
+            else
+            {
+                actions.Add(CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport, isPrimary: true));
+            }
         }
 
+        actions.Add(CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync));
         actions.Add(CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport));
         return actions;
     }
@@ -544,29 +542,59 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         ];
     }
 
-    private bool OpenLeadWorkspace()
+    private Task OpenLeadWorkspace()
         => !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
-           ? DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_campaignProjection.LeadWorkspaceId!)
+           ? OpenWorkspaceInDesktopShellAsync(_campaignProjection.LeadWorkspaceId!)
            : OpenCurrentWorkspace();
 
-    private bool OpenCurrentWorkspace()
+    private Task OpenCurrentWorkspace()
         => _recentWorkspaces.Count > 0
-           && DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_recentWorkspaces[0].Id.Value);
+           ? OpenWorkspaceInDesktopShellAsync(_recentWorkspaces[0].Id.Value)
+           : Task.CompletedTask;
+
+    private Task OpenCampaignFollowThroughAsync()
+        => !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+            ? OpenLeadWorkspace()
+            : _recentWorkspaces.Count > 0
+                ? OpenCurrentWorkspace()
+                : DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId);
 
     private bool OpenInstallSupport()
         => DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_installState);
 
-    private bool OpenWorkspaceSupport()
-        => DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, _recentWorkspaces.Count == 0 ? null : _recentWorkspaces[0]);
+    private Task OpenWorkspaceSupport()
+        => DesktopSupportWindow.ShowAsync(this, _installState.HeadId);
 
-    private bool OpenTrackedSupportCase()
-        => !string.IsNullOrWhiteSpace(_supportProjection.DetailHref)
-           && DesktopInstallLinkingRuntime.TryOpenRelativePortal(_supportProjection.DetailHref!);
+    private Task OpenReportIssueWindowAsync()
+        => DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId);
 
-    private bool OpenPrimarySupportFollowThrough()
-        => !string.IsNullOrWhiteSpace(_supportProjection.PrimaryActionHref)
-           ? DesktopInstallLinkingRuntime.TryOpenRelativePortal(_supportProjection.PrimaryActionHref!)
-           : OpenTrackedSupportCase();
+    private Task OpenDevicesAccessWindowAsync()
+        => DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId);
+
+    private Task OpenTrackedSupportCase()
+        => _supportProjection.HasTrackedCase
+           ? DesktopSupportCaseWindow.ShowAsync(this, _installState.HeadId, _supportProjection)
+           : Task.CompletedTask;
+
+    private Task OpenPrimarySupportFollowThrough()
+    {
+        if (IsDownloadsRoute(_supportProjection.PrimaryActionHref))
+        {
+            return DesktopUpdateWindow.ShowAsync(this, _installState.HeadId);
+        }
+
+        if (_supportProjection.HasTrackedCase)
+        {
+            return DesktopSupportCaseWindow.ShowAsync(this, _installState.HeadId, _supportProjection);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_supportProjection.PrimaryActionHref))
+        {
+            DesktopInstallLinkingRuntime.TryOpenRelativePortal(_supportProjection.PrimaryActionHref!);
+        }
+
+        return Task.CompletedTask;
+    }
 
     private async Task OpenInstallLinkingAsync()
     {
@@ -580,6 +608,21 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         DesktopInstallLinkingWindow dialog = new(context);
         await dialog.ShowDialog(this);
         await RefreshCampaignStateAsync();
+    }
+
+    private static bool IsDownloadsRoute(string? href)
+        => string.Equals(href?.Trim(), "/downloads", StringComparison.OrdinalIgnoreCase);
+
+    private async Task OpenWorkspaceInDesktopShellAsync(string workspaceId)
+    {
+        if (Owner is MainWindow mainWindow)
+        {
+            await mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId).ConfigureAwait(true);
+            Close();
+            return;
+        }
+
+        DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId);
     }
 
     private async Task RefreshCampaignStateAsync()

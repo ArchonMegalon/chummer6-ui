@@ -1,6 +1,8 @@
 #nullable enable annotations
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -8,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
+using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -248,12 +251,179 @@ public sealed class HttpChummerClientBuildPathTests
 
         IReadOnlyList<DesktopHomeSupportDigest> digests = await client.GetDesktopHomeSupportDigestsAsync(CancellationToken.None);
 
-        Assert.AreEqual(1, digests.Count);
+        Assert.HasCount(1, digests);
         Assert.AreEqual("case-123", digests[0].CaseId);
         Assert.AreEqual("Open downloads", digests[0].PrimaryActionLabel);
         Assert.AreEqual("/downloads", digests[0].PrimaryActionHref);
         Assert.AreEqual("preview 0.6.3-smoke", digests[0].FixedReleaseLabel);
         Assert.IsTrue(digests[0].CanVerifyFix);
+    }
+
+    [TestMethod]
+    public async Task Install_linking_summary_uses_the_account_projection_endpoint()
+    {
+        StrictHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.Method == HttpMethod.Get
+                && request.RequestUri?.PathAndQuery == "/api/v1/install-linking/me")
+            {
+                return JsonResponse("""
+{
+  "recentReceipts": [
+    {
+      "receiptId": "dlr-123",
+      "artifactLabel": "Windows",
+      "channel": "preview",
+      "version": "0.6.3-smoke",
+      "head": "avalonia",
+      "platform": "windows",
+      "arch": "x64",
+      "kind": "installer",
+      "installAccessClass": "account_recommended",
+      "issuedAtUtc": "2026-03-29T12:30:00Z",
+      "claimTicketId": "ticket-123",
+      "claimCode": "CLAIM-123",
+      "claimTicketExpiresAtUtc": "2026-04-01T12:30:00Z"
+    }
+  ],
+  "pendingClaimTickets": [
+    {
+      "ticketId": "ticket-123",
+      "claimCode": "CLAIM-123",
+      "artifactLabel": "Windows",
+      "channel": "preview",
+      "version": "0.6.3-smoke",
+      "installAccessClass": "account_recommended",
+      "status": "pending",
+      "createdAtUtc": "2026-03-29T12:30:00Z",
+      "expiresAtUtc": "2026-04-01T12:30:00Z"
+    }
+  ],
+  "claimedInstallations": [
+    {
+      "installationId": "install-123",
+      "channel": "preview",
+      "version": "0.6.3-smoke",
+      "installAccessClass": "account_recommended",
+      "status": "active",
+      "createdAtUtc": "2026-03-28T08:00:00Z",
+      "updatedAtUtc": "2026-03-29T14:00:00Z",
+      "headId": "avalonia",
+      "platform": "windows",
+      "arch": "x64",
+      "hostLabel": "Shadow Deck",
+      "grantId": "grant-123"
+    }
+  ],
+  "activeGrants": [
+    {
+      "grantId": "grant-123",
+      "installationId": "install-123",
+      "status": "active",
+      "accessToken": "redacted",
+      "issuedAtUtc": "2026-03-29T14:00:00Z",
+      "expiresAtUtc": "2026-04-28T14:00:00Z"
+    }
+  ]
+}
+""");
+            }
+
+            throw new InvalidOperationException($"Unexpected request: {request.Method} {request.RequestUri}");
+        });
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        HttpChummerClient client = new(httpClient);
+
+        DesktopInstallLinkingSummaryProjection summary = await client.GetDesktopInstallLinkingSummaryAsync(CancellationToken.None);
+
+        Assert.HasCount(1, summary.PendingClaimTickets);
+        Assert.AreEqual("CLAIM-123", summary.PendingClaimTickets[0].ClaimCode);
+        Assert.HasCount(1, summary.ClaimedInstallations);
+        Assert.AreEqual("Shadow Deck", summary.ClaimedInstallations[0].HostLabel);
+        Assert.HasCount(1, summary.ActiveGrants);
+        Assert.AreEqual("grant-123", summary.ActiveGrants[0].GrantId);
+        Assert.HasCount(1, summary.RecentReceipts);
+        Assert.AreEqual("ticket-123", summary.RecentReceipts[0].ClaimTicketId);
+    }
+
+    [TestMethod]
+    public async Task Support_case_detail_uses_the_tracked_case_detail_endpoint()
+    {
+        StrictHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.Method == HttpMethod.Get
+                && request.RequestUri?.PathAndQuery == "/api/v1/support/cases/case-123")
+            {
+                return JsonResponse("""
+{
+  "caseId": "case-123",
+  "clusterKey": "cluster-abc",
+  "kind": "bug_report",
+  "status": "released_to_reporter_channel",
+  "title": "Preview update did not carry the fix",
+  "summary": "Reporter still needs one final confirmation step.",
+  "detail": "Open the tracked case after updating this install if the issue still reproduces.",
+  "candidateOwnerRepo": "chummer-presentation",
+  "designImpactSuspected": false,
+  "createdAtUtc": "2026-03-27T10:30:00Z",
+  "updatedAtUtc": "2026-03-29T12:45:00Z",
+  "source": "desktop_feedback",
+  "installationId": "install-123",
+  "applicationVersion": "0.6.2-smoke",
+  "releaseChannel": "preview",
+  "headId": "avalonia",
+  "platform": "windows",
+  "arch": "x64",
+  "fixedVersion": "0.6.3-smoke",
+  "fixedChannel": "preview",
+  "releasedToReporterChannelAtUtc": "2026-03-29T12:00:00Z",
+  "userNotifiedAtUtc": "2026-03-29T12:30:00Z",
+  "timeline": [
+    {
+      "eventId": "evt-1",
+      "status": "released_to_reporter_channel",
+      "summary": "The fix reached the reporter-ready preview lane.",
+      "occurredAtUtc": "2026-03-29T12:00:00Z",
+      "actor": "release automation"
+    }
+  ],
+  "attachments": [
+    {
+      "attachmentId": "att-1",
+      "fileName": "support-log.txt",
+      "contentType": "text/plain",
+      "sizeBytes": 2048,
+      "uploadedAtUtc": "2026-03-28T09:15:00Z",
+      "downloadHref": "/api/v1/support/cases/case-123/attachments/att-1"
+    }
+  ]
+}
+""");
+            }
+
+            throw new InvalidOperationException($"Unexpected request: {request.Method} {request.RequestUri}");
+        });
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        HttpChummerClient client = new(httpClient);
+
+        DesktopSupportCaseDetails? details = await client.GetDesktopSupportCaseDetailsAsync("case-123", CancellationToken.None);
+
+        Assert.IsNotNull(details);
+        Assert.AreEqual("case-123", details.CaseId);
+        Assert.AreEqual("released_to_reporter_channel", details.Status);
+        Assert.AreEqual("preview", details.FixedChannel);
+        Assert.AreEqual(1, details.Timeline?.Count);
+        Assert.AreEqual("evt-1", details.Timeline?[0].EventId);
+        Assert.AreEqual(1, details.Attachments?.Count);
+        Assert.AreEqual("/api/v1/support/cases/case-123/attachments/att-1", details.Attachments?[0].DownloadHref);
     }
 
     [TestMethod]

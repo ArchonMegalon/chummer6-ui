@@ -84,6 +84,17 @@ public partial class MainWindow
             "open campaign workspace");
     }
 
+    private async void ToolStrip_OnUpdateStatusRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopUpdateWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowUpdateReviewed(_controls.ToolStrip);
+            },
+            "open update status");
+    }
+
     private async void ToolStrip_OnInstallLinkingRequested(object? sender, EventArgs e)
     {
         await RunUiActionAsync(
@@ -98,21 +109,34 @@ public partial class MainWindow
     private async void ToolStrip_OnSupportRequested(object? sender, EventArgs e)
     {
         await RunUiActionAsync(
-            () =>
+            async () =>
             {
-                DesktopInstallLinkingState state = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
-                if (DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(state))
-                {
-                    MainWindowFeedbackCoordinator.ShowInstallSupportOpened(_controls.ToolStrip);
-                }
-                else
-                {
-                    MainWindowFeedbackCoordinator.ShowInstallSupportUnavailable(_controls.ToolStrip);
-                }
-
-                return Task.CompletedTask;
+                await DesktopSupportWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowSupportReviewed(_controls.ToolStrip);
             },
-            "open install support");
+            "open support");
+    }
+
+    private async void ToolStrip_OnReportIssueRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopReportIssueWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowReportIssueReviewed(_controls.ToolStrip);
+            },
+            "open report issue");
+    }
+
+    private async void ToolStrip_OnSettingsRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await _interactionCoordinator.ExecuteCommandAsync("global_settings", CancellationToken.None);
+                MainWindowFeedbackCoordinator.ShowSettingsReviewed(_controls.ToolStrip);
+            },
+            "open global settings");
     }
 
     private async void ToolStrip_OnCloseWorkspaceRequested(object? sender, EventArgs e)

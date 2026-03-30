@@ -104,9 +104,10 @@ public partial class App : global::Avalonia.Application
 
         owner.Opened -= MainWindow_OnOpened;
 
+        bool crashRecoveryShown = false;
         try
         {
-            await DesktopCrashRecoveryWindow.ShowPendingAsync(owner);
+            crashRecoveryShown = await DesktopCrashRecoveryWindow.TryShowPendingAsync(owner);
         }
         catch (Exception ex)
         {
@@ -146,6 +147,86 @@ public partial class App : global::Avalonia.Application
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Failed to display the desktop campaign workspace window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "update", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await DesktopUpdateWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop update window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "support", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await DesktopSupportWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop support window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "support_case", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await DesktopSupportCaseWindow.ShowPreviewAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop tracked support case window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "devices_access", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await DesktopDevicesAccessWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop devices window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "report_issue", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await DesktopReportIssueWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop report window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "crash_recovery", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                if (!crashRecoveryShown)
+                {
+                    await DesktopCrashRecoveryWindow.ShowPreviewAsync(owner, "avalonia");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop crash recovery window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "settings", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await owner.OpenDesktopCommandFromSurfaceAsync("global_settings", "open global settings");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop settings command surface: {ex}");
             }
         }
     }
