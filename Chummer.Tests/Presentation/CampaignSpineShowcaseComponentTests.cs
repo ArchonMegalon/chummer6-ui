@@ -205,9 +205,9 @@ public sealed class CampaignSpineShowcaseComponentTests
         RulesNavigatorAnswerProjection projection = new(
             EntryId: "rules-1",
             Question: "Why did this rule posture change?",
-            ShortAnswer: "Because the approved compatibility fingerprint changed.",
-            BeforeSummary: "Before approval, the answer path was caveated.",
-            AfterSummary: "After approval, the rule environment is grounded everywhere.",
+            ShortAnswer: "Because the campaign-approved compatibility fingerprint changed.",
+            BeforeSummary: "Before campaign approval, the answer path was caveated.",
+            AfterSummary: "After campaign approval, the rule environment is grounded everywhere.",
             ExplainEntryId: "rules.navigator.1",
             ProvenanceLabel: "campaign scope · sr6.preview.v1",
             EvidenceLines:
@@ -224,11 +224,25 @@ public sealed class CampaignSpineShowcaseComponentTests
                 new RulesetEnvironmentDiffProjection(
                     DiffId: "rules-1:return",
                     Label: "Campaign return",
-                    BeforeSummary: "Before approval, the answer path was caveated.",
-                    AfterSummary: "After approval, the rule environment is grounded everywhere.",
-                    ReasonSummary: "Campaign continuity reuses the approved compatibility fingerprint.",
+                    BeforeSummary: "Before campaign approval, the answer path was caveated.",
+                    AfterSummary: "After campaign approval, the rule environment is grounded everywhere.",
+                    ReasonSummary: "Campaign continuity reuses the campaign-approved compatibility fingerprint.",
                     ExplainEntryId: "rules.navigator.1:return")
-            ]);
+            ],
+            Studio: new RuleEnvironmentStudioProjection(
+                CurrentStage: RuleEnvironmentLifecycleStages.CampaignApproved,
+                CurrentStageLabel: "Campaign-approved",
+                PromotionTargetStage: RuleEnvironmentLifecycleStages.Published,
+                PromotionTargetLabel: "Published",
+                PromotionSummary: "Promote the current campaign-approved fingerprint only when broader reuse is intentional.",
+                RollbackSummary: "Rollback can re-pin sr6.preview.v1 on the current campaign while the next promotion is reviewed.",
+                LineageSummary: "The current campaign fingerprint remains the lineage anchor until a published successor replaces it.",
+                Stages:
+                [
+                    new RuleEnvironmentLifecycleStepProjection(RuleEnvironmentLifecycleStages.Sandbox, "Sandbox", RuleEnvironmentLifecycleStepStatuses.Completed, "Preview work stays bounded while validation settles."),
+                    new RuleEnvironmentLifecycleStepProjection(RuleEnvironmentLifecycleStages.CampaignApproved, "Campaign-approved", RuleEnvironmentLifecycleStepStatuses.Current, "The current campaign answer is already governed."),
+                    new RuleEnvironmentLifecycleStepProjection(RuleEnvironmentLifecycleStages.Published, "Published", RuleEnvironmentLifecycleStepStatuses.Next, "Broader reuse waits for explicit promotion.")
+                ]));
 
         using var context = new BunitContext();
         IRenderedComponent<RulesNavigatorPanel> cut = context.Render<RulesNavigatorPanel>(parameters => parameters
@@ -236,10 +250,14 @@ public sealed class CampaignSpineShowcaseComponentTests
 
         StringAssert.Contains(cut.Markup, "Rules Navigator");
         StringAssert.Contains(cut.Markup, "Why did this rule posture change?");
-        StringAssert.Contains(cut.Markup, "Before approval");
+        StringAssert.Contains(cut.Markup, "Before campaign approval");
         StringAssert.Contains(cut.Markup, "Campaign return");
-        StringAssert.Contains(cut.Markup, "Campaign continuity reuses the approved compatibility fingerprint.");
+        StringAssert.Contains(cut.Markup, "Campaign continuity reuses the campaign-approved compatibility fingerprint.");
         StringAssert.Contains(cut.Markup, "Support can reuse this answer.");
+        StringAssert.Contains(cut.Markup, "Rule-environment studio");
+        StringAssert.Contains(cut.Markup, "Campaign-approved -&gt; Published");
+        StringAssert.Contains(cut.Markup, "Rollback can re-pin sr6.preview.v1");
+        StringAssert.Contains(cut.Markup, "lineage anchor");
         StringAssert.Contains(cut.Markup, "chummer-explain-chip");
     }
 

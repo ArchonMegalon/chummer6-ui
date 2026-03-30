@@ -62,6 +62,26 @@
         </ul>
         <p class="note">@string.Join(" | ", Projection.SupportReuseHints)</p>
     </section>
+
+    @if (Projection.Studio is not null)
+    {
+        <section class="coach-card">
+            <div class="coach-card-header">
+                <h3>Rule-environment studio</h3>
+                <span class="@(ChummerPatternBoundary.ExplainChipClass($"{Projection.Studio.CurrentStageLabel} -> {Projection.Studio.PromotionTargetLabel}", "Rules navigator lifecycle"))"
+                      @attributes="@(ChummerPatternBoundary.ExplainChipAttributes($"{Projection.Studio.CurrentStageLabel} -> {Projection.Studio.PromotionTargetLabel}", "Rules navigator lifecycle"))">@Projection.Studio.CurrentStageLabel -> @Projection.Studio.PromotionTargetLabel</span>
+            </div>
+            <ul class="browse-detail-lines">
+                @foreach (var stage in Projection.Studio.Stages)
+                {
+                    <li><strong>@stage.Label</strong><span> @stage.Status:</span><span> @stage.Summary</span></li>
+                }
+            </ul>
+            <p><strong>Promotion:</strong> @Projection.Studio.PromotionSummary</p>
+            <p><strong>Rollback:</strong> @Projection.Studio.RollbackSummary</p>
+            <p><strong>Lineage:</strong> @Projection.Studio.LineageSummary</p>
+        </section>
+    }
 </section>
 
 @code {
@@ -85,7 +105,21 @@
                 AfterSummary: "After approval, one grounded answer path stays visible everywhere.",
                 ReasonSummary: "The campaign return stays pinned to the approved compatibility fingerprint.",
                 ExplainEntryId: "rules.navigator.demo:return")
-        ]);
+        ],
+        Studio: new RuleEnvironmentStudioProjection(
+            CurrentStage: RuleEnvironmentLifecycleStages.CampaignApproved,
+            CurrentStageLabel: "Campaign-approved",
+            PromotionTargetStage: RuleEnvironmentLifecycleStages.Published,
+            PromotionTargetLabel: "Published",
+            PromotionSummary: "Promote the current campaign-approved fingerprint to the published rail only after broader reuse is intentional.",
+            RollbackSummary: "Rollback can re-pin sr6.preview.v1 on the current campaign while the next promotion stays under review.",
+            LineageSummary: "The campaign fingerprint stays the lineage anchor until a governed published successor replaces it.",
+            Stages:
+            [
+                new RuleEnvironmentLifecycleStepProjection(RuleEnvironmentLifecycleStages.Sandbox, "Sandbox", RuleEnvironmentLifecycleStepStatuses.Completed, "Preview work stays bounded while validation settles."),
+                new RuleEnvironmentLifecycleStepProjection(RuleEnvironmentLifecycleStages.CampaignApproved, "Campaign-approved", RuleEnvironmentLifecycleStepStatuses.Current, "The current campaign truth already shares one governed answer path."),
+                new RuleEnvironmentLifecycleStepProjection(RuleEnvironmentLifecycleStages.Published, "Published", RuleEnvironmentLifecycleStepStatuses.Next, "Broader reuse waits for an explicit governed promotion.")
+            ]));
 
     private string GetDiffChipLabel()
         => Projection.Diffs is { Count: > 0 }
