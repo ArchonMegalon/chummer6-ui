@@ -29,6 +29,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
     IReadOnlyList<DesktopHomeRuleEnvironmentHealthCueDto> RuleEnvironmentHealth,
     DesktopHomeRunboardSummaryDto? Runboard,
     IReadOnlyList<DesktopHomeContinuityConflictCueDto> ContinuityConflicts,
+    IReadOnlyList<DesktopHomeRecapShelfEntryDto> RecapShelf,
     IReadOnlyList<DesktopHomeSupportClosureCueDto> SupportClosures,
     IReadOnlyList<DesktopHomeKnownIssueCueDto> KnownIssues,
     IReadOnlyList<DesktopHomeDecisionNoticeDto> DecisionNotices,
@@ -39,11 +40,12 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 {
     public DesktopHomeCampaignServerPlane ToProjection()
     {
+        DesktopHomeRecapShelfEntryDto? leadRecapShelfEntry = RecapShelf.FirstOrDefault();
         List<string> readinessHighlights =
         [
             CampaignSummary.SessionReadinessSummary,
             $"Roster: {RosterReadiness.Summary}",
-            $"Publication lane: {CampaignSummary.PublicationSummary}"
+            $"Publication lane: {BuildPublicationLaneSummary(CampaignSummary.PublicationSummary, leadRecapShelfEntry)}"
         ];
 
         if (!string.IsNullOrWhiteSpace(Runboard?.ActiveSceneSummary))
@@ -79,6 +81,27 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
         if (CampaignMemory?.EvidenceLines.Count > 0)
         {
             readinessHighlights.Add($"Campaign memory evidence: {CampaignMemory.EvidenceLines[0]}");
+        }
+
+        if (leadRecapShelfEntry is not null)
+        {
+            readinessHighlights.Add($"Artifact audience: {HumanizeAudience(leadRecapShelfEntry.Audience)}");
+
+            if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.OwnershipSummary))
+            {
+                readinessHighlights.Add($"Artifact ownership: {leadRecapShelfEntry.OwnershipSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.PublicationSummary))
+            {
+                readinessHighlights.Add(
+                    $"Artifact publication: {HumanizeState(leadRecapShelfEntry.PublicationState, "Ready")} — {leadRecapShelfEntry.PublicationSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.NextSafeAction))
+            {
+                readinessHighlights.Add($"Artifact next: {leadRecapShelfEntry.NextSafeAction}");
+            }
         }
 
         readinessHighlights.AddRange(ReadinessCues
@@ -129,7 +152,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             WorkspaceId: Workspace.WorkspaceId,
             SessionReadinessSummary: CampaignSummary.SessionReadinessSummary,
             RestoreSummary: CampaignSummary.RestoreSummary,
-            PublicationSummary: CampaignSummary.PublicationSummary,
+            PublicationSummary: BuildPublicationLaneSummary(CampaignSummary.PublicationSummary, leadRecapShelfEntry),
             RosterSummary: RosterReadiness.Summary,
             RunboardSummary: string.IsNullOrWhiteSpace(runboardSummary) ? null : runboardSummary,
             TravelModeSummary: NormalizeOptional(TravelMode?.Summary),
@@ -150,6 +173,53 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
            && !severity.Equals("info", StringComparison.OrdinalIgnoreCase)
            && !severity.Equals("ok", StringComparison.OrdinalIgnoreCase)
            && !severity.Equals("ready", StringComparison.OrdinalIgnoreCase);
+
+    private static string BuildPublicationLaneSummary(
+        string publicationSummary,
+        DesktopHomeRecapShelfEntryDto? leadRecapShelfEntry)
+    {
+        if (leadRecapShelfEntry is null || string.IsNullOrWhiteSpace(leadRecapShelfEntry.PublicationSummary))
+        {
+            return publicationSummary;
+        }
+
+        return $"{publicationSummary} Artifact shelf: {leadRecapShelfEntry.PublicationSummary}";
+    }
+
+    private static string HumanizeAudience(string? audience)
+    {
+        if (string.IsNullOrWhiteSpace(audience))
+        {
+            return "Campaign stuff";
+        }
+
+        var labels = audience
+            .Split([',', ';', '/'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(static value => value.Trim())
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Select(static value => value.ToLowerInvariant() switch
+            {
+                "personal" => "My stuff",
+                "campaign" => "Campaign stuff",
+                "creator" => "Published stuff",
+                _ => System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(value.Replace('_', ' ').Replace('-', ' '))
+            })
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return labels.Length == 0 ? "Campaign stuff" : string.Join(", ", labels);
+    }
+
+    private static string HumanizeState(string? value, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return fallback;
+        }
+
+        return System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(
+            value.Replace('_', ' ').Replace('-', ' '));
+    }
 
     private static IReadOnlyList<string> FinalizeLines(IEnumerable<string> lines)
         => lines
@@ -200,6 +270,15 @@ public sealed record DesktopHomeRunboardSummaryDto(
     string ReturnSummary);
 
 public sealed record DesktopHomeContinuityConflictCueDto(string Summary);
+
+public sealed record DesktopHomeRecapShelfEntryDto(
+    string Label,
+    string Summary,
+    string? Audience,
+    string? OwnershipSummary,
+    string? PublicationState,
+    string? PublicationSummary,
+    string? NextSafeAction);
 
 public sealed record DesktopHomeSupportClosureCueDto(
     string StageLabel,
