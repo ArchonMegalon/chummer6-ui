@@ -207,8 +207,10 @@ internal sealed class DesktopHomeWindow : Window
         AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(true);
         IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(true);
         string? leadWorkspaceId = ResolveLeadWorkspaceId(campaignSummary, campaignWorkspaceDigests);
+        string? leadCampaignId = ResolveLeadCampaignId(campaignSummary, campaignWorkspaceDigests);
         DesktopHomeCampaignServerPlane? campaignServerPlane = await ReadCampaignWorkspaceServerPlaneAsync(client, leadWorkspaceId).ConfigureAwait(true);
-        DesktopHomeCampaignProjection campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane);
+        DesktopHomePortableExchangePreview? portableExchange = await ReadPortableExchangePreviewAsync(client, leadCampaignId).ConfigureAwait(true);
+        DesktopHomeCampaignProjection campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane, portableExchange);
         DesktopHomeSupportProjection supportProjection = await ReadSupportProjectionAsync(client, installState).ConfigureAwait(true);
         DesktopHomeBuildExplainProjection buildExplainProjection = await ReadBuildExplainProjectionAsync(client, workspaces, campaignSummary).ConfigureAwait(true);
 
@@ -371,16 +373,19 @@ internal sealed class DesktopHomeWindow : Window
     private static DesktopHomeCampaignProjection ReadCampaignProjection(
         AccountCampaignSummary? campaignSummary,
         IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests,
-        DesktopHomeCampaignServerPlane? campaignServerPlane = null)
-        => DesktopHomeCampaignProjector.Create(campaignSummary, campaignWorkspaceDigests, campaignServerPlane);
+        DesktopHomeCampaignServerPlane? campaignServerPlane = null,
+        DesktopHomePortableExchangePreview? portableExchange = null)
+        => DesktopHomeCampaignProjector.Create(campaignSummary, campaignWorkspaceDigests, campaignServerPlane, portableExchange);
 
     private static async Task<DesktopHomeCampaignProjection> ReadCampaignProjectionAsync(IChummerClient client)
     {
         AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(false);
         IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(false);
         string? leadWorkspaceId = ResolveLeadWorkspaceId(campaignSummary, campaignWorkspaceDigests);
+        string? leadCampaignId = ResolveLeadCampaignId(campaignSummary, campaignWorkspaceDigests);
         DesktopHomeCampaignServerPlane? campaignServerPlane = await ReadCampaignWorkspaceServerPlaneAsync(client, leadWorkspaceId).ConfigureAwait(false);
-        return ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane);
+        DesktopHomePortableExchangePreview? portableExchange = await ReadPortableExchangePreviewAsync(client, leadCampaignId).ConfigureAwait(false);
+        return ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane, portableExchange);
     }
 
     private static string? ResolveLeadWorkspaceId(
@@ -395,6 +400,18 @@ internal sealed class DesktopHomeWindow : Window
                .Select(static digest => digest.WorkspaceId)
                .FirstOrDefault();
 
+    private static string? ResolveLeadCampaignId(
+        AccountCampaignSummary? campaignSummary,
+        IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests)
+        => campaignSummary?.Workspaces
+               .OrderByDescending(static workspace => workspace.LatestContinuity?.CapturedAtUtc ?? DateTimeOffset.MinValue)
+               .Select(static workspace => workspace.CampaignId)
+               .FirstOrDefault()
+           ?? campaignWorkspaceDigests
+               .OrderByDescending(static digest => digest.UpdatedAtUtc)
+               .Select(static digest => digest.CampaignId)
+               .FirstOrDefault();
+
     private static async Task<DesktopHomeCampaignServerPlane?> ReadCampaignWorkspaceServerPlaneAsync(IChummerClient client, string? workspaceId)
     {
         if (string.IsNullOrWhiteSpace(workspaceId) || client is not HttpChummerClient httpClient)
@@ -405,6 +422,23 @@ internal sealed class DesktopHomeWindow : Window
         try
         {
             return await httpClient.GetCampaignWorkspaceServerPlaneAsync(workspaceId, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static async Task<DesktopHomePortableExchangePreview?> ReadPortableExchangePreviewAsync(IChummerClient client, string? campaignId)
+    {
+        if (string.IsNullOrWhiteSpace(campaignId) || client is not HttpChummerClient httpClient)
+        {
+            return null;
+        }
+
+        try
+        {
+            return await httpClient.GetPortableExchangePreviewAsync(campaignId, CancellationToken.None).ConfigureAwait(false);
         }
         catch
         {
@@ -1020,8 +1054,10 @@ internal sealed class DesktopHomeWindow : Window
             AccountCampaignSummary? campaignSummary = await ReadCampaignSummaryAsync(client).ConfigureAwait(true);
             IReadOnlyList<CampaignWorkspaceDigestProjection> campaignWorkspaceDigests = await ReadCampaignWorkspaceDigestsAsync(client).ConfigureAwait(true);
             string? leadWorkspaceId = ResolveLeadWorkspaceId(campaignSummary, campaignWorkspaceDigests);
+            string? leadCampaignId = ResolveLeadCampaignId(campaignSummary, campaignWorkspaceDigests);
             DesktopHomeCampaignServerPlane? campaignServerPlane = await ReadCampaignWorkspaceServerPlaneAsync(client, leadWorkspaceId).ConfigureAwait(true);
-            _campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane);
+            DesktopHomePortableExchangePreview? portableExchange = await ReadPortableExchangePreviewAsync(client, leadCampaignId).ConfigureAwait(true);
+            _campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane, portableExchange);
             _supportProjection = await ReadSupportProjectionAsync(client, _installState).ConfigureAwait(true);
             _buildExplainProjection = await ReadBuildExplainProjectionAsync(client, _recentWorkspaces, campaignSummary).ConfigureAwait(true);
         }
