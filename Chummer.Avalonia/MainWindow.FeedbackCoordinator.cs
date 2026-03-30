@@ -25,6 +25,11 @@ internal static class MainWindowFeedbackCoordinator
         toolStrip.SetStatusText(S("desktop.shell.feedback.desktop_home_reviewed"));
     }
 
+    public static void ShowCampaignWorkspaceReviewed(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText(S("desktop.shell.feedback.campaign_workspace_reviewed"));
+    }
+
     public static void ShowInstallLinkingReviewed(ToolStripControl toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.install_linking_reviewed"));

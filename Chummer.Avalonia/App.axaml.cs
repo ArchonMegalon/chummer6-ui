@@ -115,27 +115,38 @@ public partial class App : global::Avalonia.Application
 
         DesktopInstallLinkingStartupContext? installLinkingContext = InstallLinkingStartupContext;
         InstallLinkingStartupContext = null;
-        if (installLinkingContext is null)
+        if (installLinkingContext is not null)
         {
-            return;
+            try
+            {
+                await DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop install linking window: {ex}");
+            }
+
+            try
+            {
+                await DesktopHomeWindow.ShowIfNeededAsync(owner, "avalonia", installLinkingContext);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop home window: {ex}");
+            }
         }
 
-        try
+        string? startupSurface = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SURFACE");
+        if (string.Equals(startupSurface, "campaign_workspace", StringComparison.OrdinalIgnoreCase))
         {
-            await DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to display the desktop install linking window: {ex}");
-        }
-
-        try
-        {
-            await DesktopHomeWindow.ShowIfNeededAsync(owner, "avalonia", installLinkingContext);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to display the desktop home window: {ex}");
+            try
+            {
+                await DesktopCampaignWorkspaceWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop campaign workspace window: {ex}");
+            }
         }
     }
 }

@@ -108,60 +108,63 @@ internal sealed class DesktopHomeWindow : Window
         _buildActionsRow = CreateActionRow(CreateBuildExplainActions());
         _workspaceActionsRow = CreateActionRow(CreateWorkspaceActions());
 
-        Content = new Border
+        Content = new ScrollViewer
         {
-            Padding = new Thickness(22),
-            Child = new StackPanel
+            Content = new Border
             {
-                Spacing = 16,
-                Children =
+                Padding = new Thickness(22),
+                Child = new StackPanel
                 {
-                    new TextBlock
+                    Spacing = 16,
+                    Children =
                     {
-                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.home.title", _preferences.Language),
-                        FontSize = 24,
-                        FontWeight = FontWeight.SemiBold
-                    },
-                    _introText,
-                    CreateSection(
-                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.install_support", _preferences.Language),
-                        _installSummaryText,
-                        _installActionsRow),
-                    CreateSection(
-                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.update_posture", _preferences.Language),
-                        _updateSummaryText,
-                        _updateActionsRow),
-                    CreateSection(
-                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.campaign_return", _preferences.Language),
-                        _campaignText,
-                        _campaignActionsRow),
-                    CreateSection(
-                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.support_closure", _preferences.Language),
-                        _supportText,
-                        _supportActionsRow),
-                    CreateSection(
-                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.build_explain", _preferences.Language),
-                        _buildExplainText,
-                        _buildActionsRow),
-                    CreateSection(
-                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.language_trust", _preferences.Language),
-                        F(
-                            "desktop.home.language_summary",
-                            DesktopLocalizationCatalog.GetDisplayLabel(_preferences.Language),
-                            DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
-                        []),
-                    CreateSection(
-                        DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.recent_workspaces", _preferences.Language),
-                        _workspaceSummaryText,
-                        _workspaceActionsRow),
-                    new StackPanel
-                    {
-                        Orientation = Orientation.Horizontal,
-                        HorizontalAlignment = HorizontalAlignment.Right,
-                        Spacing = 10,
-                        Children =
+                        new TextBlock
                         {
-                            CreateButton(S("desktop.home.button.continue"), static () => true, closeWindow: true)
+                            Text = DesktopLocalizationCatalog.GetRequiredString("desktop.home.title", _preferences.Language),
+                            FontSize = 24,
+                            FontWeight = FontWeight.SemiBold
+                        },
+                        _introText,
+                        CreateSection(
+                            DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.install_support", _preferences.Language),
+                            _installSummaryText,
+                            _installActionsRow),
+                        CreateSection(
+                            DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.update_posture", _preferences.Language),
+                            _updateSummaryText,
+                            _updateActionsRow),
+                        CreateSection(
+                            DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.campaign_return", _preferences.Language),
+                            _campaignText,
+                            _campaignActionsRow),
+                        CreateSection(
+                            DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.support_closure", _preferences.Language),
+                            _supportText,
+                            _supportActionsRow),
+                        CreateSection(
+                            DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.build_explain", _preferences.Language),
+                            _buildExplainText,
+                            _buildActionsRow),
+                        CreateSection(
+                            DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.language_trust", _preferences.Language),
+                            F(
+                                "desktop.home.language_summary",
+                                DesktopLocalizationCatalog.GetDisplayLabel(_preferences.Language),
+                                DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
+                            []),
+                        CreateSection(
+                            DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.recent_workspaces", _preferences.Language),
+                            _workspaceSummaryText,
+                            _workspaceActionsRow),
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            HorizontalAlignment = HorizontalAlignment.Right,
+                            Spacing = 10,
+                            Children =
+                            {
+                                CreateButton(S("desktop.home.button.continue"), static () => true, closeWindow: true)
+                            }
                         }
                     }
                 }
@@ -738,7 +741,7 @@ internal sealed class DesktopHomeWindow : Window
         [
             // Keep the explicit "Open current campaign workspace" phrase in-source for release smoke coverage.
             !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
-                ? CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenCampaignWorkspace, isPrimary: true)
+                ? CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenCampaignWorkspaceAsync, isPrimary: true)
                 : _recentWorkspaces.Count > 0
                     ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true)
                     : DesktopInstallLinkingRuntime.IsClaimed(_installState)
@@ -856,10 +859,8 @@ internal sealed class DesktopHomeWindow : Window
         => _recentWorkspaces.Count > 0
            && DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_recentWorkspaces[0].Id.Value);
 
-    private bool OpenCampaignWorkspace()
-        => !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
-           ? DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(_campaignProjection.LeadWorkspaceId!)
-           : OpenCurrentWorkspace();
+    private Task OpenCampaignWorkspaceAsync()
+        => DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId);
 
     private bool OpenInstallSupport()
         => DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_installState);
