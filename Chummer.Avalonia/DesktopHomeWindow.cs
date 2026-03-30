@@ -10,8 +10,6 @@ using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
-using System.Globalization;
-
 namespace Chummer.Avalonia;
 
 internal sealed class DesktopHomeWindow : Window
@@ -54,7 +52,7 @@ internal sealed class DesktopHomeWindow : Window
         _supportProjection = supportProjection;
         _buildExplainProjection = buildExplainProjection;
 
-        Title = "Chummer Desktop Home";
+        Title = DesktopLocalizationCatalog.GetRequiredString("desktop.home.title", _preferences.Language);
         Width = 860;
         Height = 640;
         MinWidth = 720;
@@ -246,21 +244,25 @@ internal sealed class DesktopHomeWindow : Window
     }
 
     private static DesktopPreferenceState ReadPreferences()
-    {
-        string cultureCode = CultureInfo.CurrentUICulture.Name.Replace('_', '-').ToLowerInvariant();
-        return DesktopPreferenceState.Default with
+        => DesktopPreferenceState.Default with
         {
-            Language = DesktopLocalizationCatalog.NormalizeOrDefault(cultureCode)
+            Language = DesktopLocalizationCatalog.GetCurrentLanguage()
         };
-    }
 
     private static async Task<IReadOnlyList<WorkspaceListItem>> ReadWorkspacesAsync(IChummerClient client)
     {
-        IReadOnlyList<WorkspaceListItem> workspaces = await client.ListWorkspacesAsync(CancellationToken.None).ConfigureAwait(false);
-        return workspaces
-            .OrderByDescending(workspace => workspace.LastUpdatedUtc)
-            .Take(5)
-            .ToArray();
+        try
+        {
+            IReadOnlyList<WorkspaceListItem> workspaces = await client.ListWorkspacesAsync(CancellationToken.None).ConfigureAwait(false);
+            return workspaces
+                .OrderByDescending(workspace => workspace.LastUpdatedUtc)
+                .Take(5)
+                .ToArray();
+        }
+        catch
+        {
+            return Array.Empty<WorkspaceListItem>();
+        }
     }
 
     private static async Task<DesktopHomeBuildExplainProjection> ReadBuildExplainProjectionAsync(

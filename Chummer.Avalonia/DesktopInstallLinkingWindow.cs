@@ -4,7 +4,6 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
-using System.Globalization;
 
 namespace Chummer.Avalonia;
 
@@ -22,7 +21,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         ArgumentNullException.ThrowIfNull(context);
 
         _state = context.State;
-        _language = DesktopLocalizationCatalog.NormalizeOrDefault(CultureInfo.CurrentUICulture.Name.Replace('_', '-').ToLowerInvariant());
+        _language = DesktopLocalizationCatalog.GetCurrentLanguage();
         Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language);
         Width = 760;
         Height = 520;

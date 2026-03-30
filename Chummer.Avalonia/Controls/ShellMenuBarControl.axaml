@@ -3,17 +3,18 @@
              x:Class="Chummer.Avalonia.Controls.ShellMenuBarControl">
   <Grid ColumnDefinitions="Auto,*">
     <StackPanel x:Name="MenuBarPanel" Grid.Column="0" Orientation="Horizontal" Spacing="6">
-      <Button Classes="menu-button" Content="File" Click="MenuButton_OnClick" />
-      <Button Classes="menu-button" Content="Edit" Click="MenuButton_OnClick" />
-      <Button Classes="menu-button" Content="Special" Click="MenuButton_OnClick" />
-      <Button Classes="menu-button" Content="Tools" Click="MenuButton_OnClick" />
-      <Button Classes="menu-button" Content="Windows" Click="MenuButton_OnClick" />
-      <Button Classes="menu-button" Content="Help" Click="MenuButton_OnClick" />
+      <Button x:Name="FileMenuButton" Classes="menu-button" Tag="file" Content="File" Click="MenuButton_OnClick" />
+      <Button x:Name="EditMenuButton" Classes="menu-button" Tag="edit" Content="Edit" Click="MenuButton_OnClick" />
+      <Button x:Name="SpecialMenuButton" Classes="menu-button" Tag="special" Content="Special" Click="MenuButton_OnClick" />
+      <Button x:Name="ToolsMenuButton" Classes="menu-button" Tag="tools" Content="Tools" Click="MenuButton_OnClick" />
+      <Button x:Name="WindowsMenuButton" Classes="menu-button" Tag="windows" Content="Windows" Click="MenuButton_OnClick" />
+      <Button x:Name="HelpMenuButton" Classes="menu-button" Tag="help" Content="Help" Click="MenuButton_OnClick" />
     </StackPanel>
-    <TextBlock Grid.Column="1"
+    <TextBlock x:Name="BannerText"
+               Grid.Column="1"
                HorizontalAlignment="Right"
                VerticalAlignment="Center"
                FontWeight="SemiBold"
-               Text="Chummer Desktop Shell (Avalonia Head)" />
+               Text="Chummer desktop" />
   </Grid>
 </UserControl>

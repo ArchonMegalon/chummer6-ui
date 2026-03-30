@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
 
 namespace Chummer.Avalonia.Controls;
@@ -11,6 +12,7 @@ public partial class StatusStripControl : UserControl
     public StatusStripControl()
     {
         InitializeComponent();
+        ApplyLocalization();
     }
 
     public void SetState(StatusStripState state)
@@ -45,6 +47,21 @@ public partial class StatusStripControl : UserControl
     {
         ServiceStateText.Text = serviceState;
         TimeStateText.Text = timeState;
+    }
+
+    private void ApplyLocalization()
+    {
+        string language = DesktopLocalizationCatalog.GetCurrentLanguage();
+        CharacterStateText.Text = DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.status.character",
+            language,
+            DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language));
+        ServiceStateText.Text = DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.status.service",
+            language,
+            DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.online", language));
+        TimeStateText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.status.time_placeholder", language);
+        ComplianceStateText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.status.compliance_placeholder", language);
     }
 }
 

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Chummer.Presentation.Overview;
 
 public sealed record DesktopSupportedLanguage(
@@ -9,6 +11,56 @@ public static class DesktopLocalizationCatalog
     public const string DefaultLanguage = "en-us";
     private static readonly IReadOnlyDictionary<string, string> DefaultTrustSurfaceStrings = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["desktop.shell.window_title"] = "Chummer Desktop",
+        ["desktop.shell.banner"] = "Chummer desktop",
+        ["desktop.shell.menu.file"] = "File",
+        ["desktop.shell.menu.edit"] = "Edit",
+        ["desktop.shell.menu.special"] = "Special",
+        ["desktop.shell.menu.tools"] = "Tools",
+        ["desktop.shell.menu.windows"] = "Windows",
+        ["desktop.shell.menu.help"] = "Help",
+        ["desktop.shell.tool.desktop_home"] = "Desktop Home",
+        ["desktop.shell.tool.link_copy"] = "Link This Copy",
+        ["desktop.shell.tool.open_support"] = "Open Support",
+        ["desktop.shell.tool.import_character_file"] = "Import Character File",
+        ["desktop.shell.tool.import_raw_xml"] = "Import Raw XML",
+        ["desktop.shell.tool.save_workspace"] = "Save Workspace",
+        ["desktop.shell.tool.close_active_workspace"] = "Close Active Workspace",
+        ["desktop.shell.tool.status_idle"] = "State: idle",
+        ["desktop.shell.state.value.ready"] = "ready",
+        ["desktop.shell.state.value.busy"] = "busy",
+        ["desktop.shell.state.value.saved"] = "saved",
+        ["desktop.shell.state.value.unsaved"] = "unsaved",
+        ["desktop.shell.state.value.loaded"] = "loaded",
+        ["desktop.shell.state.value.online"] = "online",
+        ["desktop.shell.state.value.error"] = "error",
+        ["desktop.shell.value.none"] = "none",
+        ["desktop.shell.value.na"] = "n/a",
+        ["desktop.shell.state.snapshot"] = "State: {0}, workspace={1}, open={2}, saved={3}, last-command={4}",
+        ["desktop.shell.state.error"] = "State: error - {0}",
+        ["desktop.shell.workspace_strip.summary"] = "Workspace: {0} (open: {1}, {2})",
+        ["desktop.shell.workspace_strip.empty"] = "Workspace: none",
+        ["desktop.shell.summary.name"] = "Name",
+        ["desktop.shell.summary.alias"] = "Alias",
+        ["desktop.shell.summary.karma"] = "Karma",
+        ["desktop.shell.summary.skills"] = "Skills",
+        ["desktop.shell.summary.runtime"] = "Runtime",
+        ["desktop.shell.summary.inspect_runtime"] = "Inspect Runtime",
+        ["desktop.shell.summary.empty_value"] = "-",
+        ["desktop.shell.status.character"] = "Character: {0}",
+        ["desktop.shell.status.service"] = "Service: {0}",
+        ["desktop.shell.status.time"] = "Time: {0}",
+        ["desktop.shell.status.time_placeholder"] = "Time: -",
+        ["desktop.shell.status.compliance_placeholder"] = "Compliance: shared presenter path",
+        ["desktop.shell.feedback.import_raw_required"] = "State: provide debug XML content before importing.",
+        ["desktop.shell.feedback.import_file_unavailable"] = "State: file picker unavailable on this platform.",
+        ["desktop.shell.feedback.no_active_workspace"] = "State: no active workspace to close.",
+        ["desktop.shell.feedback.desktop_home_reviewed"] = "State: desktop home reviewed.",
+        ["desktop.shell.feedback.install_linking_reviewed"] = "State: install linking reviewed.",
+        ["desktop.shell.feedback.install_support_opened"] = "State: opened install-aware support.",
+        ["desktop.shell.feedback.install_support_unavailable"] = "State: install-aware support is unavailable on this host.",
+        ["desktop.shell.feedback.operation_failed_state"] = "State: error - {0} failed: {1}",
+        ["desktop.shell.feedback.operation_failed_notice"] = "Notice: {0} failed.",
         ["desktop.home.title"] = "Desktop home cockpit",
         ["desktop.home.section.install_support"] = "Install and support",
         ["desktop.home.section.update_posture"] = "Update posture",
@@ -142,6 +194,9 @@ public static class DesktopLocalizationCatalog
 
     public static string BuildSupportedLanguageSummary()
         => string.Join(", ", ShippingLanguages.Select(language => language.Label));
+
+    public static string GetCurrentLanguage()
+        => NormalizeOrDefault(CultureInfo.CurrentUICulture.Name.Replace('_', '-').ToLowerInvariant());
 
     public static string GetRequiredString(string key, string? languageCode = null)
     {
