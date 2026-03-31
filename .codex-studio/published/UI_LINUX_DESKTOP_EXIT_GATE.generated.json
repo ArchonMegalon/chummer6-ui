@@ -1,11 +1,11 @@
 {
   "contract_name": "chummer6-ui.linux_desktop_exit_gate",
-  "generated_at": "2026-03-31T11:47:27Z",
+  "generated_at": "2026-03-31T14:36:03Z",
   "status": "passed",
   "reason": "linux desktop build, startup smoke, and unit tests passed",
   "stage": "complete",
   "exit_code": 0,
-  "run_root": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42",
+  "run_root": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425",
   "head": {
     "app_key": "avalonia",
     "project_path": "Chummer.Avalonia/Chummer.Avalonia.csproj",
@@ -18,11 +18,11 @@
   },
   "build": {
     "output_base_root": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate",
-    "publish_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/publish/avalonia-linux-x64",
-    "dist_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/dist",
-    "binary_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/publish/avalonia-linux-x64/Chummer.Avalonia",
+    "publish_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/publish/avalonia-linux-x64",
+    "dist_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/dist",
+    "binary_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/publish/avalonia-linux-x64/Chummer.Avalonia",
     "binary_exists": true,
-    "binary_sha256": "8ddafca9294b20ddbdd7098d6d70b91b20f11d06b25a4f47cfc51b24c603c3e1",
+    "binary_sha256": "45dabd9b110cc172cb16016bbb25266b247070c0951862ab9e59e1f0fbafba99",
     "binary_bytes": 99679808,
     "binary_executable": true,
     "publish_exists": true,
@@ -30,20 +30,20 @@
     "single_file": true,
     "primary_package_kind": "deb",
     "fallback_package_kind": "archive",
-    "archive_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/dist/chummer-avalonia-linux-x64.tar.gz",
+    "archive_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/dist/chummer-avalonia-linux-x64.tar.gz",
     "archive_exists": true,
-    "archive_sha256": "3158d0e5d060a9a4ab33d448bdbda8801f47ed88aa8966ac3d02e1d489cae3fd",
-    "archive_bytes": 42225820,
-    "installer_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/dist/chummer-avalonia-linux-x64-installer.deb",
+    "archive_sha256": "c661c3f7d9591789abfc7e24b32478c34a0d77ab92d68481404f32aac02ab698",
+    "archive_bytes": 42225859,
+    "installer_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/dist/chummer-avalonia-linux-x64-installer.deb",
     "installer_exists": true,
-    "installer_sha256": "3f93e910651e1ee1f0cfd068eab8328eee9e510b9799be7ec5fc2bd635fd9638",
-    "installer_bytes": 34290744
+    "installer_sha256": "39a2d5af6e675af8060095d1e32564612d4f6a3cfa58a091757e8d7e59a8a5a4",
+    "installer_bytes": 34290452
   },
   "startup_smoke": {
     "primary": {
       "package_kind": "deb",
-      "artifact_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/dist/chummer-avalonia-linux-x64-installer.deb",
-      "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+      "artifact_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/dist/chummer-avalonia-linux-x64-installer.deb",
+      "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
       "status": "passed",
       "receipt": {
         "headId": "avalonia",
@@ -53,22 +53,22 @@
         "arch": "x64",
         "readyCheckpoint": "pre_ui_event_loop",
         "hostClass": "local-linux-x64",
-        "processPath": "/tmp/chummer-linux-smoke.j3OSaF/opt/chummer6/avalonia-linux-x64/Chummer.Avalonia",
-        "artifactDigest": "sha256:3f93e910651e1ee1f0cfd068eab8328eee9e510b9799be7ec5fc2bd635fd9638",
+        "processPath": "/tmp/chummer-linux-smoke.5VVR7G/opt/chummer6/avalonia-linux-x64/Chummer.Avalonia",
+        "artifactDigest": "sha256:39a2d5af6e675af8060095d1e32564612d4f6a3cfa58a091757e8d7e59a8a5a4",
         "artifactDigestSource": "environment",
         "framework": ".NET 10.0.4",
         "operatingSystem": "Ubuntu 24.04.3 LTS",
-        "recordedAtUtc": "2026-03-31T11:47:26.7833375+00:00",
-        "startedAtUtc": "2026-03-31T11:47:26.7816013+00:00",
-        "completedAtUtc": "2026-03-31T11:47:26.7833499+00:00",
+        "recordedAtUtc": "2026-03-31T14:36:02.8242777+00:00",
+        "startedAtUtc": "2026-03-31T14:36:02.8226383+00:00",
+        "completedAtUtc": "2026-03-31T14:36:02.8242919+00:00",
         "artifactInstallMode": "dpkg_rootless_install",
-        "artifactInstallVerificationPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/startup-smoke-installer/install-verification-avalonia-linux-x64.json"
+        "artifactInstallVerificationPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/startup-smoke-installer/install-verification-avalonia-linux-x64.json"
       }
     },
     "fallback": {
       "package_kind": "archive",
-      "artifact_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/dist/chummer-avalonia-linux-x64.tar.gz",
-      "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/startup-smoke-archive/startup-smoke-avalonia-linux-x64.receipt.json",
+      "artifact_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/dist/chummer-avalonia-linux-x64.tar.gz",
+      "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/startup-smoke-archive/startup-smoke-avalonia-linux-x64.receipt.json",
       "status": "passed",
       "receipt": {
         "headId": "avalonia",
@@ -78,22 +78,22 @@
         "arch": "x64",
         "readyCheckpoint": "pre_ui_event_loop",
         "hostClass": "local-linux-x64",
-        "processPath": "/tmp/chummer-linux-smoke.2a45Rd/Chummer.Avalonia",
-        "artifactDigest": "sha256:3158d0e5d060a9a4ab33d448bdbda8801f47ed88aa8966ac3d02e1d489cae3fd",
+        "processPath": "/tmp/chummer-linux-smoke.1BuHvV/Chummer.Avalonia",
+        "artifactDigest": "sha256:c661c3f7d9591789abfc7e24b32478c34a0d77ab92d68481404f32aac02ab698",
         "artifactDigestSource": "environment",
         "framework": ".NET 10.0.4",
         "operatingSystem": "Ubuntu 24.04.3 LTS",
-        "recordedAtUtc": "2026-03-31T11:47:24.4456236+00:00",
-        "startedAtUtc": "2026-03-31T11:47:24.4422532+00:00",
-        "completedAtUtc": "2026-03-31T11:47:24.4456447+00:00"
+        "recordedAtUtc": "2026-03-31T14:35:59.7523315+00:00",
+        "startedAtUtc": "2026-03-31T14:35:59.7505034+00:00",
+        "completedAtUtc": "2026-03-31T14:35:59.7523431+00:00"
       }
     }
   },
   "unit_tests": {
     "project_path": "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
     "framework": "net10.0",
-    "results_directory": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/test-results",
-    "trx_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/test-results/desktop-runtime-tests.trx",
+    "results_directory": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/test-results",
+    "trx_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/test-results/desktop-runtime-tests.trx",
     "status": "passed",
     "summary": {
       "total": 14,
@@ -106,20 +106,20 @@
   "git": {
     "repo_root": "/docker/chummercomplete/chummer-presentation",
     "available": true,
-    "head": "a7f8aecd85ef605ca2c374fa43ce5fcc52fee28b",
+    "head": "d68c968ce6f189d808e1ccf09a8181d052d4ea6d",
     "tracked_diff_sha256": "09a434dc40aa4a1fcc3279c8f763374c7d3b3b7fd72e82bfeb2978dd45cfc2bf",
     "tracked_diff_line_count": 377,
     "start": {
       "repo_root": "/docker/chummercomplete/chummer-presentation",
       "available": true,
-      "head": "a7f8aecd85ef605ca2c374fa43ce5fcc52fee28b",
+      "head": "d68c968ce6f189d808e1ccf09a8181d052d4ea6d",
       "tracked_diff_sha256": "09a434dc40aa4a1fcc3279c8f763374c7d3b3b7fd72e82bfeb2978dd45cfc2bf",
       "tracked_diff_line_count": 377
     },
     "finish": {
       "repo_root": "/docker/chummercomplete/chummer-presentation",
       "available": true,
-      "head": "a7f8aecd85ef605ca2c374fa43ce5fcc52fee28b",
+      "head": "d68c968ce6f189d808e1ccf09a8181d052d4ea6d",
       "tracked_diff_sha256": "09a434dc40aa4a1fcc3279c8f763374c7d3b3b7fd72e82bfeb2978dd45cfc2bf",
       "tracked_diff_line_count": 377
     },
@@ -128,8 +128,8 @@
   "source_snapshot": {
     "mode": "filesystem_copy",
     "repo_root": "/docker/chummercomplete/chummer-presentation",
-    "snapshot_root": "/docker/chummercomplete/.linux-desktop-exit-gate-source.Sym7DX",
-    "entries_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/source-snapshot.entries.txt",
+    "snapshot_root": "/docker/chummercomplete/.linux-desktop-exit-gate-source.4fXaHH",
+    "entries_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.bfY425/source-snapshot.entries.txt",
     "entry_count": 377,
     "worktree_sha256": "09a434dc40aa4a1fcc3279c8f763374c7d3b3b7fd72e82bfeb2978dd45cfc2bf",
     "finish_worktree_sha256": "09a434dc40aa4a1fcc3279c8f763374c7d3b3b7fd72e82bfeb2978dd45cfc2bf",
