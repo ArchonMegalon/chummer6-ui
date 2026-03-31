@@ -1,0 +1,11 @@
+{
+  "mode": "filesystem_copy",
+  "repo_root": "/docker/chummercomplete/chummer-presentation",
+  "snapshot_root": "/docker/chummercomplete/.linux-desktop-exit-gate-source.Sym7DX",
+  "entries_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.SEPI42/source-snapshot.entries.txt",
+  "entry_count": 377,
+  "worktree_sha256": "09a434dc40aa4a1fcc3279c8f763374c7d3b3b7fd72e82bfeb2978dd45cfc2bf",
+  "finish_worktree_sha256": "09a434dc40aa4a1fcc3279c8f763374c7d3b3b7fd72e82bfeb2978dd45cfc2bf",
+  "finish_entry_count": 377,
+  "identity_stable": true
+}
