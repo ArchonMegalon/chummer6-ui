@@ -303,7 +303,7 @@ public sealed class CampaignSpineShowcaseComponentTests
             Assert.IsNotNull(cut.Find("[data-build-lab-handoff-rail]"));
             StringAssert.Contains(cut.Markup, "Social Operator build path");
             StringAssert.Contains(cut.Markup, "Rules Navigator");
-            StringAssert.Contains(cut.Markup, "creator packet");
+            StringAssert.Contains(cut.Markup, "campaign packet");
             StringAssert.Contains(cut.Markup, "Campaign-safe decision rail");
         });
     }
