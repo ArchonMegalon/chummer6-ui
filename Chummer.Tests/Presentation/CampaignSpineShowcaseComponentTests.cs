@@ -276,6 +276,13 @@ public sealed class CampaignSpineShowcaseComponentTests
             DiscoverySummary: "Preview-ready discovery posture",
             Visibility: "group",
             PublicationStatus: "preview_ready",
+            TrustBand: "review-pending",
+            Discoverable: false,
+            TrustSummary: "Trust ranking stays anchored to governed provenance and GM-ready reuse fit.",
+            ComparisonSummary: "Compare by provenance, lineage, trust ranking, and campaign-return posture instead of popularity fog.",
+            LineageSummary: "This run module remains the current lineage anchor until a governed successor replaces it.",
+            ModerationSummary: "Moderation stays pending until the run-module review clears.",
+            NextSafeAction: "Review the governed run module lane before widening discovery.",
             UpdatedAtUtc: DateTimeOffset.UtcNow);
 
         using var context = new BunitContext();
@@ -287,6 +294,12 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "artifact-publication");
         StringAssert.Contains(cut.Markup, "Preview-ready discovery posture");
         StringAssert.Contains(cut.Markup, "Preview Ready");
+        StringAssert.Contains(cut.Markup, "Governance depth");
+        StringAssert.Contains(cut.Markup, "Trust posture");
+        StringAssert.Contains(cut.Markup, "Compare by");
+        StringAssert.Contains(cut.Markup, "Lineage");
+        StringAssert.Contains(cut.Markup, "Moderation");
+        StringAssert.Contains(cut.Markup, "Next safe action");
         Assert.IsFalse(cut.Markup.Contains("run_module", StringComparison.Ordinal));
         Assert.IsFalse(cut.Markup.Contains("preview_ready", StringComparison.Ordinal));
     }
@@ -308,6 +321,11 @@ public sealed class CampaignSpineShowcaseComponentTests
             StringAssert.Contains(cut.Markup, "Rules Navigator");
             StringAssert.Contains(cut.Markup, "Downtown Burn run module packet");
             StringAssert.Contains(cut.Markup, "Run Module");
+            StringAssert.Contains(cut.Markup, "Governance depth");
+            StringAssert.Contains(cut.Markup, "Trust posture");
+            StringAssert.Contains(cut.Markup, "Compare by");
+            StringAssert.Contains(cut.Markup, "Lineage");
+            StringAssert.Contains(cut.Markup, "Moderation");
             StringAssert.Contains(cut.Markup, "Campaign-safe decision rail");
         });
     }
