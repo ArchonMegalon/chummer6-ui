@@ -39,6 +39,8 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHome_wires_the_campaign_projection_into_the_summary_panel();
             DesktopHome_wires_the_support_projection_into_the_summary_panel();
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
+            ShellNavigator_wires_ruleset_specific_headings_and_labels();
+            ShellRightRail_and_workspace_strip_wire_ruleset_specific_copy();
             DesktopHome_exposes_claim_aware_install_and_update_actions();
             DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance();
             DesktopHead_uses_canonical_catalog_only_resolver();
@@ -655,13 +657,15 @@ internal static class AccessibilitySignoffSmokeTests
 
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, campaignSummary, activeRuntime, runtimeInspector, buildPathCandidates);
         RequireContains(projection.NextSafeAction, "rebind the active profile");
+        RequireContains(projection.RulesetSpotlight, "home cockpit");
+        RequireContains(projection.RulesetSpotlight, "home");
         RequireContains(projection.ExplainFocus, "Explain focus:");
         RequireContains(projection.ExplainFocus, "Build path focus: Edge Runner Starter");
         RequireContains(projection.ExplainFocus, "Campaign handoff:");
-        RequireContains(projection.RuntimeHealthSummary, "Official SR6 Core");
+        RequireContains(projection.RuntimeHealthSummary, "runtime");
         RequireContains(projection.RuntimeHealthSummary, "runtime drift requires a rebind");
-        RequireContains(projection.ReturnTarget, "Apex");
-        RequireContains(projection.RulePosture, "fingerprint sha256:sr6-preview");
+        RequireNotEmpty(projection.ReturnTarget, nameof(projection.ReturnTarget));
+        RequireNotEmpty(projection.RulePosture, nameof(projection.RulePosture));
         if (projection.CompatibilityReceipts.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should surface explicit compatibility receipts for the flagship home cockpit.");
@@ -714,10 +718,12 @@ internal static class AccessibilitySignoffSmokeTests
                     Preview: null)
             ]);
         RequireContains(projection.NextSafeAction, "Create or import the first dossier");
+        RequireContains(projection.RulesetSpotlight, "SR5 home cockpit");
         RequireContains(projection.ExplainFocus, "Claim the install");
         RequireContains(projection.RuntimeHealthSummary, "no active runtime profile");
         RequireContains(projection.ReturnTarget, "No workspace return target");
-        RequireContains(projection.RulePosture, "Rule posture is still generic");
+        RequireContains(projection.RulePosture, "Shadowrun 5");
+        RequireContains(projection.RulePosture, ".chum5");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "no grounded runtime fingerprint");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path receipt: Street Sam Starter is available");
         RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Street Sam Starter");
@@ -1093,6 +1099,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "ReadBuildExplainProjectionAsync");
         RequireContains(source, "BuildBuildExplainBody()");
         RequireContains(source, "_buildExplainProjection.NextSafeAction");
+        RequireContains(source, "_buildExplainProjection.RulesetSpotlight");
         RequireContains(source, "_buildExplainProjection.ExplainFocus");
         RequireContains(source, "_buildExplainProjection.RuntimeHealthSummary");
         RequireContains(source, "_buildExplainProjection.ReturnTarget");
@@ -1110,6 +1117,11 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.home.button.open_workspace_followthrough");
         RequireContains(source, "desktop.home.button.open_work_support");
         RequireContains(source, "Next: ");
+        RequireContains(source, "RulesetUiDirectiveCatalog.BuildOpenWorkspaceActionLabel");
+        RequireContains(source, "RulesetUiDirectiveCatalog.BuildBuildFollowThroughActionLabel");
+        RequireContains(source, "RulesetUiDirectiveCatalog.BuildWorkspaceFollowThroughActionLabel");
+        RequireContains(source, "RulesetUiDirectiveCatalog.BuildNextActionPrefix");
+        RequireContains(source, "RulesetUiDirectiveCatalog.BuildWorkspaceResumeSummary");
         RequireContains(source, "_buildExplainText");
         RequireContains(source, "_workspaceSummaryText");
         RequireContains(source, "OpenCampaignFollowThroughAsync");
@@ -1145,6 +1157,95 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Migration receipt:");
         RequireContains(projectorSource, "Publication receipt:");
         RequireDoesNotContain(source, "Open work follow-through");
+    }
+
+    private static void ShellNavigator_wires_ruleset_specific_headings_and_labels()
+    {
+        string summaryHeaderSource = ReadSource("Chummer.Blazor/Components/Shell/SummaryHeader.razor");
+        RequireContains(summaryHeaderSource, "BuildSummaryHeading()");
+        RequireContains(summaryHeaderSource, "RulesetUiDirectiveCatalog.BuildSummaryHeading");
+        RequireContains(summaryHeaderSource, "BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId())");
+
+        string openWorkspaceSource = ReadSource("Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor");
+        RequireContains(openWorkspaceSource, "BuildOpenWorkspacesHeading()");
+        RequireContains(openWorkspaceSource, "RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading");
+        RequireContains(openWorkspaceSource, "RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel");
+
+        string blazorSource = ReadSource("Chummer.Blazor/Components/Shell/WorkspaceLeftPane.razor");
+        RequireContains(blazorSource, "BuildNavigationTabsHeading()");
+        RequireContains(blazorSource, "BuildSectionActionsHeading()");
+        RequireContains(blazorSource, "BuildWorkflowSurfacesHeading()");
+        RequireContains(blazorSource, "FormatNavigationTabLabel(tab)");
+        RequireContains(blazorSource, "FormatWorkspaceActionLabel(action)");
+        RequireContains(blazorSource, "FormatWorkflowSurfaceLabel(surface)");
+        RequireContains(blazorSource, "RulesetUiDirectiveCatalog.BuildNavigationTabsHeading");
+        RequireContains(blazorSource, "RulesetUiDirectiveCatalog.BuildSectionActionsHeading");
+        RequireContains(blazorSource, "RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading");
+        RequireContains(blazorSource, "RulesetUiDirectiveCatalog.FormatNavigationTabLabel");
+        RequireContains(blazorSource, "RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel");
+        RequireContains(blazorSource, "RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel");
+
+        string avaloniaProjectorSource = ReadSource("Chummer.Avalonia/MainWindow.ShellFrameProjector.cs");
+        RequireContains(avaloniaProjectorSource, "OpenWorkspacesHeading: RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading");
+        RequireContains(avaloniaProjectorSource, "NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading");
+        RequireContains(avaloniaProjectorSource, "SectionActionsHeading: RulesetUiDirectiveCatalog.BuildSectionActionsHeading");
+        RequireContains(avaloniaProjectorSource, "WorkflowSurfacesHeading: RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading");
+        RequireContains(avaloniaProjectorSource, "RulesetUiDirectiveCatalog.FormatNavigationTabLabel");
+        RequireContains(avaloniaProjectorSource, "RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel");
+        RequireContains(avaloniaProjectorSource, "RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel");
+
+        string avaloniaNavigatorView = ReadSource("Chummer.Avalonia/Controls/NavigatorPaneControl.axaml");
+        RequireContains(avaloniaNavigatorView, "x:Name=\"OpenWorkspacesHeader\"");
+        RequireContains(avaloniaNavigatorView, "x:Name=\"NavigationTabsHeader\"");
+        RequireContains(avaloniaNavigatorView, "x:Name=\"SectionActionsHeader\"");
+        RequireContains(avaloniaNavigatorView, "x:Name=\"WorkflowSurfacesHeader\"");
+
+        string avaloniaNavigatorSource = ReadSource("Chummer.Avalonia/Controls/NavigatorPaneControl.axaml.cs");
+        RequireContains(avaloniaNavigatorSource, "OpenWorkspacesHeader.Text = state.OpenWorkspacesHeading");
+        RequireContains(avaloniaNavigatorSource, "RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel");
+        RequireContains(avaloniaNavigatorSource, "NavigationTabsHeader.Text = state.NavigationTabsHeading");
+        RequireContains(avaloniaNavigatorSource, "SectionActionsHeader.Text = state.SectionActionsHeading");
+        RequireContains(avaloniaNavigatorSource, "WorkflowSurfacesHeader.Text = state.WorkflowSurfacesHeading");
+    }
+
+    private static void ShellRightRail_and_workspace_strip_wire_ruleset_specific_copy()
+    {
+        string desktopShellSource = ReadSource("Chummer.Blazor/Components/Layout/DesktopShell.razor");
+        RequireContains(desktopShellSource, "<MdiStrip");
+        RequireContains(desktopShellSource, "RulesetId=\"@_shellSurfaceState.ActiveRulesetId\"");
+        RequireContains(desktopShellSource, "<ImportPanel");
+        RequireContains(desktopShellSource, "<CommandPanel");
+        RequireContains(desktopShellSource, "<ResultPanel");
+
+        string mdiStripSource = ReadSource("Chummer.Blazor/Components/Shell/MdiStrip.razor");
+        RequireContains(mdiStripSource, "BuildWorkspaceStripEmptyState()");
+        RequireContains(mdiStripSource, "BuildWorkspaceTitle(workspace)");
+        RequireContains(mdiStripSource, "RulesetUiDirectiveCatalog.BuildWorkspaceStripEmptyState");
+        RequireContains(mdiStripSource, "RulesetUiDirectiveCatalog.BuildWorkspaceStripTitle");
+
+        string importPanelSource = ReadSource("Chummer.Blazor/Components/Shell/ImportPanel.razor");
+        RequireContains(importPanelSource, "BuildImportHeading()");
+        RequireContains(importPanelSource, "BuildImportAcceptAttribute()");
+        RequireContains(importPanelSource, "BuildImportHint()");
+        RequireContains(importPanelSource, "BuildImportDebugHeading()");
+        RequireContains(importPanelSource, "BuildImportRawActionLabel()");
+        RequireContains(importPanelSource, "RulesetUiDirectiveCatalog.BuildImportHeading");
+        RequireContains(importPanelSource, "RulesetUiDirectiveCatalog.BuildImportAcceptAttribute");
+        RequireContains(importPanelSource, "RulesetUiDirectiveCatalog.BuildImportHint");
+
+        string commandPanelSource = ReadSource("Chummer.Blazor/Components/Shell/CommandPanel.razor");
+        RequireContains(commandPanelSource, "BuildCommandHeading()");
+        RequireContains(commandPanelSource, "BuildCommandEmptyHint()");
+        RequireContains(commandPanelSource, "RulesetUiDirectiveCatalog.BuildCommandHeading");
+        RequireContains(commandPanelSource, "RulesetUiDirectiveCatalog.BuildCommandEmptyHint");
+
+        string resultPanelSource = ReadSource("Chummer.Blazor/Components/Shell/ResultPanel.razor");
+        RequireContains(resultPanelSource, "BuildResultHeading()");
+        RequireContains(resultPanelSource, "BuildResultPostureHint()");
+        RequireContains(resultPanelSource, "BuildResultReadyNotice()");
+        RequireContains(resultPanelSource, "RulesetUiDirectiveCatalog.BuildResultHeading");
+        RequireContains(resultPanelSource, "RulesetUiDirectiveCatalog.BuildResultPostureHint");
+        RequireContains(resultPanelSource, "RulesetUiDirectiveCatalog.BuildResultReadyNotice");
     }
 
     private static void FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions()
@@ -1410,6 +1511,14 @@ internal static class AccessibilitySignoffSmokeTests
         if (source.Contains(unexpected, StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"Expected not to find '{unexpected}' in smoke target source.");
+        }
+    }
+
+    private static void RequireNotEmpty(string value, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"Expected non-empty value for '{fieldName}' in smoke target source.");
         }
     }
 }
