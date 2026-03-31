@@ -7,15 +7,15 @@
             <p class="note">@Publication.Summary</p>
         </div>
         <div class="button-row compact">
-            <span>@Publication.Visibility</span>
-            <span>@Publication.PublicationStatus</span>
+            <span>@HumanizeValue(Publication.Visibility, "Shared")</span>
+            <span>@HumanizeValue(Publication.PublicationStatus, "Preview Ready")</span>
         </div>
     </header>
 
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Trusted publication posture</h3>
-            <span class="badge">@Publication.Kind</span>
+            <span class="badge">@HumanizePublicationKind(Publication.Kind)</span>
         </div>
         <dl class="facts compact">
             <div><dt>Artifact</dt><dd>@Publication.ArtifactId</dd></div>
@@ -44,4 +44,13 @@
         TrustBand: "review-pending",
         Discoverable: false,
         UpdatedAtUtc: DateTimeOffset.UtcNow);
+
+    private static string HumanizePublicationKind(string? value)
+        => HumanizeValue(value, "Publication");
+
+    private static string HumanizeValue(string? value, string fallback)
+        => string.IsNullOrWhiteSpace(value)
+            ? fallback
+            : System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(
+                value.Replace('_', ' ').Replace('-', ' '));
 }
