@@ -301,7 +301,7 @@ internal static class AccessibilitySignoffSmokeTests
             TrustBand: "review-pending",
             Discoverable: false,
             UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T12:08:00+00:00"),
-            NextSafeAction: "Review creator publication status before you widen the audience beyond the guided recap lane.",
+            NextSafeAction: "Review publication status before you widen the audience beyond the guided recap lane.",
             LineageSummary: "Dockside recap stays chained to the same governed publication lineage without a shadow export.");
         WorkspaceRestoreProjection restore = new(
             RestoreId: "restore-1",
