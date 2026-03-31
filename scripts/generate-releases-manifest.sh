@@ -14,6 +14,8 @@ RELEASE_CHANNEL="${RELEASE_CHANNEL:-docker}"
 RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 CANONICAL_MANIFEST_PATH="${CANONICAL_MANIFEST_PATH:-$(dirname "$MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PORTAL_CANONICAL_MANIFEST_PATH="${PORTAL_CANONICAL_MANIFEST_PATH:-$(dirname "$PORTAL_MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
+SOURCE_MANIFEST_PATH="${SOURCE_MANIFEST_PATH:-}"
+RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
 
 if [[ ! -f "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" ]]; then
   echo "Missing registry materializer: $REGISTRY_ROOT/scripts/materialize_public_release_channel.py" >&2
@@ -24,13 +26,24 @@ mkdir -p "$(dirname "$MANIFEST_PATH")"
 mkdir -p "$(dirname "$PORTAL_MANIFEST_PATH")"
 mkdir -p "$DOWNLOADS_DIR"
 
-python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" \
-  --downloads-dir "$DOWNLOADS_DIR" \
-  --channel "$RELEASE_CHANNEL" \
-  --version "$RELEASE_VERSION" \
-  --published-at "$RELEASE_PUBLISHED_AT" \
-  --output "$CANONICAL_MANIFEST_PATH" \
-  --compat-output "$MANIFEST_PATH" >/dev/null
+materialize_args=(
+  --downloads-dir "$DOWNLOADS_DIR"
+  --channel "$RELEASE_CHANNEL"
+  --version "$RELEASE_VERSION"
+  --published-at "$RELEASE_PUBLISHED_AT"
+  --output "$CANONICAL_MANIFEST_PATH"
+  --compat-output "$MANIFEST_PATH"
+)
+
+if [[ -n "$SOURCE_MANIFEST_PATH" && -f "$SOURCE_MANIFEST_PATH" ]]; then
+  materialize_args+=(--manifest "$SOURCE_MANIFEST_PATH")
+fi
+
+if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
+  materialize_args+=(--proof "$RELEASE_PROOF_PATH")
+fi
+
+python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" "${materialize_args[@]}" >/dev/null
 
 resolved_manifest_path="$(realpath "$MANIFEST_PATH")"
 resolved_portal_manifest_path="$(realpath -m "$PORTAL_MANIFEST_PATH")"
