@@ -266,9 +266,9 @@ public sealed class CampaignSpineShowcaseComponentTests
     {
         CreatorPublicationProjection publication = new(
             PublicationId: "publication-1",
-            Title: "Creator packet",
-            Kind: "campaign_packet",
-            Summary: "Creator outputs share one governed shelf.",
+            Title: "Downtown Burn run module packet",
+            Kind: "run_module",
+            Summary: "Run-module-safe outputs share one governed shelf.",
             CampaignId: "campaign-1",
             DossierId: "dossier-1",
             ArtifactId: "artifact-publication",
@@ -282,10 +282,13 @@ public sealed class CampaignSpineShowcaseComponentTests
         IRenderedComponent<CreatorPublicationPanel> cut = context.Render<CreatorPublicationPanel>(parameters => parameters
             .Add(component => component.Publication, publication));
 
-        StringAssert.Contains(cut.Markup, "Creator packet");
+        StringAssert.Contains(cut.Markup, "Downtown Burn run module packet");
+        StringAssert.Contains(cut.Markup, "Run Module");
         StringAssert.Contains(cut.Markup, "artifact-publication");
         StringAssert.Contains(cut.Markup, "Preview-ready discovery posture");
-        StringAssert.Contains(cut.Markup, "preview_ready");
+        StringAssert.Contains(cut.Markup, "Preview Ready");
+        Assert.IsFalse(cut.Markup.Contains("run_module", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("preview_ready", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -298,12 +301,13 @@ public sealed class CampaignSpineShowcaseComponentTests
         {
             Assert.IsNotNull(cut.Find("[data-build-lab-handoff-showcase='handoff.showcase.social-operator']"));
             Assert.IsNotNull(cut.Find("[data-rules-navigator-showcase='rules.navigator.showcase']"));
-            Assert.IsNotNull(cut.Find("[data-creator-publication-showcase='publication.showcase.creator-packet']"));
+            Assert.IsNotNull(cut.Find("[data-creator-publication-showcase='publication.showcase.run-module']"));
             Assert.IsNotNull(cut.Find("[data-build-lab-decision-rail]"));
             Assert.IsNotNull(cut.Find("[data-build-lab-handoff-rail]"));
             StringAssert.Contains(cut.Markup, "Social Operator build path");
             StringAssert.Contains(cut.Markup, "Rules Navigator");
-            StringAssert.Contains(cut.Markup, "campaign packet");
+            StringAssert.Contains(cut.Markup, "Downtown Burn run module packet");
+            StringAssert.Contains(cut.Markup, "Run Module");
             StringAssert.Contains(cut.Markup, "Campaign-safe decision rail");
         });
     }
