@@ -30,6 +30,52 @@ esac
 
 mkdir -p "$DIST_DIR"
 
+resolve_demo_character_source() {
+  local configured="${CHUMMER_RELEASE_SAMPLE_SOURCE:-}"
+  local fixture_root="${CHUMMER_LEGACY_FIXTURE_ROOT:-}"
+  local candidates=()
+
+  if [[ -n "$configured" ]]; then
+    candidates+=("$configured")
+  fi
+  if [[ -n "$fixture_root" ]]; then
+    candidates+=("$fixture_root/Soma (Career).chum5")
+  fi
+
+  candidates+=(
+    "$REPO_ROOT/../../chummer5a/Chummer.Tests/TestFiles/Soma (Career).chum5"
+    "/docker/chummer5a/Chummer.Tests/TestFiles/Soma (Career).chum5"
+  )
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [[ -f "$candidate" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+bundle_demo_character_fixture() {
+  local source_path
+  if ! source_path="$(resolve_demo_character_source)"; then
+    echo "warning: bundled demo character fixture not found; release will not include the legacy sample." >&2
+    return 0
+  fi
+
+  local samples_dir="$PUBLISH_DIR/Samples/Legacy"
+  mkdir -p "$samples_dir"
+  cp "$source_path" "$samples_dir/Soma-Career.chum5"
+  cat > "$samples_dir/README.txt" <<'EOF'
+Bundled legacy sample fixture:
+- source repo: chummer5a
+- source path: Chummer.Tests/TestFiles/Soma (Career).chum5
+- purpose: load a completed SR5 runner in the desktop shell after install
+EOF
+}
+
 build_payload_zip() {
   local target="$1"
   python3 - "$PUBLISH_DIR" "$target" <<'PY'
@@ -272,6 +318,8 @@ build_windows_installer() {
     -p:PublishTrimmed=false \
     -p:EnableCompressionInSingleFile=true \
     -p:IncludeNativeLibrariesForSelfExtract=true \
+    -p:IncludeAllContentForSelfExtract=true \
+    -p:ChummerInstallerEmbedPayload=true \
     -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
     -p:InstallerPayloadZip="$payload_zip" \
     -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
@@ -366,14 +414,17 @@ EOF
 
 case "$RID" in
   win-*)
+    bundle_demo_character_fixture
     build_portable_artifacts
     build_windows_installer
     ;;
   linux-*)
+    bundle_demo_character_fixture
     build_portable_artifacts
     build_linux_installer
     ;;
   osx-*)
+    bundle_demo_character_fixture
     build_portable_artifacts
     build_macos_installer
     ;;

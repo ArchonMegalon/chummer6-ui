@@ -28,7 +28,7 @@
     <EmbeddedResource Include="$(InstallerPayloadZip)" LogicalName="$(ChummerInstallerPayloadResourceName)" />
   </ItemGroup>
 
-  <ItemGroup Condition="Exists('$(InstallerPayloadZip)')">
+  <ItemGroup Condition="Exists('$(InstallerPayloadZip)') and '$(ChummerInstallerEmbedPayload)' != 'true'">
     <Content Include="$(InstallerPayloadZip)">
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
       <ExcludeFromSingleFile>false</ExcludeFromSingleFile>

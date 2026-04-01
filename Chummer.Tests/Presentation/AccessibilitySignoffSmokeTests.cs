@@ -41,6 +41,7 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
             ShellNavigator_wires_ruleset_specific_headings_and_labels();
             ShellRightRail_and_workspace_strip_wire_ruleset_specific_copy();
+            DesktopShell_ruleset_matrix_coverage_is_published_and_executable();
             DesktopHome_exposes_claim_aware_install_and_update_actions();
             DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance();
             DesktopHead_uses_canonical_catalog_only_resolver();
@@ -1246,6 +1247,21 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(resultPanelSource, "RulesetUiDirectiveCatalog.BuildResultHeading");
         RequireContains(resultPanelSource, "RulesetUiDirectiveCatalog.BuildResultPostureHint");
         RequireContains(resultPanelSource, "RulesetUiDirectiveCatalog.BuildResultReadyNotice");
+    }
+
+    private static void DesktopShell_ruleset_matrix_coverage_is_published_and_executable()
+    {
+        string rulesetTestSource = ReadSource("Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs");
+        RequireContains(rulesetTestSource, "DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane");
+        RequireContains(rulesetTestSource, "DataRow(RulesetDefaults.Sr4");
+        RequireContains(rulesetTestSource, "DataRow(RulesetDefaults.Sr5");
+        RequireContains(rulesetTestSource, "DataRow(RulesetDefaults.Sr6");
+        RequireContains(rulesetTestSource, "RegisterDesktopShellServices");
+        RequireContains(rulesetTestSource, "CatalogOnlyRulesetPlugin");
+
+        string worklistSource = ReadSource("WORKLIST.md");
+        RequireContains(worklistSource, "| WL-215 | done |");
+        RequireContains(worklistSource, "ruleset-ui-adaptation-check.sh");
     }
 
     private static void FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions()

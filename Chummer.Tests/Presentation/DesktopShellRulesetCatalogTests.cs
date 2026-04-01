@@ -15,6 +15,7 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
+using Chummer.Presentation.Shell.Routing;
 using Chummer.Rulesets.Sr5;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -24,6 +25,72 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public sealed class DesktopShellRulesetCatalogTests
 {
+    [DataTestMethod]
+    [DataRow(RulesetDefaults.Sr4, "Oracle intake desk", "Shadowrun 4 preview import cockpit", "Desktop Summary · SR4 Preview", "SR4 Preview Dossiers", "Import SR4 Oracle File", "SR4 Preview Result", "SR4 Preview Commands")]
+    [DataRow(RulesetDefaults.Sr5, "Flagship desktop workbench", "Shadowrun 5 flagship workbench", "Desktop Summary · SR5 Workbench", "SR5 Workbench Dossiers", "Import SR5 Workbench File", "SR5 Workbench Result", "SR5 Workbench Commands")]
+    [DataRow(RulesetDefaults.Sr6, "Starter and beta desk", "Shadowrun 6 guided starter cockpit", "Desktop Summary · SR6 Starter", "SR6 Starter Dossiers", "Import SR6 Starter File", "SR6 Starter Result", "SR6 Starter Commands")]
+    public void DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane(
+        string rulesetId,
+        string expectedEyebrow,
+        string expectedTitle,
+        string expectedSummary,
+        string expectedDossiers,
+        string expectedImportHeading,
+        string expectedResultHeading,
+        string expectedCommandHeading)
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        CharacterWorkspaceId workspaceId = new($"ws-{rulesetId}");
+        OpenWorkspaceState openWorkspace = new(
+            Id: workspaceId,
+            Name: $"{rulesetId.ToUpperInvariant()} Runner",
+            Alias: rulesetId.ToUpperInvariant(),
+            LastOpenedUtc: DateTimeOffset.UtcNow,
+            RulesetId: rulesetId);
+        CharacterOverviewState overviewState = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(workspaceId, [openWorkspace], [workspaceId]),
+            OpenWorkspaces = [openWorkspace],
+            WorkspaceId = workspaceId,
+            ActiveTabId = "tab-info",
+            IsBusy = false
+        };
+        ShellState shellState = CreateShellState(
+            workspaceId,
+            openWorkspace,
+            rulesetId,
+            runtimeTitle: $"{rulesetId.ToUpperInvariant()} Core",
+            runtimeFingerprint: $"{rulesetId}-runtime-fp-001");
+
+        RegisterDesktopShellServices(
+            context,
+            overviewState,
+            shellState,
+            FakeWorkbenchCoachApiClient.CreateDefault($"{rulesetId}-runtime-fp-001"),
+            new CatalogOnlyRulesetPlugin(rulesetId));
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, expectedEyebrow);
+            StringAssert.Contains(cut.Markup, expectedTitle);
+            StringAssert.Contains(cut.Markup, expectedSummary);
+            StringAssert.Contains(cut.Markup, expectedDossiers);
+            StringAssert.Contains(cut.Markup, expectedImportHeading);
+            StringAssert.Contains(cut.Markup, expectedResultHeading);
+            StringAssert.Contains(cut.Markup, expectedCommandHeading);
+            StringAssert.Contains(cut.Find("#complianceState").TextContent, $"Ruleset: {rulesetId} (");
+            StringAssert.Contains(cut.Find("#complianceState").TextContent, RulesetUiDirectiveCatalog.Resolve(rulesetId).FileExtension);
+            StringAssert.Contains(cut.Find("#complianceState").TextContent, "Workflows: 1 defs / 1 surfaces");
+            Assert.AreEqual(
+                ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellState.ActiveRuntime, rulesetId),
+                cut.Find("#summaryRuntime").GetAttribute("value"));
+        });
+    }
+
     [TestMethod]
     public void DesktopShell_uses_active_ruleset_plugin_catalogs_for_actions_and_workflow_surfaces()
     {
@@ -89,15 +156,12 @@ public sealed class DesktopShellRulesetCatalogTests
                 WarningCount: 0)
         };
 
-        context.Services.AddSingleton<ICharacterOverviewPresenter>(new StaticOverviewPresenter(overviewState));
-        context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
-        context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
-        context.Services.AddSingleton<IWorkbenchCoachApiClient>(FakeWorkbenchCoachApiClient.CreateDefault("sr6-runtime-fp-001"));
-        context.Services.AddSingleton<IRulesetPlugin, Sr5RulesetPlugin>();
-        context.Services.AddSingleton<IRulesetPlugin, Sr6CatalogPlugin>();
-        context.Services.AddSingleton<IRulesetPluginRegistry, RulesetPluginRegistry>();
-        context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
-        context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
+        RegisterDesktopShellServices(
+            context,
+            overviewState,
+            shellState,
+            FakeWorkbenchCoachApiClient.CreateDefault("sr6-runtime-fp-001"),
+            new Sr6CatalogPlugin());
 
         IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
 
@@ -111,10 +175,18 @@ public sealed class DesktopShellRulesetCatalogTests
             StringAssert.Contains(actionButtons[0].TextContent, "SR6 Matrix Action");
             Assert.AreEqual("workflow.surface.sr6", workflowButtons[0].GetAttribute("data-workflow-surface"));
             StringAssert.Contains(workflowButtons[0].TextContent, "SR6 Matrix Action");
-            StringAssert.Contains(cut.Find("#complianceState").TextContent, "Runtime: SR6 Core [sr6-runtime-fp-001]");
-            Assert.AreEqual("SR6 Core [sr6-runtime-fp-001] (available)", cut.Find("#summaryRuntime").GetAttribute("value"));
-            StringAssert.Contains(cut.Find("#complianceState").TextContent, "Ruleset: sr6");
+            StringAssert.Contains(cut.Find("#complianceState").TextContent, "Runtime: Shadowrun 6 · beta/edge-first · SR6 Core [sr6-runtime-fp-001]");
+            Assert.AreEqual("Shadowrun 6 · beta/edge-first · SR6 Core [sr6-runtime-fp-001] (available)", cut.Find("#summaryRuntime").GetAttribute("value"));
+            StringAssert.Contains(cut.Find("#complianceState").TextContent, "Ruleset: sr6 (beta/edge-first");
+            StringAssert.Contains(cut.Find("#complianceState").TextContent, ".chum6");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Workflows: 1 defs / 1 surfaces");
+            StringAssert.Contains(cut.Markup, "data-testid=\"desktop-flagship-marquee\"");
+            StringAssert.Contains(cut.Markup, "Starter and beta desk");
+            StringAssert.Contains(cut.Markup, "Shadowrun 6 guided starter cockpit");
+            StringAssert.Contains(cut.Markup, "SR6 home cockpit foregrounds starter kits");
+            StringAssert.Contains(cut.Markup, "Desktop Summary · SR6 Starter");
+            StringAssert.Contains(cut.Markup, "SR6 Starter Dossiers");
+            StringAssert.Contains(cut.Markup, "SR6 Starter Tabs");
         });
     }
 
@@ -210,17 +282,12 @@ public sealed class DesktopShellRulesetCatalogTests
         };
 
         FakeWorkbenchCoachApiClient coachClient = FakeWorkbenchCoachApiClient.CreateDefault("sr6-runtime-fp-001");
-        context.Services.AddSingleton<ICharacterOverviewPresenter>(new StaticOverviewPresenter(overviewState));
-        context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
-        context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
-        context.Services.AddSingleton<IWorkbenchCoachApiClient>(coachClient);
-        IRulesetPlugin sr5Plugin = new Sr5RulesetPlugin();
-        IRulesetPlugin sr6Plugin = new Sr6CatalogPlugin();
-        context.Services.AddSingleton<IRulesetPlugin>(sr5Plugin);
-        context.Services.AddSingleton<IRulesetPlugin>(sr6Plugin);
-        context.Services.AddSingleton<IRulesetPluginRegistry>(new RulesetPluginRegistry([sr5Plugin, sr6Plugin]));
-        context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
-        context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
+        RegisterDesktopShellServices(
+            context,
+            overviewState,
+            shellState,
+            coachClient,
+            new Sr6CatalogPlugin());
 
         IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
 
@@ -254,6 +321,77 @@ public sealed class DesktopShellRulesetCatalogTests
         Assert.AreEqual(AiRouteTypes.Coach, coachClient.LastAuditRouteType);
         Assert.AreEqual("sr6-runtime-fp-001", coachClient.LastRuntimeFingerprint);
         Assert.AreEqual(3, coachClient.LastMaxCount);
+    }
+
+    private static void RegisterDesktopShellServices(
+        BunitContext context,
+        CharacterOverviewState overviewState,
+        ShellState shellState,
+        IWorkbenchCoachApiClient coachClient,
+        IRulesetPlugin activeRulesetPlugin)
+    {
+        context.Services.AddSingleton<ICharacterOverviewPresenter>(new StaticOverviewPresenter(overviewState));
+        context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
+        context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
+        context.Services.AddSingleton(coachClient);
+        context.Services.AddSingleton<IWorkbenchCoachApiClient>(coachClient);
+        IRulesetPlugin sr5Plugin = new Sr5RulesetPlugin();
+        context.Services.AddSingleton<IRulesetPlugin>(sr5Plugin);
+        context.Services.AddSingleton<IRulesetPlugin>(activeRulesetPlugin);
+        context.Services.AddSingleton<IRulesetPluginRegistry>(new RulesetPluginRegistry([sr5Plugin, activeRulesetPlugin]));
+        context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
+        context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
+    }
+
+    private static ShellState CreateShellState(
+        CharacterWorkspaceId workspaceId,
+        OpenWorkspaceState openWorkspace,
+        string rulesetId,
+        string runtimeTitle,
+        string runtimeFingerprint)
+    {
+        AppCommandDefinition menuRoot = new("file", "menu.file", "menu", false, true, rulesetId);
+        NavigationTabDefinition infoTab = new("tab-info", "Info", "profile", "character", true, true, rulesetId);
+        WorkflowDefinition workflowDefinition = new(
+            WorkflowId: WorkflowDefinitionIds.CareerWorkbench,
+            Title: "Career Workbench",
+            SurfaceIds: [$"workflow.surface.{rulesetId}"],
+            RequiresOpenWorkspace: true);
+        WorkflowSurfaceDefinition workflowSurface = new(
+            SurfaceId: $"workflow.surface.{rulesetId}",
+            WorkflowId: WorkflowDefinitionIds.CareerWorkbench,
+            Kind: WorkflowSurfaceKinds.Workbench,
+            RegionId: ShellRegionIds.SectionPane,
+            LayoutToken: WorkflowLayoutTokens.CareerWorkbench,
+            ActionIds: [$"{rulesetId}.action.matrix"]);
+        ShellWorkspaceState shellWorkspace = new(
+            Id: workspaceId,
+            Name: openWorkspace.Name,
+            Alias: openWorkspace.Alias,
+            LastOpenedUtc: openWorkspace.LastOpenedUtc,
+            RulesetId: rulesetId);
+
+        return ShellState.Empty with
+        {
+            ActiveWorkspaceId = workspaceId,
+            OpenWorkspaces = [shellWorkspace],
+            ActiveRulesetId = rulesetId,
+            Commands = [menuRoot],
+            MenuRoots = [menuRoot],
+            NavigationTabs = [infoTab],
+            ActiveTabId = infoTab.Id,
+            WorkflowDefinitions = [workflowDefinition],
+            WorkflowSurfaces = [workflowSurface],
+            ActiveRuntime = new ActiveRuntimeStatusProjection(
+                ProfileId: $"official.{rulesetId}.core",
+                Title: runtimeTitle,
+                RulesetId: rulesetId,
+                RuntimeFingerprint: runtimeFingerprint,
+                InstallState: ArtifactInstallStates.Available,
+                RulePackCount: 1,
+                ProviderBindingCount: 1,
+                WarningCount: 0)
+        };
     }
 
     private sealed class StaticOverviewPresenter : ICharacterOverviewPresenter
@@ -388,6 +526,93 @@ public sealed class DesktopShellRulesetCatalogTests
     }
 
     private sealed class Sr6CapabilityDescriptorProvider : IRulesetCapabilityDescriptorProvider
+    {
+        public IReadOnlyList<RulesetCapabilityDescriptor> GetCapabilityDescriptors() => [];
+    }
+
+    private sealed class CatalogOnlyRulesetPlugin : IRulesetPlugin
+    {
+        public CatalogOnlyRulesetPlugin(string rulesetId)
+        {
+            string normalizedRulesetId = RulesetDefaults.NormalizeRequired(rulesetId);
+            Id = new RulesetId(normalizedRulesetId);
+            DisplayName = normalizedRulesetId.ToUpperInvariant() + " test plugin";
+            Serializer = new TestRulesetSerializer(normalizedRulesetId);
+            ShellDefinitions = new TestRulesetShellDefinitions(normalizedRulesetId);
+            Catalogs = new TestRulesetCatalogs(normalizedRulesetId);
+            CapabilityDescriptors = new TestRulesetCapabilityDescriptorProvider();
+            Capabilities = new TestRulesetCapabilityHost();
+            Rules = new RulesetRuleHostCapabilityAdapter(Capabilities);
+            Scripts = new RulesetScriptHostCapabilityAdapter(Capabilities);
+        }
+
+        public RulesetId Id { get; }
+        public string DisplayName { get; }
+        public IRulesetSerializer Serializer { get; }
+        public IRulesetShellDefinitionProvider ShellDefinitions { get; }
+        public IRulesetCatalogProvider Catalogs { get; }
+        public IRulesetCapabilityDescriptorProvider CapabilityDescriptors { get; }
+        public IRulesetCapabilityHost Capabilities { get; }
+        public IRulesetRuleHost Rules { get; }
+        public IRulesetScriptHost Scripts { get; }
+    }
+
+    private sealed class TestRulesetSerializer(string rulesetId) : IRulesetSerializer
+    {
+        public RulesetId RulesetId { get; } = new(rulesetId);
+        public int SchemaVersion => 1;
+
+        public WorkspacePayloadEnvelope Wrap(string payloadKind, string payload)
+            => new(rulesetId, SchemaVersion, payloadKind, payload);
+    }
+
+    private sealed class TestRulesetShellDefinitions(string rulesetId) : IRulesetShellDefinitionProvider
+    {
+        public IReadOnlyList<AppCommandDefinition> GetCommands() =>
+        [
+            new AppCommandDefinition("file", "menu.file", "menu", false, true, rulesetId)
+        ];
+
+        public IReadOnlyList<NavigationTabDefinition> GetNavigationTabs() =>
+        [
+            new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, rulesetId)
+        ];
+    }
+
+    private sealed class TestRulesetCatalogs(string rulesetId) : IRulesetCatalogProvider
+    {
+        public IReadOnlyList<WorkspaceSurfaceActionDefinition> GetWorkspaceActions() =>
+        [
+            new WorkspaceSurfaceActionDefinition(
+                Id: $"{rulesetId}.action.matrix",
+                Label: $"{rulesetId.ToUpperInvariant()} Matrix Action",
+                TabId: "tab-info",
+                Kind: WorkspaceSurfaceActionKind.Section,
+                TargetId: "profile",
+                RequiresOpenCharacter: true,
+                EnabledByDefault: true,
+                RulesetId: rulesetId)
+        ];
+    }
+
+    private sealed class TestRulesetCapabilityHost : IRulesetCapabilityHost
+    {
+        public ValueTask<RulesetCapabilityInvocationResult> InvokeAsync(RulesetCapabilityInvocationRequest request, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(new RulesetCapabilityInvocationResult(
+                true,
+                new RulesetCapabilityValue(
+                    RulesetCapabilityValueKinds.Object,
+                    Properties: request.Arguments.ToDictionary(
+                        static argument => argument.Name,
+                        static argument => argument.Value,
+                        StringComparer.Ordinal)),
+                []));
+        }
+    }
+
+    private sealed class TestRulesetCapabilityDescriptorProvider : IRulesetCapabilityDescriptorProvider
     {
         public IReadOnlyList<RulesetCapabilityDescriptor> GetCapabilityDescriptors() => [];
     }

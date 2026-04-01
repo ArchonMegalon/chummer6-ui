@@ -4,7 +4,7 @@
   <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
     <TextBlock Grid.Row="0" x:Name="NoticeText" Text="Notice: Ready." TextWrapping="Wrap" />
 
-    <Border Grid.Row="1" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
+    <Border Grid.Row="1" Padding="8" Background="{DynamicResource ChummerShellSurfaceAltBrush}" BorderThickness="1" BorderBrush="{DynamicResource ChummerShellCardBorderBrush}">
       <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,*" RowSpacing="6">
         <TextBlock Grid.Row="0" Text="Active Section Preview" FontWeight="Bold" />
         <Border Grid.Row="1"
@@ -12,7 +12,8 @@
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
-                BorderBrush="#CBD5E1">
+                Background="{DynamicResource ChummerShellSurfaceBrush}"
+                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
           <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
             <TextBlock x:Name="BuildLabSummaryText"
                        Text="Build Lab intake"
@@ -80,7 +81,8 @@
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
-                BorderBrush="#CBD5E1">
+                Background="{DynamicResource ChummerShellSurfaceBrush}"
+                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
           <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="6">
             <TextBlock x:Name="BrowseSummaryText"
                        Text="Browse workspace"
@@ -128,7 +130,8 @@
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
-                BorderBrush="#CBD5E1">
+                Background="{DynamicResource ChummerShellSurfaceBrush}"
+                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
           <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
             <TextBlock x:Name="ContactGraphSummaryText"
                        Text="Contact relationship graph"
@@ -163,7 +166,8 @@
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
-                BorderBrush="#CBD5E1">
+                Background="{DynamicResource ChummerShellSurfaceBrush}"
+                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
           <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
             <TextBlock x:Name="NpcPersonaSummaryText"
                        Text="NPC Persona Studio"
@@ -200,7 +204,8 @@
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
-                BorderBrush="#CBD5E1">
+                Background="{DynamicResource ChummerShellSurfaceBrush}"
+                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
           <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6">
             <TextBlock x:Name="DowntimePlannerSummaryText"
                        Text="Downtime planner"
@@ -242,7 +247,7 @@
       </Grid>
     </Border>
 
-    <Border Grid.Row="2" BorderThickness="1" BorderBrush="#CBD5E1" Padding="6">
+    <Border Grid.Row="2" Background="{DynamicResource ChummerShellSurfaceAltBrush}" BorderThickness="1" BorderBrush="{DynamicResource ChummerShellBorderBrush}" Padding="6">
       <StackPanel Spacing="4">
         <TextBlock Text="Raw XML Import (Developer Utility)" FontWeight="Bold" />
         <TextBox x:Name="XmlInputBox"

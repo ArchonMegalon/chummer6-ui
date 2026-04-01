@@ -35,6 +35,7 @@ declare -a GATES=(
   "B11-NPC|NPC Persona Studio backlog mapping|${CHECK_DIR}/b11-npc-persona-studio-check.sh"
   "B13|Post-B6 accessibility signoff|${CHECK_DIR}/b13-accessibility-signoff-check.sh"
   "UI-COVERAGE|UI milestone ETA/completion registry truth|${CHECK_DIR}/ui-milestone-coverage-check.sh"
+  "UI-RS|Ruleset-specific workbench adaptation|${CHECK_DIR}/ruleset-ui-adaptation-check.sh"
   "P5|Ui kit shell chrome boundary|${CHECK_DIR}/p5-ui-kit-shell-chrome-check.sh"
   "P5-TOKENS|Ui kit design token and theme backlog mapping|${CHECK_DIR}/p5-ui-kit-design-token-check.sh"
   "P5/B13|Ui kit accessibility and state primitives|${CHECK_DIR}/p5-ui-kit-accessibility-state-check.sh"

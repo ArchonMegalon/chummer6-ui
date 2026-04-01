@@ -1,23 +1,28 @@
+@using Chummer.Presentation.Rulesets
 @using Microsoft.AspNetCore.Components.Forms
 
 <section class="panel import">
-    <h2>Import Character File</h2>
+    <h2>@BuildImportHeading()</h2>
+    <p class="hint">@BuildImportHint()</p>
     <InputFile OnChange="ImportFileRequested"
-               accept=".chum5,.xml,text/xml,application/xml"
+               accept="@BuildImportAcceptAttribute()"
                disabled="@IsBusy" />
-    <p class="hint">File: @(ImportedFileName ?? "(none)")</p>
+    <p class="hint">File: @(ImportedFileName ?? BuildImportFilePlaceholder())</p>
     @if (!string.IsNullOrWhiteSpace(ImportError))
     {
         <p class="error">@ImportError</p>
     }
     <details>
-        <summary>Raw XML Debug Import</summary>
+        <summary>@BuildImportDebugHeading()</summary>
         <textarea value="@RawImportXml" rows="8" @oninput="OnRawImportXmlChanged"></textarea>
-        <button @onclick="ImportRawRequested" disabled="@IsBusy">Import Raw XML</button>
+        <button @onclick="ImportRawRequested" disabled="@IsBusy">@BuildImportRawActionLabel()</button>
     </details>
 </section>
 
 @code {
+    [Parameter]
+    public string? RulesetId { get; set; }
+
     [Parameter]
     public bool IsBusy { get; set; }
 
@@ -43,4 +48,22 @@
     {
         return RawImportXmlChanged.InvokeAsync(args.Value?.ToString() ?? string.Empty);
     }
+
+    private string BuildImportHeading()
+        => RulesetUiDirectiveCatalog.BuildImportHeading(RulesetId);
+
+    private string BuildImportAcceptAttribute()
+        => RulesetUiDirectiveCatalog.BuildImportAcceptAttribute(RulesetId);
+
+    private string BuildImportHint()
+        => RulesetUiDirectiveCatalog.BuildImportHint(RulesetId);
+
+    private string BuildImportFilePlaceholder()
+        => RulesetUiDirectiveCatalog.BuildImportFilePlaceholder(RulesetId);
+
+    private string BuildImportDebugHeading()
+        => RulesetUiDirectiveCatalog.BuildImportDebugHeading(RulesetId);
+
+    private string BuildImportRawActionLabel()
+        => RulesetUiDirectiveCatalog.BuildImportRawActionLabel(RulesetId);
 }

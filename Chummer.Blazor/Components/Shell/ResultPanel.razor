@@ -1,6 +1,9 @@
+@using Chummer.Presentation.Rulesets
+
 <section class="panel results">
-    <h2>Result</h2>
-    <p class="note">@(State.Notice ?? "Ready.")</p>
+    <h2>@BuildResultHeading()</h2>
+    <p class="hint">@BuildResultPostureHint()</p>
+    <p class="note">@(State.Notice ?? BuildResultReadyNotice())</p>
     @if (State.LatestPortabilityActivity is { } portability)
     {
         <p class="hint"><strong>@portability.Title:</strong> @portability.Receipt.ReceiptSummary</p>
@@ -22,5 +25,17 @@
 
 @code {
     [Parameter]
+    public string? RulesetId { get; set; }
+
+    [Parameter]
     public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
+
+    private string BuildResultHeading()
+        => RulesetUiDirectiveCatalog.BuildResultHeading(RulesetId);
+
+    private string BuildResultPostureHint()
+        => RulesetUiDirectiveCatalog.BuildResultPostureHint(RulesetId);
+
+    private string BuildResultReadyNotice()
+        => RulesetUiDirectiveCatalog.BuildResultReadyNotice(RulesetId);
 }

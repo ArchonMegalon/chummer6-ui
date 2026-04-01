@@ -10,6 +10,7 @@
       <Button x:Name="SupportButton" Content="Open Support" Width="130" Click="SupportButton_OnClick" />
       <Button x:Name="ReportIssueButton" Content="Report Issue" Width="130" Click="ReportIssueButton_OnClick" />
       <Button x:Name="SettingsButton" Content="Settings" Width="120" Click="SettingsButton_OnClick" />
+      <Button x:Name="LoadDemoRunnerButton" Content="Load Demo Runner" Width="150" Click="LoadDemoRunnerButton_OnClick" />
       <Button x:Name="ImportFileButton" Content="Import Character File" Width="170" Click="ImportFileButton_OnClick" />
       <Button x:Name="ImportRawButton" Content="Import Raw XML" Width="130" Click="ImportRawButton_OnClick" />
       <Button x:Name="SaveButton" Content="Save Workspace" Width="140" Click="SaveButton_OnClick" />

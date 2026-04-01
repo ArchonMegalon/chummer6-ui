@@ -1,5 +1,8 @@
+@using Chummer.Contracts.Rulesets
+@using Chummer.Presentation.Rulesets
+
 <section class="desktop-summary panel">
-    <h2>Desktop Summary Header</h2>
+    <h2>@BuildSummaryHeading()</h2>
     <div class="summary-grid">
         <label>Name <input id="summaryName" value="@(State.Profile?.Name ?? string.Empty)" readonly /></label>
         <label>Alias <input id="summaryAlias" value="@(State.Profile?.Alias ?? string.Empty)" readonly /></label>
@@ -31,9 +34,17 @@
     public EventCallback InspectRuntimeRequested { get; set; }
 
     private string RuntimeSummary =>
-        Chummer.Presentation.Shell.ShellStatusTextFormatter.BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime);
+        Chummer.Presentation.Shell.ShellStatusTextFormatter.BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId());
 
     private bool CanInspectRuntime => ShellSurface.ActiveRuntime is not null;
+
+    private string BuildSummaryHeading()
+        => RulesetUiDirectiveCatalog.BuildSummaryHeading(ResolveActiveRulesetId());
+
+    private string? ResolveActiveRulesetId()
+        => RulesetDefaults.NormalizeOptional(ShellSurface.ActiveRulesetId)
+            ?? RulesetDefaults.NormalizeOptional(ShellSurface.ActiveRuntime?.RulesetId)
+            ?? RulesetDefaults.NormalizeOptional(State.Rules?.GameEdition);
 
     private Task OpenRuntimeInspectorAsync()
     {

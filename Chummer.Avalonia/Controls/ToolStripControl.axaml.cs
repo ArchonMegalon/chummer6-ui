@@ -23,6 +23,7 @@ public partial class ToolStripControl : UserControl
     public event EventHandler? SupportRequested;
     public event EventHandler? ReportIssueRequested;
     public event EventHandler? SettingsRequested;
+    public event EventHandler? LoadDemoRunnerRequested;
 
     public void SetState(ToolStripState state)
     {
@@ -44,6 +45,7 @@ public partial class ToolStripControl : UserControl
         SupportButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language);
         ReportIssueButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.report_issue", language);
         SettingsButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language);
+        LoadDemoRunnerButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language);
         ImportFileButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language);
         ImportRawButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language);
         SaveButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.save_workspace", language);
@@ -89,6 +91,11 @@ public partial class ToolStripControl : UserControl
     private void SettingsButton_OnClick(object? sender, RoutedEventArgs e)
     {
         SettingsRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void LoadDemoRunnerButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void ImportRawButton_OnClick(object? sender, RoutedEventArgs e)

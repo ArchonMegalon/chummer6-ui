@@ -210,6 +210,24 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task ImportAsync_resolves_sr4_alias_from_document_gameedition_when_document_seed_is_blank()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ImportAsync(
+            new WorkspaceImportDocument(
+                "<character><gameedition>Shadowrun 4</gameedition><name>Imported</name></character>",
+                string.Empty,
+                WorkspaceDocumentFormat.NativeXml),
+            CancellationToken.None);
+
+        Assert.IsNotNull(client.LastImportedDocument);
+        Assert.AreEqual(RulesetDefaults.Sr4, client.LastImportedDocument!.RulesetId);
+        Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
+    }
+
+    [TestMethod]
     public async Task LoadAsync_tracks_open_workspaces_for_multi_document_shell_state()
     {
         var client = new FakeChummerClient();

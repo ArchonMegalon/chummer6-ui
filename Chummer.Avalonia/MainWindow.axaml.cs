@@ -84,6 +84,7 @@ public partial class MainWindow : Window
             onSupportRequested: ToolStrip_OnSupportRequested,
             onReportIssueRequested: ToolStrip_OnReportIssueRequested,
             onSettingsRequested: ToolStrip_OnSettingsRequested,
+            onLoadDemoRunnerRequested: ToolStrip_OnLoadDemoRunnerRequested,
             onRuntimeInspectorRequested: SummaryHeader_OnRuntimeInspectorRequested,
             onMenuSelected: MenuBar_OnMenuSelected,
             onWorkspaceSelected: NavigatorPane_OnWorkspaceSelected,

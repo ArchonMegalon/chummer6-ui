@@ -44,6 +44,21 @@ public partial class MainWindow
             "import character file");
     }
 
+    private async void ToolStrip_OnLoadDemoRunnerRequested(object? sender, EventArgs e)
+    {
+        DesktopImportFileResult importFile = await MainWindowDesktopFileCoordinator.OpenBundledDemoRunnerAsync(CancellationToken.None);
+        if (importFile.Outcome == DesktopFileOperationOutcome.Unavailable || importFile.Payload is null)
+        {
+            MainWindowFeedbackCoordinator.ShowBundledDemoRunnerUnavailable(_controls.ToolStrip);
+            return;
+        }
+
+        MainWindowFeedbackCoordinator.ShowBundledDemoRunnerLoading(_controls.ToolStrip, importFile.SourceLabel);
+        await RunUiActionAsync(
+            () => _adapter.ImportAsync(importFile.Payload, CancellationToken.None),
+            "load bundled demo runner");
+    }
+
     private async void OnOpened(object? sender, EventArgs e)
     {
         await RunUiActionAsync(

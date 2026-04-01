@@ -89,6 +89,9 @@ bash scripts/ai/milestones/b11-npc-persona-studio-check.sh
 echo "[verify] checking UI milestone coverage registry guard..."
 bash scripts/ai/milestones/ui-milestone-coverage-check.sh
 
+echo "[verify] checking ruleset-specific workbench adaptation guard..."
+bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh
+
 echo "[verify] checking ui-kit shell chrome guard..."
 bash scripts/ai/milestones/p5-ui-kit-shell-chrome-check.sh
 

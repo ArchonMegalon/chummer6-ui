@@ -3,6 +3,7 @@ using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
 using System.Text.Json;
 
@@ -36,7 +37,7 @@ internal static class MainWindowShellFrameProjector
                     Alias: state.Profile?.Alias,
                     Karma: state.Progress?.Karma.ToString(),
                     Skills: state.Skills?.Count.ToString(),
-                    RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime),
+                    RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId),
                     CanInspectRuntime: shellSurface.ActiveRuntime is not null),
                 StatusStrip: new StatusStripState(
                     CharacterState: BuildCharacterStateText(workspaceContext, language),
@@ -56,32 +57,43 @@ internal static class MainWindowShellFrameProjector
                 NpcPersonaStudio: state.ActiveNpcPersonaStudio),
             CommandDialogPaneState: ProjectCommandDialogState(state, commands, shellSurface.LastCommandId),
             NavigatorPaneState: new NavigatorPaneState(
+                OpenWorkspacesHeading: RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(shellSurface.ActiveRulesetId),
                 OpenWorkspaces: ProjectOpenWorkspaces(state, shellSurface),
                 SelectedWorkspaceId: shellSurface.ActiveWorkspaceId?.Value,
+                NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
                 NavigationTabs: ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator),
                 ActiveTabId: shellSurface.ActiveTabId,
+                SectionActionsHeading: RulesetUiDirectiveCatalog.BuildSectionActionsHeading(shellSurface.ActiveRulesetId),
                 SectionActions: ProjectSectionActions(shellSurface),
                 ActiveActionId: state.ActiveActionId,
+                WorkflowSurfacesHeading: RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(shellSurface.ActiveRulesetId),
                 WorkflowSurfaces: ProjectWorkflowSurfaces(shellSurface)),
             WorkspaceActionsById: workspaceActionsById);
     }
 
     private static string BuildSectionNotice(CharacterOverviewState state, ShellSurfaceState shellSurface)
     {
-        string notice = $"Notice: {(shellSurface.Notice ?? "Ready.")}";
+        List<string> lines =
+        [
+            $"Notice: {(shellSurface.Notice ?? "Ready.")}",
+            RulesetUiDirectiveCatalog.BuildSectionNotice(
+                rulesetId: shellSurface.ActiveRulesetId,
+                sectionId: state.ActiveSectionId,
+                actionId: state.ActiveActionId,
+                activeRuntime: shellSurface.ActiveRuntime)
+        ];
+
         WorkspacePortabilityActivity? portability = state.LatestPortabilityActivity;
         if (portability is null)
         {
-            return notice;
+            return string.Join(
+                Environment.NewLine,
+                lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
         }
 
-        List<string> lines =
-        [
-            notice,
-            $"{portability.Title}: {portability.Receipt.ReceiptSummary}",
-            $"Context: {portability.Receipt.ContextSummary}",
-            $"Next safe action: {portability.Receipt.NextSafeAction}"
-        ];
+        lines.Add($"{portability.Title}: {portability.Receipt.ReceiptSummary}");
+        lines.Add($"Context: {portability.Receipt.ContextSummary}");
+        lines.Add($"Next safe action: {portability.Receipt.NextSafeAction}");
 
         if (portability.Receipt.SupportedExchangeModes.Count > 0)
         {
@@ -199,6 +211,7 @@ internal static class MainWindowShellFrameProjector
                 workspace.Id.Value,
                 workspace.Name,
                 workspace.Alias,
+                workspace.RulesetId,
                 workspace.HasSavedWorkspace,
                 Enabled: !state.IsBusy))
             .ToArray();
@@ -212,7 +225,7 @@ internal static class MainWindowShellFrameProjector
         return shellSurface.NavigationTabs
             .Select(tab => new NavigatorTabItem(
                 tab.Id,
-                tab.Label,
+                RulesetUiDirectiveCatalog.FormatNavigationTabLabel(tab.RulesetId, tab.Id, tab.Label),
                 tab.SectionId,
                 tab.Group,
                 commandAvailabilityEvaluator.IsNavigationTabEnabled(tab, state)))
@@ -224,7 +237,7 @@ internal static class MainWindowShellFrameProjector
         return shellSurface.WorkspaceActions
             .Select(action => new NavigatorSectionActionItem(
                 action.Id,
-                action.Label,
+                RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(action.RulesetId, action.Id, action.TargetId, action.Label),
                 action.Kind))
             .ToArray();
     }
@@ -235,7 +248,7 @@ internal static class MainWindowShellFrameProjector
             .Select(surface => new NavigatorWorkflowSurfaceItem(
                 surface.SurfaceId,
                 surface.WorkflowId,
-                surface.Label,
+                RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(shellSurface.ActiveRulesetId, surface.ActionId, surface.Label),
                 surface.ActionId))
             .ToArray();
     }
