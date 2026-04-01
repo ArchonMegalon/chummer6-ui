@@ -10,6 +10,8 @@ It is the repo for builders, inspectors, compare views, explain UX, moderation/a
 * workbench/browser/desktop UX
 * builders, inspectors, and compare flows
 * explain and audit-facing UX on the workbench side
+* rule-environment selection, inspection, and activation UX
+* preset and amend-package preview, diff, and rollback UX
 * grouped quality, active-effect, and conditional-modifier organization surfaces
 * source-linked tooltips and detail drawers for legality, acquisition, and explain traces
 * transaction-safe bundle and PACK preview/apply/cancel UX
@@ -120,4 +122,5 @@ The current flagship UX bar also assumes:
 * grouped inspection for qualities, gear, and active effects
 * in-game timeline visibility where calendar or training state matters
 * authored SR4, SR5, and SR6 UX where edition differences materially change how builders reason about the character
+* explicit rule-environment badges, package drift warnings, and restore-safe "missing pack" recovery paths
 * dense-data comfort and visual polish that make the desktop client feel premium under heavy expert use rather than merely feature-complete
