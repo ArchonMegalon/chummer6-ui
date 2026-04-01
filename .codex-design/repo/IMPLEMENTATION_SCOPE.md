@@ -10,6 +10,10 @@ It is the repo for builders, inspectors, compare views, explain UX, moderation/a
 * workbench/browser/desktop UX
 * builders, inspectors, and compare flows
 * explain and audit-facing UX on the workbench side
+* grouped quality, active-effect, and conditional-modifier organization surfaces
+* source-linked tooltips and detail drawers for legality, acquisition, and explain traces
+* transaction-safe bundle and PACK preview/apply/cancel UX
+* calendar-backed training, downtime, and timed-effect presentation
 * moderation and admin surfaces that stay outside the live play shell
 * desktop packaging, installer delivery, and workbench-side release polish
 * updater integration inside desktop heads
@@ -108,3 +112,12 @@ That means:
 * workbench release evidence is explicit in `docs/WORKBENCH_RELEASE_SIGNOFF.md`
 * any retained legacy roots must stay explicitly documented as compatibility cargo
 * the first desktop updater wave should ship atomic full-head replacement before delta or runtime-only evolution
+
+The current flagship UX bar also assumes:
+
+* cancel-safe multistep editing
+* receipt-backed conditional toggles instead of silent always-on bonuses
+* grouped inspection for qualities, gear, and active effects
+* in-game timeline visibility where calendar or training state matters
+* authored SR4, SR5, and SR6 UX where edition differences materially change how builders reason about the character
+* dense-data comfort and visual polish that make the desktop client feel premium under heavy expert use rather than merely feature-complete
