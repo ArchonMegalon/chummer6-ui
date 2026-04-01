@@ -12,6 +12,7 @@ internal static class Program
 {
     private const string PreferredPayloadResourceName = "ChummerInstaller.Payload.zip";
     private const string PreferredPayloadMetadataKey = "ChummerInstallerPayloadResourceName";
+    private const string AppendedPayloadMagic = "CHUMMER6PAYLOAD1";
 
     [STAThread]
     private static int Main(string[] args)
@@ -174,6 +175,17 @@ internal static class Program
             failureReports.Add($"2) {resourceTrace} failed: {resourceFailure}");
         }
 
+        if (TryOpenAppendedPayload(Environment.ProcessPath, out Stream? appendedStream, out string? appendedFailure))
+        {
+            RecordPayloadResolution("appended-installer-payload", failureReports);
+            return appendedStream!;
+        }
+
+        if (!string.IsNullOrWhiteSpace(appendedFailure))
+        {
+            failureReports.Add($"3) {appendedFailure}");
+        }
+
         string[] sidecarPayloads = FindPayloadSidecars(baseDirectory).ToArray();
         for (int i = 0; i < sidecarPayloads.Length; i++)
         {
@@ -184,7 +196,7 @@ internal static class Program
                 return sidecarStream!;
             }
 
-            failureReports.Add($"3.{i + 1}) {sidecarFailure}");
+            failureReports.Add($"4.{i + 1}) {sidecarFailure}");
         }
 
         string resourceNames = FormatResourceNames(assembly);
@@ -195,7 +207,8 @@ internal static class Program
             ? string.Join(", ", sidecarPayloads)
             : "<none>";
         throw new InvalidOperationException(
-            $"Embedded desktop payload was not found. Expected '{PreferredPayloadResourceName}'. " +
+            $"Bundled desktop payload was not found. Expected '{PreferredPayloadResourceName}'. " +
+            $"Appended payload marker: '{AppendedPayloadMagic}'. " +
             $"Embedded resources: {resourceNames}. " +
             $"Checked {baseDirectory} for sidecar payloads: {sidecarSummary}. " +
             $"Discovery trace: {failureSummary}");
@@ -248,6 +261,79 @@ internal static class Program
         catch (Exception ex)
         {
             failure = $"Embedded resource '{payloadResourceName}' could not be opened. {ex.Message}";
+            return false;
+        }
+    }
+
+    private static bool TryOpenAppendedPayload(string? executablePath, out Stream? payloadStream, out string? failure)
+    {
+        payloadStream = null;
+        failure = null;
+
+        if (string.IsNullOrWhiteSpace(executablePath))
+        {
+            failure = "current process path is unavailable, so the appended payload could not be checked.";
+            return false;
+        }
+
+        string candidate;
+        try
+        {
+            candidate = Path.GetFullPath(executablePath);
+        }
+        catch (ArgumentException ex)
+        {
+            failure = $"installer path was malformed: '{executablePath}'. {ex.Message}";
+            return false;
+        }
+
+        byte[] magicBytes = Encoding.ASCII.GetBytes(AppendedPayloadMagic);
+        int footerLength = sizeof(long) + magicBytes.Length;
+
+        try
+        {
+            using FileStream executable = File.Open(candidate, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (executable.Length <= footerLength)
+            {
+                failure = $"installer '{candidate}' was too small to contain an appended payload footer.";
+                return false;
+            }
+
+            executable.Seek(-footerLength, SeekOrigin.End);
+            using BinaryReader footerReader = new(executable, Encoding.ASCII, leaveOpen: true);
+            long payloadLength = footerReader.ReadInt64();
+            byte[] marker = footerReader.ReadBytes(magicBytes.Length);
+
+            if (marker.Length != magicBytes.Length || !marker.SequenceEqual(magicBytes))
+            {
+                failure = $"installer '{candidate}' did not contain the appended payload marker '{AppendedPayloadMagic}'.";
+                return false;
+            }
+
+            long payloadOffset = executable.Length - footerLength - payloadLength;
+            if (payloadLength <= 0 || payloadOffset < 0)
+            {
+                failure = $"installer '{candidate}' contained an invalid appended payload footer.";
+                return false;
+            }
+
+            executable.Position = payloadOffset;
+            string tempPayloadPath = Path.Combine(Path.GetTempPath(), $"chummer-installer-appended-payload-{Guid.NewGuid():N}.zip");
+            FileStream extractedPayload = new(
+                tempPayloadPath,
+                FileMode.Create,
+                FileAccess.ReadWrite,
+                FileShare.None,
+                bufferSize: 81920,
+                options: FileOptions.DeleteOnClose);
+            CopyExactBytes(executable, extractedPayload, payloadLength);
+            extractedPayload.Position = 0;
+            payloadStream = extractedPayload;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            failure = $"installer '{candidate}' appended payload could not be opened. {ex.Message}";
             return false;
         }
     }
@@ -502,6 +588,23 @@ internal static class Program
             string destination = Path.Combine(targetDir, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.Copy(file, destination, overwrite: true);
+        }
+    }
+
+    private static void CopyExactBytes(Stream source, Stream destination, long bytesToCopy)
+    {
+        byte[] buffer = new byte[81920];
+        long remaining = bytesToCopy;
+        while (remaining > 0)
+        {
+            int bytesRead = source.Read(buffer, 0, (int)Math.Min(buffer.Length, remaining));
+            if (bytesRead <= 0)
+            {
+                throw new EndOfStreamException($"Expected {bytesToCopy} bytes from appended payload, but only copied {bytesToCopy - remaining}.");
+            }
+
+            destination.Write(buffer, 0, bytesRead);
+            remaining -= bytesRead;
         }
     }
 
