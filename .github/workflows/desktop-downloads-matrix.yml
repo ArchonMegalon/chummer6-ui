@@ -51,9 +51,9 @@ jobs:
       run:
         working-directory: r
     env:
-      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/.c/core/Chummer.Contracts/Chummer.Contracts.csproj
-      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/.c/hub/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
-      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/.c/ui/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
+      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/c/Chummer.Contracts/Chummer.Contracts.csproj
+      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/h/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
+      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/u/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
     strategy:
       fail-fast: false
       matrix:
@@ -94,26 +94,32 @@ jobs:
         with:
           path: r
 
+      - name: Enable Windows long paths for compatibility checkouts
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          git config --system core.longpaths true
+
       - name: Checkout core-engine compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-core
           ref: fleet/core
-          path: .c/core
+          path: c
 
       - name: Checkout run-services compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-hub
           ref: main
-          path: .c/hub
+          path: h
 
       - name: Checkout ui-kit compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-ui-kit
           ref: fleet/ui-kit
-          path: .c/ui
+          path: u
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
