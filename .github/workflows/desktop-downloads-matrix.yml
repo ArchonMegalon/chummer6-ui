@@ -127,10 +127,12 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
+        shell: bash
         run: |
           dotnet restore ${{ matrix.project }} \
             -r ${{ matrix.rid }} \
             -p:ChummerUseLocalCompatibilityTree=true \
+            -p:UseChummerEngineContractsLocalFeed=false \
             -p:ChummerLocalContractsProject="${CHUMMER_LOCAL_CONTRACTS_PROJECT}" \
             -p:ChummerLocalRunContractsProject="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" \
             -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}"
@@ -144,11 +146,13 @@ jobs:
           dotnet publish "${{ matrix.project }}" \
             -c Release \
             -r "${{ matrix.rid }}" \
+            --no-restore \
             --self-contained true \
             -p:PublishSingleFile=true \
             -p:PublishTrimmed=false \
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:ChummerUseLocalCompatibilityTree=true \
+            -p:UseChummerEngineContractsLocalFeed=false \
             -p:ChummerLocalContractsProject="${CHUMMER_LOCAL_CONTRACTS_PROJECT}" \
             -p:ChummerLocalRunContractsProject="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" \
             -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}" \
