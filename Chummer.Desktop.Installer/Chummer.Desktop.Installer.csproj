@@ -21,10 +21,19 @@
     <ChummerInstallerOutputName Condition="'$(ChummerInstallerOutputName)' == ''">Chummer6Installer</ChummerInstallerOutputName>
     <ChummerInstallerPayloadResourceName Condition="'$(ChummerInstallerPayloadResourceName)' == ''">ChummerInstaller.Payload.zip</ChummerInstallerPayloadResourceName>
     <ChummerInstallerPayloadRequired Condition="'$(ChummerInstallerPayloadRequired)' == ''">true</ChummerInstallerPayloadRequired>
+    <ChummerInstallerEmbedPayload Condition="'$(ChummerInstallerEmbedPayload)' == ''">true</ChummerInstallerEmbedPayload>
   </PropertyGroup>
 
-  <ItemGroup Condition="Exists('$(InstallerPayloadZip)')">
+  <ItemGroup Condition="Exists('$(InstallerPayloadZip)') and '$(ChummerInstallerEmbedPayload)' == 'true'">
     <EmbeddedResource Include="$(InstallerPayloadZip)" LogicalName="$(ChummerInstallerPayloadResourceName)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(InstallerPayloadZip)')">
+    <Content Include="$(InstallerPayloadZip)">
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>false</ExcludeFromSingleFile>
+      <TargetPath>$(ChummerInstallerPayloadResourceName)</TargetPath>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
