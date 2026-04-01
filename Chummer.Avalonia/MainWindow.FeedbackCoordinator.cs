@@ -15,6 +15,16 @@ internal static class MainWindowFeedbackCoordinator
         toolStrip.SetStatusText(S("desktop.shell.feedback.import_file_unavailable"));
     }
 
+    public static void ShowBundledDemoRunnerUnavailable(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText(S("desktop.shell.feedback.demo_runner_unavailable"));
+    }
+
+    public static void ShowBundledDemoRunnerLoading(ToolStripControl toolStrip, string? sourceLabel)
+    {
+        toolStrip.SetStatusText(F("desktop.shell.feedback.demo_runner_loading", sourceLabel ?? "Samples/Legacy/Soma-Career.chum5"));
+    }
+
     public static void ShowNoActiveWorkspace(ToolStripControl toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.no_active_workspace"));

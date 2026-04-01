@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Use docs/MAC_CODEX_RELEASE_TO_CHUMMER_RUN.md as the source of truth for the real Mac release wrapper."
+echo "This placeholder exists so the CI example has a concrete file target to copy and specialize."

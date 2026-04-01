@@ -7,9 +7,10 @@
         MinHeight="360"
         WindowStartupLocation="CenterOwner"
         CanResize="True"
+        Background="{DynamicResource ChummerShellSurfaceAltBrush}"
         Title="Dialog">
   <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10" Margin="12">
-    <Border Grid.Row="0" BorderThickness="1" BorderBrush="#64748B" Padding="8" Background="#E2E8F0">
+    <Border Grid.Row="0" BorderThickness="1" BorderBrush="{DynamicResource ChummerShellCardBorderBrush}" Padding="8" Background="{DynamicResource ChummerShellDialogHeaderBrush}">
       <TextBlock Name="DialogTitleText" FontWeight="Bold" Text="Dialog" />
     </Border>
 

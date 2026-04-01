@@ -20,9 +20,45 @@
 
     <MdiStrip OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
               ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+              RulesetId="@_shellSurfaceState.ActiveRulesetId"
               IsBusy="@State.IsBusy"
               OpenWorkspaceRequested="@OpenWorkspaceAsync"
               CloseWorkspaceRequested="@CloseWorkspaceAsync" />
+
+    <section class="@DesktopMarqueeCssClass" data-testid="desktop-flagship-marquee">
+        <div class="flagship-copy">
+            <p class="flagship-kicker">@DesktopMarqueeEyebrow</p>
+            <h1 data-testid="desktop-flagship-marquee-title">@DesktopMarqueeTitle</h1>
+            <p class="flagship-spotlight">@DesktopMarqueeSpotlight</p>
+            <p class="flagship-resume">@DesktopMarqueeResumeLane</p>
+        </div>
+
+        <div class="flagship-fact-grid">
+            <article class="flagship-fact">
+                <span class="flagship-label">Posture</span>
+                <strong>@DesktopMarqueePosture</strong>
+            </article>
+            <article class="flagship-fact">
+                <span class="flagship-label">Runtime</span>
+                <strong>@DesktopMarqueeRuntime</strong>
+            </article>
+            <article class="flagship-fact">
+                <span class="flagship-label">Continuity</span>
+                <strong>@DesktopMarqueeContinuity</strong>
+            </article>
+            <article class="flagship-fact">
+                <span class="flagship-label">Surface</span>
+                <strong>@DesktopMarqueeSurfaceSummary</strong>
+            </article>
+        </div>
+
+        <ul class="flagship-watchouts">
+            @foreach (string watchout in DesktopMarqueeWatchouts)
+            {
+                <li>@watchout</li>
+            }
+        </ul>
+    </section>
 
     <div class="workspace-layout">
         <WorkspaceLeftPane State="@State"
@@ -58,6 +94,7 @@
 
         <aside class="right-pane">
             <ImportPanel IsBusy="@State.IsBusy"
+                         RulesetId="@_shellSurfaceState.ActiveRulesetId"
                          ImportedFileName="@ImportedFileName"
                          ImportError="@ImportError"
                          @bind-RawImportXml="RawImportXml"
@@ -65,11 +102,13 @@
                          ImportRawRequested="@ImportRawAsync" />
 
             <CommandPanel State="@State"
+                          RulesetId="@_shellSurfaceState.ActiveRulesetId"
                           Commands="@HeadCommands.ToArray()"
                           IsCommandEnabled="@IsCommandEnabled"
                           ExecuteCommandRequested="@ExecuteCommandAsync" />
 
-            <ResultPanel State="@State" />
+            <ResultPanel State="@State"
+                         RulesetId="@_shellSurfaceState.ActiveRulesetId" />
 
             <section class="panel coach-panel">
                 <div class="coach-header">

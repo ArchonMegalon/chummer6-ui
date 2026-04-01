@@ -7,11 +7,13 @@ namespace Chummer.Avalonia;
 
 internal static class MainWindowDesktopFileCoordinator
 {
+    private const string BundledDemoRelativePath = "Samples/Legacy/Soma-Career.chum5";
+
     public static async Task<DesktopImportFileResult> OpenImportFileAsync(IStorageProvider storageProvider, CancellationToken ct)
     {
         if (!storageProvider.CanOpen)
         {
-            return new DesktopImportFileResult(DesktopFileOperationOutcome.Unavailable, Payload: null);
+            return new DesktopImportFileResult(DesktopFileOperationOutcome.Unavailable, Payload: null, SourceLabel: null);
         }
 
         IReadOnlyList<IStorageFile> files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
@@ -30,13 +32,28 @@ internal static class MainWindowDesktopFileCoordinator
         IStorageFile? file = files.FirstOrDefault();
         if (file is null)
         {
-            return new DesktopImportFileResult(DesktopFileOperationOutcome.Cancelled, Payload: null);
+            return new DesktopImportFileResult(DesktopFileOperationOutcome.Cancelled, Payload: null, SourceLabel: null);
         }
 
         await using Stream stream = await file.OpenReadAsync();
         using MemoryStream memory = new();
         await stream.CopyToAsync(memory, ct);
-        return new DesktopImportFileResult(DesktopFileOperationOutcome.Completed, memory.ToArray());
+        return new DesktopImportFileResult(DesktopFileOperationOutcome.Completed, memory.ToArray(), file.Name);
+    }
+
+    public static async Task<DesktopImportFileResult> OpenBundledDemoRunnerAsync(CancellationToken ct)
+    {
+        string samplePath = Path.Combine(AppContext.BaseDirectory, BundledDemoRelativePath);
+        if (!File.Exists(samplePath))
+        {
+            return new DesktopImportFileResult(DesktopFileOperationOutcome.Unavailable, Payload: null, SourceLabel: BundledDemoRelativePath);
+        }
+
+        byte[] payload = await File.ReadAllBytesAsync(samplePath, ct);
+        return new DesktopImportFileResult(
+            DesktopFileOperationOutcome.Completed,
+            payload,
+            "Samples/Legacy/Soma-Career.chum5");
     }
 
     public static async Task<DesktopDownloadSaveResult> SaveDownloadAsync(
@@ -192,7 +209,8 @@ internal enum DesktopFileOperationOutcome
 
 internal sealed record DesktopImportFileResult(
     DesktopFileOperationOutcome Outcome,
-    byte[]? Payload);
+    byte[]? Payload,
+    string? SourceLabel);
 
 internal sealed record DesktopDownloadSaveResult(
     DesktopFileOperationOutcome Outcome,

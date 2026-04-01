@@ -3,11 +3,14 @@ using Chummer.Contracts.Content;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
+using Chummer.Presentation.Rulesets;
 using Chummer.Campaign.Contracts;
 
 namespace Chummer.Presentation.Overview;
 
 public sealed record DesktopHomeBuildExplainProjection(
+    string RulesetId,
+    string RulesetSpotlight,
     string Summary,
     string NextSafeAction,
     string ExplainFocus,
@@ -31,6 +34,13 @@ public static class DesktopHomeBuildExplainProjector
     {
         string runtimeHealthSummary = BuildRuntimeHealthSummary(activeRuntime, runtimeInspector);
         DesktopBuildPathCandidate? leadBuildPath = buildPathCandidates?.FirstOrDefault();
+        string? effectiveRulesetId = ResolveRulesetId(
+            workspaces.FirstOrDefault()?.RulesetId,
+            activeRuntime?.RulesetId,
+            rules?.GameEdition,
+            leadBuildPath?.Suggestion.Targets.FirstOrDefault());
+        string resolvedRulesetId = effectiveRulesetId ?? string.Empty;
+        string rulesetSpotlight = RulesetUiDirectiveCatalog.BuildHomeSpotlight(effectiveRulesetId);
         IReadOnlyList<string> campaignReceipts = BuildCampaignReceipts(campaignSummary);
         IReadOnlyList<string> campaignWatchouts = BuildCampaignWatchouts(campaignSummary);
         string? campaignNextSafeAction = BuildCampaignNextSafeAction(campaignSummary);
@@ -46,6 +56,8 @@ public static class DesktopHomeBuildExplainProjector
             compatibilityReceipts.AddRange(campaignReceipts);
 
             return new DesktopHomeBuildExplainProjection(
+                RulesetId: resolvedRulesetId,
+                RulesetSpotlight: rulesetSpotlight,
                 "No workspace is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.",
                 leadBuildPath is null
                     ? campaignNextSafeAction
@@ -59,13 +71,17 @@ public static class DesktopHomeBuildExplainProjector
                         ?? $"Claim the install, seed one real workspace, and hand the suggested {leadBuildPath.Suggestion.Title} build path into a grounded receipt before you reopen campaign work.",
                 runtimeHealthSummary,
                 "No workspace return target is pinned yet.",
-                "Rule posture is still generic until the first workspace restores a grounded runtime fingerprint.",
+                RulesetUiDirectiveCatalog.BuildUngroundedRulePosture(effectiveRulesetId),
                 compatibilityReceipts,
                 BuildBuildPathComparisons(buildPathCandidates),
-                [
+                new[]
+                {
                     "No grounded build lane is loaded yet for this desktop head.",
                     "Rules explanations stay generic until the first workspace is restored into local continuity."
-                ]);
+                }
+                .Concat(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(effectiveRulesetId))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray());
         }
 
         WorkspaceListItem leadWorkspace = workspaces[0];
@@ -90,6 +106,8 @@ public static class DesktopHomeBuildExplainProjector
             .ToArray();
 
             return new DesktopHomeBuildExplainProjection(
+                RulesetId: resolvedRulesetId,
+                RulesetSpotlight: rulesetSpotlight,
                 $"Continue {displayName} on {leadWorkspace.RulesetId} and inspect explain traces before you export, publish, or reopen campaign work.",
                 ResolveRefreshAction(displayName, runtimeInspector)
                     ?? campaignNextSafeAction
@@ -98,13 +116,14 @@ public static class DesktopHomeBuildExplainProjector
                     ?? "Build Lab keeps variant tradeoffs, progression rails, and overlap risks visible before the next campaign-facing handoff, while Rules explanations stay tied to the claimed install, current channel, and support path.",
                 runtimeHealthSummary,
                 $"Return target: {displayName} on runtime {runtimeFingerprint}.",
-                $"Rule posture: runtime fingerprint {runtimeFingerprint} is pinned, but the live rules section still needs a refresh before you trust drift-sensitive decisions.",
+                RulesetUiDirectiveCatalog.BuildPinnedRuntimeRulePosture(effectiveRulesetId, runtimeFingerprint),
                 BuildCompatibilityReceipts(runtimeInspector, runtimeFingerprint)
                     .Concat(buildPathReceipts)
                     .Concat(campaignReceipts)
                     .ToArray(),
                 BuildBuildPathComparisons(buildPathCandidates),
                 fallbackWatchouts
+                    .Concat(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(effectiveRulesetId))
                     .Concat(campaignWatchouts)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToArray());
@@ -132,7 +151,13 @@ public static class DesktopHomeBuildExplainProjector
         string installState = string.IsNullOrWhiteSpace(activeRuntime?.InstallState)
             ? "workspace-only"
             : activeRuntime.InstallState;
-        string rulePosture = $"Rule posture: {rules.GameEdition} · {rules.Settings} · {gameplayMode} · fingerprint {runtimeFingerprint} · install {installState}.";
+        string rulePosture = RulesetUiDirectiveCatalog.BuildGroundedRulePosture(
+            effectiveRulesetId,
+            rules.GameEdition,
+            rules.Settings,
+            gameplayMode,
+            runtimeFingerprint,
+            installState);
 
         List<string> watchouts =
         [
@@ -155,9 +180,12 @@ public static class DesktopHomeBuildExplainProjector
         }
 
         watchouts.AddRange(BuildRuntimeWatchouts(runtimeInspector));
+        watchouts.AddRange(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(effectiveRulesetId));
         watchouts.AddRange(campaignWatchouts);
 
         return new DesktopHomeBuildExplainProjection(
+            RulesetId: resolvedRulesetId,
+            RulesetSpotlight: rulesetSpotlight,
             $"Build posture: {buildLane} with {priorityLadder}; contact points {build.ContactPointsUsed}/{build.ContactPoints}; special track {build.TotalSpecial}.\nRules posture: {rules.GameEdition} · {rules.Settings} · {gameplayMode}; limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen; banned ware {bannedWare}.",
             nextSafeAction,
             explainFocus,
@@ -173,6 +201,20 @@ public static class DesktopHomeBuildExplainProjector
                 .Where(static item => !string.IsNullOrWhiteSpace(item))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray());
+    }
+
+    private static string? ResolveRulesetId(params string?[] candidates)
+    {
+        foreach (string? candidate in candidates)
+        {
+            string? normalized = RulesetDefaults.NormalizeOptional(candidate);
+            if (!string.IsNullOrWhiteSpace(normalized))
+            {
+                return normalized;
+            }
+        }
+
+        return null;
     }
 
     private static IReadOnlyList<string> BuildCampaignReceipts(AccountCampaignSummary? campaignSummary)

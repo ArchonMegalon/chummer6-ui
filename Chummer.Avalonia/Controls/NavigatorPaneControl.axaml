@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.NavigatorPaneControl">
   <Grid RowDefinitions="Auto,*,Auto,*,Auto,*,Auto,*" RowSpacing="6">
-    <TextBlock Grid.Row="0" Text="Open Characters" FontWeight="Bold" />
+    <TextBlock Grid.Row="0" x:Name="OpenWorkspacesHeader" Text="Open Characters" FontWeight="Bold" />
     <ListBox Grid.Row="1" x:Name="OpenWorkspacesList">
       <ListBox.ItemsPanel>
         <ItemsPanelTemplate>
@@ -10,7 +10,7 @@
         </ItemsPanelTemplate>
       </ListBox.ItemsPanel>
     </ListBox>
-    <TextBlock Grid.Row="2" Text="Navigation Tabs" FontWeight="Bold" />
+    <TextBlock Grid.Row="2" x:Name="NavigationTabsHeader" Text="Navigation Tabs" FontWeight="Bold" />
     <ListBox Grid.Row="3" x:Name="NavigationTabsList">
       <ListBox.ItemsPanel>
         <ItemsPanelTemplate>
@@ -18,7 +18,7 @@
         </ItemsPanelTemplate>
       </ListBox.ItemsPanel>
     </ListBox>
-    <TextBlock Grid.Row="4" Text="Section Actions" FontWeight="Bold" />
+    <TextBlock Grid.Row="4" x:Name="SectionActionsHeader" Text="Section Actions" FontWeight="Bold" />
     <ListBox Grid.Row="5" x:Name="SectionActionsList">
       <ListBox.ItemsPanel>
         <ItemsPanelTemplate>
@@ -26,7 +26,7 @@
         </ItemsPanelTemplate>
       </ListBox.ItemsPanel>
     </ListBox>
-    <TextBlock Grid.Row="6" Text="Workflow Surfaces" FontWeight="Bold" />
+    <TextBlock Grid.Row="6" x:Name="WorkflowSurfacesHeader" Text="Workflow Surfaces" FontWeight="Bold" />
     <ListBox Grid.Row="7" x:Name="WorkflowSurfacesList">
       <ListBox.ItemsPanel>
         <ItemsPanelTemplate>

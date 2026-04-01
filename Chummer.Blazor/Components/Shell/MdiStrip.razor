@@ -1,10 +1,11 @@
 @using Chummer.Presentation.Overview
+@using Chummer.Presentation.Rulesets
 @using Chummer.Contracts.Workspaces
 
 <div class="mdi-strip" id="mdiStrip">
     @if (OpenWorkspaces.Count == 0)
     {
-        <span class="mdi-doc">No open character</span>
+        <span class="mdi-doc">@BuildWorkspaceStripEmptyState()</span>
     }
     else
     {
@@ -12,10 +13,9 @@
         {
             bool isActive = string.Equals(ActiveWorkspaceId?.Value, workspace.Id.Value, StringComparison.Ordinal);
             string workspaceLabel = string.IsNullOrWhiteSpace(workspace.Alias) ? workspace.Name : $"{workspace.Name} ({workspace.Alias})";
-            string saveStatus = workspace.HasSavedWorkspace ? "saved" : "unsaved";
             <span class="mdi-doc-wrap">
                 <button class="mdi-doc @(isActive ? "active" : string.Empty)"
-                        title="@($"Workspace {workspace.Id.Value} is {saveStatus}")"
+                        title="@BuildWorkspaceTitle(workspace)"
                         disabled="@IsBusy"
                         @onclick="() => OpenWorkspaceAsync(workspace.Id.Value)">
                     @($"{workspaceLabel}{(workspace.HasSavedWorkspace ? string.Empty : " *")}")
@@ -32,6 +32,9 @@
 </div>
 
 @code {
+    [Parameter]
+    public string? RulesetId { get; set; }
+
     [Parameter]
     public IReadOnlyList<OpenWorkspaceState> OpenWorkspaces { get; set; } = [];
 
@@ -56,4 +59,10 @@
     {
         return CloseWorkspaceRequested.InvokeAsync(workspaceId);
     }
+
+    private string BuildWorkspaceStripEmptyState()
+        => RulesetUiDirectiveCatalog.BuildWorkspaceStripEmptyState(RulesetId);
+
+    private static string BuildWorkspaceTitle(OpenWorkspaceState workspace)
+        => RulesetUiDirectiveCatalog.BuildWorkspaceStripTitle(workspace.RulesetId, workspace.Id.Value, workspace.HasSavedWorkspace);
 }
