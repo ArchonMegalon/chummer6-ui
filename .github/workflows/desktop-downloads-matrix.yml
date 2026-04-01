@@ -52,7 +52,9 @@ jobs:
         working-directory: r
     env:
       CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/c/Chummer.Contracts/Chummer.Contracts.csproj
+      CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT: ${{ github.workspace }}/h/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj
       CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/h/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
+      CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT: ${{ github.workspace }}/g/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj
       CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/u/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
     strategy:
       fail-fast: false
@@ -111,8 +113,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-hub
-          ref: main
+          ref: fleet/hub
           path: h
+
+      - name: Checkout hub-registry compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer-hub-registry
+          ref: fleet/hub-registry
+          path: g
 
       - name: Checkout ui-kit compatibility tree
         uses: actions/checkout@v4
@@ -121,10 +130,50 @@ jobs:
           ref: fleet/ui-kit
           path: u
 
+      - name: Checkout media-factory compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer-media-factory
+          ref: fleet/media-factory
+          path: m
+
+      - name: Prepare compatibility tree aliases (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-core-engine" -Target "${env:GITHUB_WORKSPACE}\\c" | Out-Null
+          New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer.run-services" -Target "${env:GITHUB_WORKSPACE}\\h" | Out-Null
+          New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-hub-registry" -Target "${env:GITHUB_WORKSPACE}\\g" | Out-Null
+          New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-ui-kit" -Target "${env:GITHUB_WORKSPACE}\\u" | Out-Null
+          New-Item -ItemType Directory -Path "${env:GITHUB_WORKSPACE}\\fleet\\repos" -Force | Out-Null
+          New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\fleet\\repos\\chummer-media-factory" -Target "${env:GITHUB_WORKSPACE}\\m" | Out-Null
+
+      - name: Prepare compatibility tree aliases (POSIX)
+        if: ${{ runner.os != 'Windows' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ln -sfn "$GITHUB_WORKSPACE/c" "$GITHUB_WORKSPACE/chummer-core-engine"
+          ln -sfn "$GITHUB_WORKSPACE/h" "$GITHUB_WORKSPACE/chummer.run-services"
+          ln -sfn "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/chummer-hub-registry"
+          ln -sfn "$GITHUB_WORKSPACE/u" "$GITHUB_WORKSPACE/chummer-ui-kit"
+          mkdir -p "$GITHUB_WORKSPACE/fleet/repos"
+          ln -sfn "$GITHUB_WORKSPACE/m" "$GITHUB_WORKSPACE/fleet/repos/chummer-media-factory"
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
+      - name: Build compatibility contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build "${CHUMMER_LOCAL_CONTRACTS_PROJECT}" -c Release --nologo -p:UseChummerEngineContractsLocalFeed=false
+          dotnet build "$GITHUB_WORKSPACE/m/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj" -c Release --nologo
+          dotnet build "${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT}" -c Release --nologo
+          dotnet build "${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" -c Release --nologo
+          dotnet build "${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" -c Release --nologo
 
       - name: Restore
         shell: bash
@@ -134,7 +183,9 @@ jobs:
             -p:ChummerUseLocalCompatibilityTree=true \
             -p:UseChummerEngineContractsLocalFeed=false \
             -p:ChummerLocalContractsProject="${CHUMMER_LOCAL_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalCampaignContractsProject="${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT}" \
             -p:ChummerLocalRunContractsProject="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalHubRegistryContractsProject="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" \
             -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}"
 
       - name: Publish desktop app
@@ -154,7 +205,9 @@ jobs:
             -p:ChummerUseLocalCompatibilityTree=true \
             -p:UseChummerEngineContractsLocalFeed=false \
             -p:ChummerLocalContractsProject="${CHUMMER_LOCAL_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalCampaignContractsProject="${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT}" \
             -p:ChummerLocalRunContractsProject="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalHubRegistryContractsProject="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" \
             -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}" \
             -p:ChummerDesktopReleaseVersion="$release_version" \
             -p:ChummerDesktopReleaseChannel="docker" \
