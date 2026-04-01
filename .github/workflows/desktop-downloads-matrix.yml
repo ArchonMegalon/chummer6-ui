@@ -283,6 +283,13 @@ jobs:
           merge-multiple: true
           path: dist
 
+      - name: Download startup smoke evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-smoke-*
+          merge-multiple: true
+          path: dist/startup-smoke
+
       - name: Stage portal downloads directory
         shell: bash
         run: |
@@ -445,6 +452,66 @@ jobs:
         run: |
           set -euo pipefail
           bash scripts/verify-releases-manifest.sh "$CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+
+  deploy-downloads-http:
+    name: Deploy Downloads Bundle (HTTP Promote)
+    needs: generate-manifest
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.CHUMMER_RELEASE_UPLOAD_URL != '' && secrets.CHUMMER_RELEASE_UPLOAD_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    env:
+      CHUMMER_RELEASE_UPLOAD_URL: ${{ vars.CHUMMER_RELEASE_UPLOAD_URL }}
+      CHUMMER_RELEASE_UPLOAD_TOKEN: ${{ secrets.CHUMMER_RELEASE_UPLOAD_TOKEN }}
+      CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL }}
+
+    steps:
+      - name: Download manifest bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-download-bundle
+          path: dist
+
+      - name: Validate upload variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${CHUMMER_RELEASE_UPLOAD_URL:-}" ]] || { echo "CHUMMER_RELEASE_UPLOAD_URL is required." >&2; exit 1; }
+          [[ -n "${CHUMMER_RELEASE_UPLOAD_TOKEN:-}" ]] || { echo "CHUMMER_RELEASE_UPLOAD_TOKEN is required." >&2; exit 1; }
+
+      - name: Skip when promotion evidence is absent
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "dist/release-evidence/public-promotion.json" ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No dist/release-evidence/public-promotion.json in the bundle; skipping HTTP promotion."
+          fi
+
+      - name: Upload release bundle to chummer.run
+        if: ${{ steps.evidence.outputs.present == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_zip="$(mktemp --suffix=.zip)"
+          (
+            cd dist
+            zip -qry "$bundle_zip" .
+          )
+          curl --fail-with-body -sS \
+            -X POST \
+            -H "Authorization: Bearer ${CHUMMER_RELEASE_UPLOAD_TOKEN}" \
+            -F "bundle=@${bundle_zip};type=application/zip" \
+            "${CHUMMER_RELEASE_UPLOAD_URL}" \
+            | tee release-upload-response.json
+
+      - name: Verify live promoted manifest
+        if: ${{ steps.evidence.outputs.present == 'true' && vars.CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/verify-releases-manifest.sh "${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL}"
 
   deploy-downloads-object-storage:
     name: Deploy Downloads Bundle (Object Storage)

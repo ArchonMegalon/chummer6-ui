@@ -5,11 +5,14 @@ using Avalonia.Media;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Presentation;
+using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Rulesets;
+using Chummer.Presentation.Shell;
 namespace Chummer.Avalonia;
 
 internal sealed class DesktopHomeWindow : Window
@@ -21,6 +24,11 @@ internal sealed class DesktopHomeWindow : Window
     private DesktopHomeCampaignProjection _campaignProjection;
     private DesktopHomeSupportProjection _supportProjection;
     private DesktopHomeBuildExplainProjection _buildExplainProjection;
+    private readonly Border _flagshipHeroBorder;
+    private readonly TextBlock _flagshipEyebrowText;
+    private readonly TextBlock _flagshipTitleText;
+    private readonly TextBlock _flagshipSpotlightText;
+    private readonly TextBlock _flagshipFactsText;
     private readonly TextBlock _introText;
     private readonly TextBlock _installSummaryText;
     private readonly TextBlock _updateSummaryText;
@@ -58,12 +66,49 @@ internal sealed class DesktopHomeWindow : Window
         MinWidth = 720;
         MinHeight = 520;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        Background = new SolidColorBrush(Color.Parse("#E5ECF5"));
+
+        _flagshipEyebrowText = new TextBlock
+        {
+            Text = BuildFlagshipEyebrow(),
+            FontSize = 12,
+            FontWeight = FontWeight.Bold,
+            Foreground = new SolidColorBrush(Color.Parse("#D8E8FB")),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _flagshipTitleText = new TextBlock
+        {
+            Text = BuildFlagshipTitle(),
+            FontSize = 30,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Brushes.White,
+            TextWrapping = TextWrapping.Wrap
+        };
 
         _introText = new TextBlock
         {
             Text = BuildIntro(),
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 16,
+            Foreground = new SolidColorBrush(Color.Parse("#F8FBFF"))
         };
+
+        _flagshipSpotlightText = new TextBlock
+        {
+            Text = BuildFlagshipSpotlight(),
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = new SolidColorBrush(Color.Parse("#D7E7FA"))
+        };
+
+        _flagshipFactsText = new TextBlock
+        {
+            Text = BuildFlagshipFacts(),
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = new SolidColorBrush(Color.Parse("#EEF4FF"))
+        };
+
+        _flagshipHeroBorder = CreateFlagshipHero();
 
         _installSummaryText = new TextBlock
         {
@@ -118,13 +163,7 @@ internal sealed class DesktopHomeWindow : Window
                     Spacing = 16,
                     Children =
                     {
-                        new TextBlock
-                        {
-                            Text = DesktopLocalizationCatalog.GetRequiredString("desktop.home.title", _preferences.Language),
-                            FontSize = 24,
-                            FontWeight = FontWeight.SemiBold
-                        },
-                        _introText,
+                        _flagshipHeroBorder,
                         CreateSection(
                             DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.install_support", _preferences.Language),
                             _installSummaryText,
@@ -546,6 +585,55 @@ internal sealed class DesktopHomeWindow : Window
             : S("desktop.home.intro.ready_current_campaign_workspace");
     }
 
+    private string? ResolveFlagshipRulesetId()
+        => RulesetDefaults.NormalizeOptional(_buildExplainProjection.RulesetId)
+            ?? RulesetDefaults.NormalizeOptional(_recentWorkspaces.FirstOrDefault()?.RulesetId);
+
+    private string BuildFlagshipEyebrow()
+        => RulesetUiDirectiveCatalog.BuildDesktopMarqueeEyebrow(ResolveFlagshipRulesetId());
+
+    private string BuildFlagshipTitle()
+        => RulesetUiDirectiveCatalog.BuildDesktopMarqueeTitle(ResolveFlagshipRulesetId());
+
+    private string BuildFlagshipSpotlight()
+    {
+        List<string> lines = [BuildIntro()];
+        if (!string.IsNullOrWhiteSpace(_buildExplainProjection.RulesetSpotlight))
+        {
+            lines.Add(_buildExplainProjection.RulesetSpotlight);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_buildExplainProjection.ExplainFocus))
+        {
+            lines.Add(_buildExplainProjection.ExplainFocus);
+        }
+
+        return string.Join(" ", lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
+    }
+
+    private string BuildFlagshipFacts()
+    {
+        RulesetUiDirective directive = RulesetUiDirectiveCatalog.Resolve(ResolveFlagshipRulesetId());
+        string runtimeSummary = string.IsNullOrWhiteSpace(_buildExplainProjection.RuntimeHealthSummary)
+            ? ShellStatusTextFormatter.BuildActiveRuntimeSummary(null, ResolveFlagshipRulesetId())
+            : _buildExplainProjection.RuntimeHealthSummary;
+        string continuity = _recentWorkspaces.Count == 0
+            ? "Continuity: no recent dossier is pinned yet."
+            : $"Continuity: {_recentWorkspaces.Count} recent dossiers; lead {FormatFlagshipWorkspace(_recentWorkspaces[0])}.";
+        string watchout = _buildExplainProjection.Watchouts.FirstOrDefault() ?? "No extra flagship watchout is currently published.";
+
+        return string.Join(
+            "\n",
+            new[]
+            {
+                $"Posture: {directive.DisplayName} · {directive.PostureLabel} · {directive.FileExtension}",
+                $"Next safe action: {_buildExplainProjection.NextSafeAction}",
+                $"Runtime: {runtimeSummary}",
+                continuity,
+                $"Watchout: {watchout}"
+            });
+    }
+
     private string BuildInstallSummary()
     {
         List<string> lines =
@@ -657,11 +745,10 @@ internal sealed class DesktopHomeWindow : Window
         return string.Join(
             "\n",
             _recentWorkspaces.Select(workspace =>
-                F(
-                    "desktop.home.workspace_summary.entry",
-                    workspace.Summary,
+                RulesetUiDirectiveCatalog.BuildWorkspaceResumeSummary(
                     workspace.RulesetId,
-                    workspace.LastUpdatedUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm"))));
+                    workspace.Summary,
+                    workspace.LastUpdatedUtc)));
     }
 
     private string BuildCampaignBody()
@@ -709,6 +796,7 @@ internal sealed class DesktopHomeWindow : Window
         List<string> lines =
         [
             F("desktop.home.next_safe_action", _buildExplainProjection.NextSafeAction),
+            _buildExplainProjection.RulesetSpotlight,
             _buildExplainProjection.Summary,
             _buildExplainProjection.ExplainFocus,
             _buildExplainProjection.RuntimeHealthSummary,
@@ -813,15 +901,22 @@ internal sealed class DesktopHomeWindow : Window
     private IReadOnlyList<Button> CreateBuildExplainActions()
     {
         List<Button> actions = [];
+        string openWorkspaceLabel = RulesetUiDirectiveCatalog.BuildOpenWorkspaceActionLabel(
+            _buildExplainProjection.RulesetId,
+            S("desktop.home.button.open_current_workspace"));
+        string buildFollowThroughLabel = RulesetUiDirectiveCatalog.BuildBuildFollowThroughActionLabel(
+            _buildExplainProjection.RulesetId,
+            S("desktop.home.button.open_build_followthrough"));
+        string? nextActionPrefix = RulesetUiDirectiveCatalog.BuildNextActionPrefix(_buildExplainProjection.RulesetId);
 
         if (_recentWorkspaces.Count > 0)
         {
-            actions.Add(CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true));
-            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, S("desktop.home.button.open_build_followthrough")), OpenBuildFollowThroughAsync));
+            actions.Add(CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true));
+            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, buildFollowThroughLabel, nextActionPrefix), OpenBuildFollowThroughAsync));
         }
         else if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, S("desktop.home.button.open_build_followthrough")), OpenBuildFollowThroughAsync, isPrimary: true));
+            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, buildFollowThroughLabel, nextActionPrefix), OpenBuildFollowThroughAsync, isPrimary: true));
             actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
         }
         else
@@ -882,10 +977,18 @@ internal sealed class DesktopHomeWindow : Window
             ];
         }
 
+        string openWorkspaceLabel = RulesetUiDirectiveCatalog.BuildOpenWorkspaceActionLabel(
+            _recentWorkspaces[0].RulesetId,
+            S("desktop.home.button.open_current_workspace"));
+        string workspaceFollowThroughLabel = RulesetUiDirectiveCatalog.BuildWorkspaceFollowThroughActionLabel(
+            _recentWorkspaces[0].RulesetId,
+            S("desktop.home.button.open_workspace_followthrough"));
+        string? nextActionPrefix = RulesetUiDirectiveCatalog.BuildNextActionPrefix(_recentWorkspaces[0].RulesetId);
+
         return
         [
-            CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true),
-            CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, S("desktop.home.button.open_workspace_followthrough")), OpenWorkspaceFollowThroughAsync),
+            CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true),
+            CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, workspaceFollowThroughLabel, nextActionPrefix), OpenWorkspaceFollowThroughAsync),
             CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
         ];
     }
@@ -893,7 +996,7 @@ internal sealed class DesktopHomeWindow : Window
     private IReadOnlyList<Button> CreateLanguageActions()
         => [CreateButton(S("desktop.home.button.open_settings"), OpenSettingsAsync)];
 
-    private static string CreateNextSafeActionButtonLabel(string nextSafeAction, string fallbackLabel)
+    private static string CreateNextSafeActionButtonLabel(string nextSafeAction, string fallbackLabel, string? prefixLabel = null)
     {
         if (string.IsNullOrWhiteSpace(nextSafeAction))
         {
@@ -909,9 +1012,15 @@ internal sealed class DesktopHomeWindow : Window
             clause = $"{clause[..41].TrimEnd()}...";
         }
 
-        return string.IsNullOrWhiteSpace(clause)
-            ? fallbackLabel
-            : $"Next: {clause}";
+        if (string.IsNullOrWhiteSpace(clause))
+        {
+            return fallbackLabel;
+        }
+
+        string nextLabel = $"Next: {clause}";
+        return string.IsNullOrWhiteSpace(prefixLabel)
+            ? nextLabel
+            : $"{prefixLabel} · {nextLabel}";
     }
 
     private Task OpenCurrentWorkspace()
@@ -1066,7 +1175,13 @@ internal sealed class DesktopHomeWindow : Window
             // Keep the last rendered workspace and build/explain posture if refresh cannot reach the client.
         }
 
+        _flagshipEyebrowText.Text = BuildFlagshipEyebrow();
+        _flagshipTitleText.Text = BuildFlagshipTitle();
         _introText.Text = BuildIntro();
+        _flagshipSpotlightText.Text = BuildFlagshipSpotlight();
+        _flagshipFactsText.Text = BuildFlagshipFacts();
+        _flagshipHeroBorder.Background = BuildFlagshipHeroBackground();
+        _flagshipHeroBorder.BorderBrush = BuildFlagshipHeroBorderBrush();
         _installSummaryText.Text = BuildInstallSummary();
         _updateSummaryText.Text = BuildUpdateSummary();
         _campaignText.Text = BuildCampaignBody();
@@ -1115,11 +1230,11 @@ internal sealed class DesktopHomeWindow : Window
 
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#F4F6FA")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
+            Background = new SolidColorBrush(Color.Parse("#F8FBFF")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#CBD7E6")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(16),
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(18),
             Child = content
         };
     }
@@ -1149,7 +1264,7 @@ internal sealed class DesktopHomeWindow : Window
         }
     }
 
-    private static Button CreateButton(string label, Func<bool> action, bool closeWindow = false, bool isPrimary = false)
+    private Button CreateButton(string label, Func<bool> action, bool closeWindow = false, bool isPrimary = false)
         => CreateButton(
             label,
             () =>
@@ -1160,12 +1275,19 @@ internal sealed class DesktopHomeWindow : Window
             closeWindow,
             isPrimary);
 
-    private static Button CreateButton(string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false)
+    private Button CreateButton(string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false)
     {
         Button button = new()
         {
             Content = label,
-            MinWidth = 120
+            MinWidth = 132,
+            MinHeight = 38,
+            Padding = new Thickness(16, 9),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Background = new SolidColorBrush(Color.Parse(isPrimary ? "#163A59" : "#FFFFFF")),
+            Foreground = new SolidColorBrush(Color.Parse(isPrimary ? "#F8FBFF" : "#17324F")),
+            BorderBrush = new SolidColorBrush(Color.Parse(isPrimary ? "#7FB3DA" : "#B8C7D9")),
+            BorderThickness = new Thickness(1)
         };
         if (isPrimary)
         {
@@ -1181,6 +1303,69 @@ internal sealed class DesktopHomeWindow : Window
             }
         };
         return button;
+    }
+
+    private Border CreateFlagshipHero()
+    {
+        return new Border
+        {
+            Background = BuildFlagshipHeroBackground(),
+            BorderBrush = BuildFlagshipHeroBorderBrush(),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(20),
+            Padding = new Thickness(22),
+            Child = new StackPanel
+            {
+                Spacing = 10,
+                Children =
+                {
+                    _flagshipEyebrowText,
+                    _flagshipTitleText,
+                    _introText,
+                    _flagshipSpotlightText,
+                    _flagshipFactsText
+                }
+            }
+        };
+    }
+
+    private IBrush BuildFlagshipHeroBackground()
+        => ResolveFlagshipRulesetId() switch
+        {
+            RulesetDefaults.Sr4 => CreateGradientBrush("#1D140E", "#5F3312", "#8C5317"),
+            RulesetDefaults.Sr5 => CreateGradientBrush("#0F172A", "#14304A", "#1A5570"),
+            RulesetDefaults.Sr6 => CreateGradientBrush("#0F172A", "#173548", "#1E6757"),
+            _ => CreateGradientBrush("#0F172A", "#1C3650", "#31536D")
+        };
+
+    private IBrush BuildFlagshipHeroBorderBrush()
+        => new SolidColorBrush(ResolveFlagshipRulesetId() switch
+        {
+            RulesetDefaults.Sr4 => Color.Parse("#E6B86A"),
+            RulesetDefaults.Sr5 => Color.Parse("#8FD0F8"),
+            RulesetDefaults.Sr6 => Color.Parse("#7DDDB3"),
+            _ => Color.Parse("#C9D7E8")
+        });
+
+    private static LinearGradientBrush CreateGradientBrush(string start, string middle, string end)
+        => new()
+        {
+            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
+            GradientStops = new GradientStops
+            {
+                new GradientStop(Color.Parse(start), 0),
+                new GradientStop(Color.Parse(middle), 0.55),
+                new GradientStop(Color.Parse(end), 1)
+            }
+        };
+
+    private static string FormatFlagshipWorkspace(WorkspaceListItem workspace)
+    {
+        string alias = string.IsNullOrWhiteSpace(workspace.Summary.Alias)
+            ? workspace.Summary.Name
+            : $"{workspace.Summary.Name} / {workspace.Summary.Alias}";
+        return $"{alias} · {workspace.LastUpdatedUtc:yyyy-MM-dd HH:mm}";
     }
 
     private string S(string key)

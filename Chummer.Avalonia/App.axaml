@@ -2,7 +2,93 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.App"
              RequestedThemeVariant="Default">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#0F172A" />
+          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#475569" />
+          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#E2E8F0" />
+          <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#EEF2FF" />
+          <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#E0E7FF" />
+          <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#94A3B8" />
+          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#CBD5E1" />
+          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#64748B" />
+          <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#DBEAFE" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#2563EB" />
+          <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#E2E8F0" />
+          <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#0F172A" />
+          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#BFDBFE" />
+          <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#0F172A" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#2563EB" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#047857" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#E5E7EB" />
+          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#CBD5E1" />
+          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#0F172A" />
+          <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#111827" />
+          <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#172554" />
+          <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#475569" />
+          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#334155" />
+          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#64748B" />
+          <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#111827" />
+          <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#020617" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#1E3A8A" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#60A5FA" />
+          <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#111827" />
+          <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#0F172A" />
+          <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#162031" />
+          <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#1D4ED8" />
+          <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1D4ED8" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#34D399" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
   <Application.Styles>
     <FluentTheme />
+    <Style Selector="Window">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="UserControl">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellInputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="ListBox">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellInputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
   </Application.Styles>
 </Application>

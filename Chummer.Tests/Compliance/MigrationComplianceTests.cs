@@ -3278,18 +3278,30 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS");
         StringAssert.Contains(workflowText, "Checkout core-engine compatibility tree");
         StringAssert.Contains(workflowText, "Checkout run-services compatibility tree");
+        StringAssert.Contains(workflowText, "Checkout hub-registry compatibility tree");
         StringAssert.Contains(workflowText, "Checkout ui-kit compatibility tree");
+        StringAssert.Contains(workflowText, "Checkout media-factory compatibility tree");
+        StringAssert.Contains(workflowText, "Prepare compatibility tree aliases (Windows)");
+        StringAssert.Contains(workflowText, "Prepare compatibility tree aliases (POSIX)");
+        StringAssert.Contains(workflowText, "Build compatibility contracts");
         StringAssert.Contains(workflowText, "path: r");
-        StringAssert.Contains(workflowText, "path: .c/core");
-        StringAssert.Contains(workflowText, "path: .c/hub");
-        StringAssert.Contains(workflowText, "path: .c/ui");
+        StringAssert.Contains(workflowText, "path: c");
+        StringAssert.Contains(workflowText, "path: h");
+        StringAssert.Contains(workflowText, "path: g");
+        StringAssert.Contains(workflowText, "path: u");
+        StringAssert.Contains(workflowText, "path: m");
         StringAssert.Contains(workflowText, "ref: fleet/core");
-        StringAssert.Contains(workflowText, "ref: main");
+        StringAssert.Contains(workflowText, "ref: fleet/hub");
+        StringAssert.Contains(workflowText, "ref: fleet/hub-registry");
+        StringAssert.Contains(workflowText, "ref: fleet/media-factory");
         StringAssert.Contains(workflowText, "ref: fleet/ui-kit");
         StringAssert.Contains(workflowText, "-p:ChummerUseLocalCompatibilityTree=true");
         StringAssert.Contains(workflowText, "ChummerLocalContractsProject");
+        StringAssert.Contains(workflowText, "ChummerLocalCampaignContractsProject");
         StringAssert.Contains(workflowText, "ChummerLocalRunContractsProject");
+        StringAssert.Contains(workflowText, "ChummerLocalHubRegistryContractsProject");
         StringAssert.Contains(workflowText, "ChummerLocalUiKitProject");
+        StringAssert.Contains(workflowText, "UseChummerEngineContractsLocalFeed=false");
         StringAssert.Contains(workflowText, "if-no-files-found: ignore");
         StringAssert.Contains(workflowText, "path: r/dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.${{ matrix.installer_ext }}");
         StringAssert.Contains(workflowText, "path: r/dist/startup-smoke");
@@ -3325,6 +3337,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(manifestScriptText, "\"osx-x64\": \"macOS x64\"");
         StringAssert.Contains(manifestScriptText, "\"id\": f\"{app}-{rid}\"");
         StringAssert.Contains(manifestScriptText, "\"url\": f\"/downloads/files/{artifact.name}\"");
+        StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
+        StringAssert.Contains(manifestScriptText, "STARTUP_SMOKE_DIR");
         StringAssert.Contains(startupSmokeScriptText, "release_smoke_start_failure");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET");
@@ -3332,7 +3346,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT");
         StringAssert.Contains(startupSmokeScriptText, "--smoke-install");
         StringAssert.Contains(startupSmokeScriptText, "hdiutil attach");
-        StringAssert.Contains(startupSmokeScriptText, "dpkg-deb -x");
+        StringAssert.Contains(startupSmokeScriptText, "--force-not-root");
+        StringAssert.Contains(startupSmokeScriptText, "artifactInstallVerificationPath");
+        StringAssert.Contains(startupSmokeScriptText, "--purge");
+        Assert.IsFalse(
+            startupSmokeScriptText.Contains("dpkg-deb -x", StringComparison.Ordinal),
+            "Linux .deb startup smoke should install and purge in an isolated dpkg root instead of only extracting the archive.");
         StringAssert.Contains(verifyScriptText, "CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION");
         StringAssert.Contains(verifyScriptText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(verifyScriptText, "failed artifact verification");
@@ -4632,7 +4651,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(projectorText, "ChromeState: new MainWindowChromeState(");
         StringAssert.Contains(projectorText, "WorkspaceStrip: new WorkspaceStripState(");
         StringAssert.Contains(projectorText, "SummaryHeader: new SummaryHeaderState(");
-        StringAssert.Contains(projectorText, "RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime)");
+        StringAssert.Contains(projectorText, "RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId)");
         StringAssert.Contains(projectorText, "StatusStrip: new StatusStripState(");
         StringAssert.Contains(projectorText, "ShellStatusTextFormatter.BuildComplianceState");
         StringAssert.Contains(projectorText, "SectionHostState: new SectionHostState(");

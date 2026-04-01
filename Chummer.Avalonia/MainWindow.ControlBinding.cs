@@ -28,6 +28,7 @@ internal static class MainWindowControlBinder
         EventHandler onSupportRequested,
         EventHandler onReportIssueRequested,
         EventHandler onSettingsRequested,
+        EventHandler onLoadDemoRunnerRequested,
         EventHandler onRuntimeInspectorRequested,
         EventHandler<string> onMenuSelected,
         EventHandler<string> onWorkspaceSelected,
@@ -49,6 +50,7 @@ internal static class MainWindowControlBinder
         toolStrip.SupportRequested += onSupportRequested;
         toolStrip.ReportIssueRequested += onReportIssueRequested;
         toolStrip.SettingsRequested += onSettingsRequested;
+        toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
         summaryHeader.RuntimeInspectorRequested += onRuntimeInspectorRequested;
         menuBar.MenuSelected += onMenuSelected;
         navigatorPane.WorkspaceSelected += onWorkspaceSelected;

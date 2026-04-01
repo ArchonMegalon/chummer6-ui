@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Chummer.Contracts.Presentation;
+using Chummer.Presentation.Rulesets;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -26,9 +27,13 @@ public partial class NavigatorPaneControl : UserControl
 
     public void SetState(NavigatorPaneState state)
     {
+        OpenWorkspacesHeader.Text = state.OpenWorkspacesHeading;
         SetOpenWorkspaces(state.OpenWorkspaces, state.SelectedWorkspaceId);
+        NavigationTabsHeader.Text = state.NavigationTabsHeading;
         SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
+        SectionActionsHeader.Text = state.SectionActionsHeading;
         SetSectionActions(state.SectionActions, state.ActiveActionId);
+        WorkflowSurfacesHeader.Text = state.WorkflowSurfacesHeading;
         SetWorkflowSurfaces(state.WorkflowSurfaces);
     }
 
@@ -129,24 +134,28 @@ public sealed record NavigatorWorkspaceItem(
     string Id,
     string Name,
     string Alias,
+    string RulesetId,
     bool HasSavedWorkspace,
     bool Enabled)
 {
     public override string ToString()
     {
-        string label = string.IsNullOrWhiteSpace(Alias) ? Name : $"{Name} ({Alias})";
-        string saveTag = HasSavedWorkspace ? "saved" : "unsaved";
-        return $"{label} [{Id}] [{saveTag}] {(Enabled ? "enabled" : "disabled")}";
+        string label = RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel(RulesetId, Name, Alias, HasSavedWorkspace);
+        return $"{label} [{Id}] {(Enabled ? "enabled" : "disabled")}";
     }
 }
 
 public sealed record NavigatorPaneState(
+    string OpenWorkspacesHeading,
     NavigatorWorkspaceItem[] OpenWorkspaces,
     string? SelectedWorkspaceId,
+    string NavigationTabsHeading,
     NavigatorTabItem[] NavigationTabs,
     string? ActiveTabId,
+    string SectionActionsHeading,
     NavigatorSectionActionItem[] SectionActions,
     string? ActiveActionId,
+    string WorkflowSurfacesHeading,
     NavigatorWorkflowSurfaceItem[] WorkflowSurfaces);
 
 public sealed record NavigatorTabItem(

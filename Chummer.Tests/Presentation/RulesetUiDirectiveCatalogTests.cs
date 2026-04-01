@@ -1,0 +1,197 @@
+#nullable enable annotations
+
+using Chummer.Contracts.Characters;
+using Chummer.Contracts.Content;
+using Chummer.Contracts.Rulesets;
+using Chummer.Presentation.Rulesets;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace Chummer.Tests.Presentation;
+
+[TestClass]
+public sealed class RulesetUiDirectiveCatalogTests
+{
+    [TestMethod]
+    public void BuildComplianceRulesetSummary_distinguishes_sr4_sr5_and_sr6_posture()
+    {
+        string sr4 = RulesetUiDirectiveCatalog.BuildComplianceRulesetSummary(
+            RulesetDefaults.Sr4,
+            activeRuntime: null);
+        string sr5 = RulesetUiDirectiveCatalog.BuildComplianceRulesetSummary(
+            RulesetDefaults.Sr5,
+            new ActiveRuntimeStatusProjection(
+                ProfileId: "official.sr5.core",
+                Title: "Official SR5 Core",
+                RulesetId: RulesetDefaults.Sr5,
+                RuntimeFingerprint: "sha256:sr5",
+                InstallState: ArtifactInstallStates.Available,
+                WarningCount: 1));
+        string sr6 = RulesetUiDirectiveCatalog.BuildComplianceRulesetSummary(
+            RulesetDefaults.Sr6,
+            new ActiveRuntimeStatusProjection(
+                ProfileId: "official.sr6.core",
+                Title: "Official SR6 Core",
+                RulesetId: RulesetDefaults.Sr6,
+                RuntimeFingerprint: "sha256:sr6",
+                InstallState: ArtifactInstallStates.Available,
+                WarningCount: 0));
+
+        StringAssert.Contains(sr4, "preview/oracle-first");
+        StringAssert.Contains(sr4, ".chum4");
+        StringAssert.Contains(sr5, "primary/workbench");
+        StringAssert.Contains(sr5, ".chum5");
+        StringAssert.Contains(sr5, "runtime/provider attention required");
+        StringAssert.Contains(sr6, "beta/edge-first");
+        StringAssert.Contains(sr6, ".chum6");
+        StringAssert.Contains(sr6, "experimental-host honesty visible");
+    }
+
+    [TestMethod]
+    public void BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces()
+    {
+        string sr4Rules = RulesetUiDirectiveCatalog.BuildSectionNotice(RulesetDefaults.Sr4, "rules", "tab-rules.rules", activeRuntime: null);
+        string sr5BuildLab = RulesetUiDirectiveCatalog.BuildSectionNotice(RulesetDefaults.Sr5, "build-lab", "tab-create.intake", activeRuntime: null);
+        string sr6Rules = RulesetUiDirectiveCatalog.BuildSectionNotice(
+            RulesetDefaults.Sr6,
+            "validate",
+            "tab-info.validate",
+            new ActiveRuntimeStatusProjection(
+                ProfileId: "official.sr6.core",
+                Title: "Official SR6 Core",
+                RulesetId: RulesetDefaults.Sr6,
+                RuntimeFingerprint: "sha256:sr6",
+                InstallState: ArtifactInstallStates.Installed,
+                WarningCount: 1));
+
+        StringAssert.Contains(sr4Rules, "Shadowrun 4");
+        StringAssert.Contains(sr4Rules, "preview-only");
+        StringAssert.Contains(sr5BuildLab, "flagship lane");
+        StringAssert.Contains(sr5BuildLab, "campaign return");
+        StringAssert.Contains(sr6Rules, "beta/preview");
+        StringAssert.Contains(sr6Rules, "active runtime warnings");
+    }
+
+    [TestMethod]
+    public void BuildRulePosture_strings_keep_ruleset_specific_extensions_and_lane_labels()
+    {
+        string sr4 = RulesetUiDirectiveCatalog.BuildUngroundedRulePosture(RulesetDefaults.Sr4);
+        string sr5 = RulesetUiDirectiveCatalog.BuildPinnedRuntimeRulePosture(RulesetDefaults.Sr5, "sha256:sr5");
+        string sr6 = RulesetUiDirectiveCatalog.BuildGroundedRulePosture(
+            RulesetDefaults.Sr6,
+            gameEdition: "Shadowrun 6",
+            settings: "Seattle Nights",
+            gameplayMode: "Prime runner preview",
+            runtimeFingerprint: "sha256:sr6",
+            installState: ArtifactInstallStates.Installed);
+
+        StringAssert.Contains(sr4, ".chum4");
+        StringAssert.Contains(sr4, "preview/oracle-first");
+        StringAssert.Contains(sr5, ".chum5");
+        StringAssert.Contains(sr5, "primary/workbench");
+        StringAssert.Contains(sr6, ".chum6");
+        StringAssert.Contains(sr6, "beta/edge-first");
+        StringAssert.Contains(sr6, "Seattle Nights");
+    }
+
+    [TestMethod]
+    public void DesktopHomeDirectives_distinguish_ruleset_spotlights_resume_copy_and_action_labels()
+    {
+        CharacterFileSummary summary = new(
+            Name: "Apex",
+            Alias: "Ghost",
+            Metatype: "Human",
+            BuildMethod: "Priority",
+            CreatedVersion: "6.0",
+            AppVersion: "6.0",
+            Karma: 0,
+            Nuyen: 0,
+            Created: true);
+
+        string sr4Spotlight = RulesetUiDirectiveCatalog.BuildHomeSpotlight(RulesetDefaults.Sr4);
+        string sr5Resume = RulesetUiDirectiveCatalog.BuildWorkspaceResumeSummary(
+            RulesetDefaults.Sr5,
+            summary,
+            DateTimeOffset.Parse("2026-03-31T08:55:00+00:00"));
+        string sr6Open = RulesetUiDirectiveCatalog.BuildOpenWorkspaceActionLabel(RulesetDefaults.Sr6, "Open workspace");
+        string sr4FollowThrough = RulesetUiDirectiveCatalog.BuildBuildFollowThroughActionLabel(RulesetDefaults.Sr4, "Open build follow-through");
+        string sr6WorkspaceFollowThrough = RulesetUiDirectiveCatalog.BuildWorkspaceFollowThroughActionLabel(RulesetDefaults.Sr6, "Open workspace follow-through");
+        string? sr5Prefix = RulesetUiDirectiveCatalog.BuildNextActionPrefix(RulesetDefaults.Sr5);
+
+        StringAssert.Contains(sr4Spotlight, "oracle import");
+        StringAssert.Contains(sr5Resume, "Shadowrun 5 resume");
+        StringAssert.Contains(sr5Resume, "SR5 workbench dossier");
+        StringAssert.Contains(sr5Resume, "Apex / Ghost");
+        StringAssert.Contains(sr6Open, "SR6 starter lane");
+        StringAssert.Contains(sr4FollowThrough, "SR4 import follow-through");
+        StringAssert.Contains(sr6WorkspaceFollowThrough, "SR6 dossier follow-through");
+        Assert.AreEqual("SR5 workbench", sr5Prefix);
+    }
+
+    [TestMethod]
+    public void ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset()
+    {
+        string sr4MarqueeEyebrow = RulesetUiDirectiveCatalog.BuildDesktopMarqueeEyebrow(RulesetDefaults.Sr4);
+        string sr5MarqueeTitle = RulesetUiDirectiveCatalog.BuildDesktopMarqueeTitle(RulesetDefaults.Sr5);
+        string sr6MarqueeEyebrow = RulesetUiDirectiveCatalog.BuildDesktopMarqueeEyebrow(RulesetDefaults.Sr6);
+        string sr4Summary = RulesetUiDirectiveCatalog.BuildSummaryHeading(RulesetDefaults.Sr4);
+        string sr5Dossiers = RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(RulesetDefaults.Sr5);
+        string sr6EmptyStrip = RulesetUiDirectiveCatalog.BuildWorkspaceStripEmptyState(RulesetDefaults.Sr6);
+        string sr5StripTitle = RulesetUiDirectiveCatalog.BuildWorkspaceStripTitle(RulesetDefaults.Sr5, "ws-1", hasSavedWorkspace: false);
+        string sr4Tabs = RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(RulesetDefaults.Sr4);
+        string sr5Actions = RulesetUiDirectiveCatalog.BuildSectionActionsHeading(RulesetDefaults.Sr5);
+        string sr6Flows = RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(RulesetDefaults.Sr6);
+        string sr4Import = RulesetUiDirectiveCatalog.BuildImportHeading(RulesetDefaults.Sr4);
+        string sr5ImportAccept = RulesetUiDirectiveCatalog.BuildImportAcceptAttribute(RulesetDefaults.Sr5);
+        string sr6ImportHint = RulesetUiDirectiveCatalog.BuildImportHint(RulesetDefaults.Sr6);
+        string sr4ImportDebug = RulesetUiDirectiveCatalog.BuildImportDebugHeading(RulesetDefaults.Sr4);
+        string sr6ImportAction = RulesetUiDirectiveCatalog.BuildImportRawActionLabel(RulesetDefaults.Sr6);
+        string sr4Commands = RulesetUiDirectiveCatalog.BuildCommandHeading(RulesetDefaults.Sr4);
+        string sr6CommandHint = RulesetUiDirectiveCatalog.BuildCommandEmptyHint(RulesetDefaults.Sr6);
+        string sr5Result = RulesetUiDirectiveCatalog.BuildResultHeading(RulesetDefaults.Sr5);
+        string sr5ResultHint = RulesetUiDirectiveCatalog.BuildResultPostureHint(RulesetDefaults.Sr5);
+        string sr4Ready = RulesetUiDirectiveCatalog.BuildResultReadyNotice(RulesetDefaults.Sr4);
+        string sr4Create = RulesetUiDirectiveCatalog.FormatNavigationTabLabel(RulesetDefaults.Sr4, "tab-create", "Create");
+        string sr5Info = RulesetUiDirectiveCatalog.FormatNavigationTabLabel(RulesetDefaults.Sr5, "tab-info", "Info");
+        string sr6Rules = RulesetUiDirectiveCatalog.FormatNavigationTabLabel(RulesetDefaults.Sr6, "tab-rules", "Rules");
+        string sr4Validate = RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(RulesetDefaults.Sr4, "tab-info.validate", "validate", "Validate");
+        string sr5Build = RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(RulesetDefaults.Sr5, "tab-info.build", "build", "Build");
+        string sr6Inventory = RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(RulesetDefaults.Sr6, "tab-gear.inventory", "inventory", "Inventory");
+        string sr5Workspace = RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel(RulesetDefaults.Sr5, "Apex", "Ghost", hasSavedWorkspace: true);
+        string sr6Workflow = RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(RulesetDefaults.Sr6, "tab-info.validate", "Refresh Summary");
+        string preservedWorkflow = RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(RulesetDefaults.Sr6, "tab-info.validate", "SR6 Matrix Action");
+
+        Assert.AreEqual("Oracle intake desk", sr4MarqueeEyebrow);
+        Assert.AreEqual("Shadowrun 5 flagship workbench", sr5MarqueeTitle);
+        Assert.AreEqual("Starter and beta desk", sr6MarqueeEyebrow);
+        Assert.AreEqual("Desktop Summary · SR4 Preview", sr4Summary);
+        Assert.AreEqual("SR5 Workbench Dossiers", sr5Dossiers);
+        Assert.AreEqual("No open SR6 starter lane", sr6EmptyStrip);
+        StringAssert.Contains(sr5StripTitle, "Shadowrun 5");
+        StringAssert.Contains(sr5StripTitle, "primary/workbench");
+        StringAssert.Contains(sr5StripTitle, "unsaved");
+        Assert.AreEqual("SR4 Preview Tabs", sr4Tabs);
+        Assert.AreEqual("SR5 Workbench Actions", sr5Actions);
+        Assert.AreEqual("SR6 Starter Flows", sr6Flows);
+        Assert.AreEqual("Import SR4 Oracle File", sr4Import);
+        Assert.AreEqual(".chum5,.chum4,.chum6,.xml,text/xml,application/xml", sr5ImportAccept);
+        StringAssert.Contains(sr6ImportHint, ".chum6");
+        Assert.AreEqual("SR4 Oracle Debug Import", sr4ImportDebug);
+        Assert.AreEqual("Import SR6 Raw XML", sr6ImportAction);
+        Assert.AreEqual("SR4 Preview Commands", sr4Commands);
+        Assert.AreEqual("No SR6 starter commands are currently available.", sr6CommandHint);
+        Assert.AreEqual("SR5 Workbench Result", sr5Result);
+        StringAssert.Contains(sr5ResultHint, ".chum5");
+        StringAssert.Contains(sr4Ready, "oracle import");
+        Assert.AreEqual("Oracle Intake", sr4Create);
+        Assert.AreEqual("Runner", sr5Info);
+        Assert.AreEqual("Rules Beta", sr6Rules);
+        Assert.AreEqual("Parity Check", sr4Validate);
+        Assert.AreEqual("Build Plan", sr5Build);
+        Assert.AreEqual("Loadout", sr6Inventory);
+        StringAssert.Contains(sr5Workspace, "Shadowrun 5");
+        StringAssert.Contains(sr5Workspace, "primary/workbench");
+        StringAssert.Contains(sr5Workspace, "saved");
+        Assert.AreEqual("Starter Safety Flow", sr6Workflow);
+        Assert.AreEqual("SR6 Matrix Action", preservedWorkflow);
+    }
+}
