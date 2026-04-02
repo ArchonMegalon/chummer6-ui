@@ -56,6 +56,7 @@ jobs:
       CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/h/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
       CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT: ${{ github.workspace }}/g/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj
       CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/u/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
+      CHUMMER_LEGACY_FIXTURE_ROOT: ${{ github.workspace }}/l/Chummer.Tests/TestFiles
     strategy:
       fail-fast: false
       matrix:
@@ -139,6 +140,13 @@ jobs:
           ref: fleet/media-factory
           path: m
 
+      - name: Checkout legacy fixture tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer5a
+          ref: Docker
+          path: l
+
       - name: Prepare compatibility tree aliases (Windows)
         if: ${{ runner.os == 'Windows' }}
         shell: powershell
@@ -201,7 +209,6 @@ jobs:
           dotnet publish "${{ matrix.project }}" \
             -c Release \
             -r "${{ matrix.rid }}" \
-            --no-restore \
             --self-contained true \
             -p:PublishSingleFile=true \
             -p:PublishTrimmed=false \
