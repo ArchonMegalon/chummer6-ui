@@ -93,7 +93,9 @@ public partial class MainWindow : Window
             onWorkflowSurfaceSelected: NavigatorPane_OnWorkflowSurfaceSelected,
             onCoachLaunchCopyRequested: CoachSidecar_OnCopyLaunchRequested,
             onCommandSelected: CommandDialogPane_OnCommandSelected,
-            onDialogActionSelected: CommandDialogPane_OnDialogActionSelected);
+            onDialogActionSelected: CommandDialogPane_OnDialogActionSelected,
+            onDialogFieldValueChanged: CommandDialogPane_OnDialogFieldValueChanged,
+            onMenuCommandSelected: MenuBar_OnMenuCommandSelected);
         _lifecycleCoordinator = new MainWindowLifecycleCoordinator(
             this,
             adapter,

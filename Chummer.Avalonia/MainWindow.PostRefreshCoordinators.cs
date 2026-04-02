@@ -53,24 +53,16 @@ internal static class MainWindowPostRefreshCoordinator
         CharacterOverviewViewModelAdapter adapter,
         EventHandler onClosed)
     {
-        if (activeDialog is null)
+        if (currentWindow is not null)
         {
-            if (currentWindow is not null)
-            {
-                currentWindow.CloseFromPresenter();
-            }
-
-            return null;
+            currentWindow.CloseFromPresenter();
         }
 
-        DesktopDialogWindow dialogWindow = currentWindow ?? CreateDialogWindow(adapter, onClosed);
-        dialogWindow.BindDialog(activeDialog);
-        if (!dialogWindow.IsVisible)
-        {
-            dialogWindow.Show(owner);
-        }
-
-        return dialogWindow;
+        _ = owner;
+        _ = activeDialog;
+        _ = adapter;
+        _ = onClosed;
+        return null;
     }
 
     private static DesktopDialogWindow CreateDialogWindow(

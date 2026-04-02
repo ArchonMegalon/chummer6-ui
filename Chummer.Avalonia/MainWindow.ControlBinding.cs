@@ -37,7 +37,9 @@ internal static class MainWindowControlBinder
         EventHandler<string> onWorkflowSurfaceSelected,
         EventHandler onCoachLaunchCopyRequested,
         EventHandler<string> onCommandSelected,
-        EventHandler<string> onDialogActionSelected)
+        EventHandler<string> onDialogActionSelected,
+        EventHandler<DialogFieldValueChangedEventArgs> onDialogFieldValueChanged,
+        EventHandler<string> onMenuCommandSelected)
     {
         toolStrip.ImportFileRequested += onImportFileRequested;
         toolStrip.ImportRawRequested += onImportRawRequested;
@@ -60,6 +62,8 @@ internal static class MainWindowControlBinder
         coachSidecar.CopyLaunchRequested += onCoachLaunchCopyRequested;
         commandDialogPane.CommandSelected += onCommandSelected;
         commandDialogPane.DialogActionSelected += onDialogActionSelected;
+        commandDialogPane.DialogFieldValueChanged += onDialogFieldValueChanged;
+        menuBar.MenuCommandSelected += onMenuCommandSelected;
 
         return new MainWindowControls(
             toolStrip,

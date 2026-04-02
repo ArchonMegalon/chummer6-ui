@@ -43,8 +43,8 @@ internal static class MainWindowDesktopFileCoordinator
 
     public static async Task<DesktopImportFileResult> OpenBundledDemoRunnerAsync(CancellationToken ct)
     {
-        string samplePath = Path.Combine(AppContext.BaseDirectory, BundledDemoRelativePath);
-        if (!File.Exists(samplePath))
+        string? samplePath = ResolveBundledDemoRunnerPath();
+        if (samplePath is null)
         {
             return new DesktopImportFileResult(DesktopFileOperationOutcome.Unavailable, Payload: null, SourceLabel: BundledDemoRelativePath);
         }
@@ -54,6 +54,23 @@ internal static class MainWindowDesktopFileCoordinator
             DesktopFileOperationOutcome.Completed,
             payload,
             "Samples/Legacy/Soma-Career.chum5");
+    }
+
+    private static string? ResolveBundledDemoRunnerPath()
+    {
+        string[] candidates =
+        [
+            Path.Combine(AppContext.BaseDirectory, BundledDemoRelativePath),
+            Path.Combine(AppContext.BaseDirectory, "..", BundledDemoRelativePath),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", BundledDemoRelativePath),
+            Path.Combine(Directory.GetCurrentDirectory(), BundledDemoRelativePath),
+            Path.Combine(Directory.GetCurrentDirectory(), "Chummer.Avalonia", BundledDemoRelativePath),
+            Path.Combine("/docker/chummercomplete/chummer-presentation/Chummer.Avalonia", BundledDemoRelativePath)
+        ];
+
+        return candidates
+            .Select(path => Path.GetFullPath(path))
+            .FirstOrDefault(File.Exists);
     }
 
     public static async Task<DesktopDownloadSaveResult> SaveDownloadAsync(

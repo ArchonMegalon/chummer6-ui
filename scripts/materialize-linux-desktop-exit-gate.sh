@@ -118,7 +118,7 @@ def is_gate_input(relative_path: str) -> bool:
 def iter_repo_entries(markers):
     try:
         listing = subprocess.run(
-            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
@@ -154,7 +154,7 @@ def iter_repo_entries(markers):
             return entries
     try:
         listing = subprocess.run(
-            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
@@ -302,7 +302,7 @@ def is_gate_input(relative_path: str) -> bool:
 def iter_repo_entries(markers):
     try:
         listing = subprocess.run(
-            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
@@ -338,7 +338,7 @@ def iter_repo_entries(markers):
             return entries
     try:
         listing = subprocess.run(
-            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
@@ -717,7 +717,7 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
             exclude_markers.append(marker)
     try:
         listing = subprocess.run(
-            ["git", "-C", repo_root_text, "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            ["git", "-C", repo_root_text, "ls-files", "-z", "--cached"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
@@ -742,7 +742,7 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
     except Exception:
         try:
             listing = subprocess.run(
-                ["git", "-C", repo_root_text, "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+                ["git", "-C", repo_root_text, "ls-files", "-z", "--cached"],
                 check=True,
                 capture_output=True,
             ).stdout.decode("utf-8", errors="surrogateescape")
