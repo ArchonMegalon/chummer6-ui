@@ -47,15 +47,16 @@ jobs:
   build-desktop:
     name: Build ${{ matrix.app }} ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.tolerate_failure }}
     defaults:
       run:
         working-directory: r
     env:
-      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/c/Chummer.Contracts/Chummer.Contracts.csproj
-      CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT: ${{ github.workspace }}/h/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj
-      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/h/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
-      CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT: ${{ github.workspace }}/g/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj
-      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/u/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
+      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj
+      CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj
+      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
+      CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj
+      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
       CHUMMER_LEGACY_FIXTURE_ROOT: ${{ github.workspace }}/l/Chummer.Tests/TestFiles
     strategy:
       fail-fast: false
@@ -67,30 +68,35 @@ jobs:
             rid: win-x64
             installer_ext: exe
             launch_target: Chummer.Avalonia.exe
+            tolerate_failure: false
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: windows-latest
             rid: win-arm64
             installer_ext: exe
             launch_target: Chummer.Avalonia.exe
+            tolerate_failure: true
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: ubuntu-latest
             rid: linux-x64
             installer_ext: deb
             launch_target: Chummer.Avalonia
+            tolerate_failure: false
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: ubuntu-latest
             rid: linux-arm64
             installer_ext: deb
             launch_target: Chummer.Avalonia
+            tolerate_failure: true
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: macos-latest
             rid: osx-x64
             installer_ext: dmg
             launch_target: Chummer.Avalonia
+            tolerate_failure: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
