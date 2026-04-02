@@ -44,7 +44,8 @@ if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
   materialize_args+=(--proof "$RELEASE_PROOF_PATH")
 fi
 
-if [[ -d "$STARTUP_SMOKE_DIR" ]]; then
+materializer_help="$(python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" --help 2>&1 || true)"
+if [[ -d "$STARTUP_SMOKE_DIR" && "$materializer_help" == *"--startup-smoke-dir"* ]]; then
   materialize_args+=(--startup-smoke-dir "$STARTUP_SMOKE_DIR")
 fi
 
