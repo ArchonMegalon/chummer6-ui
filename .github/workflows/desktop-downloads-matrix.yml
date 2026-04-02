@@ -143,7 +143,7 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         shell: powershell
         run: |
-          $compatRoot = Split-Path -Parent (Split-Path -Parent $env:GITHUB_WORKSPACE)
+          $compatRoot = Split-Path -Parent $env:GITHUB_WORKSPACE
           New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-core-engine" -Target "${env:GITHUB_WORKSPACE}\\c" | Out-Null
           New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer.run-services" -Target "${env:GITHUB_WORKSPACE}\\h" | Out-Null
           New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-hub-registry" -Target "${env:GITHUB_WORKSPACE}\\g" | Out-Null
@@ -156,7 +156,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          compat_root="$(cd "$GITHUB_WORKSPACE/../.." && pwd)"
+          compat_root="$(cd "$GITHUB_WORKSPACE/.." && pwd)"
           ln -sfn "$GITHUB_WORKSPACE/c" "$GITHUB_WORKSPACE/chummer-core-engine"
           ln -sfn "$GITHUB_WORKSPACE/h" "$GITHUB_WORKSPACE/chummer.run-services"
           ln -sfn "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/chummer-hub-registry"
