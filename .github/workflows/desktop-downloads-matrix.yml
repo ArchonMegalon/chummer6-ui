@@ -113,7 +113,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-hub
-          ref: fleet/hub
+          # fleet/hub currently omits Chummer.Campaign.Contracts, but the desktop
+          # compatibility graph still needs both campaign and run contracts.
+          ref: main
           path: h
 
       - name: Checkout hub-registry compatibility tree
