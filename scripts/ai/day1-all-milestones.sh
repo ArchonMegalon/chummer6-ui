@@ -34,6 +34,7 @@ declare -a GATES=(
   "B11|Post-split session and coach ownership seams|${CHECK_DIR}/b11-post-split-ownership-check.sh"
   "B11-NPC|NPC Persona Studio backlog mapping|${CHECK_DIR}/b11-npc-persona-studio-check.sh"
   "B13|Post-B6 accessibility signoff|${CHECK_DIR}/b13-accessibility-signoff-check.sh"
+  "B14|Flagship UI release gate|${CHECK_DIR}/b14-flagship-ui-release-gate.sh"
   "UI-COVERAGE|UI milestone ETA/completion registry truth|${CHECK_DIR}/ui-milestone-coverage-check.sh"
   "UI-RS|Ruleset-specific workbench adaptation|${CHECK_DIR}/ruleset-ui-adaptation-check.sh"
   "P5|Ui kit shell chrome boundary|${CHECK_DIR}/p5-ui-kit-shell-chrome-check.sh"

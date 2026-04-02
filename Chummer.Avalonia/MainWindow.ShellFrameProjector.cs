@@ -5,6 +5,7 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
+using Chummer.Presentation.UiKit;
 using System.Text.Json;
 
 namespace Chummer.Avalonia;
@@ -28,6 +29,7 @@ internal static class MainWindowShellFrameProjector
                 MenuBar: new MenuBarState(
                     OpenMenuId: shellSurface.OpenMenuId,
                     KnownMenuIds: shellSurface.MenuRoots.Select(menu => menu.Id).ToArray(),
+                    OpenMenuCommands: ProjectMenuCommands(state, shellSurface, commandAvailabilityEvaluator),
                     IsBusy: state.IsBusy)),
             ChromeState: new MainWindowChromeState(
                 WorkspaceStrip: new WorkspaceStripState(
@@ -199,8 +201,30 @@ internal static class MainWindowShellFrameProjector
         return visibleCommands
             .Select(command => new CommandPaletteItem(
                 command.Id,
+                ShellChromeBoundary.FormatCommandLabel(command.Id),
                 command.Group,
                 commandAvailabilityEvaluator.IsCommandEnabled(command, state)))
+            .ToArray();
+    }
+
+    private static MenuCommandItem[] ProjectMenuCommands(
+        CharacterOverviewState state,
+        ShellSurfaceState shellSurface,
+        ICommandAvailabilityEvaluator commandAvailabilityEvaluator)
+    {
+        if (string.IsNullOrWhiteSpace(shellSurface.OpenMenuId))
+        {
+            return Array.Empty<MenuCommandItem>();
+        }
+
+        return shellSurface.Commands
+            .Where(command => string.Equals(command.Group, shellSurface.OpenMenuId, StringComparison.Ordinal))
+            .Select(command => new MenuCommandItem(
+                command.Id,
+                ShellChromeBoundary.FormatCommandLabel(command.Id),
+                commandAvailabilityEvaluator.IsCommandEnabled(command, state),
+                IsPrimary: string.Equals(command.Id, "open_character", StringComparison.Ordinal)
+                    || string.Equals(command.Id, "save_character", StringComparison.Ordinal)))
             .ToArray();
     }
 
@@ -270,7 +294,14 @@ internal static class MainWindowShellFrameProjector
         }
 
         DialogFieldDisplayItem[] fields = state.ActiveDialog.Fields
-            .Select(field => new DialogFieldDisplayItem(field.Id, field.Label, field.Value))
+            .Select(field => new DialogFieldDisplayItem(
+                field.Id,
+                field.Label,
+                field.Value,
+                field.Placeholder,
+                field.IsMultiline,
+                field.IsReadOnly,
+                field.InputType))
             .ToArray();
         DialogActionDisplayItem[] actions = state.ActiveDialog.Actions
             .Select(action => new DialogActionDisplayItem(action.Id, action.Label, action.IsPrimary))

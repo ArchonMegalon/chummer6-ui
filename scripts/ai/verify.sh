@@ -141,7 +141,7 @@ if ! rg -n '^# Compatibility Cargo$|`Chummer/`|`ChummerDataViewer/`|`TextblockCo
   exit 12
 fi
 
-if ! rg -n 'b3-build-lab-check\.sh|b10-contact-network-check\.sh|b9-campaign-journal-check\.sh|b8-runtime-inspector-check\.sh|b12-generated-asset-dispatch-check\.sh|b11-npc-persona-studio-check\.sh|b4-gm-board-spider-feed-check\.sh|b13-accessibility-signoff-check\.sh|b7-browser-isolation-check\.sh|b2-browse-virtualization-check\.sh|RulesetExplainRenderer\.cs' \
+if ! rg -n 'b3-build-lab-check\.sh|b10-contact-network-check\.sh|b9-campaign-journal-check\.sh|b8-runtime-inspector-check\.sh|b12-generated-asset-dispatch-check\.sh|b11-npc-persona-studio-check\.sh|b4-gm-board-spider-feed-check\.sh|b13-accessibility-signoff-check\.sh|b14-flagship-ui-release-gate\.sh|b7-browser-isolation-check\.sh|b2-browse-virtualization-check\.sh|RulesetExplainRenderer\.cs' \
   docs/WORKBENCH_RELEASE_SIGNOFF.md >/dev/null; then
   echo "[verify] FAIL: workbench release signoff must keep E0/F0 evidence explicit." >&2
   exit 13
@@ -149,6 +149,9 @@ fi
 
 echo "[verify] checking B13 accessibility signoff guard..."
 CHUMMER_B13_TESTS_REQUIRED=1 bash scripts/ai/milestones/b13-accessibility-signoff-check.sh
+
+echo "[verify] checking B14 flagship UI release gate..."
+bash scripts/ai/milestones/b14-flagship-ui-release-gate.sh
 
 echo "[verify] checking B7 browser deployment signoff guard..."
 CHUMMER_B7_RUNTIME_REQUIRED=1 CHUMMER_B7_ALLOW_RUNTIME_SKIP=0 \

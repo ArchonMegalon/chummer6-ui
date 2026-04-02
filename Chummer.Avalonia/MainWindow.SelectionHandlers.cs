@@ -1,3 +1,4 @@
+using Chummer.Avalonia.Controls;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 
@@ -53,5 +54,19 @@ public partial class MainWindow
         await RunUiActionAsync(
             () => _interactionCoordinator.ExecuteDialogActionAsync(actionId, CancellationToken.None),
             $"execute dialog action '{actionId}'");
+    }
+
+    private async void CommandDialogPane_OnDialogFieldValueChanged(object? sender, DialogFieldValueChangedEventArgs e)
+    {
+        await RunUiActionAsync(
+            () => _adapter.UpdateDialogFieldAsync(e.FieldId, e.Value, CancellationToken.None),
+            $"update dialog field '{e.FieldId}'");
+    }
+
+    private async void MenuBar_OnMenuCommandSelected(object? sender, string commandId)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.ExecuteCommandAsync(commandId, CancellationToken.None),
+            $"execute menu command '{commandId}'");
     }
 }

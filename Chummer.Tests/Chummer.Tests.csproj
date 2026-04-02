@@ -57,6 +57,9 @@
     <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />
     <Compile Include="Presentation\HttpChummerClientBuildPathTests.cs" />
   </ItemGroup>
+  <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true'">
+    <Compile Include="Presentation\AvaloniaFlagshipUiGateTests.cs" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
