@@ -11,6 +11,18 @@ LAUNCH_TARGET="${4:?launch target name is required}"
 DIST_DIR="${5:-$REPO_ROOT/dist}"
 VERSION="${6:-local}"
 
+abspath() {
+  python3 - "$1" <<'PY'
+from pathlib import Path
+import sys
+
+print(Path(sys.argv[1]).resolve())
+PY
+}
+
+PUBLISH_DIR="$(abspath "$PUBLISH_DIR")"
+DIST_DIR="$(abspath "$DIST_DIR")"
+
 case "$APP_KEY" in
   avalonia)
     APP_DISPLAY="Chummer6 Avalonia Desktop"
