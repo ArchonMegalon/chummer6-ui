@@ -6,11 +6,14 @@
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#F3F6FB" />
           <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#0F172A" />
           <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#475569" />
           <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#E2E8F0" />
           <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#EEF2FF" />
           <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#E0E7FF" />
+          <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#F1F5F9" />
           <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#94A3B8" />
           <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#CBD5E1" />
           <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#64748B" />
@@ -26,14 +29,21 @@
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#0F172A" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#2563EB" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#2563EB" />
+          <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#D97706" />
+          <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#DC2626" />
+          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#2563EB" />
           <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#047857" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#050B16" />
           <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#E5E7EB" />
           <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#CBD5E1" />
           <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#0F172A" />
           <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#172554" />
+          <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#0F172A" />
+          <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#475569" />
           <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#334155" />
           <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#64748B" />
@@ -49,15 +59,21 @@
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#60A5FA" />
+          <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#F59E0B" />
+          <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#F87171" />
+          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#93C5FD" />
           <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#34D399" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
   </Application.Resources>
   <Application.Styles>
-    <FluentTheme />
+    <FluentTheme DensityStyle="Compact" />
     <Style Selector="Window">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellWindowBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="FontSize" Value="14" />
     </Style>
     <Style Selector="UserControl">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
@@ -65,27 +81,134 @@
     <Style Selector="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
+    <Style Selector="TextBlock.shell-kicker">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
+    <Style Selector="TextBlock.shell-title">
+      <Setter Property="FontSize" Value="28" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.shell-subtitle">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.shell-section-title">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.shell-caption">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.shell-metric-value">
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Border.shell-panel">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="16" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style Selector="Border.shell-panel.chrome">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderStrongBrush}" />
+    </Style>
+    <Style Selector="Border.shell-panel.subtle">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+    </Style>
+    <Style Selector="Border.shell-panel.accent">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeAccentBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="Border.shell-card">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelOverlayBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style Selector="Border.shell-card.subtle">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
+    </Style>
     <Style Selector="TextBox">
       <Setter Property="Background" Value="{DynamicResource ChummerShellInputBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="CaretBrush" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
+      <Setter Property="Padding" Value="10,8" />
+    </Style>
+    <Style Selector="TextBox:focus">
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellFocusRingBrush}" />
     </Style>
     <Style Selector="Button">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelOverlayBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+    <Style Selector="Button:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+    </Style>
+    <Style Selector="Button:focus">
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellFocusRingBrush}" />
+    </Style>
+    <Style Selector="Button.menu-button">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="MinHeight" Value="32" />
+    </Style>
+    <Style Selector="Button.menu-button:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="Button.shell-action.primary">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellAccentButtonBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellAccentButtonForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellAccentButtonBrush}" />
+    </Style>
+    <Style Selector="Button.shell-action.primary:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="Button.shell-action.quiet">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
     </Style>
     <Style Selector="ListBox">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellInputBackgroundBrush}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="ListBoxItem">
+      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="Margin" Value="0,0,0,6" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelOverlayBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
     </Style>
     <Style Selector="ListBoxItem:selected">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="CheckBox">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />

@@ -1,38 +1,97 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.NavigatorPaneControl">
-  <Grid RowDefinitions="Auto,*,Auto,*,Auto,*,Auto,*" RowSpacing="6">
-    <TextBlock Grid.Row="0" x:Name="OpenWorkspacesHeader" Text="Open Characters" FontWeight="Bold" />
-    <ListBox Grid.Row="1" x:Name="OpenWorkspacesList">
-      <ListBox.ItemsPanel>
-        <ItemsPanelTemplate>
-          <VirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </ListBox.ItemsPanel>
-    </ListBox>
-    <TextBlock Grid.Row="2" x:Name="NavigationTabsHeader" Text="Navigation Tabs" FontWeight="Bold" />
-    <ListBox Grid.Row="3" x:Name="NavigationTabsList">
-      <ListBox.ItemsPanel>
-        <ItemsPanelTemplate>
-          <VirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </ListBox.ItemsPanel>
-    </ListBox>
-    <TextBlock Grid.Row="4" x:Name="SectionActionsHeader" Text="Section Actions" FontWeight="Bold" />
-    <ListBox Grid.Row="5" x:Name="SectionActionsList">
-      <ListBox.ItemsPanel>
-        <ItemsPanelTemplate>
-          <VirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </ListBox.ItemsPanel>
-    </ListBox>
-    <TextBlock Grid.Row="6" x:Name="WorkflowSurfacesHeader" Text="Workflow Surfaces" FontWeight="Bold" />
-    <ListBox Grid.Row="7" x:Name="WorkflowSurfacesList">
-      <ListBox.ItemsPanel>
-        <ItemsPanelTemplate>
-          <VirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </ListBox.ItemsPanel>
-    </ListBox>
-  </Grid>
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="12">
+      <Border Classes="shell-card subtle">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="shell-kicker" Text="Live Workspace" />
+          <TextBlock x:Name="OpenWorkspacesHeader" Classes="shell-section-title" Text="Open Characters" />
+          <ListBox x:Name="OpenWorkspacesList">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="shell-section-title" Text="{Binding Name}" />
+                  <TextBlock Classes="shell-caption" Text="{Binding Alias, StringFormat=Alias: {0}}" />
+                  <TextBlock Classes="shell-kicker" Text="{Binding RulesetId, StringFormat=Ruleset {0}}" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VirtualizingStackPanel />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+          </ListBox>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="shell-card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="shell-kicker" Text="Primary Navigation" />
+          <TextBlock x:Name="NavigationTabsHeader" Classes="shell-section-title" Text="Navigation Tabs" />
+          <ListBox x:Name="NavigationTabsList">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="shell-section-title" Text="{Binding Label}" />
+                  <TextBlock Classes="shell-caption" Text="{Binding Group, StringFormat=Group: {0}}" />
+                  <TextBlock Classes="shell-kicker" Text="{Binding SectionId, StringFormat=Section {0}}" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VirtualizingStackPanel />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+          </ListBox>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="shell-card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="shell-kicker" Text="Section Actions" />
+          <TextBlock x:Name="SectionActionsHeader" Classes="shell-section-title" Text="Section Actions" />
+          <ListBox x:Name="SectionActionsList">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="shell-section-title" Text="{Binding Label}" />
+                  <TextBlock Classes="shell-caption" Text="{Binding Kind, StringFormat=Action kind: {0}}" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VirtualizingStackPanel />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+          </ListBox>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="shell-card subtle">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="shell-kicker" Text="Workflow Surfaces" />
+          <TextBlock x:Name="WorkflowSurfacesHeader" Classes="shell-section-title" Text="Workflow Surfaces" />
+          <ListBox x:Name="WorkflowSurfacesList">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="shell-section-title" Text="{Binding Label}" />
+                  <TextBlock Classes="shell-caption" Text="{Binding WorkflowId, StringFormat=Workflow: {0}}" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VirtualizingStackPanel />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+          </ListBox>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
 </UserControl>

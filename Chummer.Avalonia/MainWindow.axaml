@@ -7,7 +7,7 @@
         MinWidth="1000"
         MinHeight="680"
         Title="Chummer Desktop"
-        Background="{DynamicResource ChummerShellSurfaceAltBrush}"
+        Background="{DynamicResource ChummerShellWindowBackgroundBrush}"
         KeyDown="Window_OnKeyDown">
   <Window.Styles>
     <Style Selector="Button.menu-button.active-menu">
@@ -15,43 +15,48 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
   </Window.Styles>
-  <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="6">
-    <Border x:Name="MenuBarRegion" Grid.Row="0" Background="{DynamicResource ChummerShellChromeBrush}" BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}" BorderThickness="1" Padding="6">
+  <Grid Margin="12" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8">
+    <Border x:Name="MenuBarRegion" Grid.Row="0" Classes="shell-panel chrome" Padding="6">
       <controls:ShellMenuBarControl x:Name="ShellMenuBarControl" />
     </Border>
 
-    <Border x:Name="ToolStripRegion" Grid.Row="1" Background="{DynamicResource ChummerShellChromeSubtleBrush}" BorderBrush="{DynamicResource ChummerShellBorderBrush}" BorderThickness="1" Padding="6">
-      <controls:ToolStripControl x:Name="ToolStripControl" />
-    </Border>
+    <Grid Grid.Row="1" ColumnDefinitions="2.2*,1*" ColumnSpacing="8">
+      <Border x:Name="ToolStripRegion" Grid.Column="0" Classes="shell-panel chrome" Padding="8">
+        <controls:ToolStripControl x:Name="ToolStripControl" />
+      </Border>
+      <Border x:Name="WorkspaceStripRegion" Grid.Column="1" Classes="shell-panel subtle" Padding="10,8">
+        <controls:WorkspaceStripControl x:Name="WorkspaceStripControl" />
+      </Border>
+    </Grid>
 
-    <Border x:Name="WorkspaceStripRegion" Grid.Row="2" Background="{DynamicResource ChummerShellChromeAccentBrush}" BorderBrush="{DynamicResource ChummerShellBorderBrush}" BorderThickness="1" Padding="6">
-      <controls:WorkspaceStripControl x:Name="WorkspaceStripControl" />
-    </Border>
-
-    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="300,*,300" ColumnSpacing="8">
-      <Border x:Name="LeftNavigatorRegion" Grid.Column="0" Background="{DynamicResource ChummerShellSurfaceBrush}" BorderThickness="1" BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}" Padding="8">
+    <Grid x:Name="ContentRegion" Grid.Row="2" ColumnDefinitions="300,*,320" ColumnSpacing="8">
+      <Border x:Name="LeftNavigatorRegion" Grid.Column="0" Classes="shell-panel">
         <controls:NavigatorPaneControl x:Name="NavigatorPaneControl" />
       </Border>
 
       <Grid x:Name="CenterShellRegion" Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="8">
-        <Border x:Name="SummaryHeaderRegion" Grid.Row="0" Background="{DynamicResource ChummerShellSurfaceBrush}" BorderThickness="1" BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}" Padding="8">
+        <Border x:Name="SummaryHeaderRegion" Grid.Row="0" Classes="shell-panel subtle">
           <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
         </Border>
 
-        <Border x:Name="SectionRegion" Grid.Row="1" Background="{DynamicResource ChummerShellSurfaceBrush}" BorderThickness="0" Padding="0">
+        <Border x:Name="SectionRegion" Grid.Row="1" Classes="shell-panel" Padding="0">
           <controls:SectionHostControl x:Name="SectionHostControl" />
         </Border>
       </Grid>
 
-      <Border x:Name="RightShellRegion" Grid.Column="2" Background="{DynamicResource ChummerShellSurfaceBrush}" BorderThickness="1" BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}" Padding="8">
+      <Border x:Name="RightShellRegion" Grid.Column="2" Classes="shell-panel">
         <Grid RowDefinitions="2*,*" RowSpacing="8">
-          <controls:CommandDialogPaneControl x:Name="CommandDialogPaneControl" Grid.Row="0" />
-          <controls:CoachSidecarControl x:Name="CoachSidecarControl" Grid.Row="1" />
+          <Border Grid.Row="0" Classes="shell-card">
+            <controls:CommandDialogPaneControl x:Name="CommandDialogPaneControl" />
+          </Border>
+          <Border Grid.Row="1" Classes="shell-card subtle">
+            <controls:CoachSidecarControl x:Name="CoachSidecarControl" />
+          </Border>
         </Grid>
       </Border>
     </Grid>
 
-    <Border x:Name="StatusStripRegion" Grid.Row="4" Background="{DynamicResource ChummerShellChromeBrush}" BorderBrush="{DynamicResource ChummerShellBorderBrush}" BorderThickness="1" Padding="6">
+    <Border x:Name="StatusStripRegion" Grid.Row="3" Classes="shell-panel chrome" Padding="10,8">
       <controls:StatusStripControl x:Name="StatusStripControl" />
     </Border>
   </Grid>

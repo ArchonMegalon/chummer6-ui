@@ -1,5 +1,14 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.WorkspaceStripControl">
-  <TextBlock x:Name="WorkspaceText" VerticalAlignment="Center" Text="Workspace: none" />
+  <StackPanel Spacing="3" VerticalAlignment="Center">
+    <TextBlock Classes="shell-kicker" Text="Active Workspace" />
+    <TextBlock x:Name="WorkspaceText"
+               Classes="shell-section-title"
+               VerticalAlignment="Center"
+               Text="Workspace: none"
+               TextWrapping="Wrap" />
+    <TextBlock Classes="shell-caption"
+               Text="Ruleset posture and current tab context stay visible while you move through dense builder sections." />
+  </StackPanel>
 </UserControl>

@@ -32,6 +32,12 @@
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Chummer.Tests\TestFiles\Soma (Career).chum5"
+          Link="Samples/Legacy/Soma-Career.chum5">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>ChummerDesktopHeadId</_Parameter1>
       <_Parameter2>$(ChummerDesktopHeadId)</_Parameter2>

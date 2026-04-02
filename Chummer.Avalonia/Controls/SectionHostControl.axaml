@@ -1,14 +1,21 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.SectionHostControl">
-  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
-    <TextBlock Grid.Row="0" x:Name="NoticeText" Text="Notice: Ready." TextWrapping="Wrap" />
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
+    <Border Grid.Row="0" Classes="shell-card subtle">
+      <StackPanel Spacing="6">
+        <TextBlock Classes="shell-kicker" Text="Section Briefing" />
+        <TextBlock x:Name="NoticeText" Classes="shell-section-title" Text="Notice: Ready." TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
 
-    <Border Grid.Row="1" Padding="8" Background="{DynamicResource ChummerShellSurfaceAltBrush}" BorderThickness="1" BorderBrush="{DynamicResource ChummerShellCardBorderBrush}">
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <Border Classes="shell-card">
       <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,*" RowSpacing="6">
-        <TextBlock Grid.Row="0" Text="Active Section Preview" FontWeight="Bold" />
+        <TextBlock Grid.Row="0" Text="Active Section Preview" Classes="shell-section-title" />
         <Border Grid.Row="1"
                 x:Name="BuildLabBorder"
+                Classes="shell-card"
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
@@ -78,6 +85,7 @@
         </Border>
         <Border Grid.Row="2"
                 x:Name="BrowseWorkspaceBorder"
+                Classes="shell-card"
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
@@ -127,6 +135,7 @@
         </Border>
         <Border Grid.Row="3"
                 x:Name="ContactGraphBorder"
+                Classes="shell-card"
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
@@ -163,6 +172,7 @@
         </Border>
         <Border Grid.Row="4"
                 x:Name="NpcPersonaStudioBorder"
+                Classes="shell-card"
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
@@ -201,6 +211,7 @@
         </Border>
         <Border Grid.Row="5"
                 x:Name="DowntimePlannerBorder"
+                Classes="shell-card"
                 IsVisible="False"
                 Padding="8"
                 BorderThickness="1"
@@ -245,11 +256,13 @@
                  TextWrapping="Wrap"
                  IsReadOnly="True" />
       </Grid>
-    </Border>
+      </Border>
+    </ScrollViewer>
 
-    <Border Grid.Row="2" Background="{DynamicResource ChummerShellSurfaceAltBrush}" BorderThickness="1" BorderBrush="{DynamicResource ChummerShellBorderBrush}" Padding="6">
+    <Border Grid.Row="2" Classes="shell-card subtle">
       <StackPanel Spacing="4">
-        <TextBlock Text="Raw XML Import (Developer Utility)" FontWeight="Bold" />
+        <TextBlock Classes="shell-kicker" Text="Developer Utility" />
+        <TextBlock Text="Raw XML Import" Classes="shell-section-title" />
         <TextBox x:Name="XmlInputBox"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
