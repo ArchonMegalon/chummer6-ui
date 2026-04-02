@@ -98,7 +98,16 @@ public partial class DesktopDialogWindow : Window
             };
             if (!field.IsReadOnly)
             {
-                checkBox.IsCheckedChanged += (_, _) => QueueDialogFieldUpdate(field.Id, checkBox.IsChecked == true ? "true" : "false");
+                checkBox.IsCheckedChanged += (_, _) =>
+                {
+                    string nextValue = checkBox.IsChecked == true ? "true" : "false";
+                    if (string.Equals(nextValue, field.Value, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    QueueDialogFieldUpdate(field.Id, nextValue);
+                };
             }
 
             return checkBox;
@@ -115,7 +124,16 @@ public partial class DesktopDialogWindow : Window
         };
         if (!field.IsReadOnly)
         {
-            textBox.TextChanged += (_, _) => QueueDialogFieldUpdate(field.Id, textBox.Text ?? string.Empty);
+            textBox.TextChanged += (_, _) =>
+            {
+                string nextValue = textBox.Text ?? string.Empty;
+                if (string.Equals(nextValue, field.Value, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                QueueDialogFieldUpdate(field.Id, nextValue);
+            };
         }
 
         return textBox;
