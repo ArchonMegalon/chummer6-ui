@@ -456,7 +456,7 @@ jobs:
   deploy-downloads-http:
     name: Deploy Downloads Bundle (HTTP Promote)
     needs: generate-manifest
-    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.CHUMMER_RELEASE_UPLOAD_URL != '' && secrets.CHUMMER_RELEASE_UPLOAD_TOKEN != '' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.CHUMMER_RELEASE_UPLOAD_URL != '' }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_RELEASE_UPLOAD_URL: ${{ vars.CHUMMER_RELEASE_UPLOAD_URL }}
@@ -477,20 +477,7 @@ jobs:
           [[ -n "${CHUMMER_RELEASE_UPLOAD_URL:-}" ]] || { echo "CHUMMER_RELEASE_UPLOAD_URL is required." >&2; exit 1; }
           [[ -n "${CHUMMER_RELEASE_UPLOAD_TOKEN:-}" ]] || { echo "CHUMMER_RELEASE_UPLOAD_TOKEN is required." >&2; exit 1; }
 
-      - name: Skip when promotion evidence is absent
-        id: evidence
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f "dist/release-evidence/public-promotion.json" ]]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "No dist/release-evidence/public-promotion.json in the bundle; skipping HTTP promotion."
-          fi
-
       - name: Upload release bundle to chummer.run
-        if: ${{ steps.evidence.outputs.present == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -507,7 +494,7 @@ jobs:
             | tee release-upload-response.json
 
       - name: Verify live promoted manifest
-        if: ${{ steps.evidence.outputs.present == 'true' && vars.CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL != '' }}
+        if: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL != '' }}
         shell: bash
         run: |
           set -euo pipefail
