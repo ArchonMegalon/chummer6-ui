@@ -537,31 +537,57 @@ def validate_macos_gate(
     startup = gate_payload.get("startup_smoke") if isinstance(gate_payload.get("startup_smoke"), dict) else {}
     artifact = gate_payload.get("artifact") if isinstance(gate_payload.get("artifact"), dict) else {}
     startup_receipt = startup.get("receipt") if isinstance(startup.get("receipt"), dict) else {}
-    primary_status = normalize_token(startup.get("status"))
     artifact_exists = bool(artifact.get("installer_exists"))
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
     expected_arch = "arm64" if rid.endswith("arm64") else "x64" if rid.endswith("x64") else ""
+    startup_receipt_path = Path(str(startup.get("receipt_path") or "").strip()) if startup.get("receipt_path") else None
+    startup_receipt_exists = startup_receipt_path is not None and startup_receipt_path.is_file()
+    startup_receipt_file = (
+        load_json(startup_receipt_path)
+        if startup_receipt_exists and startup_receipt_path is not None
+        else {}
+    )
+    startup_receipt_for_validation = startup_receipt_file if startup_receipt_file else startup_receipt
+    startup_smoke_status = normalize_token(
+        startup_receipt_for_validation.get("status")
+        or startup.get("status")
+    )
+    startup_smoke_ready_checkpoint = normalize_token(
+        startup_receipt_for_validation.get("readyCheckpoint")
+        or startup.get("ready_checkpoint")
+    )
+    startup_smoke_artifact_digest = normalize_token(
+        startup_receipt_for_validation.get("artifactDigest")
+        or startup.get("artifact_digest")
+    )
+    startup_smoke_head_id = normalize_token(startup_receipt_for_validation.get("headId"))
+    startup_smoke_platform = normalize_token(startup_receipt_for_validation.get("platform"))
+    startup_smoke_arch = normalize_token(startup_receipt_for_validation.get("arch"))
     startup_receipt_recorded_at_raw = str(
-        startup.get("receipt_recorded_at")
-        or startup_receipt.get("completedAtUtc")
-        or startup_receipt.get("recordedAtUtc")
-        or startup_receipt.get("startedAtUtc")
+        startup_receipt_for_validation.get("completedAtUtc")
+        or startup_receipt_for_validation.get("recordedAtUtc")
+        or startup_receipt_for_validation.get("startedAtUtc")
+        or startup.get("receipt_recorded_at")
         or ""
     ).strip()
     startup_receipt_recorded_at = parse_iso(startup_receipt_recorded_at_raw)
 
-    gate_evidence["startup_smoke_status"] = primary_status
+    gate_evidence["startup_smoke_status"] = startup_smoke_status
     gate_evidence["artifact"] = artifact
     gate_evidence["release_channel_macos_artifact"] = channel_artifact
     gate_evidence["startup_smoke_receipt_path"] = str(startup.get("receipt_path") or "").strip()
-    gate_evidence["startup_smoke_ready_checkpoint"] = normalize_token(startup.get("ready_checkpoint"))
-    gate_evidence["startup_smoke_artifact_digest"] = normalize_token(startup.get("artifact_digest"))
+    gate_evidence["startup_smoke_receipt_file_exists"] = startup_receipt_exists
+    gate_evidence["startup_smoke_ready_checkpoint"] = startup_smoke_ready_checkpoint
+    gate_evidence["startup_smoke_artifact_digest"] = startup_smoke_artifact_digest
+    gate_evidence["startup_smoke_receipt_head_id"] = startup_smoke_head_id
+    gate_evidence["startup_smoke_receipt_platform"] = startup_smoke_platform
+    gate_evidence["startup_smoke_receipt_arch"] = startup_smoke_arch
     gate_evidence["startup_smoke_receipt_recorded_at"] = startup_receipt_recorded_at_raw
 
-    if primary_status not in {"pass", "passed", "ready"}:
+    if startup_smoke_status not in {"pass", "passed", "ready"}:
         reasons.append(f"macOS startup smoke is not passing for promoted head '{head}' ({rid}).")
     if not artifact_exists:
         reasons.append(f"macOS installer artifact is missing for promoted head '{head}' ({rid}).")
@@ -599,22 +625,22 @@ def validate_macos_gate(
             if shelf_sha != installer_sha:
                 reasons.append("macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.")
 
-    startup_receipt_path = Path(gate_evidence["startup_smoke_receipt_path"]) if gate_evidence["startup_smoke_receipt_path"] else None
-    startup_receipt_exists = startup_receipt_path is not None and startup_receipt_path.is_file()
     if not startup_receipt_exists:
         reasons.append(f"macOS startup smoke receipt path is missing or unreadable for promoted head '{head}' ({rid}).")
     elif startup_receipt_path is not None and not path_within_root(startup_receipt_path, repo_root):
         reasons.append(f"macOS startup smoke receipt path is outside this repo root for promoted head '{head}' ({rid}).")
     else:
-        if gate_evidence["startup_smoke_ready_checkpoint"] != "pre_ui_event_loop":
+        if startup_smoke_status not in {"pass", "passed", "ready"}:
+            reasons.append(f"macOS startup smoke receipt status is not passing for promoted head '{head}' ({rid}).")
+        if startup_smoke_ready_checkpoint != "pre_ui_event_loop":
             reasons.append(f"macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head '{head}' ({rid}).")
-        if expected_digest and gate_evidence["startup_smoke_artifact_digest"] != expected_digest:
+        if expected_digest and startup_smoke_artifact_digest != expected_digest:
             reasons.append(f"macOS startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}' ({rid}).")
-        if normalize_token(startup_receipt.get("headId")) != head:
+        if startup_smoke_head_id != head:
             reasons.append(f"macOS startup smoke receipt headId does not match promoted head '{head}' ({rid}).")
-        if normalize_token(startup_receipt.get("platform")) != "macos":
+        if startup_smoke_platform != "macos":
             reasons.append(f"macOS startup smoke receipt platform is not macOS for promoted head '{head}' ({rid}).")
-        if expected_arch and normalize_token(startup_receipt.get("arch")) != expected_arch:
+        if expected_arch and startup_smoke_arch != expected_arch:
             reasons.append(f"macOS startup smoke receipt arch does not match promoted RID for head '{head}' ({rid}).")
         if not startup_receipt_recorded_at_raw or startup_receipt_recorded_at is None:
             reasons.append(f"macOS startup smoke receipt timestamp is missing/invalid for promoted head '{head}' ({rid}).")
