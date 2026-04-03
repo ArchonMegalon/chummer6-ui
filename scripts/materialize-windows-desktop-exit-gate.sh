@@ -1,0 +1,303 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+PROOF_PATH="${CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json}"
+RELEASE_CHANNEL_PATH="${CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+WINDOWS_INSTALLER_PATH="${CHUMMER_WINDOWS_INSTALLER_PATH:-/docker/chummer5a/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe}"
+UI_LOCAL_RELEASE_PROOF_PATH="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
+UI_FLAGSHIP_RELEASE_GATE_PATH="${CHUMMER_UI_FLAGSHIP_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
+UI_WORKFLOW_PARITY_PATH="${CHUMMER_UI_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json}"
+SR4_WORKFLOW_PARITY_PATH="${CHUMMER_SR4_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json}"
+SR6_WORKFLOW_PARITY_PATH="${CHUMMER_SR6_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json}"
+
+mkdir -p "$(dirname "$PROOF_PATH")"
+
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" <<'PY'
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List
+
+PASSING_STARTUP_SMOKE_STATUSES = {"pass", "passed", "ready"}
+STARTUP_SMOKE_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_AGE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
+    or "86400"
+)
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def load_json(path: Path) -> Dict[str, Any]:
+    if not path.is_file():
+        return {}
+    loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    return loaded if isinstance(loaded, dict) else {}
+
+
+def sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def read_status(path: Path, expected_contract: str | None = None) -> str:
+    payload = load_json(path)
+    if expected_contract:
+        contract = str(payload.get("contract_name") or payload.get("contractName") or "").strip()
+        if contract != expected_contract:
+            return ""
+    return str(payload.get("status") or "").strip().lower()
+
+
+def normalize_token(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
+def parse_iso_utc(value: Any) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+proof_path = Path(sys.argv[1])
+release_channel_path = Path(sys.argv[2])
+installer_path = Path(sys.argv[3])
+ui_local_release_proof_path = Path(sys.argv[4])
+ui_flagship_release_gate_path = Path(sys.argv[5])
+ui_workflow_parity_path = Path(sys.argv[6])
+sr4_workflow_parity_path = Path(sys.argv[7])
+sr6_workflow_parity_path = Path(sys.argv[8])
+repo_root = Path(sys.argv[9])
+
+reasons: List[str] = []
+evidence: Dict[str, Any] = {
+    "release_channel_path": str(release_channel_path),
+    "windows_installer_path": str(installer_path),
+    "ui_local_release_proof_path": str(ui_local_release_proof_path),
+    "ui_flagship_release_gate_path": str(ui_flagship_release_gate_path),
+    "ui_workflow_parity_path": str(ui_workflow_parity_path),
+    "sr4_workflow_parity_path": str(sr4_workflow_parity_path),
+    "sr6_workflow_parity_path": str(sr6_workflow_parity_path),
+}
+
+installer_exists = installer_path.is_file()
+installer_size = installer_path.stat().st_size if installer_exists else 0
+installer_sha = sha256_file(installer_path) if installer_exists else ""
+evidence["installer_exists"] = installer_exists
+evidence["installer_size_bytes"] = installer_size
+evidence["installer_sha256"] = installer_sha
+
+if not installer_exists:
+    reasons.append("Avalonia Windows installer is missing from the active public downloads shelf.")
+
+release_channel = load_json(release_channel_path)
+release_channel_status = str(release_channel.get("status") or "").strip().lower()
+evidence["release_channel_status"] = release_channel_status
+if release_channel_status != "published":
+    reasons.append("Release channel is not published.")
+
+artifacts = [
+    item for item in (release_channel.get("artifacts") or [])
+    if isinstance(item, dict)
+]
+windows_artifact = None
+for artifact in artifacts:
+    if (
+        str(artifact.get("head") or "").strip() == "avalonia"
+        and str(artifact.get("platform") or "").strip().lower() == "windows"
+        and str(artifact.get("kind") or "").strip().lower() == "installer"
+    ):
+        windows_artifact = artifact
+        break
+
+if windows_artifact is None:
+    reasons.append("Release channel does not publish an Avalonia Windows installer artifact.")
+else:
+    artifact_file_name = str(windows_artifact.get("fileName") or "").strip()
+    artifact_size = int(windows_artifact.get("sizeBytes") or 0)
+    artifact_sha = str(windows_artifact.get("sha256") or "").strip().lower()
+    evidence["release_channel_windows_artifact"] = windows_artifact
+    if artifact_file_name != installer_path.name:
+        reasons.append("Release-channel Windows artifact fileName does not match the promoted installer.")
+    if installer_exists and artifact_size and artifact_size != installer_size:
+        reasons.append("Release-channel Windows artifact size does not match installer bytes.")
+    if installer_exists and artifact_sha and artifact_sha != installer_sha:
+        reasons.append("Release-channel Windows artifact sha256 does not match installer digest.")
+
+payload_marker_present = False
+sample_marker_present = False
+if installer_exists:
+    blob = installer_path.read_bytes()
+    payload_marker_present = b"ChummerInstaller.Payload.zip" in blob
+    sample_marker_present = b"Samples/Legacy/Soma-Career.chum5" in blob
+evidence["embedded_payload_marker_present"] = payload_marker_present
+evidence["embedded_sample_marker_present"] = sample_marker_present
+evidence["installer_payload_validation_mode"] = "release-channel digest-size-and-embedded-markers"
+
+if installer_exists and not payload_marker_present:
+    reasons.append("Published Windows installer is missing the embedded desktop payload marker.")
+if installer_exists and not sample_marker_present:
+    reasons.append("Published Windows installer is missing the bundled demo runner sample marker.")
+
+startup_smoke_receipt_override = os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH", "").strip()
+if startup_smoke_receipt_override:
+    startup_smoke_receipt_path = Path(startup_smoke_receipt_override).resolve()
+    startup_smoke_candidates = [startup_smoke_receipt_path]
+else:
+    startup_smoke_receipt_name = "startup-smoke-avalonia-win-x64.receipt.json"
+    startup_smoke_candidates = [
+        release_channel_path.parent / "startup-smoke" / startup_smoke_receipt_name,
+        release_channel_path.parent.parent / "startup-smoke" / startup_smoke_receipt_name,
+        proof_path.parent / "startup-smoke" / startup_smoke_receipt_name,
+        repo_root / ".codex-studio" / "published" / "startup-smoke" / startup_smoke_receipt_name,
+        repo_root / "Docker" / "Downloads" / "startup-smoke" / startup_smoke_receipt_name,
+        Path("/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke") / startup_smoke_receipt_name,
+        Path("/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
+        Path("/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke") / startup_smoke_receipt_name,
+        Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
+        Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
+        Path("/docker/chummer5a/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
+        Path("/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
+    ]
+    startup_smoke_receipt_path = next((path for path in startup_smoke_candidates if path.is_file()), startup_smoke_candidates[0])
+
+startup_smoke_payload = load_json(startup_smoke_receipt_path)
+evidence["startup_smoke_receipt_path"] = str(startup_smoke_receipt_path)
+evidence["startup_smoke_receipt_candidates"] = [str(path) for path in startup_smoke_candidates]
+evidence["startup_smoke_receipt_found"] = startup_smoke_receipt_path.is_file()
+
+startup_smoke_status = normalize_token(startup_smoke_payload.get("status"))
+evidence["startup_smoke_status"] = startup_smoke_status
+if not startup_smoke_receipt_path.is_file():
+    reasons.append("Windows startup smoke receipt is missing for promoted installer bytes.")
+elif startup_smoke_status not in PASSING_STARTUP_SMOKE_STATUSES:
+    reasons.append("Windows startup smoke receipt status is not passing.")
+
+startup_smoke_checkpoint = normalize_token(startup_smoke_payload.get("readyCheckpoint"))
+evidence["startup_smoke_ready_checkpoint"] = startup_smoke_checkpoint
+if startup_smoke_receipt_path.is_file() and startup_smoke_checkpoint != "pre_ui_event_loop":
+    reasons.append("Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop.")
+
+startup_smoke_digest = normalize_token(startup_smoke_payload.get("artifactDigest"))
+evidence["startup_smoke_artifact_digest"] = startup_smoke_digest
+expected_installer_digest = f"sha256:{installer_sha}" if installer_sha else ""
+evidence["expected_startup_smoke_artifact_digest"] = expected_installer_digest
+if startup_smoke_receipt_path.is_file() and installer_exists and expected_installer_digest and startup_smoke_digest != expected_installer_digest:
+    reasons.append("Windows startup smoke receipt artifactDigest does not match promoted installer bytes.")
+
+startup_smoke_head = normalize_token(startup_smoke_payload.get("headId"))
+startup_smoke_platform = normalize_token(startup_smoke_payload.get("platform"))
+startup_smoke_arch = normalize_token(startup_smoke_payload.get("arch"))
+evidence["startup_smoke_head"] = startup_smoke_head
+evidence["startup_smoke_platform"] = startup_smoke_platform
+evidence["startup_smoke_arch"] = startup_smoke_arch
+if startup_smoke_receipt_path.is_file() and startup_smoke_head != "avalonia":
+    reasons.append("Windows startup smoke receipt headId does not match promoted head avalonia.")
+if startup_smoke_receipt_path.is_file() and startup_smoke_platform != "windows":
+    reasons.append("Windows startup smoke receipt platform is not windows.")
+if startup_smoke_receipt_path.is_file() and startup_smoke_arch != "x64":
+    reasons.append("Windows startup smoke receipt arch does not match promoted RID win-x64.")
+
+startup_smoke_timestamp = parse_iso_utc(
+    startup_smoke_payload.get("completedAtUtc")
+    or startup_smoke_payload.get("recordedAtUtc")
+    or startup_smoke_payload.get("startedAtUtc")
+)
+evidence["startup_smoke_completed_at"] = (
+    startup_smoke_timestamp.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    if startup_smoke_timestamp
+    else ""
+)
+if startup_smoke_receipt_path.is_file():
+    if startup_smoke_timestamp is None:
+        reasons.append("Windows startup smoke receipt timestamp is missing or invalid.")
+    else:
+        startup_smoke_age_seconds = max(0, int((datetime.now(timezone.utc) - startup_smoke_timestamp).total_seconds()))
+        evidence["startup_smoke_age_seconds"] = startup_smoke_age_seconds
+        evidence["startup_smoke_max_age_seconds"] = STARTUP_SMOKE_MAX_AGE_SECONDS
+        if startup_smoke_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+            reasons.append(f"Windows startup smoke receipt is stale ({startup_smoke_age_seconds}s old).")
+
+ui_local_release_status = read_status(
+    ui_local_release_proof_path,
+    expected_contract="chummer6-ui.local_release_proof",
+)
+ui_flagship_gate_status = read_status(ui_flagship_release_gate_path)
+ui_workflow_parity_status = read_status(
+    ui_workflow_parity_path,
+    expected_contract="chummer6-ui.chummer5a_desktop_workflow_parity",
+)
+sr4_workflow_parity_status = read_status(
+    sr4_workflow_parity_path,
+    expected_contract="chummer6-ui.sr4_desktop_workflow_parity",
+)
+sr6_workflow_parity_status = read_status(
+    sr6_workflow_parity_path,
+    expected_contract="chummer6-ui.sr6_desktop_workflow_parity",
+)
+evidence["ui_local_release_status"] = ui_local_release_status
+evidence["ui_flagship_release_gate_status"] = ui_flagship_gate_status
+evidence["ui_workflow_parity_status"] = ui_workflow_parity_status
+evidence["sr4_workflow_parity_status"] = sr4_workflow_parity_status
+evidence["sr6_workflow_parity_status"] = sr6_workflow_parity_status
+
+if ui_local_release_status not in {"pass", "passed"}:
+    reasons.append("UI local release proof is missing or not passed.")
+if ui_flagship_gate_status not in {"pass", "passed", "ready"}:
+    reasons.append("Flagship UI release gate proof is missing or not passed.")
+if ui_workflow_parity_status not in {"pass", "passed", "ready"}:
+    reasons.append("Chummer5a desktop workflow parity proof is missing or not passed.")
+if sr4_workflow_parity_status not in {"pass", "passed", "ready"}:
+    reasons.append("SR4 desktop workflow parity proof is missing or not passed.")
+if sr6_workflow_parity_status not in {"pass", "passed", "ready"}:
+    reasons.append("SR6 desktop workflow parity proof is missing or not passed.")
+
+status = "passed" if not reasons else "failed"
+payload = {
+    "contract_name": "chummer6-ui.windows_desktop_exit_gate",
+    "generated_at": now_iso(),
+    "status": status,
+    "reason": (
+        "windows desktop release-channel publication and workflow proof checks passed"
+        if status == "passed"
+        else "windows desktop exit gate checks failed"
+    ),
+    "head": {
+        "app_key": "avalonia",
+        "platform": "windows",
+        "rid": "win-x64",
+        "launch_target": "Chummer.Avalonia.exe",
+    },
+    "checks": evidence,
+    "reasons": reasons,
+}
+proof_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+if reasons:
+    print("\n".join(reasons), file=sys.stderr)
+    raise SystemExit(1)
+PY
+
+echo "[windows-exit-gate] PASS"
