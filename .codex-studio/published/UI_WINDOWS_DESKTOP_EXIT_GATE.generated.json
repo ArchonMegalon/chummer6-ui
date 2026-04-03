@@ -1,8 +1,8 @@
 {
   "contract_name": "chummer6-ui.windows_desktop_exit_gate",
-  "generated_at": "2026-04-03T15:55:54Z",
-  "status": "passed",
-  "reason": "windows desktop release-channel publication and workflow proof checks passed",
+  "generated_at": "2026-04-03T16:46:27Z",
+  "status": "failed",
+  "reason": "windows desktop exit gate checks failed",
   "head": {
     "app_key": "avalonia",
     "platform": "windows",
@@ -41,11 +41,37 @@
     "embedded_payload_marker_present": true,
     "embedded_sample_marker_present": true,
     "installer_payload_validation_mode": "release-channel digest-size-and-embedded-markers",
+    "startup_smoke_receipt_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+    "startup_smoke_receipt_candidates": [
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json"
+    ],
+    "startup_smoke_receipt_found": false,
+    "startup_smoke_status": "",
+    "startup_smoke_ready_checkpoint": "",
+    "startup_smoke_artifact_digest": "",
+    "expected_startup_smoke_artifact_digest": "sha256:529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f",
+    "startup_smoke_head": "",
+    "startup_smoke_platform": "",
+    "startup_smoke_arch": "",
+    "startup_smoke_completed_at": "",
     "ui_local_release_status": "passed",
     "ui_flagship_release_gate_status": "pass",
     "ui_workflow_parity_status": "pass",
     "sr4_workflow_parity_status": "pass",
     "sr6_workflow_parity_status": "pass"
   },
-  "reasons": []
+  "reasons": [
+    "Windows startup smoke receipt is missing for promoted installer bytes."
+  ]
 }

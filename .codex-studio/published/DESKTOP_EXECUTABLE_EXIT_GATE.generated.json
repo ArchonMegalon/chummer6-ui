@@ -1,9 +1,11 @@
 {
-  "generatedAt": "2026-04-03T16:37:42.083498Z",
+  "generatedAt": "2026-04-03T16:46:35.387223Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
   "status": "fail",
   "summary": "Desktop executable exit gate is not fully proven.",
   "reasons": [
+    "Windows desktop exit gate is missing or not passing.",
+    "Windows desktop exit gate is missing or not passing.",
     "macOS desktop exit gate is missing or not passing for promoted head 'avalonia' (osx-arm64).",
     "macOS startup smoke is not passing for promoted head 'avalonia' (osx-arm64).",
     "macOS startup smoke receipt path is missing or unreadable for promoted head 'avalonia' (osx-arm64).",
@@ -39,9 +41,9 @@
     "windows_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
     "flagship_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "repo_root": "/docker/chummercomplete/chummer-presentation",
-    "flagship UI release gate proof_generated_at": "2026-04-03T16:35:21.073697Z",
-    "flagship UI release gate proof_age_seconds": 140,
-    "windows_status": "passed",
+    "flagship UI release gate proof_generated_at": "2026-04-03T16:39:11.551172Z",
+    "flagship UI release gate proof_age_seconds": 442,
+    "windows_status": "failed",
     "flagship_status": "pass",
     "receipt_scope": {
       "windows_gate": {
@@ -162,9 +164,9 @@
     ],
     "windows_gate": {
       "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
-      "status": "passed",
-      "windows desktop exit gate proof_generated_at": "2026-04-03T15:55:54Z",
-      "windows desktop exit gate proof_age_seconds": 2507,
+      "status": "failed",
+      "windows desktop exit gate proof_generated_at": "2026-04-03T16:46:27Z",
+      "windows desktop exit gate proof_age_seconds": 7,
       "receipt_head": {
         "app_key": "avalonia",
         "platform": "windows",
@@ -210,7 +212,7 @@
             "AvaloniaFlagshipUiGateTests",
             "DualHeadAcceptanceTests"
           ],
-          "sourceTestFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+          "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
           "visualReview": "pass",
           "themeReadabilityContrast": "pass",
           "bundledDemoRunner": "pass",
@@ -243,7 +245,7 @@
           "commandSurface": "pass",
           "dialogSurface": "pass",
           "journeyPanels": "pass",
-          "sourceTestFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
+          "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
           "requiredShellTests": [
             "MenuBar_invokes_toggle_and_execute_callbacks",
             "WorkspaceLeftPane_renders_shell_controls_and_invokes_callbacks",
@@ -259,7 +261,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for avalonia_generated_at": "2026-04-03T16:30:11Z",
-        "linux desktop exit gate proof for avalonia_age_seconds": 450,
+        "linux desktop exit gate proof for avalonia_age_seconds": 984,
         "receipt_head": {
           "app_key": "avalonia",
           "project_path": "Chummer.Avalonia/Chummer.Avalonia.csproj",
@@ -282,7 +284,7 @@
         "primary_receipt_artifact_digest": "sha256:6b0a63c39850a257e66d142c0bad196a7cc4fcbaf027635965f138f534bb13ea",
         "primary_receipt_ready_checkpoint": "pre_ui_event_loop",
         "primary_receipt_recorded_at": "2026-04-03T16:30:09.3847707+00:00",
-        "primary_receipt_age_seconds": 452,
+        "primary_receipt_age_seconds": 985,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.Eu0TYP/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.Eu0TYP/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.Eu0TYP/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
@@ -311,7 +313,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json",
         "status": "failed",
         "macOS desktop exit gate proof for avalonia (osx-arm64)_generated_at": "2026-04-03T16:37:35Z",
-        "macOS desktop exit gate proof for avalonia (osx-arm64)_age_seconds": 6,
+        "macOS desktop exit gate proof for avalonia (osx-arm64)_age_seconds": 540,
         "receipt_head": {
           "app_key": "avalonia",
           "platform": "macos",
@@ -356,7 +358,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_MACOS_BLAZOR_DESKTOP_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json",
         "status": "failed",
         "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_generated_at": "2026-04-03T16:37:35Z",
-        "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_age_seconds": 6,
+        "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_age_seconds": 540,
         "receipt_head": {
           "app_key": "blazor-desktop",
           "platform": "macos",
@@ -401,7 +403,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_MACOS_AVALONIA_OSX_X64_DESKTOP_EXIT_GATE.generated.json",
         "status": "failed",
         "macOS desktop exit gate proof for avalonia (osx-x64)_generated_at": "2026-04-03T16:37:35Z",
-        "macOS desktop exit gate proof for avalonia (osx-x64)_age_seconds": 6,
+        "macOS desktop exit gate proof for avalonia (osx-x64)_age_seconds": 540,
         "receipt_head": {
           "app_key": "avalonia",
           "platform": "macos",

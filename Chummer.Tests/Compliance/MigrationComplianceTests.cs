@@ -3446,6 +3446,27 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Windows_exit_gate_requires_startup_smoke_receipt_integrity_for_promoted_installer_bytes()
+    {
+        string windowsGateScriptPath = FindPath("scripts", "materialize-windows-desktop-exit-gate.sh");
+        string windowsGateScriptText = File.ReadAllText(windowsGateScriptPath);
+
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH");
+        StringAssert.Contains(windowsGateScriptText, "startup-smoke-avalonia-win-x64.receipt.json");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is missing for promoted installer bytes.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt status is not passing.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactDigest does not match promoted installer bytes.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt headId does not match promoted head avalonia.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt platform is not windows.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt arch does not match promoted RID win-x64.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt timestamp is missing or invalid.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is stale (");
+    }
+
+    [TestMethod]
     public void Desktop_workflow_execution_gate_requires_explicit_executed_family_receipts()
     {
         string workflowGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
