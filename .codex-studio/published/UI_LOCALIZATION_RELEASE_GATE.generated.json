@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-04-03T21:50:05Z",
+  "generated_at": "2026-04-03T21:51:58Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -32,6 +32,7 @@
     {
       "locale": "de-de",
       "override_count": 49,
+      "minimum_override_count": 40,
       "default_key_count": 383,
       "untranslated_key_count": 334,
       "missing_release_seed_keys": [],
@@ -41,6 +42,7 @@
     {
       "locale": "fr-fr",
       "override_count": 41,
+      "minimum_override_count": 40,
       "default_key_count": 383,
       "untranslated_key_count": 342,
       "missing_release_seed_keys": [],
@@ -50,6 +52,7 @@
     {
       "locale": "ja-jp",
       "override_count": 41,
+      "minimum_override_count": 40,
       "default_key_count": 383,
       "untranslated_key_count": 342,
       "missing_release_seed_keys": [],
@@ -59,6 +62,7 @@
     {
       "locale": "pt-br",
       "override_count": 41,
+      "minimum_override_count": 40,
       "default_key_count": 383,
       "untranslated_key_count": 342,
       "missing_release_seed_keys": [],
@@ -68,6 +72,7 @@
     {
       "locale": "zh-cn",
       "override_count": 41,
+      "minimum_override_count": 40,
       "default_key_count": 383,
       "untranslated_key_count": 342,
       "missing_release_seed_keys": [],

@@ -3555,6 +3555,7 @@ public class MigrationComplianceTests
         string localizationGateText = File.ReadAllText(localizationGatePath);
 
         StringAssert.Contains(localizationGateText, "scripts/ai/with-package-plane.sh run --project");
+        StringAssert.Contains(localizationGateText, "minimum_override_count_by_locale");
         Assert.IsFalse(localizationGateText.Contains("--no-build", StringComparison.Ordinal),
             "Localization release gate must run the signoff project with build enabled so runtimeconfig output is always present across compatibility-tree layouts.");
         Assert.IsFalse(localizationGateText.Contains("bash -lc", StringComparison.Ordinal),

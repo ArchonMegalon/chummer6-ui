@@ -64,6 +64,13 @@ if not default_keys:
 
 shipping_locales = ["en-us", "de-de", "fr-fr", "ja-jp", "pt-br", "zh-cn"]
 non_default_locales = [locale for locale in shipping_locales if locale != "en-us"]
+minimum_override_count_by_locale = {
+    "de-de": 40,
+    "fr-fr": 40,
+    "ja-jp": 40,
+    "pt-br": 40,
+    "zh-cn": 40,
+}
 release_seed_keys = [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -107,6 +114,7 @@ for locale in non_default_locales:
     locale_entry = {
         "locale": locale,
         "override_count": len(override_keys),
+        "minimum_override_count": minimum_override_count_by_locale[locale],
         "default_key_count": len(default_keys),
         "untranslated_key_count": untranslated_key_count,
         "missing_release_seed_keys": missing_seed_keys,
@@ -118,6 +126,12 @@ for locale in non_default_locales:
     if missing_seed_keys:
         status = "fail"
         blocking_findings.append(f"{locale}: missing release-critical localized seed keys ({', '.join(missing_seed_keys)})")
+    minimum_override_count = minimum_override_count_by_locale[locale]
+    if len(override_keys) < minimum_override_count:
+        status = "fail"
+        blocking_findings.append(
+            f"{locale}: localized trust-surface override count {len(override_keys)} is below required floor {minimum_override_count}"
+        )
     if untranslated_key_count > 0:
         translation_backlog_findings.append(
             f"{locale}: {untranslated_key_count} trust-surface keys still rely on explicit en-US fallback"
