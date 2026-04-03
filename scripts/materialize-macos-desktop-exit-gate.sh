@@ -250,7 +250,13 @@ if macos_artifact is not None:
 
 startup_smoke_candidates = [
     Path(startup_smoke_receipt_arg) if startup_smoke_receipt_arg else None,
+    release_channel_path.parent / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
+    release_channel_path.parent.parent / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
+    repo_root / ".codex-studio" / "published" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     repo_root / "Docker" / "Downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
+    Path("/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
+    Path("/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
+    Path("/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummer5a/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
@@ -261,7 +267,7 @@ startup_smoke_candidate_paths = list(
 )
 evidence["startup_smoke_candidate_paths"] = startup_smoke_candidate_paths
 startup_smoke_path = resolve_existing_path(
-    "",
+    startup_smoke_receipt_arg,
     [candidate for candidate in startup_smoke_candidates if candidate is not None],
 )
 startup_smoke_payload = load_json(startup_smoke_path) if startup_smoke_path else {}

@@ -353,8 +353,10 @@ def validate_windows_gate(
 def validate_macos_gate(
     head: str,
     rid: str,
+    expected_artifact: Dict[str, Any],
     gate_path: Path,
     gate_payload: Dict[str, Any],
+    desktop_files_root: Path,
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -366,6 +368,12 @@ def validate_macos_gate(
     validate_receipt_freshness(f"macOS desktop exit gate proof for {head} ({rid})", gate_payload, gate_evidence, reasons)
 
     gate_head = gate_payload.get("head") if isinstance(gate_payload.get("head"), dict) else {}
+    gate_checks = gate_payload.get("checks") if isinstance(gate_payload.get("checks"), dict) else {}
+    channel_artifact = (
+        gate_checks.get("release_channel_macos_artifact")
+        if isinstance(gate_checks.get("release_channel_macos_artifact"), dict)
+        else {}
+    )
     gate_evidence["receipt_head"] = gate_head
     if normalize_token(gate_head.get("app_key")) != head:
         reasons.append(f"macOS desktop exit gate receipt head does not match promoted head '{head}'.")
@@ -378,16 +386,91 @@ def validate_macos_gate(
 
     startup = gate_payload.get("startup_smoke") if isinstance(gate_payload.get("startup_smoke"), dict) else {}
     artifact = gate_payload.get("artifact") if isinstance(gate_payload.get("artifact"), dict) else {}
+    startup_receipt = startup.get("receipt") if isinstance(startup.get("receipt"), dict) else {}
     primary_status = normalize_token(startup.get("status"))
     artifact_exists = bool(artifact.get("installer_exists"))
+    expected_file_name = str(expected_artifact.get("fileName") or "").strip()
+    expected_sha = normalize_token(expected_artifact.get("sha256"))
+    expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
+    expected_size = int(expected_artifact.get("sizeBytes") or 0)
+    expected_arch = "arm64" if rid.endswith("arm64") else "x64" if rid.endswith("x64") else ""
+    startup_receipt_recorded_at_raw = str(
+        startup.get("receipt_recorded_at")
+        or startup_receipt.get("completedAtUtc")
+        or startup_receipt.get("recordedAtUtc")
+        or startup_receipt.get("startedAtUtc")
+        or ""
+    ).strip()
+    startup_receipt_recorded_at = parse_iso(startup_receipt_recorded_at_raw)
 
     gate_evidence["startup_smoke_status"] = primary_status
     gate_evidence["artifact"] = artifact
+    gate_evidence["release_channel_macos_artifact"] = channel_artifact
+    gate_evidence["startup_smoke_receipt_path"] = str(startup.get("receipt_path") or "").strip()
+    gate_evidence["startup_smoke_ready_checkpoint"] = normalize_token(startup.get("ready_checkpoint"))
+    gate_evidence["startup_smoke_artifact_digest"] = normalize_token(startup.get("artifact_digest"))
+    gate_evidence["startup_smoke_receipt_recorded_at"] = startup_receipt_recorded_at_raw
 
     if primary_status not in {"pass", "passed", "ready"}:
         reasons.append(f"macOS startup smoke is not passing for promoted head '{head}' ({rid}).")
     if not artifact_exists:
         reasons.append(f"macOS installer artifact is missing for promoted head '{head}' ({rid}).")
+    if normalize_token(channel_artifact.get("head")) != head:
+        reasons.append("macOS gate embedded release_channel_macos_artifact head does not match promoted release channel.")
+    if normalize_token(channel_artifact.get("rid")) != rid:
+        reasons.append("macOS gate embedded release_channel_macos_artifact RID does not match promoted release channel.")
+    if normalize_token(channel_artifact.get("platform")) != "macos":
+        reasons.append("macOS gate embedded release_channel_macos_artifact platform is not macOS.")
+    if expected_file_name and str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
+        reasons.append("macOS gate embedded release_channel_macos_artifact fileName does not match promoted release channel.")
+    if expected_sha and normalize_token(channel_artifact.get("sha256")) != expected_sha:
+        reasons.append("macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.")
+    if expected_size and int(channel_artifact.get("sizeBytes") or 0) != expected_size:
+        reasons.append("macOS gate embedded release_channel_macos_artifact sizeBytes does not match promoted release channel.")
+
+    installer_path = Path(str(artifact.get("installer_path") or "").strip()) if artifact.get("installer_path") else None
+    if installer_path is None or not installer_path.is_file():
+        reasons.append(f"macOS gate installer path is missing or unreadable for promoted head '{head}' ({rid}).")
+    else:
+        installer_size = int(installer_path.stat().st_size)
+        installer_sha = normalize_token(hashlib.sha256(installer_path.read_bytes()).hexdigest())
+        gate_evidence["installer_size_bytes"] = installer_size
+        gate_evidence["installer_sha256"] = installer_sha
+        if expected_size and installer_size != expected_size:
+            reasons.append("macOS desktop exit gate installer size does not match promoted release-channel artifact bytes.")
+        if expected_sha and installer_sha != expected_sha:
+            reasons.append("macOS desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.")
+
+        shelf_path = desktop_files_root / expected_file_name if expected_file_name else desktop_files_root
+        gate_evidence["expected_macos_shelf_path"] = str(shelf_path)
+        if expected_file_name and shelf_path.is_file():
+            shelf_sha = normalize_token(hashlib.sha256(shelf_path.read_bytes()).hexdigest())
+            gate_evidence["expected_macos_shelf_sha256"] = shelf_sha
+            if shelf_sha != installer_sha:
+                reasons.append("macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.")
+
+    startup_receipt_path = Path(gate_evidence["startup_smoke_receipt_path"]) if gate_evidence["startup_smoke_receipt_path"] else None
+    if startup_receipt_path is None or not startup_receipt_path.is_file():
+        reasons.append(f"macOS startup smoke receipt path is missing or unreadable for promoted head '{head}' ({rid}).")
+    if gate_evidence["startup_smoke_ready_checkpoint"] != "pre_ui_event_loop":
+        reasons.append(f"macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head '{head}' ({rid}).")
+    if expected_digest and gate_evidence["startup_smoke_artifact_digest"] != expected_digest:
+        reasons.append(f"macOS startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}' ({rid}).")
+    if normalize_token(startup_receipt.get("headId")) != head:
+        reasons.append(f"macOS startup smoke receipt headId does not match promoted head '{head}' ({rid}).")
+    if normalize_token(startup_receipt.get("platform")) != "macos":
+        reasons.append(f"macOS startup smoke receipt platform is not macOS for promoted head '{head}' ({rid}).")
+    if expected_arch and normalize_token(startup_receipt.get("arch")) != expected_arch:
+        reasons.append(f"macOS startup smoke receipt arch does not match promoted RID for head '{head}' ({rid}).")
+    if not startup_receipt_recorded_at_raw or startup_receipt_recorded_at is None:
+        reasons.append(f"macOS startup smoke receipt timestamp is missing/invalid for promoted head '{head}' ({rid}).")
+    else:
+        startup_age_seconds = max(0, int((datetime.now(timezone.utc) - startup_receipt_recorded_at).total_seconds()))
+        gate_evidence["startup_smoke_receipt_age_seconds"] = startup_age_seconds
+        if startup_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+            reasons.append(
+                f"macOS startup smoke receipt is stale for promoted head '{head}' ({rid}) ({startup_age_seconds}s old)."
+            )
 
     evidence.setdefault("macos_gates", {})[f"{head}:{rid}"] = gate_evidence
 
@@ -620,7 +703,16 @@ for macos_artifact in expected_macos_artifacts:
     expected_rid = macos_rid_from_artifact(macos_artifact)
     gate_path = macos_gate_path_for_head(expected_head, expected_rid, receipt_path.parent)
     validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"macos_gate:{expected_head}:{expected_rid}")
-    validate_macos_gate(expected_head, expected_rid, gate_path, load_json(gate_path), evidence, reasons)
+    validate_macos_gate(
+        expected_head,
+        expected_rid,
+        macos_artifact,
+        gate_path,
+        load_json(gate_path),
+        desktop_files_root,
+        evidence,
+        reasons,
+    )
 
 windows_checks = windows_gate.get("checks") if isinstance(windows_gate.get("checks"), dict) else {}
 embedded_payload_marker_present = bool(windows_checks.get("embedded_payload_marker_present"))
