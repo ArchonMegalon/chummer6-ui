@@ -3415,6 +3415,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate receipt head/RID does not match promoted release-channel Windows artifact tuple");
         StringAssert.Contains(executableGateScriptText, "evidence.setdefault(\"windows_gates\", {})[gate_label] = gate_evidence");
         StringAssert.Contains(executableGateScriptText, "evidence[\"windows_statuses\"] = windows_statuses");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"macos_statuses\"] = macos_statuses");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"macOS gate reason ({head}/{rid}): {gate_reason}\")");
         StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.");
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
@@ -3457,6 +3458,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "if not startup_receipt_exists:");
         StringAssert.Contains(executableGateScriptText, "else:");
         StringAssert.Contains(executableGateScriptText, "reasons = dedupe_preserve_order(reasons)");
+        StringAssert.Contains(executableGateScriptText, "\"generated_at\": generated_at");
+        StringAssert.Contains(executableGateScriptText, "\"generatedAt\": generated_at");
         StringAssert.Contains(executableGateScriptText, "f\"Desktop executable exit gate is proven by passing packaged-head receipts for promoted desktop platforms ({platform_scope})");
         StringAssert.Contains(executableGateScriptText, "print(\"[desktop-executable-exit-gate] FAIL\", file=sys.stderr)");
         StringAssert.Contains(executableGateScriptText, "print(f\"[desktop-executable-exit-gate] reason: {reason}\", file=sys.stderr)");
