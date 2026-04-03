@@ -1,0 +1,76 @@
+{
+  "contractName": "chummer.run.desktop_release_publication",
+  "generatedAt": "2026-04-03T16:06:21Z",
+  "artifacts": [
+    {
+      "artifactId": "avalonia-linux-x64-installer",
+      "fileName": "chummer-avalonia-linux-x64-installer.deb",
+      "platform": "linux",
+      "promotionStatus": "pass",
+      "startupSmokeStatus": "pass",
+      "startupSmokeReason": "",
+      "startupSmokeReceiptPath": "Docker/Downloads/startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
+      "signingStatus": null,
+      "notarizationStatus": null,
+      "artifactSha256": "6b0a63c39850a257e66d142c0bad196a7cc4fcbaf027635965f138f534bb13ea",
+      "artifactSizeBytes": 34297862,
+      "kind": "installer"
+    },
+    {
+      "artifactId": "avalonia-osx-arm64-installer",
+      "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
+      "platform": "macos",
+      "promotionStatus": "fail",
+      "startupSmokeStatus": "fail",
+      "startupSmokeReason": "startup-smoke receipt missing",
+      "startupSmokeReceiptPath": "",
+      "signingStatus": "fail",
+      "notarizationStatus": "fail",
+      "artifactSha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
+      "artifactSizeBytes": 50365614,
+      "kind": "installer"
+    },
+    {
+      "artifactId": "blazor-desktop-osx-arm64-installer",
+      "fileName": "chummer-blazor-desktop-osx-arm64-installer.dmg",
+      "platform": "macos",
+      "promotionStatus": "fail",
+      "startupSmokeStatus": "fail",
+      "startupSmokeReason": "startup-smoke receipt missing",
+      "startupSmokeReceiptPath": "",
+      "signingStatus": "fail",
+      "notarizationStatus": "fail",
+      "artifactSha256": "19af740fb995ee5dff0c5c7a4e601159d8779ce08b4ce47ae3b0db7f796cd581",
+      "artifactSizeBytes": 50248919,
+      "kind": "installer"
+    },
+    {
+      "artifactId": "avalonia-osx-x64-installer",
+      "fileName": "chummer-avalonia-osx-x64-installer.dmg",
+      "platform": "macos",
+      "promotionStatus": "fail",
+      "startupSmokeStatus": "fail",
+      "startupSmokeReason": "startup-smoke receipt missing",
+      "startupSmokeReceiptPath": "",
+      "signingStatus": "fail",
+      "notarizationStatus": "fail",
+      "artifactSha256": "71cea7987b5323078baed5c104ca82ef80060b249f3fa8401ddf42d0e6ed8c39",
+      "artifactSizeBytes": 51887995,
+      "kind": "installer"
+    },
+    {
+      "artifactId": "avalonia-win-x64-installer",
+      "fileName": "chummer-avalonia-win-x64-installer.exe",
+      "platform": "windows",
+      "promotionStatus": "fail",
+      "startupSmokeStatus": "fail",
+      "startupSmokeReason": "startup-smoke receipt missing",
+      "startupSmokeReceiptPath": "",
+      "signingStatus": "fail",
+      "notarizationStatus": null,
+      "artifactSha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f",
+      "artifactSizeBytes": 95974786,
+      "kind": "installer"
+    }
+  ]
+}
