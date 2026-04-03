@@ -1,0 +1,173 @@
+{
+  "generatedAt": "2026-04-03T16:04:01.692060Z",
+  "status": "pass",
+  "releaseGate": "b14-flagship-ui-release-gate",
+  "desktopHead": "avalonia",
+  "desktopHeads": [
+    "avalonia",
+    "blazor-desktop"
+  ],
+  "artifactPresence": {
+    "bundledDemoRunnerPath": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/bin/Release/net10.0/Samples/Legacy/Soma-Career.chum5",
+    "bundledDemoRunnerPresent": true
+  },
+  "interactionProof": {
+    "testSuites": [
+      "AvaloniaFlagshipUiGateTests",
+      "BlazorShellComponentTests",
+      "DualHeadAcceptanceTests"
+    ],
+    "menuSurface": "pass",
+    "settingsInlineDialog": "pass",
+    "demoRunnerDispatch": "pass",
+    "keyboardShortcutParity": "pass",
+    "legacyFamiliarityBridge": "pass",
+    "crossHeadWorkflowParity": "pass",
+    "themeReadabilityContrast": "pass",
+    "blazorDesktopShellChrome": "pass",
+    "runtimeBackedShellMenu": "pass",
+    "runtimeBackedMenuBarLabels": "pass",
+    "runtimeBackedClickablePrimaryMenus": "pass",
+    "runtimeBackedToolstripActions": "pass",
+    "runtimeBackedChromeEnabledAfterRunnerLoad": "pass",
+    "runtimeBackedDemoRunnerImport": "pass",
+    "runtimeBackedLegacyWorkbench": "pass",
+    "legacyDenseBuilderRhythm": "pass",
+    "legacyBrowseDetailConfirmRhythm": "pass",
+    "legacyCyberwareDialogRhythm": "pass"
+  },
+  "headProofs": {
+    "avalonia": {
+      "status": "pass",
+      "testSuites": [
+        "AvaloniaFlagshipUiGateTests",
+        "DualHeadAcceptanceTests"
+      ],
+      "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "visualReview": "pass",
+      "themeReadabilityContrast": "pass",
+      "bundledDemoRunner": "pass",
+      "requiredRuntimeBackedTests": [
+        "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
+        "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
+        "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
+        "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+        "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
+        "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
+        "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+        "Character_creation_preserves_familiar_dense_builder_rhythm",
+        "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
+      ]
+    },
+    "blazor-desktop": {
+      "status": "pass",
+      "testSuites": [
+        "BlazorShellComponentTests",
+        "DualHeadAcceptanceTests"
+      ],
+      "shellChrome": "pass",
+      "commandSurface": "pass",
+      "dialogSurface": "pass",
+      "journeyPanels": "pass",
+      "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
+      "requiredShellTests": [
+        "MenuBar_invokes_toggle_and_execute_callbacks",
+        "WorkspaceLeftPane_renders_shell_controls_and_invokes_callbacks",
+        "DialogHost_renders_dialog_and_emits_events",
+        "StatusStrip_announces_status_via_shared_live_region_semantics",
+        "CampaignJournalPanel_renders_explicit_downtime_planner_calendar_and_schedule_views"
+      ]
+    }
+  },
+  "workflowEquivalenceProof": {
+    "status": "pass",
+    "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+    "explicitParityReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "requiredDualHeadTests": [
+      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+      "Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections",
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts",
+      "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
+      "Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices",
+      "Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices",
+      "Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices",
+      "Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices",
+      "Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices",
+      "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
+      "Avalonia_and_Blazor_character_settings_save_updates_shared_state"
+    ],
+    "legacyWorkflowFamilies": [
+      "create-open-import-save-save-as-print-export",
+      "metatype-priorities-karma-entry",
+      "attributes-skills-skill-groups-specializations-knowledge-languages",
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+      "cyberware-bioware-modular-hierarchies-nested-plugins",
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+      "improvements-explain-result-parity",
+      "recovery-reload-migration-roundtrips",
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare"
+    ]
+  },
+  "visualReviewEvidence": {
+    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "expectedScreenshots": [
+      "01-initial-shell-light.png",
+      "02-menu-open-light.png",
+      "03-settings-open-light.png",
+      "04-loaded-runner-light.png",
+      "05-dense-section-light.png",
+      "06-dense-section-dark.png",
+      "07-loaded-runner-tabs-light.png",
+      "08-cyberware-dialog-light.png"
+    ],
+    "capturedScreenshots": [
+      {
+        "name": "01-initial-shell-light.png",
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
+        "sizeBytes": 203559
+      },
+      {
+        "name": "02-menu-open-light.png",
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
+        "sizeBytes": 199363
+      },
+      {
+        "name": "03-settings-open-light.png",
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
+        "sizeBytes": 208087
+      },
+      {
+        "name": "04-loaded-runner-light.png",
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
+        "sizeBytes": 208326
+      },
+      {
+        "name": "05-dense-section-light.png",
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
+        "sizeBytes": 208327
+      },
+      {
+        "name": "06-dense-section-dark.png",
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
+        "sizeBytes": 209455
+      },
+      {
+        "name": "07-loaded-runner-tabs-light.png",
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
+        "sizeBytes": 208149
+      },
+      {
+        "name": "08-cyberware-dialog-light.png",
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
+        "sizeBytes": 208130
+      }
+    ]
+  },
+  "signoffLane": {
+    "workbenchReleaseSignoffPath": "/docker/chummercomplete/chummer6-ui/docs/WORKBENCH_RELEASE_SIGNOFF.md",
+    "citesReleaseGate": true
+  }
+}

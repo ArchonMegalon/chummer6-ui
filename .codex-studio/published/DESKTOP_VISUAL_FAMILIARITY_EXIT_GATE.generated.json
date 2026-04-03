@@ -1,0 +1,113 @@
+{
+  "generatedAt": "2026-04-03T16:04:01.630642Z",
+  "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
+  "status": "pass",
+  "summary": "Desktop visual familiarity is proven for shell chrome, theme anchors, loaded-runner tabs, and dense builder workflow posture.",
+  "reasons": [],
+  "evidence": {
+    "flagship_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "screenshot_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "app_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/App.axaml",
+    "main_window_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/MainWindow.axaml",
+    "navigator_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
+    "toolstrip_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+    "toolstrip_codebehind_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+    "ui_gate_tests_path": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+    "legacy_frmcareer_designer_path": "/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs",
+    "minimum_shell_review_size": {
+      "width": 1280,
+      "height": 800
+    },
+    "minimum_dialog_review_size": {
+      "width": 900,
+      "height": 700
+    },
+    "flagship_gate_status": "pass",
+    "flagship_theme_readability_contrast": "pass",
+    "flagship_avalonia_head_proof_status": "pass",
+    "flagship_blazor_head_proof_status": "pass",
+    "runtime_backed_shell_menu": "pass",
+    "runtime_backed_menu_bar_labels": "pass",
+    "runtime_backed_clickable_primary_menus": "pass",
+    "runtime_backed_toolstrip_actions": "pass",
+    "runtime_backed_chrome_enabled_after_runner_load": "pass",
+    "runtime_backed_demo_runner_import": "pass",
+    "runtime_backed_legacy_workbench": "pass",
+    "legacy_dense_builder_rhythm": "pass",
+    "legacy_browse_detail_confirm_rhythm": "pass",
+    "legacy_cyberware_dialog_rhythm": "pass",
+    "legacy_familiarity_bridge": "pass",
+    "missing_theme_tokens": [],
+    "required_tests": [
+      "Desktop_shell_preserves_chummer5a_familiarity_cues",
+      "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
+      "Theme_tokens_preserve_chummer5a_palette_and_readability",
+      "Loaded_runner_preserves_visible_character_tab_posture",
+      "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+      "Character_creation_preserves_familiar_dense_builder_rhythm",
+      "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
+      "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+      "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
+      "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
+      "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
+      "Runtime_backed_shell_chrome_stays_enabled_after_runner_load"
+    ],
+    "missing_tests": [],
+    "required_toolstrip_markers": [
+      "shell-toolstrip-band",
+      "shell-toolstrip-state",
+      "WrapPanel Orientation=\"Horizontal\" ItemHeight=\"28\"",
+      "button.Content = label;"
+    ],
+    "missing_toolstrip_markers": [],
+    "disallowed_toolstrip_markers": [
+      "shell-action-badge",
+      "shell-action-caption",
+      "Quick Actions",
+      "Workbench State",
+      "BuildActionContent("
+    ],
+    "present_disallowed_toolstrip_markers": [],
+    "missing_toolstrip_flat_label_markers": [],
+    "missing_toolstrip_posture_markers": [],
+    "legacy_frmcareer_markers": [
+      "StatusStrip",
+      "pgbProgress",
+      "tabCharacterTabs",
+      "tabInfo",
+      "treQualities",
+      "treCyberware",
+      "treGear",
+      "treArmor",
+      "treWeapons",
+      "treVehicles"
+    ],
+    "missing_legacy_frmcareer_markers": [],
+    "required_screenshots": [
+      "01-initial-shell-light.png",
+      "02-menu-open-light.png",
+      "03-settings-open-light.png",
+      "04-loaded-runner-light.png",
+      "05-dense-section-light.png",
+      "06-dense-section-dark.png",
+      "07-loaded-runner-tabs-light.png",
+      "08-cyberware-dialog-light.png"
+    ],
+    "missing_screenshots": [],
+    "invalid_screenshots": {},
+    "undersized_screenshots": {},
+    "loaded_runner_tab_posture_control_present": true,
+    "loaded_runner_tab_strip_control_present": true,
+    "tab_strip_markers": [
+      "TabControl",
+      "TabStrip",
+      "TabView",
+      "LoadedRunnerTabStrip",
+      "CharacterTabStrip",
+      "NavigationTabsList"
+    ],
+    "dense_section_capture_advances_past_loaded_runner": true,
+    "cyberware_dialog_test_has_visible_dialog_posture": true,
+    "cyberware_capture_opens_dialog_posture": true
+  }
+}
