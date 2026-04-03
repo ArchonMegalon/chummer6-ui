@@ -31,6 +31,9 @@ from datetime import datetime, timezone
 
 
 DESKTOP_PROOF_MAX_AGE_SECONDS = int(os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_PROOF_MAX_AGE_SECONDS", "86400"))
+STARTUP_SMOKE_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS", "86400")
+)
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -165,6 +168,7 @@ def validate_linux_gate(
     head: str,
     gate_path: Path,
     gate_payload: Dict[str, Any],
+    expected_artifact: Dict[str, Any] | None,
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -179,6 +183,8 @@ def validate_linux_gate(
     gate_evidence["receipt_head"] = gate_head
     if normalize_token(gate_head.get("app_key")) != head:
         reasons.append(f"Linux desktop exit gate receipt head does not match promoted head '{head}'.")
+    if normalize_token(gate_head.get("platform")) != "linux":
+        reasons.append(f"Linux desktop exit gate receipt platform does not match promoted head '{head}'.")
 
     if not status_ok(gate_status):
         reasons.append(f"Linux desktop exit gate is missing or not passing for promoted head '{head}'.")
@@ -205,6 +211,38 @@ def validate_linux_gate(
         reasons.append(f"Linux desktop runtime unit tests are not passing for promoted head '{head}'.")
 
     primary_receipt = primary.get("receipt") if isinstance(primary.get("receipt"), dict) else {}
+    gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt.get("artifactDigest"))
+    gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt.get("readyCheckpoint"))
+    recorded_at_raw = (
+        str(primary_receipt.get("completedAtUtc") or "").strip()
+        or str(primary_receipt.get("recordedAtUtc") or "").strip()
+        or str(primary_receipt.get("startedAtUtc") or "").strip()
+    )
+    gate_evidence["primary_receipt_recorded_at"] = recorded_at_raw
+    recorded_at = parse_iso(recorded_at_raw)
+    if not recorded_at_raw or recorded_at is None:
+        reasons.append(f"Linux installer startup smoke receipt timestamp is missing/invalid for promoted head '{head}'.")
+    else:
+        age_seconds = max(0, int((datetime.now(timezone.utc) - recorded_at).total_seconds()))
+        gate_evidence["primary_receipt_age_seconds"] = age_seconds
+        if age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+            reasons.append(
+                f"Linux installer startup smoke receipt is stale for promoted head '{head}' ({age_seconds}s old)."
+            )
+    if gate_evidence["primary_receipt_ready_checkpoint"] != "pre_ui_event_loop":
+        reasons.append(f"Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head '{head}'.")
+
+    if expected_artifact is not None:
+        expected_rid = normalize_token(expected_artifact.get("rid"))
+        expected_sha = normalize_token(expected_artifact.get("sha256"))
+        expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
+        if expected_rid and normalize_token(gate_head.get("rid")) != expected_rid:
+            reasons.append(f"Linux desktop exit gate receipt RID does not match promoted head '{head}' ({expected_rid}).")
+        if expected_digest and gate_evidence["primary_receipt_artifact_digest"] != expected_digest:
+            reasons.append(
+                f"Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}'."
+            )
+
     for key, value in (
         ("install_launch_capture_path", str(primary_receipt.get("artifactInstallLaunchCapturePath") or "").strip()),
         ("install_wrapper_capture_path", str(primary_receipt.get("artifactInstallWrapperCapturePath") or "").strip()),
@@ -524,6 +562,18 @@ expected_linux_heads = sorted(
     }
 )
 evidence["linux_heads_expected"] = expected_linux_heads
+expected_linux_artifacts_by_head = {
+    normalize_token(item.get("head")): item
+    for item in desktop_install_artifacts
+    if normalize_token(item.get("platform")) == "linux"
+    and normalize_token(item.get("head"))
+    and normalize_token(item.get("rid"))
+}
+for expected_linux_head in expected_linux_heads:
+    if expected_linux_head not in expected_linux_artifacts_by_head:
+        reasons.append(
+            f"Release channel publishes Linux desktop media for head '{expected_linux_head}' without explicit rid metadata."
+        )
 
 promoted_desktop_heads = sorted(
     {
@@ -542,7 +592,14 @@ for promoted_head in promoted_desktop_heads:
 for expected_linux_head in expected_linux_heads:
     gate_path = linux_gate_path_for_head(expected_linux_head, linux_avalonia_gate_path, linux_blazor_gate_path, receipt_path.parent)
     validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"linux_gate:{expected_linux_head}")
-    validate_linux_gate(expected_linux_head, gate_path, load_json(gate_path), evidence, reasons)
+    validate_linux_gate(
+        expected_linux_head,
+        gate_path,
+        load_json(gate_path),
+        expected_linux_artifacts_by_head.get(expected_linux_head),
+        evidence,
+        reasons,
+    )
 
 expected_macos_artifacts = [
     item for item in desktop_install_artifacts
