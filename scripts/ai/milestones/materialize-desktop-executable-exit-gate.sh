@@ -44,6 +44,9 @@ DESKTOP_PROOF_MAX_AGE_SECONDS = int(os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_P
 STARTUP_SMOKE_MAX_AGE_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS", "86400")
 )
+RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS", "86400")
+)
 VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS", "900")
 )
@@ -877,6 +880,18 @@ release_channel_version = str(release_channel.get("version") or "").strip()
 evidence["release_channel_status"] = release_channel_status
 evidence["release_channel_channel_id"] = release_channel_channel_id
 evidence["release_channel_version"] = release_channel_version
+release_channel_generated_at_raw, release_channel_generated_at = payload_generated_at(release_channel)
+evidence["release_channel_generated_at"] = release_channel_generated_at_raw
+evidence["release_channel_freshness_max_age_seconds"] = RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS
+if not release_channel_generated_at_raw or release_channel_generated_at is None:
+    reasons.append("Release channel is missing a valid generated_at timestamp.")
+else:
+    release_channel_age_seconds = max(0, int((datetime.now(timezone.utc) - release_channel_generated_at).total_seconds()))
+    evidence["release_channel_age_seconds"] = release_channel_age_seconds
+    if release_channel_age_seconds > RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS:
+        reasons.append(
+            f"Release channel receipt is stale ({release_channel_age_seconds}s old; max {RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS}s)."
+        )
 desktop_tuple_coverage = (
     release_channel.get("desktopTupleCoverage")
     if isinstance(release_channel.get("desktopTupleCoverage"), dict)
