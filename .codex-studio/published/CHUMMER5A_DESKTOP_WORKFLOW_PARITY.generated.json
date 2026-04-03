@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-04-03T16:04:01.508111Z",
+  "contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
+  "status": "pass",
+  "summary": "Chummer5a desktop workflow parity is explicitly proven across the promoted head.",
+  "reasons": [],
+  "evidence": {
+    "workflowLedgerPath": "/docker/chummercomplete/chummer6-ui/docs/WORKFLOW_PARITY_LEDGER.json",
+    "parityOraclePath": "/docker/chummercomplete/chummer6-ui/docs/PARITY_ORACLE.json",
+    "parityChecklistPath": "/docker/chummercomplete/chummer6-ui/docs/PARITY_CHECKLIST.md",
+    "requiredFamilyCount": 10,
+    "ledgerFamilyCount": 10,
+    "missingFamilyIds": [],
+    "nonReadyFamilyIds": [],
+    "tabsMissingInCatalog": 0,
+    "workspaceActionsMissingInCatalog": 0,
+    "missingTestRefs": {}
+  }
+}
