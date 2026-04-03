@@ -251,6 +251,38 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            foreach (string rulesetId in new[] { RulesetDefaults.Sr4, RulesetDefaults.Sr6 })
+            {
+                harness.ShellPresenter.SetPreferredRulesetAsync(rulesetId, CancellationToken.None).GetAwaiter().GetResult();
+                harness.WaitUntil(() =>
+                    string.Equals(harness.ShellPresenter.State.PreferredRulesetId, rulesetId, StringComparison.Ordinal)
+                    && string.Equals(harness.ShellPresenter.State.ActiveRulesetId, rulesetId, StringComparison.Ordinal));
+
+                TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
+                string[] rootLabels = SnapshotTreeItems(navigatorTree).Select(item => item.Label).ToArray();
+                string[] expectedRootLabels =
+                [
+                    RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(rulesetId),
+                    RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(rulesetId),
+                    RulesetUiDirectiveCatalog.BuildSectionActionsHeading(rulesetId),
+                    RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(rulesetId),
+                ];
+
+                CollectionAssert.AreEqual(
+                    expectedRootLabels,
+                    rootLabels,
+                    $"Ruleset '{rulesetId}' must keep the codex tree on ruleset-specific familiar landmarks.");
+            }
+        });
+    }
+
+    [TestMethod]
     public void Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation()
     {
         WithRuntimeHarness(harness =>
