@@ -26,6 +26,7 @@ The executable gate is green only when all of the following are true:
    - menu open
    - settings open
    - loaded runner
+   - explicit character-creation section posture
    - a dense shell state in light theme
    - a dense shell state in dark theme
 3. `WORKBENCH_RELEASE_SIGNOFF.md` cites this gate as part of the release closeout bar.
@@ -64,3 +65,4 @@ It must not be satisfiable by a recording/stub harness alone. If the shell boots
 
 The legacy visual oracle is old `frmCareer` / `CharacterCareer` from Chummer5a. The promoted workbench is allowed to modernize, but it must keep the recognizable landmarks from that form: top menu, immediate toolstrip, visible character-tab workbench, dense browse rhythm, visible detail pane, and compact progress/status strip.
 The left rail must now read like a Chummer codex tree instead of stacked dashboard cards: a visible `Codex` heading, a tree navigator for open characters/tabs/actions/workflows, and no second left-side tab control.
+The shell must fail closed on obviously non-Chummer dashboard copy as well: `Career-style workbench`, `Command Palette`, and `Coach Sidecar` are release-blocking regressions in the promoted desktop chrome.
