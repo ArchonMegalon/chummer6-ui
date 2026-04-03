@@ -879,6 +879,7 @@ evidence["windows_heads_expected"] = [
 ]
 if not expected_windows_artifacts and platform_artifact_counts.get("windows", 0) > 0:
     reasons.append("Release channel publishes Windows desktop media without explicit head/rid tuple metadata.")
+windows_statuses: Dict[str, str] = {}
 for expected_windows_artifact in expected_windows_artifacts:
     expected_windows_head = normalize_token(expected_windows_artifact.get("head"))
     expected_windows_rid = normalize_token(expected_windows_artifact.get("rid"))
@@ -890,6 +891,7 @@ for expected_windows_artifact in expected_windows_artifacts:
         windows_gate_path_default,
     )
     validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"windows_gate:{gate_label}")
+    reason_count_before = len(reasons)
     validate_windows_gate(
         gate_label,
         gate_path,
@@ -900,19 +902,7 @@ for expected_windows_artifact in expected_windows_artifacts:
         evidence,
         reasons,
     )
-
-windows_statuses = {
-    label: normalize_token(
-        gate_evidence.get("status")
-        if isinstance(gate_evidence, dict)
-        else ""
-    )
-    for label, gate_evidence in (
-        evidence.get("windows_gates").items()
-        if isinstance(evidence.get("windows_gates"), dict)
-        else []
-    )
-}
+    windows_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
 evidence["windows_statuses"] = windows_statuses
 
 expected_linux_heads = sorted(
@@ -951,18 +941,25 @@ evidence["promoted_desktop_heads"] = promoted_desktop_heads
 for promoted_head in promoted_desktop_heads:
     validate_flagship_head_proof(promoted_head, flagship_gate, evidence, reasons)
 
+linux_statuses: Dict[str, str] = {}
 for expected_linux_head in expected_linux_heads:
     gate_path = linux_gate_path_for_head(expected_linux_head, linux_avalonia_gate_path, linux_blazor_gate_path, receipt_path.parent)
     validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"linux_gate:{expected_linux_head}")
+    expected_linux_artifact = expected_linux_artifacts_by_head.get(expected_linux_head)
+    expected_linux_rid = normalize_token(expected_linux_artifact.get("rid")) if isinstance(expected_linux_artifact, dict) else ""
+    gate_label = f"{expected_linux_head}:{expected_linux_rid}" if expected_linux_rid else expected_linux_head
+    reason_count_before = len(reasons)
     validate_linux_gate(
         expected_linux_head,
         gate_path,
         load_json(gate_path),
-        expected_linux_artifacts_by_head.get(expected_linux_head),
+        expected_linux_artifact,
         repo_root,
         evidence,
         reasons,
     )
+    linux_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
+evidence["linux_statuses"] = linux_statuses
 
 expected_macos_artifacts = [
     item for item in desktop_install_artifacts
@@ -978,11 +975,14 @@ evidence["macos_heads_expected"] = [
     }
     for item in expected_macos_artifacts
 ]
+macos_statuses: Dict[str, str] = {}
 for macos_artifact in expected_macos_artifacts:
     expected_head = normalize_token(macos_artifact.get("head"))
     expected_rid = macos_rid_from_artifact(macos_artifact)
+    gate_label = f"{expected_head}:{expected_rid}"
     gate_path = macos_gate_path_for_head(expected_head, expected_rid, receipt_path.parent)
-    validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"macos_gate:{expected_head}:{expected_rid}")
+    validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"macos_gate:{gate_label}")
+    reason_count_before = len(reasons)
     validate_macos_gate(
         expected_head,
         expected_rid,
@@ -994,19 +994,7 @@ for macos_artifact in expected_macos_artifacts:
         evidence,
         reasons,
     )
-
-macos_statuses = {
-    label: normalize_token(
-        gate_evidence.get("status")
-        if isinstance(gate_evidence, dict)
-        else ""
-    )
-    for label, gate_evidence in (
-        evidence.get("macos_gates").items()
-        if isinstance(evidence.get("macos_gates"), dict)
-        else []
-    )
-}
+    macos_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
 evidence["macos_statuses"] = macos_statuses
 
 platform_tokens: List[str] = []
