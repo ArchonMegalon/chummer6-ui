@@ -882,6 +882,7 @@ desktop_tuple_coverage = (
     if isinstance(release_channel.get("desktopTupleCoverage"), dict)
     else {}
 )
+desktop_tuple_coverage_present = isinstance(release_channel.get("desktopTupleCoverage"), dict)
 tuple_coverage_required_desktop_platforms = normalized_token_list(
     desktop_tuple_coverage.get("requiredDesktopPlatforms")
 )
@@ -901,11 +902,20 @@ tuple_coverage_promoted_platform_heads = {
 tuple_coverage_reported_missing_platform_head_pairs = normalized_token_list(
     desktop_tuple_coverage.get("missingRequiredPlatformHeadPairs")
 )
+tuple_coverage_declares_missing_required_platform_head_pairs = (
+    "missingRequiredPlatformHeadPairs" in desktop_tuple_coverage
+    if desktop_tuple_coverage_present
+    else False
+)
 evidence["release_channel_tuple_coverage_required_desktop_platforms"] = tuple_coverage_required_desktop_platforms
 evidence["release_channel_tuple_coverage_required_desktop_heads"] = tuple_coverage_required_desktop_heads
 evidence["release_channel_tuple_coverage_promoted_platform_heads"] = tuple_coverage_promoted_platform_heads
 evidence["release_channel_tuple_coverage_reported_missing_required_platform_head_pairs"] = (
     tuple_coverage_reported_missing_platform_head_pairs
+)
+evidence["release_channel_tuple_coverage_present"] = desktop_tuple_coverage_present
+evidence["release_channel_tuple_coverage_declares_missing_required_platform_head_pairs"] = (
+    tuple_coverage_declares_missing_required_platform_head_pairs
 )
 
 if not release_channel_channel_id:
@@ -920,6 +930,26 @@ desktop_install_artifacts = [
     if normalize_token(item.get("platform")) in {"linux", "windows", "macos"}
     and is_desktop_install_media(item.get("platform"), item.get("kind"))
 ]
+if desktop_install_artifacts and not desktop_tuple_coverage_present:
+    reasons.append(
+        "Release channel is missing desktopTupleCoverage metadata for promoted desktop install artifacts."
+    )
+if desktop_install_artifacts and not tuple_coverage_required_desktop_platforms:
+    reasons.append(
+        "Release channel desktopTupleCoverage is missing requiredDesktopPlatforms for desktop install media."
+    )
+if desktop_install_artifacts and not tuple_coverage_required_desktop_heads:
+    reasons.append(
+        "Release channel desktopTupleCoverage is missing requiredDesktopHeads for desktop install media."
+    )
+if desktop_install_artifacts and not tuple_coverage_promoted_platform_heads:
+    reasons.append(
+        "Release channel desktopTupleCoverage is missing promotedPlatformHeads mapping for desktop install media."
+    )
+if desktop_install_artifacts and not tuple_coverage_declares_missing_required_platform_head_pairs:
+    reasons.append(
+        "Release channel desktopTupleCoverage must declare missingRequiredPlatformHeadPairs explicitly (empty list when complete)."
+    )
 required_desktop_platforms = ("linux", "windows", "macos")
 platform_artifact_counts = {
     platform: len(

@@ -3460,7 +3460,16 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel is missing promoted desktop install media for flagship-required head(s): ");
         StringAssert.Contains(executableGateScriptText, "heads_requiring_flagship_proof");
         StringAssert.Contains(executableGateScriptText, "desktop_tuple_coverage = (");
+        StringAssert.Contains(executableGateScriptText, "desktop_tuple_coverage_present = isinstance(release_channel.get(\"desktopTupleCoverage\"), dict)");
         StringAssert.Contains(executableGateScriptText, "tuple_coverage_required_desktop_platforms");
+        StringAssert.Contains(executableGateScriptText, "tuple_coverage_declares_missing_required_platform_head_pairs");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_present");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_declares_missing_required_platform_head_pairs");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing desktopTupleCoverage metadata for promoted desktop install artifacts.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage is missing requiredDesktopPlatforms for desktop install media.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage is missing requiredDesktopHeads for desktop install media.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage is missing promotedPlatformHeads mapping for desktop install media.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredPlatformHeadPairs explicitly (empty list when complete).");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing required desktop platform/head installer tuple pair(s): ");
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples.");
