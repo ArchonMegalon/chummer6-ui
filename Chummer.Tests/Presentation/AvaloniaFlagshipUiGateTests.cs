@@ -43,6 +43,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Chummer.Tests.Presentation;
 
 [TestClass]
+[DoNotParallelize]
 public sealed class AvaloniaFlagshipUiGateTests
 {
     private static readonly object HeadlessInitLock = new();
@@ -246,6 +247,30 @@ public sealed class AvaloniaFlagshipUiGateTests
                 + string.Join(" | ", rootLabels));
             Assert.IsNull(harness.FindControlOrDefault<TabControl>("LoadedRunnerTabStrip"), "The legacy-oriented left rail must be a tree navigator, not a second tab control.");
             Assert.IsNull(harness.FindControlOrDefault<ListBox>("NavigationTabsList"), "The legacy-oriented left rail must not fall back to a dashboard-style tab list.");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            string[] visibleTexts = harness.Window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select(text => (text.Text ?? string.Empty).Trim())
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+
+            CollectionAssert.DoesNotContain(visibleTexts, "Career-style workbench");
+            CollectionAssert.DoesNotContain(visibleTexts, "Command Palette");
+            CollectionAssert.DoesNotContain(visibleTexts, "Coach Sidecar");
+            CollectionAssert.DoesNotContain(visibleTexts, "Coach Launch");
+            CollectionAssert.DoesNotContain(visibleTexts, "Recent Coach Guidance");
+            CollectionAssert.Contains(visibleTexts, "Runner Workbench");
+            CollectionAssert.Contains(visibleTexts, "Section Commands");
+            CollectionAssert.Contains(visibleTexts, "Reference & Notes");
         });
     }
 
@@ -565,6 +590,25 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Loaded_runner_header_stays_tab_panel_only_without_metric_cards()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            Control tabStrip = harness.FindControl<Control>("LoadedRunnerTabStripBorder");
+            Panel tabStripPanel = harness.FindControl<Panel>("LoadedRunnerTabStripPanel");
+
+            harness.WaitUntil(() => tabStrip.IsVisible && tabStripPanel.Children.Count > 0);
+
+            Assert.IsNull(harness.FindControlOrDefault<Control>("NameValueText"));
+            Assert.IsNull(harness.FindControlOrDefault<Control>("AliasValueText"));
+            Assert.IsNull(harness.FindControlOrDefault<Control>("KarmaValueText"));
+            Assert.IsNull(harness.FindControlOrDefault<Control>("SkillsValueText"));
+            Assert.IsNull(harness.FindControlOrDefault<Control>("RuntimeValueText"));
+            Assert.IsNull(harness.FindControlOrDefault<Control>("RuntimeInspectButton"));
+        });
+    }
+
+    [TestMethod]
     public void Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks()
     {
         WithRuntimeLoadedRunnerHarness(harness =>
@@ -864,7 +908,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             "10-contacts-section-light.png",
             "11-diary-dialog-light.png",
             "12-magic-matrix-dialog-light.png",
-            "13-advancement-dialog-light.png"
+            "13-advancement-dialog-light.png",
+            "14-creation-section-light.png"
         ];
 
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -1014,6 +1059,15 @@ public sealed class AvaloniaFlagshipUiGateTests
                 captured[expectedFiles[12]] = harness.CaptureScreenshotBytes();
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("attributes");
+                ListBox attributeRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => attributeRows.ItemCount > 0);
+                object? attributeRow = SnapshotListBoxItems(attributeRows).FirstOrDefault();
+                Assert.IsNotNull(attributeRow, "Expected visible attributes rows before capturing character-creation familiarity proof.");
+                attributeRows.SelectedItem = attributeRow;
+                harness.WaitUntil(() => ReferenceEquals(attributeRows.SelectedItem, attributeRow));
+                captured[expectedFiles[13]] = harness.CaptureScreenshotBytes();
 
                 return captured;
             });
@@ -1396,7 +1450,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             {
                 harness.WaitForReady();
                 harness.Click("LoadDemoRunnerButton");
-                harness.WaitUntil(() => harness.Presenter.ImportCalls > 0);
+                harness.WaitUntil(() =>
+                    harness.Presenter.ImportCalls > 0
+                    && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
+                    && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false);
                 assertion(harness);
             });
         }
@@ -1488,6 +1545,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 _adapter);
             Window.Show();
             Dispatcher.UIThread.RunJobs();
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+            Dispatcher.UIThread.RunJobs();
         }
 
         public MainWindow Window { get; }
@@ -1496,7 +1555,12 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void WaitForReady()
         {
-            WaitUntil(() => ShellPresenter.InitializeCalls > 0 && _presenter.InitializeCalls > 0);
+            WaitUntil(() =>
+                ShellPresenter.InitializeCalls > 0
+                && _presenter.InitializeCalls > 0
+                && Window.IsVisible
+                && Window.Bounds.Width > 0d
+                && Window.Bounds.Height > 0d);
         }
 
         public void SetActiveSectionForTesting(string sectionId)
@@ -1601,17 +1665,23 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public byte[] CaptureScreenshotBytes()
         {
-            AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
-            Pump();
-            using var bitmap = Window.CaptureRenderedFrame();
-            if (bitmap is null)
+            for (int attempt = 0; attempt < 5; attempt++)
             {
-                throw new AssertFailedException("No rendered frame was available for screenshot capture.");
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                Window.InvalidateVisual();
+                Pump();
+                using var bitmap = Window.CaptureRenderedFrame();
+                if (bitmap is null)
+                {
+                    continue;
+                }
+
+                using MemoryStream output = new();
+                bitmap.Save(output);
+                return output.ToArray();
             }
 
-            using MemoryStream output = new();
-            bitmap.Save(output);
-            return output.ToArray();
+            throw new AssertFailedException("No rendered frame was available for screenshot capture.");
         }
 
         public T FindControl<T>(string name)
