@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-04-03T16:04:01.630642Z",
+  "generatedAt": "2026-04-03T16:24:57.329101Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "status": "pass",
-  "summary": "Desktop visual familiarity is proven for shell chrome, theme anchors, loaded-runner tabs, and dense builder workflow posture.",
+  "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 vehicles/contacts/diary surfaces.",
   "reasons": [],
   "evidence": {
     "flagship_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
@@ -35,7 +35,9 @@
     "runtime_backed_legacy_workbench": "pass",
     "legacy_dense_builder_rhythm": "pass",
     "legacy_browse_detail_confirm_rhythm": "pass",
+    "legacy_vehicles_builder_rhythm": "pass",
     "legacy_cyberware_dialog_rhythm": "pass",
+    "legacy_contacts_diary_rhythm": "pass",
     "legacy_familiarity_bridge": "pass",
     "missing_theme_tokens": [],
     "required_tests": [
@@ -46,7 +48,9 @@
       "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
       "Character_creation_preserves_familiar_dense_builder_rhythm",
       "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
+      "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
       "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+      "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
       "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
       "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
       "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
@@ -91,7 +95,10 @@
       "05-dense-section-light.png",
       "06-dense-section-dark.png",
       "07-loaded-runner-tabs-light.png",
-      "08-cyberware-dialog-light.png"
+      "08-cyberware-dialog-light.png",
+      "09-vehicles-section-light.png",
+      "10-contacts-section-light.png",
+      "11-diary-dialog-light.png"
     ],
     "missing_screenshots": [],
     "invalid_screenshots": {},
