@@ -14,7 +14,7 @@ public static class DesktopLocalizationCatalog
     private static readonly IReadOnlyDictionary<string, string> DefaultTrustSurfaceStrings = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["desktop.shell.window_title"] = "Chummer Desktop",
-        ["desktop.shell.banner"] = "Chummer desktop",
+        ["desktop.shell.banner"] = "Runner Workbench",
         ["desktop.shell.menu.file"] = "File",
         ["desktop.shell.menu.edit"] = "Edit",
         ["desktop.shell.menu.special"] = "Special",
@@ -45,8 +45,11 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.value.na"] = "n/a",
         ["desktop.shell.state.snapshot"] = "State: {0}, workspace={1}, open={2}, saved={3}, last-command={4}",
         ["desktop.shell.state.error"] = "State: error - {0}",
+        ["desktop.shell.workspace_strip.heading"] = "Current Runner",
         ["desktop.shell.workspace_strip.summary"] = "Workspace: {0} (open: {1}, {2})",
         ["desktop.shell.workspace_strip.empty"] = "Workspace: none",
+        ["desktop.shell.workspace_strip.caption"] = "Ruleset, file, and active tab stay visible while you move through dense builder sections.",
+        ["desktop.shell.workspace_strip.quick_start_caption"] = "Inspect the bundled Soma-Career sample before you start a blank build.",
         ["desktop.shell.summary.name"] = "Name",
         ["desktop.shell.summary.alias"] = "Alias",
         ["desktop.shell.summary.karma"] = "Karma",
@@ -191,7 +194,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.status.install_id_copied"] = "Copied the installation id to the clipboard.",
         ["desktop.install_link.status.opened_work_route"] = "Opened the account-aware work route so you can confirm restore, support, and update follow-through on this claimed install.",
         ["desktop.install_link.status.unable_open_work_route"] = "Unable to open the account-aware work route from this host.",
-        ["desktop.install_link.status.opened_account"] = "Opened your Hub account so you can review or copy the install claim code.",
+        ["desktop.install_link.status.opened_account"] = "Opened your Hub account so you can reopen the guided install handoff or review this install's linking state.",
         ["desktop.install_link.status.unable_open_account"] = "Unable to open the Hub account page from this host.",
         ["desktop.install_link.status.opened_downloads"] = "Opened downloads so you can review the current release and installer posture before linking.",
         ["desktop.install_link.status.unable_open_downloads"] = "Unable to open downloads from this host.",
@@ -397,16 +400,12 @@ public static class DesktopLocalizationCatalog
 
     private static IReadOnlyDictionary<string, string> BuildLocaleTrustSurfaceStrings(string languageCode)
     {
-        var localized = new Dictionary<string, string>(DefaultTrustSurfaceStrings.Count, StringComparer.Ordinal);
-        foreach (KeyValuePair<string, string> pair in DefaultTrustSurfaceStrings)
-        {
-            localized[pair.Key] = pair.Value;
-        }
+        var localized = new Dictionary<string, string>(StringComparer.Ordinal);
 
         if (string.Equals(languageCode, "de-de", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer Desktop";
-            localized["desktop.shell.banner"] = "Chummer Desktop";
+            localized["desktop.shell.banner"] = "Runner Workbench";
             localized["desktop.shell.menu.file"] = "Datei";
             localized["desktop.shell.menu.edit"] = "Bearbeiten";
             localized["desktop.shell.menu.special"] = "Besonderes";
@@ -426,16 +425,40 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.close_active_workspace"] = "Aktiven Arbeitsbereich schließen";
             localized["desktop.shell.tool.status_idle"] = "Status: inaktiv";
             localized["desktop.shell.state.value.ready"] = "bereit";
-            localized["desktop.support.title"] = "Support";
+            localized["desktop.support.title"] = "Unterstützung";
             localized["desktop.home.title"] = "Desktop-Start-Cockpit";
             localized["desktop.home.section.install_support"] = "Installation und Support";
             localized["desktop.home.section.update_posture"] = "Update-Posture";
+            localized["desktop.home.section.campaign_return"] = "Kampagnen-Ruckkehr und Wiederherstellung";
+            localized["desktop.home.section.support_closure"] = "Support-Abschluss und Fix-Hinweise";
+            localized["desktop.home.section.build_explain"] = "Build und Explain als Nächstes";
+            localized["desktop.home.section.language_trust"] = "Sprache und Vertrauensoberflächen";
+            localized["desktop.home.section.recent_workspaces"] = "Letzte Arbeitsbereiche";
+            localized["desktop.home.button.continue"] = "Weiter";
+            localized["desktop.home.button.open_install_support"] = "Installations-Support öffnen";
+            localized["desktop.home.button.open_update_support"] = "Update-Support öffnen";
+            localized["desktop.home.button.open_work_support"] = "Arbeits-Support öffnen";
+            localized["desktop.home.button.open_tracked_case"] = "Verfolgten Fall öffnen";
+            localized["desktop.home.button.open_campaign_followthrough"] = "Kampagnen-Nachverfolgung öffnen";
+            localized["desktop.home.button.open_support_center"] = "Support-Center öffnen";
+            localized["desktop.home.button.open_report_issue"] = "Fehler melden";
+            localized["desktop.home.button.open_settings"] = "Einstellungen öffnen";
+            localized["desktop.install_link.title"] = "Diese Kopie verknüpfen";
+            localized["desktop.install_link.heading"] = "Diese Desktop-Kopie mit Ihrem Konto verknüpfen";
+            localized["desktop.install_link.claim_code_label"] = "Installations-Claim-Code";
+            localized["desktop.install_link.button.link_copy"] = "Diese Kopie verknüpfen";
+            localized["desktop.install_link.button.continue_guest"] = "Als Gast fortfahren";
+            localized["desktop.support.heading"] = "Support und Abschluss";
+            localized["desktop.support.section.case"] = "Verfolgter Fall und Abschluss";
+            localized["desktop.support.section.release"] = "Release- und Installationskontext";
+            localized["desktop.support.section.follow_through"] = "Support-Nachverfolgung";
+            localized["desktop.support.button.refresh"] = "Aktualisieren";
         }
 
         if (string.Equals(languageCode, "fr-fr", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer Bureau";
-            localized["desktop.shell.banner"] = "Chummer Desktop";
+            localized["desktop.shell.banner"] = "Runner Workbench";
             localized["desktop.shell.menu.file"] = "Fichier";
             localized["desktop.shell.menu.edit"] = "Éditer";
             localized["desktop.shell.menu.tools"] = "Outils";
@@ -447,16 +470,40 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.open_support"] = "Ouvrir le support";
             localized["desktop.shell.tool.report_issue"] = "Signaler un problème";
             localized["desktop.shell.tool.settings"] = "Paramètres";
-            localized["desktop.support.title"] = "Support";
+            localized["desktop.support.title"] = "Assistance";
             localized["desktop.home.title"] = "Cockpit principal";
             localized["desktop.home.section.install_support"] = "Installation et support";
             localized["desktop.home.section.update_posture"] = "Posture de mise à jour";
+            localized["desktop.home.section.campaign_return"] = "Retour de campagne et reprise";
+            localized["desktop.home.section.support_closure"] = "Clôture du support et avis de correctifs";
+            localized["desktop.home.section.build_explain"] = "Build et Explain ensuite";
+            localized["desktop.home.section.language_trust"] = "Langue et surfaces de confiance";
+            localized["desktop.home.section.recent_workspaces"] = "Espaces de travail récents";
+            localized["desktop.home.button.continue"] = "Continuer";
+            localized["desktop.home.button.open_install_support"] = "Ouvrir le support d'installation";
+            localized["desktop.home.button.open_update_support"] = "Ouvrir le support des mises à jour";
+            localized["desktop.home.button.open_work_support"] = "Ouvrir le support de travail";
+            localized["desktop.home.button.open_tracked_case"] = "Ouvrir le dossier suivi";
+            localized["desktop.home.button.open_campaign_followthrough"] = "Ouvrir le suivi de campagne";
+            localized["desktop.home.button.open_support_center"] = "Ouvrir le centre de support";
+            localized["desktop.home.button.open_report_issue"] = "Signaler un problème";
+            localized["desktop.home.button.open_settings"] = "Ouvrir les paramètres";
+            localized["desktop.install_link.title"] = "Lier cette copie";
+            localized["desktop.install_link.heading"] = "Lier cette copie desktop à votre compte";
+            localized["desktop.install_link.claim_code_label"] = "Code de réclamation d'installation";
+            localized["desktop.install_link.button.link_copy"] = "Lier cette copie";
+            localized["desktop.install_link.button.continue_guest"] = "Continuer en invité";
+            localized["desktop.support.heading"] = "Support et clôture";
+            localized["desktop.support.section.case"] = "Dossier suivi et clôture";
+            localized["desktop.support.section.release"] = "Contexte de version et d'installation";
+            localized["desktop.support.section.follow_through"] = "Suivi du support";
+            localized["desktop.support.button.refresh"] = "Rafraîchir";
         }
 
         if (string.Equals(languageCode, "ja-jp", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer デスクトップ";
-            localized["desktop.shell.banner"] = "Chummer Desktop";
+            localized["desktop.shell.banner"] = "Runner Workbench";
             localized["desktop.shell.menu.file"] = "ファイル";
             localized["desktop.shell.menu.edit"] = "編集";
             localized["desktop.shell.menu.tools"] = "ツール";
@@ -472,12 +519,36 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.title"] = "デスクトップホーム";
             localized["desktop.home.section.install_support"] = "インストールとサポート";
             localized["desktop.home.section.update_posture"] = "更新の姿勢";
+            localized["desktop.home.section.campaign_return"] = "キャンペーン復帰と復元";
+            localized["desktop.home.section.support_closure"] = "サポート完了と修正通知";
+            localized["desktop.home.section.build_explain"] = "次のビルドとExplain";
+            localized["desktop.home.section.language_trust"] = "言語と信頼サーフェス";
+            localized["desktop.home.section.recent_workspaces"] = "最近のワークスペース";
+            localized["desktop.home.button.continue"] = "続行";
+            localized["desktop.home.button.open_install_support"] = "インストールサポートを開く";
+            localized["desktop.home.button.open_update_support"] = "更新サポートを開く";
+            localized["desktop.home.button.open_work_support"] = "作業サポートを開く";
+            localized["desktop.home.button.open_tracked_case"] = "追跡ケースを開く";
+            localized["desktop.home.button.open_campaign_followthrough"] = "キャンペーン追跡を開く";
+            localized["desktop.home.button.open_support_center"] = "サポートセンターを開く";
+            localized["desktop.home.button.open_report_issue"] = "問題を報告";
+            localized["desktop.home.button.open_settings"] = "設定を開く";
+            localized["desktop.install_link.title"] = "このコピーをリンク";
+            localized["desktop.install_link.heading"] = "このデスクトップコピーをアカウントにリンク";
+            localized["desktop.install_link.claim_code_label"] = "インストール請求コード";
+            localized["desktop.install_link.button.link_copy"] = "このコピーをリンク";
+            localized["desktop.install_link.button.continue_guest"] = "ゲストとして続行";
+            localized["desktop.support.heading"] = "サポートとクローズ";
+            localized["desktop.support.section.case"] = "追跡ケースとクローズ";
+            localized["desktop.support.section.release"] = "リリースとインストールのコンテキスト";
+            localized["desktop.support.section.follow_through"] = "サポートフォローアップ";
+            localized["desktop.support.button.refresh"] = "更新";
         }
 
         if (string.Equals(languageCode, "pt-br", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer Desktop";
-            localized["desktop.shell.banner"] = "Chummer Desktop";
+            localized["desktop.shell.banner"] = "Runner Workbench";
             localized["desktop.shell.menu.file"] = "Arquivo";
             localized["desktop.shell.menu.edit"] = "Editar";
             localized["desktop.shell.menu.tools"] = "Ferramentas";
@@ -493,12 +564,36 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.title"] = "Painel inicial";
             localized["desktop.home.section.install_support"] = "Instalação e suporte";
             localized["desktop.home.section.update_posture"] = "Postura de atualização";
+            localized["desktop.home.section.campaign_return"] = "Retorno de campanha e restauração";
+            localized["desktop.home.section.support_closure"] = "Fechamento de suporte e avisos de correção";
+            localized["desktop.home.section.build_explain"] = "Build e Explain em seguida";
+            localized["desktop.home.section.language_trust"] = "Idioma e superfícies de confiança";
+            localized["desktop.home.section.recent_workspaces"] = "Workspaces recentes";
+            localized["desktop.home.button.continue"] = "Continuar";
+            localized["desktop.home.button.open_install_support"] = "Abrir suporte de instalação";
+            localized["desktop.home.button.open_update_support"] = "Abrir suporte de atualização";
+            localized["desktop.home.button.open_work_support"] = "Abrir suporte de trabalho";
+            localized["desktop.home.button.open_tracked_case"] = "Abrir caso rastreado";
+            localized["desktop.home.button.open_campaign_followthrough"] = "Abrir acompanhamento da campanha";
+            localized["desktop.home.button.open_support_center"] = "Abrir central de suporte";
+            localized["desktop.home.button.open_report_issue"] = "Reportar problema";
+            localized["desktop.home.button.open_settings"] = "Abrir configurações";
+            localized["desktop.install_link.title"] = "Vincular esta cópia";
+            localized["desktop.install_link.heading"] = "Vincular esta cópia desktop à sua conta";
+            localized["desktop.install_link.claim_code_label"] = "Código de vínculo da instalação";
+            localized["desktop.install_link.button.link_copy"] = "Vincular esta cópia";
+            localized["desktop.install_link.button.continue_guest"] = "Continuar como convidado";
+            localized["desktop.support.heading"] = "Suporte e fechamento";
+            localized["desktop.support.section.case"] = "Caso rastreado e fechamento";
+            localized["desktop.support.section.release"] = "Contexto de versão e instalação";
+            localized["desktop.support.section.follow_through"] = "Acompanhamento de suporte";
+            localized["desktop.support.button.refresh"] = "Atualizar";
         }
 
         if (string.Equals(languageCode, "zh-cn", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer 桌面";
-            localized["desktop.shell.banner"] = "Chummer 桌面";
+            localized["desktop.shell.banner"] = "Runner Workbench";
             localized["desktop.shell.menu.file"] = "文件";
             localized["desktop.shell.menu.edit"] = "编辑";
             localized["desktop.shell.menu.tools"] = "工具";
@@ -514,6 +609,30 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.title"] = "桌面控制台";
             localized["desktop.home.section.install_support"] = "安装与支持";
             localized["desktop.home.section.update_posture"] = "更新状态";
+            localized["desktop.home.section.campaign_return"] = "战役回归与恢复";
+            localized["desktop.home.section.support_closure"] = "支持闭环与修复通知";
+            localized["desktop.home.section.build_explain"] = "下一步构建与Explain";
+            localized["desktop.home.section.language_trust"] = "语言与信任界面";
+            localized["desktop.home.section.recent_workspaces"] = "最近工作区";
+            localized["desktop.home.button.continue"] = "继续";
+            localized["desktop.home.button.open_install_support"] = "打开安装支持";
+            localized["desktop.home.button.open_update_support"] = "打开更新支持";
+            localized["desktop.home.button.open_work_support"] = "打开工作支持";
+            localized["desktop.home.button.open_tracked_case"] = "打开跟踪工单";
+            localized["desktop.home.button.open_campaign_followthrough"] = "打开战役跟进";
+            localized["desktop.home.button.open_support_center"] = "打开支持中心";
+            localized["desktop.home.button.open_report_issue"] = "报告问题";
+            localized["desktop.home.button.open_settings"] = "打开设置";
+            localized["desktop.install_link.title"] = "绑定此副本";
+            localized["desktop.install_link.heading"] = "将此桌面副本绑定到您的账户";
+            localized["desktop.install_link.claim_code_label"] = "安装认领码";
+            localized["desktop.install_link.button.link_copy"] = "绑定此副本";
+            localized["desktop.install_link.button.continue_guest"] = "以访客身份继续";
+            localized["desktop.support.heading"] = "支持与闭环";
+            localized["desktop.support.section.case"] = "跟踪工单与闭环";
+            localized["desktop.support.section.release"] = "版本与安装上下文";
+            localized["desktop.support.section.follow_through"] = "支持跟进";
+            localized["desktop.support.button.refresh"] = "刷新";
         }
 
         return localized;
@@ -564,6 +683,9 @@ public static class DesktopLocalizationCatalog
     public static string BuildSupportedLanguageSummary()
         => string.Join(", ", ShippingLanguages.Select(language => language.Label));
 
+    public static string BuildSupportedLanguageCodeSummary()
+        => string.Join(", ", ShippingLanguages.Select(language => language.Code));
+
     public static void SetCurrentLanguageOverride(string? languageCode)
     {
         _currentLanguageOverride = string.IsNullOrWhiteSpace(languageCode)
@@ -588,12 +710,12 @@ public static class DesktopLocalizationCatalog
         string normalizedLanguage = NormalizeOrDefault(languageCode);
         if (TryGetLocalizedValue(normalizedLanguage, key, out string? value))
         {
-            return value;
+            return value!;
         }
 
         if (TryGetLocalizedValue(DefaultLanguage, key, out value))
         {
-            return normalizedLanguage == DefaultLanguage ? value : string.Concat(value, EnglishFallbackMarker, "[", normalizedLanguage, "]");
+            return normalizedLanguage == DefaultLanguage ? value! : string.Concat(value!, EnglishFallbackMarker, "[", normalizedLanguage, "]");
         }
 
         throw new KeyNotFoundException($"desktop_localization_key_missing:{key}");
