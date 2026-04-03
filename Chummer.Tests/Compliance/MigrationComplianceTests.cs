@@ -3387,6 +3387,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "and is_desktop_install_media(item.get(\"platform\"), item.get(\"kind\"))");
         StringAssert.Contains(executableGateScriptText, "def validate_receipt_path_scope(");
         StringAssert.Contains(executableGateScriptText, "receipt path is outside this repo root");
+        StringAssert.Contains(executableGateScriptText, "def validate_windows_gate(");
+        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate receipt head/RID does not match any promoted release-channel Windows artifact tuple.");
+        StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.");
+        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
+        StringAssert.Contains(executableGateScriptText, "Release channel currently promotes multiple Windows desktop installer tuples, but the executable gate supports one Windows receipt path.");
         StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
         StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");
         StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact is missing from local desktop downloads shelf");

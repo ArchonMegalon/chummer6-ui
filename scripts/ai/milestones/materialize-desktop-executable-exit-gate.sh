@@ -220,6 +220,98 @@ def validate_linux_gate(
     evidence.setdefault("linux_gates", {})[head] = gate_evidence
 
 
+def validate_windows_gate(
+    gate_path: Path,
+    gate_payload: Dict[str, Any],
+    expected_artifacts: List[Dict[str, Any]],
+    desktop_files_root: Path,
+    evidence: Dict[str, Any],
+    reasons: List[str],
+) -> None:
+    gate_evidence: Dict[str, Any] = {
+        "path": str(gate_path),
+    }
+    gate_status = pick_status(gate_payload)
+    gate_evidence["status"] = gate_status
+    validate_receipt_freshness("windows desktop exit gate proof", gate_payload, gate_evidence, reasons)
+
+    gate_head = gate_payload.get("head") if isinstance(gate_payload.get("head"), dict) else {}
+    gate_checks = gate_payload.get("checks") if isinstance(gate_payload.get("checks"), dict) else {}
+    channel_artifact = (
+        gate_checks.get("release_channel_windows_artifact")
+        if isinstance(gate_checks.get("release_channel_windows_artifact"), dict)
+        else {}
+    )
+
+    gate_evidence["receipt_head"] = gate_head
+    gate_evidence["release_channel_windows_artifact"] = channel_artifact
+    gate_evidence["windows_installer_path"] = str(gate_checks.get("windows_installer_path") or "").strip()
+
+    if normalize_token(gate_head.get("platform")) != "windows":
+        reasons.append("Windows desktop exit gate receipt platform is not 'windows'.")
+    if not status_ok(gate_status):
+        reasons.append("Windows desktop exit gate is missing or not passing.")
+
+    expected_by_tuple = {
+        (
+            normalize_token(item.get("head")),
+            normalize_token(item.get("rid")),
+        ): item
+        for item in expected_artifacts
+    }
+    expected_tuple = (
+        normalize_token(gate_head.get("app_key")),
+        normalize_token(gate_head.get("rid")),
+    )
+    matched_expected = expected_by_tuple.get(expected_tuple)
+    if matched_expected is None:
+        reasons.append(
+            "Windows desktop exit gate receipt head/RID does not match any promoted release-channel Windows artifact tuple."
+        )
+        evidence["windows_gate"] = gate_evidence
+        return
+
+    expected_file_name = str(matched_expected.get("fileName") or "").strip()
+    expected_sha = normalize_token(matched_expected.get("sha256"))
+    expected_size = int(matched_expected.get("sizeBytes") or 0)
+    expected_head = normalize_token(matched_expected.get("head"))
+    expected_rid = normalize_token(matched_expected.get("rid"))
+
+    if normalize_token(channel_artifact.get("head")) != expected_head:
+        reasons.append("Windows gate embedded release_channel_windows_artifact head does not match promoted release channel.")
+    if normalize_token(channel_artifact.get("rid")) != expected_rid:
+        reasons.append("Windows gate embedded release_channel_windows_artifact RID does not match promoted release channel.")
+    if normalize_token(channel_artifact.get("platform")) != "windows":
+        reasons.append("Windows gate embedded release_channel_windows_artifact platform is not 'windows'.")
+    if str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
+        reasons.append("Windows gate embedded release_channel_windows_artifact fileName does not match promoted release channel.")
+    if expected_sha and normalize_token(channel_artifact.get("sha256")) != expected_sha:
+        reasons.append("Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.")
+    if expected_size and int(channel_artifact.get("sizeBytes") or 0) != expected_size:
+        reasons.append("Windows gate embedded release_channel_windows_artifact sizeBytes does not match promoted release channel.")
+
+    installer_path = Path(str(gate_checks.get("windows_installer_path") or "").strip())
+    if not installer_path.is_file():
+        reasons.append("Windows desktop exit gate windows_installer_path does not exist.")
+    else:
+        gate_evidence["windows_installer_size_bytes"] = int(installer_path.stat().st_size)
+        gate_evidence["windows_installer_sha256"] = hashlib.sha256(installer_path.read_bytes()).hexdigest().lower()
+        if expected_size and gate_evidence["windows_installer_size_bytes"] != expected_size:
+            reasons.append("Windows desktop exit gate installer size does not match promoted release-channel artifact bytes.")
+        if expected_sha and normalize_token(gate_evidence["windows_installer_sha256"]) != expected_sha:
+            reasons.append("Windows desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.")
+
+    shelf_path = desktop_files_root / expected_file_name
+    gate_evidence["expected_windows_shelf_path"] = str(shelf_path)
+    if shelf_path.is_file() and installer_path.is_file():
+        shelf_sha = hashlib.sha256(shelf_path.read_bytes()).hexdigest().lower()
+        gate_evidence["expected_windows_shelf_sha256"] = shelf_sha
+        if shelf_sha != normalize_token(gate_evidence.get("windows_installer_sha256")):
+            reasons.append("Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.")
+
+    evidence["windows_gate"] = gate_evidence
+
+
 def validate_macos_gate(
     head: str,
     rid: str,
@@ -327,8 +419,6 @@ evidence: Dict[str, Any] = {
 release_channel = load_json(release_channel_path)
 windows_gate = load_json(windows_gate_path)
 flagship_gate = load_json(flagship_gate_path)
-
-validate_receipt_freshness("windows desktop exit gate proof", windows_gate, evidence, reasons)
 validate_receipt_freshness("flagship UI release gate proof", flagship_gate, evidence, reasons)
 
 windows_status = pick_status(windows_gate)
@@ -400,6 +490,30 @@ for required_platform in required_desktop_platforms:
         )
 for desktop_install_artifact in desktop_install_artifacts:
     validate_local_release_artifact_file(desktop_install_artifact, desktop_files_root, evidence, reasons)
+
+expected_windows_artifacts = [
+    item
+    for item in desktop_install_artifacts
+    if normalize_token(item.get("platform")) == "windows"
+    and normalize_token(item.get("head"))
+    and normalize_token(item.get("rid"))
+]
+evidence["windows_heads_expected"] = [
+    {
+        "head": normalize_token(item.get("head")),
+        "rid": normalize_token(item.get("rid")),
+        "fileName": str(item.get("fileName") or "").strip(),
+    }
+    for item in expected_windows_artifacts
+]
+if not expected_windows_artifacts and platform_artifact_counts.get("windows", 0) > 0:
+    reasons.append("Release channel publishes Windows desktop media without explicit head/rid tuple metadata.")
+if len(expected_windows_artifacts) > 1:
+    reasons.append(
+        "Release channel currently promotes multiple Windows desktop installer tuples, but the executable gate supports one Windows receipt path."
+    )
+if expected_windows_artifacts:
+    validate_windows_gate(windows_gate_path, windows_gate, expected_windows_artifacts, desktop_files_root, evidence, reasons)
 
 expected_linux_heads = sorted(
     {
