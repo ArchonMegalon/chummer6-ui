@@ -3394,11 +3394,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is outside this repo root.");
         StringAssert.Contains(executableGateScriptText, "Release channel currently promotes multiple Windows desktop installer tuples, but the executable gate supports one Windows receipt path.");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"macOS gate reason ({head}/{rid}): {gate_reason}\")");
         StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.");
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt path is outside this repo root for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
@@ -5170,9 +5173,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(xamlText, "x:Name=\"RightShellRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"StatusStripRegion\"");
 
-        StringAssert.Contains(navigatorControlText, "Open Characters");
-        StringAssert.Contains(navigatorControlText, "Navigation Tabs");
-        StringAssert.Contains(navigatorControlText, "Section Actions");
+        StringAssert.Contains(navigatorControlText, "x:Name=\"CodexKickerText\"");
+        StringAssert.Contains(navigatorControlText, "x:Name=\"NavigatorTree\"");
+        StringAssert.Contains(navigatorControlText, "TreeDataTemplate");
         StringAssert.Contains(commandPaneControlText, "Command Palette");
     }
 
