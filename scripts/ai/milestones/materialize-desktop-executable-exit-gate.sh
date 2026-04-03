@@ -275,6 +275,16 @@ def validate_linux_gate(
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
     validate_receipt_freshness(f"linux desktop exit gate proof for {head}", gate_payload, gate_evidence, reasons)
+    gate_reasons = [
+        str(item).strip()
+        for item in (gate_payload.get("reasons") or [])
+        if str(item).strip()
+    ]
+    if not gate_reasons and not status_ok(gate_status):
+        fallback_gate_reason = str(gate_payload.get("reason") or "").strip()
+        if fallback_gate_reason:
+            gate_reasons = [fallback_gate_reason]
+    gate_evidence["gate_reasons"] = gate_reasons
 
     gate_head = gate_payload.get("head") if isinstance(gate_payload.get("head"), dict) else {}
     gate_evidence["receipt_head"] = gate_head
@@ -285,6 +295,8 @@ def validate_linux_gate(
 
     if not status_ok(gate_status):
         reasons.append(f"Linux desktop exit gate is missing or not passing for promoted head '{head}'.")
+    for gate_reason in gate_reasons:
+        reasons.append(f"Linux gate reason ({head}): {gate_reason}")
 
     startup = gate_payload.get("startup_smoke") if isinstance(gate_payload.get("startup_smoke"), dict) else {}
     primary = startup.get("primary") if isinstance(startup.get("primary"), dict) else {}
