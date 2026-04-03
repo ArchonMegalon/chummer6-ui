@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-04-03T21:08:33Z",
-  "generatedAt": "2026-04-03T21:08:33Z",
+  "generated_at": "2026-04-03T23:30:39Z",
+  "generatedAt": "2026-04-03T23:30:39Z",
   "version": "unpublished",
   "channel": "docker",
-  "publishedAt": "2026-04-03T21:08:32Z",
+  "publishedAt": "2026-04-03T23:30:38Z",
   "downloads": [
     {
       "id": "avalonia-linux-x64-installer",
       "platform": "Avalonia Desktop Linux X64 Installer",
       "url": "/downloads/files/chummer-avalonia-linux-x64-installer.deb",
-      "sha256": "6b0a63c39850a257e66d142c0bad196a7cc4fcbaf027635965f138f534bb13ea",
-      "sizeBytes": 34297862,
+      "sha256": "db286c2cde05206a2826817d91abfd331ed0fca1d11df550c368e510d43d8808",
+      "sizeBytes": 31791888,
       "format": "deb",
       "flavor": "installer",
       "kind": "installer",
@@ -24,8 +24,8 @@
       "id": "blazor-desktop-linux-x64-installer",
       "platform": "Blazor Desktop Linux X64 Installer",
       "url": "/downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
-      "sha256": "2548564550bc2c8ec4dbc0d5c8566e44ac87610ddbb9cf8ea15b08b5c64518e4",
-      "sizeBytes": 34147692,
+      "sha256": "e045312eab4982b801edcba6edef0ae0d32065fe9c29e1d502b70d83b33fc37e",
+      "sizeBytes": 34181284,
       "format": "deb",
       "flavor": "installer",
       "kind": "installer",
@@ -39,12 +39,12 @@
   "source": "registry",
   "status": "published",
   "message": null,
-  "rolloutState": "local_docker_preview",
-  "rolloutReason": "Current release shelf was exercised by the local docker release proof harness before publication.",
-  "supportabilityState": "local_docker_proven",
-  "supportabilitySummary": "Local release proof passed for: install_claim_restore_continue, build_explain_publish, campaign_session_recover_recap, report_cluster_release_notify. Claimed-device restore and bounded offline prefetch stayed grounded on the current shelf.",
-  "knownIssueSummary": "Preview caveats still apply, but the current shelf has recent install, claimed-device recovery, bounded offline prefetch, and support proof instead of only manifest presence.",
-  "fixAvailabilitySummary": "Only send fixed notices after the affected install can receive the published channel artifact now on the shelf.",
+  "rolloutState": "coverage_incomplete",
+  "rolloutReason": "Current shelf is published, but promotion stays blocked because required desktop tuple coverage is incomplete (platforms: windows, macos; pairs: avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos).",
+  "supportabilityState": "review_required",
+  "supportabilitySummary": "Treat the current shelf as review-required because required desktop tuple coverage is incomplete (platforms: windows, macos; pairs: avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos).",
+  "knownIssueSummary": "Known issue: required desktop tuple coverage is incomplete (platforms: windows, macos; pairs: avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos).",
+  "fixAvailabilitySummary": "Do not send fixed notices until required desktop tuple coverage is complete for the promoted shelf.",
   "releaseProof": {
     "status": "passed",
     "generatedAt": "2026-03-29T09:48:56Z",
@@ -62,7 +62,14 @@
       "/account/work",
       "/account/support",
       "/contact"
-    ]
+    ],
+    "uiLocalizationReleaseGate": {
+      "status": "missing",
+      "generatedAt": null,
+      "defaultKeyCount": null,
+      "shippingLocales": [],
+      "localeSummary": []
+    }
   },
   "desktopTupleCoverage": {
     "requiredDesktopPlatforms": [
