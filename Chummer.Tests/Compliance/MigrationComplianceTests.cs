@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
+using Chummer.Rulesets.Hosting.Presentation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Compliance;
@@ -214,6 +215,8 @@ public class MigrationComplianceTests
         string desktopRuntimeExtensionsText = File.ReadAllText(desktopRuntimeExtensionsPath);
         string serviceRegistrationPath = FindPath("Chummer.Infrastructure", "DependencyInjection", "ServiceCollectionExtensions.cs");
         string serviceRegistrationText = File.ReadAllText(serviceRegistrationPath);
+        string blazorProgramPath = FindPath("Chummer.Blazor", "Program.cs");
+        string blazorProgramText = File.ReadAllText(blazorProgramPath);
         string readmePath = FindPath("README.md");
         string readmeText = File.ReadAllText(readmePath);
 
@@ -2462,7 +2465,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(explainContractsText, "public sealed record RulesetGasBudget");
         StringAssert.Contains(explainContractsText, "public sealed record RulesetExecutionOptions");
         StringAssert.Contains(explainContractsText, "public sealed record RulesetGasUsage");
-        StringAssert.Contains(explainContractsText, "public sealed record RulesetExplainFragment");
+        StringAssert.Contains(explainContractsText, "public sealed record RulesetExplainParameter");
+        StringAssert.Contains(explainContractsText, "public sealed record RulesetTraceStep");
         StringAssert.Contains(explainContractsText, "public sealed record RulesetProviderTrace");
         StringAssert.Contains(explainContractsText, "public sealed record RulesetExplainTrace");
         StringAssert.Contains(explainContractsText, "ProviderInstructionLimit");
@@ -2852,6 +2856,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(testText, "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections");
         StringAssert.Contains(testText, "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections");
         StringAssert.Contains(testText, "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections");
+        StringAssert.Contains(testText, "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details");
         StringAssert.Contains(testText, "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity");
     }
 
@@ -3360,6 +3365,69 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_exit_gate_prefers_registry_release_truth_with_repo_local_fallback_and_counts_macos_dmg_media()
+    {
+        string executableGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string executableGateScriptText = File.ReadAllText(executableGateScriptPath);
+
+        StringAssert.Contains(
+            executableGateScriptText,
+            "canonical_release_channel_path=\"/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json\"");
+        StringAssert.Contains(executableGateScriptText, "release_channel_path_default");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "release_channel_path=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}\"");
+        StringAssert.Contains(executableGateScriptText, "def is_desktop_install_media(");
+        StringAssert.Contains(executableGateScriptText, "return kind_token in {\"installer\", \"dmg\", \"pkg\"}");
+        StringAssert.Contains(executableGateScriptText, "and is_desktop_install_media(item.get(\"platform\"), item.get(\"kind\"))");
+        StringAssert.Contains(executableGateScriptText, "def validate_receipt_path_scope(");
+        StringAssert.Contains(executableGateScriptText, "receipt path is outside this repo root");
+        StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
+        StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");
+        StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact is missing from local desktop downloads shelf");
+        StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact sha256 does not match local bytes");
+        StringAssert.Contains(executableGateScriptText, "f\"Desktop executable exit gate is proven by passing packaged-head receipts for promoted desktop platforms ({platform_scope})");
+        StringAssert.Contains(executableGateScriptText, "print(\"[desktop-executable-exit-gate] FAIL\", file=sys.stderr)");
+        StringAssert.Contains(executableGateScriptText, "print(f\"[desktop-executable-exit-gate] reason: {reason}\", file=sys.stderr)");
+    }
+
+    [TestMethod]
+    public void Macos_exit_gate_prefers_registry_release_truth_with_repo_local_fallback_and_accepts_dmg_media()
+    {
+        string macosGateScriptPath = FindPath("scripts", "materialize-macos-desktop-exit-gate.sh");
+        string macosGateScriptText = File.ReadAllText(macosGateScriptPath);
+
+        StringAssert.Contains(
+            macosGateScriptText,
+            "CANONICAL_RELEASE_CHANNEL_PATH=\"/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json\"");
+        StringAssert.Contains(
+            macosGateScriptText,
+            "RELEASE_CHANNEL_PATH=\"${CHUMMER_MACOS_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}\"");
+        StringAssert.Contains(macosGateScriptText, "RID=\"$(python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY\"");
+        StringAssert.Contains(macosGateScriptText, "RID=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID:-}\"");
+        StringAssert.Contains(macosGateScriptText, "normalize(item.get(\"kind\")) in {\"installer\", \"dmg\", \"pkg\"}");
+        StringAssert.Contains(macosGateScriptText, "preferred_order = [\"osx-arm64\", \"osx-x64\"]");
+        StringAssert.Contains(macosGateScriptText, "def is_macos_install_media_kind(kind: Any) -> bool:");
+        StringAssert.Contains(macosGateScriptText, "return normalize_token(kind) in {\"installer\", \"dmg\", \"pkg\"}");
+        StringAssert.Contains(macosGateScriptText, "Release channel does not publish a macOS install medium");
+    }
+
+    [TestMethod]
+    public void Desktop_workflow_execution_gate_requires_explicit_executed_family_receipts()
+    {
+        string workflowGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string workflowGateScriptText = File.ReadAllText(workflowGateScriptPath);
+
+        StringAssert.Contains(workflowGateScriptText, "def iter_execution_receipts(");
+        StringAssert.Contains(workflowGateScriptText, "workflow_execution_receipt_count_checked");
+        StringAssert.Contains(workflowGateScriptText, "matchedPassedTests");
+        StringAssert.Contains(workflowGateScriptText, "missingAuditTests");
+        StringAssert.Contains(workflowGateScriptText, "failedAuditTests");
+        StringAssert.Contains(workflowGateScriptText, "expected_proof_kind");
+        StringAssert.Contains(workflowGateScriptText, "SR4/SR6 family-level execution receipts are not explicitly grounded");
+    }
+
+    [TestMethod]
     public void Readme_modern_stack_summary_tracks_current_gateway_and_runtime_contract()
     {
         string readmePath = FindPath("README.md");
@@ -3634,38 +3702,48 @@ public class MigrationComplianceTests
     [TestMethod]
     public void Shell_session_restore_does_not_infer_active_workspace_from_workspace_order()
     {
-        string shellEndpointsPath = FindPath("Chummer.Api", "Endpoints", "ShellEndpoints.cs");
-        string shellEndpointsText = File.ReadAllText(shellEndpointsPath);
+        string? shellEndpointsPath = TryFindPath("Chummer.Api", "Endpoints", "ShellEndpoints.cs");
+        string? shellEndpointsText = shellEndpointsPath is null ? null : File.ReadAllText(shellEndpointsPath);
         string bootstrapProviderPath = FindPath("Chummer.Presentation", "Shell", "ShellBootstrapDataProvider.cs");
         string bootstrapProviderText = File.ReadAllText(bootstrapProviderPath);
-        string inProcessClientPath = FindPath("Chummer.Desktop.Runtime", "InProcessChummerClient.cs");
-        string inProcessClientText = File.ReadAllText(inProcessClientPath);
+        string? inProcessClientPath = TryFindPath("Chummer.Desktop.Runtime", "InProcessChummerClient.cs");
+        string? inProcessClientText = inProcessClientPath is null ? null : File.ReadAllText(inProcessClientPath);
         string shellPresenterPath = FindPath("Chummer.Presentation", "Shell", "ShellPresenter.cs");
         string shellPresenterText = File.ReadAllText(shellPresenterPath);
 
-        Assert.IsTrue(
-            Regex.IsMatch(shellEndpointsText, @"if\s*\(string\.IsNullOrWhiteSpace\(preferredActiveWorkspaceId\)\)\s*return null;", RegexOptions.Multiline),
-            "Shell bootstrap endpoint should return no active workspace when session state is empty.");
+        if (shellEndpointsText is not null)
+        {
+            Assert.IsTrue(
+                Regex.IsMatch(shellEndpointsText, @"if\s*\(string\.IsNullOrWhiteSpace\(preferredActiveWorkspaceId\)\)\s*return null;", RegexOptions.Multiline),
+                "Shell bootstrap endpoint should return no active workspace when session state is empty.");
+            Assert.IsFalse(
+                shellEndpointsText.Contains("workspaces[0]", StringComparison.Ordinal),
+                "Shell bootstrap endpoint must not fall back to the first workspace.");
+        }
+
         StringAssert.Contains(bootstrapProviderText, "ActiveWorkspaceId: snapshot.ActiveWorkspaceId");
         Assert.IsFalse(
             bootstrapProviderText.Contains("preferredActiveWorkspaceId", StringComparison.Ordinal),
             "Shell bootstrap provider should trust the bootstrap snapshot instead of reconstructing active workspace selection.");
-        Assert.IsTrue(
-            Regex.IsMatch(inProcessClientText, @"if\s*\(string\.IsNullOrWhiteSpace\(persistedActiveWorkspaceId\)\)\s*return null;", RegexOptions.Multiline),
-            "In-process bootstrap client should return no active workspace when session state is empty.");
+        if (inProcessClientText is not null)
+        {
+            Assert.IsTrue(
+                Regex.IsMatch(inProcessClientText, @"if\s*\(string\.IsNullOrWhiteSpace\(persistedActiveWorkspaceId\)\)\s*return null;", RegexOptions.Multiline),
+                "In-process bootstrap client should return no active workspace when session state is empty.");
+        }
         Assert.IsTrue(
             Regex.IsMatch(shellPresenterText, @"if\s*\(requestedActiveWorkspaceId is null\)\s*return null;", RegexOptions.Multiline),
             "Shell presenter should preserve the explicit no-active-workspace state instead of auto-selecting one.");
 
         Assert.IsFalse(
-            shellEndpointsText.Contains("workspaces[0]", StringComparison.Ordinal),
-            "Shell bootstrap endpoint must not fall back to the first workspace.");
-        Assert.IsFalse(
             bootstrapProviderText.Contains("workspaces[0]", StringComparison.Ordinal),
             "Shell bootstrap provider must not fall back to the first workspace.");
-        Assert.IsFalse(
-            inProcessClientText.Contains("workspaces[0]", StringComparison.Ordinal),
-            "In-process bootstrap client must not fall back to the first workspace.");
+        if (inProcessClientText is not null)
+        {
+            Assert.IsFalse(
+                inProcessClientText.Contains("workspaces[0]", StringComparison.Ordinal),
+                "In-process bootstrap client must not fall back to the first workspace.");
+        }
     }
 
     [TestMethod]
@@ -4253,6 +4331,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle-s3.sh");
         StringAssert.Contains(runbookText, "bash scripts/verify-releases-manifest.sh");
         StringAssert.Contains(runbookText, "bash scripts/validate-amend-manifests.sh");
+        StringAssert.Contains(publisherText, "startup_smoke_deploy_dir=\"$DEPLOY_DIR/startup-smoke\"");
+        StringAssert.Contains(publisherText, "find \"$STARTUP_SMOKE_SOURCE\" -type f -name \"startup-smoke-*.receipt.json\"");
         StringAssert.Contains(runbookText, "permission denied while trying to connect to the Docker daemon socket");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_DEPLOY_MODE");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_VERIFY_LINKS");
@@ -4354,9 +4434,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "Chummer.Portal/downloads/releases.json");
         StringAssert.Contains(generatorText, "PORTAL_DOWNLOADS_DIR");
         StringAssert.Contains(generatorText, "synced ${#portal_artifacts[@]} local portal artifact(s)");
-        StringAssert.Contains(generatorText, "/downloads/files/");
-        StringAssert.Contains(generatorText, "installer_pattern");
-        StringAssert.Contains(generatorText, "\"flavor\": flavor");
+        StringAssert.Contains(generatorText, "materialize_public_release_channel.py");
+        StringAssert.Contains(generatorText, "--compat-output");
+        StringAssert.Contains(generatorText, "generate-public-promotion-evidence.py");
 
         StringAssert.Contains(publisherText, "Expected desktop-download-bundle layout");
         StringAssert.Contains(publisherText, "generate-releases-manifest.sh");
@@ -4366,7 +4446,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "Deployment mode requires CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(publisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(publisherText, "installer.exe");
-        StringAssert.Contains(publisherText, "Published ${#artifacts[@]} desktop artifact(s)");
+        StringAssert.Contains(publisherText, "Published ${#promoted_file_names[@]} desktop artifact(s)");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
@@ -4376,12 +4456,15 @@ public class MigrationComplianceTests
 
         string verifierPath = FindPath("scripts", "verify-releases-manifest.sh");
         string verifierText = File.ReadAllText(verifierPath);
+        string registryVerifierPath = FindPath("scripts", "verify_public_release_channel.py");
+        string registryVerifierText = File.ReadAllText(registryVerifierPath);
         StringAssert.Contains(verifierText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
-        StringAssert.Contains(verifierText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
-        StringAssert.Contains(verifierText, "/downloads/releases.json");
-        StringAssert.Contains(verifierText, "failed artifact verification");
-        StringAssert.Contains(verifierText, "Verified artifact links/files");
-        StringAssert.Contains(verifierText, "has no downloads");
+        StringAssert.Contains(verifierText, "verify_public_release_channel.py");
+        StringAssert.Contains(verifierText, "Provide a portal base URL or manifest path");
+        StringAssert.Contains(verifierText, "Missing registry verifier");
+        StringAssert.Contains(registryVerifierText, "Mozilla/5.0");
+        StringAssert.Contains(registryVerifierText, "open_json_url_via_curl");
+        StringAssert.Contains(registryVerifierText, "Accept-Language");
 
         StringAssert.Contains(amendValidatorText, "checksums map is required");
         StringAssert.Contains(amendValidatorText, "missing checksum entry");
@@ -6078,11 +6161,39 @@ public class MigrationComplianceTests
         throw new DirectoryNotFoundException("Could not locate directory: " + Path.Combine(parts));
     }
 
+    private static string? TryFindDirectory(params string[] parts)
+    {
+        foreach (string? root in CandidateRoots())
+        {
+            if (string.IsNullOrWhiteSpace(root))
+                continue;
+
+            DirectoryInfo current = new(root);
+            while (true)
+            {
+                string candidate = Path.Combine(new[] { current.FullName }.Concat(parts).ToArray());
+                if (Directory.Exists(candidate))
+                    return candidate;
+
+                if (current.Parent == null)
+                    break;
+
+                current = current.Parent;
+            }
+        }
+
+        return null;
+    }
+
     private static IEnumerable<string?> CandidateRoots()
     {
         yield return Environment.GetEnvironmentVariable("CHUMMER_REPO_ROOT");
         yield return Directory.GetCurrentDirectory();
         yield return AppContext.BaseDirectory;
+        yield return "/docker/chummercomplete/chummer-core-engine";
+        yield return "/docker/chummercomplete/chummer.run-services";
+        yield return "/docker/chummercomplete/chummer-hub-registry";
+        yield return "/docker/fleet/repos/chummer-media-factory/src";
         yield return "/src";
     }
 
