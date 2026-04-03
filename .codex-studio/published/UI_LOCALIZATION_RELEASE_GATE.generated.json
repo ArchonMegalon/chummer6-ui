@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-04-03T21:28:13Z",
+  "generated_at": "2026-04-03T21:47:20Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -25,10 +25,6 @@
   "signoff_smoke_runner": {
     "status": "pass",
     "log_excerpt": [
-      "    0 Warning(s)",
-      "    0 Error(s)",
-      "",
-      "Time Elapsed 00:00:18.83",
       "[B15] PASS: localization release smoke runner checks passed."
     ]
   },
