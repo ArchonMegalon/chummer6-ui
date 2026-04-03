@@ -12,12 +12,13 @@ main_window_axaml_path="$repo_root/Chummer.Avalonia/MainWindow.axaml"
 navigator_axaml_path="$repo_root/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml"
 toolstrip_axaml_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml"
 toolstrip_codebehind_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"
+summary_header_axaml_path="$repo_root/Chummer.Avalonia/Controls/SummaryHeaderControl.axaml"
 ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 legacy_frmcareer_designer_path="/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs"
 
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$ui_gate_tests_path" "$legacy_frmcareer_designer_path"
+python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$legacy_frmcareer_designer_path"
 from __future__ import annotations
 
 import json
@@ -113,8 +114,8 @@ def segment_between(text: str, start_marker: str, end_marker: str) -> str:
     return text[start:] if end < 0 else text[start:end]
 
 
-receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, ui_gate_tests_path, legacy_frmcareer_designer_path = [
-    Path(value) for value in sys.argv[1:11]
+repo_root, receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, legacy_frmcareer_designer_path = [
+    Path(value) for value in sys.argv[1:13]
 ]
 
 reasons: List[str] = []
@@ -150,6 +151,9 @@ runtime_backed_shell_menu = str(interaction_proof.get("runtimeBackedShellMenu") 
 runtime_backed_menu_bar_labels = str(interaction_proof.get("runtimeBackedMenuBarLabels") or "").strip().lower()
 runtime_backed_clickable_primary_menus = str(interaction_proof.get("runtimeBackedClickablePrimaryMenus") or "").strip().lower()
 runtime_backed_toolstrip_actions = str(interaction_proof.get("runtimeBackedToolstripActions") or "").strip().lower()
+runtime_backed_codex_tree = str(interaction_proof.get("runtimeBackedCodexTree") or "").strip().lower()
+runtime_backed_classic_chrome_copy = str(interaction_proof.get("runtimeBackedClassicChromeCopy") or "").strip().lower()
+runtime_backed_tab_panel_only_header = str(interaction_proof.get("runtimeBackedTabPanelOnlyHeader") or "").strip().lower()
 runtime_backed_chrome_enabled_after_runner_load = str(interaction_proof.get("runtimeBackedChromeEnabledAfterRunnerLoad") or "").strip().lower()
 # Backward-compatible aliasing: some generated flagship receipts carry only runtimeBackedShellMenu.
 if not runtime_backed_menu_bar_labels:
@@ -162,6 +166,8 @@ if not runtime_backed_chrome_enabled_after_runner_load:
     runtime_backed_chrome_enabled_after_runner_load = runtime_backed_shell_menu
 runtime_backed_demo_runner_import = str(interaction_proof.get("runtimeBackedDemoRunnerImport") or "").strip().lower()
 runtime_backed_legacy_workbench = str(interaction_proof.get("runtimeBackedLegacyWorkbench") or "").strip().lower()
+if not runtime_backed_codex_tree:
+    runtime_backed_codex_tree = runtime_backed_legacy_workbench or runtime_backed_shell_menu
 legacy_dense_builder_rhythm = str(interaction_proof.get("legacyDenseBuilderRhythm") or "").strip().lower()
 legacy_advancement_workflow_rhythm = str(interaction_proof.get("legacyAdvancementWorkflowRhythm") or "").strip().lower()
 legacy_browse_detail_confirm_rhythm = str(interaction_proof.get("legacyBrowseDetailConfirmRhythm") or "").strip().lower()
@@ -188,6 +194,9 @@ evidence["runtime_backed_shell_menu"] = runtime_backed_shell_menu
 evidence["runtime_backed_menu_bar_labels"] = runtime_backed_menu_bar_labels
 evidence["runtime_backed_clickable_primary_menus"] = runtime_backed_clickable_primary_menus
 evidence["runtime_backed_toolstrip_actions"] = runtime_backed_toolstrip_actions
+evidence["runtime_backed_codex_tree"] = runtime_backed_codex_tree
+evidence["runtime_backed_classic_chrome_copy"] = runtime_backed_classic_chrome_copy
+evidence["runtime_backed_tab_panel_only_header"] = runtime_backed_tab_panel_only_header
 evidence["runtime_backed_chrome_enabled_after_runner_load"] = runtime_backed_chrome_enabled_after_runner_load
 evidence["runtime_backed_demo_runner_import"] = runtime_backed_demo_runner_import
 evidence["runtime_backed_legacy_workbench"] = runtime_backed_legacy_workbench
@@ -220,6 +229,12 @@ if not status_ok(runtime_backed_clickable_primary_menus):
     reasons.append("Flagship UI release gate does not prove runtime-backed clickable primary menus.")
 if not status_ok(runtime_backed_toolstrip_actions):
     reasons.append("Flagship UI release gate does not prove runtime-backed labeled workbench actions.")
+if not status_ok(runtime_backed_codex_tree):
+    reasons.append("Flagship UI release gate does not prove a runtime-backed codex tree left rail.")
+if not status_ok(runtime_backed_classic_chrome_copy):
+    reasons.append("Flagship UI release gate does not prove runtime-backed classic chrome copy and anti-dashboard posture.")
+if not status_ok(runtime_backed_tab_panel_only_header):
+    reasons.append("Flagship UI release gate does not prove the loaded-runner header stays tab-panel-only.")
 if not status_ok(runtime_backed_chrome_enabled_after_runner_load):
     reasons.append("Flagship UI release gate does not prove runtime-backed shell chrome stays enabled after a real runner load.")
 if not status_ok(runtime_backed_demo_runner_import):
@@ -262,6 +277,7 @@ required_test_names = [
     "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
     "Theme_tokens_preserve_chummer5a_palette_and_readability",
     "Loaded_runner_preserves_visible_character_tab_posture",
+    "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
     "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
     "Character_creation_preserves_familiar_dense_builder_rhythm",
     "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
@@ -273,6 +289,8 @@ required_test_names = [
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
+    "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
+    "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
 ]
 test_text = ui_gate_tests_path.read_text(encoding="utf-8") if ui_gate_tests_path.is_file() else ""
@@ -315,6 +333,63 @@ if missing_toolstrip_markers:
     reasons.append("Classic toolbar source anchors are missing: " + ", ".join(missing_toolstrip_markers))
 if present_disallowed_toolstrip_markers:
     reasons.append("Dashboard-style toolbar chrome is still present in source: " + ", ".join(present_disallowed_toolstrip_markers))
+
+summary_header_text = summary_header_axaml_path.read_text(encoding="utf-8") if summary_header_axaml_path.is_file() else ""
+required_summary_header_markers = [
+    "x:Name=\"LoadedRunnerTabStripBorder\"",
+    "x:Name=\"LoadedRunnerTabStripPanel\"",
+]
+missing_summary_header_markers = [
+    marker for marker in required_summary_header_markers if marker not in summary_header_text
+]
+disallowed_summary_header_markers = [
+    "NameValueText",
+    "AliasValueText",
+    "KarmaValueText",
+    "SkillsValueText",
+    "RuntimeValueText",
+    "RuntimeInspectButton",
+    "Text=\"Name\"",
+    "Text=\"Alias\"",
+    "Text=\"Karma\"",
+    "Text=\"Skills\"",
+    "Text=\"Runtime\"",
+]
+present_disallowed_summary_header_markers = [
+    marker for marker in disallowed_summary_header_markers if marker in summary_header_text
+]
+evidence["required_summary_header_markers"] = required_summary_header_markers
+evidence["missing_summary_header_markers"] = missing_summary_header_markers
+evidence["disallowed_summary_header_markers"] = disallowed_summary_header_markers
+evidence["present_disallowed_summary_header_markers"] = present_disallowed_summary_header_markers
+if missing_summary_header_markers:
+    reasons.append("Loaded-runner header no longer guarantees the visible tab-panel posture: " + ", ".join(missing_summary_header_markers))
+if present_disallowed_summary_header_markers:
+    reasons.append("Loaded-runner header still carries metric-card chrome instead of a tab panel: " + ", ".join(present_disallowed_summary_header_markers))
+
+classic_copy_disallowed_markers = [
+    "Career-style workbench",
+    "Command Palette",
+    "Coach Sidecar",
+    "Coach Launch",
+    "Recent Coach Guidance",
+]
+classic_copy_present_markers: List[str] = []
+for extra_path in (
+    repo_root / "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+    repo_root / "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml",
+    repo_root / "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
+):
+    if not extra_path.is_file():
+        continue
+    extra_text = extra_path.read_text(encoding="utf-8")
+    for marker in classic_copy_disallowed_markers:
+        if marker in extra_text and marker not in classic_copy_present_markers:
+            classic_copy_present_markers.append(marker)
+evidence["classic_copy_disallowed_markers"] = classic_copy_disallowed_markers
+evidence["classic_copy_present_markers"] = classic_copy_present_markers
+if classic_copy_present_markers:
+    reasons.append("Modern dashboard copy is still present in source: " + ", ".join(classic_copy_present_markers))
 
 toolstrip_labels_method = extract_test_method(test_text, "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions")
 toolstrip_posture_method = extract_test_method(test_text, "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture")
@@ -376,6 +451,7 @@ required_screenshots = [
     "11-diary-dialog-light.png",
     "12-magic-matrix-dialog-light.png",
     "13-advancement-dialog-light.png",
+    "14-creation-section-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -426,13 +502,40 @@ if undersized_screenshots:
     )
 
 navigator_text = navigator_axaml_path.read_text(encoding="utf-8") if navigator_axaml_path.is_file() else ""
+navigator_codebehind_text = navigator_axaml_path.with_suffix(".axaml.cs").read_text(encoding="utf-8") if navigator_axaml_path.with_suffix(".axaml.cs").is_file() else ""
 main_window_text = main_window_axaml_path.read_text(encoding="utf-8") if main_window_axaml_path.is_file() else ""
-has_navigation_tabs = "NavigationTabsList" in navigator_text
-tab_strip_markers = ["TabControl", "TabStrip", "TabView", "LoadedRunnerTabStrip", "CharacterTabStrip", "NavigationTabsList"]
+required_navigator_markers = [
+    "x:Name=\"NavigatorTree\"",
+    "TreeDataTemplate",
+    "Codex",
+]
+missing_navigator_markers = [
+    marker for marker in required_navigator_markers if marker not in navigator_text and marker not in navigator_codebehind_text
+]
+disallowed_navigator_markers = [
+    "x:Name=\"LoadedRunnerTabStrip\"",
+    "x:Name=\"NavigationTabsList\"",
+    "x:Name=\"OpenWorkspacesList\"",
+    "x:Name=\"SectionActionsList\"",
+    "x:Name=\"WorkflowSurfacesList\"",
+]
+present_disallowed_navigator_markers = [
+    marker for marker in disallowed_navigator_markers if marker in navigator_text or marker in navigator_codebehind_text
+]
+has_navigation_tabs = "NavigatorTree" in navigator_text
+tab_strip_markers = ["TabControl", "TabStrip", "TabView", "LoadedRunnerTabStrip", "CharacterTabStrip", "NavigatorTree"]
 has_tab_strip_control = any(marker in navigator_text or marker in main_window_text for marker in tab_strip_markers)
+evidence["required_navigator_markers"] = required_navigator_markers
+evidence["missing_navigator_markers"] = missing_navigator_markers
+evidence["disallowed_navigator_markers"] = disallowed_navigator_markers
+evidence["present_disallowed_navigator_markers"] = present_disallowed_navigator_markers
 evidence["loaded_runner_tab_posture_control_present"] = has_navigation_tabs
 evidence["loaded_runner_tab_strip_control_present"] = has_tab_strip_control
 evidence["tab_strip_markers"] = tab_strip_markers
+if missing_navigator_markers:
+    reasons.append("Codex tree source anchors are missing: " + ", ".join(missing_navigator_markers))
+if present_disallowed_navigator_markers:
+    reasons.append("Legacy-incompatible navigator chrome is still present in source: " + ", ".join(present_disallowed_navigator_markers))
 if not has_navigation_tabs:
     reasons.append("Loaded-runner tab posture control is missing from the shell.")
 if not has_tab_strip_control:
@@ -452,7 +555,7 @@ dense_section_state_change_markers = [
     'InvokeDialogAction(',
     'SelectedItem =',
     'SectionRowsList',
-    'NavigationTabsList',
+    'NavigatorTree',
 ]
 dense_section_capture_advances = any(marker in dense_section_capture_segment for marker in dense_section_state_change_markers)
 evidence["dense_section_capture_advances_past_loaded_runner"] = dense_section_capture_advances
@@ -502,7 +605,7 @@ payload = {
     "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
     "status": status,
     "summary": (
-        "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 vehicles/contacts/diary surfaces."
+        "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 creation/vehicles/contacts/diary surfaces."
         if status == "pass"
         else "Desktop visual familiarity is not fully proven."
     ),
