@@ -3451,6 +3451,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "Path(\"/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke\")");
         StringAssert.Contains(macosGateScriptText, "Path(\"/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke\")");
         StringAssert.Contains(macosGateScriptText, "startup_smoke_receipt_arg,");
+        StringAssert.Contains(macosGateScriptText, "installer_candidate_paths");
+        StringAssert.Contains(macosGateScriptText, "installer_from_primary_shelf");
+        StringAssert.Contains(macosGateScriptText, "Promoted macOS installer was not resolved from the repo-local desktop shelf");
+        StringAssert.Contains(macosGateScriptText, "Promoted macOS installer was resolved from legacy chummer5a shelf bytes");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt was resolved from a legacy chummer5a path.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt status is not passing.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt is stale (");
@@ -3489,6 +3494,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "startup-smoke-{expected_head}-{expected_rid}.receipt.json");
         StringAssert.Contains(windowsGateScriptText, "expected_rid.startswith(\"win-\")");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT");
+        StringAssert.Contains(windowsGateScriptText, "WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}\"");
+        StringAssert.Contains(windowsGateScriptText, "windows_installer_candidate_paths");
+        StringAssert.Contains(windowsGateScriptText, "windows_installer_from_primary_shelf");
+        StringAssert.Contains(windowsGateScriptText, "Promoted Windows installer was not resolved from the repo-local desktop shelf.");
+        StringAssert.Contains(windowsGateScriptText, "Promoted Windows installer was resolved from legacy chummer5a shelf bytes.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt was resolved from a legacy chummer5a path.");
         StringAssert.Contains(windowsGateScriptText, "Release channel does not publish a promoted Windows install medium artifact.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is missing for promoted installer bytes.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt status is not passing.");
