@@ -3275,7 +3275,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "project: Chummer.Avalonia/Chummer.Avalonia.csproj");
         StringAssert.Contains(
             workflowText,
-            "app: avalonia\n            project: Chummer.Avalonia/Chummer.Avalonia.csproj\n            os: macos-latest\n            rid: osx-x64");
+            "app: avalonia\n            project: Chummer.Avalonia/Chummer.Avalonia.csproj\n            os: macos-latest\n            rid: osx-arm64");
+        StringAssert.Contains(
+            workflowText,
+            "app: avalonia\n            project: Chummer.Avalonia/Chummer.Avalonia.csproj\n            os: macos-13\n            rid: osx-x64");
+        StringAssert.Contains(
+            workflowText,
+            "app: blazor-desktop\n            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\n            os: macos-latest\n            rid: osx-arm64");
         StringAssert.Contains(workflowText, "installer_ext: dmg");
         StringAssert.Contains(workflowText, "name: Startup smoke");
         StringAssert.Contains(workflowText, "bash scripts/run-desktop-startup-smoke.sh");
@@ -3308,7 +3314,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "ChummerLocalUiKitProject");
         StringAssert.Contains(workflowText, "UseChummerEngineContractsLocalFeed=false");
         StringAssert.Contains(workflowText, "if-no-files-found: ignore");
-        StringAssert.Contains(workflowText, "path: r/dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.${{ matrix.installer_ext }}");
+        StringAssert.Contains(workflowText, "r/dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.");
         StringAssert.Contains(workflowText, "path: r/dist/startup-smoke");
         StringAssert.Contains(workflowText, "bash scripts/generate-releases-manifest.sh");
         StringAssert.Contains(workflowText, "Chummer.Application/**");
@@ -3338,10 +3344,10 @@ public class MigrationComplianceTests
             "Live portal manifest verification should be mandatory when deployment is enabled.");
         StringAssert.Contains(workflowText, "scripts/verify-releases-manifest.sh");
 
-        StringAssert.Contains(manifestScriptText, "chummer-(?P<app>avalonia|blazor-desktop)-(?P<rid>[^.]+)\\.(?P<ext>zip|tar\\.gz)");
-        StringAssert.Contains(manifestScriptText, "\"osx-x64\": \"macOS x64\"");
-        StringAssert.Contains(manifestScriptText, "\"id\": f\"{app}-{rid}\"");
-        StringAssert.Contains(manifestScriptText, "\"url\": f\"/downloads/files/{artifact.name}\"");
+        StringAssert.Contains(manifestScriptText, "materialize_public_release_channel.py");
+        StringAssert.Contains(manifestScriptText, "generate-public-promotion-evidence.py");
+        StringAssert.Contains(manifestScriptText, "promoted_file_names");
+        StringAssert.Contains(manifestScriptText, "portal_artifacts");
         StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
         StringAssert.Contains(manifestScriptText, "STARTUP_SMOKE_DIR");
         StringAssert.Contains(startupSmokeScriptText, "release_smoke_start_failure");
@@ -3357,11 +3363,10 @@ public class MigrationComplianceTests
         Assert.IsFalse(
             startupSmokeScriptText.Contains("dpkg-deb -x", StringComparison.Ordinal),
             "Linux .deb startup smoke should install and purge in an isolated dpkg root instead of only extracting the archive.");
-        StringAssert.Contains(verifyScriptText, "CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION");
-        StringAssert.Contains(verifyScriptText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
-        StringAssert.Contains(verifyScriptText, "failed artifact verification");
-        StringAssert.Contains(verifyScriptText, "Verified artifact links/files");
-        StringAssert.Contains(verifyScriptText, "version.lower() == \"unpublished\"");
+        StringAssert.Contains(verifyScriptText, "TARGET=\"${1:-${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}}\"");
+        StringAssert.Contains(verifyScriptText, "Provide a portal base URL or manifest path as the first argument");
+        StringAssert.Contains(verifyScriptText, "verify_public_release_channel.py");
+        StringAssert.Contains(verifyScriptText, "Missing registry verifier");
     }
 
     [TestMethod]
