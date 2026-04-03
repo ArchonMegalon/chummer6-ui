@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T18:50:09.988049Z",
+  "generatedAt": "2026-04-03T19:54:29.968807Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "status": "pass",
   "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 creation/vehicles/contacts/diary surfaces.",
@@ -26,6 +26,14 @@
     "flagship_theme_readability_contrast": "pass",
     "flagship_avalonia_head_proof_status": "pass",
     "flagship_blazor_head_proof_status": "pass",
+    "flagship_required_desktop_heads": [
+      "avalonia",
+      "blazor-desktop"
+    ],
+    "flagship_head_proof_statuses": {
+      "avalonia": "pass",
+      "blazor-desktop": "pass"
+    },
     "runtime_backed_shell_menu": "pass",
     "runtime_backed_menu_bar_labels": "pass",
     "runtime_backed_clickable_primary_menus": "pass",
@@ -34,6 +42,8 @@
     "runtime_backed_classic_chrome_copy": "pass",
     "runtime_backed_tab_panel_only_header": "pass",
     "runtime_backed_chrome_enabled_after_runner_load": "pass",
+    "full_interactive_control_inventory": "pass",
+    "main_window_interaction_inventory": "pass",
     "runtime_backed_demo_runner_import": "pass",
     "runtime_backed_legacy_workbench": "pass",
     "legacy_dense_builder_rhythm": "pass",
@@ -75,7 +85,15 @@
       "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
       "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
       "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
-      "Runtime_backed_shell_chrome_stays_enabled_after_runner_load"
+      "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+      "Standalone_toolstrip_buttons_raise_expected_events",
+      "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
+      "Standalone_workspace_strip_quick_start_button_raises_expected_event",
+      "Standalone_summary_header_tab_buttons_raise_expected_events",
+      "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
+      "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
+      "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
+      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
     ],
     "missing_tests": [],
     "required_toolstrip_markers": [
