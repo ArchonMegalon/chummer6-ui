@@ -4472,6 +4472,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "materialize_public_release_channel.py");
         StringAssert.Contains(generatorText, "--compat-output");
         StringAssert.Contains(generatorText, "generate-public-promotion-evidence.py");
+        StringAssert.Contains(generatorText, "CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF");
+        StringAssert.Contains(generatorText, "startup smoke proof is required for promoted installer artifacts");
         StringAssert.Contains(promotionEvidenceText, "CHUMMER_PUBLIC_PROMOTION_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(promotionEvidenceText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(promotionEvidenceText, "pre_ui_event_loop");
