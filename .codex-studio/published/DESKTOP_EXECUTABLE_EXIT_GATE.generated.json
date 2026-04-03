@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T17:52:48.830361Z",
+  "generatedAt": "2026-04-03T17:57:56.448661Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
   "status": "fail",
   "summary": "Desktop executable exit gate is not fully proven.",
@@ -24,27 +24,21 @@
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "linux_avalonia_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
     "linux_blazor_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json",
-    "windows_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
+    "windows_gate_path_default": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
     "flagship_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "visual_familiarity_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
     "workflow_execution_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
     "repo_root": "/docker/chummercomplete/chummer-presentation",
     "flagship UI release gate proof_generated_at": "2026-04-03T17:28:49.792944Z",
-    "flagship UI release gate proof_age_seconds": 1438,
+    "flagship UI release gate proof_age_seconds": 1745,
     "desktop visual familiarity gate proof_generated_at": "2026-04-03T17:52:42.752645Z",
-    "desktop visual familiarity gate proof_age_seconds": 5,
+    "desktop visual familiarity gate proof_age_seconds": 312,
     "desktop workflow execution gate proof_generated_at": "2026-04-03T17:45:03.732346Z",
-    "desktop workflow execution gate proof_age_seconds": 464,
-    "windows_status": "failed",
+    "desktop workflow execution gate proof_age_seconds": 771,
     "flagship_status": "pass",
     "visual_familiarity_status": "pass",
     "workflow_execution_status": "pass",
     "receipt_scope": {
-      "windows_gate": {
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
-        "within_repo_root": true,
-        "repo_root": "/docker/chummercomplete/chummer-presentation"
-      },
       "flagship_gate": {
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
         "within_repo_root": true,
@@ -57,6 +51,11 @@
       },
       "workflow_execution_gate": {
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+        "within_repo_root": true,
+        "repo_root": "/docker/chummercomplete/chummer-presentation"
+      },
+      "windows_gate:avalonia:win-x64": {
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
         "within_repo_root": true,
         "repo_root": "/docker/chummercomplete/chummer-presentation"
       },
@@ -183,43 +182,50 @@
         "fileName": "chummer-avalonia-win-x64-installer.exe"
       }
     ],
-    "windows_gate": {
-      "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
-      "status": "failed",
-      "windows desktop exit gate proof_generated_at": "2026-04-03T17:18:31Z",
-      "windows desktop exit gate proof_age_seconds": 2057,
-      "receipt_head": {
-        "app_key": "avalonia",
-        "platform": "windows",
-        "rid": "win-x64",
-        "launch_target": "Chummer.Avalonia.exe"
-      },
-      "release_channel_windows_artifact": {
-        "artifactId": "avalonia-win-x64-installer",
-        "head": "avalonia",
-        "rid": "win-x64",
-        "platform": "windows",
-        "arch": "x64",
-        "kind": "installer",
-        "fileName": "chummer-avalonia-win-x64-installer.exe",
-        "downloadUrl": "/downloads/files/chummer-avalonia-win-x64-installer.exe",
-        "sha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f",
-        "sizeBytes": 95974786,
-        "platformLabel": "Avalonia Desktop Windows X64 Installer",
-        "updateFeedUrl": null,
-        "embeddedRuntimeBundleHeadId": null,
-        "compatibilityState": "compatible",
-        "installAccessClass": "open_public"
-      },
-      "windows_installer_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
-      "gate_reasons": [
-        "Windows startup smoke receipt is missing for promoted installer bytes."
-      ],
-      "startup_smoke_receipt_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-      "windows_installer_size_bytes": 95974786,
-      "windows_installer_sha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f",
-      "expected_windows_shelf_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
-      "expected_windows_shelf_sha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f"
+    "windows_gates": {
+      "avalonia:win-x64": {
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
+        "status": "failed",
+        "windows desktop exit gate proof_generated_at": "2026-04-03T17:18:31Z",
+        "windows desktop exit gate proof_age_seconds": 2364,
+        "receipt_head": {
+          "app_key": "avalonia",
+          "platform": "windows",
+          "rid": "win-x64",
+          "launch_target": "Chummer.Avalonia.exe"
+        },
+        "release_channel_windows_artifact": {
+          "artifactId": "avalonia-win-x64-installer",
+          "head": "avalonia",
+          "rid": "win-x64",
+          "platform": "windows",
+          "arch": "x64",
+          "kind": "installer",
+          "fileName": "chummer-avalonia-win-x64-installer.exe",
+          "downloadUrl": "/downloads/files/chummer-avalonia-win-x64-installer.exe",
+          "sha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f",
+          "sizeBytes": 95974786,
+          "platformLabel": "Avalonia Desktop Windows X64 Installer",
+          "updateFeedUrl": null,
+          "embeddedRuntimeBundleHeadId": null,
+          "compatibilityState": "compatible",
+          "installAccessClass": "open_public"
+        },
+        "windows_installer_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
+        "gate_reasons": [
+          "Windows startup smoke receipt is missing for promoted installer bytes."
+        ],
+        "startup_smoke_receipt_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+        "embedded_payload_marker_present": true,
+        "embedded_sample_marker_present": true,
+        "windows_installer_size_bytes": 95974786,
+        "windows_installer_sha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f",
+        "expected_windows_shelf_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
+        "expected_windows_shelf_sha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f"
+      }
+    },
+    "windows_statuses": {
+      "avalonia:win-x64": "failed"
     },
     "linux_heads_expected": [
       "avalonia"
@@ -287,7 +293,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for avalonia_generated_at": "2026-04-03T16:30:11Z",
-        "linux desktop exit gate proof for avalonia_age_seconds": 4957,
+        "linux desktop exit gate proof for avalonia_age_seconds": 5265,
         "receipt_head": {
           "app_key": "avalonia",
           "project_path": "Chummer.Avalonia/Chummer.Avalonia.csproj",
@@ -315,7 +321,7 @@
         "primary_receipt_platform": "linux",
         "primary_receipt_arch": "x64",
         "primary_receipt_recorded_at": "2026-04-03T16:30:09.3847707+00:00",
-        "primary_receipt_age_seconds": 4959,
+        "primary_receipt_age_seconds": 5266,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.Eu0TYP/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.Eu0TYP/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.Eu0TYP/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
@@ -344,7 +350,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json",
         "status": "failed",
         "macOS desktop exit gate proof for avalonia (osx-arm64)_generated_at": "2026-04-03T17:18:36Z",
-        "macOS desktop exit gate proof for avalonia (osx-arm64)_age_seconds": 2052,
+        "macOS desktop exit gate proof for avalonia (osx-arm64)_age_seconds": 2360,
         "receipt_head": {
           "app_key": "avalonia",
           "platform": "macos",
@@ -403,7 +409,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_MACOS_BLAZOR_DESKTOP_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json",
         "status": "failed",
         "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_generated_at": "2026-04-03T17:18:36Z",
-        "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_age_seconds": 2052,
+        "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_age_seconds": 2360,
         "receipt_head": {
           "app_key": "blazor-desktop",
           "platform": "macos",
@@ -462,7 +468,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_MACOS_AVALONIA_OSX_X64_DESKTOP_EXIT_GATE.generated.json",
         "status": "failed",
         "macOS desktop exit gate proof for avalonia (osx-x64)_generated_at": "2026-04-03T17:18:36Z",
-        "macOS desktop exit gate proof for avalonia (osx-x64)_age_seconds": 2052,
+        "macOS desktop exit gate proof for avalonia (osx-x64)_age_seconds": 2360,
         "receipt_head": {
           "app_key": "avalonia",
           "platform": "macos",
@@ -517,8 +523,6 @@
         "expected_macos_shelf_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-x64-installer.dmg",
         "expected_macos_shelf_sha256": "71cea7987b5323078baed5c104ca82ef80060b249f3fa8401ddf42d0e6ed8c39"
       }
-    },
-    "windows_embedded_payload_marker_present": true,
-    "windows_embedded_sample_marker_present": true
+    }
   }
 }
