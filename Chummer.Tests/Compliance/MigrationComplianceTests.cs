@@ -3385,6 +3385,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(
             executableGateScriptText,
             "release_channel_path=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}\"");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "python3 - <<'PY' \"$receipt_path\" \"$release_channel_path\" \"$linux_avalonia_gate_path\" \"$linux_blazor_gate_path\" \"$windows_gate_path_default\" \"$flagship_gate_path\" \"$visual_familiarity_gate_path\" \"$workflow_execution_gate_path\" \"$repo_root\" \"$hub_registry_root\"");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_gate_path=\"$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json\"");
         StringAssert.Contains(executableGateScriptText, "workflow_execution_gate_path=\"$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json\"");
         StringAssert.Contains(executableGateScriptText, "def is_desktop_install_media(");
@@ -3392,6 +3395,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "and is_desktop_install_media(item.get(\"platform\"), item.get(\"kind\"))");
         StringAssert.Contains(executableGateScriptText, "def validate_receipt_path_scope(");
         StringAssert.Contains(executableGateScriptText, "receipt path is outside this repo root");
+        StringAssert.Contains(executableGateScriptText, "def validate_trusted_path_scope(");
+        StringAssert.Contains(executableGateScriptText, "trusted_local_roots");
         StringAssert.Contains(executableGateScriptText, "def validate_windows_gate(");
         StringAssert.Contains(executableGateScriptText, "gate_reasons = [");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"Windows gate reason: {gate_reason}\")");
@@ -3399,7 +3404,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.");
-        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is outside this repo root.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is outside trusted local roots.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt status is not passing for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes.");
@@ -3422,7 +3427,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.");
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
-        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt path is outside this repo root for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt path is outside trusted local roots for promoted head");
         StringAssert.Contains(executableGateScriptText, "startup_receipt_file = (");
         StringAssert.Contains(executableGateScriptText, "startup_smoke_receipt_file_exists");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt status is not passing for promoted head");
@@ -3439,7 +3444,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is missing/unreadable for promoted head");
-        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is outside this repo root for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is outside trusted local roots for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt headId does not match promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt platform is not linux for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt arch does not match promoted RID for head");
