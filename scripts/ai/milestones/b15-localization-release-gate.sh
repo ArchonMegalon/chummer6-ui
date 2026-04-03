@@ -28,11 +28,7 @@ fi
 echo "[b15] executing localization signoff smoke runner..."
 signoff_log="$(mktemp "${TMPDIR:-/tmp}/chummer-b15-signoff.XXXXXX.log")"
 set +e
-bash -lc '
-  set -euo pipefail
-  scripts/ai/with-package-plane.sh build "'"$signoff_project_path"'" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false
-  scripts/ai/with-package-plane.sh run --project "'"$signoff_project_path"'" --no-build --nologo --verbosity quiet
-' >"$signoff_log" 2>&1
+scripts/ai/with-package-plane.sh run --project "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false >"$signoff_log" 2>&1
 signoff_status=$?
 set -e
 
