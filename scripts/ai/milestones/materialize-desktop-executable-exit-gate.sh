@@ -189,6 +189,7 @@ def validate_linux_gate(
     gate_path: Path,
     gate_payload: Dict[str, Any],
     expected_artifact: Dict[str, Any] | None,
+    repo_root: Path,
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -241,6 +242,8 @@ def validate_linux_gate(
     gate_evidence["primary_receipt_file_exists"] = primary_receipt_file_exists
     if not primary_receipt_file_exists:
         reasons.append(f"Linux installer startup smoke receipt path is missing/unreadable for promoted head '{head}'.")
+    elif primary_receipt_path is not None and not path_within_root(primary_receipt_path, repo_root):
+        reasons.append(f"Linux installer startup smoke receipt path is outside this repo root for promoted head '{head}'.")
 
     gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt.get("artifactDigest"))
     gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt.get("readyCheckpoint"))
@@ -739,6 +742,7 @@ for expected_linux_head in expected_linux_heads:
         gate_path,
         load_json(gate_path),
         expected_linux_artifacts_by_head.get(expected_linux_head),
+        repo_root,
         evidence,
         reasons,
     )
