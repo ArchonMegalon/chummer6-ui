@@ -38,7 +38,8 @@
     "legacyVehiclesBuilderRhythm": "pass",
     "legacyCyberwareDialogRhythm": "pass",
     "legacyContactsDiaryRhythm": "pass",
-    "legacyMagicMatrixWorkflowRhythm": "pass"
+    "legacyMagicMatrixWorkflowRhythm": "pass",
+    "runtimeBackedClassicChromeCopy": "pass"
   },
   "headProofs": {
     "avalonia": {
