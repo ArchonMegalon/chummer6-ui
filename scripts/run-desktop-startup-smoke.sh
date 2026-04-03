@@ -299,16 +299,31 @@ PY
 }
 
 attach_install_verification_to_receipt() {
-  python3 - "$RECEIPT_PATH" "$INSTALL_VERIFICATION_PATH" <<'PY'
+  local dpkg_log_path="$1"
+  local installed_launch_capture_path="$2"
+  local wrapper_capture_path="$3"
+  local desktop_entry_capture_path="$4"
+
+  python3 - "$RECEIPT_PATH" "$INSTALL_VERIFICATION_PATH" "$dpkg_log_path" "$installed_launch_capture_path" "$wrapper_capture_path" "$desktop_entry_capture_path" "$ARTIFACT_PATH" <<'PY'
 import json
 import pathlib
 import sys
 
 receipt_path = pathlib.Path(sys.argv[1])
 verification_path = pathlib.Path(sys.argv[2])
+dpkg_log_path = pathlib.Path(sys.argv[3])
+installed_launch_capture_path = pathlib.Path(sys.argv[4])
+wrapper_capture_path = pathlib.Path(sys.argv[5])
+desktop_entry_capture_path = pathlib.Path(sys.argv[6])
+artifact_path = pathlib.Path(sys.argv[7])
 payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 payload["artifactInstallMode"] = "dpkg_rootless_install"
 payload["artifactInstallVerificationPath"] = str(verification_path)
+payload["artifactInstallDpkgLogPath"] = str(dpkg_log_path)
+payload["artifactInstallLaunchCapturePath"] = str(installed_launch_capture_path)
+payload["artifactInstallWrapperCapturePath"] = str(wrapper_capture_path)
+payload["artifactInstallDesktopEntryCapturePath"] = str(desktop_entry_capture_path)
+payload["artifactPath"] = str(artifact_path)
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 }
@@ -392,7 +407,11 @@ run_linux_smoke_deb() {
       "$launch_exists_after_purge" \
       "$wrapper_exists_after_purge" \
       "$desktop_exists_after_purge"
-    attach_install_verification_to_receipt
+    attach_install_verification_to_receipt \
+      "$DPKG_LOG_PATH" \
+      "$installed_launch_capture_path" \
+      "$wrapper_capture_path" \
+      "$desktop_entry_capture_path"
   fi
 
   if [[ "$smoke_status" -ne 0 ]]; then
@@ -526,6 +545,27 @@ print(packet_path)
 PY
 }
 
+set_receipt_status() {
+  local status_value="$1"
+  python3 - "$RECEIPT_PATH" "$status_value" <<'PY'
+import json
+import pathlib
+import sys
+
+receipt_path = pathlib.Path(sys.argv[1])
+status_value = str(sys.argv[2]).strip().lower()
+if not receipt_path.exists() or not receipt_path.is_file():
+    raise SystemExit(0)
+
+payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit(0)
+
+payload["status"] = status_value
+receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
 main() {
   : >"$LOG_PATH"
   rm -f "$RECEIPT_PATH" "$PACKET_PATH"
@@ -556,9 +596,11 @@ status=0
 main || status=$?
 
 if [[ "$status" -ne 0 ]]; then
+  set_receipt_status "failed"
   emit_release_regression_packet "$status" >>"$LOG_PATH"
   echo "startup smoke failed for $APP_KEY $RID; regression packet: $PACKET_PATH" >&2
   exit "$status"
 fi
 
+set_receipt_status "pass"
 echo "startup smoke passed for $APP_KEY $RID; receipt: $RECEIPT_PATH"
