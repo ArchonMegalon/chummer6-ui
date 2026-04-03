@@ -44,6 +44,9 @@ DESKTOP_PROOF_MAX_AGE_SECONDS = int(os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_P
 STARTUP_SMOKE_MAX_AGE_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS", "86400")
 )
+VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS", "900")
+)
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -819,6 +822,40 @@ else:
         reasons.append(
             "Desktop visual familiarity required screenshots are missing on disk: "
             + ", ".join(missing_visual_screenshots)
+        )
+    screenshot_generated_at_raw, screenshot_generated_at = payload_generated_at(visual_familiarity_gate)
+    evidence["visual_familiarity_screenshot_reference_generated_at"] = screenshot_generated_at_raw
+    screenshot_file_timestamps: Dict[str, str] = {}
+    screenshot_stale_reasons: List[str] = []
+    screenshot_older_than_receipt: List[str] = []
+    for name in visual_required_screenshots:
+        if visual_screenshot_dir is None:
+            continue
+        screenshot_path = visual_screenshot_dir / name
+        if not screenshot_path.is_file():
+            continue
+        screenshot_mtime = datetime.fromtimestamp(screenshot_path.stat().st_mtime, timezone.utc)
+        screenshot_mtime_raw = screenshot_mtime.isoformat().replace("+00:00", "Z")
+        screenshot_file_timestamps[name] = screenshot_mtime_raw
+        screenshot_age_seconds = max(0, int((datetime.now(timezone.utc) - screenshot_mtime).total_seconds()))
+        if screenshot_age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
+            screenshot_stale_reasons.append(f"{name} ({screenshot_age_seconds}s old)")
+        if screenshot_generated_at is not None:
+            skew_seconds = int((screenshot_generated_at - screenshot_mtime).total_seconds())
+            if skew_seconds > VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS:
+                screenshot_older_than_receipt.append(f"{name} ({skew_seconds}s older)")
+    evidence["visual_familiarity_screenshot_file_timestamps"] = screenshot_file_timestamps
+    evidence["visual_familiarity_stale_screenshots"] = screenshot_stale_reasons
+    evidence["visual_familiarity_screenshots_older_than_receipt"] = screenshot_older_than_receipt
+    if screenshot_stale_reasons:
+        reasons.append(
+            "Desktop visual familiarity required screenshots are stale: "
+            + ", ".join(screenshot_stale_reasons)
+        )
+    if screenshot_older_than_receipt:
+        reasons.append(
+            "Desktop visual familiarity screenshot evidence predates the visual familiarity receipt generation time: "
+            + ", ".join(screenshot_older_than_receipt)
         )
 
 artifacts = [

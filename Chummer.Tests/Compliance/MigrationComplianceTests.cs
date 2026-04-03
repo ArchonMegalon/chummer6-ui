@@ -3449,6 +3449,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot_dir is outside this repo root.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing required_screenshots.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are missing on disk:");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are stale:");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot evidence predates the visual familiarity receipt generation time:");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshot_file_timestamps");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshots_older_than_receipt");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes Linux desktop media for head");
         StringAssert.Contains(executableGateScriptText, "flagship_required_desktop_heads = sorted(");
         StringAssert.Contains(executableGateScriptText, "Flagship UI release gate is missing required desktopHeads desktop head inventory.");
