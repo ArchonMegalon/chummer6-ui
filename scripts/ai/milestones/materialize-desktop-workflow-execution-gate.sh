@@ -285,6 +285,14 @@ for edition, ledger_payload, expected_proof_kind in (
                 f"{edition}:{family_id}:{rel_path}=dotnetExit:{dotnet_test.get('exitCode')}"
             )
 
+legacy_execution_receipt_paths = sorted(
+    str(path.resolve())
+    for path in (repo_root / ".codex-studio" / "published" / "workflow-family-parity" / "execution").glob(
+        "**/*.generated.json"
+    )
+    if path.is_file()
+)
+
 evidence["workflow_family_receipt_count_checked"] = checked_family_receipts
 evidence["workflow_family_missing_receipts"] = missing_family_receipts
 evidence["workflow_family_failing_receipts"] = failing_family_receipts
@@ -292,6 +300,7 @@ evidence["workflow_execution_receipt_count_checked"] = checked_execution_receipt
 evidence["workflow_execution_missing_receipts"] = missing_execution_receipts
 evidence["workflow_execution_failing_receipts"] = failing_execution_receipts
 evidence["workflow_execution_weak_receipts"] = weak_execution_receipts
+evidence["legacy_execution_receipt_paths"] = legacy_execution_receipt_paths
 evidence["required_workflow_family_ids"] = sorted(REQUIRED_WORKFLOW_FAMILY_IDS)
 evidence["missing_required_workflow_family_ids"] = missing_required_family_ids
 evidence["not_ready_required_workflow_family_ids"] = not_ready_required_family_ids
@@ -345,6 +354,13 @@ if weak_execution_receipts:
     reasons.append(
         "SR4/SR6 family-level execution receipts are not explicitly grounded: "
         + ", ".join(sorted(weak_execution_receipts))
+    )
+if legacy_execution_receipt_paths:
+    reasons.append(
+        "Legacy workflow-family execution receipts still exist under deprecated path "
+        "`.codex-studio/published/workflow-family-parity/execution`; only `.../executed/...` "
+        "paths are canonical: "
+        + ", ".join(legacy_execution_receipt_paths)
     )
 
 status = "pass" if not reasons else "fail"
