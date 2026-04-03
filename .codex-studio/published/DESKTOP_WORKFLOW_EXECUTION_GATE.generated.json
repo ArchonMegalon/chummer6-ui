@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-04-03T17:28:49.594412Z",
+  "generatedAt": "2026-04-03T17:42:40.933225Z",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
   "status": "pass",
   "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts.",
   "reasons": [],
   "evidence": {
-    "chummer5a_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "chummer5a_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
     "chummer5a_workflow_parity_status": "pass",
-    "sr4_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr4_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr4_workflow_parity_status": "pass",
-    "sr6_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr6_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr6_workflow_parity_status": "pass",
-    "sr4_sr6_frontier_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
+    "sr4_sr6_frontier_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
     "sr4_sr6_frontier_status": "pass",
-    "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "ui_flagship_release_gate_status": "pass",
     "workflow_family_receipt_count_checked": 60,
     "workflow_family_missing_receipts": [],
@@ -21,6 +21,21 @@
     "workflow_execution_receipt_count_checked": 20,
     "workflow_execution_missing_receipts": [],
     "workflow_execution_failing_receipts": [],
-    "workflow_execution_weak_receipts": []
+    "workflow_execution_weak_receipts": [],
+    "required_workflow_family_ids": [
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+      "attributes-skills-skill-groups-specializations-knowledge-languages",
+      "create-open-import-save-save-as-print-export",
+      "cyberware-bioware-modular-hierarchies-nested-plugins",
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+      "improvements-explain-result-parity",
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+      "metatype-priorities-karma-entry",
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+      "recovery-reload-migration-roundtrips"
+    ],
+    "missing_required_workflow_family_ids": {},
+    "not_ready_required_workflow_family_ids": {},
+    "missing_required_workflow_family_audit_tests": {}
   }
 }
