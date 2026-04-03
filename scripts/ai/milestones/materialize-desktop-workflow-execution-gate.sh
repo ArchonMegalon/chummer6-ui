@@ -53,6 +53,10 @@ def status_ok(value: str) -> bool:
     return value.strip().lower() in {"pass", "passed", "ready"}
 
 
+def normalize_token(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
 def check_receipt(path: Path, label: str, reasons: List[str], evidence: Dict[str, Any]) -> Dict[str, Any]:
     payload = load_json(path)
     status = str(payload.get("status") or "").strip().lower()
@@ -135,7 +139,39 @@ check_receipt(ui_workflow_parity_path, "chummer5a_workflow_parity", reasons, evi
 check_receipt(sr4_workflow_parity_path, "sr4_workflow_parity", reasons, evidence)
 check_receipt(sr6_workflow_parity_path, "sr6_workflow_parity", reasons, evidence)
 check_receipt(sr_frontier_path, "sr4_sr6_frontier", reasons, evidence)
-check_receipt(flagship_gate_path, "ui_flagship_release_gate", reasons, evidence)
+flagship_gate = check_receipt(flagship_gate_path, "ui_flagship_release_gate", reasons, evidence)
+flagship_head_proofs = flagship_gate.get("headProofs") if isinstance(flagship_gate.get("headProofs"), dict) else {}
+required_desktop_heads = sorted(
+    {
+        normalize_token(item)
+        for item in (
+            flagship_gate.get("desktopHeads")
+            if isinstance(flagship_gate.get("desktopHeads"), list)
+            else [flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else []
+        )
+        if normalize_token(item)
+    }
+)
+flagship_head_proof_statuses = {
+    normalize_token(head): normalize_token((proof or {}).get("status"))
+    for head, proof in flagship_head_proofs.items()
+    if normalize_token(head) and isinstance(proof, dict)
+}
+evidence["flagship_required_desktop_heads"] = required_desktop_heads
+evidence["flagship_head_proof_statuses"] = flagship_head_proof_statuses
+if not required_desktop_heads:
+    reasons.append("Flagship UI release gate is missing required desktopHeads inventory for per-head workflow execution proof.")
+missing_or_not_ready_heads = [
+    head
+    for head in required_desktop_heads
+    if not status_ok(flagship_head_proof_statuses.get(head, ""))
+]
+evidence["flagship_missing_or_not_ready_desktop_heads"] = missing_or_not_ready_heads
+if missing_or_not_ready_heads:
+    reasons.append(
+        "Flagship UI release gate is missing passing headProofs for required desktop heads: "
+        + ", ".join(missing_or_not_ready_heads)
+    )
 
 sr4_ledger = load_json(sr4_ledger_path)
 sr6_ledger = load_json(sr6_ledger_path)
