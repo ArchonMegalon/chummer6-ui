@@ -584,6 +584,23 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.access_no_grants"] = "No active installation grants are visible for this signed-in account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 
+            localized["desktop.dialog.action.close"] = "Close";
+            localized["desktop.dialog.action.save"] = "Save";
+            localized["desktop.dialog.action.cancel"] = "Cancel";
+            localized["desktop.dialog.global_settings.title"] = "Global Settings";
+            localized["desktop.dialog.global_settings.message"] = "Phase-1 desktop language changes apply on restart. Shipping locales: {0}";
+            localized["desktop.dialog.global_settings.field.ui_scale"] = "UI Scale (%)";
+            localized["desktop.dialog.global_settings.field.theme"] = "Theme";
+            localized["desktop.dialog.global_settings.field.language"] = "Language";
+            localized["desktop.dialog.global_settings.field.compact_mode"] = "Compact Mode";
+            localized["desktop.dialog.global_settings.notice.updated"] = "Global settings updated.";
+            localized["desktop.dialog.global_settings.notice.updated_restart"] = "Global settings updated. Restart the desktop head to fully apply {0} across shell chrome, update, and support surfaces.";
+            localized["desktop.dialog.translator.title"] = "Translator";
+            localized["desktop.dialog.translator.message"] = "Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: {0}";
+            localized["desktop.dialog.translator.field.search"] = "Language Search";
+            localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
+
         }
 
         if (string.Equals(languageCode, "fr-fr", StringComparison.Ordinal))
@@ -767,6 +784,23 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.access_claimed"] = "Next safe action: keep devices, support, update, and work follow-through grounded to this claimed install instead of bouncing out to a generic account shelf.";
             localized["desktop.devices.context.access_no_grants"] = "No active installation grants are visible for this signed-in account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
+
+            localized["desktop.dialog.action.close"] = "Close";
+            localized["desktop.dialog.action.save"] = "Save";
+            localized["desktop.dialog.action.cancel"] = "Cancel";
+            localized["desktop.dialog.global_settings.title"] = "Global Settings";
+            localized["desktop.dialog.global_settings.message"] = "Phase-1 desktop language changes apply on restart. Shipping locales: {0}";
+            localized["desktop.dialog.global_settings.field.ui_scale"] = "UI Scale (%)";
+            localized["desktop.dialog.global_settings.field.theme"] = "Theme";
+            localized["desktop.dialog.global_settings.field.language"] = "Language";
+            localized["desktop.dialog.global_settings.field.compact_mode"] = "Compact Mode";
+            localized["desktop.dialog.global_settings.notice.updated"] = "Global settings updated.";
+            localized["desktop.dialog.global_settings.notice.updated_restart"] = "Global settings updated. Restart the desktop head to fully apply {0} across shell chrome, update, and support surfaces.";
+            localized["desktop.dialog.translator.title"] = "Translator";
+            localized["desktop.dialog.translator.message"] = "Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: {0}";
+            localized["desktop.dialog.translator.field.search"] = "Language Search";
+            localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
 
         }
 
@@ -952,6 +986,23 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.access_no_grants"] = "No active installation grants are visible for this signed-in account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 
+            localized["desktop.dialog.action.close"] = "Close";
+            localized["desktop.dialog.action.save"] = "Save";
+            localized["desktop.dialog.action.cancel"] = "Cancel";
+            localized["desktop.dialog.global_settings.title"] = "Global Settings";
+            localized["desktop.dialog.global_settings.message"] = "Phase-1 desktop language changes apply on restart. Shipping locales: {0}";
+            localized["desktop.dialog.global_settings.field.ui_scale"] = "UI Scale (%)";
+            localized["desktop.dialog.global_settings.field.theme"] = "Theme";
+            localized["desktop.dialog.global_settings.field.language"] = "Language";
+            localized["desktop.dialog.global_settings.field.compact_mode"] = "Compact Mode";
+            localized["desktop.dialog.global_settings.notice.updated"] = "Global settings updated.";
+            localized["desktop.dialog.global_settings.notice.updated_restart"] = "Global settings updated. Restart the desktop head to fully apply {0} across shell chrome, update, and support surfaces.";
+            localized["desktop.dialog.translator.title"] = "Translator";
+            localized["desktop.dialog.translator.message"] = "Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: {0}";
+            localized["desktop.dialog.translator.field.search"] = "Language Search";
+            localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
+
         }
 
         if (string.Equals(languageCode, "pt-br", StringComparison.Ordinal))
@@ -1136,6 +1187,23 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.access_no_grants"] = "No active installation grants are visible for this signed-in account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 
+            localized["desktop.dialog.action.close"] = "Close";
+            localized["desktop.dialog.action.save"] = "Save";
+            localized["desktop.dialog.action.cancel"] = "Cancel";
+            localized["desktop.dialog.global_settings.title"] = "Global Settings";
+            localized["desktop.dialog.global_settings.message"] = "Phase-1 desktop language changes apply on restart. Shipping locales: {0}";
+            localized["desktop.dialog.global_settings.field.ui_scale"] = "UI Scale (%)";
+            localized["desktop.dialog.global_settings.field.theme"] = "Theme";
+            localized["desktop.dialog.global_settings.field.language"] = "Language";
+            localized["desktop.dialog.global_settings.field.compact_mode"] = "Compact Mode";
+            localized["desktop.dialog.global_settings.notice.updated"] = "Global settings updated.";
+            localized["desktop.dialog.global_settings.notice.updated_restart"] = "Global settings updated. Restart the desktop head to fully apply {0} across shell chrome, update, and support surfaces.";
+            localized["desktop.dialog.translator.title"] = "Translator";
+            localized["desktop.dialog.translator.message"] = "Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: {0}";
+            localized["desktop.dialog.translator.field.search"] = "Language Search";
+            localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
+
         }
 
         if (string.Equals(languageCode, "zh-cn", StringComparison.Ordinal))
@@ -1319,6 +1387,23 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.access_claimed"] = "Next safe action: keep devices, support, update, and work follow-through grounded to this claimed install instead of bouncing out to a generic account shelf.";
             localized["desktop.devices.context.access_no_grants"] = "No active installation grants are visible for this signed-in account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
+
+            localized["desktop.dialog.action.close"] = "Close";
+            localized["desktop.dialog.action.save"] = "Save";
+            localized["desktop.dialog.action.cancel"] = "Cancel";
+            localized["desktop.dialog.global_settings.title"] = "Global Settings";
+            localized["desktop.dialog.global_settings.message"] = "Phase-1 desktop language changes apply on restart. Shipping locales: {0}";
+            localized["desktop.dialog.global_settings.field.ui_scale"] = "UI Scale (%)";
+            localized["desktop.dialog.global_settings.field.theme"] = "Theme";
+            localized["desktop.dialog.global_settings.field.language"] = "Language";
+            localized["desktop.dialog.global_settings.field.compact_mode"] = "Compact Mode";
+            localized["desktop.dialog.global_settings.notice.updated"] = "Global settings updated.";
+            localized["desktop.dialog.global_settings.notice.updated_restart"] = "Global settings updated. Restart the desktop head to fully apply {0} across shell chrome, update, and support surfaces.";
+            localized["desktop.dialog.translator.title"] = "Translator";
+            localized["desktop.dialog.translator.message"] = "Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: {0}";
+            localized["desktop.dialog.translator.field.search"] = "Language Search";
+            localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
 
         }
 
