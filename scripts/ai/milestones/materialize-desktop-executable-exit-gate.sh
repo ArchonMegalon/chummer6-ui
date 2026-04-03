@@ -759,6 +759,51 @@ def validate_local_release_artifact_file(
         reasons.append(f"Promoted release-channel artifact sha256 does not match local bytes for {file_name}.")
 
 
+def validate_no_unpromoted_desktop_shelf_installers(
+    desktop_files_root: Path,
+    promoted_desktop_installer_files: List[str],
+    evidence: Dict[str, Any],
+    reasons: List[str],
+) -> None:
+    if not desktop_files_root.is_dir():
+        evidence["desktop_shelf_installer_candidates"] = []
+        evidence["release_channel_promoted_desktop_installer_files"] = sorted(
+            set(file_name for file_name in promoted_desktop_installer_files if file_name)
+        )
+        evidence["unpromoted_desktop_shelf_installers"] = []
+        return
+
+    desktop_shelf_installer_candidates = sorted(
+        {
+            item.name
+            for item in desktop_files_root.iterdir()
+            if item.is_file()
+            and item.name.startswith("chummer-")
+            and "-installer." in item.name
+            and item.suffix.lower() in {".deb", ".exe", ".dmg", ".pkg"}
+        }
+    )
+    promoted_set = {
+        file_name
+        for file_name in promoted_desktop_installer_files
+        if file_name
+    }
+    unpromoted_desktop_shelf_installers = [
+        file_name
+        for file_name in desktop_shelf_installer_candidates
+        if file_name not in promoted_set
+    ]
+    evidence["desktop_shelf_installer_candidates"] = desktop_shelf_installer_candidates
+    evidence["release_channel_promoted_desktop_installer_files"] = sorted(promoted_set)
+    evidence["unpromoted_desktop_shelf_installers"] = unpromoted_desktop_shelf_installers
+    if unpromoted_desktop_shelf_installers:
+        reasons.append(
+            "Desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth: "
+            + ", ".join(unpromoted_desktop_shelf_installers)
+            + "."
+        )
+
+
 receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path_default, flagship_gate_path, visual_familiarity_gate_path, workflow_execution_gate_path, repo_root = [Path(v) for v in sys.argv[1:10]]
 
 reasons: List[str] = []
@@ -997,6 +1042,17 @@ for required_platform in required_desktop_platforms:
         )
 for desktop_install_artifact in desktop_install_artifacts:
     validate_local_release_artifact_file(desktop_install_artifact, desktop_files_root, evidence, reasons)
+promoted_desktop_installer_files = [
+    str(item.get("fileName") or "").strip()
+    for item in desktop_install_artifacts
+    if str(item.get("fileName") or "").strip()
+]
+validate_no_unpromoted_desktop_shelf_installers(
+    desktop_files_root,
+    promoted_desktop_installer_files,
+    evidence,
+    reasons,
+)
 
 expected_windows_artifacts = [
     item
