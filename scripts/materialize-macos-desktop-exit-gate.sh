@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CURRENT_STAGE="init"
 
 APP_KEY_OVERRIDE="${CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY:-}"
 HUB_REGISTRY_ROOT="${CHUMMER_HUB_REGISTRY_ROOT:-$("$REPO_ROOT/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
@@ -103,6 +104,7 @@ INSTALLER_PATH="${CHUMMER_MACOS_INSTALLER_PATH:-}"
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
+CURRENT_STAGE="promoted_installer_proof_integrity"
 python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$STARTUP_SMOKE_RECEIPT_PATH" "$INSTALLER_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" <<'PY'
 from __future__ import annotations
 
@@ -217,9 +219,11 @@ evidence: Dict[str, Any] = {
 
 release_channel = load_json(release_channel_path)
 release_channel_status = normalize_token(release_channel.get("status"))
+release_channel_id = normalize_token(release_channel.get("channelId") or release_channel.get("channel"))
 evidence["release_channel_status"] = release_channel_status
+evidence["release_channel_id"] = release_channel_id
 if release_channel_status != "published":
-    reasons.append("Release channel is not published.")
+    reasons.append("macOS release-channel proof status is not published.")
 
 artifacts = [
     item for item in (release_channel.get("artifacts") or [])
@@ -237,7 +241,7 @@ for artifact in artifacts:
         break
 
 if macos_artifact is None:
-    reasons.append(f"Release channel does not publish a macOS install medium for {app_key} ({rid}).")
+    reasons.append(f"Release channel does not publish a promoted macOS install medium artifact for {app_key} ({rid}).")
     file_name = f"chummer-{app_key}-{rid}-installer.dmg"
 else:
     evidence["release_channel_macos_artifact"] = macos_artifact
@@ -278,9 +282,9 @@ if macos_artifact is not None:
     artifact_size_expected = int(macos_artifact.get("sizeBytes") or 0)
     artifact_sha_expected = normalize_token(macos_artifact.get("sha256"))
     if artifact_exists and artifact_size_expected and artifact_size != artifact_size_expected:
-        reasons.append("Release-channel macOS artifact size does not match installer bytes.")
+        reasons.append("macOS release-channel artifact size does not match promoted installer bytes.")
     if artifact_exists and artifact_sha_expected and artifact_sha != artifact_sha_expected:
-        reasons.append("Release-channel macOS artifact sha256 does not match installer digest.")
+        reasons.append("macOS release-channel artifact sha256 does not match promoted installer bytes.")
 
 startup_smoke_candidates = [
     Path(startup_smoke_receipt_arg) if startup_smoke_receipt_arg else None,
@@ -313,6 +317,7 @@ startup_smoke_payload = load_json(startup_smoke_path) if startup_smoke_path else
 startup_smoke_status = normalize_token(startup_smoke_payload.get("status")) or ("pass" if startup_smoke_payload else "fail")
 startup_smoke_checkpoint = normalize_token(startup_smoke_payload.get("readyCheckpoint"))
 startup_smoke_artifact_digest = normalize_token(startup_smoke_payload.get("artifactDigest"))
+startup_smoke_channel = normalize_token(startup_smoke_payload.get("channelId") or startup_smoke_payload.get("channel"))
 startup_smoke_recorded_at_raw = str(
     startup_smoke_payload.get("completedAtUtc")
     or startup_smoke_payload.get("recordedAtUtc")
@@ -331,6 +336,7 @@ evidence["startup_smoke"] = {
     "candidate_paths": startup_smoke_candidate_paths,
     "ready_checkpoint": startup_smoke_checkpoint,
     "artifact_digest": startup_smoke_artifact_digest,
+    "channel_id": startup_smoke_channel,
     "receipt_recorded_at": startup_smoke_recorded_at_raw,
     "receipt_age_seconds": startup_smoke_age_seconds,
     "receipt": startup_smoke_payload,
@@ -342,25 +348,25 @@ else:
         reasons.append("macOS startup smoke receipt was resolved from a legacy chummer5a path.")
     expected_arch = expected_arch_from_rid(rid)
     if normalize_token(startup_smoke_payload.get("headId")) != normalize_token(app_key):
-        reasons.append("macOS startup smoke receipt headId does not match promoted app key.")
+        reasons.append(f"macOS startup smoke receipt headId does not match promoted head {app_key}.")
     if normalize_token(startup_smoke_payload.get("platform")) != "macos":
         reasons.append("macOS startup smoke receipt platform is not macOS.")
     if expected_arch and normalize_token(startup_smoke_payload.get("arch")) != expected_arch:
-        reasons.append("macOS startup smoke receipt arch does not match promoted RID.")
+        reasons.append(f"macOS startup smoke receipt arch does not match promoted RID {rid}.")
+    if release_channel_id and startup_smoke_channel != release_channel_id:
+        reasons.append(f"macOS startup smoke receipt channelId does not match release channel {release_channel_id}.")
     if startup_smoke_status not in {"pass", "passed", "ready"}:
         reasons.append("macOS startup smoke receipt status is not passing.")
     if startup_smoke_checkpoint != "pre_ui_event_loop":
-        reasons.append("macOS startup smoke receipt did not reach pre_ui_event_loop.")
+        reasons.append("macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop.")
     if not artifact_sha:
         reasons.append("Promoted macOS installer digest could not be computed.")
     elif startup_smoke_artifact_digest != f"sha256:{artifact_sha}":
         reasons.append("macOS startup smoke receipt artifactDigest does not match promoted installer bytes.")
     if startup_smoke_recorded_at is None:
-        reasons.append("macOS startup smoke receipt is missing a valid recorded/completed timestamp.")
+        reasons.append("macOS startup smoke receipt timestamp is missing or invalid.")
     elif startup_smoke_age_seconds is not None and startup_smoke_age_seconds > startup_smoke_max_age_seconds:
-        reasons.append(
-            f"macOS startup smoke receipt is stale ({startup_smoke_age_seconds}s old; max {startup_smoke_max_age_seconds}s)."
-        )
+        reasons.append(f"macOS startup smoke receipt is stale ({startup_smoke_age_seconds}s old).")
 
 status = "passed" if not reasons else "failed"
 payload = {

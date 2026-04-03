@@ -204,7 +204,9 @@ evidence: Dict[str, Any] = {
 
 release_channel = load_json(release_channel_path)
 release_channel_status = str(release_channel.get("status") or "").strip().lower()
+release_channel_id = normalize_token(release_channel.get("channelId") or release_channel.get("channel"))
 evidence["release_channel_status"] = release_channel_status
+evidence["release_channel_id"] = release_channel_id
 if release_channel_status != "published":
     reasons.append("Release channel is not published.")
 
@@ -365,15 +367,19 @@ if startup_smoke_receipt_path.is_file() and installer_exists and expected_instal
 startup_smoke_head = normalize_token(startup_smoke_payload.get("headId"))
 startup_smoke_platform = normalize_token(startup_smoke_payload.get("platform"))
 startup_smoke_arch = normalize_token(startup_smoke_payload.get("arch"))
+startup_smoke_channel = normalize_token(startup_smoke_payload.get("channelId") or startup_smoke_payload.get("channel"))
 evidence["startup_smoke_head"] = startup_smoke_head
 evidence["startup_smoke_platform"] = startup_smoke_platform
 evidence["startup_smoke_arch"] = startup_smoke_arch
+evidence["startup_smoke_channel"] = startup_smoke_channel
 if startup_smoke_receipt_path.is_file() and startup_smoke_head != expected_head:
     reasons.append(f"Windows startup smoke receipt headId does not match promoted head {expected_head}.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_platform != "windows":
     reasons.append("Windows startup smoke receipt platform is not windows.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_arch != expected_arch:
     reasons.append(f"Windows startup smoke receipt arch does not match promoted RID {expected_rid}.")
+if startup_smoke_receipt_path.is_file() and release_channel_id and startup_smoke_channel != release_channel_id:
+    reasons.append(f"Windows startup smoke receipt channelId does not match release channel {release_channel_id}.")
 
 launch_target_by_head = {
     "avalonia": "Chummer.Avalonia.exe",

@@ -1290,6 +1290,7 @@ max_age_seconds = int(
     or "86400"
 )
 reasons: list[str] = []
+expected_channel = ""
 
 if not release_channel_path.is_file():
     reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
@@ -1301,6 +1302,7 @@ else:
         release_channel = {}
 
     status = str(release_channel.get("status") or "").strip().lower()
+    expected_channel = str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower()
     if status != "published":
         reasons.append("Linux release-channel proof status is not published.")
 
@@ -1377,6 +1379,7 @@ else:
             receipt_head = str(receipt.get("headId") or "").strip().lower()
             receipt_platform = str(receipt.get("platform") or "").strip().lower()
             receipt_arch = str(receipt.get("arch") or "").strip().lower()
+            receipt_channel = str(receipt.get("channelId") or receipt.get("channel") or "").strip().lower()
             receipt_digest = str(receipt.get("artifactDigest") or "").strip().lower()
             receipt_recorded_at = (
                 str(receipt.get("completedAtUtc") or "").strip()
@@ -1395,6 +1398,8 @@ else:
                 reasons.append("Linux startup smoke receipt platform is not linux.")
             if expected_arch and receipt_arch != expected_arch:
                 reasons.append("Linux startup smoke receipt arch does not match promoted RID.")
+            if expected_channel and receipt_channel != expected_channel:
+                reasons.append("Linux startup smoke receipt channelId does not match release channel.")
             if expected_digest and receipt_digest != expected_digest:
                 reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")
             if not receipt_recorded_at:
