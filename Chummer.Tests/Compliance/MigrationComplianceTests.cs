@@ -3393,6 +3393,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
         StringAssert.Contains(executableGateScriptText, "Release channel currently promotes multiple Windows desktop installer tuples, but the executable gate supports one Windows receipt path.");
+        StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.");
+        StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is missing/invalid");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt is stale for promoted head");
@@ -3428,6 +3435,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "return normalize_token(kind) in {\"installer\", \"dmg\", \"pkg\"}");
         StringAssert.Contains(macosGateScriptText, "CHUMMER_MACOS_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(macosGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(macosGateScriptText, "release_channel_path.parent / \"startup-smoke\"");
+        StringAssert.Contains(macosGateScriptText, "Path(\"/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke\")");
+        StringAssert.Contains(macosGateScriptText, "Path(\"/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke\")");
+        StringAssert.Contains(macosGateScriptText, "startup_smoke_receipt_arg,");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt status is not passing.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt is stale (");
