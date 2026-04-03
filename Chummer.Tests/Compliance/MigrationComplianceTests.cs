@@ -3549,6 +3549,19 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Localization_release_gate_runs_signoff_runner_without_no_build_runtimeconfig_drift()
+    {
+        string localizationGatePath = FindPath("scripts", "ai", "milestones", "b15-localization-release-gate.sh");
+        string localizationGateText = File.ReadAllText(localizationGatePath);
+
+        StringAssert.Contains(localizationGateText, "scripts/ai/with-package-plane.sh run --project");
+        Assert.IsFalse(localizationGateText.Contains("--no-build", StringComparison.Ordinal),
+            "Localization release gate must run the signoff project with build enabled so runtimeconfig output is always present across compatibility-tree layouts.");
+        Assert.IsFalse(localizationGateText.Contains("bash -lc", StringComparison.Ordinal),
+            "Localization release gate must execute the signoff runner from repo_root directly so relative package-plane paths resolve deterministically.");
+    }
+
+    [TestMethod]
     public void Macos_exit_gate_prefers_registry_release_truth_with_repo_local_fallback_and_accepts_dmg_media()
     {
         string macosGateScriptPath = FindPath("scripts", "materialize-macos-desktop-exit-gate.sh");
