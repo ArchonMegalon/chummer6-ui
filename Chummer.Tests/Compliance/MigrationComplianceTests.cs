@@ -3454,14 +3454,17 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH");
-        StringAssert.Contains(windowsGateScriptText, "startup-smoke-avalonia-win-x64.receipt.json");
+        StringAssert.Contains(windowsGateScriptText, "startup-smoke-{expected_head}-{expected_rid}.receipt.json");
+        StringAssert.Contains(windowsGateScriptText, "expected_rid.startswith(\"win-\")");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT");
+        StringAssert.Contains(windowsGateScriptText, "Release channel does not publish a promoted Windows install medium artifact.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is missing for promoted installer bytes.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt status is not passing.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactDigest does not match promoted installer bytes.");
-        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt headId does not match promoted head avalonia.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt headId does not match promoted head {expected_head}.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt platform is not windows.");
-        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt arch does not match promoted RID win-x64.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt arch does not match promoted RID {expected_rid}.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt timestamp is missing or invalid.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is stale (");
     }
