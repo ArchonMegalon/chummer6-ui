@@ -3484,7 +3484,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredPlatforms explicitly (empty list when complete).");
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredHeads explicitly (empty list when complete).");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs");
+        StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs_by_platform");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing required desktop platform/head installer tuple pair(s): ");
+        StringAssert.Contains(executableGateScriptText, "def missing_or_failing_keys_for_platform(");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"windows_missing_or_failing_keys\"] = windows_missing_or_failing_keys");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"macos_missing_or_failing_keys\"] = macos_missing_or_failing_keys");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platforms_derived");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_heads_derived");
         StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_missing_platform_inventory_mismatch");
@@ -3583,6 +3587,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
         StringAssert.Contains(macosGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
         StringAssert.Contains(macosGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-osx-arm64}}\"");
+        StringAssert.Contains(macosGateScriptText, "CURRENT_STAGE=\"promoted_installer_proof_integrity\"");
         StringAssert.Contains(macosGateScriptText, "if app_key_override:");
         StringAssert.Contains(macosGateScriptText, "if rid_override:");
         StringAssert.Contains(macosGateScriptText, "print(normalize(chosen.get(\"head\")))");
@@ -3602,10 +3607,17 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "Promoted macOS installer was not resolved from the repo-local desktop shelf");
         StringAssert.Contains(macosGateScriptText, "Promoted macOS installer was resolved from legacy chummer5a shelf bytes");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt was resolved from a legacy chummer5a path.");
+        StringAssert.Contains(macosGateScriptText, "macOS release-channel proof status is not published.");
+        StringAssert.Contains(macosGateScriptText, "Release channel does not publish a promoted macOS install medium artifact for");
+        StringAssert.Contains(macosGateScriptText, "macOS release-channel artifact sha256 does not match promoted installer bytes.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt status is not passing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt headId does not match promoted head");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt platform is not macOS.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt arch does not match promoted RID");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted installer bytes.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt timestamp is missing or invalid.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt is stale (");
-        StringAssert.Contains(macosGateScriptText, "Release channel does not publish a macOS install medium");
     }
 
     [TestMethod]

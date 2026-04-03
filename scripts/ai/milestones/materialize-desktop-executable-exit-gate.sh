@@ -1273,6 +1273,23 @@ missing_required_platform_head_pairs = (
     if tuple_coverage_reported_missing_platform_head_pairs
     else missing_required_platform_head_pairs_derived
 )
+missing_required_platform_head_pairs_by_platform: Dict[str, List[str]] = {
+    "linux": [],
+    "windows": [],
+    "macos": [],
+}
+for pair in missing_required_platform_head_pairs:
+    pair_token = normalize_token(pair)
+    if ":" not in pair_token:
+        continue
+    head_token, platform_token = pair_token.split(":", 1)
+    if not head_token or platform_token not in missing_required_platform_head_pairs_by_platform:
+        continue
+    missing_required_platform_head_pairs_by_platform[platform_token].append(pair_token)
+for platform_token in missing_required_platform_head_pairs_by_platform:
+    missing_required_platform_head_pairs_by_platform[platform_token] = sorted(
+        set(missing_required_platform_head_pairs_by_platform[platform_token])
+    )
 tuple_coverage_missing_pair_inventory_mismatch = sorted(
     set(tuple_coverage_reported_missing_platform_head_pairs).symmetric_difference(
         set(missing_required_platform_head_pairs_derived)
@@ -1284,6 +1301,9 @@ evidence["promoted_platform_heads_for_required_pair_matrix"] = promoted_platform
 evidence["missing_required_desktop_platform_head_pairs"] = missing_required_platform_head_pairs
 evidence["missing_required_desktop_platform_head_pairs_derived"] = (
     missing_required_platform_head_pairs_derived
+)
+evidence["missing_required_desktop_platform_head_pairs_by_platform"] = (
+    missing_required_platform_head_pairs_by_platform
 )
 missing_required_platforms_derived = sorted(
     {
@@ -1504,6 +1524,34 @@ for macos_artifact in expected_macos_artifacts:
     )
     macos_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
 evidence["macos_statuses"] = macos_statuses
+
+def missing_or_failing_keys_for_platform(
+    statuses: Dict[str, str],
+    missing_required_pairs: List[str],
+) -> List[str]:
+    failing_keys = [
+        normalize_token(key)
+        for key, status in statuses.items()
+        if normalize_token(key) and normalize_token(status) not in {"pass", "passed", "ready"}
+    ]
+    failing_keys.extend(normalize_token(item) for item in missing_required_pairs if normalize_token(item))
+    return sorted(set(failing_keys))
+
+linux_missing_or_failing_keys = missing_or_failing_keys_for_platform(
+    linux_statuses,
+    missing_required_platform_head_pairs_by_platform.get("linux", []),
+)
+windows_missing_or_failing_keys = missing_or_failing_keys_for_platform(
+    windows_statuses,
+    missing_required_platform_head_pairs_by_platform.get("windows", []),
+)
+macos_missing_or_failing_keys = missing_or_failing_keys_for_platform(
+    macos_statuses,
+    missing_required_platform_head_pairs_by_platform.get("macos", []),
+)
+evidence["linux_missing_or_failing_keys"] = linux_missing_or_failing_keys
+evidence["windows_missing_or_failing_keys"] = windows_missing_or_failing_keys
+evidence["macos_missing_or_failing_keys"] = macos_missing_or_failing_keys
 
 platform_tokens: List[str] = []
 if expected_linux_heads:
