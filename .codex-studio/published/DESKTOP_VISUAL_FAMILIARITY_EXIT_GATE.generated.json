@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-04-03T17:58:31.551272Z",
+  "generatedAt": "2026-04-03T18:30:31.198950Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "status": "pass",
-  "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 vehicles/contacts/diary surfaces.",
+  "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 creation/vehicles/contacts/diary surfaces.",
   "reasons": [],
   "evidence": {
     "flagship_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
@@ -32,6 +32,7 @@
     "runtime_backed_toolstrip_actions": "pass",
     "runtime_backed_codex_tree": "pass",
     "runtime_backed_classic_chrome_copy": "pass",
+    "runtime_backed_tab_panel_only_header": "pass",
     "runtime_backed_chrome_enabled_after_runner_load": "pass",
     "runtime_backed_demo_runner_import": "pass",
     "runtime_backed_legacy_workbench": "pass",
@@ -60,6 +61,7 @@
       "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
       "Theme_tokens_preserve_chummer5a_palette_and_readability",
       "Loaded_runner_preserves_visible_character_tab_posture",
+      "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
       "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
       "Character_creation_preserves_familiar_dense_builder_rhythm",
       "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
@@ -91,6 +93,25 @@
       "BuildActionContent("
     ],
     "present_disallowed_toolstrip_markers": [],
+    "required_summary_header_markers": [
+      "x:Name=\"LoadedRunnerTabStripBorder\"",
+      "x:Name=\"LoadedRunnerTabStripPanel\""
+    ],
+    "missing_summary_header_markers": [],
+    "disallowed_summary_header_markers": [
+      "NameValueText",
+      "AliasValueText",
+      "KarmaValueText",
+      "SkillsValueText",
+      "RuntimeValueText",
+      "RuntimeInspectButton",
+      "Text=\"Name\"",
+      "Text=\"Alias\"",
+      "Text=\"Karma\"",
+      "Text=\"Skills\"",
+      "Text=\"Runtime\""
+    ],
+    "present_disallowed_summary_header_markers": [],
     "classic_copy_disallowed_markers": [
       "Career-style workbench",
       "Command Palette",
@@ -127,7 +148,8 @@
       "10-contacts-section-light.png",
       "11-diary-dialog-light.png",
       "12-magic-matrix-dialog-light.png",
-      "13-advancement-dialog-light.png"
+      "13-advancement-dialog-light.png",
+      "14-creation-section-light.png"
     ],
     "missing_screenshots": [],
     "invalid_screenshots": {},

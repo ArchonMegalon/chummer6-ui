@@ -3,9 +3,17 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+HUB_REGISTRY_ROOT="${CHUMMER_HUB_REGISTRY_ROOT:-$("$REPO_ROOT/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+CANONICAL_RELEASE_CHANNEL_PATH="${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+DEFAULT_RELEASE_CHANNEL_PATH="$REPO_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+if [[ -n "$CANONICAL_RELEASE_CHANNEL_PATH" && -f "$CANONICAL_RELEASE_CHANNEL_PATH" ]]; then
+  RELEASE_CHANNEL_PATH_DEFAULT="$CANONICAL_RELEASE_CHANNEL_PATH"
+else
+  RELEASE_CHANNEL_PATH_DEFAULT="$DEFAULT_RELEASE_CHANNEL_PATH"
+fi
 
 PROOF_PATH="${CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json}"
-RELEASE_CHANNEL_PATH="${CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+RELEASE_CHANNEL_PATH="${CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}"
 WINDOWS_INSTALLER_PATH="${CHUMMER_WINDOWS_INSTALLER_PATH:-}"
 WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
 UI_LOCAL_RELEASE_PROOF_PATH="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
@@ -16,7 +24,7 @@ SR6_WORKFLOW_PARITY_PATH="${CHUMMER_SR6_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
-python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" <<'PY'
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -101,6 +109,8 @@ ui_workflow_parity_path = Path(sys.argv[7])
 sr4_workflow_parity_path = Path(sys.argv[8])
 sr6_workflow_parity_path = Path(sys.argv[9])
 repo_root = Path(sys.argv[10])
+hub_registry_root_arg = str(sys.argv[11] or "").strip()
+hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
@@ -230,14 +240,19 @@ else:
         proof_path.parent / "startup-smoke" / startup_smoke_receipt_name,
         repo_root / ".codex-studio" / "published" / "startup-smoke" / startup_smoke_receipt_name,
         repo_root / "Docker" / "Downloads" / "startup-smoke" / startup_smoke_receipt_name,
-        Path("/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke") / startup_smoke_receipt_name,
-        Path("/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
         Path("/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke") / startup_smoke_receipt_name,
         Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
         Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
         Path("/docker/chummer5a/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
         Path("/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
     ]
+    if hub_registry_root is not None:
+        startup_smoke_candidates.extend(
+            [
+                hub_registry_root / ".codex-studio" / "published" / "startup-smoke" / startup_smoke_receipt_name,
+                hub_registry_root / "Docker" / "Downloads" / "startup-smoke" / startup_smoke_receipt_name,
+            ]
+        )
     startup_smoke_receipt_path = next((path for path in startup_smoke_candidates if path.is_file()), startup_smoke_candidates[0])
 
 startup_smoke_payload = load_json(startup_smoke_receipt_path)
