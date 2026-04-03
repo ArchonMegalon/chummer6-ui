@@ -3483,6 +3483,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "if [[ ! -d \"$lock_dir\" ]]; then");
         StringAssert.Contains(flagshipGateScriptText, "cp \"$staged_screenshot_dir\"/*.png \"$screenshot_dir\"/");
         StringAssert.Contains(flagshipGateScriptText, "trap cleanup EXIT");
+        StringAssert.Contains(flagshipGateScriptText, "run_with_retry() {");
+        StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"flagship Avalonia headless UI gate tests\"");
+        StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"flagship Blazor desktop shell gate tests\"");
+        StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"cross-head workflow parity tests\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"requiredRuntimeBackedTests\": [");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture");
+        StringAssert.Contains(flagshipGateScriptText, "Loaded_runner_header_stays_tab_panel_only_without_metric_cards");
 
         StringAssert.Contains(visualGateScriptText, "release_gate_lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
         StringAssert.Contains(visualGateScriptText, "for _ in $(seq 1 150); do");
