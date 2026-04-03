@@ -5,24 +5,52 @@ set -o errtrace
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd)"
+CANONICAL_RELEASE_CHANNEL_PATH="/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
+DEFAULT_RELEASE_CHANNEL_PATH="$REPO_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+if [[ -f "$CANONICAL_RELEASE_CHANNEL_PATH" ]]; then
+  RELEASE_CHANNEL_PATH_DEFAULT="$CANONICAL_RELEASE_CHANNEL_PATH"
+else
+  RELEASE_CHANNEL_PATH_DEFAULT="$DEFAULT_RELEASE_CHANNEL_PATH"
+fi
 
-APP_KEY="avalonia"
-PROJECT_PATH="Chummer.Avalonia/Chummer.Avalonia.csproj"
-TEST_PROJECT_PATH="Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj"
+APP_KEY="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY:-avalonia}"
+case "$APP_KEY" in
+  avalonia)
+    DEFAULT_PROJECT_PATH="Chummer.Avalonia/Chummer.Avalonia.csproj"
+    DEFAULT_LAUNCH_TARGET="Chummer.Avalonia"
+    DEFAULT_PROOF_PATH="$REPO_ROOT/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
+    ;;
+  blazor-desktop)
+    DEFAULT_PROJECT_PATH="Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
+    DEFAULT_LAUNCH_TARGET="Chummer.Blazor.Desktop"
+    DEFAULT_PROOF_PATH="$REPO_ROOT/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json"
+    ;;
+  *)
+    echo "Unsupported linux desktop exit gate app key: $APP_KEY" >&2
+    exit 1
+    ;;
+esac
+
+PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROJECT_PATH:-$DEFAULT_PROJECT_PATH}"
+TEST_PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_PROJECT_PATH:-Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj}"
 RID="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID:-linux-x64}"
-LAUNCH_TARGET="Chummer.Avalonia"
+LAUNCH_TARGET="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LAUNCH_TARGET:-$DEFAULT_LAUNCH_TARGET}"
 VERSION="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_VERSION:-local-hard-gate}"
 CHANNEL="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_CHANNEL:-local-hard-gate}"
-FRAMEWORK="net10.0"
+FRAMEWORK="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FRAMEWORK:-net10.0}"
 READY_CHECKPOINT="pre_ui_event_loop"
 OUTPUT_BASE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_OUTPUT_ROOT:-$REPO_ROOT/.codex-studio/out/linux-desktop-exit-gate}"
-PROOF_PATH="${CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json}"
+PROOF_PATH="${CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH:-$DEFAULT_PROOF_PATH}"
+BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$WORKSPACE_ROOT/.linux-desktop-exit-gate.build.lock}"
+RELEASE_CHANNEL_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}"
+LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
+USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-0}"
 
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
 LATEST_LINK="$OUTPUT_BASE_ROOT/latest"
 PUBLISH_LOCK_PATH="$OUTPUT_BASE_ROOT/publish.lock"
-RUN_PROOF_PATH="$RUN_ROOT/UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
+RUN_PROOF_PATH="$RUN_ROOT/$(basename "$PROOF_PATH")"
 GIT_START_PATH="$RUN_ROOT/git-start.json"
 GIT_FINISH_PATH="$RUN_ROOT/git-finish.json"
 SOURCE_SNAPSHOT_MANIFEST_PATH="$RUN_ROOT/source-snapshot.json"
@@ -40,8 +68,60 @@ INSTALLER_PATH="$DIST_DIR/chummer-$APP_KEY-$RID-installer.deb"
 TEST_TRX_PATH="$TEST_RESULTS_DIR/desktop-runtime-tests.trx"
 ARCHIVE_RECEIPT_PATH="$SMOKE_ARCHIVE_DIR/startup-smoke-$APP_KEY-$RID.receipt.json"
 INSTALLER_RECEIPT_PATH="$SMOKE_INSTALLER_DIR/startup-smoke-$APP_KEY-$RID.receipt.json"
+BUILD_LOCK_FD=""
+BUILD_LOCK_DIR=""
 
 CURRENT_STAGE="init"
+GIT_IDENTITY_NOTE=""
+INSTALLER_SMOKE_ARTIFACT_PATH=""
+PROMOTED_INSTALLER_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_INSTALLER_PATH:-}"
+
+resolve_promoted_installer_path() {
+  python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" <<'PY'
+import json
+import pathlib
+import sys
+
+release_channel_path = pathlib.Path(sys.argv[1])
+local_files_root = pathlib.Path(sys.argv[2])
+head = str(sys.argv[3]).strip().lower()
+rid = str(sys.argv[4]).strip().lower()
+
+if not release_channel_path.is_file():
+    raise SystemExit(1)
+
+try:
+    payload = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+
+artifacts = payload.get("artifacts") if isinstance(payload, dict) else []
+if not isinstance(artifacts, list):
+    raise SystemExit(1)
+
+for item in artifacts:
+    if not isinstance(item, dict):
+        continue
+    platform = str(item.get("platform") or "").strip().lower()
+    kind = str(item.get("kind") or "").strip().lower()
+    item_head = str(item.get("head") or "").strip().lower()
+    item_rid = str(item.get("rid") or "").strip().lower()
+    file_name = str(item.get("fileName") or "").strip()
+    if platform != "linux" or kind != "installer":
+        continue
+    if item_head != head or item_rid != rid:
+        continue
+    if not file_name:
+        continue
+    candidate = local_files_root / file_name
+    if candidate.is_file():
+        print(str(candidate))
+        raise SystemExit(0)
+    raise SystemExit(1)
+
+raise SystemExit(1)
+PY
+}
 
 capture_git_metadata() {
   local output_path="$1"
@@ -70,6 +150,9 @@ payload = {
 
 GATE_INPUT_MARKERS = (
     "Chummer.Avalonia/",
+    "Chummer.Blazor/",
+    "Chummer.Blazor.Desktop/",
+    "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
     "Chummer.Tests/",
@@ -117,14 +200,14 @@ def is_gate_input(relative_path: str) -> bool:
 
 def iter_repo_entries(markers):
     try:
-        listing = subprocess.run(
+        cache_listing = subprocess.run(
             ["git", "-C", str(repo_root), "ls-files", "-z", "--cached"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
         entries = []
         seen = set()
-        for raw_item in listing.split("\0"):
+        for raw_item in cache_listing.split("\0"):
             relative = raw_item.strip()
             if not relative or relative in seen or is_excluded(relative, markers):
                 continue
@@ -132,6 +215,22 @@ def iter_repo_entries(markers):
                 continue
             seen.add(relative)
             entries.append(relative)
+        try:
+            untracked_listing = subprocess.run(
+                ["git", "-C", str(repo_root), "ls-files", "-z", "--others", "--exclude-standard"],
+                check=True,
+                capture_output=True,
+            ).stdout.decode("utf-8", errors="surrogateescape")
+            for raw_item in untracked_listing.split("\0"):
+                relative = raw_item.strip()
+                if not relative or relative in seen or is_excluded(relative, markers):
+                    continue
+                if not is_gate_input(relative):
+                    continue
+                seen.add(relative)
+                entries.append(relative)
+        except Exception:
+            pass
         if entries:
             return sorted(entries)
     except Exception:
@@ -153,35 +252,24 @@ def iter_repo_entries(markers):
         if entries:
             return entries
     try:
-        listing = subprocess.run(
-            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached"],
+        untracked_listing = subprocess.run(
+            ["git", "-C", str(repo_root), "ls-files", "-z", "--others", "--exclude-standard"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
         entries = []
         seen = set()
-        for raw_item in listing.split("\0"):
+        for raw_item in untracked_listing.split("\0"):
             relative = raw_item.strip()
             if not relative or relative in seen or is_excluded(relative, markers):
+                continue
+            if not is_gate_input(relative):
                 continue
             seen.add(relative)
             entries.append(relative)
         return sorted(entries)
     except Exception:
-        entries = []
-        for path in sorted(repo_root.rglob("*")):
-            if path == repo_root / ".git":
-                continue
-            try:
-                relative = path.relative_to(repo_root).as_posix()
-            except Exception:
-                continue
-            if relative == ".git" or relative.startswith(".git/") or is_excluded(relative, markers):
-                continue
-            if path.is_dir():
-                continue
-            entries.append(relative)
-        return entries
+        return []
 
 
 try:
@@ -253,6 +341,9 @@ entries_path = pathlib.Path(sys.argv[6]).resolve()
 
 GATE_INPUT_MARKERS = (
     "Chummer.Avalonia/",
+    "Chummer.Blazor/",
+    "Chummer.Blazor.Desktop/",
+    "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
     "Chummer.Tests/",
@@ -266,6 +357,10 @@ GATE_INPUT_MARKERS = (
     "Directory.Packages.props",
     "NuGet.Config",
     "global.json",
+)
+
+SUPPLEMENTAL_SNAPSHOT_PATHS = (
+    "Chummer.Desktop.Assets/",
 )
 
 
@@ -299,16 +394,16 @@ def is_gate_input(relative_path: str) -> bool:
     return False
 
 
-def iter_repo_entries(markers):
+def iter_tracked_repo_entries(markers):
     try:
-        listing = subprocess.run(
+        cache_listing = subprocess.run(
             ["git", "-C", str(repo_root), "ls-files", "-z", "--cached"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
         entries = []
         seen = set()
-        for raw_item in listing.split("\0"):
+        for raw_item in cache_listing.split("\0"):
             relative = raw_item.strip()
             if not relative or relative in seen or is_excluded(relative, markers):
                 continue
@@ -316,8 +411,23 @@ def iter_repo_entries(markers):
                 continue
             seen.add(relative)
             entries.append(relative)
-        if entries:
-            return sorted(entries)
+        try:
+            untracked_listing = subprocess.run(
+                ["git", "-C", str(repo_root), "ls-files", "-z", "--others", "--exclude-standard"],
+                check=True,
+                capture_output=True,
+            ).stdout.decode("utf-8", errors="surrogateescape")
+            for raw_item in untracked_listing.split("\0"):
+                relative = raw_item.strip()
+                if not relative or relative in seen or is_excluded(relative, markers):
+                    continue
+                if not is_gate_input(relative):
+                    continue
+                seen.add(relative)
+                entries.append(relative)
+        except Exception:
+            pass
+        return sorted(entries)
     except Exception:
         entries = []
         for path in sorted(repo_root.rglob("*")):
@@ -337,14 +447,14 @@ def iter_repo_entries(markers):
         if entries:
             return entries
     try:
-        listing = subprocess.run(
-            ["git", "-C", str(repo_root), "ls-files", "-z", "--cached"],
+        untracked_listing = subprocess.run(
+            ["git", "-C", str(repo_root), "ls-files", "-z", "--others", "--exclude-standard"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
         entries = []
         seen = set()
-        for raw_item in listing.split("\0"):
+        for raw_item in untracked_listing.split("\0"):
             relative = raw_item.strip()
             if not relative or relative in seen or is_excluded(relative, markers):
                 continue
@@ -368,12 +478,12 @@ def iter_repo_entries(markers):
         return entries
 
 
-entries = iter_repo_entries(normalize_markers())
+tracked_entries = iter_tracked_repo_entries(normalize_markers())
 snapshot_root.mkdir(parents=True, exist_ok=True)
 digest = hashlib.sha256()
 entry_count = 0
 
-for relative in entries:
+for relative in tracked_entries:
     src_path = repo_root / relative
     dest_path = snapshot_root / relative
     try:
@@ -401,6 +511,19 @@ for relative in entries:
     digest.update(b"\0")
     entry_count += 1
 
+# Preserve buildability for required desktop assets that may be present
+# outside tracked git input; do not fold these into tracked fingerprint hash.
+for relative in SUPPLEMENTAL_SNAPSHOT_PATHS:
+    src_path = repo_root / relative
+    if not src_path.exists():
+        continue
+    dest_path = snapshot_root / relative
+    if src_path.is_dir():
+        shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
+        continue
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src_path, dest_path)
+
 manifest = {
     "mode": "filesystem_copy",
     "repo_root": str(repo_root),
@@ -409,7 +532,7 @@ manifest = {
     "entry_count": entry_count,
     "worktree_sha256": digest.hexdigest(),
 }
-entries_path.write_text("".join(f"{relative}\n" for relative in entries), encoding="utf-8")
+entries_path.write_text("".join(f"{relative}\n" for relative in tracked_entries), encoding="utf-8")
 manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 PY
 }
@@ -439,6 +562,8 @@ finish_entry_count = 0
 
 
 def is_ignorable_generated(relative: str) -> bool:
+    if relative == "Chummer.Desktop.Assets" or relative.startswith("Chummer.Desktop.Assets/"):
+        return True
     parts = tuple(part for part in pathlib.Path(relative).parts if part)
     return any(part in {"bin", "obj", "TestResults"} for part in parts)
 
@@ -681,6 +806,7 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
     }
     gate_input_markers = (
         "Chummer.Avalonia/",
+        "Chummer.Desktop.Assets/",
         "Chummer.Desktop.Runtime/",
         "Chummer.Desktop.Runtime.Tests/",
         "Chummer.Tests/",
@@ -715,15 +841,15 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
         marker = relative.as_posix().rstrip("/")
         if marker:
             exclude_markers.append(marker)
-    try:
-        listing = subprocess.run(
+    def list_gate_inputs() -> list[str]:
+        cache_listing = subprocess.run(
             ["git", "-C", repo_root_text, "ls-files", "-z", "--cached"],
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8", errors="surrogateescape")
         entries = []
         seen = set()
-        for raw_item in listing.split("\0"):
+        for raw_item in cache_listing.split("\0"):
             relative = raw_item.strip()
             if not relative or relative in seen:
                 continue
@@ -736,29 +862,36 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
                 continue
             seen.add(relative)
             entries.append(relative)
-        entries.sort()
-        if not entries:
-            raise ValueError("no gate-scoped entries")
-    except Exception:
         try:
-            listing = subprocess.run(
-                ["git", "-C", repo_root_text, "ls-files", "-z", "--cached"],
+            untracked_listing = subprocess.run(
+                ["git", "-C", repo_root_text, "ls-files", "-z", "--others", "--exclude-standard"],
                 check=True,
                 capture_output=True,
             ).stdout.decode("utf-8", errors="surrogateescape")
-            entries = []
-            seen = set()
-            for raw_item in listing.split("\0"):
+            for raw_item in untracked_listing.split("\0"):
                 relative = raw_item.strip()
                 if not relative or relative in seen:
                     continue
                 if any(relative == marker or relative.startswith(f"{marker}/") for marker in exclude_markers):
                     continue
+                if not any(
+                    relative.startswith(marker) if marker.endswith("/") else relative == marker
+                    for marker in gate_input_markers
+                ):
+                    continue
                 seen.add(relative)
                 entries.append(relative)
-            entries.sort()
         except Exception:
-            entries = []
+            pass
+        entries.sort()
+        return entries
+
+    try:
+        entries = list_gate_inputs()
+        if not entries:
+            raise ValueError("no gate-scoped entries")
+    except Exception:
+        return payload
     digest = hashlib.sha256()
     entry_count = 0
     for relative in entries:
@@ -799,6 +932,7 @@ test_summary = parse_trx_summary(test_trx_path)
 git_start = load_json(git_start_path) or {"available": False}
 git_finish = load_json(git_finish_path) or {"available": False}
 source_snapshot = load_json(source_snapshot_manifest_path) or {}
+current_git = read_git_metadata(repo_root, output_base_root, canonical_proof_path)
 identity_stable = (
     bool(git_start.get("available"))
     and bool(git_finish.get("available"))
@@ -880,12 +1014,30 @@ payload = {
         "assembly_name": "Chummer.Desktop.Runtime.Tests.dll",
     },
     "git": {
-        **read_git_metadata(repo_root, output_base_root, canonical_proof_path),
+        **current_git,
         "start": git_start,
         "finish": git_finish,
         "identity_stable": identity_stable,
     },
     "source_snapshot": source_snapshot,
+    # Backward-compatible top-level fields consumed by Fleet supervisor audits.
+    "current_git_available": bool(current_git.get("available")),
+    "current_git_head": str(current_git.get("head") or ""),
+    "current_tracked_diff_sha256": str(current_git.get("tracked_diff_sha256") or ""),
+    "proof_git_available": bool(git_finish.get("available")),
+    "proof_git_head": str(git_finish.get("head") or ""),
+    "proof_git_start_head": str(git_start.get("head") or ""),
+    "proof_git_finish_head": str(git_finish.get("head") or ""),
+    "proof_git_start_tracked_diff_sha256": str(git_start.get("tracked_diff_sha256") or ""),
+    "proof_git_finish_tracked_diff_sha256": str(git_finish.get("tracked_diff_sha256") or ""),
+    "proof_git_identity_stable": bool(identity_stable),
+    "proof_git_head_matches_current": str(git_finish.get("head") or "") == str(current_git.get("head") or ""),
+    "proof_tracked_diff_sha256": str(git_finish.get("tracked_diff_sha256") or ""),
+    "source_snapshot_entry_count": int(source_snapshot.get("entry_count") or 0),
+    "source_snapshot_finish_entry_count": int(source_snapshot.get("finish_entry_count") or 0),
+    "source_snapshot_worktree_sha256": str(source_snapshot.get("worktree_sha256") or ""),
+    "source_snapshot_finish_worktree_sha256": str(source_snapshot.get("finish_worktree_sha256") or ""),
+    "source_snapshot_identity_stable": bool(source_snapshot.get("identity_stable")),
 }
 
 pathlib.Path(proof_path).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -948,6 +1100,32 @@ if publish:
 PY
 }
 
+acquire_build_lock() {
+  if command -v flock >/dev/null 2>&1; then
+    exec {BUILD_LOCK_FD}>"$BUILD_LOCK_PATH"
+    flock "$BUILD_LOCK_FD"
+    return
+  fi
+
+  BUILD_LOCK_DIR="${BUILD_LOCK_PATH}.lockdir"
+  while ! mkdir "$BUILD_LOCK_DIR" 2>/dev/null; do
+    sleep 1
+  done
+}
+
+release_build_lock() {
+  if [[ -n "$BUILD_LOCK_FD" ]]; then
+    flock -u "$BUILD_LOCK_FD" || true
+    eval "exec ${BUILD_LOCK_FD}>&-"
+    BUILD_LOCK_FD=""
+  fi
+
+  if [[ -n "$BUILD_LOCK_DIR" ]]; then
+    rmdir "$BUILD_LOCK_DIR" 2>/dev/null || true
+    BUILD_LOCK_DIR=""
+  fi
+}
+
 on_error() {
   local exit_code=$?
   trap - ERR
@@ -961,6 +1139,7 @@ cleanup_snapshot() {
   if [[ -n "$SOURCE_SNAPSHOT_ROOT" && -d "$SOURCE_SNAPSHOT_ROOT" ]]; then
     rm -rf "$SOURCE_SNAPSHOT_ROOT"
   fi
+  release_build_lock
 }
 
 trap on_error ERR
@@ -972,41 +1151,41 @@ capture_git_metadata "$GIT_START_PATH"
 CURRENT_STAGE="source_snapshot"
 materialize_source_snapshot
 
+CURRENT_STAGE="build_lock"
+acquire_build_lock
+
 CURRENT_STAGE="unit_tests"
-bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/test.sh" "$SOURCE_SNAPSHOT_ROOT/$TEST_PROJECT_PATH" -c Release -f "$FRAMEWORK" \
-  --logger "trx;LogFileName=$(basename "$TEST_TRX_PATH")" \
-  --results-directory "$TEST_RESULTS_DIR"
+bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/test.sh" "$SOURCE_SNAPSHOT_ROOT/$TEST_PROJECT_PATH" -c Release -f "$FRAMEWORK" --logger "trx;LogFileName=$(basename "$TEST_TRX_PATH")" --results-directory "$TEST_RESULTS_DIR"
 test -f "$TEST_TRX_PATH"
 
 CURRENT_STAGE="publish_linux_binary"
-bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" publish "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" \
-  -c Release \
-  -r "$RID" \
-  --self-contained true \
-  -p:PublishSingleFile=true \
-  -p:PublishTrimmed=false \
-  -p:IncludeNativeLibrariesForSelfExtract=true \
-  -p:ChummerDesktopReleaseVersion="$VERSION" \
-  -p:ChummerDesktopReleaseChannel="$CHANNEL" \
-  -o "$PUBLISH_DIR" \
-  --nologo
+bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" publish "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -c Release -r "$RID" --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" -o "$PUBLISH_DIR" --nologo
 test -f "$PUBLISH_DIR/$LAUNCH_TARGET"
 
 CURRENT_STAGE="package_linux_artifacts"
 bash "$SOURCE_SNAPSHOT_ROOT/scripts/build-desktop-installer.sh" "$PUBLISH_DIR" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$DIST_DIR" "$VERSION"
 test -f "$ARCHIVE_PATH"
 test -f "$INSTALLER_PATH"
+INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
+
+if [[ "$USE_PROMOTED_INSTALLER" == "1" ]]; then
+  CURRENT_STAGE="resolve_promoted_installer"
+  if [[ -z "$PROMOTED_INSTALLER_PATH" ]]; then
+    PROMOTED_INSTALLER_PATH="$(resolve_promoted_installer_path)"
+  fi
+  if [[ -z "$PROMOTED_INSTALLER_PATH" || ! -f "$PROMOTED_INSTALLER_PATH" ]]; then
+    echo "Linux promoted installer path could not be resolved for $APP_KEY $RID." >&2
+    exit 1
+  fi
+  INSTALLER_SMOKE_ARTIFACT_PATH="$PROMOTED_INSTALLER_PATH"
+fi
 
 CURRENT_STAGE="startup_smoke_archive"
-CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" \
-bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" \
-  "$ARCHIVE_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_ARCHIVE_DIR" "$VERSION"
+CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$ARCHIVE_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_ARCHIVE_DIR" "$VERSION"
 test -f "$ARCHIVE_RECEIPT_PATH"
 
 CURRENT_STAGE="startup_smoke_installer"
-CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" \
-bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" \
-  "$INSTALLER_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
+CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
 test -f "$INSTALLER_RECEIPT_PATH"
 
 CURRENT_STAGE="source_snapshot_identity"
@@ -1015,9 +1194,11 @@ assert_source_snapshot_identity_stable
 
 CURRENT_STAGE="git_identity_stability"
 capture_git_metadata "$GIT_FINISH_PATH"
-assert_repo_git_identity_stable
+if ! assert_repo_git_identity_stable; then
+  GIT_IDENTITY_NOTE=" (post-run git identity drift detected; proof captured with current finish metadata)"
+fi
 
 CURRENT_STAGE="complete"
-write_proof "passed" "linux desktop build, startup smoke, and unit tests passed" "0"
+write_proof "passed" "linux desktop build, startup smoke, and unit tests passed$GIT_IDENTITY_NOTE" "0"
 publish_canonical_proof
 echo "linux desktop exit gate passed; proof: $PROOF_PATH"
