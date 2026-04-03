@@ -1,0 +1,51 @@
+{
+  "contract_name": "chummer6-ui.windows_desktop_exit_gate",
+  "generated_at": "2026-04-03T15:55:54Z",
+  "status": "passed",
+  "reason": "windows desktop release-channel publication and workflow proof checks passed",
+  "head": {
+    "app_key": "avalonia",
+    "platform": "windows",
+    "rid": "win-x64",
+    "launch_target": "Chummer.Avalonia.exe"
+  },
+  "checks": {
+    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "windows_installer_path": "/docker/chummer5a/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
+    "ui_local_release_proof_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
+    "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "ui_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr4_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr6_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "installer_exists": true,
+    "installer_size_bytes": 95974786,
+    "installer_sha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f",
+    "release_channel_status": "published",
+    "release_channel_windows_artifact": {
+      "artifactId": "avalonia-win-x64-installer",
+      "head": "avalonia",
+      "rid": "win-x64",
+      "platform": "windows",
+      "arch": "x64",
+      "kind": "installer",
+      "fileName": "chummer-avalonia-win-x64-installer.exe",
+      "downloadUrl": "/downloads/files/chummer-avalonia-win-x64-installer.exe",
+      "sha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f",
+      "sizeBytes": 95974786,
+      "platformLabel": "Avalonia Desktop Windows X64 Installer",
+      "updateFeedUrl": null,
+      "embeddedRuntimeBundleHeadId": null,
+      "compatibilityState": "compatible",
+      "installAccessClass": "open_public"
+    },
+    "embedded_payload_marker_present": true,
+    "embedded_sample_marker_present": true,
+    "installer_payload_validation_mode": "release-channel digest-size-and-embedded-markers",
+    "ui_local_release_status": "passed",
+    "ui_flagship_release_gate_status": "pass",
+    "ui_workflow_parity_status": "pass",
+    "sr4_workflow_parity_status": "pass",
+    "sr6_workflow_parity_status": "pass"
+  },
+  "reasons": []
+}

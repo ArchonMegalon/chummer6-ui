@@ -1,0 +1,63 @@
+{
+  "contract_name": "chummer6-ui.macos_desktop_exit_gate",
+  "generated_at": "2026-04-03T15:55:55Z",
+  "status": "failed",
+  "reason": "macOS desktop exit gate checks failed",
+  "head": {
+    "app_key": "avalonia",
+    "platform": "macos",
+    "rid": "osx-arm64",
+    "launch_target": "Chummer.Avalonia"
+  },
+  "artifact": {
+    "installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+    "installer_exists": true,
+    "installer_size_bytes": 50365614,
+    "installer_sha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
+    "file_name": "chummer-avalonia-osx-arm64-installer.dmg"
+  },
+  "startup_smoke": {
+    "status": "fail",
+    "receipt_path": "",
+    "receipt": {}
+  },
+  "checks": {
+    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "app_key": "avalonia",
+    "rid": "osx-arm64",
+    "launch_target": "Chummer.Avalonia",
+    "release_channel_status": "published",
+    "release_channel_macos_artifact": {
+      "artifactId": "avalonia-osx-arm64-installer",
+      "head": "avalonia",
+      "rid": "osx-arm64",
+      "platform": "macos",
+      "arch": "arm64",
+      "kind": "installer",
+      "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
+      "downloadUrl": "/downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+      "sha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
+      "sizeBytes": 50365614,
+      "platformLabel": "Avalonia Desktop macOS ARM64 Installer",
+      "updateFeedUrl": null,
+      "embeddedRuntimeBundleHeadId": null,
+      "compatibilityState": "unknown",
+      "installAccessClass": "open_public"
+    },
+    "artifact": {
+      "installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+      "installer_exists": true,
+      "installer_size_bytes": 50365614,
+      "installer_sha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
+      "file_name": "chummer-avalonia-osx-arm64-installer.dmg"
+    },
+    "startup_smoke": {
+      "status": "fail",
+      "receipt_path": "",
+      "receipt": {}
+    }
+  },
+  "reasons": [
+    "macOS startup smoke receipt is missing for avalonia (osx-arm64)."
+  ]
+}
