@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T18:48:27.654072Z",
+  "generatedAt": "2026-04-03T19:29:44.076246Z",
   "status": "pass",
   "releaseGate": "b14-flagship-ui-release-gate",
   "desktopHead": "avalonia",
@@ -34,6 +34,8 @@
     "runtimeBackedTabPanelOnlyHeader": "pass",
     "runtimeBackedChromeEnabledAfterRunnerLoad": "pass",
     "runtimeBackedDemoRunnerImport": "pass",
+    "fullInteractiveControlInventory": "pass",
+    "mainWindowInteractionInventory": "pass",
     "runtimeBackedLegacyWorkbench": "pass",
     "legacyDenseBuilderRhythm": "pass",
     "legacyAdvancementWorkflowRhythm": "pass",
@@ -58,8 +60,18 @@
         "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
         "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
         "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
+        "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
         "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
         "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+        "Standalone_toolstrip_buttons_raise_expected_events",
+        "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
+        "Standalone_workspace_strip_quick_start_button_raises_expected_event",
+        "Standalone_summary_header_tab_buttons_raise_expected_events",
+        "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
+        "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
+        "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
+        "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+        "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
         "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
         "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
         "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
@@ -149,72 +161,72 @@
       {
         "name": "01-initial-shell-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
-        "sizeBytes": 182499
+        "sizeBytes": 182791
       },
       {
         "name": "02-menu-open-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
-        "sizeBytes": 183309
+        "sizeBytes": 183912
       },
       {
         "name": "03-settings-open-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
-        "sizeBytes": 187104
+        "sizeBytes": 186733
       },
       {
         "name": "04-loaded-runner-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
-        "sizeBytes": 204077
+        "sizeBytes": 204370
       },
       {
         "name": "05-dense-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-        "sizeBytes": 204271
+        "sizeBytes": 204537
       },
       {
         "name": "06-dense-section-dark.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-        "sizeBytes": 206765
+        "sizeBytes": 206982
       },
       {
         "name": "07-loaded-runner-tabs-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
-        "sizeBytes": 204093
+        "sizeBytes": 204376
       },
       {
         "name": "08-cyberware-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
-        "sizeBytes": 205681
+        "sizeBytes": 206087
       },
       {
         "name": "09-vehicles-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
-        "sizeBytes": 205238
+        "sizeBytes": 205630
       },
       {
         "name": "10-contacts-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
-        "sizeBytes": 205885
+        "sizeBytes": 206252
       },
       {
         "name": "11-diary-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
-        "sizeBytes": 203537
+        "sizeBytes": 203786
       },
       {
         "name": "12-magic-matrix-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-matrix-dialog-light.png",
-        "sizeBytes": 202776
+        "sizeBytes": 203118
       },
       {
         "name": "13-advancement-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/13-advancement-dialog-light.png",
-        "sizeBytes": 203219
+        "sizeBytes": 203594
       },
       {
         "name": "14-creation-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/14-creation-section-light.png",
-        "sizeBytes": 197378
+        "sizeBytes": 197470
       }
     ]
   },
