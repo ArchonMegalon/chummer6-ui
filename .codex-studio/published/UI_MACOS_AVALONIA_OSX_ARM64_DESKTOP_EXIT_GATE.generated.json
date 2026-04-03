@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.macos_desktop_exit_gate",
-  "generated_at": "2026-04-03T16:01:34Z",
+  "generated_at": "2026-04-03T16:18:54Z",
   "status": "failed",
   "reason": "macOS desktop exit gate checks failed",
   "head": {
@@ -19,6 +19,12 @@
   "startup_smoke": {
     "status": "fail",
     "receipt_path": "",
+    "candidate_paths": [
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
+    ],
     "ready_checkpoint": "",
     "artifact_digest": "",
     "receipt_recorded_at": "",
@@ -55,9 +61,21 @@
       "installer_sha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
       "file_name": "chummer-avalonia-osx-arm64-installer.dmg"
     },
+    "startup_smoke_candidate_paths": [
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
+    ],
     "startup_smoke": {
       "status": "fail",
       "receipt_path": "",
+      "candidate_paths": [
+        "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "/docker/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
+      ],
       "ready_checkpoint": "",
       "artifact_digest": "",
       "receipt_recorded_at": "",

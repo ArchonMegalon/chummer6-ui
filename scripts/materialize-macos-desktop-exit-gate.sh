@@ -253,7 +253,13 @@ startup_smoke_candidates = [
     repo_root / "Docker" / "Downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
+    Path("/docker/chummer5a/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
+    Path("/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
 ]
+startup_smoke_candidate_paths = list(
+    dict.fromkeys(str(candidate) for candidate in startup_smoke_candidates if candidate is not None)
+)
+evidence["startup_smoke_candidate_paths"] = startup_smoke_candidate_paths
 startup_smoke_path = resolve_existing_path(
     "",
     [candidate for candidate in startup_smoke_candidates if candidate is not None],
@@ -277,6 +283,7 @@ startup_smoke_age_seconds = (
 evidence["startup_smoke"] = {
     "status": startup_smoke_status,
     "receipt_path": str(startup_smoke_path) if startup_smoke_path else "",
+    "candidate_paths": startup_smoke_candidate_paths,
     "ready_checkpoint": startup_smoke_checkpoint,
     "artifact_digest": startup_smoke_artifact_digest,
     "receipt_recorded_at": startup_smoke_recorded_at_raw,
