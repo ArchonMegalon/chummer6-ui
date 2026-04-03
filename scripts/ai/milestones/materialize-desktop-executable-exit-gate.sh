@@ -30,7 +30,7 @@ for _ in $(seq 1 150); do
   sleep 2
 done
 
-python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path_default" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root"
+python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path_default" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root" "$hub_registry_root"
 from __future__ import annotations
 
 import hashlib
@@ -202,6 +202,29 @@ def validate_receipt_path_scope(path: Path, repo_root: Path, reasons: List[str],
         )
 
 
+def path_within_any_root(path: Path, roots: List[Path]) -> bool:
+    return any(path_within_root(path, root) for root in roots if isinstance(root, Path))
+
+
+def validate_trusted_path_scope(
+    path: Path,
+    trusted_roots: List[Path],
+    reasons: List[str],
+    evidence: Dict[str, Any],
+    label: str,
+    reason_message: str,
+) -> bool:
+    in_scope = path_within_any_root(path, trusted_roots)
+    evidence.setdefault("trusted_path_scope", {})[label] = {
+        "path": str(path),
+        "within_trusted_roots": in_scope,
+        "trusted_roots": [str(root.resolve()) for root in trusted_roots],
+    }
+    if not in_scope:
+        reasons.append(reason_message)
+    return in_scope
+
+
 def validate_flagship_head_proof(
     head: str,
     flagship_gate: Dict[str, Any],
@@ -242,6 +265,7 @@ def validate_linux_gate(
     expected_artifact: Dict[str, Any] | None,
     release_channel_id: str,
     repo_root: Path,
+    trusted_roots: List[Path],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -294,8 +318,15 @@ def validate_linux_gate(
     gate_evidence["primary_receipt_file_exists"] = primary_receipt_file_exists
     if not primary_receipt_file_exists:
         reasons.append(f"Linux installer startup smoke receipt path is missing/unreadable for promoted head '{head}'.")
-    elif primary_receipt_path is not None and not path_within_root(primary_receipt_path, repo_root):
-        reasons.append(f"Linux installer startup smoke receipt path is outside this repo root for promoted head '{head}'.")
+    elif primary_receipt_path is not None:
+        validate_trusted_path_scope(
+            primary_receipt_path,
+            trusted_roots,
+            reasons,
+            gate_evidence,
+            f"linux_startup_smoke:{head}",
+            f"Linux installer startup smoke receipt path is outside trusted local roots for promoted head '{head}'.",
+        )
 
     gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt.get("artifactDigest"))
     gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt.get("readyCheckpoint"))
@@ -369,6 +400,7 @@ def validate_windows_gate(
     release_channel_id: str,
     desktop_files_root: Path,
     repo_root: Path,
+    trusted_roots: List[Path],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -470,8 +502,15 @@ def validate_windows_gate(
     )
     if not startup_smoke_receipt_exists:
         reasons.append("Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.")
-    elif startup_smoke_receipt_path is not None and not path_within_root(startup_smoke_receipt_path, repo_root):
-        reasons.append("Windows startup smoke receipt path is outside this repo root.")
+    elif startup_smoke_receipt_path is not None and not validate_trusted_path_scope(
+        startup_smoke_receipt_path,
+        trusted_roots,
+        reasons,
+        gate_evidence,
+        "windows_startup_smoke",
+        "Windows startup smoke receipt path is outside trusted local roots.",
+    ):
+        pass
     else:
         startup_smoke_status = normalize_token(
             startup_smoke_receipt_payload.get("status")
@@ -569,6 +608,7 @@ def validate_macos_gate(
     release_channel_id: str,
     desktop_files_root: Path,
     repo_root: Path,
+    trusted_roots: List[Path],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -701,8 +741,15 @@ def validate_macos_gate(
 
     if not startup_receipt_exists:
         reasons.append(f"macOS startup smoke receipt path is missing or unreadable for promoted head '{head}' ({rid}).")
-    elif startup_receipt_path is not None and not path_within_root(startup_receipt_path, repo_root):
-        reasons.append(f"macOS startup smoke receipt path is outside this repo root for promoted head '{head}' ({rid}).")
+    elif startup_receipt_path is not None and not validate_trusted_path_scope(
+        startup_receipt_path,
+        trusted_roots,
+        reasons,
+        gate_evidence,
+        f"macos_startup_smoke:{head}:{rid}",
+        f"macOS startup smoke receipt path is outside trusted local roots for promoted head '{head}' ({rid}).",
+    ):
+        pass
     else:
         if startup_smoke_status not in {"pass", "passed", "ready"}:
             reasons.append(f"macOS startup smoke receipt status is not passing for promoted head '{head}' ({rid}).")
@@ -876,6 +923,20 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
 
 
 receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path_default, flagship_gate_path, visual_familiarity_gate_path, workflow_execution_gate_path, repo_root = [Path(v) for v in sys.argv[1:10]]
+hub_registry_root_raw = str(sys.argv[10]).strip() if len(sys.argv) > 10 else ""
+hub_registry_root = Path(hub_registry_root_raw) if hub_registry_root_raw else None
+trusted_roots = [repo_root]
+if hub_registry_root is not None:
+    trusted_roots.append(hub_registry_root)
+deduped_trusted_roots: List[Path] = []
+seen_trusted_roots: set[str] = set()
+for candidate_root in trusted_roots:
+    candidate_resolved = str(candidate_root.resolve())
+    if candidate_resolved in seen_trusted_roots:
+        continue
+    seen_trusted_roots.add(candidate_resolved)
+    deduped_trusted_roots.append(candidate_root)
+trusted_roots = deduped_trusted_roots
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
@@ -887,6 +948,7 @@ evidence: Dict[str, Any] = {
     "visual_familiarity_gate_path": str(visual_familiarity_gate_path),
     "workflow_execution_gate_path": str(workflow_execution_gate_path),
     "repo_root": str(repo_root.resolve()),
+    "trusted_local_roots": [str(root.resolve()) for root in trusted_roots],
 }
 
 release_channel = load_json(release_channel_path)
@@ -1207,6 +1269,7 @@ for expected_windows_artifact in expected_windows_artifacts:
         release_channel_channel_id,
         desktop_files_root,
         repo_root,
+        trusted_roots,
         evidence,
         reasons,
     )
@@ -1496,6 +1559,7 @@ for expected_linux_head in expected_linux_heads:
         expected_linux_artifact,
         release_channel_channel_id,
         repo_root,
+        trusted_roots,
         evidence,
         reasons,
     )
@@ -1544,6 +1608,7 @@ for macos_artifact in expected_macos_artifacts:
         release_channel_channel_id,
         desktop_files_root,
         repo_root,
+        trusted_roots,
         evidence,
         reasons,
     )

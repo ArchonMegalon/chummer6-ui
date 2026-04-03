@@ -1,13 +1,15 @@
 {
-  "generated_at": "2026-04-03T22:18:27.929259Z",
-  "generatedAt": "2026-04-03T22:18:27.929259Z",
+  "generated_at": "2026-04-03T23:04:05.679206Z",
+  "generatedAt": "2026-04-03T23:04:05.679206Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
   "status": "fail",
   "summary": "Desktop executable exit gate is not fully proven.",
   "reasons": [
     "Release channel does not publish desktop install media for required platform 'windows'.",
     "Release channel does not publish desktop install media for required platform 'macos'.",
-    "Release channel is missing required desktop platform/head installer tuple pair(s): avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos."
+    "Release channel is missing required desktop platform/head installer tuple pair(s): avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos.",
+    "Linux installer startup smoke receipt channelId does not match release channel for promoted head 'avalonia'.",
+    "Linux installer startup smoke receipt channelId does not match release channel for promoted head 'blazor-desktop'."
   ],
   "evidence": {
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
@@ -18,12 +20,16 @@
     "visual_familiarity_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
     "workflow_execution_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
     "repo_root": "/docker/chummercomplete/chummer-presentation",
+    "trusted_local_roots": [
+      "/docker/chummercomplete/chummer-presentation",
+      "/docker/chummercomplete/chummer-hub-registry"
+    ],
     "flagship UI release gate proof_generated_at": "2026-04-03T21:28:13.673179Z",
-    "flagship UI release gate proof_age_seconds": 3014,
+    "flagship UI release gate proof_age_seconds": 5751,
     "desktop visual familiarity gate proof_generated_at": "2026-04-03T21:40:32.419577Z",
-    "desktop visual familiarity gate proof_age_seconds": 2275,
+    "desktop visual familiarity gate proof_age_seconds": 5013,
     "desktop workflow execution gate proof_generated_at": "2026-04-03T21:40:32.406139Z",
-    "desktop workflow execution gate proof_age_seconds": 2275,
+    "desktop workflow execution gate proof_age_seconds": 5013,
     "flagship_status": "pass",
     "visual_familiarity_status": "pass",
     "workflow_execution_status": "pass",
@@ -94,9 +100,9 @@
     "release_channel_status": "published",
     "release_channel_channel_id": "docker",
     "release_channel_version": "unpublished",
-    "release_channel_generated_at": "2026-04-03T21:29:28Z",
+    "release_channel_generated_at": "2026-04-03T22:35:44Z",
     "release_channel_freshness_max_age_seconds": 86400,
-    "release_channel_age_seconds": 2939,
+    "release_channel_age_seconds": 1701,
     "release_channel_tuple_coverage_required_desktop_platforms": [
       "linux",
       "windows",
@@ -338,7 +344,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for avalonia_generated_at": "2026-04-03T22:06:08Z",
-        "linux desktop exit gate proof for avalonia_age_seconds": 739,
+        "linux desktop exit gate proof for avalonia_age_seconds": 3477,
         "receipt_head": {
           "app_key": "avalonia",
           "project_path": "Chummer.Avalonia/Chummer.Avalonia.csproj",
@@ -360,13 +366,24 @@
         },
         "primary_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.IJIQAZ/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
         "primary_receipt_file_exists": true,
+        "trusted_path_scope": {
+          "linux_startup_smoke:avalonia": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.IJIQAZ/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
+          }
+        },
         "primary_receipt_artifact_digest": "sha256:6b0a63c39850a257e66d142c0bad196a7cc4fcbaf027635965f138f534bb13ea",
         "primary_receipt_ready_checkpoint": "pre_ui_event_loop",
         "primary_receipt_head_id": "avalonia",
         "primary_receipt_platform": "linux",
         "primary_receipt_arch": "x64",
+        "primary_receipt_channel_id": "local-hard-gate",
         "primary_receipt_recorded_at": "2026-04-03T22:06:05.9654259+00:00",
-        "primary_receipt_age_seconds": 741,
+        "primary_receipt_age_seconds": 3479,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.IJIQAZ/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.IJIQAZ/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.IJIQAZ/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
@@ -376,7 +393,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for blazor-desktop_generated_at": "2026-04-03T22:09:07Z",
-        "linux desktop exit gate proof for blazor-desktop_age_seconds": 560,
+        "linux desktop exit gate proof for blazor-desktop_age_seconds": 3298,
         "receipt_head": {
           "app_key": "blazor-desktop",
           "project_path": "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj",
@@ -398,13 +415,24 @@
         },
         "primary_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.JvcMck/startup-smoke-installer/startup-smoke-blazor-desktop-linux-x64.receipt.json",
         "primary_receipt_file_exists": true,
+        "trusted_path_scope": {
+          "linux_startup_smoke:blazor-desktop": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.JvcMck/startup-smoke-installer/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
+          }
+        },
         "primary_receipt_artifact_digest": "sha256:2548564550bc2c8ec4dbc0d5c8566e44ac87610ddbb9cf8ea15b08b5c64518e4",
         "primary_receipt_ready_checkpoint": "pre_ui_event_loop",
         "primary_receipt_head_id": "blazor-desktop",
         "primary_receipt_platform": "linux",
         "primary_receipt_arch": "x64",
+        "primary_receipt_channel_id": "local-hard-gate",
         "primary_receipt_recorded_at": "2026-04-03T22:09:05.7532308+00:00",
-        "primary_receipt_age_seconds": 562,
+        "primary_receipt_age_seconds": 3299,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.JvcMck/startup-smoke-installer/installed-launch-blazor-desktop-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.JvcMck/startup-smoke-installer/installed-wrapper-blazor-desktop-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.JvcMck/startup-smoke-installer/installed-desktop-entry-blazor-desktop-linux-x64.desktop",
@@ -412,8 +440,8 @@
       }
     },
     "linux_statuses": {
-      "avalonia:linux-x64": "pass",
-      "blazor-desktop:linux-x64": "pass"
+      "avalonia:linux-x64": "fail",
+      "blazor-desktop:linux-x64": "fail"
     },
     "macos_heads_expected": [],
     "stale_windows_gate_receipts_without_promoted_tuples": [
@@ -442,7 +470,10 @@
     ],
     "stale_passing_platform_gate_receipts_without_promoted_tuples": [],
     "macos_statuses": {},
-    "linux_missing_or_failing_keys": [],
+    "linux_missing_or_failing_keys": [
+      "avalonia:linux-x64",
+      "blazor-desktop:linux-x64"
+    ],
     "windows_missing_or_failing_keys": [
       "avalonia:windows",
       "blazor-desktop:windows"
