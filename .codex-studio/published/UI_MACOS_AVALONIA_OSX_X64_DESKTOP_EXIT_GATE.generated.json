@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.macos_desktop_exit_gate",
-  "generated_at": "2026-04-03T15:56:00Z",
+  "generated_at": "2026-04-03T16:01:34Z",
   "status": "failed",
   "reason": "macOS desktop exit gate checks failed",
   "head": {
@@ -19,6 +19,10 @@
   "startup_smoke": {
     "status": "fail",
     "receipt_path": "",
+    "ready_checkpoint": "",
+    "artifact_digest": "",
+    "receipt_recorded_at": "",
+    "receipt_age_seconds": null,
     "receipt": {}
   },
   "checks": {
@@ -54,6 +58,10 @@
     "startup_smoke": {
       "status": "fail",
       "receipt_path": "",
+      "ready_checkpoint": "",
+      "artifact_digest": "",
+      "receipt_recorded_at": "",
+      "receipt_age_seconds": null,
       "receipt": {}
     }
   },
