@@ -55,6 +55,10 @@ run_root.mkdir(parents=True, exist_ok=True)
 trx_path = run_root / f"{edition}-workflow-family-execution.trx"
 if trx_path.exists():
     trx_path.unlink()
+legacy_execution_root = repo_root / ".codex-studio" / "published" / "workflow-family-parity" / "execution" / edition
+if legacy_execution_root.is_dir():
+    for stale_file in legacy_execution_root.glob("*.generated.json"):
+        stale_file.unlink()
 lock_dir = repo_root / ".codex-studio" / "locks"
 lock_dir.mkdir(parents=True, exist_ok=True)
 lock_path = lock_dir / "workflow-family-dotnet-test.lock"
@@ -238,6 +242,10 @@ for family in families:
 
     for output_ref in output_refs:
         output_ref = output_ref.replace("{familyId}", family_id)
+        output_ref = output_ref.replace(
+            "workflow-family-parity/execution/",
+            "workflow-family-parity/executed/",
+        )
         output_path = Path(output_ref)
         if not output_path.is_absolute():
             output_path = repo_root / output_path
