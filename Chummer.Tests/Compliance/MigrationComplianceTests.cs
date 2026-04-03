@@ -3636,6 +3636,19 @@ public class MigrationComplianceTests
         string windowsGateScriptPath = FindPath("scripts", "materialize-windows-desktop-exit-gate.sh");
         string windowsGateScriptText = File.ReadAllText(windowsGateScriptPath);
 
+        StringAssert.Contains(windowsGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
+        StringAssert.Contains(windowsGateScriptText, "RID_OVERRIDE=\"${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID:-}\"");
+        StringAssert.Contains(windowsGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
+        StringAssert.Contains(windowsGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(windowsGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
+        StringAssert.Contains(windowsGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-win-x64}}\"");
+        StringAssert.Contains(windowsGateScriptText, "and normalize(item.get(\"platform\")) == \"windows\"");
+        StringAssert.Contains(windowsGateScriptText, "and normalize(item.get(\"kind\")) in {\"installer\", \"msix\"}");
+        StringAssert.Contains(windowsGateScriptText, "if app_key_override:");
+        StringAssert.Contains(windowsGateScriptText, "if rid_override:");
+        StringAssert.Contains(windowsGateScriptText, "preferred_order = [\"win-x64\", \"win-arm64\"]");
+        StringAssert.Contains(windowsGateScriptText, "print(normalize(chosen.get(\"head\")))");
+        StringAssert.Contains(windowsGateScriptText, "print(artifact_rid(chosen))");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(windowsGateScriptText, "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
@@ -3653,7 +3666,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "Promoted Windows installer was not resolved from the repo-local desktop shelf.");
         StringAssert.Contains(windowsGateScriptText, "Promoted Windows installer was resolved from legacy chummer5a shelf bytes.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt was resolved from a legacy chummer5a path.");
-        StringAssert.Contains(windowsGateScriptText, "Release channel does not publish a promoted Windows install medium artifact.");
+        StringAssert.Contains(windowsGateScriptText, "Release channel does not publish a promoted Windows install medium artifact for {expected_head} ({expected_rid}).");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is missing for promoted installer bytes.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt status is not passing.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop.");
