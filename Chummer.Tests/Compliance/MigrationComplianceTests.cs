@@ -3414,6 +3414,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f\"windows_gate:{gate_label}\")");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate receipt head/RID does not match promoted release-channel Windows artifact tuple");
         StringAssert.Contains(executableGateScriptText, "evidence.setdefault(\"windows_gates\", {})[gate_label] = gate_evidence");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"linux_statuses\"] = linux_statuses");
         StringAssert.Contains(executableGateScriptText, "evidence[\"windows_statuses\"] = windows_statuses");
         StringAssert.Contains(executableGateScriptText, "evidence[\"macos_statuses\"] = macos_statuses");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"macOS gate reason ({head}/{rid}): {gate_reason}\")");
@@ -3463,6 +3464,33 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "f\"Desktop executable exit gate is proven by passing packaged-head receipts for promoted desktop platforms ({platform_scope})");
         StringAssert.Contains(executableGateScriptText, "print(\"[desktop-executable-exit-gate] FAIL\", file=sys.stderr)");
         StringAssert.Contains(executableGateScriptText, "print(f\"[desktop-executable-exit-gate] reason: {reason}\", file=sys.stderr)");
+    }
+
+    [TestMethod]
+    public void Flagship_gate_and_materializers_are_lock_safe_under_concurrent_runs()
+    {
+        string flagshipGateScriptPath = FindPath("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
+        string flagshipGateScriptText = File.ReadAllText(flagshipGateScriptPath);
+        string visualGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
+        string visualGateScriptText = File.ReadAllText(visualGateScriptPath);
+        string executableGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string executableGateScriptText = File.ReadAllText(executableGateScriptPath);
+
+        StringAssert.Contains(flagshipGateScriptText, "lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
+        StringAssert.Contains(flagshipGateScriptText, "capture_screenshot_dir=\"$(mktemp -d");
+        StringAssert.Contains(flagshipGateScriptText, "staged_screenshot_dir=\"$(mktemp -d");
+        StringAssert.Contains(flagshipGateScriptText, "for _ in $(seq 1 150); do");
+        StringAssert.Contains(flagshipGateScriptText, "if [[ ! -d \"$lock_dir\" ]]; then");
+        StringAssert.Contains(flagshipGateScriptText, "cp \"$staged_screenshot_dir\"/*.png \"$screenshot_dir\"/");
+        StringAssert.Contains(flagshipGateScriptText, "trap cleanup EXIT");
+
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
+        StringAssert.Contains(visualGateScriptText, "for _ in $(seq 1 150); do");
+        StringAssert.Contains(visualGateScriptText, "if [[ ! -d \"$release_gate_lock_dir\" ]]; then");
+
+        StringAssert.Contains(executableGateScriptText, "release_gate_lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
+        StringAssert.Contains(executableGateScriptText, "for _ in $(seq 1 150); do");
+        StringAssert.Contains(executableGateScriptText, "if [[ ! -d \"$release_gate_lock_dir\" ]]; then");
     }
 
     [TestMethod]
