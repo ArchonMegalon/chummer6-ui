@@ -727,6 +727,21 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            AssertQuickActionDialogFlow(
+                harness,
+                sectionId: "vehicles",
+                actionControlId: "vehicle_add",
+                expectedTitle: "Add Vehicle / Drone",
+                requiredFieldLabel: "Vehicle",
+                requiredActionId: "add");
+        });
+    }
+
+    [TestMethod]
     public void Visual_review_evidence_is_published_for_light_and_dark_shell_states()
     {
         string screenshotDirectory = ResolveScreenshotDirectory();
@@ -746,7 +761,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             "05-dense-section-light.png",
             "06-dense-section-dark.png",
             "07-loaded-runner-tabs-light.png",
-            "08-cyberware-dialog-light.png"
+            "08-cyberware-dialog-light.png",
+            "09-vehicles-section-light.png",
+            "10-contacts-section-light.png",
+            "11-diary-dialog-light.png"
         ];
 
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -830,6 +848,39 @@ public sealed class AvaloniaFlagshipUiGateTests
                         "Add Cyberware",
                         StringComparison.Ordinal));
                 captured[expectedFiles[7]] = harness.CaptureScreenshotBytes();
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("vehicles");
+                harness.WaitUntil(() => harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
+                ListBox vehicleRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => vehicleRows.ItemCount > 0);
+                object? vehicleRow = SnapshotListBoxItems(vehicleRows).FirstOrDefault(item =>
+                    item.ToString()?.Contains("vehicles[0] = Roadmaster", StringComparison.Ordinal) == true);
+                Assert.IsNotNull(vehicleRow, "Expected a vehicle row before capturing vehicle familiarity proof.");
+                vehicleRows.SelectedItem = vehicleRow;
+                harness.WaitUntil(() => ReferenceEquals(vehicleRows.SelectedItem, vehicleRow));
+                captured[expectedFiles[8]] = harness.CaptureScreenshotBytes();
+
+                harness.SetActiveSectionForTesting("contacts");
+                ListBox contactRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => contactRows.ItemCount > 0);
+                object? contactRow = SnapshotListBoxItems(contactRows).FirstOrDefault(item =>
+                    item.ToString()?.Contains("contacts[0] = Fixer", StringComparison.Ordinal) == true);
+                Assert.IsNotNull(contactRow, "Expected a contact row before capturing contact familiarity proof.");
+                contactRows.SelectedItem = contactRow;
+                harness.WaitUntil(() => ReferenceEquals(contactRows.SelectedItem, contactRow));
+                captured[expectedFiles[9]] = harness.CaptureScreenshotBytes();
+
+                harness.SetActiveSectionForTesting("progress");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_create_entry")?.IsVisible == true);
+                harness.Click("SectionQuickAction_create_entry");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Entry",
+                        StringComparison.Ordinal));
+                captured[expectedFiles[10]] = harness.CaptureScreenshotBytes();
 
                 return captured;
             });
@@ -1911,12 +1962,25 @@ public sealed class AvaloniaFlagshipUiGateTests
 {
   "section": "contacts",
   "contacts": [
-    { "name": "Fixer", "connection": 5, "loyalty": 4 }
+    { "name": "Fixer", "role": "Broker", "location": "Seattle", "connection": 5, "loyalty": 4 }
   ]
 }
 """,
                         [
                             new SectionRowState("contacts[0]", "Fixer (Loyalty 4 / Connection 5)")
+                        ]);
+                case "vehicles":
+                    return (
+                        """
+{
+  "section": "vehicles",
+  "vehicles": [
+    { "name": "Roadmaster", "handling": 3, "armor": 16 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("vehicles[0]", "Roadmaster · Armor 16 / Handling 3")
                         ]);
                 case "mentorspirits":
                     return (
