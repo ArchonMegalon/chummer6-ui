@@ -590,7 +590,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.summary.claim_error"] = "Claim-Fehler: {0}";
             localized["desktop.install_link.summary.next_safe_action_claimed"] = "Nachste sichere Aktion: offnen Sie die konto-basierte Arbeitsroute und bestatigen Sie Wiederherstellung, Update- und Support-Nachverfolgung von dieser beanspruchten Installation aus.";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "Nachste sichere Aktion: kopieren Sie die Installations-ID, losen Sie den Hub-Claim-Code ein und lassen Sie den install-aware Support offen, bis der Grant angekommen ist.";
+            localized["desktop.install_link.summary"] = "Chummer halt das Binary kanonisch. Die Verknupfung erfolgt uber einen Install-Claim-Code und einen von Hub ausgestellten Installations-Grant, statt den Installer pro Benutzer zu verandern.";
             localized["desktop.update.title"] = "Update-Status";
+            localized["desktop.update.heading"] = "Update-Status und Release-Posture";
             localized["desktop.update.section.current"] = "Aktuelle Release-Posture";
             localized["desktop.update.section.follow_through"] = "Update-Nachverfolgung";
             localized["desktop.update.section.install"] = "Installationskontext";
@@ -649,7 +651,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.crash.status.previous_send_failed"] = "Crash-Status: vorheriger Sendeversuch ist fehlgeschlagen, lokaler Bundle bleibt erhalten.";
             localized["desktop.crash.status.unable_open_path"] = "Crash-Status: Pfad kann auf diesem Host nicht geöffnet werden.";
             localized["desktop.crash.status.clipboard_unavailable"] = "Crash-Status: Zwischenablage ist auf diesem Host nicht verfügbar.";
+            localized["desktop.crash.heading"] = "Crash-Wiederherstellung und lokale Belege";
             localized["desktop.report.title"] = "Problem melden";
+            localized["desktop.report.heading"] = "Bug melden oder Feedback teilen";
             localized["desktop.report.section.context"] = "Automatisch ausgefüllter Desktop-Kontext";
             localized["desktop.report.section.bug"] = "Strukturierter Fehlerbericht";
             localized["desktop.report.section.feedback"] = "Leichtgewichtiges Feedback";
@@ -665,6 +669,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.report.bug.repro_watermark"] = "Wie kann Support den Fehler reproduzieren?";
             localized["desktop.report.bug.evidence_label"] = "Beleg- oder Screenshot-Hinweis";
             localized["desktop.report.bug.evidence_watermark"] = "Optional: Screenshot-Pfad, Anhang-Hinweis oder Crash-ID";
+            localized["desktop.report.bug.intro"] = "Nutzen Sie diese Spur fur reproduzierbares Verhalten. Erwartet-gegen-aktuell-Details und Repro-Schritte helfen Support und Triage, einen Bericht in ehrlichen Abschluss zu verwandeln.";
             localized["desktop.report.feedback.intro"] = "Nutzen Sie diese Spur für kurze Produktsignale, wenn kein reproduzierbarer Defekt vorliegt.";
             localized["desktop.report.feedback.summary_label"] = "Kurzfassung";
             localized["desktop.report.feedback.summary_watermark"] = "Was sollte das Team zuerst wissen?";
@@ -975,7 +980,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.summary.claim_error"] = "Erreur de liaison : {0}";
             localized["desktop.install_link.summary.next_safe_action_claimed"] = "Prochaine action sure : ouvrez la route de travail liee au compte et confirmez restauration, mise a jour et suivi support depuis cette installation liee.";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "Prochaine action sure : copiez l'ID d'installation, utilisez le code de liaison Hub et gardez le support lie a l'installation ouvert jusqu'a reception du grant.";
+            localized["desktop.install_link.summary"] = "Chummer garde le binaire canonique. La liaison passe par un code de liaison d'installation et un grant d'installation emis par Hub, au lieu de modifier l'installeur par utilisateur.";
             localized["desktop.update.title"] = "État de la mise à jour";
+            localized["desktop.update.heading"] = "Etat de mise a jour et posture de version";
             localized["desktop.update.section.current"] = "Posture de version actuelle";
             localized["desktop.update.section.follow_through"] = "Suivi de la mise à jour";
             localized["desktop.update.section.install"] = "Contexte d'installation";
@@ -1034,7 +1041,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.crash.status.previous_send_failed"] = "Statut crash : l'envoi precedent a echoue, le bundle local reste disponible.";
             localized["desktop.crash.status.unable_open_path"] = "Statut crash : impossible d'ouvrir le chemin sur cet hote.";
             localized["desktop.crash.status.clipboard_unavailable"] = "Statut crash : presse-papiers indisponible sur cet hote.";
+            localized["desktop.crash.heading"] = "Recuperation de crash et preuves locales";
             localized["desktop.report.title"] = "Signaler un problème";
+            localized["desktop.report.heading"] = "Signaler un bug ou partager un retour";
             localized["desktop.report.section.context"] = "Contexte desktop auto-rempli";
             localized["desktop.report.section.bug"] = "Rapport de bug structuré";
             localized["desktop.report.section.feedback"] = "Retour léger";
@@ -1050,6 +1059,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.report.bug.repro_watermark"] = "Comment le support peut-il reproduire ce bug ?";
             localized["desktop.report.bug.evidence_label"] = "Preuve ou note de capture";
             localized["desktop.report.bug.evidence_watermark"] = "Optionnel : chemin de capture, note de piece jointe ou id de crash";
+            localized["desktop.report.bug.intro"] = "Utilisez cette voie pour un comportement reproductible. Les details attendu versus observe et les etapes de reproduction aident support et triage a transformer un rapport en cloture honnete.";
             localized["desktop.report.feedback.intro"] = "Utilisez cette voie pour un retour court quand il n'y a pas de defaut reproductible.";
             localized["desktop.report.feedback.summary_label"] = "Resume";
             localized["desktop.report.feedback.summary_watermark"] = "Que doit savoir l'equipe en premier ?";
@@ -1360,7 +1370,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.summary.claim_error"] = "請求エラー: {0}";
             localized["desktop.install_link.summary.next_safe_action_claimed"] = "次の安全なアクション: アカウント連携ワークルートを開き、この認証済みインストールで復元・更新・サポートのフォローアップを確認してください。";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "次の安全なアクション: インストール ID をコピーし、Hub 請求コードを適用し、付与が着地するまでインストール連携サポートを開いたままにしてください。";
+            localized["desktop.install_link.summary"] = "Chummer はバイナリを正規状態のまま保持します。ユーザーごとにインストーラーを変えるのではなく、インストール請求コードと Hub 発行のインストール付与でリンクします。";
             localized["desktop.update.title"] = "更新ステータス";
+            localized["desktop.update.heading"] = "更新ステータスとリリース姿勢";
             localized["desktop.update.section.current"] = "現在のリリース姿勢";
             localized["desktop.update.section.follow_through"] = "更新フォローアップ";
             localized["desktop.update.section.install"] = "インストールコンテキスト";
@@ -1419,7 +1431,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.crash.status.previous_send_failed"] = "クラッシュ状態: 前回送信に失敗したため、ローカルバンドルを保持しています。";
             localized["desktop.crash.status.unable_open_path"] = "クラッシュ状態: このホストではパスを開けません。";
             localized["desktop.crash.status.clipboard_unavailable"] = "クラッシュ状態: このホストではクリップボードが利用できません。";
+            localized["desktop.crash.heading"] = "クラッシュ復旧とローカル証拠";
             localized["desktop.report.title"] = "問題を報告";
+            localized["desktop.report.heading"] = "バグを報告またはフィードバックを共有";
             localized["desktop.report.section.context"] = "自動入力されたデスクトップコンテキスト";
             localized["desktop.report.section.bug"] = "構造化バグ報告";
             localized["desktop.report.section.feedback"] = "軽量フィードバック";
@@ -1435,6 +1449,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.report.bug.repro_watermark"] = "サポートはこの問題をどう再現できますか?";
             localized["desktop.report.bug.evidence_label"] = "証拠またはスクリーンショットメモ";
             localized["desktop.report.bug.evidence_watermark"] = "任意: スクリーンショットパス、添付メモ、またはクラッシュ ID";
+            localized["desktop.report.bug.intro"] = "再現可能な挙動にはこのレーンを使ってください。期待値と実際の差分、再現手順の詳細があると、サポートとトリアージが報告を誠実なクローズに変えやすくなります。";
             localized["desktop.report.feedback.intro"] = "再現可能な不具合ではない短い製品フィードバックはこのレーンを使ってください。";
             localized["desktop.report.feedback.summary_label"] = "要約";
             localized["desktop.report.feedback.summary_watermark"] = "チームが最初に知るべきことは何ですか?";
@@ -1745,7 +1760,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.summary.claim_error"] = "Erro de vinculacao: {0}";
             localized["desktop.install_link.summary.next_safe_action_claimed"] = "Proxima acao segura: abra a rota de trabalho vinculada a conta e confirme restauracao, atualizacao e acompanhamento de suporte nesta instalacao reivindicada.";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "Proxima acao segura: copie o ID da instalacao, resgate o codigo de vinculacao do Hub e mantenha o suporte ligado a instalacao aberto ate o grant chegar.";
+            localized["desktop.install_link.summary"] = "O Chummer mantem o binario canonico. A vinculacao acontece com um codigo de vinculacao da instalacao e um grant de instalacao emitido pelo Hub, sem mutar o instalador por usuario.";
             localized["desktop.update.title"] = "Status da atualização";
+            localized["desktop.update.heading"] = "Status da atualizacao e postura de release";
             localized["desktop.update.section.current"] = "Postura da versão atual";
             localized["desktop.update.section.follow_through"] = "Acompanhamento da atualização";
             localized["desktop.update.section.install"] = "Contexto da instalação";
@@ -1804,7 +1821,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.crash.status.previous_send_failed"] = "Status de crash: envio anterior falhou; o pacote local foi mantido.";
             localized["desktop.crash.status.unable_open_path"] = "Status de crash: nao foi possivel abrir o caminho neste host.";
             localized["desktop.crash.status.clipboard_unavailable"] = "Status de crash: area de transferencia indisponivel neste host.";
+            localized["desktop.crash.heading"] = "Recuperacao de crash e evidencias locais";
             localized["desktop.report.title"] = "Reportar problema";
+            localized["desktop.report.heading"] = "Reportar bug ou compartilhar feedback";
             localized["desktop.report.section.context"] = "Contexto desktop preenchido automaticamente";
             localized["desktop.report.section.bug"] = "Relato de bug estruturado";
             localized["desktop.report.section.feedback"] = "Feedback leve";
@@ -1820,6 +1839,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.report.bug.repro_watermark"] = "Como o suporte pode reproduzir este problema?";
             localized["desktop.report.bug.evidence_label"] = "Evidencia ou nota de captura";
             localized["desktop.report.bug.evidence_watermark"] = "Opcional: caminho da captura, nota de anexo ou id de crash";
+            localized["desktop.report.bug.intro"] = "Use esta trilha para comportamento reproduzivel. Detalhes de esperado versus atual e passos de reproducao ajudam suporte e triagem a transformar um relato em fechamento honesto.";
             localized["desktop.report.feedback.intro"] = "Use esta trilha para sinais curtos de produto quando nao houver defeito reproduzivel.";
             localized["desktop.report.feedback.summary_label"] = "Resumo";
             localized["desktop.report.feedback.summary_watermark"] = "O que a equipe deve saber primeiro?";
@@ -2130,7 +2150,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.summary.claim_error"] = "认领错误: {0}";
             localized["desktop.install_link.summary.next_safe_action_claimed"] = "下一步安全操作: 打开账户关联工作路由，并在此认领安装上确认恢复、更新与支持跟进。";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "下一步安全操作: 复制安装 ID，兑换 Hub 认领码，并在授权落地前保持安装关联支持处于打开状态。";
+            localized["desktop.install_link.summary"] = "Chummer 保持二进制为规范状态。绑定通过安装认领码和 Hub 下发的安装授权完成，而不是按用户改写安装器。";
             localized["desktop.update.title"] = "更新状态";
+            localized["desktop.update.heading"] = "更新状态与发布姿态";
             localized["desktop.update.section.current"] = "当前发布姿态";
             localized["desktop.update.section.follow_through"] = "更新跟进";
             localized["desktop.update.section.install"] = "安装上下文";
@@ -2189,7 +2211,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.crash.status.previous_send_failed"] = "崩溃状态: 上次发送失败，已保留本地包。";
             localized["desktop.crash.status.unable_open_path"] = "崩溃状态: 此主机无法打开该路径。";
             localized["desktop.crash.status.clipboard_unavailable"] = "崩溃状态: 此主机剪贴板不可用。";
+            localized["desktop.crash.heading"] = "崩溃恢复与本地证据";
             localized["desktop.report.title"] = "报告问题";
+            localized["desktop.report.heading"] = "报告缺陷或分享反馈";
             localized["desktop.report.section.context"] = "自动填充的桌面上下文";
             localized["desktop.report.section.bug"] = "结构化缺陷报告";
             localized["desktop.report.section.feedback"] = "轻量反馈";
@@ -2205,6 +2229,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.report.bug.repro_watermark"] = "支持团队如何复现这个问题?";
             localized["desktop.report.bug.evidence_label"] = "证据或截图说明";
             localized["desktop.report.bug.evidence_watermark"] = "可选: 截图路径、附件说明或崩溃 ID";
+            localized["desktop.report.bug.intro"] = "可复现行为请走此通道。期望与实际差异以及复现步骤，能帮助支持与分诊把报告转成可信闭环。";
             localized["desktop.report.feedback.intro"] = "当没有可复现缺陷时，请使用此通道提交简短产品反馈。";
             localized["desktop.report.feedback.summary_label"] = "摘要";
             localized["desktop.report.feedback.summary_watermark"] = "团队首先应了解什么?";
