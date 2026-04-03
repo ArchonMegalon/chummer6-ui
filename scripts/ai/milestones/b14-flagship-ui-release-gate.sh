@@ -14,6 +14,10 @@ avalonia_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagship
 dual_head_tests_path="$repo_root/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
 blazor_shell_tests_path="$repo_root/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
 workflow_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+sr4_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
+sr6_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
+sr4_sr6_frontier_receipt_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
+desktop_workflow_execution_receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 nuget_packages="${CHUMMER_NUGET_PACKAGES:-$repo_root/.codex-studio/.nuget/packages}"
 
 mkdir -p "$(dirname "$receipt_path")"
@@ -180,16 +184,35 @@ bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
 bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
 
+echo "[b14] running explicit SR4/SR6 desktop parity frontier gate..."
+bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
+
+echo "[b14] materializing desktop workflow execution gate..."
+bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
+
 echo "[b14] materializing desktop visual familiarity exit gate..."
 bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$workflow_parity_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path"
 import json
 import os
 import sys
 from datetime import datetime, timezone
 
-sample_path, receipt_path, screenshot_dir, signoff_path, avalonia_gate_tests_path, dual_head_tests_path, blazor_shell_tests_path, workflow_parity_receipt_path = sys.argv[1:9]
+(
+    sample_path,
+    receipt_path,
+    screenshot_dir,
+    signoff_path,
+    avalonia_gate_tests_path,
+    dual_head_tests_path,
+    blazor_shell_tests_path,
+    workflow_parity_receipt_path,
+    sr4_workflow_parity_receipt_path,
+    sr6_workflow_parity_receipt_path,
+    sr4_sr6_frontier_receipt_path,
+    desktop_workflow_execution_receipt_path,
+) = sys.argv[1:13]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -232,6 +255,34 @@ if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pas
     raise SystemExit(
         "[b14] FAIL: explicit Chummer5a desktop workflow parity proof is not passed: "
         + ", ".join(workflow_parity_receipt.get("reasons") or ["missing reason"])
+    )
+with open(sr4_workflow_parity_receipt_path, "r", encoding="utf-8") as handle:
+    sr4_workflow_parity_receipt = json.load(handle)
+if str(sr4_workflow_parity_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit SR4 desktop workflow parity proof is not passed: "
+        + ", ".join(sr4_workflow_parity_receipt.get("reasons") or ["missing reason"])
+    )
+with open(sr6_workflow_parity_receipt_path, "r", encoding="utf-8") as handle:
+    sr6_workflow_parity_receipt = json.load(handle)
+if str(sr6_workflow_parity_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit SR6 desktop workflow parity proof is not passed: "
+        + ", ".join(sr6_workflow_parity_receipt.get("reasons") or ["missing reason"])
+    )
+with open(sr4_sr6_frontier_receipt_path, "r", encoding="utf-8") as handle:
+    sr4_sr6_frontier_receipt = json.load(handle)
+if str(sr4_sr6_frontier_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit SR4/SR6 desktop parity frontier proof is not passed: "
+        + ", ".join(sr4_sr6_frontier_receipt.get("reasons") or ["missing reason"])
+    )
+with open(desktop_workflow_execution_receipt_path, "r", encoding="utf-8") as handle:
+    desktop_workflow_execution_receipt = json.load(handle)
+if str(desktop_workflow_execution_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit desktop workflow execution gate proof is not passed: "
+        + ", ".join(desktop_workflow_execution_receipt.get("reasons") or ["missing reason"])
     )
 captured = []
 missing = []
@@ -338,6 +389,10 @@ payload = {
         "status": "pass",
         "sourceTestFile": dual_head_tests_path,
         "explicitParityReceiptPath": workflow_parity_receipt_path,
+        "explicitSr4ParityReceiptPath": sr4_workflow_parity_receipt_path,
+        "explicitSr6ParityReceiptPath": sr6_workflow_parity_receipt_path,
+        "explicitSr4Sr6FrontierReceiptPath": sr4_sr6_frontier_receipt_path,
+        "desktopWorkflowExecutionReceiptPath": desktop_workflow_execution_receipt_path,
         "requiredDualHeadTests": required_full_workflow_tests,
         "legacyWorkflowFamilies": [
             "create-open-import-save-save-as-print-export",
