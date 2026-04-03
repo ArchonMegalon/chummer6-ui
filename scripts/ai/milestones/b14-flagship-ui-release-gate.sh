@@ -421,12 +421,18 @@ payload = {
         "mainWindowInteractionInventory": "pass",
         "runtimeBackedLegacyWorkbench": "pass",
         "legacyDenseBuilderRhythm": "pass",
+        "legacyCreationWorkflowRhythm": "pass",
         "legacyAdvancementWorkflowRhythm": "pass",
         "legacyBrowseDetailConfirmRhythm": "pass",
+        "legacyGearWorkflowRhythm": "pass",
         "legacyVehiclesBuilderRhythm": "pass",
         "legacyCyberwareDialogRhythm": "pass",
         "legacyContactsDiaryRhythm": "pass",
+        "legacyContactsWorkflowRhythm": "pass",
+        "legacyDiaryWorkflowRhythm": "pass",
         "legacyMagicMatrixWorkflowRhythm": "pass",
+        "legacyMagicWorkflowRhythm": "pass",
+        "legacyMatrixWorkflowRhythm": "pass",
     },
     "headProofs": {
         "avalonia": {

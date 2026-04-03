@@ -3556,6 +3556,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks");
         StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr4CodexOrientationModel\": \"pass\"");
         StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr6CodexOrientationModel\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyCreationWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyGearWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyContactsWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyDiaryWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyMagicWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyMatrixWorkflowRhythm\": \"pass\"");
         StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture");
         StringAssert.Contains(flagshipGateScriptText, "Loaded_runner_header_stays_tab_panel_only_without_metric_cards");
 
@@ -3565,6 +3571,16 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks");
         StringAssert.Contains(visualGateScriptText, "ruleset_orientation_method_has_markers");
         StringAssert.Contains(visualGateScriptText, "missing_ruleset_orientation_markers");
+        StringAssert.Contains(visualGateScriptText, "legacy_creation_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_gear_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_contacts_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_diary_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_magic_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_matrix_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "creation_method_has_rhythm_markers");
+        StringAssert.Contains(visualGateScriptText, "advancement_method_has_rhythm_markers");
+        StringAssert.Contains(visualGateScriptText, "gear_method_has_rhythm_markers");
+        StringAssert.Contains(visualGateScriptText, "contacts_diary_method_has_rhythm_markers");
 
         StringAssert.Contains(executableGateScriptText, "release_gate_lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
         StringAssert.Contains(executableGateScriptText, "for _ in $(seq 1 150); do");

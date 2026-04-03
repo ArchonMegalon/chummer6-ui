@@ -200,22 +200,34 @@ runtime_backed_legacy_workbench = str(interaction_proof.get("runtimeBackedLegacy
 if not runtime_backed_codex_tree:
     runtime_backed_codex_tree = runtime_backed_legacy_workbench or runtime_backed_shell_menu
 legacy_dense_builder_rhythm = str(interaction_proof.get("legacyDenseBuilderRhythm") or "").strip().lower()
+legacy_creation_workflow_rhythm = str(interaction_proof.get("legacyCreationWorkflowRhythm") or "").strip().lower()
 legacy_advancement_workflow_rhythm = str(interaction_proof.get("legacyAdvancementWorkflowRhythm") or "").strip().lower()
 legacy_browse_detail_confirm_rhythm = str(interaction_proof.get("legacyBrowseDetailConfirmRhythm") or "").strip().lower()
+legacy_gear_workflow_rhythm = str(interaction_proof.get("legacyGearWorkflowRhythm") or "").strip().lower()
 legacy_vehicles_builder_rhythm = str(interaction_proof.get("legacyVehiclesBuilderRhythm") or "").strip().lower()
 legacy_cyberware_dialog_rhythm = str(interaction_proof.get("legacyCyberwareDialogRhythm") or "").strip().lower()
 legacy_contacts_diary_rhythm = str(interaction_proof.get("legacyContactsDiaryRhythm") or "").strip().lower()
+legacy_contacts_workflow_rhythm = str(interaction_proof.get("legacyContactsWorkflowRhythm") or "").strip().lower()
+legacy_diary_workflow_rhythm = str(interaction_proof.get("legacyDiaryWorkflowRhythm") or "").strip().lower()
 legacy_magic_matrix_workflow_rhythm = str(interaction_proof.get("legacyMagicMatrixWorkflowRhythm") or "").strip().lower()
+legacy_magic_workflow_rhythm = str(interaction_proof.get("legacyMagicWorkflowRhythm") or "").strip().lower()
+legacy_matrix_workflow_rhythm = str(interaction_proof.get("legacyMatrixWorkflowRhythm") or "").strip().lower()
 legacy_familiarity_bridge = str(interaction_proof.get("legacyFamiliarityBridge") or "").strip().lower()
 required_legacy_interaction_keys = [
     "runtimeBackedLegacyWorkbench",
     "legacyDenseBuilderRhythm",
+    "legacyCreationWorkflowRhythm",
     "legacyAdvancementWorkflowRhythm",
     "legacyBrowseDetailConfirmRhythm",
+    "legacyGearWorkflowRhythm",
     "legacyVehiclesBuilderRhythm",
     "legacyCyberwareDialogRhythm",
     "legacyContactsDiaryRhythm",
+    "legacyContactsWorkflowRhythm",
+    "legacyDiaryWorkflowRhythm",
     "legacyMagicMatrixWorkflowRhythm",
+    "legacyMagicWorkflowRhythm",
+    "legacyMatrixWorkflowRhythm",
 ]
 missing_required_legacy_interaction_keys = [
     key for key in required_legacy_interaction_keys
@@ -234,12 +246,18 @@ evidence["main_window_interaction_inventory"] = main_window_interaction_inventor
 evidence["runtime_backed_demo_runner_import"] = runtime_backed_demo_runner_import
 evidence["runtime_backed_legacy_workbench"] = runtime_backed_legacy_workbench
 evidence["legacy_dense_builder_rhythm"] = legacy_dense_builder_rhythm
+evidence["legacy_creation_workflow_rhythm"] = legacy_creation_workflow_rhythm
 evidence["legacy_advancement_workflow_rhythm"] = legacy_advancement_workflow_rhythm
 evidence["legacy_browse_detail_confirm_rhythm"] = legacy_browse_detail_confirm_rhythm
+evidence["legacy_gear_workflow_rhythm"] = legacy_gear_workflow_rhythm
 evidence["legacy_vehicles_builder_rhythm"] = legacy_vehicles_builder_rhythm
 evidence["legacy_cyberware_dialog_rhythm"] = legacy_cyberware_dialog_rhythm
 evidence["legacy_contacts_diary_rhythm"] = legacy_contacts_diary_rhythm
+evidence["legacy_contacts_workflow_rhythm"] = legacy_contacts_workflow_rhythm
+evidence["legacy_diary_workflow_rhythm"] = legacy_diary_workflow_rhythm
 evidence["legacy_magic_matrix_workflow_rhythm"] = legacy_magic_matrix_workflow_rhythm
+evidence["legacy_magic_workflow_rhythm"] = legacy_magic_workflow_rhythm
+evidence["legacy_matrix_workflow_rhythm"] = legacy_matrix_workflow_rhythm
 evidence["legacy_familiarity_bridge"] = legacy_familiarity_bridge
 evidence["required_legacy_interaction_keys"] = required_legacy_interaction_keys
 evidence["missing_required_legacy_interaction_keys"] = missing_required_legacy_interaction_keys
@@ -288,18 +306,30 @@ if not status_ok(runtime_backed_legacy_workbench):
     reasons.append("Flagship UI release gate does not prove a runtime-backed legacy frmCareer workbench.")
 if not status_ok(legacy_dense_builder_rhythm):
     reasons.append("Flagship UI release gate does not prove dense builder rhythm familiarity.")
+if not status_ok(legacy_creation_workflow_rhythm):
+    reasons.append("Flagship UI release gate does not prove character creation workflow familiarity.")
 if not status_ok(legacy_advancement_workflow_rhythm):
     reasons.append("Flagship UI release gate does not prove advancement workflow familiarity.")
 if not status_ok(legacy_browse_detail_confirm_rhythm):
     reasons.append("Flagship UI release gate does not prove browse-detail-confirm familiarity.")
+if not status_ok(legacy_gear_workflow_rhythm):
+    reasons.append("Flagship UI release gate does not prove gear workflow familiarity.")
 if not status_ok(legacy_vehicles_builder_rhythm):
     reasons.append("Flagship UI release gate does not prove vehicles/drones browse-detail-confirm familiarity.")
 if not status_ok(legacy_cyberware_dialog_rhythm):
     reasons.append("Flagship UI release gate does not prove cyberware dialog familiarity.")
 if not status_ok(legacy_contacts_diary_rhythm):
     reasons.append("Flagship UI release gate does not prove contacts/diary familiarity.")
+if not status_ok(legacy_contacts_workflow_rhythm):
+    reasons.append("Flagship UI release gate does not prove contacts workflow familiarity.")
+if not status_ok(legacy_diary_workflow_rhythm):
+    reasons.append("Flagship UI release gate does not prove diary workflow familiarity.")
 if not status_ok(legacy_magic_matrix_workflow_rhythm):
     reasons.append("Flagship UI release gate does not prove magic/matrix workflow rhythm.")
+if not status_ok(legacy_magic_workflow_rhythm):
+    reasons.append("Flagship UI release gate does not prove magic workflow familiarity.")
+if not status_ok(legacy_matrix_workflow_rhythm):
+    reasons.append("Flagship UI release gate does not prove matrix workflow familiarity.")
 
 required_theme_tokens = {
     "ChummerShellActiveMenuBorderBrush_light": "#1C4A2D",
@@ -653,6 +683,42 @@ elif not magic_matrix_method_has_rhythm:
 if not magic_matrix_capture_opens_dialog:
     reasons.append("Magic/matrix screenshot proof is not trusted: the visual review proof does not open a dedicated spell/matrix dialog before recording evidence.")
 
+creation_method = extract_test_method(test_text, "Character_creation_preserves_familiar_dense_builder_rhythm")
+creation_method_markers = ["attributes.body = 5", "skills.firearms[0] = Automatics 6"]
+creation_method_has_rhythm = all(marker in creation_method for marker in creation_method_markers) if creation_method else False
+evidence["creation_method_has_rhythm_markers"] = creation_method_has_rhythm
+if not creation_method:
+    reasons.append("Character creation familiarity is not proven: the dedicated workflow method is not present in test sources.")
+elif not creation_method_has_rhythm:
+    reasons.append("Character creation familiarity is not proven: dense-builder rhythm markers are missing from the dedicated test.")
+
+advancement_method = extract_test_method(test_text, "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm")
+advancement_method_markers = ["sectionId: \"progress\"", "actionControlId: \"create_entry\"", "actionControlId: \"initiation_add\""]
+advancement_method_has_rhythm = all(marker in advancement_method for marker in advancement_method_markers) if advancement_method else False
+evidence["advancement_method_has_rhythm_markers"] = advancement_method_has_rhythm
+if not advancement_method:
+    reasons.append("Advancement familiarity is not proven: the dedicated workflow method is not present in test sources.")
+elif not advancement_method_has_rhythm:
+    reasons.append("Advancement familiarity is not proven: progression/journal action markers are missing from the dedicated test.")
+
+gear_method = extract_test_method(test_text, "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm")
+gear_method_markers = ["gear.weapons[0] = Ares Alpha", "gear.armor[0] = Armor Jacket"]
+gear_method_has_rhythm = all(marker in gear_method for marker in gear_method_markers) if gear_method else False
+evidence["gear_method_has_rhythm_markers"] = gear_method_has_rhythm
+if not gear_method:
+    reasons.append("Gear familiarity is not proven: the dedicated workflow method is not present in test sources.")
+elif not gear_method_has_rhythm:
+    reasons.append("Gear familiarity is not proven: browse/detail rhythm markers are missing from the dedicated test.")
+
+contacts_diary_method = extract_test_method(test_text, "Contacts_diary_and_support_routes_execute_with_public_path_visibility")
+contacts_diary_markers = ["actionControlId: \"contact_add\"", "actionControlId: \"create_entry\""]
+contacts_diary_method_has_rhythm = all(marker in contacts_diary_method for marker in contacts_diary_markers) if contacts_diary_method else False
+evidence["contacts_diary_method_has_rhythm_markers"] = contacts_diary_method_has_rhythm
+if not contacts_diary_method:
+    reasons.append("Contacts/diary familiarity is not proven: the dedicated workflow method is not present in test sources.")
+elif not contacts_diary_method_has_rhythm:
+    reasons.append("Contacts/diary familiarity is not proven: contact + diary action markers are missing from the dedicated test.")
+
 ruleset_orientation_method = extract_test_method(test_text, "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks")
 required_ruleset_orientation_markers = [
     "RulesetDefaults.Sr4",
@@ -683,7 +749,7 @@ payload = {
     "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
     "status": status,
     "summary": (
-        "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, milestone-2 creation/vehicles/contacts/diary surfaces, and SR4/SR6 codex orientation cues."
+        "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR6 codex orientation."
         if status == "pass"
         else "Desktop visual familiarity is not fully proven."
     ),
