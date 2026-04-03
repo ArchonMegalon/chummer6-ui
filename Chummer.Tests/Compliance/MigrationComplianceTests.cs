@@ -3377,7 +3377,10 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(
             executableGateScriptText,
-            "canonical_release_channel_path=\"/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json\"");
+            "hub_registry_root=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$repo_root/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "canonical_release_channel_path=\"${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
         StringAssert.Contains(executableGateScriptText, "release_channel_path_default");
         StringAssert.Contains(
             executableGateScriptText,
@@ -3467,7 +3470,10 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(
             macosGateScriptText,
-            "CANONICAL_RELEASE_CHANNEL_PATH=\"/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json\"");
+            "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
+        StringAssert.Contains(
+            macosGateScriptText,
+            "CANONICAL_RELEASE_CHANNEL_PATH=\"${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
         StringAssert.Contains(
             macosGateScriptText,
             "RELEASE_CHANNEL_PATH=\"${CHUMMER_MACOS_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}\"");
@@ -3487,8 +3493,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "CHUMMER_MACOS_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(macosGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(macosGateScriptText, "release_channel_path.parent / \"startup-smoke\"");
-        StringAssert.Contains(macosGateScriptText, "Path(\"/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke\")");
-        StringAssert.Contains(macosGateScriptText, "Path(\"/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke\")");
+        StringAssert.Contains(macosGateScriptText, "hub_registry_root_arg = str(sys.argv[9] or \"\").strip()");
+        StringAssert.Contains(macosGateScriptText, "hub_registry_root / \".codex-studio\" / \"published\" / \"startup-smoke\"");
+        StringAssert.Contains(macosGateScriptText, "hub_registry_root / \"Docker\" / \"Downloads\" / \"startup-smoke\"");
         StringAssert.Contains(macosGateScriptText, "startup_smoke_receipt_arg,");
         StringAssert.Contains(macosGateScriptText, "installer_candidate_paths");
         StringAssert.Contains(macosGateScriptText, "installer_from_primary_shelf");
@@ -3509,6 +3516,8 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(linuxGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
         StringAssert.Contains(linuxGateScriptText, "RID_OVERRIDE=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID:-}\"");
+        StringAssert.Contains(linuxGateScriptText, "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
+        StringAssert.Contains(linuxGateScriptText, "CANONICAL_RELEASE_CHANNEL_PATH=\"${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
         StringAssert.Contains(linuxGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
         StringAssert.Contains(linuxGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
         StringAssert.Contains(linuxGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
@@ -3529,6 +3538,11 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(windowsGateScriptText, "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
+        StringAssert.Contains(windowsGateScriptText, "RELEASE_CHANNEL_PATH_DEFAULT");
+        StringAssert.Contains(windowsGateScriptText, "hub_registry_root_arg = str(sys.argv[11] or \"\").strip()");
+        StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \".codex-studio\" / \"published\" / \"startup-smoke\"");
+        StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \"Docker\" / \"Downloads\" / \"startup-smoke\"");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH");
         StringAssert.Contains(windowsGateScriptText, "startup-smoke-{expected_head}-{expected_rid}.receipt.json");
         StringAssert.Contains(windowsGateScriptText, "expected_rid.startswith(\"win-\")");
@@ -4868,8 +4882,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(workspaceStripCodeText, "public void SetState(WorkspaceStripState state)");
         StringAssert.Contains(workspaceStripCodeText, "SetWorkspaceText(state.WorkspaceText);");
         StringAssert.Contains(summaryHeaderCodeText, "public void SetState(SummaryHeaderState state)");
-        StringAssert.Contains(summaryHeaderCodeText, "SetValues(state.Name, state.Alias, state.Karma, state.Skills, state.RuntimeSummary, state.CanInspectRuntime);");
-        StringAssert.Contains(summaryHeaderCodeText, "RuntimeInspectButton.IsEnabled = canInspectRuntime;");
+        StringAssert.Contains(summaryHeaderCodeText, "SetNavigationTabs(state.NavigationTabsHeading, state.NavigationTabs, state.ActiveTabId);");
+        Assert.IsFalse(summaryHeaderCodeText.Contains("SetValues(", StringComparison.Ordinal));
+        Assert.IsFalse(summaryHeaderCodeText.Contains("RuntimeInspectButton", StringComparison.Ordinal));
         StringAssert.Contains(statusStripCodeText, "public void SetState(StatusStripState state)");
         StringAssert.Contains(statusStripCodeText, "SetValues(");
         StringAssert.Contains(statusFormatterText, "public static class ShellStatusTextFormatter");
@@ -4926,8 +4941,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(xamlText, "<controls:CoachSidecarControl");
         StringAssert.Contains(xamlText, "<controls:SummaryHeaderControl");
         StringAssert.Contains(xamlText, "<controls:StatusStripControl");
-        StringAssert.Contains(summaryHeaderXamlText, "Text=\"Runtime\"");
-        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"RuntimeValueText\"");
+        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"LoadedRunnerTabStripBorder\"");
+        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"LoadedRunnerTabStripPanel\"");
+        Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeValueText", StringComparison.Ordinal));
+        Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeInspectButton", StringComparison.Ordinal));
+        Assert.IsFalse(summaryHeaderXamlText.Contains("NameValueText", StringComparison.Ordinal));
         StringAssert.Contains(menuControlText, "Classes=\"menu-button\"");
         StringAssert.Contains(xamlText, "Button.menu-button.active-menu");
     }

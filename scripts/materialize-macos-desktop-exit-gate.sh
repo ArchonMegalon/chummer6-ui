@@ -5,9 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 APP_KEY_OVERRIDE="${CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY:-}"
-CANONICAL_RELEASE_CHANNEL_PATH="/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
+HUB_REGISTRY_ROOT="${CHUMMER_HUB_REGISTRY_ROOT:-$("$REPO_ROOT/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+CANONICAL_RELEASE_CHANNEL_PATH="${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 DEFAULT_RELEASE_CHANNEL_PATH="$REPO_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json"
-if [[ -f "$CANONICAL_RELEASE_CHANNEL_PATH" ]]; then
+if [[ -n "$CANONICAL_RELEASE_CHANNEL_PATH" && -f "$CANONICAL_RELEASE_CHANNEL_PATH" ]]; then
   RELEASE_CHANNEL_PATH_DEFAULT="$CANONICAL_RELEASE_CHANNEL_PATH"
 else
   RELEASE_CHANNEL_PATH_DEFAULT="$DEFAULT_RELEASE_CHANNEL_PATH"
@@ -102,7 +103,7 @@ INSTALLER_PATH="${CHUMMER_MACOS_INSTALLER_PATH:-}"
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
-python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$STARTUP_SMOKE_RECEIPT_PATH" "$INSTALLER_PATH" "$REPO_ROOT" <<'PY'
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$STARTUP_SMOKE_RECEIPT_PATH" "$INSTALLER_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -196,6 +197,8 @@ launch_target = sys.argv[5]
 startup_smoke_receipt_arg = sys.argv[6].strip()
 installer_path_arg = sys.argv[7].strip()
 repo_root = Path(sys.argv[8])
+hub_registry_root_arg = str(sys.argv[9] or "").strip()
+hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
 startup_smoke_max_age_seconds = int(
     str(
         os.environ.get("CHUMMER_MACOS_STARTUP_SMOKE_MAX_AGE_SECONDS")
@@ -285,14 +288,19 @@ startup_smoke_candidates = [
     release_channel_path.parent.parent / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     repo_root / ".codex-studio" / "published" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     repo_root / "Docker" / "Downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
-    Path("/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
-    Path("/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummer5a/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
     Path("/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
 ]
+if hub_registry_root is not None:
+    startup_smoke_candidates.extend(
+        [
+            hub_registry_root / ".codex-studio" / "published" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
+            hub_registry_root / "Docker" / "Downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
+        ]
+    )
 startup_smoke_candidate_paths = list(
     dict.fromkeys(str(candidate) for candidate in startup_smoke_candidates if candidate is not None)
 )

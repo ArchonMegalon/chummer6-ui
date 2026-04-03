@@ -53,7 +53,10 @@ required_avalonia_tests = [
     "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
+    "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
+    "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+    "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
     "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
     "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
     "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
@@ -109,16 +112,26 @@ PY
 
 echo "[b14] running flagship Avalonia headless UI gate tests..."
 CHUMMER_UI_GATE_SCREENSHOT_DIR="$capture_screenshot_dir" \
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
-  --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" -v minimal >/dev/null
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" -v minimal >/dev/null
 
 echo "[b14] running flagship Blazor desktop shell gate tests..."
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
-  --filter "FullyQualifiedName~BlazorShellComponentTests" -v minimal >/dev/null
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" -v minimal >/dev/null
 
-if compgen -G "$capture_screenshot_dir/*.png" > /dev/null; then
-  cp "$capture_screenshot_dir"/*.png "$screenshot_dir"/
-fi
+python3 - <<'PY' "$capture_screenshot_dir" "$screenshot_dir"
+from __future__ import annotations
+
+import shutil
+import sys
+from pathlib import Path
+
+capture_dir = Path(sys.argv[1])
+target_dir = Path(sys.argv[2])
+png_paths = sorted(capture_dir.glob("*.png"))
+if not png_paths:
+    raise SystemExit(f"[b14] FAIL: no screenshot PNG files were produced in capture directory: {capture_dir}")
+for path in png_paths:
+    shutil.copy2(path, target_dir / path.name)
+PY
 
 echo "[b14] normalizing screenshot PNG CRC chunks..."
 python3 - <<'PY' "$screenshot_dir"
@@ -190,9 +203,6 @@ bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 echo "[b14] materializing desktop workflow execution gate..."
 bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
 
-echo "[b14] materializing desktop visual familiarity exit gate..."
-bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
-
 python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path"
 import json
 import os
@@ -227,6 +237,7 @@ expected_screenshots = [
     "11-diary-dialog-light.png",
     "12-magic-matrix-dialog-light.png",
     "13-advancement-dialog-light.png",
+    "14-creation-section-light.png",
 ]
 required_full_workflow_tests = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
@@ -332,6 +343,9 @@ payload = {
         "runtimeBackedMenuBarLabels": "pass",
         "runtimeBackedClickablePrimaryMenus": "pass",
         "runtimeBackedToolstripActions": "pass",
+        "runtimeBackedCodexTree": "pass",
+        "runtimeBackedClassicChromeCopy": "pass",
+        "runtimeBackedTabPanelOnlyHeader": "pass",
         "runtimeBackedChromeEnabledAfterRunnerLoad": "pass",
         "runtimeBackedDemoRunnerImport": "pass",
         "runtimeBackedLegacyWorkbench": "pass",
@@ -358,6 +372,7 @@ payload = {
                 "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
                 "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
                 "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
+                "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
                 "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
                 "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
                 "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
@@ -421,5 +436,8 @@ with open(receipt_path, "w", encoding="utf-8") as handle:
     json.dump(payload, handle, indent=2)
     handle.write("\n")
 PY
+
+echo "[b14] materializing desktop visual familiarity exit gate..."
+bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
 
 echo "[b14] PASS"
