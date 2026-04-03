@@ -798,7 +798,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             "09-vehicles-section-light.png",
             "10-contacts-section-light.png",
             "11-diary-dialog-light.png",
-            "12-magic-matrix-dialog-light.png"
+            "12-magic-matrix-dialog-light.png",
+            "13-advancement-dialog-light.png"
         ];
 
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -928,6 +929,19 @@ public sealed class AvaloniaFlagshipUiGateTests
                         "Add Spell",
                         StringComparison.Ordinal));
                 captured[expectedFiles[11]] = harness.CaptureScreenshotBytes();
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("initiationgrades");
+                harness.WaitUntil(() =>
+                    harness.FindControlOrDefault<Control>("SectionQuickAction_initiation_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_initiation_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Initiation / Submersion",
+                        StringComparison.Ordinal));
+                captured[expectedFiles[12]] = harness.CaptureScreenshotBytes();
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 

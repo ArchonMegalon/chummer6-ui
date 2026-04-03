@@ -203,6 +203,7 @@ expected_screenshots = [
     "10-contacts-section-light.png",
     "11-diary-dialog-light.png",
     "12-magic-matrix-dialog-light.png",
+    "13-advancement-dialog-light.png",
 ]
 required_full_workflow_tests = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",

@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-04-03T16:49:56.608741Z",
+  "generatedAt": "2026-04-03T17:01:12.327284Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "status": "pass",
   "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 vehicles/contacts/diary surfaces.",
   "reasons": [],
   "evidence": {
-    "flagship_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-    "screenshot_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "app_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml",
-    "main_window_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.axaml",
-    "navigator_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
-    "toolstrip_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
-    "toolstrip_codebehind_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
-    "ui_gate_tests_path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+    "flagship_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "screenshot_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "app_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/App.axaml",
+    "main_window_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/MainWindow.axaml",
+    "navigator_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
+    "toolstrip_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+    "toolstrip_codebehind_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+    "ui_gate_tests_path": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
     "legacy_frmcareer_designer_path": "/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs",
     "minimum_shell_review_size": {
       "width": 1280,
@@ -103,7 +103,8 @@
       "09-vehicles-section-light.png",
       "10-contacts-section-light.png",
       "11-diary-dialog-light.png",
-      "12-magic-matrix-dialog-light.png"
+      "12-magic-matrix-dialog-light.png",
+      "13-advancement-dialog-light.png"
     ],
     "missing_screenshots": [],
     "invalid_screenshots": {},
