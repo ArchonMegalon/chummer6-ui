@@ -3615,6 +3615,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt headId does not match promoted head");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt platform is not macOS.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt arch does not match promoted RID");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt channelId does not match release channel");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt timestamp is missing or invalid.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt is stale (");
@@ -3645,6 +3646,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "Linux release-channel proof status is not published.");
         StringAssert.Contains(linuxGateScriptText, "Release channel does not publish a Linux installer artifact for");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt channelId does not match release channel.");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
@@ -3694,6 +3696,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt headId does not match promoted head {expected_head}.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt platform is not windows.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt arch does not match promoted RID {expected_rid}.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt channelId does not match release channel");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt timestamp is missing or invalid.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is stale (");
     }
