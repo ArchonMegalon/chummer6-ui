@@ -572,6 +572,39 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SetActiveSectionForTesting("progress");
+            ListBox progressRows = harness.FindControl<ListBox>("SectionRowsList");
+            TextBox progressPreview = harness.FindControl<TextBox>("SectionPreviewBox");
+            harness.WaitUntil(() => progressRows.ItemCount > 0);
+
+            string[] progressRowText = SnapshotListBoxItems(progressRows).Select(item => item.ToString() ?? string.Empty).ToArray();
+            CollectionAssert.Contains(progressRowText, "progress[0] = First extraction · +2 karma");
+            StringAssert.Contains(progressPreview.Text ?? string.Empty, "\"diary\"");
+            StringAssert.Contains(progressPreview.Text ?? string.Empty, "\"karma\"");
+
+            AssertQuickActionDialogFlow(
+                harness,
+                sectionId: "progress",
+                actionControlId: "create_entry",
+                expectedTitle: "Add Entry",
+                requiredFieldLabel: "Entry Name",
+                requiredActionId: "add");
+
+            AssertQuickActionDialogFlow(
+                harness,
+                sectionId: "initiationgrades",
+                actionControlId: "initiation_add",
+                expectedTitle: "Add Initiation / Submersion",
+                requiredFieldLabel: "Grade",
+                requiredActionId: "add");
+        });
+    }
+
+    [TestMethod]
     public void Gear_builder_preserves_familiar_browse_detail_confirm_rhythm()
     {
         WithLoadedRunnerHarness(harness =>
@@ -764,7 +797,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             "08-cyberware-dialog-light.png",
             "09-vehicles-section-light.png",
             "10-contacts-section-light.png",
-            "11-diary-dialog-light.png"
+            "11-diary-dialog-light.png",
+            "12-magic-matrix-dialog-light.png"
         ];
 
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -881,6 +915,21 @@ public sealed class AvaloniaFlagshipUiGateTests
                         "Add Entry",
                         StringComparison.Ordinal));
                 captured[expectedFiles[10]] = harness.CaptureScreenshotBytes();
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("spells");
+                harness.WaitUntil(() =>
+                    harness.FindControlOrDefault<Control>("SectionQuickAction_spell_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_spell_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Spell",
+                        StringComparison.Ordinal));
+                captured[expectedFiles[11]] = harness.CaptureScreenshotBytes();
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 return captured;
             });
