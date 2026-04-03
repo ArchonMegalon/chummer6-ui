@@ -3392,7 +3392,6 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "def validate_windows_gate(");
         StringAssert.Contains(executableGateScriptText, "gate_reasons = [");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"Windows gate reason: {gate_reason}\")");
-        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate receipt head/RID does not match any promoted release-channel Windows artifact tuple.");
         StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
@@ -3406,7 +3405,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt is stale for promoted installer bytes (");
-        StringAssert.Contains(executableGateScriptText, "Release channel currently promotes multiple Windows desktop installer tuples, but the executable gate supports one Windows receipt path.");
+        StringAssert.Contains(executableGateScriptText, "def windows_gate_path_for_head(");
+        StringAssert.Contains(executableGateScriptText, "UI_WINDOWS_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json");
+        StringAssert.Contains(executableGateScriptText, "for expected_windows_artifact in expected_windows_artifacts:");
+        StringAssert.Contains(executableGateScriptText, "validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f\"windows_gate:{gate_label}\")");
+        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate receipt head/RID does not match promoted release-channel Windows artifact tuple");
+        StringAssert.Contains(executableGateScriptText, "evidence.setdefault(\"windows_gates\", {})[gate_label] = gate_evidence");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"windows_statuses\"] = windows_statuses");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"macOS gate reason ({head}/{rid}): {gate_reason}\")");
         StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.");
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");

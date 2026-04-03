@@ -15,14 +15,14 @@ fi
 release_channel_path="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 linux_avalonia_gate_path="$repo_root/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
 linux_blazor_gate_path="$repo_root/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json"
-windows_gate_path="$repo_root/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
+windows_gate_path_default="$repo_root/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 visual_familiarity_gate_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 workflow_execution_gate_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root"
+python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path_default" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root"
 from __future__ import annotations
 
 import hashlib
@@ -137,6 +137,17 @@ def linux_gate_path_for_head(head: str, avalonia_path: Path, blazor_path: Path, 
 
 def macos_gate_path_for_head(head: str, rid: str, receipt_root: Path) -> Path:
     return receipt_root / f"UI_MACOS_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json"
+
+
+def windows_gate_path_for_head(
+    head: str,
+    rid: str,
+    receipt_root: Path,
+    default_gate_path: Path,
+) -> Path:
+    if head == "avalonia" and rid == "win-x64":
+        return default_gate_path
+    return receipt_root / f"UI_WINDOWS_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json"
 
 
 def arch_from_rid(rid: str) -> str:
@@ -307,9 +318,10 @@ def validate_linux_gate(
 
 
 def validate_windows_gate(
+    gate_label: str,
     gate_path: Path,
     gate_payload: Dict[str, Any],
-    expected_artifacts: List[Dict[str, Any]],
+    expected_artifact: Dict[str, Any],
     desktop_files_root: Path,
     repo_root: Path,
     evidence: Dict[str, Any],
@@ -340,6 +352,10 @@ def validate_windows_gate(
     gate_evidence["windows_installer_path"] = str(gate_checks.get("windows_installer_path") or "").strip()
     gate_evidence["gate_reasons"] = gate_reasons
     gate_evidence["startup_smoke_receipt_path"] = str(gate_checks.get("startup_smoke_receipt_path") or "").strip()
+    embedded_payload_marker_present = bool(gate_checks.get("embedded_payload_marker_present"))
+    embedded_sample_marker_present = bool(gate_checks.get("embedded_sample_marker_present"))
+    gate_evidence["embedded_payload_marker_present"] = embedded_payload_marker_present
+    gate_evidence["embedded_sample_marker_present"] = embedded_sample_marker_present
 
     if normalize_token(gate_head.get("platform")) != "windows":
         reasons.append("Windows desktop exit gate receipt platform is not 'windows'.")
@@ -348,30 +364,23 @@ def validate_windows_gate(
     for gate_reason in gate_reasons:
         reasons.append(f"Windows gate reason: {gate_reason}")
 
-    expected_by_tuple = {
-        (
-            normalize_token(item.get("head")),
-            normalize_token(item.get("rid")),
-        ): item
-        for item in expected_artifacts
-    }
-    expected_tuple = (
+    expected_head = normalize_token(expected_artifact.get("head"))
+    expected_rid = normalize_token(expected_artifact.get("rid"))
+    expected_tuple = (expected_head, expected_rid)
+    gate_tuple = (
         normalize_token(gate_head.get("app_key")),
         normalize_token(gate_head.get("rid")),
     )
-    matched_expected = expected_by_tuple.get(expected_tuple)
-    if matched_expected is None:
+    if gate_tuple != expected_tuple:
         reasons.append(
-            "Windows desktop exit gate receipt head/RID does not match any promoted release-channel Windows artifact tuple."
+            f"Windows desktop exit gate receipt head/RID does not match promoted release-channel Windows artifact tuple {gate_label}."
         )
-        evidence["windows_gate"] = gate_evidence
+        evidence.setdefault("windows_gates", {})[gate_label] = gate_evidence
         return
 
-    expected_file_name = str(matched_expected.get("fileName") or "").strip()
-    expected_sha = normalize_token(matched_expected.get("sha256"))
-    expected_size = int(matched_expected.get("sizeBytes") or 0)
-    expected_head = normalize_token(matched_expected.get("head"))
-    expected_rid = normalize_token(matched_expected.get("rid"))
+    expected_file_name = str(expected_artifact.get("fileName") or "").strip()
+    expected_sha = normalize_token(expected_artifact.get("sha256"))
+    expected_size = int(expected_artifact.get("sizeBytes") or 0)
 
     if normalize_token(channel_artifact.get("head")) != expected_head:
         reasons.append("Windows gate embedded release_channel_windows_artifact head does not match promoted release channel.")
@@ -490,7 +499,12 @@ def validate_windows_gate(
                     f"Windows startup smoke receipt is stale for promoted installer bytes ({startup_smoke_age_seconds}s old)."
                 )
 
-    evidence["windows_gate"] = gate_evidence
+    if not embedded_payload_marker_present:
+        reasons.append(f"Windows installer receipt does not confirm embedded payload marker for promoted tuple {gate_label}.")
+    if not embedded_sample_marker_present:
+        reasons.append(f"Windows installer receipt does not confirm bundled demo sample marker for promoted tuple {gate_label}.")
+
+    evidence.setdefault("windows_gates", {})[gate_label] = gate_evidence
 
 
 def validate_macos_gate(
@@ -707,14 +721,14 @@ def validate_local_release_artifact_file(
         reasons.append(f"Promoted release-channel artifact sha256 does not match local bytes for {file_name}.")
 
 
-receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path, flagship_gate_path, visual_familiarity_gate_path, workflow_execution_gate_path, repo_root = [Path(v) for v in sys.argv[1:10]]
+receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path_default, flagship_gate_path, visual_familiarity_gate_path, workflow_execution_gate_path, repo_root = [Path(v) for v in sys.argv[1:10]]
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
     "release_channel_path": str(release_channel_path),
     "linux_avalonia_gate_path": str(linux_avalonia_gate_path),
     "linux_blazor_gate_path": str(linux_blazor_gate_path),
-    "windows_gate_path": str(windows_gate_path),
+    "windows_gate_path_default": str(windows_gate_path_default),
     "flagship_gate_path": str(flagship_gate_path),
     "visual_familiarity_gate_path": str(visual_familiarity_gate_path),
     "workflow_execution_gate_path": str(workflow_execution_gate_path),
@@ -722,7 +736,6 @@ evidence: Dict[str, Any] = {
 }
 
 release_channel = load_json(release_channel_path)
-windows_gate = load_json(windows_gate_path)
 flagship_gate = load_json(flagship_gate_path)
 visual_familiarity_gate = load_json(visual_familiarity_gate_path)
 workflow_execution_gate = load_json(workflow_execution_gate_path)
@@ -730,12 +743,10 @@ validate_receipt_freshness("flagship UI release gate proof", flagship_gate, evid
 validate_receipt_freshness("desktop visual familiarity gate proof", visual_familiarity_gate, evidence, reasons)
 validate_receipt_freshness("desktop workflow execution gate proof", workflow_execution_gate, evidence, reasons)
 
-windows_status = pick_status(windows_gate)
 flagship_status = pick_status(flagship_gate)
 visual_familiarity_status = pick_status(visual_familiarity_gate)
 workflow_execution_status = pick_status(workflow_execution_gate)
 
-evidence["windows_status"] = windows_status
 evidence["flagship_status"] = flagship_status
 evidence["visual_familiarity_status"] = visual_familiarity_status
 evidence["workflow_execution_status"] = workflow_execution_status
@@ -746,7 +757,6 @@ if not status_ok(visual_familiarity_status):
     reasons.append("Desktop visual familiarity exit gate is missing or not passing.")
 if not status_ok(workflow_execution_status):
     reasons.append("Desktop workflow execution gate is missing or not passing.")
-validate_receipt_path_scope(windows_gate_path, repo_root, reasons, evidence, "windows_gate")
 validate_receipt_path_scope(flagship_gate_path, repo_root, reasons, evidence, "flagship_gate")
 validate_receipt_path_scope(visual_familiarity_gate_path, repo_root, reasons, evidence, "visual_familiarity_gate")
 validate_receipt_path_scope(workflow_execution_gate_path, repo_root, reasons, evidence, "workflow_execution_gate")
@@ -861,20 +871,41 @@ evidence["windows_heads_expected"] = [
 ]
 if not expected_windows_artifacts and platform_artifact_counts.get("windows", 0) > 0:
     reasons.append("Release channel publishes Windows desktop media without explicit head/rid tuple metadata.")
-if len(expected_windows_artifacts) > 1:
-    reasons.append(
-        "Release channel currently promotes multiple Windows desktop installer tuples, but the executable gate supports one Windows receipt path."
+for expected_windows_artifact in expected_windows_artifacts:
+    expected_windows_head = normalize_token(expected_windows_artifact.get("head"))
+    expected_windows_rid = normalize_token(expected_windows_artifact.get("rid"))
+    gate_label = f"{expected_windows_head}:{expected_windows_rid}"
+    gate_path = windows_gate_path_for_head(
+        expected_windows_head,
+        expected_windows_rid,
+        receipt_path.parent,
+        windows_gate_path_default,
     )
-if expected_windows_artifacts:
+    validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"windows_gate:{gate_label}")
     validate_windows_gate(
-        windows_gate_path,
-        windows_gate,
-        expected_windows_artifacts,
+        gate_label,
+        gate_path,
+        load_json(gate_path),
+        expected_windows_artifact,
         desktop_files_root,
         repo_root,
         evidence,
         reasons,
     )
+
+windows_statuses = {
+    label: normalize_token(
+        gate_evidence.get("status")
+        if isinstance(gate_evidence, dict)
+        else ""
+    )
+    for label, gate_evidence in (
+        evidence.get("windows_gates").items()
+        if isinstance(evidence.get("windows_gates"), dict)
+        else []
+    )
+}
+evidence["windows_statuses"] = windows_statuses
 
 expected_linux_heads = sorted(
     {
@@ -955,16 +986,6 @@ for macos_artifact in expected_macos_artifacts:
         evidence,
         reasons,
     )
-
-windows_checks = windows_gate.get("checks") if isinstance(windows_gate.get("checks"), dict) else {}
-embedded_payload_marker_present = bool(windows_checks.get("embedded_payload_marker_present"))
-embedded_sample_marker_present = bool(windows_checks.get("embedded_sample_marker_present"))
-evidence["windows_embedded_payload_marker_present"] = embedded_payload_marker_present
-evidence["windows_embedded_sample_marker_present"] = embedded_sample_marker_present
-if not embedded_payload_marker_present:
-    reasons.append("Windows installer receipt does not confirm embedded payload marker.")
-if not embedded_sample_marker_present:
-    reasons.append("Windows installer receipt does not confirm bundled demo sample marker.")
 
 platform_tokens: List[str] = []
 if expected_linux_heads:
