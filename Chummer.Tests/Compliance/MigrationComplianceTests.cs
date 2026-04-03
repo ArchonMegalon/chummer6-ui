@@ -4368,6 +4368,8 @@ public class MigrationComplianceTests
         string hostPrereqText = File.ReadAllText(hostPrereqPath);
         string strictHostGatesPath = FindPath("scripts", "runbook-strict-host-gates.sh");
         string strictHostGatesText = File.ReadAllText(strictHostGatesPath);
+        string startupSmokePath = FindPath("scripts", "run-desktop-startup-smoke.sh");
+        string startupSmokeText = File.ReadAllText(startupSmokePath);
         string amendValidatorPath = FindPath("scripts", "validate-amend-manifests.sh");
         string amendValidatorText = File.ReadAllText(amendValidatorPath);
         string parityGeneratorPath = FindPath("scripts", "generate-parity-checklist.sh");
@@ -4398,6 +4400,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "find \"$startup_smoke_deploy_dir\" -maxdepth 1 -type f -name \"startup-smoke-*.receipt.json\" -delete");
         StringAssert.Contains(publisherText, "verified_startup_smoke_tmp=\"$(mktemp)\"");
         StringAssert.Contains(publisherText, "if ! python3 - \"$DEPLOY_DIR/RELEASE_CHANNEL.generated.json\" \"$STARTUP_SMOKE_SOURCE\" \"$DEPLOY_DIR/files\" >\"$verified_startup_smoke_tmp\"");
+        StringAssert.Contains(startupSmokeText, "set_receipt_status()");
+        StringAssert.Contains(startupSmokeText, "payload[\"status\"] = status_value");
+        StringAssert.Contains(startupSmokeText, "set_receipt_status \"pass\"");
+        StringAssert.Contains(startupSmokeText, "set_receipt_status \"failed\"");
         StringAssert.Contains(runbookText, "permission denied while trying to connect to the Docker daemon socket");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_DEPLOY_MODE");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_VERIFY_LINKS");
