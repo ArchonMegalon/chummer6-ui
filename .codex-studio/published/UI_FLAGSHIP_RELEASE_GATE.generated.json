@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T16:04:01.692060Z",
+  "generatedAt": "2026-04-03T16:49:56.670097Z",
   "status": "pass",
   "releaseGate": "b14-flagship-ui-release-gate",
   "desktopHead": "avalonia",
@@ -8,7 +8,7 @@
     "blazor-desktop"
   ],
   "artifactPresence": {
-    "bundledDemoRunnerPath": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/bin/Release/net10.0/Samples/Legacy/Soma-Career.chum5",
+    "bundledDemoRunnerPath": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Release/net10.0/Samples/Legacy/Soma-Career.chum5",
     "bundledDemoRunnerPresent": true
   },
   "interactionProof": {
@@ -33,8 +33,12 @@
     "runtimeBackedDemoRunnerImport": "pass",
     "runtimeBackedLegacyWorkbench": "pass",
     "legacyDenseBuilderRhythm": "pass",
+    "legacyAdvancementWorkflowRhythm": "pass",
     "legacyBrowseDetailConfirmRhythm": "pass",
-    "legacyCyberwareDialogRhythm": "pass"
+    "legacyVehiclesBuilderRhythm": "pass",
+    "legacyCyberwareDialogRhythm": "pass",
+    "legacyContactsDiaryRhythm": "pass",
+    "legacyMagicMatrixWorkflowRhythm": "pass"
   },
   "headProofs": {
     "avalonia": {
@@ -43,7 +47,7 @@
         "AvaloniaFlagshipUiGateTests",
         "DualHeadAcceptanceTests"
       ],
-      "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "sourceTestFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
       "visualReview": "pass",
       "themeReadabilityContrast": "pass",
       "bundledDemoRunner": "pass",
@@ -56,8 +60,12 @@
         "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
         "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
         "Character_creation_preserves_familiar_dense_builder_rhythm",
+        "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
         "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
-        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
+        "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+        "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
+        "Magic_matrix_and_consumables_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
       ]
     },
     "blazor-desktop": {
@@ -70,7 +78,7 @@
       "commandSurface": "pass",
       "dialogSurface": "pass",
       "journeyPanels": "pass",
-      "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
+      "sourceTestFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
       "requiredShellTests": [
         "MenuBar_invokes_toggle_and_execute_callbacks",
         "WorkspaceLeftPane_renders_shell_controls_and_invokes_callbacks",
@@ -82,8 +90,8 @@
   },
   "workflowEquivalenceProof": {
     "status": "pass",
-    "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-    "explicitParityReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sourceTestFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+    "explicitParityReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
     "requiredDualHeadTests": [
       "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
       "Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections",
@@ -112,7 +120,7 @@
     ]
   },
   "visualReviewEvidence": {
-    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "expectedScreenshots": [
       "01-initial-shell-light.png",
       "02-menu-open-light.png",
@@ -121,53 +129,77 @@
       "05-dense-section-light.png",
       "06-dense-section-dark.png",
       "07-loaded-runner-tabs-light.png",
-      "08-cyberware-dialog-light.png"
+      "08-cyberware-dialog-light.png",
+      "09-vehicles-section-light.png",
+      "10-contacts-section-light.png",
+      "11-diary-dialog-light.png",
+      "12-magic-matrix-dialog-light.png"
     ],
     "capturedScreenshots": [
       {
         "name": "01-initial-shell-light.png",
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
-        "sizeBytes": 203559
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
+        "sizeBytes": 203519
       },
       {
         "name": "02-menu-open-light.png",
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
-        "sizeBytes": 199363
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
+        "sizeBytes": 199291
       },
       {
         "name": "03-settings-open-light.png",
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
-        "sizeBytes": 208087
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
+        "sizeBytes": 207948
       },
       {
         "name": "04-loaded-runner-light.png",
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
-        "sizeBytes": 208326
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
+        "sizeBytes": 208253
       },
       {
         "name": "05-dense-section-light.png",
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-        "sizeBytes": 208327
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
+        "sizeBytes": 208254
       },
       {
         "name": "06-dense-section-dark.png",
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-        "sizeBytes": 209455
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
+        "sizeBytes": 209366
       },
       {
         "name": "07-loaded-runner-tabs-light.png",
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
-        "sizeBytes": 208149
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
+        "sizeBytes": 208079
       },
       {
         "name": "08-cyberware-dialog-light.png",
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
-        "sizeBytes": 208130
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
+        "sizeBytes": 208263
+      },
+      {
+        "name": "09-vehicles-section-light.png",
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
+        "sizeBytes": 206559
+      },
+      {
+        "name": "10-contacts-section-light.png",
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
+        "sizeBytes": 207298
+      },
+      {
+        "name": "11-diary-dialog-light.png",
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "sizeBytes": 205328
+      },
+      {
+        "name": "12-magic-matrix-dialog-light.png",
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-matrix-dialog-light.png",
+        "sizeBytes": 205761
       }
     ]
   },
   "signoffLane": {
-    "workbenchReleaseSignoffPath": "/docker/chummercomplete/chummer6-ui/docs/WORKBENCH_RELEASE_SIGNOFF.md",
+    "workbenchReleaseSignoffPath": "/docker/chummercomplete/chummer-presentation/docs/WORKBENCH_RELEASE_SIGNOFF.md",
     "citesReleaseGate": true
   }
 }

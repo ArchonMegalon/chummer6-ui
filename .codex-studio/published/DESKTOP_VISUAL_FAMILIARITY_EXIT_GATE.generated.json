@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-04-03T16:24:57.329101Z",
+  "generatedAt": "2026-04-03T16:49:56.608741Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "status": "pass",
   "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 vehicles/contacts/diary surfaces.",
   "reasons": [],
   "evidence": {
-    "flagship_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-    "screenshot_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "app_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/App.axaml",
-    "main_window_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/MainWindow.axaml",
-    "navigator_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
-    "toolstrip_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml",
-    "toolstrip_codebehind_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
-    "ui_gate_tests_path": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+    "flagship_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "screenshot_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "app_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml",
+    "main_window_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.axaml",
+    "navigator_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
+    "toolstrip_axaml_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+    "toolstrip_codebehind_path": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+    "ui_gate_tests_path": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
     "legacy_frmcareer_designer_path": "/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs",
     "minimum_shell_review_size": {
       "width": 1280,
@@ -34,10 +34,12 @@
     "runtime_backed_demo_runner_import": "pass",
     "runtime_backed_legacy_workbench": "pass",
     "legacy_dense_builder_rhythm": "pass",
+    "legacy_advancement_workflow_rhythm": "pass",
     "legacy_browse_detail_confirm_rhythm": "pass",
     "legacy_vehicles_builder_rhythm": "pass",
     "legacy_cyberware_dialog_rhythm": "pass",
     "legacy_contacts_diary_rhythm": "pass",
+    "legacy_magic_matrix_workflow_rhythm": "pass",
     "legacy_familiarity_bridge": "pass",
     "missing_theme_tokens": [],
     "required_tests": [
@@ -47,10 +49,12 @@
       "Loaded_runner_preserves_visible_character_tab_posture",
       "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
       "Character_creation_preserves_familiar_dense_builder_rhythm",
+      "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
       "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
       "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
       "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
       "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
+      "Magic_matrix_and_consumables_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
       "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
       "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
       "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
@@ -98,7 +102,8 @@
       "08-cyberware-dialog-light.png",
       "09-vehicles-section-light.png",
       "10-contacts-section-light.png",
-      "11-diary-dialog-light.png"
+      "11-diary-dialog-light.png",
+      "12-magic-matrix-dialog-light.png"
     ],
     "missing_screenshots": [],
     "invalid_screenshots": {},
@@ -115,6 +120,8 @@
     ],
     "dense_section_capture_advances_past_loaded_runner": true,
     "cyberware_dialog_test_has_visible_dialog_posture": true,
-    "cyberware_capture_opens_dialog_posture": true
+    "cyberware_capture_opens_dialog_posture": true,
+    "magic_matrix_capture_opens_dialog_posture": true,
+    "magic_matrix_method_has_rhythm_markers": true
   }
 }

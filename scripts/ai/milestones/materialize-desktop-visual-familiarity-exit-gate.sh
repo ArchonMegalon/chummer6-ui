@@ -163,15 +163,19 @@ if not runtime_backed_chrome_enabled_after_runner_load:
 runtime_backed_demo_runner_import = str(interaction_proof.get("runtimeBackedDemoRunnerImport") or "").strip().lower()
 runtime_backed_legacy_workbench = str(interaction_proof.get("runtimeBackedLegacyWorkbench") or "").strip().lower()
 legacy_dense_builder_rhythm = str(interaction_proof.get("legacyDenseBuilderRhythm") or "").strip().lower()
+legacy_advancement_workflow_rhythm = str(interaction_proof.get("legacyAdvancementWorkflowRhythm") or "").strip().lower()
 legacy_browse_detail_confirm_rhythm = str(interaction_proof.get("legacyBrowseDetailConfirmRhythm") or "").strip().lower()
 legacy_vehicles_builder_rhythm = str(interaction_proof.get("legacyVehiclesBuilderRhythm") or "").strip().lower()
 legacy_cyberware_dialog_rhythm = str(interaction_proof.get("legacyCyberwareDialogRhythm") or "").strip().lower()
 legacy_contacts_diary_rhythm = str(interaction_proof.get("legacyContactsDiaryRhythm") or "").strip().lower()
+legacy_magic_matrix_workflow_rhythm = str(interaction_proof.get("legacyMagicMatrixWorkflowRhythm") or "").strip().lower()
 legacy_familiarity_bridge = str(interaction_proof.get("legacyFamiliarityBridge") or "").strip().lower()
 if not runtime_backed_legacy_workbench:
     runtime_backed_legacy_workbench = legacy_familiarity_bridge
 if not legacy_dense_builder_rhythm:
     legacy_dense_builder_rhythm = legacy_familiarity_bridge
+if not legacy_advancement_workflow_rhythm:
+    legacy_advancement_workflow_rhythm = legacy_dense_builder_rhythm
 if not legacy_browse_detail_confirm_rhythm:
     legacy_browse_detail_confirm_rhythm = legacy_familiarity_bridge
 if not legacy_vehicles_builder_rhythm:
@@ -180,6 +184,8 @@ if not legacy_cyberware_dialog_rhythm:
     legacy_cyberware_dialog_rhythm = legacy_familiarity_bridge
 if not legacy_contacts_diary_rhythm:
     legacy_contacts_diary_rhythm = legacy_familiarity_bridge
+if not legacy_magic_matrix_workflow_rhythm:
+    legacy_magic_matrix_workflow_rhythm = legacy_familiarity_bridge
 legacy_familiarity_bridge = str(interaction_proof.get("legacyFamiliarityBridge") or "").strip().lower()
 if not runtime_backed_legacy_workbench:
     runtime_backed_legacy_workbench = legacy_familiarity_bridge
@@ -201,10 +207,12 @@ evidence["runtime_backed_chrome_enabled_after_runner_load"] = runtime_backed_chr
 evidence["runtime_backed_demo_runner_import"] = runtime_backed_demo_runner_import
 evidence["runtime_backed_legacy_workbench"] = runtime_backed_legacy_workbench
 evidence["legacy_dense_builder_rhythm"] = legacy_dense_builder_rhythm
+evidence["legacy_advancement_workflow_rhythm"] = legacy_advancement_workflow_rhythm
 evidence["legacy_browse_detail_confirm_rhythm"] = legacy_browse_detail_confirm_rhythm
 evidence["legacy_vehicles_builder_rhythm"] = legacy_vehicles_builder_rhythm
 evidence["legacy_cyberware_dialog_rhythm"] = legacy_cyberware_dialog_rhythm
 evidence["legacy_contacts_diary_rhythm"] = legacy_contacts_diary_rhythm
+evidence["legacy_magic_matrix_workflow_rhythm"] = legacy_magic_matrix_workflow_rhythm
 evidence["legacy_familiarity_bridge"] = legacy_familiarity_bridge
 evidence["legacy_familiarity_bridge"] = legacy_familiarity_bridge
 if not status_ok(theme_readability_contrast):
@@ -229,6 +237,8 @@ if not status_ok(runtime_backed_legacy_workbench):
     reasons.append("Flagship UI release gate does not prove a runtime-backed legacy frmCareer workbench.")
 if not status_ok(legacy_dense_builder_rhythm):
     reasons.append("Flagship UI release gate does not prove dense builder rhythm familiarity.")
+if not status_ok(legacy_advancement_workflow_rhythm):
+    reasons.append("Flagship UI release gate does not prove advancement workflow familiarity.")
 if not status_ok(legacy_browse_detail_confirm_rhythm):
     reasons.append("Flagship UI release gate does not prove browse-detail-confirm familiarity.")
 if not status_ok(legacy_vehicles_builder_rhythm):
@@ -237,6 +247,8 @@ if not status_ok(legacy_cyberware_dialog_rhythm):
     reasons.append("Flagship UI release gate does not prove cyberware dialog familiarity.")
 if not status_ok(legacy_contacts_diary_rhythm):
     reasons.append("Flagship UI release gate does not prove contacts/diary familiarity.")
+if not status_ok(legacy_magic_matrix_workflow_rhythm):
+    reasons.append("Flagship UI release gate does not prove magic/matrix workflow rhythm.")
 
 required_theme_tokens = {
     "ChummerShellActiveMenuBorderBrush_light": "#1C4A2D",
@@ -261,10 +273,12 @@ required_test_names = [
     "Loaded_runner_preserves_visible_character_tab_posture",
     "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
     "Character_creation_preserves_familiar_dense_builder_rhythm",
+    "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
     "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
     "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
     "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
     "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
+    "Magic_matrix_and_consumables_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
@@ -369,6 +383,7 @@ required_screenshots = [
     "09-vehicles-section-light.png",
     "10-contacts-section-light.png",
     "11-diary-dialog-light.png",
+    "12-magic-matrix-dialog-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -393,7 +408,7 @@ undersized_screenshots = {
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png"}
+            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-matrix-dialog-light.png"}
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )
@@ -460,12 +475,34 @@ cyberware_capture_segment = segment_between(
     'captured[expectedFiles[7]] = harness.CaptureScreenshotBytes();',
 )
 cyberware_capture_opens_dialog = any(marker in cyberware_capture_segment for marker in cyberware_dialog_markers)
+magic_matrix_capture_segment = segment_between(
+    visual_review_method,
+    'captured[expectedFiles[10]] = harness.CaptureScreenshotBytes();',
+    'return captured;',
+)
+magic_matrix_capture_markers = [
+    "SectionQuickAction_spell_add",
+    "Add Spell",
+    "captured[expectedFiles[11]] = harness.CaptureScreenshotBytes()",
+]
+magic_matrix_capture_opens_dialog = any(marker in magic_matrix_capture_segment for marker in magic_matrix_capture_markers)
 evidence["cyberware_dialog_test_has_visible_dialog_posture"] = cyberware_dialog_test_has_visible_dialog
 evidence["cyberware_capture_opens_dialog_posture"] = cyberware_capture_opens_dialog
+evidence["magic_matrix_capture_opens_dialog_posture"] = magic_matrix_capture_opens_dialog
 if not cyberware_dialog_test_has_visible_dialog:
     reasons.append("Cyberware/cyberlimb familiarity is not proven: the dedicated test never opens a visible dialog with confirm controls.")
 if not cyberware_capture_opens_dialog:
     reasons.append("Cyberware screenshot proof is not trusted: the screenshot capture does not open an explicit dialog posture before recording evidence.")
+magic_matrix_method = extract_test_method(test_text, "Magic_matrix_and_consumables_workflows_execute_with_specific_dialog_fields_and_confirm_actions")
+magic_matrix_method_markers = ["sectionId: \"spells\"", "actionControlId: \"spell_add\"", "actionControlId: \"matrix_program_add\""]
+magic_matrix_method_has_rhythm = all(marker in magic_matrix_method for marker in magic_matrix_method_markers) if magic_matrix_method else False
+evidence["magic_matrix_method_has_rhythm_markers"] = magic_matrix_method_has_rhythm
+if not magic_matrix_method:
+    reasons.append("Magic/matrix familiarity is not proven: the dedicated workflow method is not present in test sources.")
+elif not magic_matrix_method_has_rhythm:
+    reasons.append("Magic/matrix familiarity is not proven: the dedicated workflow method no longer exercises both spell and matrix actions.");
+if not magic_matrix_capture_opens_dialog:
+    reasons.append("Magic/matrix screenshot proof is not trusted: the visual review proof does not open a dedicated spell/matrix dialog before recording evidence.")
 
 status = "pass" if not reasons else "fail"
 payload = {
