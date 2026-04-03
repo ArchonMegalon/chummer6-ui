@@ -3622,12 +3622,20 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
         StringAssert.Contains(linuxGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
         StringAssert.Contains(linuxGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-linux-x64}}\"");
+        StringAssert.Contains(linuxGateScriptText, "USE_PROMOTED_INSTALLER=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-1}\"");
         StringAssert.Contains(linuxGateScriptText, "and normalize(item.get(\"platform\")) == \"linux\"");
         StringAssert.Contains(linuxGateScriptText, "and normalize(item.get(\"kind\")) == \"installer\"");
         StringAssert.Contains(linuxGateScriptText, "if app_key_override:");
         StringAssert.Contains(linuxGateScriptText, "if rid_override:");
         StringAssert.Contains(linuxGateScriptText, "print(normalize(chosen.get(\"head\")))");
         StringAssert.Contains(linuxGateScriptText, "print(normalize(chosen.get(\"rid\")))");
+        StringAssert.Contains(linuxGateScriptText, "CURRENT_STAGE=\"promoted_installer_proof_integrity\"");
+        StringAssert.Contains(linuxGateScriptText, "Linux release-channel proof status is not published.");
+        StringAssert.Contains(linuxGateScriptText, "Release channel does not publish a Linux installer artifact for");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactDigest does not match promoted installer bytes.");
+        StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
     }
 
     [TestMethod]
