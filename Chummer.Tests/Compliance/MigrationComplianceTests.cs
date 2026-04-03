@@ -4391,7 +4391,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "bash scripts/verify-releases-manifest.sh");
         StringAssert.Contains(runbookText, "bash scripts/validate-amend-manifests.sh");
         StringAssert.Contains(publisherText, "startup_smoke_deploy_dir=\"$DEPLOY_DIR/startup-smoke\"");
-        StringAssert.Contains(publisherText, "find \"$STARTUP_SMOKE_SOURCE\" -type f -name \"startup-smoke-*.receipt.json\"");
+        StringAssert.Contains(publisherText, "INSTALL_MEDIA_KINDS = {\"installer\", \"dmg\", \"pkg\", \"msix\"}");
+        StringAssert.Contains(publisherText, "startup-smoke-{head}-{rid}.receipt.json");
+        StringAssert.Contains(publisherText, "startup-smoke receipt status is not passing for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt artifactDigest mismatch for promoted install medium");
+        StringAssert.Contains(publisherText, "find \"$startup_smoke_deploy_dir\" -maxdepth 1 -type f -name \"startup-smoke-*.receipt.json\" -delete");
+        StringAssert.Contains(publisherText, "verified_startup_smoke_tmp=\"$(mktemp)\"");
+        StringAssert.Contains(publisherText, "if ! python3 - \"$DEPLOY_DIR/RELEASE_CHANNEL.generated.json\" \"$STARTUP_SMOKE_SOURCE\" \"$DEPLOY_DIR/files\" >\"$verified_startup_smoke_tmp\"");
         StringAssert.Contains(runbookText, "permission denied while trying to connect to the Docker daemon socket");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_DEPLOY_MODE");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_VERIFY_LINKS");
