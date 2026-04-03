@@ -17,10 +17,12 @@ linux_avalonia_gate_path="$repo_root/.codex-studio/published/UI_LINUX_DESKTOP_EX
 linux_blazor_gate_path="$repo_root/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json"
 windows_gate_path="$repo_root/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+visual_familiarity_gate_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+workflow_execution_gate_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path" "$flagship_gate_path" "$repo_root"
+python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root"
 from __future__ import annotations
 
 import hashlib
@@ -705,7 +707,7 @@ def validate_local_release_artifact_file(
         reasons.append(f"Promoted release-channel artifact sha256 does not match local bytes for {file_name}.")
 
 
-receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path, flagship_gate_path, repo_root = [Path(v) for v in sys.argv[1:8]]
+receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path, flagship_gate_path, visual_familiarity_gate_path, workflow_execution_gate_path, repo_root = [Path(v) for v in sys.argv[1:10]]
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
@@ -714,24 +716,76 @@ evidence: Dict[str, Any] = {
     "linux_blazor_gate_path": str(linux_blazor_gate_path),
     "windows_gate_path": str(windows_gate_path),
     "flagship_gate_path": str(flagship_gate_path),
+    "visual_familiarity_gate_path": str(visual_familiarity_gate_path),
+    "workflow_execution_gate_path": str(workflow_execution_gate_path),
     "repo_root": str(repo_root.resolve()),
 }
 
 release_channel = load_json(release_channel_path)
 windows_gate = load_json(windows_gate_path)
 flagship_gate = load_json(flagship_gate_path)
+visual_familiarity_gate = load_json(visual_familiarity_gate_path)
+workflow_execution_gate = load_json(workflow_execution_gate_path)
 validate_receipt_freshness("flagship UI release gate proof", flagship_gate, evidence, reasons)
+validate_receipt_freshness("desktop visual familiarity gate proof", visual_familiarity_gate, evidence, reasons)
+validate_receipt_freshness("desktop workflow execution gate proof", workflow_execution_gate, evidence, reasons)
 
 windows_status = pick_status(windows_gate)
 flagship_status = pick_status(flagship_gate)
+visual_familiarity_status = pick_status(visual_familiarity_gate)
+workflow_execution_status = pick_status(workflow_execution_gate)
 
 evidence["windows_status"] = windows_status
 evidence["flagship_status"] = flagship_status
+evidence["visual_familiarity_status"] = visual_familiarity_status
+evidence["workflow_execution_status"] = workflow_execution_status
 
 if not status_ok(flagship_status):
     reasons.append("Flagship UI release gate is missing or not passing.")
+if not status_ok(visual_familiarity_status):
+    reasons.append("Desktop visual familiarity exit gate is missing or not passing.")
+if not status_ok(workflow_execution_status):
+    reasons.append("Desktop workflow execution gate is missing or not passing.")
 validate_receipt_path_scope(windows_gate_path, repo_root, reasons, evidence, "windows_gate")
 validate_receipt_path_scope(flagship_gate_path, repo_root, reasons, evidence, "flagship_gate")
+validate_receipt_path_scope(visual_familiarity_gate_path, repo_root, reasons, evidence, "visual_familiarity_gate")
+validate_receipt_path_scope(workflow_execution_gate_path, repo_root, reasons, evidence, "workflow_execution_gate")
+
+visual_familiarity_evidence = (
+    visual_familiarity_gate.get("evidence")
+    if isinstance(visual_familiarity_gate.get("evidence"), dict)
+    else {}
+)
+visual_screenshot_dir_raw = str(visual_familiarity_evidence.get("screenshot_dir") or "").strip()
+visual_screenshot_dir = Path(visual_screenshot_dir_raw) if visual_screenshot_dir_raw else None
+visual_required_screenshots = [
+    str(item).strip()
+    for item in (visual_familiarity_evidence.get("required_screenshots") or [])
+    if str(item).strip()
+]
+evidence["visual_familiarity_screenshot_dir"] = visual_screenshot_dir_raw
+evidence["visual_familiarity_required_screenshots"] = visual_required_screenshots
+if visual_screenshot_dir is None:
+    reasons.append("Desktop visual familiarity exit gate evidence is missing screenshot_dir.")
+else:
+    if not visual_screenshot_dir.is_dir():
+        reasons.append("Desktop visual familiarity screenshot_dir does not exist on disk.")
+    elif not path_within_root(visual_screenshot_dir, repo_root):
+        reasons.append("Desktop visual familiarity screenshot_dir is outside this repo root.")
+if not visual_required_screenshots:
+    reasons.append("Desktop visual familiarity exit gate evidence is missing required_screenshots.")
+else:
+    missing_visual_screenshots = [
+        name
+        for name in visual_required_screenshots
+        if visual_screenshot_dir is None or not (visual_screenshot_dir / name).is_file()
+    ]
+    evidence["visual_familiarity_missing_screenshots_now"] = missing_visual_screenshots
+    if missing_visual_screenshots:
+        reasons.append(
+            "Desktop visual familiarity required screenshots are missing on disk: "
+            + ", ".join(missing_visual_screenshots)
+        )
 
 artifacts = [
     item for item in (release_channel.get("artifacts") or [])
