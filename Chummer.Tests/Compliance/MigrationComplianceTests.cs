@@ -3450,6 +3450,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing required_screenshots.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are missing on disk:");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes Linux desktop media for head");
+        StringAssert.Contains(executableGateScriptText, "flagship_required_desktop_heads = sorted(");
+        StringAssert.Contains(executableGateScriptText, "Flagship UI release gate is missing required desktopHeads desktop head inventory.");
+        StringAssert.Contains(executableGateScriptText, "missing_promoted_desktop_heads");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing promoted desktop install media for flagship-required head(s): ");
+        StringAssert.Contains(executableGateScriptText, "heads_requiring_flagship_proof");
         StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
         StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");
         StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact is missing from local desktop downloads shelf");

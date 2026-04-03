@@ -935,10 +935,39 @@ promoted_desktop_heads = sorted(
         and normalize_token(item.get("head"))
     }
 )
+flagship_required_desktop_heads = sorted(
+    {
+        normalize_token(item)
+        for item in (
+            flagship_gate.get("desktopHeads")
+            if isinstance(flagship_gate.get("desktopHeads"), list)
+            else [flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else []
+        )
+        if normalize_token(item)
+    }
+)
 if not promoted_desktop_heads:
     reasons.append("Release channel does not publish any promoted desktop install media artifacts.")
+if not flagship_required_desktop_heads:
+    reasons.append("Flagship UI release gate is missing required desktopHeads desktop head inventory.")
 evidence["promoted_desktop_heads"] = promoted_desktop_heads
-for promoted_head in promoted_desktop_heads:
+evidence["flagship_required_desktop_heads"] = flagship_required_desktop_heads
+missing_required_promoted_heads = [
+    head for head in flagship_required_desktop_heads
+    if head not in promoted_desktop_heads
+]
+evidence["missing_promoted_desktop_heads"] = missing_required_promoted_heads
+if missing_required_promoted_heads:
+    reasons.append(
+        "Release channel is missing promoted desktop install media for flagship-required head(s): "
+        + ", ".join(missing_required_promoted_heads)
+        + "."
+    )
+heads_requiring_flagship_proof = sorted(
+    set(promoted_desktop_heads).union(set(flagship_required_desktop_heads))
+)
+evidence["heads_requiring_flagship_proof"] = heads_requiring_flagship_proof
+for promoted_head in heads_requiring_flagship_proof:
     validate_flagship_head_proof(promoted_head, flagship_gate, evidence, reasons)
 
 linux_statuses: Dict[str, str] = {}
