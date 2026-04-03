@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T17:01:12.327284Z",
+  "generatedAt": "2026-04-03T17:52:42.752645Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "status": "pass",
   "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 vehicles/contacts/diary surfaces.",
@@ -30,6 +30,8 @@
     "runtime_backed_menu_bar_labels": "pass",
     "runtime_backed_clickable_primary_menus": "pass",
     "runtime_backed_toolstrip_actions": "pass",
+    "runtime_backed_codex_tree": "pass",
+    "runtime_backed_classic_chrome_copy": "pass",
     "runtime_backed_chrome_enabled_after_runner_load": "pass",
     "runtime_backed_demo_runner_import": "pass",
     "runtime_backed_legacy_workbench": "pass",
@@ -41,6 +43,17 @@
     "legacy_contacts_diary_rhythm": "pass",
     "legacy_magic_matrix_workflow_rhythm": "pass",
     "legacy_familiarity_bridge": "pass",
+    "required_legacy_interaction_keys": [
+      "runtimeBackedLegacyWorkbench",
+      "legacyDenseBuilderRhythm",
+      "legacyAdvancementWorkflowRhythm",
+      "legacyBrowseDetailConfirmRhythm",
+      "legacyVehiclesBuilderRhythm",
+      "legacyCyberwareDialogRhythm",
+      "legacyContactsDiaryRhythm",
+      "legacyMagicMatrixWorkflowRhythm"
+    ],
+    "missing_required_legacy_interaction_keys": [],
     "missing_theme_tokens": [],
     "required_tests": [
       "Desktop_shell_preserves_chummer5a_familiarity_cues",
@@ -58,6 +71,8 @@
       "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
       "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
       "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
+      "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
+      "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
       "Runtime_backed_shell_chrome_stays_enabled_after_runner_load"
     ],
     "missing_tests": [],
@@ -76,6 +91,14 @@
       "BuildActionContent("
     ],
     "present_disallowed_toolstrip_markers": [],
+    "classic_copy_disallowed_markers": [
+      "Career-style workbench",
+      "Command Palette",
+      "Coach Sidecar",
+      "Coach Launch",
+      "Recent Coach Guidance"
+    ],
+    "classic_copy_present_markers": [],
     "missing_toolstrip_flat_label_markers": [],
     "missing_toolstrip_posture_markers": [],
     "legacy_frmcareer_markers": [
@@ -109,6 +132,20 @@
     "missing_screenshots": [],
     "invalid_screenshots": {},
     "undersized_screenshots": {},
+    "required_navigator_markers": [
+      "x:Name=\"NavigatorTree\"",
+      "TreeDataTemplate",
+      "Codex"
+    ],
+    "missing_navigator_markers": [],
+    "disallowed_navigator_markers": [
+      "x:Name=\"LoadedRunnerTabStrip\"",
+      "x:Name=\"NavigationTabsList\"",
+      "x:Name=\"OpenWorkspacesList\"",
+      "x:Name=\"SectionActionsList\"",
+      "x:Name=\"WorkflowSurfacesList\""
+    ],
+    "present_disallowed_navigator_markers": [],
     "loaded_runner_tab_posture_control_present": true,
     "loaded_runner_tab_strip_control_present": true,
     "tab_strip_markers": [
@@ -117,7 +154,7 @@
       "TabView",
       "LoadedRunnerTabStrip",
       "CharacterTabStrip",
-      "NavigationTabsList"
+      "NavigatorTree"
     ],
     "dense_section_capture_advances_past_loaded_runner": true,
     "cyberware_dialog_test_has_visible_dialog_posture": true,
