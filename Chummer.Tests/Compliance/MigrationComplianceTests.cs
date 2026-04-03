@@ -3427,8 +3427,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(
             macosGateScriptText,
             "RELEASE_CHANNEL_PATH=\"${CHUMMER_MACOS_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}\"");
-        StringAssert.Contains(macosGateScriptText, "RID=\"$(python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY\"");
-        StringAssert.Contains(macosGateScriptText, "RID=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID:-}\"");
+        StringAssert.Contains(macosGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
+        StringAssert.Contains(macosGateScriptText, "RID_OVERRIDE=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID:-}\"");
+        StringAssert.Contains(macosGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
+        StringAssert.Contains(macosGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(macosGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
+        StringAssert.Contains(macosGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-osx-arm64}}\"");
+        StringAssert.Contains(macosGateScriptText, "if app_key_override:");
+        StringAssert.Contains(macosGateScriptText, "if rid_override:");
+        StringAssert.Contains(macosGateScriptText, "print(normalize(chosen.get(\"head\")))");
         StringAssert.Contains(macosGateScriptText, "normalize(item.get(\"kind\")) in {\"installer\", \"dmg\", \"pkg\"}");
         StringAssert.Contains(macosGateScriptText, "preferred_order = [\"osx-arm64\", \"osx-x64\"]");
         StringAssert.Contains(macosGateScriptText, "def is_macos_install_media_kind(kind: Any) -> bool:");
