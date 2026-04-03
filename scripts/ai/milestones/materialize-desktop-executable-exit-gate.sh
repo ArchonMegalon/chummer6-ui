@@ -61,6 +61,17 @@ def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def dedupe_preserve_order(values: List[str]) -> List[str]:
+    seen: set[str] = set()
+    deduped: List[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        deduped.append(value)
+    return deduped
+
+
 def parse_iso(value: Any) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -450,27 +461,29 @@ def validate_macos_gate(
                 reasons.append("macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.")
 
     startup_receipt_path = Path(gate_evidence["startup_smoke_receipt_path"]) if gate_evidence["startup_smoke_receipt_path"] else None
-    if startup_receipt_path is None or not startup_receipt_path.is_file():
+    startup_receipt_exists = startup_receipt_path is not None and startup_receipt_path.is_file()
+    if not startup_receipt_exists:
         reasons.append(f"macOS startup smoke receipt path is missing or unreadable for promoted head '{head}' ({rid}).")
-    if gate_evidence["startup_smoke_ready_checkpoint"] != "pre_ui_event_loop":
-        reasons.append(f"macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head '{head}' ({rid}).")
-    if expected_digest and gate_evidence["startup_smoke_artifact_digest"] != expected_digest:
-        reasons.append(f"macOS startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}' ({rid}).")
-    if normalize_token(startup_receipt.get("headId")) != head:
-        reasons.append(f"macOS startup smoke receipt headId does not match promoted head '{head}' ({rid}).")
-    if normalize_token(startup_receipt.get("platform")) != "macos":
-        reasons.append(f"macOS startup smoke receipt platform is not macOS for promoted head '{head}' ({rid}).")
-    if expected_arch and normalize_token(startup_receipt.get("arch")) != expected_arch:
-        reasons.append(f"macOS startup smoke receipt arch does not match promoted RID for head '{head}' ({rid}).")
-    if not startup_receipt_recorded_at_raw or startup_receipt_recorded_at is None:
-        reasons.append(f"macOS startup smoke receipt timestamp is missing/invalid for promoted head '{head}' ({rid}).")
     else:
-        startup_age_seconds = max(0, int((datetime.now(timezone.utc) - startup_receipt_recorded_at).total_seconds()))
-        gate_evidence["startup_smoke_receipt_age_seconds"] = startup_age_seconds
-        if startup_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
-            reasons.append(
-                f"macOS startup smoke receipt is stale for promoted head '{head}' ({rid}) ({startup_age_seconds}s old)."
-            )
+        if gate_evidence["startup_smoke_ready_checkpoint"] != "pre_ui_event_loop":
+            reasons.append(f"macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head '{head}' ({rid}).")
+        if expected_digest and gate_evidence["startup_smoke_artifact_digest"] != expected_digest:
+            reasons.append(f"macOS startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}' ({rid}).")
+        if normalize_token(startup_receipt.get("headId")) != head:
+            reasons.append(f"macOS startup smoke receipt headId does not match promoted head '{head}' ({rid}).")
+        if normalize_token(startup_receipt.get("platform")) != "macos":
+            reasons.append(f"macOS startup smoke receipt platform is not macOS for promoted head '{head}' ({rid}).")
+        if expected_arch and normalize_token(startup_receipt.get("arch")) != expected_arch:
+            reasons.append(f"macOS startup smoke receipt arch does not match promoted RID for head '{head}' ({rid}).")
+        if not startup_receipt_recorded_at_raw or startup_receipt_recorded_at is None:
+            reasons.append(f"macOS startup smoke receipt timestamp is missing/invalid for promoted head '{head}' ({rid}).")
+        else:
+            startup_age_seconds = max(0, int((datetime.now(timezone.utc) - startup_receipt_recorded_at).total_seconds()))
+            gate_evidence["startup_smoke_receipt_age_seconds"] = startup_age_seconds
+            if startup_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+                reasons.append(
+                    f"macOS startup smoke receipt is stale for promoted head '{head}' ({rid}) ({startup_age_seconds}s old)."
+                )
 
     evidence.setdefault("macos_gates", {})[f"{head}:{rid}"] = gate_evidence
 
@@ -548,8 +561,6 @@ flagship_status = pick_status(flagship_gate)
 evidence["windows_status"] = windows_status
 evidence["flagship_status"] = flagship_status
 
-if not status_ok(windows_status):
-    reasons.append("Windows desktop exit gate is missing or not passing.")
 if not status_ok(flagship_status):
     reasons.append("Flagship UI release gate is missing or not passing.")
 validate_receipt_path_scope(windows_gate_path, repo_root, reasons, evidence, "windows_gate")
@@ -734,6 +745,7 @@ if platform_artifact_counts.get("windows", 0) > 0:
 platform_scope = ", ".join(platform_tokens) if platform_tokens else "none"
 
 status = "pass" if not reasons else "fail"
+reasons = dedupe_preserve_order(reasons)
 payload = {
     "generatedAt": now_iso(),
     "contract_name": "chummer6-ui.desktop_executable_exit_gate",

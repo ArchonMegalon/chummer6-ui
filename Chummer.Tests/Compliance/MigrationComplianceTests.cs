@@ -3410,6 +3410,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");
         StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact is missing from local desktop downloads shelf");
         StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact sha256 does not match local bytes");
+        StringAssert.Contains(executableGateScriptText, "def dedupe_preserve_order(values: List[str]) -> List[str]:");
+        StringAssert.Contains(executableGateScriptText, "startup_receipt_exists = startup_receipt_path is not None and startup_receipt_path.is_file()");
+        StringAssert.Contains(executableGateScriptText, "if not startup_receipt_exists:");
+        StringAssert.Contains(executableGateScriptText, "else:");
+        StringAssert.Contains(executableGateScriptText, "reasons = dedupe_preserve_order(reasons)");
         StringAssert.Contains(executableGateScriptText, "f\"Desktop executable exit gate is proven by passing packaged-head receipts for promoted desktop platforms ({platform_scope})");
         StringAssert.Contains(executableGateScriptText, "print(\"[desktop-executable-exit-gate] FAIL\", file=sys.stderr)");
         StringAssert.Contains(executableGateScriptText, "print(f\"[desktop-executable-exit-gate] reason: {reason}\", file=sys.stderr)");
