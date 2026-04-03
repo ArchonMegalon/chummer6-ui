@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-04-03T22:55:06Z",
+  "generated_at": "2026-04-03T22:59:41Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -31,50 +31,50 @@
   "locale_summary": [
     {
       "locale": "de-de",
-      "override_count": 378,
+      "override_count": 383,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 5,
+      "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     },
     {
       "locale": "fr-fr",
-      "override_count": 378,
+      "override_count": 383,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 5,
+      "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     },
     {
       "locale": "ja-jp",
-      "override_count": 378,
+      "override_count": 383,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 5,
+      "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     },
     {
       "locale": "pt-br",
-      "override_count": 378,
+      "override_count": 383,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 5,
+      "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     },
     {
       "locale": "zh-cn",
-      "override_count": 378,
+      "override_count": 383,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 5,
+      "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
@@ -111,13 +111,7 @@
     ]
   },
   "blocking_findings": [],
-  "translation_backlog_findings": [
-    "de-de: 5 trust-surface keys still rely on explicit en-US fallback",
-    "fr-fr: 5 trust-surface keys still rely on explicit en-US fallback",
-    "ja-jp: 5 trust-surface keys still rely on explicit en-US fallback",
-    "pt-br: 5 trust-surface keys still rely on explicit en-US fallback",
-    "zh-cn: 5 trust-surface keys still rely on explicit en-US fallback"
-  ],
+  "translation_backlog_findings": [],
   "acceptance_gates": [
     "pseudo_localization",
     "missing_key_fail_fast",
