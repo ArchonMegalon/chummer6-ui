@@ -4564,6 +4564,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "startup-smoke-{head}-{rid}.receipt.json");
         StringAssert.Contains(publisherText, "startup-smoke receipt status is not passing for promoted install medium");
         StringAssert.Contains(publisherText, "startup-smoke receipt artifactDigest mismatch for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt timestamp is missing/invalid for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt is stale for promoted install medium");
+        StringAssert.Contains(publisherText, "CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(publisherText, "find \"$startup_smoke_deploy_dir\" -maxdepth 1 -type f -name \"startup-smoke-*.receipt.json\" -delete");
         StringAssert.Contains(publisherText, "verified_startup_smoke_tmp=\"$(mktemp)\"");
         StringAssert.Contains(publisherText, "if ! python3 - \"$DEPLOY_DIR/RELEASE_CHANNEL.generated.json\" \"$STARTUP_SMOKE_SOURCE\" \"$DEPLOY_DIR/files\" >\"$verified_startup_smoke_tmp\"");
