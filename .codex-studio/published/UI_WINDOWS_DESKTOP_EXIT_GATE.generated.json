@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.windows_desktop_exit_gate",
-  "generated_at": "2026-04-03T17:18:31Z",
+  "generated_at": "2026-04-03T22:00:09Z",
   "status": "failed",
   "reason": "windows desktop exit gate checks failed",
   "head": {
@@ -19,24 +19,7 @@
     "sr4_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr6_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
     "release_channel_status": "published",
-    "release_channel_windows_artifact": {
-      "artifactId": "avalonia-win-x64-installer",
-      "head": "avalonia",
-      "rid": "win-x64",
-      "platform": "windows",
-      "arch": "x64",
-      "kind": "installer",
-      "fileName": "chummer-avalonia-win-x64-installer.exe",
-      "downloadUrl": "/downloads/files/chummer-avalonia-win-x64-installer.exe",
-      "sha256": "529a427c84a36082fe66d09a4547b17bd6c5046d2e4586277c5b7cd0c83ab00f",
-      "sizeBytes": 95974786,
-      "platformLabel": "Avalonia Desktop Windows X64 Installer",
-      "updateFeedUrl": null,
-      "embeddedRuntimeBundleHeadId": null,
-      "compatibilityState": "compatible",
-      "installAccessClass": "open_public"
-    },
-    "windows_installer_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
+    "windows_installer_path": "/docker/chummer5a/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
     "windows_installer_candidate_paths": [
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
       "/docker/chummer5a/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
@@ -48,9 +31,8 @@
     "expected_windows_head": "avalonia",
     "expected_windows_rid": "win-x64",
     "expected_windows_arch": "x64",
-    "expected_windows_file_name": "chummer-avalonia-win-x64-installer.exe",
     "windows_installer_primary_shelf_root": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
-    "windows_installer_from_primary_shelf": true,
+    "windows_installer_from_primary_shelf": false,
     "embedded_payload_marker_present": true,
     "embedded_sample_marker_present": true,
     "installer_payload_validation_mode": "release-channel digest-size-and-embedded-markers",
@@ -61,13 +43,13 @@
       "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-      "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json"
+      "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json"
     ],
     "startup_smoke_receipt_found": false,
     "startup_smoke_status": "",
@@ -85,6 +67,9 @@
     "sr6_workflow_parity_status": "pass"
   },
   "reasons": [
+    "Release channel does not publish a promoted Windows install medium artifact for avalonia (win-x64).",
+    "Promoted Windows installer was not resolved from the repo-local desktop shelf.",
+    "Promoted Windows installer was resolved from legacy chummer5a shelf bytes.",
     "Windows startup smoke receipt is missing for promoted installer bytes."
   ]
 }
