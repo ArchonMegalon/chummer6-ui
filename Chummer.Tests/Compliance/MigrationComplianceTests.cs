@@ -3453,6 +3453,26 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Linux_exit_gate_defaults_to_promoted_release_tuple_when_overrides_are_missing()
+    {
+        string linuxGateScriptPath = FindPath("scripts", "materialize-linux-desktop-exit-gate.sh");
+        string linuxGateScriptText = File.ReadAllText(linuxGateScriptPath);
+
+        StringAssert.Contains(linuxGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
+        StringAssert.Contains(linuxGateScriptText, "RID_OVERRIDE=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID:-}\"");
+        StringAssert.Contains(linuxGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
+        StringAssert.Contains(linuxGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(linuxGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
+        StringAssert.Contains(linuxGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-linux-x64}}\"");
+        StringAssert.Contains(linuxGateScriptText, "and normalize(item.get(\"platform\")) == \"linux\"");
+        StringAssert.Contains(linuxGateScriptText, "and normalize(item.get(\"kind\")) == \"installer\"");
+        StringAssert.Contains(linuxGateScriptText, "if app_key_override:");
+        StringAssert.Contains(linuxGateScriptText, "if rid_override:");
+        StringAssert.Contains(linuxGateScriptText, "print(normalize(chosen.get(\"head\")))");
+        StringAssert.Contains(linuxGateScriptText, "print(normalize(chosen.get(\"rid\")))");
+    }
+
+    [TestMethod]
     public void Windows_exit_gate_requires_startup_smoke_receipt_integrity_for_promoted_installer_bytes()
     {
         string windowsGateScriptPath = FindPath("scripts", "materialize-windows-desktop-exit-gate.sh");
