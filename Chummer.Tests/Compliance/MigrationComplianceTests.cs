@@ -3459,6 +3459,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "missing_promoted_desktop_heads");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing promoted desktop install media for flagship-required head(s): ");
         StringAssert.Contains(executableGateScriptText, "heads_requiring_flagship_proof");
+        StringAssert.Contains(executableGateScriptText, "desktop_tuple_coverage = (");
+        StringAssert.Contains(executableGateScriptText, "tuple_coverage_required_desktop_platforms");
+        StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing required desktop platform/head installer tuple pair(s): ");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples.");
         StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
         StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");
         StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact is missing from local desktop downloads shelf");
