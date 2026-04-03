@@ -286,6 +286,11 @@ def validate_windows_gate(
 
     gate_head = gate_payload.get("head") if isinstance(gate_payload.get("head"), dict) else {}
     gate_checks = gate_payload.get("checks") if isinstance(gate_payload.get("checks"), dict) else {}
+    gate_reasons = [
+        str(item).strip()
+        for item in (gate_payload.get("reasons") or [])
+        if str(item).strip()
+    ]
     channel_artifact = (
         gate_checks.get("release_channel_windows_artifact")
         if isinstance(gate_checks.get("release_channel_windows_artifact"), dict)
@@ -295,11 +300,14 @@ def validate_windows_gate(
     gate_evidence["receipt_head"] = gate_head
     gate_evidence["release_channel_windows_artifact"] = channel_artifact
     gate_evidence["windows_installer_path"] = str(gate_checks.get("windows_installer_path") or "").strip()
+    gate_evidence["gate_reasons"] = gate_reasons
 
     if normalize_token(gate_head.get("platform")) != "windows":
         reasons.append("Windows desktop exit gate receipt platform is not 'windows'.")
     if not status_ok(gate_status):
         reasons.append("Windows desktop exit gate is missing or not passing.")
+    for gate_reason in gate_reasons:
+        reasons.append(f"Windows gate reason: {gate_reason}")
 
     expected_by_tuple = {
         (
@@ -380,12 +388,18 @@ def validate_macos_gate(
 
     gate_head = gate_payload.get("head") if isinstance(gate_payload.get("head"), dict) else {}
     gate_checks = gate_payload.get("checks") if isinstance(gate_payload.get("checks"), dict) else {}
+    gate_reasons = [
+        str(item).strip()
+        for item in (gate_payload.get("reasons") or [])
+        if str(item).strip()
+    ]
     channel_artifact = (
         gate_checks.get("release_channel_macos_artifact")
         if isinstance(gate_checks.get("release_channel_macos_artifact"), dict)
         else {}
     )
     gate_evidence["receipt_head"] = gate_head
+    gate_evidence["gate_reasons"] = gate_reasons
     if normalize_token(gate_head.get("app_key")) != head:
         reasons.append(f"macOS desktop exit gate receipt head does not match promoted head '{head}'.")
     if normalize_token(gate_head.get("rid")) != rid:
@@ -394,6 +408,8 @@ def validate_macos_gate(
         reasons.append(f"macOS desktop exit gate receipt platform does not match promoted head '{head}'.")
     if not status_ok(gate_status):
         reasons.append(f"macOS desktop exit gate is missing or not passing for promoted head '{head}' ({rid}).")
+    for gate_reason in gate_reasons:
+        reasons.append(f"macOS gate reason ({head}/{rid}): {gate_reason}")
 
     startup = gate_payload.get("startup_smoke") if isinstance(gate_payload.get("startup_smoke"), dict) else {}
     artifact = gate_payload.get("artifact") if isinstance(gate_payload.get("artifact"), dict) else {}
