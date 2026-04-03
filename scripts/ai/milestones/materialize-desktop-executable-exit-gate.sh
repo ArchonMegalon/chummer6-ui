@@ -137,6 +137,15 @@ def macos_gate_path_for_head(head: str, rid: str, receipt_root: Path) -> Path:
     return receipt_root / f"UI_MACOS_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json"
 
 
+def arch_from_rid(rid: str) -> str:
+    normalized = normalize_token(rid)
+    if normalized.endswith("x64"):
+        return "x64"
+    if normalized.endswith("arm64"):
+        return "arm64"
+    return ""
+
+
 def path_within_root(path: Path, root: Path) -> bool:
     try:
         path.resolve().relative_to(root.resolve())
@@ -222,13 +231,29 @@ def validate_linux_gate(
         reasons.append(f"Linux desktop runtime unit tests are not passing for promoted head '{head}'.")
 
     primary_receipt = primary.get("receipt") if isinstance(primary.get("receipt"), dict) else {}
+    primary_receipt_path_raw = str(primary.get("receipt_path") or "").strip()
+    primary_receipt_path = Path(primary_receipt_path_raw) if primary_receipt_path_raw else None
+    primary_receipt_file_exists = primary_receipt_path is not None and primary_receipt_path.is_file()
+    primary_receipt_file = load_json(primary_receipt_path) if primary_receipt_file_exists and primary_receipt_path is not None else {}
+    primary_receipt_for_validation = primary_receipt_file if primary_receipt_file else primary_receipt
+
+    gate_evidence["primary_receipt_path"] = primary_receipt_path_raw
+    gate_evidence["primary_receipt_file_exists"] = primary_receipt_file_exists
+    if not primary_receipt_file_exists:
+        reasons.append(f"Linux installer startup smoke receipt path is missing/unreadable for promoted head '{head}'.")
+
     gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt.get("artifactDigest"))
     gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt.get("readyCheckpoint"))
     recorded_at_raw = (
-        str(primary_receipt.get("completedAtUtc") or "").strip()
-        or str(primary_receipt.get("recordedAtUtc") or "").strip()
-        or str(primary_receipt.get("startedAtUtc") or "").strip()
+        str(primary_receipt_for_validation.get("completedAtUtc") or "").strip()
+        or str(primary_receipt_for_validation.get("recordedAtUtc") or "").strip()
+        or str(primary_receipt_for_validation.get("startedAtUtc") or "").strip()
     )
+    gate_evidence["primary_receipt_head_id"] = normalize_token(primary_receipt_for_validation.get("headId"))
+    gate_evidence["primary_receipt_platform"] = normalize_token(primary_receipt_for_validation.get("platform"))
+    gate_evidence["primary_receipt_arch"] = normalize_token(primary_receipt_for_validation.get("arch"))
+    gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt_for_validation.get("artifactDigest"))
+    gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt_for_validation.get("readyCheckpoint"))
     gate_evidence["primary_receipt_recorded_at"] = recorded_at_raw
     recorded_at = parse_iso(recorded_at_raw)
     if not recorded_at_raw or recorded_at is None:
@@ -242,13 +267,20 @@ def validate_linux_gate(
             )
     if gate_evidence["primary_receipt_ready_checkpoint"] != "pre_ui_event_loop":
         reasons.append(f"Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head '{head}'.")
+    if gate_evidence["primary_receipt_head_id"] != head:
+        reasons.append(f"Linux installer startup smoke receipt headId does not match promoted head '{head}'.")
+    if gate_evidence["primary_receipt_platform"] != "linux":
+        reasons.append(f"Linux installer startup smoke receipt platform is not linux for promoted head '{head}'.")
 
     if expected_artifact is not None:
         expected_rid = normalize_token(expected_artifact.get("rid"))
         expected_sha = normalize_token(expected_artifact.get("sha256"))
         expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
+        expected_arch = arch_from_rid(expected_rid)
         if expected_rid and normalize_token(gate_head.get("rid")) != expected_rid:
             reasons.append(f"Linux desktop exit gate receipt RID does not match promoted head '{head}' ({expected_rid}).")
+        if expected_arch and gate_evidence["primary_receipt_arch"] != expected_arch:
+            reasons.append(f"Linux installer startup smoke receipt arch does not match promoted RID for head '{head}'.")
         if expected_digest and gate_evidence["primary_receipt_artifact_digest"] != expected_digest:
             reasons.append(
                 f"Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}'."
