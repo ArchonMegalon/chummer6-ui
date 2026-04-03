@@ -45,6 +45,7 @@ That lane:
 - runs the targeted Avalonia headless UI gate tests
 - verifies `DualHeadAcceptanceTests` still contains the required full-workflow equivalence tests
 - fail-closes on `chummer5a-desktop-workflow-parity-check.sh`, `sr4-sr6-desktop-parity-frontier-receipt.sh`, and `materialize-desktop-workflow-execution-gate.sh`
+- fail-closes when SR4/SR6 workflow ledgers drop canonical required family IDs or omit per-family audit-test declarations
 - verifies the release signoff document cites the gate
 - publishes screenshot evidence under `.codex-studio/published/ui-flagship-release-gate-screenshots/`
 - publishes `.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json`
@@ -62,3 +63,4 @@ This gate closes exactly those seams.
 It must not be satisfiable by a recording/stub harness alone. If the shell bootstrap is broken in the promoted runtime, the gate must fail even when a synthetic harness can still paint the menu and dialog chrome.
 
 The legacy visual oracle is old `frmCareer` / `CharacterCareer` from Chummer5a. The promoted workbench is allowed to modernize, but it must keep the recognizable landmarks from that form: top menu, immediate toolstrip, visible character-tab workbench, dense browse rhythm, visible detail pane, and compact progress/status strip.
+The left rail must now read like a Chummer codex tree instead of stacked dashboard cards: a visible `Codex` heading, a tree navigator for open characters/tabs/actions/workflows, and no second left-side tab control.

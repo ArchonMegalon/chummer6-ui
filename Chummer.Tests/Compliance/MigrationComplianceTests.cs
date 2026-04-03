@@ -3410,8 +3410,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt path is outside this repo root for promoted head");
+        StringAssert.Contains(executableGateScriptText, "startup_receipt_file = (");
+        StringAssert.Contains(executableGateScriptText, "startup_smoke_receipt_file_exists");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt status is not passing for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt headId does not match promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt platform is not macOS for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt arch does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");

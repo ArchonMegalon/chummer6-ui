@@ -31,6 +31,7 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Infrastructure.Workspaces;
 using Chummer.Infrastructure.Xml;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
 using Chummer.Rulesets.Hosting;
 using Chummer.Rulesets.Hosting.Presentation;
@@ -221,18 +222,28 @@ public sealed class AvaloniaFlagshipUiGateTests
             TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
             NavigatorTreeItem[] rootItems = SnapshotTreeItems(navigatorTree);
             string[] rootLabels = rootItems.Select(item => item.Label).ToArray();
+            string? rulesetId = harness.State.OpenWorkspaces
+                .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))
+                ?? harness.State.NavigationTabs
+                    .Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId))
+                    .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+            string[] expectedRootLabels =
+            [
+                RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(rulesetId),
+                RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(rulesetId),
+                RulesetUiDirectiveCatalog.BuildSectionActionsHeading(rulesetId),
+                RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(rulesetId),
+            ];
 
             Assert.AreEqual("Codex", codexKicker.Text);
             StringAssert.Contains(codexHeading.Text ?? string.Empty, "Codex");
-            CollectionAssert.AreEqual(
-                new[]
-                {
-                    "Open Characters",
-                    "Navigation Tabs",
-                    "Section Actions",
-                    "Workflow Surfaces"
-                },
-                rootLabels);
+            Assert.IsTrue(
+                rootLabels.SequenceEqual(expectedRootLabels, StringComparer.Ordinal),
+                "The codex tree must keep the classic left-rail group order. Expected: "
+                + string.Join(" | ", expectedRootLabels)
+                + " ; actual: "
+                + string.Join(" | ", rootLabels));
             Assert.IsNull(harness.FindControlOrDefault<TabControl>("LoadedRunnerTabStrip"), "The legacy-oriented left rail must be a tree navigator, not a second tab control.");
             Assert.IsNull(harness.FindControlOrDefault<ListBox>("NavigationTabsList"), "The legacy-oriented left rail must not fall back to a dashboard-style tab list.");
         });
@@ -597,7 +608,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             bool hasLegacyOrWorkflowSectionMarker =
                 previewPayload.Contains("\"sectionId\"", StringComparison.Ordinal)
                 || previewPayload.Contains("\"workflowId\"", StringComparison.Ordinal)
-                || previewPayload.Contains("\"progressionTimelines\"", StringComparison.Ordinal);
+                || previewPayload.Contains("\"progressionTimelines\"", StringComparison.Ordinal)
+                || previewPayload.Contains("\"gear\"", StringComparison.OrdinalIgnoreCase)
+                || previewPayload.Contains("\"profile\"", StringComparison.OrdinalIgnoreCase);
             Assert.IsTrue(
                 hasLegacyOrWorkflowSectionMarker,
                 "Legacy frmCareer parity requires preview payload landmarks that map sections/workflows to the visible workbench.");
