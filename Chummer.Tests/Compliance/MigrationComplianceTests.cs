@@ -3382,6 +3382,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(
             executableGateScriptText,
             "release_channel_path=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}\"");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_gate_path=\"$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json\"");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_gate_path=\"$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json\"");
         StringAssert.Contains(executableGateScriptText, "def is_desktop_install_media(");
         StringAssert.Contains(executableGateScriptText, "return kind_token in {\"installer\", \"dmg\", \"pkg\"}");
         StringAssert.Contains(executableGateScriptText, "and is_desktop_install_media(item.get(\"platform\"), item.get(\"kind\"))");
@@ -3430,6 +3432,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt platform is not linux for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt arch does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate is missing or not passing.");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate is missing or not passing.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing screenshot_dir.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot_dir does not exist on disk.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot_dir is outside this repo root.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing required_screenshots.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are missing on disk:");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes Linux desktop media for head");
         StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
         StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");
