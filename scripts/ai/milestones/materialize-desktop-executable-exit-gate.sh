@@ -309,6 +309,7 @@ def validate_windows_gate(
     gate_payload: Dict[str, Any],
     expected_artifacts: List[Dict[str, Any]],
     desktop_files_root: Path,
+    repo_root: Path,
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -336,6 +337,7 @@ def validate_windows_gate(
     gate_evidence["release_channel_windows_artifact"] = channel_artifact
     gate_evidence["windows_installer_path"] = str(gate_checks.get("windows_installer_path") or "").strip()
     gate_evidence["gate_reasons"] = gate_reasons
+    gate_evidence["startup_smoke_receipt_path"] = str(gate_checks.get("startup_smoke_receipt_path") or "").strip()
 
     if normalize_token(gate_head.get("platform")) != "windows":
         reasons.append("Windows desktop exit gate receipt platform is not 'windows'.")
@@ -401,6 +403,15 @@ def validate_windows_gate(
         if shelf_sha != normalize_token(gate_evidence.get("windows_installer_sha256")):
             reasons.append("Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.")
 
+    startup_smoke_receipt_path = (
+        Path(gate_evidence["startup_smoke_receipt_path"]) if gate_evidence["startup_smoke_receipt_path"] else None
+    )
+    startup_smoke_receipt_exists = startup_smoke_receipt_path is not None and startup_smoke_receipt_path.is_file()
+    if not startup_smoke_receipt_exists:
+        reasons.append("Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.")
+    elif startup_smoke_receipt_path is not None and not path_within_root(startup_smoke_receipt_path, repo_root):
+        reasons.append("Windows startup smoke receipt path is outside this repo root.")
+
     evidence["windows_gate"] = gate_evidence
 
 
@@ -411,6 +422,7 @@ def validate_macos_gate(
     gate_path: Path,
     gate_payload: Dict[str, Any],
     desktop_files_root: Path,
+    repo_root: Path,
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -515,6 +527,8 @@ def validate_macos_gate(
     startup_receipt_exists = startup_receipt_path is not None and startup_receipt_path.is_file()
     if not startup_receipt_exists:
         reasons.append(f"macOS startup smoke receipt path is missing or unreadable for promoted head '{head}' ({rid}).")
+    elif startup_receipt_path is not None and not path_within_root(startup_receipt_path, repo_root):
+        reasons.append(f"macOS startup smoke receipt path is outside this repo root for promoted head '{head}' ({rid}).")
     else:
         if gate_evidence["startup_smoke_ready_checkpoint"] != "pre_ui_event_loop":
             reasons.append(f"macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head '{head}' ({rid}).")
@@ -696,7 +710,15 @@ if len(expected_windows_artifacts) > 1:
         "Release channel currently promotes multiple Windows desktop installer tuples, but the executable gate supports one Windows receipt path."
     )
 if expected_windows_artifacts:
-    validate_windows_gate(windows_gate_path, windows_gate, expected_windows_artifacts, desktop_files_root, evidence, reasons)
+    validate_windows_gate(
+        windows_gate_path,
+        windows_gate,
+        expected_windows_artifacts,
+        desktop_files_root,
+        repo_root,
+        evidence,
+        reasons,
+    )
 
 expected_linux_heads = sorted(
     {
@@ -773,6 +795,7 @@ for macos_artifact in expected_macos_artifacts:
         gate_path,
         load_json(gate_path),
         desktop_files_root,
+        repo_root,
         evidence,
         reasons,
     )
