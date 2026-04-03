@@ -52,6 +52,10 @@ def status_ok(value: str) -> bool:
     return value.strip().lower() in {"pass", "passed", "ready"}
 
 
+def normalize_token(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
 def validate_png(path: Path) -> tuple[str, int, int]:
     try:
         data = path.read_bytes()
@@ -148,12 +152,30 @@ if not status_ok(flagship_status):
 
 interaction_proof = flagship_gate.get("interactionProof") if isinstance(flagship_gate.get("interactionProof"), dict) else {}
 head_proofs = flagship_gate.get("headProofs") if isinstance(flagship_gate.get("headProofs"), dict) else {}
+flagship_required_desktop_heads = sorted(
+    {
+        normalize_token(item)
+        for item in (
+            flagship_gate.get("desktopHeads")
+            if isinstance(flagship_gate.get("desktopHeads"), list)
+            else [flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else []
+        )
+        if normalize_token(item)
+    }
+)
+flagship_head_proof_statuses = {
+    normalize_token(head): normalize_token((proof or {}).get("status"))
+    for head, proof in head_proofs.items()
+    if normalize_token(head) and isinstance(proof, dict)
+}
 avalonia_head_proof = head_proofs.get("avalonia") if isinstance(head_proofs.get("avalonia"), dict) else {}
 blazor_head_proof = head_proofs.get("blazor-desktop") if isinstance(head_proofs.get("blazor-desktop"), dict) else {}
 theme_readability_contrast = str(interaction_proof.get("themeReadabilityContrast") or "").strip().lower()
 evidence["flagship_theme_readability_contrast"] = theme_readability_contrast
 evidence["flagship_avalonia_head_proof_status"] = str(avalonia_head_proof.get("status") or "").strip().lower()
 evidence["flagship_blazor_head_proof_status"] = str(blazor_head_proof.get("status") or "").strip().lower()
+evidence["flagship_required_desktop_heads"] = flagship_required_desktop_heads
+evidence["flagship_head_proof_statuses"] = flagship_head_proof_statuses
 runtime_backed_shell_menu = str(interaction_proof.get("runtimeBackedShellMenu") or "").strip().lower()
 runtime_backed_menu_bar_labels = str(interaction_proof.get("runtimeBackedMenuBarLabels") or "").strip().lower()
 runtime_backed_clickable_primary_menus = str(interaction_proof.get("runtimeBackedClickablePrimaryMenus") or "").strip().lower()
@@ -162,6 +184,8 @@ runtime_backed_codex_tree = str(interaction_proof.get("runtimeBackedCodexTree") 
 runtime_backed_classic_chrome_copy = str(interaction_proof.get("runtimeBackedClassicChromeCopy") or "").strip().lower()
 runtime_backed_tab_panel_only_header = str(interaction_proof.get("runtimeBackedTabPanelOnlyHeader") or "").strip().lower()
 runtime_backed_chrome_enabled_after_runner_load = str(interaction_proof.get("runtimeBackedChromeEnabledAfterRunnerLoad") or "").strip().lower()
+full_interactive_control_inventory = str(interaction_proof.get("fullInteractiveControlInventory") or "").strip().lower()
+main_window_interaction_inventory = str(interaction_proof.get("mainWindowInteractionInventory") or "").strip().lower()
 # Backward-compatible aliasing: some generated flagship receipts carry only runtimeBackedShellMenu.
 if not runtime_backed_menu_bar_labels:
     runtime_backed_menu_bar_labels = runtime_backed_shell_menu
@@ -205,6 +229,8 @@ evidence["runtime_backed_codex_tree"] = runtime_backed_codex_tree
 evidence["runtime_backed_classic_chrome_copy"] = runtime_backed_classic_chrome_copy
 evidence["runtime_backed_tab_panel_only_header"] = runtime_backed_tab_panel_only_header
 evidence["runtime_backed_chrome_enabled_after_runner_load"] = runtime_backed_chrome_enabled_after_runner_load
+evidence["full_interactive_control_inventory"] = full_interactive_control_inventory
+evidence["main_window_interaction_inventory"] = main_window_interaction_inventory
 evidence["runtime_backed_demo_runner_import"] = runtime_backed_demo_runner_import
 evidence["runtime_backed_legacy_workbench"] = runtime_backed_legacy_workbench
 evidence["legacy_dense_builder_rhythm"] = legacy_dense_builder_rhythm
@@ -228,6 +254,14 @@ if not status_ok(str(avalonia_head_proof.get("status") or "").strip().lower()):
     reasons.append("Flagship UI release gate does not carry a passing Avalonia head proof.")
 if not status_ok(str(blazor_head_proof.get("status") or "").strip().lower()):
     reasons.append("Flagship UI release gate does not carry a passing Blazor desktop head proof.")
+if not flagship_required_desktop_heads:
+    reasons.append("Flagship UI release gate is missing required desktopHeads inventory for per-head visual proof.")
+for required_head in flagship_required_desktop_heads:
+    required_head_status = flagship_head_proof_statuses.get(required_head, "")
+    if not status_ok(required_head_status):
+        reasons.append(
+            f"Flagship UI release gate does not carry a passing head proof for required desktop head '{required_head}'."
+        )
 if not status_ok(runtime_backed_shell_menu):
     reasons.append("Flagship UI release gate does not prove runtime-backed shell menu behavior.")
 if not status_ok(runtime_backed_menu_bar_labels):
@@ -244,6 +278,10 @@ if not status_ok(runtime_backed_tab_panel_only_header):
     reasons.append("Flagship UI release gate does not prove the loaded-runner header stays tab-panel-only.")
 if not status_ok(runtime_backed_chrome_enabled_after_runner_load):
     reasons.append("Flagship UI release gate does not prove runtime-backed shell chrome stays enabled after a real runner load.")
+if not status_ok(full_interactive_control_inventory):
+    reasons.append("Flagship UI release gate does not prove the standalone interactive control inventory.")
+if not status_ok(main_window_interaction_inventory):
+    reasons.append("Flagship UI release gate does not prove the main-window interaction inventory.")
 if not status_ok(runtime_backed_demo_runner_import):
     reasons.append("Flagship UI release gate does not prove runtime-backed demo-runner import.")
 if not status_ok(runtime_backed_legacy_workbench):
@@ -299,6 +337,14 @@ required_test_names = [
     "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+    "Standalone_toolstrip_buttons_raise_expected_events",
+    "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
+    "Standalone_workspace_strip_quick_start_button_raises_expected_event",
+    "Standalone_summary_header_tab_buttons_raise_expected_events",
+    "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
+    "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
+    "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
+    "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
 ]
 test_text = ui_gate_tests_path.read_text(encoding="utf-8") if ui_gate_tests_path.is_file() else ""
 missing_tests = [name for name in required_test_names if name not in test_text]

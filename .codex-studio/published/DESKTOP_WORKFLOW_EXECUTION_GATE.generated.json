@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T18:48:27.592817Z",
+  "generatedAt": "2026-04-03T19:54:30.092582Z",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
   "status": "pass",
   "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts.",
@@ -15,6 +15,15 @@
     "sr4_sr6_frontier_status": "pass",
     "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "ui_flagship_release_gate_status": "pass",
+    "flagship_required_desktop_heads": [
+      "avalonia",
+      "blazor-desktop"
+    ],
+    "flagship_head_proof_statuses": {
+      "avalonia": "pass",
+      "blazor-desktop": "pass"
+    },
+    "flagship_missing_or_not_ready_desktop_heads": [],
     "workflow_family_receipt_count_checked": 60,
     "workflow_family_missing_receipts": [],
     "workflow_family_failing_receipts": [],

@@ -205,6 +205,22 @@ def validate_flagship_head_proof(
         reasons.append(f"Flagship UI proof is missing or not passing for promoted head '{head}'.")
 
 
+def validate_cross_gate_head_proof(
+    head: str,
+    gate_label: str,
+    proof_statuses: Dict[str, str],
+    evidence_key: str,
+    evidence: Dict[str, Any],
+    reasons: List[str],
+) -> None:
+    status = normalize_token(proof_statuses.get(head))
+    evidence.setdefault(evidence_key, {})[head] = status
+    if not status_ok(status):
+        reasons.append(
+            f"{gate_label} does not carry passing per-head proof for required desktop head '{head}'."
+        )
+
+
 def validate_linux_gate(
     head: str,
     gate_path: Path,
@@ -967,8 +983,90 @@ heads_requiring_flagship_proof = sorted(
     set(promoted_desktop_heads).union(set(flagship_required_desktop_heads))
 )
 evidence["heads_requiring_flagship_proof"] = heads_requiring_flagship_proof
+
+visual_required_heads = [
+    normalize_token(item)
+    for item in (visual_familiarity_evidence.get("flagship_required_desktop_heads") or [])
+    if normalize_token(item)
+]
+visual_head_statuses_raw = (
+    visual_familiarity_evidence.get("flagship_head_proof_statuses")
+    if isinstance(visual_familiarity_evidence.get("flagship_head_proof_statuses"), dict)
+    else {}
+)
+visual_head_statuses = {
+    normalize_token(head): normalize_token(status)
+    for head, status in visual_head_statuses_raw.items()
+    if normalize_token(head)
+}
+if not visual_head_statuses:
+    # Backward-compatible fallback for older visual receipts.
+    visual_head_statuses = {
+        "avalonia": normalize_token(visual_familiarity_evidence.get("flagship_avalonia_head_proof_status")),
+        "blazor-desktop": normalize_token(visual_familiarity_evidence.get("flagship_blazor_head_proof_status")),
+    }
+workflow_execution_evidence = (
+    workflow_execution_gate.get("evidence")
+    if isinstance(workflow_execution_gate.get("evidence"), dict)
+    else {}
+)
+workflow_required_heads = [
+    normalize_token(item)
+    for item in (workflow_execution_evidence.get("flagship_required_desktop_heads") or [])
+    if normalize_token(item)
+]
+workflow_head_statuses_raw = (
+    workflow_execution_evidence.get("flagship_head_proof_statuses")
+    if isinstance(workflow_execution_evidence.get("flagship_head_proof_statuses"), dict)
+    else {}
+)
+workflow_head_statuses = {
+    normalize_token(head): normalize_token(status)
+    for head, status in workflow_head_statuses_raw.items()
+    if normalize_token(head)
+}
+evidence["visual_familiarity_required_desktop_heads"] = visual_required_heads
+evidence["workflow_execution_required_desktop_heads"] = workflow_required_heads
+if not visual_required_heads:
+    reasons.append("Desktop visual familiarity exit gate evidence is missing required per-head desktop inventory.")
+if not workflow_required_heads:
+    reasons.append("Desktop workflow execution gate evidence is missing required per-head desktop inventory.")
+missing_visual_required_heads = [
+    head for head in heads_requiring_flagship_proof if head not in visual_required_heads
+]
+missing_workflow_required_heads = [
+    head for head in heads_requiring_flagship_proof if head not in workflow_required_heads
+]
+evidence["visual_familiarity_missing_required_heads"] = missing_visual_required_heads
+evidence["workflow_execution_missing_required_heads"] = missing_workflow_required_heads
+if missing_visual_required_heads:
+    reasons.append(
+        "Desktop visual familiarity exit gate does not declare required per-head inventory for: "
+        + ", ".join(missing_visual_required_heads)
+    )
+if missing_workflow_required_heads:
+    reasons.append(
+        "Desktop workflow execution gate does not declare required per-head inventory for: "
+        + ", ".join(missing_workflow_required_heads)
+    )
 for promoted_head in heads_requiring_flagship_proof:
     validate_flagship_head_proof(promoted_head, flagship_gate, evidence, reasons)
+    validate_cross_gate_head_proof(
+        promoted_head,
+        "Desktop visual familiarity exit gate",
+        visual_head_statuses,
+        "visual_familiarity_head_proofs",
+        evidence,
+        reasons,
+    )
+    validate_cross_gate_head_proof(
+        promoted_head,
+        "Desktop workflow execution gate",
+        workflow_head_statuses,
+        "workflow_execution_head_proofs",
+        evidence,
+        reasons,
+    )
 
 linux_statuses: Dict[str, str] = {}
 for expected_linux_head in expected_linux_heads:
