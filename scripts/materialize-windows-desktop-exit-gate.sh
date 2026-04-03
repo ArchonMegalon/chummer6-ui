@@ -14,6 +14,72 @@ fi
 
 PROOF_PATH="${CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json}"
 RELEASE_CHANNEL_PATH="${CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}"
+APP_KEY_OVERRIDE="${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY:-}"
+RID_OVERRIDE="${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID:-}"
+if [[ -z "$APP_KEY_OVERRIDE" || -z "$RID_OVERRIDE" ]]; then
+  mapfile -t RELEASE_PROMOTED_TUPLE < <(python3 - "$RELEASE_CHANNEL_PATH" "$APP_KEY_OVERRIDE" "$RID_OVERRIDE" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+release_channel_path = Path(sys.argv[1])
+app_key_override = sys.argv[2].strip().lower()
+rid_override = sys.argv[3].strip().lower()
+
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+def artifact_rid(artifact: dict) -> str:
+    rid = normalize(artifact.get("rid"))
+    if rid:
+        return rid
+    arch = normalize(artifact.get("arch"))
+    if arch in {"x64", "arm64"}:
+        return f"win-{arch}"
+    return ""
+
+
+if not release_channel_path.is_file():
+    raise SystemExit(0)
+
+payload = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
+artifacts = [
+    item for item in (payload.get("artifacts") or [])
+    if isinstance(item, dict)
+    and normalize(item.get("platform")) == "windows"
+    and normalize(item.get("kind")) in {"installer", "msix"}
+    and normalize(item.get("head"))
+    and artifact_rid(item)
+]
+
+if app_key_override:
+    artifacts = [item for item in artifacts if normalize(item.get("head")) == app_key_override]
+if rid_override:
+    artifacts = [item for item in artifacts if artifact_rid(item) == rid_override]
+if not artifacts:
+    raise SystemExit(0)
+
+preferred_order = ["win-x64", "win-arm64"]
+ranked = sorted(
+    artifacts,
+    key=lambda artifact: (
+        preferred_order.index(artifact_rid(artifact)) if artifact_rid(artifact) in preferred_order else len(preferred_order),
+        0 if normalize(artifact.get("head")) == "avalonia" else 1,
+        normalize(artifact.get("head")),
+        artifact_rid(artifact),
+    ),
+)
+chosen = ranked[0]
+print(normalize(chosen.get("head")))
+print(artifact_rid(chosen))
+PY
+)
+fi
+APP_KEY="${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}"
+RID="${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-win-x64}}"
 WINDOWS_INSTALLER_PATH="${CHUMMER_WINDOWS_INSTALLER_PATH:-}"
 WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
 UI_LOCAL_RELEASE_PROOF_PATH="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
@@ -24,7 +90,7 @@ SR6_WORKFLOW_PARITY_PATH="${CHUMMER_SR6_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
-python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" <<'PY'
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$APP_KEY" "$RID" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -75,6 +141,16 @@ def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def artifact_rid(artifact: Dict[str, Any]) -> str:
+    rid = normalize_token(artifact.get("rid"))
+    if rid:
+        return rid
+    arch = normalize_token(artifact.get("arch"))
+    if arch in {"x64", "arm64"}:
+        return f"win-{arch}"
+    return ""
+
+
 def parse_iso_utc(value: Any) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -111,6 +187,8 @@ sr6_workflow_parity_path = Path(sys.argv[9])
 repo_root = Path(sys.argv[10])
 hub_registry_root_arg = str(sys.argv[11] or "").strip()
 hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
+expected_head_override = normalize_token(sys.argv[12])
+expected_rid_override = normalize_token(sys.argv[13])
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
@@ -134,28 +212,30 @@ artifacts = [
     item for item in (release_channel.get("artifacts") or [])
     if isinstance(item, dict)
 ]
+expected_head = expected_head_override or "avalonia"
+expected_rid = expected_rid_override or "win-x64"
+expected_arch = "x64"
 windows_artifact = None
 for artifact in artifacts:
     if (
-        str(artifact.get("head") or "").strip()
-        and str(artifact.get("platform") or "").strip().lower() == "windows"
-        and str(artifact.get("kind") or "").strip().lower() in {"installer", "msix"}
+        normalize_token(artifact.get("head")) == expected_head
+        and normalize_token(artifact.get("platform")) == "windows"
+        and normalize_token(artifact.get("kind")) in {"installer", "msix"}
+        and artifact_rid(artifact) == expected_rid
     ):
         windows_artifact = artifact
         break
 
-expected_head = "avalonia"
-expected_rid = "win-x64"
-expected_arch = "x64"
-
 if windows_artifact is None:
-    reasons.append("Release channel does not publish a promoted Windows install medium artifact.")
+    reasons.append(
+        f"Release channel does not publish a promoted Windows install medium artifact for {expected_head} ({expected_rid})."
+    )
     artifact_file_name = ""
     artifact_size = 0
     artifact_sha = ""
 else:
     expected_head = normalize_token(windows_artifact.get("head")) or expected_head
-    expected_rid = normalize_token(windows_artifact.get("rid")) or expected_rid
+    expected_rid = artifact_rid(windows_artifact) or expected_rid
     if expected_rid.startswith("win-") and len(expected_rid) > 4:
         expected_arch = expected_rid.split("-", 1)[1]
     artifact_file_name = str(windows_artifact.get("fileName") or "").strip()
@@ -163,7 +243,7 @@ else:
     artifact_sha = str(windows_artifact.get("sha256") or "").strip().lower()
     evidence["release_channel_windows_artifact"] = windows_artifact
 
-default_file_name = artifact_file_name or "chummer-avalonia-win-x64-installer.exe"
+default_file_name = artifact_file_name or f"chummer-{expected_head}-{expected_rid}-installer.exe"
 if windows_installer_path_override:
     installer_candidates = [windows_installer_path_override.expanduser().resolve()]
 else:
