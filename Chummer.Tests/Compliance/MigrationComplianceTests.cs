@@ -3453,6 +3453,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot evidence predates the visual familiarity receipt generation time:");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshot_file_timestamps");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshots_older_than_receipt");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "release_channel_generated_at");
+        StringAssert.Contains(executableGateScriptText, "release_channel_age_seconds");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing a valid generated_at timestamp.");
+        StringAssert.Contains(executableGateScriptText, "Release channel receipt is stale (");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes Linux desktop media for head");
         StringAssert.Contains(executableGateScriptText, "flagship_required_desktop_heads = sorted(");
         StringAssert.Contains(executableGateScriptText, "Flagship UI release gate is missing required desktopHeads desktop head inventory.");
