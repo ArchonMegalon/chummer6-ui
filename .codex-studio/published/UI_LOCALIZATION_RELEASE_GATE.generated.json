@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-04-03T22:15:35Z",
+  "generated_at": "2026-04-03T22:19:12Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -25,57 +25,56 @@
   "signoff_smoke_runner": {
     "status": "pass",
     "log_excerpt": [
-      "/usr/share/dotnet/sdk/10.0.201/Microsoft.Common.CurrentVersion.targets(4917,5): warning MSB3026: Could not copy \"obj/Debug/net10.0/Chummer.Engine.Contracts.dll\" to \"bin/Debug/net10.0/Chummer.Engine.Contracts.dll\". Beginning retry 1 in 1000ms. The process cannot access the file '/docker/chummercomplete/chummer-core-engine/Chummer.Contracts/obj/Debug/net10.0/Chummer.Engine.Contracts.dll' because it is being used by another process.  [/docker/chummercomplete/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj]",
       "[B15] PASS: localization release smoke runner checks passed."
     ]
   },
   "locale_summary": [
     {
       "locale": "de-de",
-      "override_count": 178,
+      "override_count": 194,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 205,
+      "untranslated_key_count": 189,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     },
     {
       "locale": "fr-fr",
-      "override_count": 178,
+      "override_count": 194,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 205,
+      "untranslated_key_count": 189,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     },
     {
       "locale": "ja-jp",
-      "override_count": 178,
+      "override_count": 194,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 205,
+      "untranslated_key_count": 189,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     },
     {
       "locale": "pt-br",
-      "override_count": 178,
+      "override_count": 194,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 205,
+      "untranslated_key_count": 189,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     },
     {
       "locale": "zh-cn",
-      "override_count": 178,
+      "override_count": 194,
       "minimum_override_count": 40,
       "default_key_count": 383,
-      "untranslated_key_count": 205,
+      "untranslated_key_count": 189,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
@@ -113,11 +112,11 @@
   },
   "blocking_findings": [],
   "translation_backlog_findings": [
-    "de-de: 205 trust-surface keys still rely on explicit en-US fallback",
-    "fr-fr: 205 trust-surface keys still rely on explicit en-US fallback",
-    "ja-jp: 205 trust-surface keys still rely on explicit en-US fallback",
-    "pt-br: 205 trust-surface keys still rely on explicit en-US fallback",
-    "zh-cn: 205 trust-surface keys still rely on explicit en-US fallback"
+    "de-de: 189 trust-surface keys still rely on explicit en-US fallback",
+    "fr-fr: 189 trust-surface keys still rely on explicit en-US fallback",
+    "ja-jp: 189 trust-surface keys still rely on explicit en-US fallback",
+    "pt-br: 189 trust-surface keys still rely on explicit en-US fallback",
+    "zh-cn: 189 trust-surface keys still rely on explicit en-US fallback"
   ],
   "acceptance_gates": [
     "pseudo_localization",
