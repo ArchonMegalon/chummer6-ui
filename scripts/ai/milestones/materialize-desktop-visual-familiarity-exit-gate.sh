@@ -335,6 +335,7 @@ required_test_names = [
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
     "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
+    "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
     "Standalone_toolstrip_buttons_raise_expected_events",
@@ -652,13 +653,37 @@ elif not magic_matrix_method_has_rhythm:
 if not magic_matrix_capture_opens_dialog:
     reasons.append("Magic/matrix screenshot proof is not trusted: the visual review proof does not open a dedicated spell/matrix dialog before recording evidence.")
 
+ruleset_orientation_method = extract_test_method(test_text, "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks")
+required_ruleset_orientation_markers = [
+    "RulesetDefaults.Sr4",
+    "RulesetDefaults.Sr6",
+    "SetPreferredRulesetAsync(",
+    "BuildOpenWorkspacesHeading",
+    "BuildNavigationTabsHeading",
+    "BuildSectionActionsHeading",
+    "BuildWorkflowSurfacesHeading",
+]
+missing_ruleset_orientation_markers = [
+    marker for marker in required_ruleset_orientation_markers if marker not in ruleset_orientation_method
+]
+ruleset_orientation_method_has_markers = not missing_ruleset_orientation_markers
+evidence["ruleset_orientation_method_has_markers"] = ruleset_orientation_method_has_markers
+evidence["missing_ruleset_orientation_markers"] = missing_ruleset_orientation_markers
+if not ruleset_orientation_method:
+    reasons.append("SR4/SR6 codex orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is not present in test sources.")
+elif not ruleset_orientation_method_has_markers:
+    reasons.append(
+        "SR4/SR6 codex orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is missing markers: "
+        + ", ".join(missing_ruleset_orientation_markers)
+    )
+
 status = "pass" if not reasons else "fail"
 payload = {
     "generatedAt": now_iso(),
     "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
     "status": status,
     "summary": (
-        "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and milestone-2 creation/vehicles/contacts/diary surfaces."
+        "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, milestone-2 creation/vehicles/contacts/diary surfaces, and SR4/SR6 codex orientation cues."
         if status == "pass"
         else "Desktop visual familiarity is not fully proven."
     ),
