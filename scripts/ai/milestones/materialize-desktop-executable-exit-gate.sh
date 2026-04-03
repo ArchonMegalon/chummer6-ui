@@ -938,8 +938,18 @@ receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_
 hub_registry_root_raw = str(sys.argv[10]).strip() if len(sys.argv) > 10 else ""
 hub_registry_root = Path(hub_registry_root_raw) if hub_registry_root_raw else None
 trusted_roots = [repo_root]
+hub_registry_release_channel_path = None
+hub_registry_root_trusted = False
 if hub_registry_root is not None:
-    trusted_roots.append(hub_registry_root)
+    hub_registry_release_channel_path = (
+        hub_registry_root / ".codex-studio" / "published" / "RELEASE_CHANNEL.generated.json"
+    )
+    if (
+        hub_registry_release_channel_path.is_file()
+        and release_channel_path.resolve() == hub_registry_release_channel_path.resolve()
+    ):
+        trusted_roots.append(hub_registry_root)
+        hub_registry_root_trusted = True
 deduped_trusted_roots: List[Path] = []
 seen_trusted_roots: set[str] = set()
 for candidate_root in trusted_roots:
@@ -960,6 +970,13 @@ evidence: Dict[str, Any] = {
     "visual_familiarity_gate_path": str(visual_familiarity_gate_path),
     "workflow_execution_gate_path": str(workflow_execution_gate_path),
     "repo_root": str(repo_root.resolve()),
+    "hub_registry_root": str(hub_registry_root.resolve()) if hub_registry_root is not None else "",
+    "hub_registry_release_channel_path": (
+        str(hub_registry_release_channel_path.resolve())
+        if hub_registry_release_channel_path is not None
+        else ""
+    ),
+    "hub_registry_root_trusted_for_startup_smoke_proof": hub_registry_root_trusted,
     "trusted_local_roots": [str(root.resolve()) for root in trusted_roots],
 }
 

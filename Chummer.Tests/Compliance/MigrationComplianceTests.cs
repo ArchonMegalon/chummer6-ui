@@ -3397,6 +3397,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "receipt path is outside this repo root");
         StringAssert.Contains(executableGateScriptText, "def validate_trusted_path_scope(");
         StringAssert.Contains(executableGateScriptText, "trusted_local_roots");
+        StringAssert.Contains(executableGateScriptText, "hub_registry_release_channel_path = (");
+        StringAssert.Contains(executableGateScriptText, "hub_registry_root_trusted_for_startup_smoke_proof");
+        StringAssert.Contains(executableGateScriptText, "and release_channel_path.resolve() == hub_registry_release_channel_path.resolve()");
         StringAssert.Contains(executableGateScriptText, "def validate_windows_gate(");
         StringAssert.Contains(executableGateScriptText, "gate_reasons = [");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"Windows gate reason: {gate_reason}\")");
