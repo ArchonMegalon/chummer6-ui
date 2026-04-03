@@ -8,7 +8,9 @@ output_dir="$repo_root/Chummer.Avalonia/bin/Release/net10.0"
 sample_path="$output_dir/Samples/Legacy/Soma-Career.chum5"
 receipt_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
-capture_screenshot_dir="${TMPDIR:-/tmp}/chummer-ui-flagship-gate-screenshots"
+lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
+capture_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-gate-screenshots.XXXXXX")"
+staged_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-published-screenshots.XXXXXX")"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 avalonia_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 dual_head_tests_path="$repo_root/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
@@ -20,11 +22,25 @@ sr4_sr6_frontier_receipt_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTO
 desktop_workflow_execution_receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 nuget_packages="${CHUMMER_NUGET_PACKAGES:-$repo_root/.codex-studio/.nuget/packages}"
 
+mkdir -p "$(dirname "$lock_dir")"
+for _ in $(seq 1 150); do
+  if mkdir "$lock_dir" 2>/dev/null; then
+    break
+  fi
+  sleep 2
+done
+if [[ ! -d "$lock_dir" ]]; then
+  echo "[b14] FAIL: could not acquire release gate lock: $lock_dir" >&2
+  exit 44
+fi
+
+cleanup() {
+  rm -rf "$capture_screenshot_dir" "$staged_screenshot_dir"
+  rmdir "$lock_dir" 2>/dev/null || true
+}
+trap cleanup EXIT
+
 mkdir -p "$(dirname "$receipt_path")"
-rm -rf "$screenshot_dir"
-mkdir -p "$screenshot_dir"
-rm -rf "$capture_screenshot_dir"
-mkdir -p "$capture_screenshot_dir"
 mkdir -p "$nuget_packages"
 export NUGET_PACKAGES="$nuget_packages"
 
@@ -117,7 +133,7 @@ bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualif
 echo "[b14] running flagship Blazor desktop shell gate tests..."
 bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" -v minimal >/dev/null
 
-python3 - <<'PY' "$capture_screenshot_dir" "$screenshot_dir"
+python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir"
 from __future__ import annotations
 
 import shutil
@@ -134,7 +150,7 @@ for path in png_paths:
 PY
 
 echo "[b14] normalizing screenshot PNG CRC chunks..."
-python3 - <<'PY' "$screenshot_dir"
+python3 - <<'PY' "$staged_screenshot_dir"
 from __future__ import annotations
 
 import binascii
@@ -189,6 +205,10 @@ if not png_paths:
 for png_path in png_paths:
     normalize_png(png_path)
 PY
+
+rm -rf "$screenshot_dir"
+mkdir -p "$screenshot_dir"
+cp "$staged_screenshot_dir"/*.png "$screenshot_dir"/
 
 echo "[b14] running cross-head workflow parity tests..."
 bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
