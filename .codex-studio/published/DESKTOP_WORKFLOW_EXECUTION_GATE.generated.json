@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T17:42:40.933225Z",
+  "generatedAt": "2026-04-03T17:58:31.411907Z",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
   "status": "pass",
   "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts.",
