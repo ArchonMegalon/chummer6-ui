@@ -429,6 +429,354 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Standalone_toolstrip_buttons_raise_expected_events()
+    {
+        WithStandaloneControl<ToolStripControl>(control =>
+        {
+            List<string> raisedEvents = [];
+            control.ImportFileRequested += (_, _) => raisedEvents.Add("import_file");
+            control.ImportRawRequested += (_, _) => raisedEvents.Add("import_raw");
+            control.SaveRequested += (_, _) => raisedEvents.Add("save");
+            control.CloseWorkspaceRequested += (_, _) => raisedEvents.Add("close_workspace");
+            control.DesktopHomeRequested += (_, _) => raisedEvents.Add("desktop_home");
+            control.CampaignWorkspaceRequested += (_, _) => raisedEvents.Add("campaign_workspace");
+            control.UpdateStatusRequested += (_, _) => raisedEvents.Add("update_status");
+            control.InstallLinkingRequested += (_, _) => raisedEvents.Add("install_linking");
+            control.SupportRequested += (_, _) => raisedEvents.Add("support");
+            control.ReportIssueRequested += (_, _) => raisedEvents.Add("report_issue");
+            control.SettingsRequested += (_, _) => raisedEvents.Add("settings");
+            control.LoadDemoRunnerRequested += (_, _) => raisedEvents.Add("load_demo_runner");
+
+            (string ButtonName, string EventId)[] buttonMap =
+            [
+                ("DesktopHomeButton", "desktop_home"),
+                ("CampaignWorkspaceButton", "campaign_workspace"),
+                ("LoadDemoRunnerButton", "load_demo_runner"),
+                ("ImportFileButton", "import_file"),
+                ("SaveButton", "save"),
+                ("SettingsButton", "settings"),
+                ("ImportRawButton", "import_raw"),
+                ("UpdateStatusButton", "update_status"),
+                ("InstallLinkingButton", "install_linking"),
+                ("SupportButton", "support"),
+                ("ReportIssueButton", "report_issue"),
+                ("CloseWorkspaceButton", "close_workspace"),
+            ];
+
+            foreach ((string buttonName, _) in buttonMap)
+            {
+                RaiseClick(FindDescendant<Button>(control, buttonName));
+            }
+
+            CollectionAssert.AreEqual(buttonMap.Select(item => item.EventId).ToArray(), raisedEvents.ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events()
+    {
+        WithStandaloneControl<ShellMenuBarControl>(control =>
+        {
+            List<string> selectedMenus = [];
+            List<string> selectedCommands = [];
+            control.MenuSelected += (_, menuId) => selectedMenus.Add(menuId);
+            control.MenuCommandSelected += (_, commandId) => selectedCommands.Add(commandId);
+
+            string[] menuIds = ["file", "edit", "special", "tools", "windows", "help"];
+            control.SetMenuState(
+                openMenuId: null,
+                knownMenuIds: menuIds,
+                openMenuCommands: [],
+                isBusy: false);
+
+            foreach (string buttonName in new[]
+                     {
+                         "FileMenuButton",
+                         "EditMenuButton",
+                         "SpecialMenuButton",
+                         "ToolsMenuButton",
+                         "WindowsMenuButton",
+                         "HelpMenuButton",
+                     })
+            {
+                RaiseClick(FindDescendant<Button>(control, buttonName));
+            }
+
+            CollectionAssert.AreEqual(menuIds, selectedMenus.ToArray());
+
+            control.SetMenuState(
+                openMenuId: "file",
+                knownMenuIds: menuIds,
+                openMenuCommands:
+                [
+                    new MenuCommandItem("open_character", "open character", true, true),
+                    new MenuCommandItem("save_character", "save character", true),
+                ],
+                isBusy: false);
+
+            Button[] commandButtons = FindDescendant<Panel>(control, "MenuCommandsHost")
+                .Children
+                .OfType<Button>()
+                .ToArray();
+            Assert.AreEqual(2, commandButtons.Length, "Standalone menu proof must render visible command buttons for the open menu.");
+
+            foreach (Button commandButton in commandButtons)
+            {
+                RaiseClick(commandButton);
+            }
+
+            CollectionAssert.AreEqual(new[] { "open_character", "save_character" }, selectedCommands.ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_workspace_strip_quick_start_button_raises_expected_event()
+    {
+        WithStandaloneControl<WorkspaceStripControl>(control =>
+        {
+            int loadDemoRunnerRequests = 0;
+            control.LoadDemoRunnerRequested += (_, _) => loadDemoRunnerRequests++;
+            control.SetState(new WorkspaceStripState("No runner loaded.", ShowQuickStartAction: true));
+
+            Assert.IsTrue(FindDescendant<Control>(control, "QuickStartContainer").IsVisible);
+            RaiseClick(FindDescendant<Button>(control, "LoadDemoRunnerQuickActionButton"));
+
+            Assert.AreEqual(1, loadDemoRunnerRequests, "Workspace quick-start CTA must raise its load-demo-runner event.");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_summary_header_tab_buttons_raise_expected_events()
+    {
+        WithStandaloneControl<SummaryHeaderControl>(control =>
+        {
+            List<string> selectedTabs = [];
+            control.NavigationTabSelected += (_, tabId) => selectedTabs.Add(tabId);
+            control.SetNavigationTabs(
+                "Runner Tabs",
+                [
+                    new NavigatorTabItem("tab-profile", "Profile", "profile", "runner", true),
+                    new NavigatorTabItem("tab-gear", "Gear", "gear", "runner", true),
+                ],
+                activeTabId: "tab-profile");
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            Button[] tabButtons = control.GetVisualDescendants()
+                .OfType<Button>()
+                .ToArray();
+            Assert.AreEqual(2, tabButtons.Length, "Standalone summary-header proof must render a button for every visible runner tab.");
+
+            foreach (Button tabButton in tabButtons)
+            {
+                RaiseClick(tabButton);
+            }
+
+            CollectionAssert.AreEqual(new[] { "tab-profile", "tab-gear" }, selectedTabs.ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events()
+    {
+        WithStandaloneControl<NavigatorPaneControl>(control =>
+        {
+            List<string> selectedWorkspaces = [];
+            List<string> selectedTabs = [];
+            List<string> selectedSectionActions = [];
+            List<string> selectedWorkflowSurfaces = [];
+            control.WorkspaceSelected += (_, workspaceId) => selectedWorkspaces.Add(workspaceId);
+            control.NavigationTabSelected += (_, tabId) => selectedTabs.Add(tabId);
+            control.SectionActionSelected += (_, actionId) => selectedSectionActions.Add(actionId);
+            control.WorkflowSurfaceSelected += (_, actionId) => selectedWorkflowSurfaces.Add(actionId);
+
+            control.SetState(new NavigatorPaneState(
+                OpenWorkspacesHeading: "Open Workspaces",
+                OpenWorkspaces:
+                [
+                    new NavigatorWorkspaceItem("runner-1", "Soma", "Demo", RulesetDefaults.Sr5, true, true)
+                ],
+                SelectedWorkspaceId: null,
+                NavigationTabsHeading: "Tabs",
+                NavigationTabs:
+                [
+                    new NavigatorTabItem("tab-gear", "Gear", "gear", "runner", true)
+                ],
+                ActiveTabId: null,
+                SectionActionsHeading: "Section Actions",
+                SectionActions:
+                [
+                    new NavigatorSectionActionItem("action-cyberware", "Open Cyberware", WorkspaceSurfaceActionKind.Section)
+                ],
+                ActiveActionId: null,
+                WorkflowSurfacesHeading: "Workflow Surfaces",
+                WorkflowSurfaces:
+                [
+                    new NavigatorWorkflowSurfaceItem("surface-progress", "progress", "Progress Workflow", "workflow-progress")
+                ]));
+
+            TreeView navigatorTree = FindDescendant<TreeView>(control, "NavigatorTree");
+            NavigatorTreeItem[] items = control.SnapshotTreeItems();
+
+            navigatorTree.SelectedItem = FindTreeItem(items, NavigatorTreeNodeKind.Workspace, static item => true);
+            PumpStandaloneUi();
+            navigatorTree.SelectedItem = FindTreeItem(items, NavigatorTreeNodeKind.NavigationTab, static item => true);
+            PumpStandaloneUi();
+            navigatorTree.SelectedItem = FindTreeItem(items, NavigatorTreeNodeKind.SectionAction, static item => true);
+            PumpStandaloneUi();
+            navigatorTree.SelectedItem = FindTreeItem(items, NavigatorTreeNodeKind.WorkflowSurface, static item => true);
+            PumpStandaloneUi();
+
+            CollectionAssert.AreEqual(new[] { "runner-1" }, selectedWorkspaces.ToArray());
+            CollectionAssert.AreEqual(new[] { "tab-gear" }, selectedTabs.ToArray());
+            CollectionAssert.AreEqual(new[] { "action-cyberware" }, selectedSectionActions.ToArray());
+            CollectionAssert.AreEqual(new[] { "workflow-progress" }, selectedWorkflowSurfaces.ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions()
+    {
+        WithStandaloneControl<CommandDialogPaneControl>(control =>
+        {
+            List<string> selectedCommands = [];
+            List<string> selectedActions = [];
+            List<string> updatedFields = [];
+            control.CommandSelected += (_, commandId) => selectedCommands.Add(commandId);
+            control.DialogActionSelected += (_, actionId) => selectedActions.Add(actionId);
+            control.DialogFieldValueChanged += (_, args) => updatedFields.Add($"{args.FieldId}={args.Value}");
+
+            CommandPaletteItem[] commands =
+            [
+                new("global_settings", "Global Settings", "tools", true),
+                new("about", "About Chummer", "help", true),
+            ];
+            control.SetState(new CommandDialogPaneState(
+                Commands: commands,
+                SelectedCommandId: null,
+                DialogTitle: "Global Settings",
+                DialogMessage: "Adjust desktop preferences.",
+                Fields:
+                [
+                    new DialogFieldDisplayItem("globalTheme", "Theme", "classic", "classic", false, false, "text"),
+                    new DialogFieldDisplayItem("globalCompactMode", "Compact Mode", "false", "false", false, false, "checkbox")
+                ],
+                Actions:
+                [
+                    new DialogActionDisplayItem("save", "Save", true),
+                    new DialogActionDisplayItem("cancel", "Cancel", false)
+                ]));
+
+            ListBox commandsList = FindDescendant<ListBox>(control, "CommandsList");
+            commandsList.SelectedItem = commands[0];
+            PumpStandaloneUi();
+
+            TextBox editableTextField = control.GetVisualDescendants()
+                .OfType<TextBox>()
+                .First(textBox => !textBox.IsReadOnly);
+            editableTextField.Text = "dense";
+            PumpStandaloneUi();
+
+            CheckBox checkboxField = control.GetVisualDescendants()
+                .OfType<CheckBox>()
+                .First();
+            checkboxField.IsChecked = true;
+            PumpStandaloneUi();
+
+            Button primaryActionButton = FindDescendant<Panel>(control, "DialogActionsHost")
+                .Children
+                .OfType<Button>()
+                .First(button => string.Equals(button.Tag?.ToString(), "save", StringComparison.Ordinal));
+            RaiseClick(primaryActionButton);
+
+            CollectionAssert.AreEqual(new[] { "global_settings" }, selectedCommands.ToArray());
+            CollectionAssert.Contains(updatedFields, "globalTheme=dense");
+            CollectionAssert.Contains(updatedFields, "globalCompactMode=true");
+            CollectionAssert.AreEqual(new[] { "save" }, selectedActions.ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available()
+    {
+        WithStandaloneControl<CoachSidecarControl>(control =>
+        {
+            int copyRequests = 0;
+            control.CopyLaunchRequested += (_, _) => copyRequests++;
+            control.SetState(new CoachSidecarPaneState(
+                Status: "ready",
+                PromptPolicy: "evidence-first",
+                BudgetSummary: "healthy",
+                WorkspaceId: "demo-runner",
+                RuntimeFingerprint: "runtime-1",
+                LaunchUri: "https://chummer.run/coach/demo",
+                LaunchStatusMessage: "Ready to copy.",
+                ErrorMessage: null,
+                Providers:
+                [
+                    new CoachProviderDisplayItem("Primary", "provider-primary", "api", "closed", "https", "token", "bound", "recent", "none")
+                ],
+                Audits:
+                [
+                    new CoachAuditDisplayItem("conversation-1", "runtime-1", "https://chummer.run/coach/demo", "summary", "flavor", "healthy", "structured", "recommend", "evidence", "risk", "source", "cached", "direct", "full", "now")
+                ]));
+
+            Button copyButton = FindDescendant<Button>(control, "CopyCoachLaunchButton");
+            Assert.IsTrue(copyButton.IsEnabled, "Coach sidecar copy button must enable when a scoped launch URI is available.");
+            RaiseClick(copyButton);
+
+            Assert.AreEqual(1, copyRequests, "Coach sidecar copy control must raise a copy-launch event.");
+        });
+    }
+
+    [TestMethod]
+    public void Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.WaitUntil(() => harness.FindControl<Panel>("LoadedRunnerTabStripPanel").Children.Count > 0);
+
+            Button firstTabButton = harness.FindControl<Panel>("LoadedRunnerTabStripPanel")
+                .Children
+                .OfType<Button>()
+                .First(button => !string.IsNullOrWhiteSpace(button.Tag?.ToString()));
+            string selectedTabId = firstTabButton.Tag?.ToString() ?? throw new AssertFailedException("Loaded-runner tab buttons must carry tab ids.");
+            harness.ClickLoadedRunnerTab(firstTabButton.Content?.ToString() ?? string.Empty);
+            harness.WaitUntil(() => harness.ShellPresenter.SelectedTabIds.Contains(selectedTabId));
+
+            harness.SelectCommand("global_settings");
+            harness.WaitUntil(() =>
+                string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Global Settings",
+                    StringComparison.Ordinal));
+            harness.WaitUntil(() =>
+                harness.ShellPresenter.ExecutedCommandIds.Contains("global_settings")
+                && harness.Presenter.ExecutedCommandIds.Contains("global_settings"));
+
+            harness.UpdateFirstEditableDialogTextField("dense");
+            harness.WaitUntil(() => harness.Presenter.DialogFieldUpdates.Any(update => string.Equals(update.Value, "dense", StringComparison.Ordinal)));
+
+            harness.ClickDialogAction("save");
+            harness.WaitUntil(() =>
+                harness.Presenter.ExecutedDialogActionIds.Contains("save")
+                && harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null,
+                timeoutMs: 4000);
+
+            harness.SetActiveSectionForTesting("spells");
+            harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_spell_add")?.IsVisible == true);
+            harness.Click("SectionQuickAction_spell_add");
+            harness.WaitUntil(() =>
+                harness.Presenter.HandledUiControlIds.Contains("spell_add")
+                && string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Add Spell",
+                    StringComparison.Ordinal));
+        });
+    }
+
+    [TestMethod]
     public void Keyboard_shortcuts_resolve_to_the_same_shell_commands()
     {
         WithHarness(harness =>
@@ -1495,6 +1843,88 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
     }
 
+    private static void WithStandaloneControl<TControl>(Action<TControl> assertion)
+        where TControl : Control, new()
+    {
+        WithStandaloneControl<TControl, bool>(control =>
+        {
+            assertion(control);
+            return true;
+        });
+    }
+
+    private static TResult WithStandaloneControl<TControl, TResult>(Func<TControl, TResult> assertion)
+        where TControl : Control, new()
+    {
+        EnsureHeadlessPlatform();
+        HeadlessUnitTestSession? session = null;
+        try
+        {
+            session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
+            return session.Dispatch(() =>
+                {
+                    Window hostWindow = new()
+                    {
+                        Width = 1440,
+                        Height = 960,
+                        Content = new TControl()
+                    };
+                    hostWindow.Show();
+                    PumpStandaloneUi();
+
+                    try
+                    {
+                        return assertion((TControl)hostWindow.Content!);
+                    }
+                    finally
+                    {
+                        hostWindow.Close();
+                        PumpStandaloneUi();
+                    }
+                },
+                CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+        }
+        finally
+        {
+            DisposeHeadlessSessionQuietly(session);
+        }
+    }
+
+    private static T FindDescendant<T>(Control root, string name)
+        where T : Control
+    {
+        return FindDescendantOrDefault<T>(root, name)
+            ?? throw new AssertFailedException($"Descendant control '{name}' of type {typeof(T).Name} was not found.");
+    }
+
+    private static T? FindDescendantOrDefault<T>(Control root, string name)
+        where T : Control
+    {
+        if (root is T typedRoot && string.Equals(root.Name, name, StringComparison.Ordinal))
+        {
+            return typedRoot;
+        }
+
+        return root.GetVisualDescendants()
+            .OfType<T>()
+            .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
+    }
+
+    private static void RaiseClick(Button button)
+    {
+        button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        PumpStandaloneUi();
+    }
+
+    private static void PumpStandaloneUi()
+    {
+        Dispatcher.UIThread.RunJobs();
+        Thread.Sleep(10);
+        Dispatcher.UIThread.RunJobs();
+    }
+
     private static RulesetPluginRegistry CreateShellPluginRegistry()
     {
         return new(
@@ -1575,9 +2005,40 @@ public sealed class AvaloniaFlagshipUiGateTests
             Pump();
         }
 
+        public void SelectCommand(string commandId)
+        {
+            ListBox commandsList = FindControl<ListBox>("CommandsList");
+            CommandPaletteItem command = SnapshotListBoxItems(commandsList)
+                .OfType<CommandPaletteItem>()
+                .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
+                ?? throw new AssertFailedException($"Command '{commandId}' was not found in the command list.");
+            commandsList.SelectedItem = command;
+            Pump();
+        }
+
+        public void UpdateFirstEditableDialogTextField(string value)
+        {
+            Panel fieldsHost = FindControl<Panel>("DialogFieldsHost");
+            TextBox textBox = fieldsHost.Children
+                .OfType<Panel>()
+                .SelectMany(panel => panel.Children.OfType<TextBox>())
+                .FirstOrDefault(candidate => !candidate.IsReadOnly)
+                ?? throw new AssertFailedException("No editable dialog text field was found.");
+            textBox.Text = value;
+            Pump();
+        }
+
         public void Click(string controlName)
         {
             Control control = FindControl<Control>(controlName);
+            if (control is Button button)
+            {
+                Assert.IsTrue(button.IsEnabled, $"Control '{controlName}' must be enabled.");
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Pump();
+                return;
+            }
+
             Point? translated = control.TranslatePoint(
                 new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
                 Window);
@@ -1587,6 +2048,28 @@ public sealed class AvaloniaFlagshipUiGateTests
             Window.MouseMove(location, RawInputModifiers.None);
             Window.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
             Window.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+            Pump();
+        }
+
+        public void ClickLoadedRunnerTab(string labelFragment)
+        {
+            Button tabButton = FindControl<Panel>("LoadedRunnerTabStripPanel")
+                .Children
+                .OfType<Button>()
+                .FirstOrDefault(button => (button.Content?.ToString() ?? string.Empty).Contains(labelFragment, StringComparison.OrdinalIgnoreCase))
+                ?? throw new AssertFailedException($"Loaded-runner tab containing '{labelFragment}' was not found.");
+            Assert.IsTrue(tabButton.IsEnabled, $"Loaded-runner tab '{labelFragment}' must be enabled.");
+            tabButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Pump();
+        }
+
+        public void SelectNavigatorTreeItem(NavigatorTreeNodeKind kind, Func<NavigatorTreeItem, bool> predicate)
+        {
+            TreeView navigatorTree = FindControl<TreeView>("NavigatorTree");
+            NavigatorTreeItem[] treeItems = SnapshotTreeItems(navigatorTree);
+            NavigatorTreeItem selectedItem = FindTreeItem(treeItems, kind, predicate)
+                ?? throw new AssertFailedException($"Navigator tree item of kind '{kind}' matching the requested predicate was not found.");
+            navigatorTree.SelectedItem = selectedItem;
             Pump();
         }
 
@@ -1602,16 +2085,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             Button actionButton = DialogActionButtons()
                 .FirstOrDefault(button => string.Equals(button.Tag?.ToString(), actionId, StringComparison.Ordinal))
                 ?? throw new AssertFailedException($"Dialog action '{actionId}' was not found.");
-
-            Point? translated = actionButton.TranslatePoint(
-                new Point(actionButton.Bounds.Width / 2d, actionButton.Bounds.Height / 2d),
-                Window);
-            Assert.IsNotNull(translated, $"Unable to translate dialog action '{actionId}' to window coordinates.");
-
-            Point location = translated!.Value;
-            Window.MouseMove(location, RawInputModifiers.None);
-            Window.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
-            Window.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+            Assert.IsTrue(actionButton.IsEnabled, $"Dialog action '{actionId}' must be enabled.");
+            actionButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Pump();
         }
 
@@ -1647,8 +2122,51 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void PressKey(Key key, RawInputModifiers modifiers = RawInputModifiers.None)
         {
-            Window.KeyPress(key, modifiers);
+            Window.KeyPress(key, modifiers, ToPhysicalKey(key), ToKeySymbol(key));
             Pump();
+        }
+
+        private static PhysicalKey ToPhysicalKey(Key key)
+        {
+            return key switch
+            {
+                Key.A => PhysicalKey.A,
+                Key.B => PhysicalKey.B,
+                Key.C => PhysicalKey.C,
+                Key.D => PhysicalKey.D,
+                Key.E => PhysicalKey.E,
+                Key.F => PhysicalKey.F,
+                Key.G => PhysicalKey.G,
+                Key.H => PhysicalKey.H,
+                Key.I => PhysicalKey.I,
+                Key.J => PhysicalKey.J,
+                Key.K => PhysicalKey.K,
+                Key.L => PhysicalKey.L,
+                Key.M => PhysicalKey.M,
+                Key.N => PhysicalKey.N,
+                Key.O => PhysicalKey.O,
+                Key.P => PhysicalKey.P,
+                Key.Q => PhysicalKey.Q,
+                Key.R => PhysicalKey.R,
+                Key.S => PhysicalKey.S,
+                Key.T => PhysicalKey.T,
+                Key.U => PhysicalKey.U,
+                Key.V => PhysicalKey.V,
+                Key.W => PhysicalKey.W,
+                Key.X => PhysicalKey.X,
+                Key.Y => PhysicalKey.Y,
+                Key.Z => PhysicalKey.Z,
+                _ => PhysicalKey.None,
+            };
+        }
+
+        private static string ToKeySymbol(Key key)
+        {
+            return key switch
+            {
+                >= Key.A and <= Key.Z => key.ToString().ToLowerInvariant(),
+                _ => string.Empty,
+            };
         }
 
         public void SetTheme(ThemeVariant themeVariant)
@@ -1909,6 +2427,15 @@ public sealed class AvaloniaFlagshipUiGateTests
         public int InitializeCalls { get; private set; }
         public int ImportCalls { get; private set; }
         public WorkspaceImportDocument? LastImportedDocument { get; private set; }
+        public List<string> SwitchWorkspaceIds { get; } = [];
+        public List<string> ClosedWorkspaceIds { get; } = [];
+        public List<string> SelectedTabIds { get; } = [];
+        public List<string> HandledUiControlIds { get; } = [];
+        public List<string> ExecutedWorkspaceActionIds { get; } = [];
+        public List<string> ExecutedCommandIds { get; } = [];
+        public List<DialogFieldValueChangedEventArgs> DialogFieldUpdates { get; } = [];
+        public List<string> ExecutedDialogActionIds { get; } = [];
+        public int SaveCalls { get; private set; }
 
         public Task InitializeAsync(CancellationToken ct)
         {
@@ -2023,11 +2550,28 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
 
         public Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
-        public Task SwitchWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
-        public Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
-        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task SwitchWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
+        {
+            SwitchWorkspaceIds.Add(id.Value);
+            return Task.CompletedTask;
+        }
+
+        public Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
+        {
+            ClosedWorkspaceIds.Add(id.Value);
+            return Task.CompletedTask;
+        }
+
+        public Task SelectTabAsync(string tabId, CancellationToken ct)
+        {
+            SelectedTabIds.Add(tabId);
+            return Task.CompletedTask;
+        }
+
         public Task HandleUiControlAsync(string controlId, CancellationToken ct)
         {
+            HandledUiControlIds.Add(controlId);
             Publish(_state with
             {
                 Error = null,
@@ -2035,12 +2579,24 @@ public sealed class AvaloniaFlagshipUiGateTests
             });
             return Task.CompletedTask;
         }
-        public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct) => Task.CompletedTask;
+
+        public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct)
+        {
+            ExecutedWorkspaceActionIds.Add(action.Id);
+            return Task.CompletedTask;
+        }
+
         public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
-        public Task SaveAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task SaveAsync(CancellationToken ct)
+        {
+            SaveCalls++;
+            return Task.CompletedTask;
+        }
 
         public Task ExecuteCommandAsync(string commandId, CancellationToken ct)
         {
+            ExecutedCommandIds.Add(commandId);
             if (OverviewCommandPolicy.IsDialogCommand(commandId)
                 || OverviewCommandPolicy.IsImportHintCommand(commandId))
             {
@@ -2077,6 +2633,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 return Task.CompletedTask;
             }
 
+            DialogFieldUpdates.Add(new DialogFieldValueChangedEventArgs(fieldId, value ?? string.Empty));
+
             Publish(_state with
             {
                 ActiveDialog = dialog with
@@ -2094,6 +2652,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct)
         {
+            ExecutedDialogActionIds.Add(actionId);
             if (string.Equals(actionId, "cancel", StringComparison.Ordinal)
                 || string.Equals(actionId, "close", StringComparison.Ordinal)
                 || string.Equals(actionId, "save", StringComparison.Ordinal)
@@ -2283,6 +2842,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public ShellState State { get; private set; }
         public int InitializeCalls { get; private set; }
+        public List<string> ExecutedCommandIds { get; } = [];
+        public List<string> SelectedTabIds { get; } = [];
+        public List<string> ToggledMenuIds { get; } = [];
         public event EventHandler? StateChanged;
 
         public Task InitializeAsync(CancellationToken ct)
@@ -2294,6 +2856,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public Task ExecuteCommandAsync(string commandId, CancellationToken ct)
         {
+            ExecutedCommandIds.Add(commandId);
             State = State with
             {
                 LastCommandId = commandId,
@@ -2306,6 +2869,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public Task SelectTabAsync(string tabId, CancellationToken ct)
         {
+            SelectedTabIds.Add(tabId);
             State = State with { ActiveTabId = tabId };
             StateChanged?.Invoke(this, EventArgs.Empty);
             return Task.CompletedTask;
@@ -2313,6 +2877,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public Task ToggleMenuAsync(string menuId, CancellationToken ct)
         {
+            ToggledMenuIds.Add(menuId);
             State = State with
             {
                 OpenMenuId = string.Equals(State.OpenMenuId, menuId, StringComparison.Ordinal) ? null : menuId,
