@@ -101,7 +101,7 @@ OUTPUT_BASE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_OUTPUT_ROOT:-$REPO_ROOT/.cod
 PROOF_PATH="${CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH:-$DEFAULT_PROOF_PATH}"
 BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$WORKSPACE_ROOT/.linux-desktop-exit-gate.build.lock}"
 LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
-USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-0}"
+USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-1}"
 
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
@@ -754,7 +754,8 @@ write_proof() {
   python3 - "$RUN_PROOF_PATH" "$REPO_ROOT" "$OUTPUT_BASE_ROOT" "$PROOF_PATH" "$proof_status" "$reason" "$CURRENT_STAGE" "$exit_code" \
     "$APP_KEY" "$PROJECT_PATH" "$TEST_PROJECT_PATH" "$RID" "$LAUNCH_TARGET" "$VERSION" "$CHANNEL" "$FRAMEWORK" \
     "$READY_CHECKPOINT" "$RUN_ROOT" "$PUBLISH_DIR" "$DIST_DIR" "$ARCHIVE_PATH" "$INSTALLER_PATH" "$ARCHIVE_RECEIPT_PATH" "$INSTALLER_RECEIPT_PATH" \
-    "$TEST_RESULTS_DIR" "$TEST_TRX_PATH" "$GIT_START_PATH" "$GIT_FINISH_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" <<'PY'
+    "$TEST_RESULTS_DIR" "$TEST_TRX_PATH" "$GIT_START_PATH" "$GIT_FINISH_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" \
+    "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$USE_PROMOTED_INSTALLER" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$PROMOTED_INSTALLER_PATH" <<'PY'
 import datetime as dt
 import hashlib
 import json
@@ -795,6 +796,11 @@ import xml.etree.ElementTree as ET
     git_start_path,
     git_finish_path,
     source_snapshot_manifest_path,
+    release_channel_path,
+    local_desktop_files_root,
+    use_promoted_installer,
+    installer_smoke_artifact_path,
+    promoted_installer_path,
 ) = sys.argv[1:]
 
 
@@ -1043,6 +1049,13 @@ payload = {
         "installer_sha256": installer_metadata["sha256"],
         "installer_bytes": installer_metadata["bytes"],
     },
+    "release_channel": {
+        "path": release_channel_path,
+        "local_desktop_files_root": local_desktop_files_root,
+        "use_promoted_installer": str(use_promoted_installer).strip() == "1",
+        "installer_smoke_artifact_path": installer_smoke_artifact_path,
+        "promoted_installer_path": promoted_installer_path,
+    },
     "startup_smoke": {
         "primary": {
             "package_kind": "deb",
@@ -1244,6 +1257,165 @@ test -f "$ARCHIVE_RECEIPT_PATH"
 CURRENT_STAGE="startup_smoke_installer"
 CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
 test -f "$INSTALLER_RECEIPT_PATH"
+
+CURRENT_STAGE="promoted_installer_proof_integrity"
+python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" <<'PY'
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import json
+import os
+import pathlib
+import sys
+
+(
+    release_channel_path_text,
+    local_desktop_files_root_text,
+    app_key,
+    rid,
+    installer_smoke_artifact_path_text,
+    installer_receipt_path_text,
+    use_promoted_installer,
+) = sys.argv[1:]
+
+release_channel_path = pathlib.Path(release_channel_path_text)
+local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
+installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
+installer_receipt_path = pathlib.Path(installer_receipt_path_text)
+
+max_age_seconds = int(
+    os.environ.get("CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
+    or "86400"
+)
+reasons: list[str] = []
+
+if not release_channel_path.is_file():
+    reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
+else:
+    try:
+        release_channel = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
+    except Exception as ex:
+        reasons.append(f"Linux release-channel proof is unreadable: {ex}")
+        release_channel = {}
+
+    status = str(release_channel.get("status") or "").strip().lower()
+    if status != "published":
+        reasons.append("Linux release-channel proof status is not published.")
+
+    expected_artifact = None
+    for item in (release_channel.get("artifacts") or []):
+        if not isinstance(item, dict):
+            continue
+        if (
+            str(item.get("platform") or "").strip().lower() == "linux"
+            and str(item.get("kind") or "").strip().lower() == "installer"
+            and str(item.get("head") or "").strip().lower() == app_key.lower()
+            and str(item.get("rid") or "").strip().lower() == rid.lower()
+        ):
+            expected_artifact = item
+            break
+    if expected_artifact is None:
+        reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
+    else:
+        expected_file_name = str(expected_artifact.get("fileName") or "").strip()
+        expected_size = int(expected_artifact.get("sizeBytes") or 0)
+        expected_sha = str(expected_artifact.get("sha256") or "").strip().lower()
+        expected_arch = "x64" if rid.endswith("x64") else "arm64" if rid.endswith("arm64") else ""
+        if not expected_file_name:
+            reasons.append(f"Promoted Linux artifact fileName is missing for {app_key} ({rid}).")
+        if not expected_sha:
+            reasons.append(f"Promoted Linux artifact sha256 is missing for {app_key} ({rid}).")
+
+        promoted_shelf_artifact_path = local_desktop_files_root / expected_file_name if expected_file_name else pathlib.Path()
+        if expected_file_name and not promoted_shelf_artifact_path.is_file():
+            reasons.append(
+                f"Promoted Linux installer file is missing from repo-local desktop shelf: {promoted_shelf_artifact_path}"
+            )
+        elif expected_file_name:
+            promoted_shelf_artifact_size = promoted_shelf_artifact_path.stat().st_size
+            promoted_shelf_artifact_sha = hashlib.sha256(promoted_shelf_artifact_path.read_bytes()).hexdigest().lower()
+            if expected_size and promoted_shelf_artifact_size != expected_size:
+                reasons.append("Promoted Linux installer size does not match release-channel artifact size.")
+            if expected_sha and promoted_shelf_artifact_sha != expected_sha:
+                reasons.append("Promoted Linux installer sha256 does not match release-channel artifact sha256.")
+
+            if not installer_smoke_artifact_path.is_file():
+                reasons.append(
+                    f"Linux startup smoke installer artifact path is missing: {installer_smoke_artifact_path}"
+                )
+            else:
+                smoke_artifact_sha = hashlib.sha256(installer_smoke_artifact_path.read_bytes()).hexdigest().lower()
+                if expected_sha and smoke_artifact_sha != expected_sha:
+                    reasons.append(
+                        "Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes."
+                    )
+
+            if str(use_promoted_installer).strip() == "1":
+                try:
+                    if installer_smoke_artifact_path.resolve() != promoted_shelf_artifact_path.resolve():
+                        reasons.append(
+                            "Linux startup smoke installer artifact path does not resolve to promoted repo-local shelf bytes."
+                        )
+                except Exception:
+                    reasons.append(
+                        "Linux startup smoke installer artifact path could not be resolved for promoted shelf verification."
+                    )
+
+        if not installer_receipt_path.is_file():
+            reasons.append(f"Linux startup smoke receipt is missing: {installer_receipt_path}")
+        else:
+            try:
+                receipt = json.loads(installer_receipt_path.read_text(encoding="utf-8-sig"))
+            except Exception as ex:
+                reasons.append(f"Linux startup smoke receipt is unreadable: {ex}")
+                receipt = {}
+
+            receipt_status = str(receipt.get("status") or "").strip().lower()
+            receipt_ready_checkpoint = str(receipt.get("readyCheckpoint") or "").strip().lower()
+            receipt_head = str(receipt.get("headId") or "").strip().lower()
+            receipt_platform = str(receipt.get("platform") or "").strip().lower()
+            receipt_arch = str(receipt.get("arch") or "").strip().lower()
+            receipt_digest = str(receipt.get("artifactDigest") or "").strip().lower()
+            receipt_recorded_at = (
+                str(receipt.get("completedAtUtc") or "").strip()
+                or str(receipt.get("recordedAtUtc") or "").strip()
+                or str(receipt.get("startedAtUtc") or "").strip()
+            )
+            expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
+
+            if receipt_status not in {"pass", "passed", "ready"}:
+                reasons.append("Linux startup smoke receipt status is not passing.")
+            if receipt_ready_checkpoint != "pre_ui_event_loop":
+                reasons.append("Linux startup smoke receipt readyCheckpoint is not pre_ui_event_loop.")
+            if receipt_head != app_key.lower():
+                reasons.append("Linux startup smoke receipt headId does not match promoted head.")
+            if receipt_platform != "linux":
+                reasons.append("Linux startup smoke receipt platform is not linux.")
+            if expected_arch and receipt_arch != expected_arch:
+                reasons.append("Linux startup smoke receipt arch does not match promoted RID.")
+            if expected_digest and receipt_digest != expected_digest:
+                reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")
+            if not receipt_recorded_at:
+                reasons.append("Linux startup smoke receipt timestamp is missing.")
+            else:
+                normalized = receipt_recorded_at[:-1] + "+00:00" if receipt_recorded_at.endswith("Z") else receipt_recorded_at
+                try:
+                    recorded_at = dt.datetime.fromisoformat(normalized)
+                    if recorded_at.tzinfo is None:
+                        recorded_at = recorded_at.replace(tzinfo=dt.timezone.utc)
+                    recorded_at = recorded_at.astimezone(dt.timezone.utc)
+                    age_seconds = max(0, int((dt.datetime.now(dt.timezone.utc) - recorded_at).total_seconds()))
+                    if age_seconds > max_age_seconds:
+                        reasons.append(f"Linux startup smoke receipt is stale ({age_seconds}s old).")
+                except ValueError:
+                    reasons.append("Linux startup smoke receipt timestamp is invalid.")
+
+if reasons:
+    print("\n".join(reasons), file=sys.stderr)
+    raise SystemExit(1)
+PY
 
 CURRENT_STAGE="source_snapshot_identity"
 refresh_source_snapshot_manifest
