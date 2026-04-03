@@ -3393,6 +3393,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
         StringAssert.Contains(executableGateScriptText, "Release channel currently promotes multiple Windows desktop installer tuples, but the executable gate supports one Windows receipt path.");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is missing/invalid");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt is stale for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes");
+        StringAssert.Contains(executableGateScriptText, "Release channel publishes Linux desktop media for head");
         StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
         StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");
         StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact is missing from local desktop downloads shelf");
