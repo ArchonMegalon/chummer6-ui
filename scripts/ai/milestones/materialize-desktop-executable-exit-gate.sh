@@ -23,6 +23,7 @@ mkdir -p "$(dirname "$receipt_path")"
 python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path" "$flagship_gate_path" "$repo_root"
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sys
@@ -261,6 +262,56 @@ def validate_macos_gate(
     evidence.setdefault("macos_gates", {})[f"{head}:{rid}"] = gate_evidence
 
 
+def validate_local_release_artifact_file(
+    artifact: Dict[str, Any],
+    desktop_files_root: Path,
+    evidence: Dict[str, Any],
+    reasons: List[str],
+) -> None:
+    artifact_id = str(artifact.get("artifactId") or "").strip()
+    file_name = str(artifact.get("fileName") or "").strip()
+    if not file_name:
+        download_url = str(artifact.get("downloadUrl") or "").strip()
+        file_name = Path(download_url).name if download_url else ""
+
+    evidence_key = artifact_id or file_name or "unknown-artifact"
+    local_path = desktop_files_root / file_name if file_name else desktop_files_root
+    exists = bool(file_name) and local_path.is_file()
+
+    artifact_evidence: Dict[str, Any] = {
+        "artifact_id": artifact_id,
+        "file_name": file_name,
+        "path": str(local_path),
+        "exists": exists,
+    }
+
+    expected_size = int(artifact.get("sizeBytes") or 0)
+    expected_sha = normalize_token(artifact.get("sha256"))
+    if exists:
+        artifact_evidence["size_bytes"] = int(local_path.stat().st_size)
+        artifact_evidence["sha256"] = normalize_token(hashlib.sha256(local_path.read_bytes()).hexdigest())
+    else:
+        artifact_evidence["size_bytes"] = 0
+        artifact_evidence["sha256"] = ""
+
+    artifact_evidence["expected_size_bytes"] = expected_size
+    artifact_evidence["expected_sha256"] = expected_sha
+    evidence.setdefault("release_artifacts_local", {})[evidence_key] = artifact_evidence
+
+    if not file_name:
+        reasons.append("Release channel desktop artifact is missing fileName/downloadUrl basename, so local proof cannot verify shipped bytes.")
+        return
+
+    if not exists:
+        reasons.append(f"Promoted release-channel artifact is missing from local desktop downloads shelf: {file_name}.")
+        return
+
+    if expected_size and artifact_evidence["size_bytes"] != expected_size:
+        reasons.append(f"Promoted release-channel artifact size does not match local bytes for {file_name}.")
+    if expected_sha and artifact_evidence["sha256"] != expected_sha:
+        reasons.append(f"Promoted release-channel artifact sha256 does not match local bytes for {file_name}.")
+
+
 receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path, flagship_gate_path, repo_root = [Path(v) for v in sys.argv[1:8]]
 
 reasons: List[str] = []
@@ -340,11 +391,15 @@ platform_heads_from_release_channel = {
 evidence["required_desktop_platforms"] = list(required_desktop_platforms)
 evidence["platform_artifact_counts"] = platform_artifact_counts
 evidence["platform_heads_from_release_channel"] = platform_heads_from_release_channel
+desktop_files_root = repo_root / "Docker" / "Downloads" / "files"
+evidence["desktop_files_root"] = str(desktop_files_root)
 for required_platform in required_desktop_platforms:
     if platform_artifact_counts.get(required_platform, 0) < 1:
         reasons.append(
             f"Release channel does not publish desktop install media for required platform '{required_platform}'."
         )
+for desktop_install_artifact in desktop_install_artifacts:
+    validate_local_release_artifact_file(desktop_install_artifact, desktop_files_root, evidence, reasons)
 
 expected_linux_heads = sorted(
     {
@@ -430,6 +485,13 @@ payload = {
 }
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
+    print("[desktop-executable-exit-gate] FAIL", file=sys.stderr)
+    print(f"[desktop-executable-exit-gate] receipt: {receipt_path}", file=sys.stderr)
+    if reasons:
+        for reason in reasons:
+            print(f"[desktop-executable-exit-gate] reason: {reason}", file=sys.stderr)
+    else:
+        print("[desktop-executable-exit-gate] reason: unknown failure", file=sys.stderr)
     raise SystemExit(43)
 PY
 
