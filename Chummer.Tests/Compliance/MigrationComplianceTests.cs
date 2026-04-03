@@ -3409,6 +3409,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "preferred_order = [\"osx-arm64\", \"osx-x64\"]");
         StringAssert.Contains(macosGateScriptText, "def is_macos_install_media_kind(kind: Any) -> bool:");
         StringAssert.Contains(macosGateScriptText, "return normalize_token(kind) in {\"installer\", \"dmg\", \"pkg\"}");
+        StringAssert.Contains(macosGateScriptText, "CHUMMER_MACOS_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(macosGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt status is not passing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted installer bytes.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt is stale (");
         StringAssert.Contains(macosGateScriptText, "Release channel does not publish a macOS install medium");
     }
 
