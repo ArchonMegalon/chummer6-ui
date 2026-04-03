@@ -94,7 +94,29 @@ TEST_PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_PROJECT_PATH:-Chummer.
 RID="${RID:-linux-x64}"
 LAUNCH_TARGET="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LAUNCH_TARGET:-$DEFAULT_LAUNCH_TARGET}"
 VERSION="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_VERSION:-local-hard-gate}"
-CHANNEL="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_CHANNEL:-local-hard-gate}"
+RELEASE_CHANNEL_ID_DEFAULT="$(
+  python3 - "$RELEASE_CHANNEL_PATH" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+release_channel_path = Path(sys.argv[1])
+if not release_channel_path.is_file():
+    raise SystemExit(0)
+
+try:
+    payload = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(0)
+
+channel_id = str(payload.get("channelId") or payload.get("channel") or "").strip().lower()
+if channel_id:
+    print(channel_id)
+PY
+)"
+CHANNEL="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_CHANNEL:-${RELEASE_CHANNEL_ID_DEFAULT:-local-hard-gate}}"
 FRAMEWORK="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FRAMEWORK:-net10.0}"
 READY_CHECKPOINT="pre_ui_event_loop"
 OUTPUT_BASE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_OUTPUT_ROOT:-$REPO_ROOT/.codex-studio/out/linux-desktop-exit-gate}"
@@ -108,6 +130,7 @@ RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
 LATEST_LINK="$OUTPUT_BASE_ROOT/latest"
 PUBLISH_LOCK_PATH="$OUTPUT_BASE_ROOT/publish.lock"
 RUN_PROOF_PATH="$RUN_ROOT/$(basename "$PROOF_PATH")"
+FAILURE_REASONS_PATH="$RUN_ROOT/failure-reasons.json"
 GIT_START_PATH="$RUN_ROOT/git-start.json"
 GIT_FINISH_PATH="$RUN_ROOT/git-finish.json"
 SOURCE_SNAPSHOT_MANIFEST_PATH="$RUN_ROOT/source-snapshot.json"
@@ -755,7 +778,8 @@ write_proof() {
     "$APP_KEY" "$PROJECT_PATH" "$TEST_PROJECT_PATH" "$RID" "$LAUNCH_TARGET" "$VERSION" "$CHANNEL" "$FRAMEWORK" \
     "$READY_CHECKPOINT" "$RUN_ROOT" "$PUBLISH_DIR" "$DIST_DIR" "$ARCHIVE_PATH" "$INSTALLER_PATH" "$ARCHIVE_RECEIPT_PATH" "$INSTALLER_RECEIPT_PATH" \
     "$TEST_RESULTS_DIR" "$TEST_TRX_PATH" "$GIT_START_PATH" "$GIT_FINISH_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" \
-    "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$USE_PROMOTED_INSTALLER" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$PROMOTED_INSTALLER_PATH" <<'PY'
+    "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$USE_PROMOTED_INSTALLER" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$PROMOTED_INSTALLER_PATH" \
+    "$FAILURE_REASONS_PATH" <<'PY'
 import datetime as dt
 import hashlib
 import json
@@ -801,6 +825,7 @@ import xml.etree.ElementTree as ET
     use_promoted_installer,
     installer_smoke_artifact_path,
     promoted_installer_path,
+    failure_reasons_path,
 ) = sys.argv[1:]
 
 
@@ -812,6 +837,43 @@ def load_json(path_text: str):
         return json.loads(path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError:
         return None
+
+
+def load_failure_reasons(path_text: str) -> list[str]:
+    if not path_text:
+        return []
+    path = pathlib.Path(path_text)
+    if not path.is_file():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return []
+    if isinstance(payload, list):
+        source = payload
+    elif isinstance(payload, dict):
+        source = payload.get("reasons")
+    else:
+        source = None
+    if not isinstance(source, list):
+        return []
+    reasons = []
+    for item in source:
+        value = str(item or "").strip()
+        if value:
+            reasons.append(value)
+    return reasons
+
+
+def dedupe_preserve_order(values: list[str]) -> list[str]:
+    seen = set()
+    ordered = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        ordered.append(value)
+    return ordered
 
 
 def sha256_file(path_text: str):
@@ -1007,12 +1069,19 @@ binary_path = str(pathlib.Path(publish_dir) / launch_target)
 binary_metadata = path_metadata(binary_path)
 archive_metadata = path_metadata(archive_path)
 installer_metadata = path_metadata(installer_path)
+normalized_status = str(proof_status or "").strip().lower()
+reason_lines: list[str] = []
+if normalized_status not in {"pass", "passed", "ready"}:
+    reason_lines = [str(reason or "").strip()]
+    reason_lines.extend(load_failure_reasons(failure_reasons_path))
+    reason_lines = dedupe_preserve_order([line for line in reason_lines if line])
 
 payload = {
     "contract_name": "chummer6-ui.linux_desktop_exit_gate",
     "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
     "status": proof_status,
     "reason": reason,
+    "reasons": reason_lines,
     "stage": stage,
     "exit_code": int(exit_code),
     "run_root": run_root,
@@ -1216,6 +1285,7 @@ trap on_error ERR
 trap cleanup_snapshot EXIT
 
 mkdir -p "$PUBLISH_DIR" "$DIST_DIR" "$TEST_RESULTS_DIR" "$SMOKE_ARCHIVE_DIR" "$SMOKE_INSTALLER_DIR"
+rm -f "$FAILURE_REASONS_PATH"
 capture_git_metadata "$GIT_START_PATH"
 
 CURRENT_STAGE="source_snapshot"
@@ -1259,7 +1329,7 @@ CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/r
 test -f "$INSTALLER_RECEIPT_PATH"
 
 CURRENT_STAGE="promoted_installer_proof_integrity"
-python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" <<'PY'
+python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -1277,12 +1347,14 @@ import sys
     installer_smoke_artifact_path_text,
     installer_receipt_path_text,
     use_promoted_installer,
+    failure_reasons_path_text,
 ) = sys.argv[1:]
 
 release_channel_path = pathlib.Path(release_channel_path_text)
 local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
 installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
 installer_receipt_path = pathlib.Path(installer_receipt_path_text)
+failure_reasons_path = pathlib.Path(failure_reasons_path_text)
 
 max_age_seconds = int(
     os.environ.get("CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS")
@@ -1418,6 +1490,8 @@ else:
                     reasons.append("Linux startup smoke receipt timestamp is invalid.")
 
 if reasons:
+    failure_reasons_path.parent.mkdir(parents=True, exist_ok=True)
+    failure_reasons_path.write_text(json.dumps({"reasons": reasons}, indent=2) + "\n", encoding="utf-8")
     print("\n".join(reasons), file=sys.stderr)
     raise SystemExit(1)
 PY

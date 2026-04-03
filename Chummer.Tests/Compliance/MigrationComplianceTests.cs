@@ -3450,6 +3450,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt arch does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt channelId does not match release channel for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes");
+        StringAssert.Contains(executableGateScriptText, "gate_reasons = [");
+        StringAssert.Contains(executableGateScriptText, "reasons.append(f\"Linux gate reason ({head}): {gate_reason}\")");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate is missing or not passing.");
         StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate is missing or not passing.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing screenshot_dir.");
@@ -3658,6 +3660,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(linuxGateScriptText, "FAILURE_REASONS_PATH=\"$RUN_ROOT/failure-reasons.json\"");
+        StringAssert.Contains(linuxGateScriptText, "rm -f \"$FAILURE_REASONS_PATH\"");
+        StringAssert.Contains(linuxGateScriptText, "failure_reasons_path.write_text(json.dumps({\"reasons\": reasons}, indent=2) + \"\\n\", encoding=\"utf-8\")");
+        StringAssert.Contains(linuxGateScriptText, "\"reasons\": reason_lines,");
+        StringAssert.Contains(linuxGateScriptText, "reason_lines.extend(load_failure_reasons(failure_reasons_path))");
     }
 
     [TestMethod]
