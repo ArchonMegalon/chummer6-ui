@@ -225,14 +225,21 @@ done
 if [[ -d "$STARTUP_SMOKE_SOURCE" ]]; then
   verified_startup_smoke_tmp="$(mktemp)"
   if ! python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$STARTUP_SMOKE_SOURCE" "$DEPLOY_DIR/files" >"$verified_startup_smoke_tmp" <<'PY'
+import os
 import hashlib
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 PASSING_STATUSES = {"pass", "passed", "ready"}
 INSTALL_MEDIA_KINDS = {"installer", "dmg", "pkg", "msix"}
+STARTUP_SMOKE_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_AGE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
+    or "86400"
+)
 
 release_channel_path = Path(sys.argv[1])
 startup_smoke_root = Path(sys.argv[2])
@@ -253,6 +260,20 @@ def rid_to_arch(rid: str) -> str:
         _, _, arch = token.partition("-")
         return arch
     return token
+
+def parse_iso_utc(value: Any) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 for artifact in artifacts:
     if not isinstance(artifact, dict):
@@ -304,6 +325,23 @@ for artifact in artifacts:
     receipt_digest = normalize(receipt.get("artifactDigest"))
     if expected_digest and receipt_digest != expected_digest:
         errors.append(f"startup-smoke receipt artifactDigest mismatch for promoted install medium {head}/{platform}/{rid}.")
+    recorded_at_raw = (
+        receipt.get("completedAtUtc")
+        or receipt.get("recordedAtUtc")
+        or receipt.get("startedAtUtc")
+    )
+    recorded_at = parse_iso_utc(recorded_at_raw)
+    if recorded_at is None:
+        errors.append(
+            f"startup-smoke receipt timestamp is missing/invalid for promoted install medium {head}/{platform}/{rid}."
+        )
+    else:
+        receipt_age_seconds = max(0, int((datetime.now(timezone.utc) - recorded_at).total_seconds()))
+        if receipt_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+            errors.append(
+                "startup-smoke receipt is stale for promoted install medium "
+                f"{head}/{platform}/{rid}: {receipt_age_seconds}s old (max {STARTUP_SMOKE_MAX_AGE_SECONDS}s)."
+            )
     verified_receipts.append(str(receipt_path))
 
 if errors:
