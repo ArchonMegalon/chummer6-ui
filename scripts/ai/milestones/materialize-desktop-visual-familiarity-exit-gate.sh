@@ -384,6 +384,7 @@ required_screenshots = [
     "10-contacts-section-light.png",
     "11-diary-dialog-light.png",
     "12-magic-matrix-dialog-light.png",
+    "13-advancement-dialog-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -408,7 +409,7 @@ undersized_screenshots = {
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-matrix-dialog-light.png"}
+            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-matrix-dialog-light.png", "13-advancement-dialog-light.png"}
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )
