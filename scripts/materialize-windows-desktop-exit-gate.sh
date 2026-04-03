@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROOF_PATH="${CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json}"
 RELEASE_CHANNEL_PATH="${CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 WINDOWS_INSTALLER_PATH="${CHUMMER_WINDOWS_INSTALLER_PATH:-}"
-WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-/docker/chummer5a/Docker/Downloads/files}"
+WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
 UI_LOCAL_RELEASE_PROOF_PATH="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
 UI_FLAGSHIP_RELEASE_GATE_PATH="${CHUMMER_UI_FLAGSHIP_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
 UI_WORKFLOW_PARITY_PATH="${CHUMMER_UI_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json}"
@@ -82,6 +82,14 @@ def parse_iso_utc(value: Any) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def path_is_within(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except Exception:
+        return False
+
+
 proof_path = Path(sys.argv[1])
 release_channel_path = Path(sys.argv[2])
 installer_path = Path(sys.argv[3])
@@ -145,17 +153,26 @@ else:
     artifact_sha = str(windows_artifact.get("sha256") or "").strip().lower()
     evidence["release_channel_windows_artifact"] = windows_artifact
 
+default_file_name = artifact_file_name or "chummer-avalonia-win-x64-installer.exe"
 if windows_installer_path_override:
-    installer_path = windows_installer_path_override.resolve()
-elif artifact_file_name:
-    installer_path = (windows_local_desktop_files_root / artifact_file_name).resolve()
+    installer_candidates = [windows_installer_path_override.expanduser().resolve()]
 else:
-    installer_path = (windows_local_desktop_files_root / "chummer-avalonia-win-x64-installer.exe").resolve()
+    installer_candidates = [
+        (windows_local_desktop_files_root / default_file_name).resolve(),
+        (repo_root / "Docker" / "Downloads" / "files" / default_file_name).resolve(),
+        Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/files") / default_file_name,
+        Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/files") / default_file_name,
+        Path("/docker/chummer5a/Docker/Downloads/files") / default_file_name,
+        Path("/docker/chummercomplete/chummer5a/Docker/Downloads/files") / default_file_name,
+    ]
+installer_candidates = list(dict.fromkeys(path.resolve() for path in installer_candidates))
+installer_path = next((path for path in installer_candidates if path.is_file()), installer_candidates[0])
 
 installer_exists = installer_path.is_file()
 installer_size = installer_path.stat().st_size if installer_exists else 0
 installer_sha = sha256_file(installer_path) if installer_exists else ""
 evidence["windows_installer_path"] = str(installer_path)
+evidence["windows_installer_candidate_paths"] = [str(path) for path in installer_candidates]
 evidence["installer_exists"] = installer_exists
 evidence["installer_size_bytes"] = installer_size
 evidence["installer_sha256"] = installer_sha
@@ -164,6 +181,18 @@ evidence["expected_windows_rid"] = expected_rid
 evidence["expected_windows_arch"] = expected_arch
 if artifact_file_name:
     evidence["expected_windows_file_name"] = artifact_file_name
+primary_shelf_root = (repo_root / "Docker" / "Downloads" / "files").resolve()
+installer_from_primary_shelf = path_is_within(installer_path, primary_shelf_root)
+evidence["windows_installer_primary_shelf_root"] = str(primary_shelf_root)
+evidence["windows_installer_from_primary_shelf"] = installer_from_primary_shelf
+if not windows_installer_path_override and not installer_from_primary_shelf:
+    reasons.append(
+        "Promoted Windows installer was not resolved from the repo-local desktop shelf."
+    )
+if not windows_installer_path_override and "/chummer5a/" in str(installer_path).replace("\\", "/").lower():
+    reasons.append(
+        "Promoted Windows installer was resolved from legacy chummer5a shelf bytes."
+    )
 
 if not installer_exists:
     reasons.append("Promoted Windows installer is missing from the active public downloads shelf.")
@@ -215,6 +244,9 @@ startup_smoke_payload = load_json(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_path"] = str(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_candidates"] = [str(path) for path in startup_smoke_candidates]
 evidence["startup_smoke_receipt_found"] = startup_smoke_receipt_path.is_file()
+if startup_smoke_receipt_path.is_file() and not startup_smoke_receipt_override:
+    if "/chummer5a/" in str(startup_smoke_receipt_path).replace("\\", "/").lower():
+        reasons.append("Windows startup smoke receipt was resolved from a legacy chummer5a path.")
 
 startup_smoke_status = normalize_token(startup_smoke_payload.get("status"))
 evidence["startup_smoke_status"] = startup_smoke_status

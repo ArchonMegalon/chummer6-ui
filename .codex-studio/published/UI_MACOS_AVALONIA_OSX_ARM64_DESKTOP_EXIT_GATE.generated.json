@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.macos_desktop_exit_gate",
-  "generated_at": "2026-04-03T16:37:35Z",
+  "generated_at": "2026-04-03T17:18:36Z",
   "status": "failed",
   "reason": "macOS desktop exit gate checks failed",
   "head": {
@@ -10,11 +10,18 @@
     "launch_target": "Chummer.Avalonia"
   },
   "artifact": {
-    "installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+    "installer_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
     "installer_exists": true,
     "installer_size_bytes": 50365614,
     "installer_sha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
-    "file_name": "chummer-avalonia-osx-arm64-installer.dmg"
+    "file_name": "chummer-avalonia-osx-arm64-installer.dmg",
+    "installer_candidate_paths": [
+      "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+      "/docker/chummer5a/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+      "/docker/chummercomplete/chummer5a/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
+    ],
+    "installer_primary_shelf_root": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
+    "installer_from_primary_shelf": true
   },
   "startup_smoke": {
     "status": "fail",
@@ -60,11 +67,18 @@
       "installAccessClass": "open_public"
     },
     "artifact": {
-      "installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+      "installer_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
       "installer_exists": true,
       "installer_size_bytes": 50365614,
       "installer_sha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
-      "file_name": "chummer-avalonia-osx-arm64-installer.dmg"
+      "file_name": "chummer-avalonia-osx-arm64-installer.dmg",
+      "installer_candidate_paths": [
+        "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+        "/docker/chummer5a/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+        "/docker/chummercomplete/chummer5a/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
+      ],
+      "installer_primary_shelf_root": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
+      "installer_from_primary_shelf": true
     },
     "startup_smoke_candidate_paths": [
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",

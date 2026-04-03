@@ -180,6 +180,14 @@ def resolve_existing_path(explicit_path: str, candidates: Iterable[Path]) -> Pat
     return None
 
 
+def path_is_within(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except Exception:
+        return False
+
+
 proof_path = Path(sys.argv[1])
 release_channel_path = Path(sys.argv[2])
 app_key = sys.argv[3]
@@ -239,19 +247,29 @@ downloads_candidates = [
     Path("/docker/chummer5a/Docker/Downloads/files") / file_name,
     Path("/docker/chummercomplete/chummer5a/Docker/Downloads/files") / file_name,
 ]
+downloads_candidates = list(dict.fromkeys(candidate.resolve() for candidate in downloads_candidates))
 installer_path = resolve_existing_path(installer_path_arg, downloads_candidates)
 artifact_exists = installer_path is not None
 artifact_size = installer_path.stat().st_size if installer_path else 0
 artifact_sha = sha256_file(installer_path) if installer_path else ""
+primary_shelf_root = (repo_root / "Docker" / "Downloads" / "files").resolve()
+installer_from_primary_shelf = installer_path is not None and path_is_within(installer_path, primary_shelf_root)
 evidence["artifact"] = {
     "installer_path": str(installer_path) if installer_path else "",
     "installer_exists": artifact_exists,
     "installer_size_bytes": artifact_size,
     "installer_sha256": artifact_sha,
     "file_name": file_name,
+    "installer_candidate_paths": [str(candidate) for candidate in downloads_candidates],
+    "installer_primary_shelf_root": str(primary_shelf_root),
+    "installer_from_primary_shelf": installer_from_primary_shelf,
 }
 if not artifact_exists:
     reasons.append(f"Promoted macOS installer file is missing locally for {app_key} ({rid}).")
+elif not installer_path_arg and not installer_from_primary_shelf:
+    reasons.append(f"Promoted macOS installer was not resolved from the repo-local desktop shelf for {app_key} ({rid}).")
+    if "/chummer5a/" in str(installer_path).replace("\\", "/").lower():
+        reasons.append(f"Promoted macOS installer was resolved from legacy chummer5a shelf bytes for {app_key} ({rid}).")
 
 if macos_artifact is not None:
     artifact_size_expected = int(macos_artifact.get("sizeBytes") or 0)
@@ -312,6 +330,8 @@ evidence["startup_smoke"] = {
 if not startup_smoke_payload:
     reasons.append(f"macOS startup smoke receipt is missing for {app_key} ({rid}).")
 else:
+    if not startup_smoke_receipt_arg and "/chummer5a/" in str(startup_smoke_path).replace("\\", "/").lower():
+        reasons.append("macOS startup smoke receipt was resolved from a legacy chummer5a path.")
     expected_arch = expected_arch_from_rid(rid)
     if normalize_token(startup_smoke_payload.get("headId")) != normalize_token(app_key):
         reasons.append("macOS startup smoke receipt headId does not match promoted app key.")
