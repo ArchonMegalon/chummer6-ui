@@ -3396,6 +3396,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is outside this repo root.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt status is not passing for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt headId does not match promoted release-channel head.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt platform is not windows for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt is stale for promoted installer bytes (");
         StringAssert.Contains(executableGateScriptText, "Release channel currently promotes multiple Windows desktop installer tuples, but the executable gate supports one Windows receipt path.");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"macOS gate reason ({head}/{rid}): {gate_reason}\")");
         StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.");
@@ -3535,6 +3543,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "missingAuditTests");
         StringAssert.Contains(workflowGateScriptText, "failedAuditTests");
         StringAssert.Contains(workflowGateScriptText, "expected_proof_kind");
+        StringAssert.Contains(workflowGateScriptText, "REQUIRED_WORKFLOW_FAMILY_IDS");
+        StringAssert.Contains(workflowGateScriptText, "missing_required_workflow_family_ids");
+        StringAssert.Contains(workflowGateScriptText, "SR4/SR6 ledgers are missing required canonical workflow families");
+        StringAssert.Contains(workflowGateScriptText, "SR4/SR6 required canonical workflow families are missing audit tests");
         StringAssert.Contains(workflowGateScriptText, "SR4/SR6 family-level execution receipts are not explicitly grounded");
     }
 

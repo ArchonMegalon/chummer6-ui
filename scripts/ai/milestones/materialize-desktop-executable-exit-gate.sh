@@ -407,10 +407,86 @@ def validate_windows_gate(
         Path(gate_evidence["startup_smoke_receipt_path"]) if gate_evidence["startup_smoke_receipt_path"] else None
     )
     startup_smoke_receipt_exists = startup_smoke_receipt_path is not None and startup_smoke_receipt_path.is_file()
+    startup_smoke_receipt_payload = (
+        load_json(startup_smoke_receipt_path)
+        if startup_smoke_receipt_exists and startup_smoke_receipt_path is not None
+        else {}
+    )
     if not startup_smoke_receipt_exists:
         reasons.append("Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.")
     elif startup_smoke_receipt_path is not None and not path_within_root(startup_smoke_receipt_path, repo_root):
         reasons.append("Windows startup smoke receipt path is outside this repo root.")
+    else:
+        startup_smoke_status = normalize_token(
+            startup_smoke_receipt_payload.get("status")
+            or gate_checks.get("startup_smoke_status")
+        )
+        startup_smoke_ready_checkpoint = normalize_token(
+            startup_smoke_receipt_payload.get("readyCheckpoint")
+            or gate_checks.get("startup_smoke_ready_checkpoint")
+        )
+        startup_smoke_artifact_digest = normalize_token(
+            startup_smoke_receipt_payload.get("artifactDigest")
+            or gate_checks.get("startup_smoke_artifact_digest")
+        )
+        startup_smoke_head_id = normalize_token(
+            startup_smoke_receipt_payload.get("headId")
+            or gate_checks.get("startup_smoke_receipt_head_id")
+        )
+        startup_smoke_platform = normalize_token(
+            startup_smoke_receipt_payload.get("platform")
+            or gate_checks.get("startup_smoke_receipt_platform")
+        )
+        startup_smoke_arch = normalize_token(
+            startup_smoke_receipt_payload.get("arch")
+            or gate_checks.get("startup_smoke_receipt_arch")
+        )
+        startup_smoke_recorded_at_raw = str(
+            startup_smoke_receipt_payload.get("completedAtUtc")
+            or startup_smoke_receipt_payload.get("recordedAtUtc")
+            or startup_smoke_receipt_payload.get("startedAtUtc")
+            or gate_checks.get("startup_smoke_receipt_timestamp")
+            or ""
+        ).strip()
+        startup_smoke_recorded_at = parse_iso(startup_smoke_recorded_at_raw)
+        expected_startup_smoke_arch = arch_from_rid(expected_rid)
+        expected_startup_smoke_digest = (
+            f"sha256:{expected_sha}"
+            if expected_sha
+            else f"sha256:{normalize_token(gate_evidence.get('windows_installer_sha256'))}"
+            if normalize_token(gate_evidence.get("windows_installer_sha256"))
+            else ""
+        )
+
+        gate_evidence["startup_smoke_status"] = startup_smoke_status
+        gate_evidence["startup_smoke_ready_checkpoint"] = startup_smoke_ready_checkpoint
+        gate_evidence["startup_smoke_artifact_digest"] = startup_smoke_artifact_digest
+        gate_evidence["startup_smoke_head_id"] = startup_smoke_head_id
+        gate_evidence["startup_smoke_platform"] = startup_smoke_platform
+        gate_evidence["startup_smoke_arch"] = startup_smoke_arch
+        gate_evidence["startup_smoke_recorded_at"] = startup_smoke_recorded_at_raw
+
+        if startup_smoke_status not in {"pass", "passed", "ready"}:
+            reasons.append("Windows startup smoke receipt status is not passing for promoted installer bytes.")
+        if startup_smoke_ready_checkpoint != "pre_ui_event_loop":
+            reasons.append("Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes.")
+        if expected_startup_smoke_digest and startup_smoke_artifact_digest != expected_startup_smoke_digest:
+            reasons.append("Windows startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes.")
+        if startup_smoke_head_id != expected_head:
+            reasons.append("Windows startup smoke receipt headId does not match promoted release-channel head.")
+        if startup_smoke_platform != "windows":
+            reasons.append("Windows startup smoke receipt platform is not windows for promoted installer bytes.")
+        if expected_startup_smoke_arch and startup_smoke_arch != expected_startup_smoke_arch:
+            reasons.append("Windows startup smoke receipt arch does not match promoted release-channel RID.")
+        if not startup_smoke_recorded_at_raw or startup_smoke_recorded_at is None:
+            reasons.append("Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.")
+        else:
+            startup_smoke_age_seconds = max(0, int((datetime.now(timezone.utc) - startup_smoke_recorded_at).total_seconds()))
+            gate_evidence["startup_smoke_receipt_age_seconds"] = startup_smoke_age_seconds
+            if startup_smoke_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+                reasons.append(
+                    f"Windows startup smoke receipt is stale for promoted installer bytes ({startup_smoke_age_seconds}s old)."
+                )
 
     evidence["windows_gate"] = gate_evidence
 
