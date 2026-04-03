@@ -240,6 +240,7 @@ def validate_linux_gate(
     gate_path: Path,
     gate_payload: Dict[str, Any],
     expected_artifact: Dict[str, Any] | None,
+    release_channel_id: str,
     repo_root: Path,
     evidence: Dict[str, Any],
     reasons: List[str],
@@ -306,6 +307,9 @@ def validate_linux_gate(
     gate_evidence["primary_receipt_head_id"] = normalize_token(primary_receipt_for_validation.get("headId"))
     gate_evidence["primary_receipt_platform"] = normalize_token(primary_receipt_for_validation.get("platform"))
     gate_evidence["primary_receipt_arch"] = normalize_token(primary_receipt_for_validation.get("arch"))
+    gate_evidence["primary_receipt_channel_id"] = normalize_token(
+        primary_receipt_for_validation.get("channelId") or primary_receipt_for_validation.get("channel")
+    )
     gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt_for_validation.get("artifactDigest"))
     gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt_for_validation.get("readyCheckpoint"))
     gate_evidence["primary_receipt_recorded_at"] = recorded_at_raw
@@ -325,6 +329,8 @@ def validate_linux_gate(
         reasons.append(f"Linux installer startup smoke receipt headId does not match promoted head '{head}'.")
     if gate_evidence["primary_receipt_platform"] != "linux":
         reasons.append(f"Linux installer startup smoke receipt platform is not linux for promoted head '{head}'.")
+    if release_channel_id and gate_evidence["primary_receipt_channel_id"] != release_channel_id:
+        reasons.append(f"Linux installer startup smoke receipt channelId does not match release channel for promoted head '{head}'.")
 
     if expected_artifact is not None:
         expected_rid = normalize_token(expected_artifact.get("rid"))
@@ -360,6 +366,7 @@ def validate_windows_gate(
     gate_path: Path,
     gate_payload: Dict[str, Any],
     expected_artifact: Dict[str, Any],
+    release_channel_id: str,
     desktop_files_root: Path,
     repo_root: Path,
     evidence: Dict[str, Any],
@@ -490,6 +497,11 @@ def validate_windows_gate(
             startup_smoke_receipt_payload.get("arch")
             or gate_checks.get("startup_smoke_receipt_arch")
         )
+        startup_smoke_channel_id = normalize_token(
+            startup_smoke_receipt_payload.get("channelId")
+            or startup_smoke_receipt_payload.get("channel")
+            or gate_checks.get("startup_smoke_channel")
+        )
         startup_smoke_recorded_at_raw = str(
             startup_smoke_receipt_payload.get("completedAtUtc")
             or startup_smoke_receipt_payload.get("recordedAtUtc")
@@ -513,6 +525,7 @@ def validate_windows_gate(
         gate_evidence["startup_smoke_head_id"] = startup_smoke_head_id
         gate_evidence["startup_smoke_platform"] = startup_smoke_platform
         gate_evidence["startup_smoke_arch"] = startup_smoke_arch
+        gate_evidence["startup_smoke_channel"] = startup_smoke_channel_id
         gate_evidence["startup_smoke_recorded_at"] = startup_smoke_recorded_at_raw
 
         if startup_smoke_status not in {"pass", "passed", "ready"}:
@@ -527,6 +540,8 @@ def validate_windows_gate(
             reasons.append("Windows startup smoke receipt platform is not windows for promoted installer bytes.")
         if expected_startup_smoke_arch and startup_smoke_arch != expected_startup_smoke_arch:
             reasons.append("Windows startup smoke receipt arch does not match promoted release-channel RID.")
+        if release_channel_id and startup_smoke_channel_id != release_channel_id:
+            reasons.append("Windows startup smoke receipt channelId does not match release-channel channelId for promoted installer bytes.")
         if not startup_smoke_recorded_at_raw or startup_smoke_recorded_at is None:
             reasons.append("Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.")
         else:
@@ -551,6 +566,7 @@ def validate_macos_gate(
     expected_artifact: Dict[str, Any],
     gate_path: Path,
     gate_payload: Dict[str, Any],
+    release_channel_id: str,
     desktop_files_root: Path,
     repo_root: Path,
     evidence: Dict[str, Any],
@@ -620,6 +636,9 @@ def validate_macos_gate(
     startup_smoke_head_id = normalize_token(startup_receipt_for_validation.get("headId"))
     startup_smoke_platform = normalize_token(startup_receipt_for_validation.get("platform"))
     startup_smoke_arch = normalize_token(startup_receipt_for_validation.get("arch"))
+    startup_smoke_channel_id = normalize_token(
+        startup_receipt_for_validation.get("channelId") or startup_receipt_for_validation.get("channel")
+    )
     startup_receipt_recorded_at_raw = str(
         startup_receipt_for_validation.get("completedAtUtc")
         or startup_receipt_for_validation.get("recordedAtUtc")
@@ -639,6 +658,7 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_receipt_head_id"] = startup_smoke_head_id
     gate_evidence["startup_smoke_receipt_platform"] = startup_smoke_platform
     gate_evidence["startup_smoke_receipt_arch"] = startup_smoke_arch
+    gate_evidence["startup_smoke_receipt_channel_id"] = startup_smoke_channel_id
     gate_evidence["startup_smoke_receipt_recorded_at"] = startup_receipt_recorded_at_raw
 
     if startup_smoke_status not in {"pass", "passed", "ready"}:
@@ -696,6 +716,8 @@ def validate_macos_gate(
             reasons.append(f"macOS startup smoke receipt platform is not macOS for promoted head '{head}' ({rid}).")
         if expected_arch and startup_smoke_arch != expected_arch:
             reasons.append(f"macOS startup smoke receipt arch does not match promoted RID for head '{head}' ({rid}).")
+        if release_channel_id and startup_smoke_channel_id != release_channel_id:
+            reasons.append(f"macOS startup smoke receipt channelId does not match release-channel channelId for promoted head '{head}' ({rid}).")
         if not startup_receipt_recorded_at_raw or startup_receipt_recorded_at is None:
             reasons.append(f"macOS startup smoke receipt timestamp is missing/invalid for promoted head '{head}' ({rid}).")
         else:
@@ -968,7 +990,7 @@ artifacts = [
     if isinstance(item, dict)
 ]
 release_channel_status = normalize_token(release_channel.get("status"))
-release_channel_channel_id = str(release_channel.get("channelId") or "").strip()
+release_channel_channel_id = normalize_token(release_channel.get("channelId") or release_channel.get("channel"))
 release_channel_version = str(release_channel.get("version") or "").strip()
 
 evidence["release_channel_status"] = release_channel_status
@@ -1182,6 +1204,7 @@ for expected_windows_artifact in expected_windows_artifacts:
         gate_path,
         load_json(gate_path),
         expected_windows_artifact,
+        release_channel_channel_id,
         desktop_files_root,
         repo_root,
         evidence,
@@ -1471,6 +1494,7 @@ for expected_linux_head in expected_linux_heads:
         gate_path,
         load_json(gate_path),
         expected_linux_artifact,
+        release_channel_channel_id,
         repo_root,
         evidence,
         reasons,
@@ -1517,6 +1541,7 @@ for macos_artifact in expected_macos_artifacts:
         macos_artifact,
         gate_path,
         load_json(gate_path),
+        release_channel_channel_id,
         desktop_files_root,
         repo_root,
         evidence,

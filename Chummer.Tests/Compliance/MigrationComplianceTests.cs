@@ -3406,6 +3406,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt headId does not match promoted release-channel head.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt platform is not windows for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt channelId does not match release-channel channelId for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt is stale for promoted installer bytes (");
         StringAssert.Contains(executableGateScriptText, "def windows_gate_path_for_head(");
@@ -3430,6 +3431,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt headId does not match promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt platform is not macOS for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt channelId does not match release-channel channelId for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
@@ -3441,6 +3443,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt headId does not match promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt platform is not linux for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt channelId does not match release channel for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate is missing or not passing.");
         StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate is missing or not passing.");
