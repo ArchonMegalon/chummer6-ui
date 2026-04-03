@@ -3408,6 +3408,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is missing/unreadable for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is outside this repo root for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt headId does not match promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt platform is not linux for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt arch does not match promoted RID for head");
