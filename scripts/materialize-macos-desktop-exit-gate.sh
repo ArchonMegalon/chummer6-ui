@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-APP_KEY="${CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY:-avalonia}"
+APP_KEY_OVERRIDE="${CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY:-}"
 CANONICAL_RELEASE_CHANNEL_PATH="/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
 DEFAULT_RELEASE_CHANNEL_PATH="$REPO_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 if [[ -f "$CANONICAL_RELEASE_CHANNEL_PATH" ]]; then
@@ -13,9 +13,9 @@ else
   RELEASE_CHANNEL_PATH_DEFAULT="$DEFAULT_RELEASE_CHANNEL_PATH"
 fi
 RELEASE_CHANNEL_PATH="${CHUMMER_MACOS_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}"
-RID="${CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID:-}"
-if [[ -z "$RID" ]]; then
-  RID="$(python3 - "$RELEASE_CHANNEL_PATH" "$APP_KEY" <<'PY'
+RID_OVERRIDE="${CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID:-}"
+if [[ -z "$APP_KEY_OVERRIDE" || -z "$RID_OVERRIDE" ]]; then
+  mapfile -t RELEASE_PROMOTED_TUPLE < <(python3 - "$RELEASE_CHANNEL_PATH" "$APP_KEY_OVERRIDE" "$RID_OVERRIDE" <<'PY'
 from __future__ import annotations
 
 import json
@@ -23,7 +23,8 @@ import sys
 from pathlib import Path
 
 release_channel_path = Path(sys.argv[1])
-app_key = sys.argv[2].strip().lower()
+app_key_override = sys.argv[2].strip().lower()
+rid_override = sys.argv[3].strip().lower()
 
 def normalize(value: object) -> str:
     return str(value or "").strip().lower()
@@ -39,30 +40,42 @@ def artifact_rid(artifact: dict) -> str:
     return ""
 
 if not release_channel_path.is_file():
-    raise SystemExit("")
+    raise SystemExit(0)
 
 payload = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
 artifacts = [
     item for item in (payload.get("artifacts") or [])
     if isinstance(item, dict)
-    and normalize(item.get("head")) == app_key
     and normalize(item.get("platform")) == "macos"
     and normalize(item.get("kind")) in {"installer", "dmg", "pkg"}
     and artifact_rid(item)
 ]
 
-preferred_order = ["osx-arm64", "osx-x64"]
-for preferred in preferred_order:
-    for artifact in artifacts:
-        if artifact_rid(artifact) == preferred:
-            print(preferred)
-            raise SystemExit(0)
+if app_key_override:
+    artifacts = [item for item in artifacts if normalize(item.get("head")) == app_key_override]
+if rid_override:
+    artifacts = [item for item in artifacts if artifact_rid(item) == rid_override]
+if not artifacts:
+    raise SystemExit(0)
 
-if artifacts:
-    print(artifact_rid(artifacts[0]))
+preferred_order = ["osx-arm64", "osx-x64"]
+ranked = sorted(
+    artifacts,
+    key=lambda artifact: (
+        preferred_order.index(artifact_rid(artifact)) if artifact_rid(artifact) in preferred_order else len(preferred_order),
+        0 if normalize(artifact.get("head")) == "avalonia" else 1,
+        normalize(artifact.get("head")),
+        artifact_rid(artifact),
+    ),
+)
+chosen = ranked[0]
+print(normalize(chosen.get("head")))
+print(artifact_rid(chosen))
 PY
-)"
+)
 fi
+APP_KEY="${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}"
+RID="${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-osx-arm64}}"
 RID="${RID:-osx-arm64}"
 APP_KEY_PROOF_TOKEN="${APP_KEY^^}"
 APP_KEY_PROOF_TOKEN="${APP_KEY_PROOF_TOKEN//-/_}"
