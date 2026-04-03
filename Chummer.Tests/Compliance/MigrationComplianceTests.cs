@@ -4306,6 +4306,8 @@ public class MigrationComplianceTests
         string runbookText = File.ReadAllText(runbookPath);
         string generatorPath = FindPath("scripts", "generate-releases-manifest.sh");
         string generatorText = File.ReadAllText(generatorPath);
+        string promotionEvidencePath = FindPath("scripts", "generate-public-promotion-evidence.py");
+        string promotionEvidenceText = File.ReadAllText(promotionEvidencePath);
         string publisherPath = FindPath("scripts", "publish-download-bundle.sh");
         string publisherText = File.ReadAllText(publisherPath);
         string s3PublisherPath = FindPath("scripts", "publish-download-bundle-s3.sh");
@@ -4442,6 +4444,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "materialize_public_release_channel.py");
         StringAssert.Contains(generatorText, "--compat-output");
         StringAssert.Contains(generatorText, "generate-public-promotion-evidence.py");
+        StringAssert.Contains(promotionEvidenceText, "CHUMMER_PUBLIC_PROMOTION_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(promotionEvidenceText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(promotionEvidenceText, "pre_ui_event_loop");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt artifactDigest does not match manifest sha256");
+        StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReason\": startup_smoke_reason");
+        StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReceiptPath\": str((receipt or {}).get(\"__sourcePath\") or \"\")");
 
         StringAssert.Contains(publisherText, "Expected desktop-download-bundle layout");
         StringAssert.Contains(publisherText, "generate-releases-manifest.sh");
