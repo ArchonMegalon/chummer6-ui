@@ -20,6 +20,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Avalonia;
+using Chummer.Avalonia.Controls;
 using Chummer.Application.Characters;
 using Chummer.Application.Workspaces;
 using Chummer.Contracts.AI;
@@ -205,6 +206,35 @@ public sealed class AvaloniaFlagshipUiGateTests
             CollectionAssert.DoesNotContain(shellChromeLabels, "Quick Actions");
             CollectionAssert.DoesNotContain(shellChromeLabels, "Workbench State");
             Assert.IsTrue(toolbarButtonHeights.All(height => height <= 40d), "Classic toolbar parity requires compact workbench actions instead of hero-card sized buttons.");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            TextBlock codexKicker = harness.FindControl<TextBlock>("CodexKickerText");
+            TextBlock codexHeading = harness.FindControl<TextBlock>("CodexHeadingText");
+            TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
+            NavigatorTreeItem[] rootItems = SnapshotTreeItems(navigatorTree);
+            string[] rootLabels = rootItems.Select(item => item.Label).ToArray();
+
+            Assert.AreEqual("Codex", codexKicker.Text);
+            StringAssert.Contains(codexHeading.Text ?? string.Empty, "Codex");
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "Open Characters",
+                    "Navigation Tabs",
+                    "Section Actions",
+                    "Workflow Surfaces"
+                },
+                rootLabels);
+            Assert.IsNull(harness.FindControlOrDefault<TabControl>("LoadedRunnerTabStrip"), "The legacy-oriented left rail must be a tree navigator, not a second tab control.");
+            Assert.IsNull(harness.FindControlOrDefault<ListBox>("NavigationTabsList"), "The legacy-oriented left rail must not fall back to a dashboard-style tab list.");
         });
     }
 
@@ -443,6 +473,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Control summaryHeaderRegion = harness.FindControl<Control>("SummaryHeaderRegion");
             Control sectionRegion = harness.FindControl<Control>("SectionRegion");
             Control statusStripRegion = harness.FindControl<Control>("StatusStripRegion");
+            TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
 
             Assert.IsTrue(toolStripRegion.Bounds.Width > workspaceStripRegion.Bounds.Width, "The immediate quick-action strip must dominate the row under the menu.");
             Assert.IsTrue(leftNavigatorRegion.Bounds.Width >= 240d && leftNavigatorRegion.Bounds.Width <= 360d, "Left navigation must stay dense and desktop-scaled.");
@@ -451,6 +482,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(centerShellRegion.Bounds.Width > rightShellRegion.Bounds.Width, "The central editing workbench must remain the dominant pane.");
             Assert.IsTrue(menuBarRegion.Bounds.Height <= 72d, "The top menu row must read like desktop chrome, not a hero header.");
             Assert.IsTrue(statusStripRegion.Bounds.Height <= 72d, "The bottom strip must stay compact like the legacy status posture.");
+            Assert.IsTrue(navigatorTree.Bounds.Width > 0d && navigatorTree.Bounds.Height > 0d, "The left rail must render a visible codex tree.");
+            Assert.IsNull(harness.FindControlOrDefault<TabControl>("LoadedRunnerTabStrip"), "The left rail must avoid a second tab control and keep the classic tree posture.");
 
             Point summaryTop = harness.TranslateToWindow(summaryHeaderRegion);
             Point sectionTop = harness.TranslateToWindow(sectionRegion);
@@ -488,27 +521,35 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         WithLoadedRunnerHarness(harness =>
         {
-            ListBox tabs = harness.FindControl<ListBox>("NavigationTabsList");
-            TextBlock tabsHeader = harness.FindControl<TextBlock>("NavigationTabsHeader");
+            TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
             Control tabStrip = harness.FindControl<Control>("LoadedRunnerTabStripBorder");
             Panel tabStripPanel = harness.FindControl<Panel>("LoadedRunnerTabStripPanel");
             Control quickStart = harness.FindControl<Control>("QuickStartContainer");
 
             harness.WaitUntil(() => !quickStart.IsVisible);
             harness.WaitUntil(() => tabStrip.IsVisible && tabStripPanel.Children.Count > 0);
+            harness.WaitUntil(() =>
+            {
+                NavigatorTreeItem[] treeItems = SnapshotTreeItems(navigatorTree);
+                return FindTreeItem(treeItems, NavigatorTreeNodeKind.NavigationTab, static item =>
+                    item.Label.Contains("Runner", StringComparison.Ordinal)) is not null;
+            });
 
-            Assert.IsTrue(tabs.IsVisible);
+            NavigatorTreeItem[] rootItems = SnapshotTreeItems(navigatorTree);
+            NavigatorTreeItem tabGroup = FindTreeItem(rootItems, NavigatorTreeNodeKind.Group, static item =>
+                item.Label.Contains("Tabs", StringComparison.Ordinal))!;
+
+            Assert.IsTrue(navigatorTree.IsVisible);
             Assert.IsTrue(tabStrip.IsVisible);
-            StringAssert.Contains(tabsHeader.Text ?? string.Empty, "Tabs");
-            Assert.IsTrue(tabs.Bounds.Width > 0d && tabs.Bounds.Height > 0d, "Navigation tabs should render with a visible desktop footprint.");
+            Assert.IsTrue(navigatorTree.Bounds.Width > 0d && navigatorTree.Bounds.Height > 0d, "Codex tree should render with a visible desktop footprint.");
+            Assert.IsTrue(tabGroup.Children.Length > 0, "Loaded runner posture requires a visible tabs branch in the codex tree.");
             Assert.IsTrue(tabStripPanel.Children.OfType<Button>().Any(button =>
                 (button.Content?.ToString() ?? string.Empty).Contains("Runner", StringComparison.Ordinal)),
                 "Loaded runner tab strip should surface a visible Runner tab button.");
-            object[] tabItems = SnapshotListBoxItems(tabs);
-            if (tabItems.Length > 0)
-            {
-                StringAssert.Contains(tabItems[0].ToString() ?? string.Empty, "Runner");
-            }
+            Assert.IsNotNull(
+                FindTreeItem(tabGroup.Children, NavigatorTreeNodeKind.NavigationTab, static item =>
+                    item.Label.Contains("Runner", StringComparison.Ordinal)),
+                "Loaded runner codex tree must expose a Runner leaf.");
         });
     }
 
@@ -523,24 +564,35 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(harness.FindControl<ProgressBar>("WorkbenchProgressBar").IsVisible);
             Assert.IsTrue(harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible);
 
-            ListBox tabs = harness.FindControl<ListBox>("NavigationTabsList");
+            TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
             ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
             Control quickStart = harness.FindControl<Control>("QuickStartContainer");
 
             harness.WaitUntil(() =>
                 !quickStart.IsVisible
-                && tabs.ItemCount >= 2
                 && sectionRows.ItemCount > 0
-                && !string.IsNullOrWhiteSpace(preview.Text));
+                && !string.IsNullOrWhiteSpace(preview.Text)
+                && SnapshotTreeItems(navigatorTree).Length >= 4);
 
-            Assert.IsTrue(tabs.IsVisible, "Legacy frmCareer parity requires a visible loaded-runner tab posture.");
+            NavigatorTreeItem[] rootItems = SnapshotTreeItems(navigatorTree);
+            NavigatorTreeItem tabGroup = FindTreeItem(rootItems, NavigatorTreeNodeKind.Group, static item =>
+                item.Label.Contains("Tabs", StringComparison.Ordinal))!;
+
+            Assert.IsTrue(navigatorTree.IsVisible, "Legacy frmCareer parity requires a visible codex tree posture.");
             Assert.IsTrue(sectionRows.IsVisible, "Legacy frmCareer parity requires a visible dense section/workbench list.");
             Assert.IsFalse(string.IsNullOrWhiteSpace(preview.Text), "Legacy frmCareer parity requires a visible detail/preview pane.");
 
-            string[] tabItems = SnapshotListBoxItems(tabs).Select(item => item.ToString() ?? string.Empty).ToArray();
+            string[] tabItems = tabGroup.Children.Select(item => item.ToString() ?? string.Empty).ToArray();
             Assert.IsTrue(tabItems.Any(item => item.Contains("profile", StringComparison.OrdinalIgnoreCase)), "Legacy frmCareer parity requires an info/profile navigation landmark.");
             Assert.IsTrue(tabItems.Any(item => item.Contains("gear", StringComparison.OrdinalIgnoreCase)), "Legacy frmCareer parity requires a gear navigation landmark.");
+
+            NavigatorTreeItem? gearTab = FindTreeItem(tabGroup.Children, NavigatorTreeNodeKind.NavigationTab, static item =>
+                item.Label.Contains("Gear", StringComparison.OrdinalIgnoreCase));
+            Assert.IsNotNull(gearTab, "Legacy frmCareer parity requires a gear leaf in the codex tree.");
+            navigatorTree.SelectedItem = gearTab;
+            harness.WaitUntil(() => string.Equals(harness.ShellPresenter.State.ActiveTabId, gearTab.Id, StringComparison.Ordinal));
+
             string previewPayload = preview.Text ?? string.Empty;
             bool hasLegacyOrWorkflowSectionMarker =
                 previewPayload.Contains("\"sectionId\"", StringComparison.Ordinal)
@@ -864,8 +916,13 @@ public sealed class AvaloniaFlagshipUiGateTests
                 captured[expectedFiles[5]] = harness.CaptureScreenshotBytes();
 
                 harness.SetTheme(ThemeVariant.Light);
-                ListBox tabs = harness.FindControl<ListBox>("NavigationTabsList");
-                harness.WaitUntil(() => tabs.ItemCount > 0 && tabs.SelectedItem is not null);
+                TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
+                harness.WaitUntil(() =>
+                {
+                    NavigatorTreeItem[] treeItems = SnapshotTreeItems(navigatorTree);
+                    return FindTreeItem(treeItems, NavigatorTreeNodeKind.NavigationTab, static item =>
+                        item.Label.Contains("Runner", StringComparison.Ordinal)) is not null;
+                });
                 captured[expectedFiles[6]] = harness.CaptureScreenshotBytes();
 
                 ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
@@ -1218,6 +1275,43 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
 
         return Array.Empty<object>();
+    }
+
+    private static NavigatorTreeItem[] SnapshotTreeItems(TreeView treeView)
+    {
+        if (treeView.ItemsSource is IEnumerable<NavigatorTreeItem> typedItems)
+        {
+            return typedItems.ToArray();
+        }
+
+        if (treeView.Items is IEnumerable items)
+        {
+            return items.OfType<NavigatorTreeItem>().ToArray();
+        }
+
+        return [];
+    }
+
+    private static NavigatorTreeItem? FindTreeItem(
+        IEnumerable<NavigatorTreeItem> items,
+        NavigatorTreeNodeKind kind,
+        Func<NavigatorTreeItem, bool> predicate)
+    {
+        foreach (NavigatorTreeItem item in items)
+        {
+            if (item.Kind == kind && predicate(item))
+            {
+                return item;
+            }
+
+            NavigatorTreeItem? childMatch = FindTreeItem(item.Children, kind, predicate);
+            if (childMatch is not null)
+            {
+                return childMatch;
+            }
+        }
+
+        return null;
     }
 
     private static void AssertQuickActionDialogFlow(

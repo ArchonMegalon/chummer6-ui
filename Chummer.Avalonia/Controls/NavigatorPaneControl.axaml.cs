@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Rulesets;
@@ -6,18 +8,11 @@ namespace Chummer.Avalonia.Controls;
 
 public partial class NavigatorPaneControl : UserControl
 {
-    private bool _suppressWorkspaceSelectionEvent;
-    private bool _suppressTabSelectionEvent;
-    private bool _suppressSectionActionSelectionEvent;
-    private bool _suppressWorkflowSurfaceSelectionEvent;
+    private bool _suppressTreeSelectionEvent;
 
     public NavigatorPaneControl()
     {
         InitializeComponent();
-        OpenWorkspacesList.SelectionChanged += OpenWorkspacesList_OnSelectionChanged;
-        NavigationTabsList.SelectionChanged += NavigationTabsList_OnSelectionChanged;
-        SectionActionsList.SelectionChanged += SectionActionsList_OnSelectionChanged;
-        WorkflowSurfacesList.SelectionChanged += WorkflowSurfacesList_OnSelectionChanged;
     }
 
     public event EventHandler<string>? WorkspaceSelected;
@@ -27,106 +22,188 @@ public partial class NavigatorPaneControl : UserControl
 
     public void SetState(NavigatorPaneState state)
     {
-        OpenWorkspacesHeader.Text = state.OpenWorkspacesHeading;
-        SetOpenWorkspaces(state.OpenWorkspaces, state.SelectedWorkspaceId);
-        NavigationTabsHeader.Text = state.NavigationTabsHeading;
-        SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
-        SectionActionsHeader.Text = state.SectionActionsHeading;
-        SetSectionActions(state.SectionActions, state.ActiveActionId);
-        WorkflowSurfacesHeader.Text = state.WorkflowSurfacesHeading;
-        SetWorkflowSurfaces(state.WorkflowSurfaces);
+        CodexHeadingText.Text = BuildCodexHeading(state);
+        CodexCaptionText.Text = BuildCodexCaption(state);
+        SetNavigatorTree(state);
     }
 
-    public void SetOpenWorkspaces(IEnumerable<NavigatorWorkspaceItem> workspaces, string? selectedWorkspaceId)
+    public NavigatorTreeItem[] SnapshotTreeItems()
     {
-        NavigatorWorkspaceItem[] workspaceItems = workspaces.ToArray();
-        _suppressWorkspaceSelectionEvent = true;
-        OpenWorkspacesList.ItemsSource = workspaceItems;
-        OpenWorkspacesList.SelectedItem = workspaceItems
-            .FirstOrDefault(item => string.Equals(item.Id, selectedWorkspaceId, StringComparison.Ordinal));
-        _suppressWorkspaceSelectionEvent = false;
+        if (NavigatorTree.ItemsSource is IEnumerable<NavigatorTreeItem> typedItems)
+        {
+            return typedItems.ToArray();
+        }
+
+        if (NavigatorTree.Items is IEnumerable items)
+        {
+            return items.OfType<NavigatorTreeItem>().ToArray();
+        }
+
+        return [];
     }
 
-    public void SetNavigationTabs(IEnumerable<NavigatorTabItem> tabs, string? activeTabId)
+    private void SetNavigatorTree(NavigatorPaneState state)
     {
-        NavigatorTabItem[] tabItems = tabs.ToArray();
-        _suppressTabSelectionEvent = true;
-        NavigationTabsList.ItemsSource = tabItems;
-        NavigationTabsList.SelectedItem = tabItems
-            .FirstOrDefault(item => string.Equals(item.Id, activeTabId, StringComparison.Ordinal));
-        _suppressTabSelectionEvent = false;
+        NavigatorTreeItem[] treeItems = BuildTreeItems(state);
+        _suppressTreeSelectionEvent = true;
+        NavigatorTree.ItemsSource = treeItems;
+        NavigatorTree.SelectedItem = ResolveSelectedTreeItem(treeItems, state.SelectedWorkspaceId, state.ActiveTabId);
+        _suppressTreeSelectionEvent = false;
     }
 
-    public void SetSectionActions(IEnumerable<NavigatorSectionActionItem> actions, string? activeActionId)
+    private void NavigatorTree_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        NavigatorSectionActionItem[] actionItems = actions.ToArray();
-        _suppressSectionActionSelectionEvent = true;
-        SectionActionsList.ItemsSource = actionItems;
-        SectionActionsList.SelectedItem = actionItems
-            .FirstOrDefault(item => string.Equals(item.Id, activeActionId, StringComparison.Ordinal));
-        _suppressSectionActionSelectionEvent = false;
-    }
-
-    public void SetWorkflowSurfaces(IEnumerable<NavigatorWorkflowSurfaceItem> workflowSurfaces)
-    {
-        NavigatorWorkflowSurfaceItem[] surfaceItems = workflowSurfaces.ToArray();
-        _suppressWorkflowSurfaceSelectionEvent = true;
-        WorkflowSurfacesList.ItemsSource = surfaceItems;
-        WorkflowSurfacesList.SelectedItem = null;
-        _suppressWorkflowSurfaceSelectionEvent = false;
-    }
-
-    private void OpenWorkspacesList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_suppressWorkspaceSelectionEvent)
+        if (_suppressTreeSelectionEvent)
             return;
 
-        if (OpenWorkspacesList.SelectedItem is not NavigatorWorkspaceItem workspace || !workspace.Enabled)
+        if (NavigatorTree.SelectedItem is not NavigatorTreeItem item || !item.Enabled)
             return;
 
-        WorkspaceSelected?.Invoke(this, workspace.Id);
+        switch (item.Kind)
+        {
+            case NavigatorTreeNodeKind.Workspace:
+                WorkspaceSelected?.Invoke(this, item.Id);
+                break;
+            case NavigatorTreeNodeKind.NavigationTab:
+                NavigationTabSelected?.Invoke(this, item.Id);
+                break;
+            case NavigatorTreeNodeKind.SectionAction:
+                SectionActionSelected?.Invoke(this, item.Id);
+                ClearTreeSelection();
+                break;
+            case NavigatorTreeNodeKind.WorkflowSurface:
+                WorkflowSurfaceSelected?.Invoke(this, item.Id);
+                ClearTreeSelection();
+                break;
+        }
     }
 
-    private void NavigationTabsList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void ClearTreeSelection()
     {
-        if (_suppressTabSelectionEvent)
-            return;
-
-        if (NavigationTabsList.SelectedItem is not NavigatorTabItem tab || !tab.Enabled)
-            return;
-
-        NavigationTabSelected?.Invoke(this, tab.Id);
+        _suppressTreeSelectionEvent = true;
+        NavigatorTree.SelectedItem = null;
+        _suppressTreeSelectionEvent = false;
     }
 
-    private void SectionActionsList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private static string BuildCodexHeading(NavigatorPaneState state)
+        => state.SelectedWorkspaceId is null
+            ? "Codex"
+            : $"Codex · {state.OpenWorkspaces.Length} runner{(state.OpenWorkspaces.Length == 1 ? string.Empty : "s")} open";
+
+    private static string BuildCodexCaption(NavigatorPaneState state)
     {
-        if (_suppressSectionActionSelectionEvent)
-            return;
-
-        if (SectionActionsList.SelectedItem is not NavigatorSectionActionItem action)
-            return;
-
-        SectionActionSelected?.Invoke(this, action.Id);
-        ClearSelection(SectionActionsList, ref _suppressSectionActionSelectionEvent);
+        string tabLabel = state.NavigationTabs.FirstOrDefault(item => string.Equals(item.Id, state.ActiveTabId, StringComparison.Ordinal))?.Label
+            ?? "Pick a runner to restore the workbench";
+        return $"Legacy tree navigator with runners, tabs, actions, and workflow routes. Active tab: {tabLabel}.";
     }
 
-    private void WorkflowSurfacesList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private static NavigatorTreeItem[] BuildTreeItems(NavigatorPaneState state)
     {
-        if (_suppressWorkflowSurfaceSelectionEvent)
-            return;
+        NavigatorTreeItem[] workspaces = state.OpenWorkspaces
+            .Select(workspace => new NavigatorTreeItem(
+                workspace.Id,
+                workspace.Name,
+                BuildWorkspaceDetail(workspace),
+                workspace.Enabled,
+                NavigatorTreeNodeKind.Workspace,
+                []))
+            .ToArray();
+        NavigatorTreeItem[] tabs = state.NavigationTabs
+            .Select(tab => new NavigatorTreeItem(
+                tab.Id,
+                tab.Label,
+                $"{tab.Group} · {tab.SectionId}",
+                tab.Enabled,
+                NavigatorTreeNodeKind.NavigationTab,
+                []))
+            .ToArray();
+        NavigatorTreeItem[] sectionActions = state.SectionActions
+            .Select(action => new NavigatorTreeItem(
+                action.Id,
+                action.Label,
+                $"Action · {action.Kind}",
+                Enabled: true,
+                NavigatorTreeNodeKind.SectionAction,
+                []))
+            .ToArray();
+        NavigatorTreeItem[] workflowSurfaces = state.WorkflowSurfaces
+            .Select(surface => new NavigatorTreeItem(
+                surface.ActionId,
+                surface.Label,
+                $"Workflow · {surface.WorkflowId}",
+                Enabled: true,
+                NavigatorTreeNodeKind.WorkflowSurface,
+                []))
+            .ToArray();
 
-        if (WorkflowSurfacesList.SelectedItem is not NavigatorWorkflowSurfaceItem surface)
-            return;
-
-        WorkflowSurfaceSelected?.Invoke(this, surface.ActionId);
-        ClearSelection(WorkflowSurfacesList, ref _suppressWorkflowSurfaceSelectionEvent);
+        return
+        [
+            CreateGroupNode(state.OpenWorkspacesHeading, workspaces),
+            CreateGroupNode(state.NavigationTabsHeading, tabs),
+            CreateGroupNode(state.SectionActionsHeading, sectionActions),
+            CreateGroupNode(state.WorkflowSurfacesHeading, workflowSurfaces),
+        ];
     }
 
-    private static void ClearSelection(ListBox listBox, ref bool suppressSelectionEvent)
+    private static NavigatorTreeItem CreateGroupNode(string heading, NavigatorTreeItem[] children)
     {
-        suppressSelectionEvent = true;
-        listBox.SelectedItem = null;
-        suppressSelectionEvent = false;
+        string detail = children.Length == 0
+            ? "No items available yet."
+            : $"{children.Length} item{(children.Length == 1 ? string.Empty : "s")}";
+        return new NavigatorTreeItem(
+            Id: heading,
+            Label: heading,
+            Detail: detail,
+            Enabled: false,
+            Kind: NavigatorTreeNodeKind.Group,
+            Children: children);
+    }
+
+    private static string BuildWorkspaceDetail(NavigatorWorkspaceItem workspace)
+        => $"Alias {workspace.Alias} · Ruleset {workspace.RulesetId} · {(workspace.HasSavedWorkspace ? "saved" : "unsaved")}";
+
+    private static NavigatorTreeItem? ResolveSelectedTreeItem(
+        IEnumerable<NavigatorTreeItem> items,
+        string? selectedWorkspaceId,
+        string? activeTabId)
+    {
+        if (!string.IsNullOrWhiteSpace(activeTabId))
+        {
+            NavigatorTreeItem? selectedTab = FindTreeItem(items, NavigatorTreeNodeKind.NavigationTab, activeTabId);
+            if (selectedTab is not null)
+            {
+                return selectedTab;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(selectedWorkspaceId))
+        {
+            return FindTreeItem(items, NavigatorTreeNodeKind.Workspace, selectedWorkspaceId);
+        }
+
+        return null;
+    }
+
+    private static NavigatorTreeItem? FindTreeItem(
+        IEnumerable<NavigatorTreeItem> items,
+        NavigatorTreeNodeKind kind,
+        string id)
+    {
+        foreach (NavigatorTreeItem item in items)
+        {
+            if (item.Kind == kind && string.Equals(item.Id, id, StringComparison.Ordinal))
+            {
+                return item;
+            }
+
+            NavigatorTreeItem? childMatch = FindTreeItem(item.Children, kind, id);
+            if (childMatch is not null)
+            {
+                return childMatch;
+            }
+        }
+
+        return null;
     }
 }
 
@@ -188,5 +265,30 @@ public sealed record NavigatorWorkflowSurfaceItem(
     public override string ToString()
     {
         return $"{Label} ({WorkflowId})";
+    }
+}
+
+public enum NavigatorTreeNodeKind
+{
+    Group,
+    Workspace,
+    NavigationTab,
+    SectionAction,
+    WorkflowSurface,
+}
+
+public sealed record NavigatorTreeItem(
+    string Id,
+    string Label,
+    string Detail,
+    bool Enabled,
+    NavigatorTreeNodeKind Kind,
+    NavigatorTreeItem[] Children)
+{
+    public bool HasDetail => !string.IsNullOrWhiteSpace(Detail);
+
+    public override string ToString()
+    {
+        return HasDetail ? $"{Label} · {Detail}" : Label;
     }
 }
