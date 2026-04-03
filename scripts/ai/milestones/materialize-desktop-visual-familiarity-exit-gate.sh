@@ -7,6 +7,7 @@ cd "$repo_root"
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
+release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
 app_axaml_path="$repo_root/Chummer.Avalonia/App.axaml"
 main_window_axaml_path="$repo_root/Chummer.Avalonia/MainWindow.axaml"
 navigator_axaml_path="$repo_root/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml"
@@ -17,6 +18,12 @@ ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGate
 legacy_frmcareer_designer_path="/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs"
 
 mkdir -p "$(dirname "$receipt_path")"
+for _ in $(seq 1 150); do
+  if [[ ! -d "$release_gate_lock_dir" ]]; then
+    break
+  fi
+  sleep 2
+done
 
 python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$legacy_frmcareer_designer_path"
 from __future__ import annotations
