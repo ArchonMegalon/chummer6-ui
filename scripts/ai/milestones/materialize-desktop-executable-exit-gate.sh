@@ -85,6 +85,14 @@ def dedupe_preserve_order(values: List[str]) -> List[str]:
     return deduped
 
 
+def normalized_token_list(values: Any) -> List[str]:
+    if not isinstance(values, list):
+        return []
+    return dedupe_preserve_order(
+        [normalize_token(value) for value in values if normalize_token(value)]
+    )
+
+
 def parse_iso(value: Any) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -869,6 +877,36 @@ release_channel_version = str(release_channel.get("version") or "").strip()
 evidence["release_channel_status"] = release_channel_status
 evidence["release_channel_channel_id"] = release_channel_channel_id
 evidence["release_channel_version"] = release_channel_version
+desktop_tuple_coverage = (
+    release_channel.get("desktopTupleCoverage")
+    if isinstance(release_channel.get("desktopTupleCoverage"), dict)
+    else {}
+)
+tuple_coverage_required_desktop_platforms = normalized_token_list(
+    desktop_tuple_coverage.get("requiredDesktopPlatforms")
+)
+tuple_coverage_required_desktop_heads = normalized_token_list(
+    desktop_tuple_coverage.get("requiredDesktopHeads")
+)
+tuple_coverage_promoted_platform_heads_raw = (
+    desktop_tuple_coverage.get("promotedPlatformHeads")
+    if isinstance(desktop_tuple_coverage.get("promotedPlatformHeads"), dict)
+    else {}
+)
+tuple_coverage_promoted_platform_heads = {
+    normalize_token(platform): normalized_token_list(heads)
+    for platform, heads in tuple_coverage_promoted_platform_heads_raw.items()
+    if normalize_token(platform)
+}
+tuple_coverage_reported_missing_platform_head_pairs = normalized_token_list(
+    desktop_tuple_coverage.get("missingRequiredPlatformHeadPairs")
+)
+evidence["release_channel_tuple_coverage_required_desktop_platforms"] = tuple_coverage_required_desktop_platforms
+evidence["release_channel_tuple_coverage_required_desktop_heads"] = tuple_coverage_required_desktop_heads
+evidence["release_channel_tuple_coverage_promoted_platform_heads"] = tuple_coverage_promoted_platform_heads
+evidence["release_channel_tuple_coverage_reported_missing_required_platform_head_pairs"] = (
+    tuple_coverage_reported_missing_platform_head_pairs
+)
 
 if not release_channel_channel_id:
     reasons.append("Release channel is missing channelId, so installer/update truth cannot be aligned by channel.")
@@ -1020,6 +1058,52 @@ heads_requiring_flagship_proof = sorted(
     set(promoted_desktop_heads).union(set(flagship_required_desktop_heads))
 )
 evidence["heads_requiring_flagship_proof"] = heads_requiring_flagship_proof
+required_platforms_for_pair_matrix = tuple_coverage_required_desktop_platforms or list(required_desktop_platforms)
+required_heads_for_pair_matrix = tuple_coverage_required_desktop_heads or heads_requiring_flagship_proof
+promoted_platform_heads_for_pair_matrix: Dict[str, List[str]] = {}
+for platform in required_platforms_for_pair_matrix:
+    promoted_platform_heads_for_pair_matrix[platform] = (
+        tuple_coverage_promoted_platform_heads.get(platform)
+        or platform_heads_from_release_channel.get(platform, [])
+    )
+missing_required_platform_head_pairs_derived = sorted(
+    {
+        f"{head}:{platform}"
+        for platform in required_platforms_for_pair_matrix
+        for head in required_heads_for_pair_matrix
+        if head and head not in set(promoted_platform_heads_for_pair_matrix.get(platform, []))
+    }
+)
+missing_required_platform_head_pairs = (
+    tuple_coverage_reported_missing_platform_head_pairs
+    if tuple_coverage_reported_missing_platform_head_pairs
+    else missing_required_platform_head_pairs_derived
+)
+tuple_coverage_missing_pair_inventory_mismatch = sorted(
+    set(tuple_coverage_reported_missing_platform_head_pairs).symmetric_difference(
+        set(missing_required_platform_head_pairs_derived)
+    )
+)
+evidence["required_desktop_platform_head_pair_platforms"] = required_platforms_for_pair_matrix
+evidence["required_desktop_platform_head_pair_heads"] = required_heads_for_pair_matrix
+evidence["promoted_platform_heads_for_required_pair_matrix"] = promoted_platform_heads_for_pair_matrix
+evidence["missing_required_desktop_platform_head_pairs"] = missing_required_platform_head_pairs
+evidence["missing_required_desktop_platform_head_pairs_derived"] = (
+    missing_required_platform_head_pairs_derived
+)
+evidence["release_channel_tuple_coverage_missing_pair_inventory_mismatch"] = (
+    tuple_coverage_missing_pair_inventory_mismatch
+)
+if tuple_coverage_missing_pair_inventory_mismatch:
+    reasons.append(
+        "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples."
+    )
+if missing_required_platform_head_pairs:
+    reasons.append(
+        "Release channel is missing required desktop platform/head installer tuple pair(s): "
+        + ", ".join(missing_required_platform_head_pairs)
+        + "."
+    )
 
 visual_required_heads = [
     normalize_token(item)
