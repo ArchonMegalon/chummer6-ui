@@ -6,7 +6,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PROOF_PATH="${CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json}"
 RELEASE_CHANNEL_PATH="${CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
-WINDOWS_INSTALLER_PATH="${CHUMMER_WINDOWS_INSTALLER_PATH:-/docker/chummer5a/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe}"
+WINDOWS_INSTALLER_PATH="${CHUMMER_WINDOWS_INSTALLER_PATH:-}"
+WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-/docker/chummer5a/Docker/Downloads/files}"
 UI_LOCAL_RELEASE_PROOF_PATH="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
 UI_FLAGSHIP_RELEASE_GATE_PATH="${CHUMMER_UI_FLAGSHIP_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
 UI_WORKFLOW_PARITY_PATH="${CHUMMER_UI_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json}"
@@ -15,7 +16,7 @@ SR6_WORKFLOW_PARITY_PATH="${CHUMMER_SR6_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
-python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" <<'PY'
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -84,33 +85,26 @@ def parse_iso_utc(value: Any) -> datetime | None:
 proof_path = Path(sys.argv[1])
 release_channel_path = Path(sys.argv[2])
 installer_path = Path(sys.argv[3])
-ui_local_release_proof_path = Path(sys.argv[4])
-ui_flagship_release_gate_path = Path(sys.argv[5])
-ui_workflow_parity_path = Path(sys.argv[6])
-sr4_workflow_parity_path = Path(sys.argv[7])
-sr6_workflow_parity_path = Path(sys.argv[8])
-repo_root = Path(sys.argv[9])
+windows_installer_path_override = Path(sys.argv[3]).expanduser() if str(sys.argv[3]).strip() else None
+windows_local_desktop_files_root = Path(sys.argv[4])
+ui_local_release_proof_path = Path(sys.argv[5])
+ui_flagship_release_gate_path = Path(sys.argv[6])
+ui_workflow_parity_path = Path(sys.argv[7])
+sr4_workflow_parity_path = Path(sys.argv[8])
+sr6_workflow_parity_path = Path(sys.argv[9])
+repo_root = Path(sys.argv[10])
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
     "release_channel_path": str(release_channel_path),
-    "windows_installer_path": str(installer_path),
+    "windows_installer_path_override": str(windows_installer_path_override) if windows_installer_path_override else "",
+    "windows_local_desktop_files_root": str(windows_local_desktop_files_root),
     "ui_local_release_proof_path": str(ui_local_release_proof_path),
     "ui_flagship_release_gate_path": str(ui_flagship_release_gate_path),
     "ui_workflow_parity_path": str(ui_workflow_parity_path),
     "sr4_workflow_parity_path": str(sr4_workflow_parity_path),
     "sr6_workflow_parity_path": str(sr6_workflow_parity_path),
 }
-
-installer_exists = installer_path.is_file()
-installer_size = installer_path.stat().st_size if installer_exists else 0
-installer_sha = sha256_file(installer_path) if installer_exists else ""
-evidence["installer_exists"] = installer_exists
-evidence["installer_size_bytes"] = installer_size
-evidence["installer_sha256"] = installer_sha
-
-if not installer_exists:
-    reasons.append("Avalonia Windows installer is missing from the active public downloads shelf.")
 
 release_channel = load_json(release_channel_path)
 release_channel_status = str(release_channel.get("status") or "").strip().lower()
@@ -125,26 +119,60 @@ artifacts = [
 windows_artifact = None
 for artifact in artifacts:
     if (
-        str(artifact.get("head") or "").strip() == "avalonia"
+        str(artifact.get("head") or "").strip()
         and str(artifact.get("platform") or "").strip().lower() == "windows"
-        and str(artifact.get("kind") or "").strip().lower() == "installer"
+        and str(artifact.get("kind") or "").strip().lower() in {"installer", "msix"}
     ):
         windows_artifact = artifact
         break
 
+expected_head = "avalonia"
+expected_rid = "win-x64"
+expected_arch = "x64"
+
 if windows_artifact is None:
-    reasons.append("Release channel does not publish an Avalonia Windows installer artifact.")
+    reasons.append("Release channel does not publish a promoted Windows install medium artifact.")
+    artifact_file_name = ""
+    artifact_size = 0
+    artifact_sha = ""
 else:
+    expected_head = normalize_token(windows_artifact.get("head")) or expected_head
+    expected_rid = normalize_token(windows_artifact.get("rid")) or expected_rid
+    if expected_rid.startswith("win-") and len(expected_rid) > 4:
+        expected_arch = expected_rid.split("-", 1)[1]
     artifact_file_name = str(windows_artifact.get("fileName") or "").strip()
     artifact_size = int(windows_artifact.get("sizeBytes") or 0)
     artifact_sha = str(windows_artifact.get("sha256") or "").strip().lower()
     evidence["release_channel_windows_artifact"] = windows_artifact
-    if artifact_file_name != installer_path.name:
-        reasons.append("Release-channel Windows artifact fileName does not match the promoted installer.")
-    if installer_exists and artifact_size and artifact_size != installer_size:
-        reasons.append("Release-channel Windows artifact size does not match installer bytes.")
-    if installer_exists and artifact_sha and artifact_sha != installer_sha:
-        reasons.append("Release-channel Windows artifact sha256 does not match installer digest.")
+
+if windows_installer_path_override:
+    installer_path = windows_installer_path_override.resolve()
+elif artifact_file_name:
+    installer_path = (windows_local_desktop_files_root / artifact_file_name).resolve()
+else:
+    installer_path = (windows_local_desktop_files_root / "chummer-avalonia-win-x64-installer.exe").resolve()
+
+installer_exists = installer_path.is_file()
+installer_size = installer_path.stat().st_size if installer_exists else 0
+installer_sha = sha256_file(installer_path) if installer_exists else ""
+evidence["windows_installer_path"] = str(installer_path)
+evidence["installer_exists"] = installer_exists
+evidence["installer_size_bytes"] = installer_size
+evidence["installer_sha256"] = installer_sha
+evidence["expected_windows_head"] = expected_head
+evidence["expected_windows_rid"] = expected_rid
+evidence["expected_windows_arch"] = expected_arch
+if artifact_file_name:
+    evidence["expected_windows_file_name"] = artifact_file_name
+
+if not installer_exists:
+    reasons.append("Promoted Windows installer is missing from the active public downloads shelf.")
+if artifact_file_name and artifact_file_name != installer_path.name:
+    reasons.append("Release-channel Windows artifact fileName does not match the selected installer path.")
+if installer_exists and artifact_size and artifact_size != installer_size:
+    reasons.append("Release-channel Windows artifact size does not match installer bytes.")
+if installer_exists and artifact_sha and artifact_sha != installer_sha:
+    reasons.append("Release-channel Windows artifact sha256 does not match installer digest.")
 
 payload_marker_present = False
 sample_marker_present = False
@@ -166,7 +194,7 @@ if startup_smoke_receipt_override:
     startup_smoke_receipt_path = Path(startup_smoke_receipt_override).resolve()
     startup_smoke_candidates = [startup_smoke_receipt_path]
 else:
-    startup_smoke_receipt_name = "startup-smoke-avalonia-win-x64.receipt.json"
+    startup_smoke_receipt_name = f"startup-smoke-{expected_head}-{expected_rid}.receipt.json"
     startup_smoke_candidates = [
         release_channel_path.parent / "startup-smoke" / startup_smoke_receipt_name,
         release_channel_path.parent.parent / "startup-smoke" / startup_smoke_receipt_name,
@@ -213,12 +241,18 @@ startup_smoke_arch = normalize_token(startup_smoke_payload.get("arch"))
 evidence["startup_smoke_head"] = startup_smoke_head
 evidence["startup_smoke_platform"] = startup_smoke_platform
 evidence["startup_smoke_arch"] = startup_smoke_arch
-if startup_smoke_receipt_path.is_file() and startup_smoke_head != "avalonia":
-    reasons.append("Windows startup smoke receipt headId does not match promoted head avalonia.")
+if startup_smoke_receipt_path.is_file() and startup_smoke_head != expected_head:
+    reasons.append(f"Windows startup smoke receipt headId does not match promoted head {expected_head}.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_platform != "windows":
     reasons.append("Windows startup smoke receipt platform is not windows.")
-if startup_smoke_receipt_path.is_file() and startup_smoke_arch != "x64":
-    reasons.append("Windows startup smoke receipt arch does not match promoted RID win-x64.")
+if startup_smoke_receipt_path.is_file() and startup_smoke_arch != expected_arch:
+    reasons.append(f"Windows startup smoke receipt arch does not match promoted RID {expected_rid}.")
+
+launch_target_by_head = {
+    "avalonia": "Chummer.Avalonia.exe",
+    "blazor-desktop": "Chummer.Blazor.Desktop.exe",
+}
+launch_target = launch_target_by_head.get(expected_head, "Chummer.Avalonia.exe")
 
 startup_smoke_timestamp = parse_iso_utc(
     startup_smoke_payload.get("completedAtUtc")
@@ -285,10 +319,10 @@ payload = {
         else "windows desktop exit gate checks failed"
     ),
     "head": {
-        "app_key": "avalonia",
+        "app_key": expected_head,
         "platform": "windows",
-        "rid": "win-x64",
-        "launch_target": "Chummer.Avalonia.exe",
+        "rid": expected_rid,
+        "launch_target": launch_target,
     },
     "checks": evidence,
     "reasons": reasons,
