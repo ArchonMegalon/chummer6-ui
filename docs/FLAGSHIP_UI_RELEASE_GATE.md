@@ -29,7 +29,7 @@ The executable gate is green only when all of the following are true:
    - explicit character-creation section posture
    - a dense shell state in light theme
    - a dense shell state in dark theme
-3. `WORKBENCH_RELEASE_SIGNOFF.md` cites this gate as part of the release closeout bar.
+4. `WORKBENCH_RELEASE_SIGNOFF.md` cites this gate as part of the release closeout bar.
 
 ## Executable lane
 
@@ -48,6 +48,7 @@ That lane:
 - fail-closes on `chummer5a-desktop-workflow-parity-check.sh`, `sr4-sr6-desktop-parity-frontier-receipt.sh`, and `materialize-desktop-workflow-execution-gate.sh`
 - fail-closes when SR4/SR6 workflow ledgers drop canonical required family IDs or omit per-family audit-test declarations
 - verifies the release signoff document cites the gate
+- acquires `.codex-studio/locks/b14-flagship-ui-release-gate.lock` and stages screenshots in per-run temp directories before publishing, so concurrent runs cannot wipe in-flight screenshot evidence
 - publishes screenshot evidence under `.codex-studio/published/ui-flagship-release-gate-screenshots/`
 - publishes `.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json`
 
