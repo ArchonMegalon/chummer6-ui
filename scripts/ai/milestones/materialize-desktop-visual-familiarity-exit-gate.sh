@@ -170,35 +170,20 @@ legacy_cyberware_dialog_rhythm = str(interaction_proof.get("legacyCyberwareDialo
 legacy_contacts_diary_rhythm = str(interaction_proof.get("legacyContactsDiaryRhythm") or "").strip().lower()
 legacy_magic_matrix_workflow_rhythm = str(interaction_proof.get("legacyMagicMatrixWorkflowRhythm") or "").strip().lower()
 legacy_familiarity_bridge = str(interaction_proof.get("legacyFamiliarityBridge") or "").strip().lower()
-if not runtime_backed_legacy_workbench:
-    runtime_backed_legacy_workbench = legacy_familiarity_bridge
-if not legacy_dense_builder_rhythm:
-    legacy_dense_builder_rhythm = legacy_familiarity_bridge
-if not legacy_advancement_workflow_rhythm:
-    legacy_advancement_workflow_rhythm = legacy_dense_builder_rhythm
-if not legacy_browse_detail_confirm_rhythm:
-    legacy_browse_detail_confirm_rhythm = legacy_familiarity_bridge
-if not legacy_vehicles_builder_rhythm:
-    legacy_vehicles_builder_rhythm = legacy_browse_detail_confirm_rhythm
-if not legacy_cyberware_dialog_rhythm:
-    legacy_cyberware_dialog_rhythm = legacy_familiarity_bridge
-if not legacy_contacts_diary_rhythm:
-    legacy_contacts_diary_rhythm = legacy_familiarity_bridge
-if not legacy_magic_matrix_workflow_rhythm:
-    legacy_magic_matrix_workflow_rhythm = legacy_familiarity_bridge
-legacy_familiarity_bridge = str(interaction_proof.get("legacyFamiliarityBridge") or "").strip().lower()
-if not runtime_backed_legacy_workbench:
-    runtime_backed_legacy_workbench = legacy_familiarity_bridge
-if not legacy_dense_builder_rhythm:
-    legacy_dense_builder_rhythm = legacy_familiarity_bridge
-if not legacy_browse_detail_confirm_rhythm:
-    legacy_browse_detail_confirm_rhythm = legacy_familiarity_bridge
-if not legacy_vehicles_builder_rhythm:
-    legacy_vehicles_builder_rhythm = legacy_browse_detail_confirm_rhythm
-if not legacy_cyberware_dialog_rhythm:
-    legacy_cyberware_dialog_rhythm = legacy_familiarity_bridge
-if not legacy_contacts_diary_rhythm:
-    legacy_contacts_diary_rhythm = legacy_familiarity_bridge
+required_legacy_interaction_keys = [
+    "runtimeBackedLegacyWorkbench",
+    "legacyDenseBuilderRhythm",
+    "legacyAdvancementWorkflowRhythm",
+    "legacyBrowseDetailConfirmRhythm",
+    "legacyVehiclesBuilderRhythm",
+    "legacyCyberwareDialogRhythm",
+    "legacyContactsDiaryRhythm",
+    "legacyMagicMatrixWorkflowRhythm",
+]
+missing_required_legacy_interaction_keys = [
+    key for key in required_legacy_interaction_keys
+    if not str(interaction_proof.get(key) or "").strip()
+]
 evidence["runtime_backed_shell_menu"] = runtime_backed_shell_menu
 evidence["runtime_backed_menu_bar_labels"] = runtime_backed_menu_bar_labels
 evidence["runtime_backed_clickable_primary_menus"] = runtime_backed_clickable_primary_menus
@@ -214,7 +199,13 @@ evidence["legacy_cyberware_dialog_rhythm"] = legacy_cyberware_dialog_rhythm
 evidence["legacy_contacts_diary_rhythm"] = legacy_contacts_diary_rhythm
 evidence["legacy_magic_matrix_workflow_rhythm"] = legacy_magic_matrix_workflow_rhythm
 evidence["legacy_familiarity_bridge"] = legacy_familiarity_bridge
-evidence["legacy_familiarity_bridge"] = legacy_familiarity_bridge
+evidence["required_legacy_interaction_keys"] = required_legacy_interaction_keys
+evidence["missing_required_legacy_interaction_keys"] = missing_required_legacy_interaction_keys
+if missing_required_legacy_interaction_keys:
+    reasons.append(
+        "Flagship UI release gate is missing explicit legacy workflow interaction proof keys: "
+        + ", ".join(missing_required_legacy_interaction_keys)
+    )
 if not status_ok(theme_readability_contrast):
     reasons.append("Flagship UI release gate does not report a passing readability contrast proof.")
 if not status_ok(str(avalonia_head_proof.get("status") or "").strip().lower()):
