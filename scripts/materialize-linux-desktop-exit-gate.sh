@@ -13,7 +13,64 @@ else
   RELEASE_CHANNEL_PATH_DEFAULT="$DEFAULT_RELEASE_CHANNEL_PATH"
 fi
 
-APP_KEY="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY:-avalonia}"
+RELEASE_CHANNEL_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}"
+APP_KEY_OVERRIDE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY:-}"
+RID_OVERRIDE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID:-}"
+if [[ -z "$APP_KEY_OVERRIDE" || -z "$RID_OVERRIDE" ]]; then
+  mapfile -t RELEASE_PROMOTED_TUPLE < <(python3 - "$RELEASE_CHANNEL_PATH" "$APP_KEY_OVERRIDE" "$RID_OVERRIDE" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+release_channel_path = Path(sys.argv[1])
+app_key_override = sys.argv[2].strip().lower()
+rid_override = sys.argv[3].strip().lower()
+
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+if not release_channel_path.is_file():
+    raise SystemExit(0)
+
+payload = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
+artifacts = [
+    item for item in (payload.get("artifacts") or [])
+    if isinstance(item, dict)
+    and normalize(item.get("platform")) == "linux"
+    and normalize(item.get("kind")) == "installer"
+    and normalize(item.get("head"))
+    and normalize(item.get("rid"))
+]
+
+if app_key_override:
+    artifacts = [item for item in artifacts if normalize(item.get("head")) == app_key_override]
+if rid_override:
+    artifacts = [item for item in artifacts if normalize(item.get("rid")) == rid_override]
+if not artifacts:
+    raise SystemExit(0)
+
+preferred_order = ["linux-x64", "linux-arm64"]
+ranked = sorted(
+    artifacts,
+    key=lambda artifact: (
+        preferred_order.index(normalize(artifact.get("rid"))) if normalize(artifact.get("rid")) in preferred_order else len(preferred_order),
+        0 if normalize(artifact.get("head")) == "avalonia" else 1,
+        normalize(artifact.get("head")),
+        normalize(artifact.get("rid")),
+    ),
+)
+chosen = ranked[0]
+print(normalize(chosen.get("head")))
+print(normalize(chosen.get("rid")))
+PY
+)
+fi
+
+APP_KEY="${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}"
+RID="${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-linux-x64}}"
+
 case "$APP_KEY" in
   avalonia)
     DEFAULT_PROJECT_PATH="Chummer.Avalonia/Chummer.Avalonia.csproj"
@@ -33,7 +90,7 @@ esac
 
 PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROJECT_PATH:-$DEFAULT_PROJECT_PATH}"
 TEST_PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_PROJECT_PATH:-Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj}"
-RID="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID:-linux-x64}"
+RID="${RID:-linux-x64}"
 LAUNCH_TARGET="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LAUNCH_TARGET:-$DEFAULT_LAUNCH_TARGET}"
 VERSION="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_VERSION:-local-hard-gate}"
 CHANNEL="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_CHANNEL:-local-hard-gate}"
@@ -42,7 +99,6 @@ READY_CHECKPOINT="pre_ui_event_loop"
 OUTPUT_BASE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_OUTPUT_ROOT:-$REPO_ROOT/.codex-studio/out/linux-desktop-exit-gate}"
 PROOF_PATH="${CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH:-$DEFAULT_PROOF_PATH}"
 BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$WORKSPACE_ROOT/.linux-desktop-exit-gate.build.lock}"
-RELEASE_CHANNEL_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}"
 LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
 USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-0}"
 
