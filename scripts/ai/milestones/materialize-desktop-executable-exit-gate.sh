@@ -988,6 +988,20 @@ for macos_artifact in expected_macos_artifacts:
         reasons,
     )
 
+macos_statuses = {
+    label: normalize_token(
+        gate_evidence.get("status")
+        if isinstance(gate_evidence, dict)
+        else ""
+    )
+    for label, gate_evidence in (
+        evidence.get("macos_gates").items()
+        if isinstance(evidence.get("macos_gates"), dict)
+        else []
+    )
+}
+evidence["macos_statuses"] = macos_statuses
+
 platform_tokens: List[str] = []
 if expected_linux_heads:
     platform_tokens.append("Linux")
@@ -999,8 +1013,10 @@ platform_scope = ", ".join(platform_tokens) if platform_tokens else "none"
 
 status = "pass" if not reasons else "fail"
 reasons = dedupe_preserve_order(reasons)
+generated_at = now_iso()
 payload = {
-    "generatedAt": now_iso(),
+    "generated_at": generated_at,
+    "generatedAt": generated_at,
     "contract_name": "chummer6-ui.desktop_executable_exit_gate",
     "status": status,
     "summary": (
