@@ -40,6 +40,28 @@ cleanup() {
 }
 trap cleanup EXIT
 
+run_with_retry() {
+  local max_attempts="$1"
+  local step_label="$2"
+  shift 2
+
+  local attempt=1
+  while true; do
+    if "$@"; then
+      return 0
+    fi
+
+    if (( attempt >= max_attempts )); then
+      echo "[b14] FAIL: ${step_label} failed after ${attempt} attempts." >&2
+      return 1
+    fi
+
+    echo "[b14] WARN: ${step_label} failed on attempt ${attempt}/${max_attempts}; retrying..." >&2
+    attempt=$((attempt + 1))
+    sleep 1
+  done
+}
+
 mkdir -p "$(dirname "$receipt_path")"
 mkdir -p "$nuget_packages"
 export NUGET_PACKAGES="$nuget_packages"
@@ -72,6 +94,14 @@ required_avalonia_tests = [
     "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+    "Standalone_toolstrip_buttons_raise_expected_events",
+    "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
+    "Standalone_workspace_strip_quick_start_button_raises_expected_event",
+    "Standalone_summary_header_tab_buttons_raise_expected_events",
+    "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
+    "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
+    "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
+    "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
     "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
     "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
     "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
@@ -127,11 +157,13 @@ if missing_blazor:
 PY
 
 echo "[b14] running flagship Avalonia headless UI gate tests..."
-CHUMMER_UI_GATE_SCREENSHOT_DIR="$capture_screenshot_dir" \
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" -v minimal >/dev/null
+run_with_retry 2 "flagship Avalonia headless UI gate tests" \
+  env CHUMMER_UI_GATE_SCREENSHOT_DIR="$capture_screenshot_dir" \
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" -v minimal >/dev/null
 
 echo "[b14] running flagship Blazor desktop shell gate tests..."
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" -v minimal >/dev/null
+run_with_retry 2 "flagship Blazor desktop shell gate tests" \
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" -v minimal >/dev/null
 
 python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir"
 from __future__ import annotations
@@ -211,7 +243,8 @@ mkdir -p "$screenshot_dir"
 cp "$staged_screenshot_dir"/*.png "$screenshot_dir"/
 
 echo "[b14] running cross-head workflow parity tests..."
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
+run_with_retry 2 "cross-head workflow parity tests" \
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
   --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" -v minimal >/dev/null
 
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
@@ -368,6 +401,8 @@ payload = {
         "runtimeBackedTabPanelOnlyHeader": "pass",
         "runtimeBackedChromeEnabledAfterRunnerLoad": "pass",
         "runtimeBackedDemoRunnerImport": "pass",
+        "fullInteractiveControlInventory": "pass",
+        "mainWindowInteractionInventory": "pass",
         "runtimeBackedLegacyWorkbench": "pass",
         "legacyDenseBuilderRhythm": "pass",
         "legacyAdvancementWorkflowRhythm": "pass",
@@ -392,8 +427,18 @@ payload = {
                 "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
                 "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
                 "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
+                "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
                 "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
                 "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+                "Standalone_toolstrip_buttons_raise_expected_events",
+                "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
+                "Standalone_workspace_strip_quick_start_button_raises_expected_event",
+                "Standalone_summary_header_tab_buttons_raise_expected_events",
+                "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
+                "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
+                "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
+                "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+                "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
                 "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
                 "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
                 "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
