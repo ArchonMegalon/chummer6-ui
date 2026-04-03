@@ -93,10 +93,24 @@ jobs:
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: macos-latest
+            rid: osx-arm64
+            installer_ext: dmg
+            launch_target: Chummer.Avalonia
+            tolerate_failure: false
+          - app: avalonia
+            project: Chummer.Avalonia/Chummer.Avalonia.csproj
+            os: macos-13
             rid: osx-x64
             installer_ext: dmg
             launch_target: Chummer.Avalonia
-            tolerate_failure: true
+            tolerate_failure: false
+          - app: blazor-desktop
+            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
+            os: macos-latest
+            rid: osx-arm64
+            installer_ext: dmg
+            launch_target: Chummer.Blazor.Desktop
+            tolerate_failure: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -227,7 +241,7 @@ jobs:
             -p:ChummerLocalHubRegistryContractsProject="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" \
             -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}" \
             -p:ChummerDesktopReleaseVersion="$release_version" \
-            -p:ChummerDesktopReleaseChannel="docker" \
+            -p:ChummerDesktopReleaseChannel="preview" \
             -o "$out_dir"
 
       - name: Package installer
@@ -246,7 +260,7 @@ jobs:
       - name: Startup smoke
         shell: bash
         env:
-          CHUMMER_DESKTOP_RELEASE_CHANNEL: docker
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: preview
           CHUMMER_DESKTOP_RELEASE_VERSION: run-${GITHUB_RUN_NUMBER:-local}
           CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-${{ matrix.os }}
         run: |
@@ -340,7 +354,7 @@ jobs:
           MANIFEST_PATH="dist/releases.json" \
           PORTAL_MANIFEST_PATH="dist/releases.json" \
           RELEASE_VERSION="run-${GITHUB_RUN_NUMBER:-local}" \
-          RELEASE_CHANNEL="docker" \
+          RELEASE_CHANNEL="preview" \
           RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT}" \
           bash scripts/generate-releases-manifest.sh
 
@@ -517,25 +531,16 @@ jobs:
           set -euo pipefail
           [[ -n "${CHUMMER_RELEASE_UPLOAD_URL:-}" ]] || { echo "CHUMMER_RELEASE_UPLOAD_URL is required." >&2; exit 1; }
           [[ -n "${CHUMMER_RELEASE_UPLOAD_TOKEN:-}" ]] || { echo "CHUMMER_RELEASE_UPLOAD_TOKEN is required." >&2; exit 1; }
+          [[ -n "${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}" ]] || { echo "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL is required." >&2; exit 1; }
 
       - name: Upload release bundle to chummer.run
         shell: bash
         run: |
           set -euo pipefail
-          bundle_zip="$(mktemp --suffix=.zip)"
-          (
-            cd dist
-            zip -qry "$bundle_zip" .
-          )
-          curl --fail-with-body -sS \
-            -X POST \
-            -H "Authorization: Bearer ${CHUMMER_RELEASE_UPLOAD_TOKEN}" \
-            -F "bundle=@${bundle_zip};type=application/zip" \
-            "${CHUMMER_RELEASE_UPLOAD_URL}" \
-            | tee release-upload-response.json
+          CHUMMER_RELEASE_UPLOAD_RESPONSE_PATH="release-upload-response.json" \
+          bash scripts/publish-download-bundle-http.sh dist
 
       - name: Verify live promoted manifest
-        if: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL != '' }}
         shell: bash
         run: |
           set -euo pipefail
