@@ -2843,11 +2843,29 @@ release_channel_rollout_state_blocks_publishable_complete = (
     and release_channel_publishable_status
     and release_channel_rollout_state in set(release_channel_rollout_state_blocked_for_publishable_complete_values)
 )
+release_channel_rollout_state_allowed_for_publishable_complete_values = [
+    "promoted_preview",
+    "release_candidate",
+    "public_stable",
+]
+release_channel_rollout_state_invalid_for_publishable_complete = (
+    not coverage_incomplete
+    and release_channel_publishable_status
+    and bool(release_channel_rollout_state)
+    and release_channel_rollout_state
+    not in set(release_channel_rollout_state_allowed_for_publishable_complete_values)
+)
 evidence["release_channel_rollout_state_blocked_for_publishable_complete_values"] = (
     release_channel_rollout_state_blocked_for_publishable_complete_values
 )
 evidence["release_channel_rollout_state_blocks_publishable_complete"] = (
     release_channel_rollout_state_blocks_publishable_complete
+)
+evidence["release_channel_rollout_state_allowed_for_publishable_complete_values"] = (
+    release_channel_rollout_state_allowed_for_publishable_complete_values
+)
+evidence["release_channel_rollout_state_invalid_for_publishable_complete"] = (
+    release_channel_rollout_state_invalid_for_publishable_complete
 )
 release_channel_publishable_status_with_incomplete_desktop_tuple_coverage = (
     release_channel_publishable_status and coverage_incomplete
@@ -2900,6 +2918,10 @@ if release_channel_publishable_status_with_incomplete_desktop_tuple_coverage:
 if release_channel_rollout_state_blocks_publishable_complete:
     reasons.append(
         "Release channel rolloutState cannot be paused/revoked when status is publishable and required desktop tuple coverage is complete."
+    )
+if release_channel_rollout_state_invalid_for_publishable_complete:
+    reasons.append(
+        "Release channel rolloutState must be promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete."
     )
 if coverage_incomplete and release_channel_rollout_state != "coverage_incomplete":
     reasons.append(
