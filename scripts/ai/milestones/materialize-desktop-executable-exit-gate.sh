@@ -2137,6 +2137,8 @@ desktop_install_artifact_missing_channel_tokens: List[str] = []
 desktop_install_artifact_channel_mismatch_tokens: List[str] = []
 desktop_install_artifact_missing_version_tokens: List[str] = []
 desktop_install_artifact_version_mismatch_tokens: List[str] = []
+desktop_install_artifact_missing_arch_tokens: List[str] = []
+desktop_install_artifact_arch_mismatch_tokens: List[str] = []
 for desktop_install_artifact in desktop_install_artifacts:
     artifact_channel_id = normalize_token(
         desktop_install_artifact.get("channelId") or desktop_install_artifact.get("channel")
@@ -2148,6 +2150,14 @@ for desktop_install_artifact in desktop_install_artifacts:
         desktop_install_artifact.get("artifactId") or ""
     ).strip()
     artifact_head = normalize_token(desktop_install_artifact.get("head"))
+    artifact_platform = normalize_token(desktop_install_artifact.get("platform"))
+    artifact_arch = normalize_token(desktop_install_artifact.get("arch"))
+    artifact_rid_for_arch = (
+        macos_rid_from_artifact(desktop_install_artifact)
+        if artifact_platform == "macos"
+        else normalize_token(desktop_install_artifact.get("rid"))
+    )
+    expected_artifact_arch = arch_from_rid(artifact_rid_for_arch)
     desktop_install_artifact_channel_ids.append(artifact_channel_id)
     desktop_install_artifact_versions.append(artifact_version)
     if not artifact_head:
@@ -2160,6 +2170,10 @@ for desktop_install_artifact in desktop_install_artifacts:
         desktop_install_artifact_missing_version_tokens.append(artifact_tuple_token or "<unknown>")
     elif release_channel_version and artifact_version != release_channel_version:
         desktop_install_artifact_version_mismatch_tokens.append(artifact_tuple_token or "<unknown>")
+    if not artifact_arch:
+        desktop_install_artifact_missing_arch_tokens.append(artifact_tuple_token or "<unknown>")
+    elif expected_artifact_arch and artifact_arch != expected_artifact_arch:
+        desktop_install_artifact_arch_mismatch_tokens.append(artifact_tuple_token or "<unknown>")
 evidence["release_channel_desktop_install_artifact_channel_ids"] = (
     desktop_install_artifact_channel_ids
 )
@@ -2180,6 +2194,12 @@ evidence["release_channel_desktop_install_artifacts_missing_version"] = (
 )
 evidence["release_channel_desktop_install_artifacts_version_mismatch"] = (
     sorted(set(desktop_install_artifact_version_mismatch_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_missing_arch"] = (
+    sorted(set(desktop_install_artifact_missing_arch_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_arch_mismatch"] = (
+    sorted(set(desktop_install_artifact_arch_mismatch_tokens))
 )
 if desktop_install_artifact_missing_channel_tokens:
     reasons.append(
@@ -2209,6 +2229,18 @@ if desktop_install_artifact_version_mismatch_tokens:
     reasons.append(
         "Release channel desktop install artifact(s) version/releaseVersion does not match release channel version: "
         + ", ".join(sorted(set(desktop_install_artifact_version_mismatch_tokens)))
+        + "."
+    )
+if desktop_install_artifact_missing_arch_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) are missing arch: "
+        + ", ".join(sorted(set(desktop_install_artifact_missing_arch_tokens)))
+        + "."
+    )
+if desktop_install_artifact_arch_mismatch_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) arch does not match RID-derived architecture: "
+        + ", ".join(sorted(set(desktop_install_artifact_arch_mismatch_tokens)))
         + "."
     )
 duplicate_desktop_install_artifact_tuples = collect_duplicate_install_media_tuples(
