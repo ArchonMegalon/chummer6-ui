@@ -353,6 +353,7 @@ startup_smoke_status = normalize_token(startup_smoke_payload.get("status")) or (
 startup_smoke_checkpoint = normalize_token(startup_smoke_payload.get("readyCheckpoint"))
 startup_smoke_artifact_digest = normalize_token(startup_smoke_payload.get("artifactDigest"))
 startup_smoke_channel = normalize_token(startup_smoke_payload.get("channelId") or startup_smoke_payload.get("channel"))
+startup_smoke_rid = normalize_token(startup_smoke_payload.get("rid"))
 startup_smoke_version = str(
     startup_smoke_payload.get("version")
     or startup_smoke_payload.get("releaseVersion")
@@ -387,6 +388,7 @@ evidence["startup_smoke"] = {
     "ready_checkpoint": startup_smoke_checkpoint,
     "artifact_digest": startup_smoke_artifact_digest,
     "channel_id": startup_smoke_channel,
+    "rid": startup_smoke_rid,
     "version": startup_smoke_version,
     "host_class": startup_smoke_host_class,
     "operating_system": startup_smoke_operating_system,
@@ -420,6 +422,10 @@ else:
         reasons.append("macOS startup smoke receipt operatingSystem is missing.")
     if expected_arch and normalize_token(startup_smoke_payload.get("arch")) != expected_arch:
         reasons.append(f"macOS startup smoke receipt arch does not match promoted RID {rid}.")
+    if not startup_smoke_rid:
+        reasons.append("macOS startup smoke receipt rid is missing.")
+    if startup_smoke_rid and startup_smoke_rid != normalize_token(rid):
+        reasons.append(f"macOS startup smoke receipt rid does not match promoted RID {rid}.")
     if release_channel_id and startup_smoke_channel != release_channel_id:
         reasons.append(f"macOS startup smoke receipt channelId does not match release channel {release_channel_id}.")
     if release_channel_version and not startup_smoke_version:
