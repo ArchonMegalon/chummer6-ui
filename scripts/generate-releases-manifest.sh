@@ -126,6 +126,85 @@ if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -type f -name 'sta
 fi
 
 python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" "${materialize_args[@]}" >/dev/null
+python3 - "$CANONICAL_MANIFEST_PATH" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+def normalize_release_channel_artifact_identity_fields(manifest_path: Path) -> bool:
+    payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+    if not isinstance(payload, dict):
+        raise SystemExit("release channel manifest must be a JSON object")
+
+    channel_id = normalize(payload.get("channelId") or payload.get("channel"))
+    release_version = str(payload.get("version") or "").strip()
+    if not channel_id:
+        raise SystemExit(
+            "Release channel is missing channelId/channel at top level; cannot normalize artifact channel identity."
+        )
+    if not release_version:
+        raise SystemExit(
+            "Release channel is missing version at top level; cannot normalize artifact release identity."
+        )
+
+    artifacts = payload.get("artifacts")
+    if not isinstance(artifacts, list):
+        return False
+
+    changed = False
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        platform = normalize(artifact.get("platform"))
+        kind = normalize(artifact.get("kind"))
+        if platform not in {"linux", "windows", "macos"}:
+            continue
+        if kind not in {"installer", "dmg", "pkg", "msix"}:
+            continue
+
+        artifact_channel_id = normalize(artifact.get("channelId") or artifact.get("channel"))
+        if not artifact_channel_id:
+            artifact["channelId"] = channel_id
+            artifact["channel"] = channel_id
+            changed = True
+        else:
+            if normalize(artifact.get("channelId")) != artifact_channel_id:
+                artifact["channelId"] = artifact_channel_id
+                changed = True
+            if normalize(artifact.get("channel")) != artifact_channel_id:
+                artifact["channel"] = artifact_channel_id
+                changed = True
+
+        artifact_version = str(artifact.get("version") or artifact.get("releaseVersion") or "").strip()
+        if not artifact_version:
+            artifact["version"] = release_version
+            artifact["releaseVersion"] = release_version
+            changed = True
+        else:
+            if str(artifact.get("version") or "").strip() != artifact_version:
+                artifact["version"] = artifact_version
+                changed = True
+            if str(artifact.get("releaseVersion") or "").strip() != artifact_version:
+                artifact["releaseVersion"] = artifact_version
+                changed = True
+
+    if not changed:
+        return False
+
+    manifest_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return True
+
+
+manifest_path = Path(sys.argv[1]).resolve()
+normalize_release_channel_artifact_identity_fields(manifest_path)
+PY
 verify_args=()
 if [[ "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" != "0" ]]; then
   verify_args+=(--require-complete-desktop-coverage)
