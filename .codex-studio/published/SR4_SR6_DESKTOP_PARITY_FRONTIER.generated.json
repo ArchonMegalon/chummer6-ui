@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-04-03T17:28:49.480185Z",
+  "generatedAt": "2026-04-04T00:04:14.009561Z",
   "contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
   "status": "pass",
   "summary": "SR4 and SR6 desktop parity frontier closure is explicitly proven by executable parity gates with equivalent-or-not-applicable workflow-family receipts.",
   "reasons": [],
   "evidence": {
-    "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "sr6ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr4ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr6ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr4Status": "pass",
     "sr6Status": "pass",
     "sr4ClosureCounts": null,

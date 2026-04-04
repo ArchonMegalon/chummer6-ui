@@ -360,7 +360,8 @@ required_test_names = [
     "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
     "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
     "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
-    "Magic_matrix_and_consumables_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+    "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+    "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
@@ -533,9 +534,10 @@ required_screenshots = [
     "09-vehicles-section-light.png",
     "10-contacts-section-light.png",
     "11-diary-dialog-light.png",
-    "12-magic-matrix-dialog-light.png",
-    "13-advancement-dialog-light.png",
-    "14-creation-section-light.png",
+    "12-magic-dialog-light.png",
+    "13-matrix-dialog-light.png",
+    "14-advancement-dialog-light.png",
+    "15-creation-section-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -560,7 +562,7 @@ undersized_screenshots = {
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-matrix-dialog-light.png", "13-advancement-dialog-light.png"}
+            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png"}
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )
@@ -654,34 +656,57 @@ cyberware_capture_segment = segment_between(
     'captured[expectedFiles[7]] = harness.CaptureScreenshotBytes();',
 )
 cyberware_capture_opens_dialog = any(marker in cyberware_capture_segment for marker in cyberware_dialog_markers)
-magic_matrix_capture_segment = segment_between(
+magic_capture_segment = segment_between(
     visual_review_method,
     'captured[expectedFiles[10]] = harness.CaptureScreenshotBytes();',
-    'return captured;',
+    'captured[expectedFiles[11]] = harness.CaptureScreenshotBytes();',
 )
-magic_matrix_capture_markers = [
+magic_capture_markers = [
     "SectionQuickAction_spell_add",
     "Add Spell",
     "captured[expectedFiles[11]] = harness.CaptureScreenshotBytes()",
 ]
-magic_matrix_capture_opens_dialog = any(marker in magic_matrix_capture_segment for marker in magic_matrix_capture_markers)
+magic_capture_opens_dialog = any(marker in magic_capture_segment for marker in magic_capture_markers)
+matrix_capture_segment = segment_between(
+    visual_review_method,
+    'captured[expectedFiles[11]] = harness.CaptureScreenshotBytes();',
+    'captured[expectedFiles[12]] = harness.CaptureScreenshotBytes();',
+)
+matrix_capture_markers = [
+    "SectionQuickAction_matrix_program_add",
+    "Add Program / Cyberdeck Item",
+    "captured[expectedFiles[12]] = harness.CaptureScreenshotBytes()",
+]
+matrix_capture_opens_dialog = any(marker in matrix_capture_segment for marker in matrix_capture_markers)
 evidence["cyberware_dialog_test_has_visible_dialog_posture"] = cyberware_dialog_test_has_visible_dialog
 evidence["cyberware_capture_opens_dialog_posture"] = cyberware_capture_opens_dialog
-evidence["magic_matrix_capture_opens_dialog_posture"] = magic_matrix_capture_opens_dialog
+evidence["magic_capture_opens_dialog_posture"] = magic_capture_opens_dialog
+evidence["matrix_capture_opens_dialog_posture"] = matrix_capture_opens_dialog
 if not cyberware_dialog_test_has_visible_dialog:
     reasons.append("Cyberware/cyberlimb familiarity is not proven: the dedicated test never opens a visible dialog with confirm controls.")
 if not cyberware_capture_opens_dialog:
     reasons.append("Cyberware screenshot proof is not trusted: the screenshot capture does not open an explicit dialog posture before recording evidence.")
-magic_matrix_method = extract_test_method(test_text, "Magic_matrix_and_consumables_workflows_execute_with_specific_dialog_fields_and_confirm_actions")
-magic_matrix_method_markers = ["sectionId: \"spells\"", "actionControlId: \"spell_add\"", "actionControlId: \"matrix_program_add\""]
-magic_matrix_method_has_rhythm = all(marker in magic_matrix_method for marker in magic_matrix_method_markers) if magic_matrix_method else False
-evidence["magic_matrix_method_has_rhythm_markers"] = magic_matrix_method_has_rhythm
-if not magic_matrix_method:
-    reasons.append("Magic/matrix familiarity is not proven: the dedicated workflow method is not present in test sources.")
-elif not magic_matrix_method_has_rhythm:
-    reasons.append("Magic/matrix familiarity is not proven: the dedicated workflow method no longer exercises both spell and matrix actions.");
-if not magic_matrix_capture_opens_dialog:
-    reasons.append("Magic/matrix screenshot proof is not trusted: the visual review proof does not open a dedicated spell/matrix dialog before recording evidence.")
+magic_method = extract_test_method(test_text, "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions")
+magic_method_markers = ["sectionId: \"spells\"", "actionControlId: \"spell_add\"", "actionControlId: \"adept_power_add\""]
+magic_method_has_rhythm = all(marker in magic_method for marker in magic_method_markers) if magic_method else False
+evidence["magic_method_has_rhythm_markers"] = magic_method_has_rhythm
+if not magic_method:
+    reasons.append("Magic familiarity is not proven: the dedicated workflow method is not present in test sources.")
+elif not magic_method_has_rhythm:
+    reasons.append("Magic familiarity is not proven: required spell/power markers are missing from the dedicated workflow method.")
+if not magic_capture_opens_dialog:
+    reasons.append("Magic screenshot proof is not trusted: the visual review proof does not open a dedicated magic dialog before recording evidence.")
+
+matrix_method = extract_test_method(test_text, "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions")
+matrix_method_markers = ["sectionId: \"complexforms\"", "actionControlId: \"complex_form_add\"", "actionControlId: \"matrix_program_add\""]
+matrix_method_has_rhythm = all(marker in matrix_method for marker in matrix_method_markers) if matrix_method else False
+evidence["matrix_method_has_rhythm_markers"] = matrix_method_has_rhythm
+if not matrix_method:
+    reasons.append("Matrix familiarity is not proven: the dedicated workflow method is not present in test sources.")
+elif not matrix_method_has_rhythm:
+    reasons.append("Matrix familiarity is not proven: required complex-form/program markers are missing from the dedicated workflow method.")
+if not matrix_capture_opens_dialog:
+    reasons.append("Matrix screenshot proof is not trusted: the visual review proof does not open a dedicated matrix dialog before recording evidence.")
 
 creation_method = extract_test_method(test_text, "Character_creation_preserves_familiar_dense_builder_rhythm")
 creation_method_markers = ["attributes.body = 5", "skills.firearms[0] = Automatics 6"]
