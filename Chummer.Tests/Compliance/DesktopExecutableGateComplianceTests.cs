@@ -354,6 +354,22 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_materializer_uses_tuple_specific_windows_receipts_for_non_default_heads()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "if [[ \"$head\" == \"avalonia\" && \"$rid\" == \"win-x64\" ]]; then");
+        StringAssert.Contains(scriptText, "windows_gate_tuple_path=\"$windows_gate_path_default\"");
+        StringAssert.Contains(scriptText, "windows_gate_tuple_path=\"$repo_root/.codex-studio/published/UI_WINDOWS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json\"");
+        StringAssert.Contains(scriptText, "CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH=\"$windows_gate_tuple_path\"");
+        StringAssert.Contains(scriptText, "def windows_gate_path_for_head(");
+        StringAssert.Contains(scriptText, "if head == \"avalonia\" and rid == \"win-x64\":");
+        StringAssert.Contains(scriptText, "return receipt_root / f\"UI_WINDOWS_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json\"");
+    }
+
+    [TestMethod]
     public void Windows_and_macos_exit_gate_materializers_do_not_resolve_proof_from_legacy_chummer5a_paths()
     {
         string repoRoot = FindRepoRoot();
