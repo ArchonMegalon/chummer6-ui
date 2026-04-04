@@ -130,6 +130,42 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_missing_required_platform_head_pairs_inventory_drift()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject missingRequiredPlatformHeadPairs inventory drift");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit missingRequiredPlatformHeadPairs inventory drift marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples.");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_missing_required_platforms_inventory_drift()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject missingRequiredPlatforms inventory drift");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit missingRequiredPlatforms inventory drift marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage missingRequiredPlatforms inventory does not match promoted installer tuples.");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_missing_required_heads_inventory_drift()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject missingRequiredHeads inventory drift");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit missingRequiredHeads inventory drift marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage missingRequiredHeads inventory does not match promoted installer tuples.");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_checks_desktop_executable_gate_blocking_findings_alias_alignment()
     {
         string repoRoot = FindRepoRoot();
