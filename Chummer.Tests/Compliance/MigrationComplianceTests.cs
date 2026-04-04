@@ -3468,6 +3468,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt arch does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt channelId does not match release channel for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes");
+        StringAssert.Contains(executableGateScriptText, "Linux installer proof path is outside trusted local roots for promoted head");
+        StringAssert.Contains(executableGateScriptText, "linux_installer_capture:{head}:{key}");
         StringAssert.Contains(executableGateScriptText, "gate_reasons = [");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"Linux gate reason ({head}): {gate_reason}\")");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate is missing or not passing.");

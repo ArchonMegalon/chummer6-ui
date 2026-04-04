@@ -459,8 +459,19 @@ def validate_linux_gate(
         gate_evidence[key] = value
         if not value:
             reasons.append(f"Linux installer proof is missing {key} for promoted head '{head}'.")
-        elif not os.path.exists(value):
+            continue
+        proof_path = Path(value)
+        if not proof_path.exists():
             reasons.append(f"Linux installer proof path does not exist for promoted head '{head}': {value}")
+            continue
+        validate_trusted_path_scope(
+            proof_path,
+            trusted_roots,
+            reasons,
+            gate_evidence,
+            f"linux_installer_capture:{head}:{key}",
+            f"Linux installer proof path is outside trusted local roots for promoted head '{head}' ({key}).",
+        )
 
     evidence.setdefault("linux_gates", {})[head] = gate_evidence
 
