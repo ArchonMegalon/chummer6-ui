@@ -38,10 +38,14 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "workflow_execution.release_channel_channel_id");
         StringAssert.Contains(executableScriptText, "visual_familiarity_release_channel_id");
         StringAssert.Contains(executableScriptText, "workflow_execution_release_channel_id");
+        StringAssert.Contains(executableScriptText, "visual_familiarity_release_version");
+        StringAssert.Contains(executableScriptText, "workflow_execution_release_version");
         StringAssert.Contains(executableScriptText, "\"channelId\": release_channel_channel_id");
         StringAssert.Contains(executableScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(executableScriptText, "Desktop visual familiarity exit gate release-channel identity does not match release channel channelId.");
         StringAssert.Contains(executableScriptText, "Desktop workflow execution gate release-channel identity does not match release channel channelId.");
+        StringAssert.Contains(executableScriptText, "Desktop visual familiarity exit gate releaseVersion does not match release channel version.");
+        StringAssert.Contains(executableScriptText, "Desktop workflow execution gate releaseVersion does not match release channel version.");
         StringAssert.Contains(executableScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
         StringAssert.Contains(executableScriptText, "missing_canonical_promoted_desktop_heads");
         StringAssert.Contains(executableScriptText, "missing_canonical_flagship_desktop_heads");
@@ -56,14 +60,20 @@ public sealed class DesktopExecutableGateComplianceTests
 
         StringAssert.Contains(visualScriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(visualScriptText, "release_channel_channel_id");
+        StringAssert.Contains(visualScriptText, "release_channel_version");
         StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing channelId/channel.");
+        StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing version.");
+        StringAssert.Contains(visualScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(visualScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
         StringAssert.Contains(visualScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(visualScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head visual proof:");
 
         StringAssert.Contains(workflowScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(workflowScriptText, "release_channel_channel_id");
+        StringAssert.Contains(workflowScriptText, "release_channel_version");
         StringAssert.Contains(workflowScriptText, "Desktop workflow execution gate release channel receipt is missing channelId/channel.");
+        StringAssert.Contains(workflowScriptText, "Desktop workflow execution gate release channel receipt is missing version.");
+        StringAssert.Contains(workflowScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(workflowScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
         StringAssert.Contains(workflowScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(workflowScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head workflow execution proof:");

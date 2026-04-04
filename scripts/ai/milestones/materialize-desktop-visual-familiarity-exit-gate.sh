@@ -334,12 +334,18 @@ if release_channel_path.is_file() and not release_channel:
 release_channel_channel_id = normalize_token(
     release_channel.get("channelId") or release_channel.get("channel")
 )
+release_channel_version = str(release_channel.get("version") or "").strip()
 release_channel_generated_at_raw, release_channel_generated_at = payload_generated_at(release_channel)
 evidence["release_channel_channel_id"] = release_channel_channel_id
+evidence["release_channel_version"] = release_channel_version
 evidence["release_channel_generated_at"] = release_channel_generated_at_raw
 if not release_channel_channel_id:
     reasons.append(
         "Desktop visual familiarity exit gate release channel receipt is missing channelId/channel."
+    )
+if not release_channel_version:
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel receipt is missing version."
     )
 if not release_channel_generated_at_raw or release_channel_generated_at is None:
     reasons.append(
@@ -1117,6 +1123,7 @@ payload = {
     "generatedAt": now_iso(),
     "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
     "channelId": release_channel_channel_id,
+    "releaseVersion": release_channel_version,
     "status": status,
     "summary": (
         "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR5/SR6 codex orientation."

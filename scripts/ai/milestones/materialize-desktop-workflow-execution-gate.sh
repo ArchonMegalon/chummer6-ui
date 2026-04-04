@@ -302,9 +302,11 @@ release_channel_exists = release_channel_path.is_file()
 release_channel_channel_id = normalize_token(
     release_channel.get("channelId") or release_channel.get("channel")
 )
+release_channel_version = str(release_channel.get("version") or "").strip()
 release_channel_generated_at_raw, release_channel_generated_at = payload_generated_at(release_channel)
 evidence["release_channel_receipt_exists"] = release_channel_exists
 evidence["release_channel_channel_id"] = release_channel_channel_id
+evidence["release_channel_version"] = release_channel_version
 evidence["release_channel_generated_at"] = release_channel_generated_at_raw
 if release_channel_exists and not release_channel:
     reasons.append(
@@ -313,6 +315,10 @@ if release_channel_exists and not release_channel:
 if not release_channel_channel_id:
     reasons.append(
         "Desktop workflow execution gate release channel receipt is missing channelId/channel."
+    )
+if not release_channel_version:
+    reasons.append(
+        "Desktop workflow execution gate release channel receipt is missing version."
     )
 if not release_channel_generated_at_raw or release_channel_generated_at is None:
     reasons.append(
@@ -731,6 +737,7 @@ payload = {
     "generatedAt": now_iso(),
     "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
     "channelId": release_channel_channel_id,
+    "releaseVersion": release_channel_version,
     "status": status,
     "summary": (
         "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts."
