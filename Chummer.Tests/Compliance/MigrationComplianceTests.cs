@@ -3479,7 +3479,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt channelId does not match release-channel channelId for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting arch/architecture alias values for promoted installer bytes.");
-        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt is stale for promoted installer bytes (");
         StringAssert.Contains(executableGateScriptText, "def windows_gate_path_for_head(");
@@ -3527,7 +3527,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt channelId does not match release-channel channelId for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
-        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
@@ -3535,7 +3535,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "gate_evidence[\"primary_receipt_source\"] = \"file\" if primary_receipt_file else \"missing\"");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is missing/invalid");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt is stale for promoted head");
-        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is missing/unreadable for promoted head");
         StringAssert.Contains(executableGateScriptText, "host_supports_linux_startup_smoke");

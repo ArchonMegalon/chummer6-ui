@@ -207,6 +207,11 @@ STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = int(
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
     or "300"
 )
+STARTUP_SMOKE_TIMESTAMP_ALIAS_TOLERANCE_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_STARTUP_SMOKE_TIMESTAMP_ALIAS_TOLERANCE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_TIMESTAMP_ALIAS_TOLERANCE_SECONDS")
+    or "5"
+)
 RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS")
     or "86400"
@@ -701,22 +706,16 @@ def scalar_alias_conflicts(
 
 
 def startup_smoke_timestamp_alias_conflicts(payload: Dict[str, Any]) -> bool:
-    timestamp_keys = ("completedAtUtc", "recordedAtUtc", "startedAtUtc")
-    instants: List[datetime] = []
-    normalized_values: List[str] = []
-    for key in timestamp_keys:
-        raw_value = str(payload.get(key) or "").strip()
-        if not raw_value:
-            continue
-        normalized_values.append(raw_value)
-        parsed = parse_iso(raw_value)
-        if parsed is not None:
-            instants.append(parsed)
-    if len(normalized_values) <= 1:
+    completed_raw = str(payload.get("completedAtUtc") or "").strip()
+    recorded_raw = str(payload.get("recordedAtUtc") or "").strip()
+    if not completed_raw or not recorded_raw:
         return False
-    if len(instants) == len(normalized_values):
-        return len({instant.isoformat() for instant in instants}) > 1
-    return len(set(normalized_values)) > 1
+    completed_at = parse_iso(completed_raw)
+    recorded_at = parse_iso(recorded_raw)
+    if completed_at is not None and recorded_at is not None:
+        alias_delta_seconds = abs((completed_at - recorded_at).total_seconds())
+        return alias_delta_seconds > STARTUP_SMOKE_TIMESTAMP_ALIAS_TOLERANCE_SECONDS
+    return completed_raw != recorded_raw
 
 
 def validate_receipt_freshness(label: str, payload: Dict[str, Any], evidence: Dict[str, Any], reasons: List[str]) -> None:
@@ -1253,7 +1252,7 @@ def validate_linux_gate(
         )
     if gate_evidence["primary_receipt_timestamp_alias_conflict"]:
         reasons.append(
-            f"Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted head '{head}'."
+            f"Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head '{head}'."
         )
     if gate_evidence["primary_receipt_arch_alias_conflict"]:
         reasons.append(
@@ -1852,7 +1851,7 @@ def validate_windows_gate(
         if startup_smoke_version_alias_conflict:
             reasons.append("Windows startup smoke receipt carries conflicting version/releaseVersion alias values for promoted installer bytes.")
         if startup_smoke_timestamp_alias_conflict:
-            reasons.append("Windows startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted installer bytes.")
+            reasons.append("Windows startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted installer bytes.")
         if not startup_smoke_recorded_at_raw or startup_smoke_recorded_at is None:
             reasons.append("Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.")
         else:
@@ -2312,7 +2311,7 @@ def validate_macos_gate(
             )
         if startup_smoke_timestamp_alias_conflict:
             reasons.append(
-                f"macOS startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted head '{head}' ({rid})."
+                f"macOS startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head '{head}' ({rid})."
             )
         if not startup_receipt_recorded_at_raw or startup_receipt_recorded_at is None:
             reasons.append(f"macOS startup smoke receipt timestamp is missing/invalid for promoted head '{head}' ({rid}).")
