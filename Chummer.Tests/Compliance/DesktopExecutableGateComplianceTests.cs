@@ -104,6 +104,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "release_channel_tuple_coverage_missing_required_platforms_from_policy");
         StringAssert.Contains(executableScriptText, "release_channel_tuple_coverage_missing_required_heads_from_policy");
         StringAssert.Contains(executableScriptText, "release_channel_tuple_coverage_missing_canonical_required_heads");
+        StringAssert.Contains(executableScriptText, "duplicate_desktop_install_artifact_tuples");
+        StringAssert.Contains(executableScriptText, "duplicate_desktop_install_artifact_tuple_tokens");
+        StringAssert.Contains(executableScriptText, "Release channel publishes duplicate desktop install media tuple entries (head:rid:platform):");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_tuple_coverage_complete");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt is missing releaseVersion/version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head");
