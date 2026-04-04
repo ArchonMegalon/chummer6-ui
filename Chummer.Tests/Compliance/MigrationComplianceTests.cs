@@ -3913,6 +3913,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt version is missing.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt version does not match release channel");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath is missing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath points into a legacy chummer5a root.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath could not be resolved for promoted shelf verification.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt timestamp is missing or invalid.");
         StringAssert.Contains(macosGateScriptText, "CHUMMER_MACOS_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
@@ -4048,6 +4052,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt version is missing.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt version does not match release channel");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactPath is missing.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactPath points into a legacy chummer5a root.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactPath could not be resolved for promoted shelf verification.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt timestamp is missing or invalid.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt timestamp is in the future (");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is stale (");
