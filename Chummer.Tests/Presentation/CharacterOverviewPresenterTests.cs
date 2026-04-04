@@ -40,10 +40,22 @@ public class CharacterOverviewPresenterTests
         "gear_delete",
         "gear_mount",
         "gear_source",
+        "cyberware_add",
+        "cyberware_edit",
+        "cyberware_delete",
+        "drug_add",
+        "drug_delete",
         "magic_add",
         "magic_delete",
         "magic_bind",
         "magic_source",
+        "spell_add",
+        "adept_power_add",
+        "complex_form_add",
+        "initiation_add",
+        "spirit_add",
+        "critter_power_add",
+        "matrix_program_add",
         "skill_add",
         "skill_specialize",
         "skill_remove",
@@ -52,10 +64,16 @@ public class CharacterOverviewPresenterTests
         "combat_add_armor",
         "combat_reload",
         "combat_damage_track",
+        "vehicle_add",
+        "vehicle_edit",
+        "vehicle_delete",
+        "vehicle_mod_add",
         "contact_add",
         "contact_edit",
         "contact_remove",
-        "contact_connection"
+        "contact_connection",
+        "quality_add",
+        "quality_delete"
     ];
 
     [TestMethod]
@@ -174,6 +192,36 @@ public class CharacterOverviewPresenterTests
         StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import completed");
         Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
         Assert.AreEqual("Last portable import", presenter.State.LatestPortabilityActivity?.Title);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_selects_default_surface_when_workspace_has_no_restored_view()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
+
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_selects_default_surface_when_workspace_has_no_restored_view()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ImportAsync(
+            new WorkspaceImportDocument("<character><name>Imported</name></character>", RulesetDefaults.Sr5, WorkspaceDocumentFormat.NativeXml),
+            CancellationToken.None);
+
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
     }
 
     [TestMethod]
@@ -553,6 +601,72 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task ExecuteCommandAsync_master_index_opens_dialog_with_catalog_parity_fields()
+    {
+        var client = new FakeChummerClient();
+        client.SeedToolCatalog(
+            new MasterIndexResponse(
+                Count: 4,
+                GeneratedUtc: DateTimeOffset.UtcNow,
+                Files: [],
+                ReferenceLanePosture: "governed",
+                SourcebookCount: 11,
+                Sourcebooks: [],
+                ReferenceCoveragePercent: 73,
+                SourcebooksWithSnippets: 8,
+                SourcebooksWithGovernedReferenceSources: 7,
+                SourcebooksWithStaleReferenceSources: 3,
+                SourcebooksMissingReferenceSources: 1,
+                ReferenceSourceLaneReceipt: "mixed reference-source posture",
+                SettingsLanePosture: "governed",
+                SourceToggleLanePosture: "governed",
+                DistinctSourcebookToggles: 18,
+                SourceSelectionLaneReceipt: "source selection governed",
+                SourcebookToggleCoveragePercent: 64,
+                CustomDataLanePosture: "partial",
+                CustomDataAuthoringLaneReceipt: "custom-data authoring partial",
+                XmlBridgePosture: "governed",
+                XmlBridgeLaneReceipt: "xml bridge governed",
+                TranslatorLanePosture: "governed",
+                TranslatorLaneReceipt: "translator governed",
+                TranslatorBridgePosture: "governed",
+                TranslatorLanguageCount: 6,
+                EnabledLanguageOverlayCount: 3,
+                OnlineStorageLanePosture: "partial",
+                OnlineStorageReceiptPosture: "stale",
+                OnlineStorageLaneReceipt: "online storage partial",
+                OnlineStorageReceiptsCovered: 1,
+                OnlineStorageReceiptsExpected: 2,
+                OnlineStorageCoveragePercent: 50,
+                ImportOracleLanePosture: "partial",
+                ImportOracleReceiptPosture: "stale",
+                AdjacentSr6OracleReceiptPosture: "partial",
+                AdjacentSr6OracleSourcesCovered: 1,
+                AdjacentSr6OracleSourcesExpected: 2,
+                ImportOracleSourcesCovered: 3,
+                ImportOracleSourcesExpected: 4,
+                ImportOracleCoveragePercent: 75,
+                ImportOracleLaneReceipt: "import oracle partial",
+                AdjacentSr6OracleLaneReceipt: "adjacent oracle partial",
+                Sr6SupplementLanePosture: "partial",
+                Sr6DesignerFamiliesAvailable: 4,
+                Sr6DesignerFamiliesExpected: 5,
+                HouseRuleLanePosture: "governed",
+                Sr6SuccessorLaneReceipt: "sr6 successor partial"));
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ExecuteCommandAsync("master_index", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("dialog.master_index", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("11", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourcebooks"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSettingsLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleLane"), "75%");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageLane"), "50%");
+        Assert.AreEqual("source selection governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionReceipt"));
+    }
+
+    [TestMethod]
     public async Task ExecuteCommandAsync_switch_ruleset_opens_dialog()
     {
         var presenter = new CharacterOverviewPresenter(new FakeChummerClient());
@@ -919,6 +1033,8 @@ public class CharacterOverviewPresenterTests
         private int _clock;
         private ShellPreferences _preferences = new(RulesetDefaults.Sr5);
         private ShellSessionState _session = ShellSessionState.Default;
+        private MasterIndexResponse _masterIndex = new(0, DateTimeOffset.UtcNow, [], "missing", 0, []);
+        private TranslatorLanguagesResponse _translatorLanguages = new(0, []);
         public bool DisableActiveRuntime { get; set; }
         public bool ThrowOnCloseWorkspace { get; set; }
         public int DownloadCalls { get; private set; }
@@ -1000,6 +1116,16 @@ public class CharacterOverviewPresenterTests
             return Task.FromResult(projection);
         }
 
+        public Task<MasterIndexResponse> GetMasterIndexAsync(CancellationToken ct)
+        {
+            return Task.FromResult(_masterIndex);
+        }
+
+        public Task<TranslatorLanguagesResponse> GetTranslatorLanguagesAsync(CancellationToken ct)
+        {
+            return Task.FromResult(_translatorLanguages);
+        }
+
         public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct)
         {
             string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
@@ -1058,6 +1184,14 @@ public class CharacterOverviewPresenterTests
                 summary,
                 timestamp,
                 resolvedRulesetId);
+        }
+
+        public void SeedToolCatalog(
+            MasterIndexResponse masterIndex,
+            TranslatorLanguagesResponse? translatorLanguages = null)
+        {
+            _masterIndex = masterIndex;
+            _translatorLanguages = translatorLanguages ?? new TranslatorLanguagesResponse(0, []);
         }
 
         public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct)
