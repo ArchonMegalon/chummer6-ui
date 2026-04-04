@@ -118,6 +118,18 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_missing_required_platform_head_rid_tuple_inventory_drift()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject missingRequiredPlatformHeadRidTuples inventory drift");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit missingRequiredPlatformHeadRidTuples inventory drift marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadRidTuples inventory does not match promoted installer tuples.");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_checks_desktop_executable_gate_blocking_findings_alias_alignment()
     {
         string repoRoot = FindRepoRoot();
