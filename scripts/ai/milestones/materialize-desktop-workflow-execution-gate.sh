@@ -57,6 +57,14 @@ def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def path_within_root(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except Exception:
+        return False
+
+
 def check_receipt(path: Path, label: str, reasons: List[str], evidence: Dict[str, Any]) -> Dict[str, Any]:
     payload = load_json(path)
     status = str(payload.get("status") or "").strip().lower()
@@ -157,8 +165,133 @@ flagship_head_proof_statuses = {
     for head, proof in flagship_head_proofs.items()
     if normalize_token(head) and isinstance(proof, dict)
 }
+required_head_contract_markers = {
+    "avalonia": [
+        "status",
+        "visualReview",
+        "themeReadabilityContrast",
+        "bundledDemoRunner",
+        "requiredRuntimeBackedTests",
+        "sourceTestFile",
+        "testSuites",
+    ],
+    "blazor-desktop": [
+        "status",
+        "shellChrome",
+        "commandSurface",
+        "dialogSurface",
+        "journeyPanels",
+        "requiredShellTests",
+        "sourceTestFile",
+        "testSuites",
+    ],
+}
+required_head_status_markers = {
+    "avalonia": [
+        "status",
+        "visualReview",
+        "themeReadabilityContrast",
+        "bundledDemoRunner",
+    ],
+    "blazor-desktop": [
+        "status",
+        "shellChrome",
+        "commandSurface",
+        "dialogSurface",
+        "journeyPanels",
+    ],
+}
+required_head_list_markers = {
+    "avalonia": [
+        "requiredRuntimeBackedTests",
+        "testSuites",
+    ],
+    "blazor-desktop": [
+        "requiredShellTests",
+        "testSuites",
+    ],
+}
+flagship_head_contract_marker_statuses: Dict[str, Dict[str, str]] = {}
+flagship_head_missing_contract_markers: Dict[str, List[str]] = {}
+flagship_head_source_test_file_paths: Dict[str, str] = {}
+flagship_head_source_test_file_exists: Dict[str, bool] = {}
+flagship_head_source_test_file_within_repo_root: Dict[str, bool] = {}
+for required_head in required_desktop_heads:
+    proof_payload = (
+        flagship_head_proofs.get(required_head)
+        if isinstance(flagship_head_proofs.get(required_head), dict)
+        else {}
+    )
+    required_markers = required_head_contract_markers.get(
+        required_head, ["status", "sourceTestFile", "testSuites"]
+    )
+    status_markers = set(required_head_status_markers.get(required_head, ["status"]))
+    list_markers = set(required_head_list_markers.get(required_head, ["testSuites"]))
+    marker_statuses: Dict[str, str] = {}
+    missing_markers: List[str] = []
+    source_test_file_value = str(proof_payload.get("sourceTestFile") or "").strip()
+    source_test_file_path = Path(source_test_file_value) if source_test_file_value else None
+    source_test_file_exists = source_test_file_path is not None and source_test_file_path.is_file()
+    source_test_file_within_repo_root = (
+        path_within_root(source_test_file_path, repo_root)
+        if source_test_file_path is not None
+        else False
+    )
+    flagship_head_source_test_file_paths[required_head] = source_test_file_value
+    flagship_head_source_test_file_exists[required_head] = source_test_file_exists
+    flagship_head_source_test_file_within_repo_root[required_head] = (
+        source_test_file_within_repo_root
+    )
+    for marker in required_markers:
+        marker_value = proof_payload.get(marker)
+        marker_ok = False
+        if marker == "sourceTestFile":
+            marker_ok = source_test_file_exists and source_test_file_within_repo_root
+        elif marker in list_markers:
+            marker_ok = (
+                isinstance(marker_value, list)
+                and any(str(item).strip() for item in marker_value)
+            )
+        elif marker in status_markers:
+            marker_ok = status_ok(str(marker_value or "").strip().lower())
+        else:
+            marker_ok = bool(str(marker_value or "").strip())
+        marker_statuses[marker] = "pass" if marker_ok else "fail"
+        if not marker_ok:
+            missing_markers.append(marker)
+    flagship_head_contract_marker_statuses[required_head] = marker_statuses
+    flagship_head_missing_contract_markers[required_head] = missing_markers
+    if missing_markers:
+        reasons.append(
+            f"Flagship UI release gate head proof for required desktop head '{required_head}' is missing required workflow contract marker(s): "
+            + ", ".join(missing_markers)
+        )
+    if source_test_file_value and source_test_file_exists and not source_test_file_within_repo_root:
+        reasons.append(
+            f"Flagship UI release gate sourceTestFile for required desktop head '{required_head}' is outside this repo root."
+        )
+    if source_test_file_value and not source_test_file_exists:
+        reasons.append(
+            f"Flagship UI release gate sourceTestFile for required desktop head '{required_head}' is missing/unreadable on disk."
+        )
 evidence["flagship_required_desktop_heads"] = required_desktop_heads
 evidence["flagship_head_proof_statuses"] = flagship_head_proof_statuses
+evidence["required_head_contract_markers"] = required_head_contract_markers
+evidence["flagship_head_contract_marker_statuses"] = (
+    flagship_head_contract_marker_statuses
+)
+evidence["flagship_head_missing_contract_markers"] = (
+    flagship_head_missing_contract_markers
+)
+evidence["flagship_head_source_test_file_paths"] = (
+    flagship_head_source_test_file_paths
+)
+evidence["flagship_head_source_test_file_exists"] = (
+    flagship_head_source_test_file_exists
+)
+evidence["flagship_head_source_test_file_within_repo_root"] = (
+    flagship_head_source_test_file_within_repo_root
+)
 if not required_desktop_heads:
     reasons.append("Flagship UI release gate is missing required desktopHeads inventory for per-head workflow execution proof.")
 missing_or_not_ready_heads = [

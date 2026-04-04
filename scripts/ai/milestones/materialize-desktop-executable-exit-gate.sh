@@ -1767,6 +1767,34 @@ workflow_head_statuses = {
     for head, status in workflow_head_statuses_raw.items()
     if normalize_token(head)
 }
+workflow_head_contract_marker_statuses_raw = (
+    workflow_execution_evidence.get("flagship_head_contract_marker_statuses")
+    if isinstance(workflow_execution_evidence.get("flagship_head_contract_marker_statuses"), dict)
+    else {}
+)
+workflow_head_contract_marker_statuses = {
+    normalize_token(head): {
+        normalize_token(marker): normalize_token(status)
+        for marker, status in marker_statuses.items()
+        if normalize_token(marker)
+    }
+    for head, marker_statuses in workflow_head_contract_marker_statuses_raw.items()
+    if normalize_token(head) and isinstance(marker_statuses, dict)
+}
+workflow_head_missing_contract_markers_raw = (
+    workflow_execution_evidence.get("flagship_head_missing_contract_markers")
+    if isinstance(workflow_execution_evidence.get("flagship_head_missing_contract_markers"), dict)
+    else {}
+)
+workflow_head_missing_contract_markers = {
+    normalize_token(head): [
+        normalize_token(marker)
+        for marker in markers
+        if normalize_token(marker)
+    ]
+    for head, markers in workflow_head_missing_contract_markers_raw.items()
+    if normalize_token(head) and isinstance(markers, list)
+}
 evidence["visual_familiarity_required_desktop_heads"] = visual_required_heads
 evidence["workflow_execution_required_desktop_heads"] = workflow_required_heads
 evidence["visual_familiarity_head_contract_marker_statuses"] = (
@@ -1774,6 +1802,12 @@ evidence["visual_familiarity_head_contract_marker_statuses"] = (
 )
 evidence["visual_familiarity_head_missing_contract_markers"] = (
     visual_head_missing_contract_markers
+)
+evidence["workflow_execution_head_contract_marker_statuses"] = (
+    workflow_head_contract_marker_statuses
+)
+evidence["workflow_execution_head_missing_contract_markers"] = (
+    workflow_head_missing_contract_markers
 )
 if not visual_required_heads:
     reasons.append("Desktop visual familiarity exit gate evidence is missing required per-head desktop inventory.")
@@ -1800,6 +1834,10 @@ if missing_workflow_required_heads:
 if heads_requiring_flagship_proof and not visual_head_contract_marker_statuses:
     reasons.append(
         "Desktop visual familiarity exit gate evidence is missing per-head proof contract markers."
+    )
+if heads_requiring_flagship_proof and not workflow_head_contract_marker_statuses:
+    reasons.append(
+        "Desktop workflow execution gate evidence is missing per-head proof contract markers."
     )
 for promoted_head in heads_requiring_flagship_proof:
     contract_marker_statuses_for_head = visual_head_contract_marker_statuses.get(promoted_head, {})
@@ -1832,6 +1870,37 @@ for promoted_head in heads_requiring_flagship_proof:
         reasons.append(
             f"Desktop visual familiarity exit gate has missing/failing per-head proof contract markers for required desktop head '{promoted_head}': "
             + ", ".join(missing_contract_markers_for_head)
+        )
+    workflow_contract_marker_statuses_for_head = workflow_head_contract_marker_statuses.get(promoted_head, {})
+    failing_workflow_contract_markers_for_head = sorted(
+        {
+            marker
+            for marker, status in workflow_contract_marker_statuses_for_head.items()
+            if status not in {"pass", "passed", "ready"}
+        }
+    )
+    explicitly_missing_workflow_contract_markers_for_head = sorted(
+        set(workflow_head_missing_contract_markers.get(promoted_head, []))
+    )
+    missing_workflow_contract_markers_for_head = sorted(
+        set(failing_workflow_contract_markers_for_head).union(
+            set(explicitly_missing_workflow_contract_markers_for_head)
+        )
+    )
+    evidence.setdefault("workflow_execution_head_contract_markers_by_head", {})[
+        promoted_head
+    ] = {
+        "marker_statuses": workflow_contract_marker_statuses_for_head,
+        "missing_or_failing_markers": missing_workflow_contract_markers_for_head,
+    }
+    if not workflow_contract_marker_statuses_for_head:
+        reasons.append(
+            f"Desktop workflow execution gate does not carry per-head proof contract markers for required desktop head '{promoted_head}'."
+        )
+    elif missing_workflow_contract_markers_for_head:
+        reasons.append(
+            f"Desktop workflow execution gate has missing/failing per-head proof contract markers for required desktop head '{promoted_head}': "
+            + ", ".join(missing_workflow_contract_markers_for_head)
         )
     validate_flagship_head_proof(promoted_head, flagship_gate, evidence, reasons)
     validate_cross_gate_head_proof(
