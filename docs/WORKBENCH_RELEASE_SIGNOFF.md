@@ -15,12 +15,16 @@ Purpose: close `WL-202` and `WL-203` with explicit, verifier-backed evidence ins
 - `scripts/ai/milestones/b4-gm-board-spider-feed-check.sh` for moderation-adjacent Spider and board surfaces.
 - `scripts/ai/milestones/ruleset-ui-adaptation-check.sh` for SR4/SR5/SR6 posture, unsupported-state honesty, and cross-head shell adaptation proof.
 - `scripts/ai/milestones/b14-flagship-ui-release-gate.sh` for flagship desktop interaction, bundled demo-runner presence, and visibly reactive menu/settings proof.
+- `scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh` for release-channel/install-media/startup-smoke truth across promoted desktop heads, including fail-honest blocker receipts when artifacts or platform proof are missing.
+- `scripts/ai/milestones/b15-localization-release-gate.sh` for shipping-locale truth, explicit fallback honesty, explain localization, and support/install/update language coverage.
 
 Those checks are all part of the normal `scripts/ai/verify.sh` path, so release truth does not depend on ad hoc manual demos.
 
 For local docker-backed release proof, `scripts/e2e-portal.sh` is the canonical executable lane. It boots the downstream public-edge stack from `chummer6-hub` and materializes `.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json` with the probed base URL, route coverage, and whether the route probe actually ran.
 
 For the hard Linux desktop exit gate, `scripts/materialize-linux-desktop-exit-gate.sh` is the canonical executable lane. It must build the Linux Avalonia binary, package the primary `.deb` plus fallback archive, install and purge the primary `.deb` inside an isolated dpkg root while running startup smoke from the installed path, run startup smoke against the fallback archive, run the desktop runtime unit-test suite, and publish `.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json`.
+
+For the hard Windows desktop exit gate, `scripts/materialize-windows-desktop-exit-gate.sh` is the canonical executable lane. It must validate that the promoted Avalonia Windows installer is present on the active release shelf, require release-channel digest/size alignment for that installer, require current local release plus desktop workflow parity proofs, and publish `.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json`.
 
 ## Cross-head hardening proof
 
@@ -36,7 +40,7 @@ For the hard Linux desktop exit gate, `scripts/materialize-linux-desktop-exit-ga
 ## Release budgets
 
 - Accessibility: workbench surfaces must keep explicit live/status semantics and the B13 signoff path must stay green.
-- Localization: explain and workbench chrome must remain localization-safe; `Chummer.Presentation/Explain/RulesetExplainRenderer.cs` is allowed to fail fast on missing localization keys rather than silently falling back to stale copy.
+- Localization: explain and workbench chrome must remain localization-safe; `Chummer.Presentation/Explain/RulesetExplainRenderer.cs` is allowed to fail fast on missing localization keys rather than silently falling back to stale copy, and `scripts/ai/milestones/b15-localization-release-gate.sh` is the release-required executable proof lane for shipping locale truth.
 - Performance: dense browse and browser delivery must remain under the existing virtualization and browser-isolation guardrails instead of regressing into unbounded table/render paths.
 
 ## Ownership note
