@@ -46,6 +46,7 @@ if ! [[ "$release_gate_lock_poll_seconds" =~ ^[0-9]+$ ]] || [[ "$release_gate_lo
 fi
 
 mkdir -p "$(dirname "$receipt_path")"
+release_gate_lock_blocked=0
 if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
   release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))
   if [[ "$release_gate_lock_wait_iterations" -lt 1 ]]; then
@@ -57,6 +58,10 @@ if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
     fi
     sleep "$release_gate_lock_poll_seconds"
   done
+  if [[ -d "$release_gate_lock_dir" ]]; then
+    release_gate_lock_blocked=1
+    skip_dependency_materialize=1
+  fi
 fi
 
 if [[ "$skip_dependency_materialize" != "1" ]]; then
@@ -176,7 +181,7 @@ PY
   fi
 fi
 
-python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path_default" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root" "$hub_registry_root"
+python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path_default" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root" "$hub_registry_root" "$release_gate_lock_blocked"
 from __future__ import annotations
 
 import hashlib
@@ -2396,6 +2401,7 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
 
 receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path_default, flagship_gate_path, visual_familiarity_gate_path, workflow_execution_gate_path, repo_root = [Path(v) for v in sys.argv[1:10]]
 hub_registry_root_raw = str(sys.argv[10]).strip() if len(sys.argv) > 10 else ""
+release_gate_lock_blocked = str(sys.argv[11]).strip() == "1" if len(sys.argv) > 11 else False
 hub_registry_root = Path(hub_registry_root_raw) if hub_registry_root_raw else None
 trusted_roots = [repo_root]
 hub_registry_release_channel_path = None
@@ -2438,7 +2444,14 @@ evidence: Dict[str, Any] = {
     ),
     "hub_registry_root_trusted_for_startup_smoke_proof": hub_registry_root_trusted,
     "trusted_local_roots": [str(root) for root in trusted_roots],
+    "release_gate_lock_blocked": release_gate_lock_blocked,
+    "release_gate_lock_dir": str(repo_root / ".codex-studio" / "locks" / "b14-flagship-ui-release-gate.lock"),
 }
+
+if release_gate_lock_blocked:
+    reasons.append(
+        "Flagship release gate lock remained active after wait window; executable gate skipped dependency rematerialization and fail-closes to prevent partial proof races."
+    )
 
 release_channel = load_json(release_channel_path)
 flagship_gate = load_json(flagship_gate_path)

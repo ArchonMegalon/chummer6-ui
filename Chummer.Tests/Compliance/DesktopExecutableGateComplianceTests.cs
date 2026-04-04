@@ -23,6 +23,22 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_fail_closes_when_flagship_release_lock_is_still_active_after_wait_window()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "release_gate_lock_blocked=0");
+        StringAssert.Contains(scriptText, "if [[ -d \"$release_gate_lock_dir\" ]]; then");
+        StringAssert.Contains(scriptText, "release_gate_lock_blocked=1");
+        StringAssert.Contains(scriptText, "skip_dependency_materialize=1");
+        StringAssert.Contains(scriptText, "\"release_gate_lock_blocked\": release_gate_lock_blocked");
+        StringAssert.Contains(scriptText, "\"release_gate_lock_dir\": str(repo_root / \".codex-studio\" / \"locks\" / \"b14-flagship-ui-release-gate.lock\")");
+        StringAssert.Contains(scriptText, "Flagship release gate lock remained active after wait window; executable gate skipped dependency rematerialization and fail-closes to prevent partial proof races.");
+    }
+
+    [TestMethod]
     public void Desktop_executable_gate_surfaces_linux_windows_and_macos_per_head_diagnostics_from_required_tuple_policy_when_release_artifacts_are_missing()
     {
         string repoRoot = FindRepoRoot();
