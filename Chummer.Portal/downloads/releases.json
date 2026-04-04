@@ -1,0 +1,272 @@
+{
+  "generated_at": "2026-04-04T04:17:45Z",
+  "generatedAt": "2026-04-04T04:17:45Z",
+  "version": "local-docker",
+  "channel": "docker",
+  "publishedAt": "2026-04-04T04:17:44Z",
+  "downloads": [
+    {
+      "id": "avalonia-linux-x64-installer",
+      "platform": "Avalonia Desktop Linux X64 Installer",
+      "url": "/downloads/files/chummer-avalonia-linux-x64-installer.deb",
+      "sha256": "4544ef844262d3381bc424105c4d67e95fa6f3c2541c1c79b00d0b4666a6198c",
+      "sizeBytes": 31796460,
+      "format": "deb",
+      "flavor": "installer",
+      "kind": "installer",
+      "head": "avalonia",
+      "platformId": "linux-x64",
+      "arch": "x64",
+      "fileName": "chummer-avalonia-linux-x64-installer.deb",
+      "installAccessClass": "open_public"
+    },
+    {
+      "id": "blazor-desktop-linux-x64-installer",
+      "platform": "Blazor Desktop Linux X64 Installer",
+      "url": "/downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
+      "sha256": "fba47bb24a11f45dcd37c9d70b036346355d24802a434bf9eac2e6f3767c11f3",
+      "sizeBytes": 34182932,
+      "format": "deb",
+      "flavor": "installer",
+      "kind": "installer",
+      "head": "blazor-desktop",
+      "platformId": "linux-x64",
+      "arch": "x64",
+      "fileName": "chummer-blazor-desktop-linux-x64-installer.deb",
+      "installAccessClass": "open_public"
+    }
+  ],
+  "source": "registry",
+  "status": "published",
+  "message": null,
+  "rolloutState": "coverage_incomplete",
+  "rolloutReason": "Current shelf is published, but promotion stays blocked because required desktop tuple coverage is incomplete (platforms: windows, macos; pairs: avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos).",
+  "supportabilityState": "review_required",
+  "supportabilitySummary": "Treat the current shelf as review-required because required desktop tuple coverage is incomplete (platforms: windows, macos; pairs: avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos).",
+  "knownIssueSummary": "Known issue: required desktop tuple coverage is incomplete (platforms: windows, macos; pairs: avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos).",
+  "fixAvailabilitySummary": "Do not send fixed notices until required desktop tuple coverage is complete for the promoted shelf.",
+  "releaseProof": {
+    "status": "passed",
+    "generatedAt": "2026-03-29T09:48:56Z",
+    "baseUrl": "https://chummer.run",
+    "journeysPassed": [
+      "install_claim_restore_continue",
+      "build_explain_publish",
+      "campaign_session_recover_recap",
+      "report_cluster_release_notify"
+    ],
+    "proofRoutes": [
+      "/downloads/install/avalonia-linux-x64-installer",
+      "/home/access",
+      "/home/work",
+      "/account/work",
+      "/account/support",
+      "/contact"
+    ],
+    "uiLocalizationReleaseGate": {
+      "status": "pass",
+      "generatedAt": "2026-04-04T04:08:30Z",
+      "defaultKeyCount": 383,
+      "explicitFallbackRuntime": "pass",
+      "signoffSmokeRunnerStatus": "pass",
+      "shippingLocales": [
+        "en-us",
+        "de-de",
+        "fr-fr",
+        "ja-jp",
+        "pt-br",
+        "zh-cn"
+      ],
+      "localeSummary": [
+        {
+          "locale": "de-de",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": 40,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": true,
+          "legacyDataXmlPresent": true
+        },
+        {
+          "locale": "en-us",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": 383,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": true,
+          "legacyDataXmlPresent": true
+        },
+        {
+          "locale": "fr-fr",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": 40,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": true,
+          "legacyDataXmlPresent": true
+        },
+        {
+          "locale": "ja-jp",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": 40,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": true,
+          "legacyDataXmlPresent": true
+        },
+        {
+          "locale": "pt-br",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": 40,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": true,
+          "legacyDataXmlPresent": true
+        },
+        {
+          "locale": "zh-cn",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": 40,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": true,
+          "legacyDataXmlPresent": true
+        }
+      ],
+      "acceptanceGates": [
+        "pseudo_localization",
+        "missing_key_fail_fast",
+        "top_surface_overflow_checks",
+        "locale_smoke_first_launch",
+        "locale_smoke_settings",
+        "locale_smoke_explain",
+        "locale_smoke_updater",
+        "locale_smoke_support",
+        "non_english_generated_artifact_smoke"
+      ],
+      "domainCoverage": {
+        "app_chrome": "pass",
+        "data_rules_names": "pass",
+        "explain_receipts": "pass",
+        "generated_artifacts": "pass",
+        "install_update_support": "pass"
+      },
+      "localeDomainCoverage": {
+        "de-de": {
+          "app_chrome": "pass",
+          "data_rules_names": "pass",
+          "explain_receipts": "pass",
+          "generated_artifacts": "pass",
+          "install_update_support": "pass"
+        },
+        "en-us": {
+          "app_chrome": "pass",
+          "data_rules_names": "pass",
+          "explain_receipts": "pass",
+          "generated_artifacts": "pass",
+          "install_update_support": "pass"
+        },
+        "fr-fr": {
+          "app_chrome": "pass",
+          "data_rules_names": "pass",
+          "explain_receipts": "pass",
+          "generated_artifacts": "pass",
+          "install_update_support": "pass"
+        },
+        "ja-jp": {
+          "app_chrome": "pass",
+          "data_rules_names": "pass",
+          "explain_receipts": "pass",
+          "generated_artifacts": "pass",
+          "install_update_support": "pass"
+        },
+        "pt-br": {
+          "app_chrome": "pass",
+          "data_rules_names": "pass",
+          "explain_receipts": "pass",
+          "generated_artifacts": "pass",
+          "install_update_support": "pass"
+        },
+        "zh-cn": {
+          "app_chrome": "pass",
+          "data_rules_names": "pass",
+          "explain_receipts": "pass",
+          "generated_artifacts": "pass",
+          "install_update_support": "pass"
+        }
+      },
+      "blockingFindings": [],
+      "blockingFindingsCount": 0,
+      "translationBacklogFindings": [],
+      "translationBacklogFindingsCount": 0
+    }
+  },
+  "desktopTupleCoverage": {
+    "requiredDesktopPlatforms": [
+      "linux",
+      "windows",
+      "macos"
+    ],
+    "requiredDesktopHeads": [
+      "avalonia",
+      "blazor-desktop"
+    ],
+    "promotedInstallerTuples": [
+      {
+        "tupleId": "avalonia:linux:linux-x64",
+        "head": "avalonia",
+        "platform": "linux",
+        "rid": "linux-x64",
+        "arch": "x64",
+        "kind": "installer",
+        "artifactId": "avalonia-linux-x64-installer"
+      },
+      {
+        "tupleId": "blazor-desktop:linux:linux-x64",
+        "head": "blazor-desktop",
+        "platform": "linux",
+        "rid": "linux-x64",
+        "arch": "x64",
+        "kind": "installer",
+        "artifactId": "blazor-desktop-linux-x64-installer"
+      }
+    ],
+    "promotedPlatformHeads": {
+      "linux": [
+        "avalonia",
+        "blazor-desktop"
+      ],
+      "windows": [],
+      "macos": []
+    },
+    "requiredDesktopPlatformHeadRidTuples": [
+      "avalonia:linux-x64:linux",
+      "avalonia:osx-arm64:macos",
+      "avalonia:win-x64:windows",
+      "blazor-desktop:linux-x64:linux",
+      "blazor-desktop:osx-arm64:macos",
+      "blazor-desktop:win-x64:windows"
+    ],
+    "promotedPlatformHeadRidTuples": [
+      "avalonia:linux-x64:linux",
+      "blazor-desktop:linux-x64:linux"
+    ],
+    "missingRequiredPlatforms": [
+      "windows",
+      "macos"
+    ],
+    "missingRequiredHeads": [],
+    "missingRequiredPlatformHeadPairs": [
+      "avalonia:windows",
+      "blazor-desktop:windows",
+      "avalonia:macos",
+      "blazor-desktop:macos"
+    ],
+    "missingRequiredPlatformHeadRidTuples": [
+      "avalonia:osx-arm64:macos",
+      "avalonia:win-x64:windows",
+      "blazor-desktop:osx-arm64:macos",
+      "blazor-desktop:win-x64:windows"
+    ]
+  }
+}

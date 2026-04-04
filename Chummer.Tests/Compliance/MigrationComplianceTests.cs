@@ -3387,6 +3387,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(manifestScriptText, "promoted_file_names");
         StringAssert.Contains(manifestScriptText, "portal_artifacts");
         StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
+        StringAssert.Contains(manifestScriptText, "UI_LOCALIZATION_RELEASE_GATE_PATH");
+        StringAssert.Contains(manifestScriptText, "--ui-localization-release-gate");
         StringAssert.Contains(manifestScriptText, "STARTUP_SMOKE_DIR");
         StringAssert.Contains(startupSmokeScriptText, "release_smoke_start_failure");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT");
@@ -3794,6 +3796,11 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(localizationGateText, "scripts/ai/with-package-plane.sh run --project");
         StringAssert.Contains(localizationGateText, "minimum_override_count_by_locale");
+        StringAssert.Contains(localizationGateText, "required_localization_domains");
+        StringAssert.Contains(localizationGateText, "\"domain_coverage\"");
+        StringAssert.Contains(localizationGateText, "\"locale_domain_coverage\"");
+        StringAssert.Contains(localizationGateText, "\"app_chrome\"");
+        StringAssert.Contains(localizationGateText, "\"install_update_support\"");
         Assert.IsFalse(localizationGateText.Contains("--no-build", StringComparison.Ordinal),
             "Localization release gate must run the signoff project with build enabled so runtimeconfig output is always present across compatibility-tree layouts.");
         Assert.IsFalse(localizationGateText.Contains("bash -lc", StringComparison.Ordinal),
