@@ -611,7 +611,29 @@ public class CharacterOverviewPresenterTests
                 Files: [],
                 ReferenceLanePosture: "governed",
                 SourcebookCount: 11,
-                Sourcebooks: [],
+                Sourcebooks:
+                [
+                    new MasterIndexSourcebookEntry(
+                        Id: "core-rulebook",
+                        Code: "CRB",
+                        Name: "Core Rulebook",
+                        Permanent: true,
+                        ReferencePosture: "governed",
+                        RuleSnippetCount: 12,
+                        RuleSnippets: [],
+                        ReferenceSourcePosture: "governed",
+                        LocalPdfPath: "/books/core-rulebook.pdf"),
+                    new MasterIndexSourcebookEntry(
+                        Id: "firing-squad",
+                        Code: "FS",
+                        Name: "Firing Squad",
+                        Permanent: false,
+                        ReferencePosture: "partial",
+                        RuleSnippetCount: 5,
+                        RuleSnippets: [],
+                        ReferenceSourcePosture: "stale",
+                        ReferenceUrl: "https://example.test/firing-squad")
+                ],
                 ReferenceCoveragePercent: 73,
                 SourcebooksWithSnippets: 8,
                 SourcebooksWithGovernedReferenceSources: 7,
@@ -640,18 +662,24 @@ public class CharacterOverviewPresenterTests
                 OnlineStorageCoveragePercent: 50,
                 ImportOracleLanePosture: "partial",
                 ImportOracleReceiptPosture: "stale",
+                LegacyChummer4FixtureCount: 18,
+                LegacyChummer5FixtureCount: 31,
+                HeroLabFixtureCount: 0,
                 AdjacentSr6OracleReceiptPosture: "partial",
                 AdjacentSr6OracleSourcesCovered: 1,
                 AdjacentSr6OracleSourcesExpected: 2,
                 ImportOracleSourcesCovered: 3,
                 ImportOracleSourcesExpected: 4,
                 ImportOracleCoveragePercent: 75,
+                ImportOracleMissingSources: ["Hero Lab"],
                 ImportOracleLaneReceipt: "import oracle partial",
                 AdjacentSr6OracleLaneReceipt: "adjacent oracle partial",
                 Sr6SupplementLanePosture: "partial",
+                Sr6DesignerToolsPosture: "partial",
                 Sr6DesignerFamiliesAvailable: 4,
                 Sr6DesignerFamiliesExpected: 5,
                 HouseRuleLanePosture: "governed",
+                HouseRuleOverlayCount: 3,
                 Sr6SuccessorLaneReceipt: "sr6 successor partial"));
         var presenter = new CharacterOverviewPresenter(client);
 
@@ -661,13 +689,55 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("dialog.master_index", presenter.State.ActiveDialog?.Id);
         Assert.AreEqual("11", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourcebooks"));
         Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSettingsLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionSummary"), "2 sourcebooks");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourcebook1"), "Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleLane"), "75%");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleMatrix"), "Chummer4 fixtures 18");
+        Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleMissingSources"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageLane"), "50%");
         Assert.AreEqual("50% (1/2)", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageCoverage"));
         Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6SupplementLane"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6DesignerToolsLane"));
         Assert.AreEqual("4/5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6DesignerCoverage"));
         Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexHouseRuleLane"));
+        Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexHouseRuleOverlayCount"));
         Assert.AreEqual("source selection governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionReceipt"));
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture()
+    {
+        var client = new FakeChummerClient();
+        client.SeedToolCatalog(
+            new MasterIndexResponse(
+                Count: 1,
+                GeneratedUtc: DateTimeOffset.UtcNow,
+                Files: [],
+                ReferenceLanePosture: "governed",
+                SourcebookCount: 1,
+                Sourcebooks: [],
+                TranslatorLanePosture: "governed",
+                TranslatorLaneReceipt: "translator governed",
+                TranslatorBridgePosture: "governed",
+                TranslatorLanguageCount: 6,
+                EnabledLanguageOverlayCount: 3),
+            new TranslatorLanguagesResponse(
+                EnabledLanguageOverlayCount: 1,
+                Languages:
+                [
+                    new TranslatorLanguageEntry("en-us", "English", true),
+                    new TranslatorLanguageEntry("de-de", "Deutsch", true)
+                ],
+                TranslatorBridgePosture: "partial"));
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ExecuteCommandAsync("translator", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("dialog.translator", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorLanePosture"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorBridgePosture"));
+        Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorOverlayCount"));
     }
 
     [TestMethod]
@@ -897,6 +967,40 @@ public class CharacterOverviewPresenterTests
 
         Assert.IsNull(presenter.State.ActiveDialog);
         Assert.AreEqual("No active runtime profile is available for inspection.", presenter.State.Error);
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_dice_roller_opens_utility_lane_with_roster_context()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-legacy-1", "Legacy One", "L1", DateTimeOffset.UtcNow.AddMinutes(-10), RulesetDefaults.Sr5);
+        client.SeedWorkspace("ws-legacy-2", "Legacy Two", "L2", DateTimeOffset.UtcNow.AddMinutes(-1), RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync("dice_roller", CancellationToken.None);
+
+        Assert.AreEqual("dialog.dice_roller", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("ruleset-backed roll + initiative preview", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceUtilityLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "2 open runners");
+        Assert.AreEqual("10 + 1d6 · pass 1 · range 11-16 · avg 13.5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "initiativePreview"));
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_character_roster_opens_dialog_with_workspace_summary()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-legacy-1", "Legacy One", "L1", DateTimeOffset.UtcNow.AddMinutes(-10), RulesetDefaults.Sr5);
+        client.SeedWorkspace("ws-legacy-2", "Legacy Two", "L2", DateTimeOffset.UtcNow.AddMinutes(-1), RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync("character_roster", CancellationToken.None);
+
+        Assert.AreEqual("dialog.character_roster", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterOpenCount"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterRulesetMix"), "sr5");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterRulesetMix"), "sr6");
     }
 
     [TestMethod]
