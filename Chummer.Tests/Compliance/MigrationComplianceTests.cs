@@ -3383,6 +3383,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "scripts/verify-releases-manifest.sh");
 
         StringAssert.Contains(manifestScriptText, "materialize_public_release_channel.py");
+        StringAssert.Contains(manifestScriptText, "normalize_release_channel_artifact_identity_fields");
+        StringAssert.Contains(manifestScriptText, "cannot normalize artifact channel identity");
+        StringAssert.Contains(manifestScriptText, "cannot normalize artifact release identity");
+        StringAssert.Contains(manifestScriptText, "artifact[\"channelId\"] = channel_id");
+        StringAssert.Contains(manifestScriptText, "artifact[\"releaseVersion\"] = release_version");
         StringAssert.Contains(manifestScriptText, "generate-public-promotion-evidence.py");
         StringAssert.Contains(manifestScriptText, "promoted_file_names");
         StringAssert.Contains(manifestScriptText, "portal_artifacts");
@@ -5220,6 +5225,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "PORTAL_DOWNLOADS_DIR");
         StringAssert.Contains(generatorText, "synced ${#portal_artifacts[@]} local portal artifact(s)");
         StringAssert.Contains(generatorText, "materialize_public_release_channel.py");
+        StringAssert.Contains(generatorText, "normalize_release_channel_artifact_identity_fields");
+        StringAssert.Contains(generatorText, "artifact[\"channel\"] = channel_id");
+        StringAssert.Contains(generatorText, "artifact[\"version\"] = artifact_version");
         StringAssert.Contains(generatorText, "--compat-output");
         StringAssert.Contains(generatorText, "generate-public-promotion-evidence.py");
         StringAssert.Contains(generatorText, "CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF");
