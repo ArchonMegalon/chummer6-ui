@@ -120,6 +120,7 @@ CHANNEL="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_CHANNEL:-${RELEASE_CHANNEL_ID_DEFAULT
 FRAMEWORK="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FRAMEWORK:-net10.0}"
 READY_CHECKPOINT="pre_ui_event_loop"
 OUTPUT_BASE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_OUTPUT_ROOT:-$REPO_ROOT/.codex-studio/out/linux-desktop-exit-gate}"
+RUN_RETENTION_COUNT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_RETENTION_COUNT:-40}"
 PROOF_PATH="${CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH:-$DEFAULT_PROOF_PATH}"
 BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$WORKSPACE_ROOT/.linux-desktop-exit-gate.build.lock}"
 LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
@@ -1279,6 +1280,57 @@ cleanup_snapshot() {
     rm -rf "$SOURCE_SNAPSHOT_ROOT"
   fi
   release_build_lock
+  prune_old_run_roots
+}
+
+prune_old_run_roots() {
+  if ! [[ "$RUN_RETENTION_COUNT" =~ ^[0-9]+$ ]] || [[ "$RUN_RETENTION_COUNT" -lt 1 ]]; then
+    RUN_RETENTION_COUNT=40
+  fi
+
+  python3 - "$OUTPUT_BASE_ROOT" "$LATEST_LINK" "$RUN_ROOT" "$RUN_RETENTION_COUNT" <<'PY'
+from __future__ import annotations
+
+import pathlib
+import shutil
+import sys
+
+output_base_root = pathlib.Path(sys.argv[1])
+latest_link = pathlib.Path(sys.argv[2])
+current_run_root = pathlib.Path(sys.argv[3]).resolve()
+retention_count = int(sys.argv[4])
+
+if not output_base_root.is_dir():
+    raise SystemExit(0)
+
+preserve = {current_run_root}
+if latest_link.is_symlink():
+    try:
+        preserve.add(latest_link.resolve())
+    except Exception:
+        pass
+
+run_roots = [
+    path
+    for path in output_base_root.iterdir()
+    if path.is_dir() and path.name.startswith("run.")
+]
+
+ranked = sorted(
+    run_roots,
+    key=lambda path: path.stat().st_mtime,
+    reverse=True,
+)
+
+kept_by_retention = {path.resolve() for path in ranked[:retention_count]}
+keep = kept_by_retention.union(preserve)
+
+for candidate in run_roots:
+    resolved = candidate.resolve()
+    if resolved in keep:
+        continue
+    shutil.rmtree(candidate, ignore_errors=True)
+PY
 }
 
 trap on_error ERR
