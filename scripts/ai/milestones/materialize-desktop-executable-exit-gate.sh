@@ -936,6 +936,7 @@ def validate_linux_gate(
     expected_artifact: Dict[str, Any] | None,
     release_channel_id: str,
     release_channel_version: str,
+    release_channel_generated_at_raw: str,
     desktop_files_root: Path,
     repo_root: Path,
     trusted_roots: List[Path],
@@ -1292,6 +1293,12 @@ def validate_linux_gate(
             gate_evidence["release_channel_linux_artifact_version_alias_conflict"] = channel_artifact_version_alias_conflict
             gate_evidence["release_channel_linux_artifact_arch"] = channel_artifact_arch
             gate_evidence["release_channel_linux_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
+            channel_artifact_generated_at_raw, _ = payload_generated_at(channel_artifact)
+            channel_artifact_generated_at_alias_conflict = generated_at_alias_conflicts(channel_artifact)
+            gate_evidence["release_channel_linux_artifact_generated_at"] = channel_artifact_generated_at_raw
+            gate_evidence["release_channel_linux_artifact_generated_at_alias_conflict"] = (
+                channel_artifact_generated_at_alias_conflict
+            )
             if normalize_token(channel_artifact.get("head")) != head:
                 reasons.append("Linux gate embedded release_channel_linux_artifact head does not match promoted release channel.")
             if expected_rid and normalize_token(channel_artifact.get("rid")) != expected_rid:
@@ -1310,6 +1317,12 @@ def validate_linux_gate(
                 reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting version/releaseVersion alias values.")
             if channel_artifact_arch_alias_conflict:
                 reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting arch/architecture alias values.")
+            if not channel_artifact_generated_at_raw:
+                reasons.append("Linux gate embedded release_channel_linux_artifact is missing generated_at/generatedAt.")
+            elif release_channel_generated_at_raw and channel_artifact_generated_at_raw != release_channel_generated_at_raw:
+                reasons.append("Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at.")
+            if channel_artifact_generated_at_alias_conflict:
+                reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting generated_at/generatedAt alias values.")
             if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
                 reasons.append("Linux gate embedded release_channel_linux_artifact arch does not match promoted release-channel RID.")
             if not policy_missing_release_artifact:
@@ -1375,6 +1388,7 @@ def validate_windows_gate(
     expected_artifact: Dict[str, Any],
     release_channel_id: str,
     release_channel_version: str,
+    release_channel_generated_at_raw: str,
     desktop_files_root: Path,
     repo_root: Path,
     trusted_roots: List[Path],
@@ -1555,6 +1569,12 @@ def validate_windows_gate(
         gate_evidence["release_channel_windows_artifact_version_alias_conflict"] = channel_artifact_version_alias_conflict
         gate_evidence["release_channel_windows_artifact_arch"] = channel_artifact_arch
         gate_evidence["release_channel_windows_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
+        channel_artifact_generated_at_raw, _ = payload_generated_at(channel_artifact)
+        channel_artifact_generated_at_alias_conflict = generated_at_alias_conflicts(channel_artifact)
+        gate_evidence["release_channel_windows_artifact_generated_at"] = channel_artifact_generated_at_raw
+        gate_evidence["release_channel_windows_artifact_generated_at_alias_conflict"] = (
+            channel_artifact_generated_at_alias_conflict
+        )
         if normalize_token(channel_artifact.get("head")) != expected_head:
             reasons.append("Windows gate embedded release_channel_windows_artifact head does not match promoted release channel.")
         if normalize_token(channel_artifact.get("rid")) != expected_rid:
@@ -1573,6 +1593,12 @@ def validate_windows_gate(
             reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting version/releaseVersion alias values.")
         if channel_artifact_arch_alias_conflict:
             reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting arch/architecture alias values.")
+        if not channel_artifact_generated_at_raw:
+            reasons.append("Windows gate embedded release_channel_windows_artifact is missing generated_at/generatedAt.")
+        elif release_channel_generated_at_raw and channel_artifact_generated_at_raw != release_channel_generated_at_raw:
+            reasons.append("Windows gate embedded release_channel_windows_artifact generated_at does not match promoted release channel generated_at.")
+        if channel_artifact_generated_at_alias_conflict:
+            reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting generated_at/generatedAt alias values.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
             reasons.append("Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.")
         if str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
@@ -1820,6 +1846,7 @@ def validate_macos_gate(
     gate_payload: Dict[str, Any],
     release_channel_id: str,
     release_channel_version: str,
+    release_channel_generated_at_raw: str,
     desktop_files_root: Path,
     repo_root: Path,
     trusted_roots: List[Path],
@@ -2084,6 +2111,12 @@ def validate_macos_gate(
         gate_evidence["release_channel_macos_artifact_version_alias_conflict"] = channel_artifact_version_alias_conflict
         gate_evidence["release_channel_macos_artifact_arch"] = channel_artifact_arch
         gate_evidence["release_channel_macos_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
+        channel_artifact_generated_at_raw, _ = payload_generated_at(channel_artifact)
+        channel_artifact_generated_at_alias_conflict = generated_at_alias_conflicts(channel_artifact)
+        gate_evidence["release_channel_macos_artifact_generated_at"] = channel_artifact_generated_at_raw
+        gate_evidence["release_channel_macos_artifact_generated_at_alias_conflict"] = (
+            channel_artifact_generated_at_alias_conflict
+        )
         if normalize_token(channel_artifact.get("head")) != head:
             reasons.append("macOS gate embedded release_channel_macos_artifact head does not match promoted release channel.")
         if normalize_token(channel_artifact.get("rid")) != rid:
@@ -2102,6 +2135,12 @@ def validate_macos_gate(
             reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting version/releaseVersion alias values.")
         if channel_artifact_arch_alias_conflict:
             reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting arch/architecture alias values.")
+        if not channel_artifact_generated_at_raw:
+            reasons.append("macOS gate embedded release_channel_macos_artifact is missing generated_at/generatedAt.")
+        elif release_channel_generated_at_raw and channel_artifact_generated_at_raw != release_channel_generated_at_raw:
+            reasons.append("macOS gate embedded release_channel_macos_artifact generated_at does not match promoted release channel generated_at.")
+        if channel_artifact_generated_at_alias_conflict:
+            reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting generated_at/generatedAt alias values.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
             reasons.append("macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.")
         if expected_file_name and str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
@@ -3246,6 +3285,7 @@ for expected_windows_artifact in expected_windows_artifacts:
         expected_windows_artifact,
         release_channel_channel_id,
         release_channel_version,
+        release_channel_generated_at_raw,
         desktop_files_root,
         repo_root,
         trusted_roots,
@@ -4202,6 +4242,7 @@ for expected_linux_artifact in expected_linux_artifacts:
         expected_linux_artifact,
         release_channel_channel_id,
         release_channel_version,
+        release_channel_generated_at_raw,
         desktop_files_root,
         repo_root,
         trusted_roots,
@@ -4309,6 +4350,7 @@ for macos_artifact in expected_macos_artifacts:
         load_json(gate_path),
         release_channel_channel_id,
         release_channel_version,
+        release_channel_generated_at_raw,
         desktop_files_root,
         repo_root,
         trusted_roots,
