@@ -1722,6 +1722,7 @@ else:
     screenshot_file_timestamps: Dict[str, str] = {}
     screenshot_stale_reasons: List[str] = []
     screenshot_older_than_receipt: List[str] = []
+    screenshot_newer_than_receipt: List[str] = []
     for name in visual_required_screenshots:
         if visual_screenshot_dir is None:
             continue
@@ -1738,9 +1739,14 @@ else:
             skew_seconds = int((screenshot_generated_at - screenshot_mtime).total_seconds())
             if skew_seconds > VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS:
                 screenshot_older_than_receipt.append(f"{name} ({skew_seconds}s older)")
+            elif abs(skew_seconds) > VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS:
+                screenshot_newer_than_receipt.append(
+                    f"{name} ({abs(skew_seconds)}s newer)"
+                )
     evidence["visual_familiarity_screenshot_file_timestamps"] = screenshot_file_timestamps
     evidence["visual_familiarity_stale_screenshots"] = screenshot_stale_reasons
     evidence["visual_familiarity_screenshots_older_than_receipt"] = screenshot_older_than_receipt
+    evidence["visual_familiarity_screenshots_newer_than_receipt"] = screenshot_newer_than_receipt
     if screenshot_stale_reasons:
         reasons.append(
             "Desktop visual familiarity required screenshots are stale: "
@@ -1750,6 +1756,11 @@ else:
         reasons.append(
             "Desktop visual familiarity screenshot evidence predates the visual familiarity receipt generation time: "
             + ", ".join(screenshot_older_than_receipt)
+        )
+    if screenshot_newer_than_receipt:
+        reasons.append(
+            "Desktop visual familiarity screenshot evidence is newer than the visual familiarity receipt generation time: "
+            + ", ".join(screenshot_newer_than_receipt)
         )
 
 raw_artifacts = release_channel.get("artifacts")

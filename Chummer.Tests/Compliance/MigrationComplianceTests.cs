@@ -3547,8 +3547,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are missing on disk:");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are stale:");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot evidence predates the visual familiarity receipt generation time:");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot evidence is newer than the visual familiarity receipt generation time:");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshot_file_timestamps");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshots_older_than_receipt");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshots_newer_than_receipt");
         StringAssert.Contains(executableGateScriptText, "visual_head_contract_marker_statuses_raw");
         StringAssert.Contains(executableGateScriptText, "def normalize_required_status_map(");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity.flagship_head_proof_statuses");
