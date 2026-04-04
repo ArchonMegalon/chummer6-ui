@@ -3513,6 +3513,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "release_channel_generated_at");
         StringAssert.Contains(executableGateScriptText, "release_channel_future_skew_seconds");
         StringAssert.Contains(executableGateScriptText, "release_channel_age_seconds");
+        StringAssert.Contains(executableGateScriptText, "Release channel artifacts must be a list when present.");
+        StringAssert.Contains(executableGateScriptText, "Release channel artifacts contains a non-object item at index");
+        StringAssert.Contains(executableGateScriptText, "release_channel_artifacts_total_count");
+        StringAssert.Contains(executableGateScriptText, "release_channel_artifacts_object_count");
+        StringAssert.Contains(executableGateScriptText, "release_channel_artifacts_non_object_indexes");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing a valid generated_at timestamp.");
         StringAssert.Contains(executableGateScriptText, "Release channel generated_at is in the future");
         StringAssert.Contains(executableGateScriptText, "Release channel receipt is stale (");

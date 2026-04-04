@@ -1382,10 +1382,27 @@ else:
             + ", ".join(screenshot_older_than_receipt)
         )
 
-artifacts = [
-    item for item in (release_channel.get("artifacts") or [])
-    if isinstance(item, dict)
-]
+raw_artifacts = release_channel.get("artifacts")
+artifacts: List[Dict[str, Any]] = []
+non_object_artifact_indexes: List[int] = []
+if raw_artifacts is None:
+    pass
+elif not isinstance(raw_artifacts, list):
+    reasons.append("Release channel artifacts must be a list when present.")
+else:
+    for artifact_index, artifact_item in enumerate(raw_artifacts):
+        if not isinstance(artifact_item, dict):
+            non_object_artifact_indexes.append(artifact_index)
+            reasons.append(
+                f"Release channel artifacts contains a non-object item at index {artifact_index}."
+            )
+            continue
+        artifacts.append(artifact_item)
+evidence["release_channel_artifacts_total_count"] = (
+    len(raw_artifacts) if isinstance(raw_artifacts, list) else 0
+)
+evidence["release_channel_artifacts_object_count"] = len(artifacts)
+evidence["release_channel_artifacts_non_object_indexes"] = non_object_artifact_indexes
 release_channel_status = normalize_token(release_channel.get("status"))
 release_channel_channel_id = normalize_token(release_channel.get("channelId") or release_channel.get("channel"))
 release_channel_version = str(release_channel.get("version") or "").strip()
