@@ -108,6 +108,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt is missing version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt version does not match release channel version for promoted head");
+        StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid is missing for promoted head");
+        StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid does not match promoted RID for head");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt is missing releaseVersion/version.");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt is missing version for promoted installer bytes.");
@@ -122,6 +124,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt rid does not match promoted RID for head");
         StringAssert.Contains(executableScriptText, "gate_release_version");
         StringAssert.Contains(executableScriptText, "startup_smoke_version");
+        StringAssert.Contains(executableScriptText, "primary_receipt_rid");
         StringAssert.Contains(executableScriptText, "startup_smoke_rid");
         StringAssert.Contains(executableScriptText, "startup_smoke_receipt_version");
         StringAssert.Contains(executableScriptText, "startup_smoke_receipt_rid");

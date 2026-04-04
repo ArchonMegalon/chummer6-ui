@@ -859,6 +859,7 @@ def validate_linux_gate(
     )
     gate_evidence["primary_receipt_head_id"] = normalize_token(primary_receipt_for_validation.get("headId"))
     gate_evidence["primary_receipt_platform"] = normalize_token(primary_receipt_for_validation.get("platform"))
+    gate_evidence["primary_receipt_rid"] = normalize_token(primary_receipt_for_validation.get("rid"))
     gate_evidence["primary_receipt_arch"] = normalize_token(primary_receipt_for_validation.get("arch"))
     gate_evidence["primary_receipt_channel_id"] = normalize_token(
         primary_receipt_for_validation.get("channelId") or primary_receipt_for_validation.get("channel")
@@ -898,6 +899,8 @@ def validate_linux_gate(
         reasons.append(f"Linux installer startup smoke receipt headId does not match promoted head '{head}'.")
     if gate_evidence["primary_receipt_platform"] != "linux":
         reasons.append(f"Linux installer startup smoke receipt platform is not linux for promoted head '{head}'.")
+    if not gate_evidence["primary_receipt_rid"]:
+        reasons.append(f"Linux installer startup smoke receipt rid is missing for promoted head '{head}'.")
     if not gate_evidence["primary_receipt_host_class"]:
         reasons.append(f"Linux installer startup smoke receipt hostClass is missing for promoted head '{head}'.")
     elif not host_class_matches_platform(gate_evidence["primary_receipt_host_class"], "linux"):
@@ -923,6 +926,8 @@ def validate_linux_gate(
         gate_evidence["expected_artifact_source"] = expected_artifact_source
         if expected_rid and normalize_token(gate_head.get("rid")) != expected_rid:
             reasons.append(f"Linux desktop exit gate receipt RID does not match promoted head '{head}' ({expected_rid}).")
+        if expected_rid and gate_evidence["primary_receipt_rid"] and gate_evidence["primary_receipt_rid"] != expected_rid:
+            reasons.append(f"Linux installer startup smoke receipt rid does not match promoted RID for head '{head}'.")
         if not policy_missing_release_artifact:
             if expected_arch and gate_evidence["primary_receipt_arch"] != expected_arch:
                 reasons.append(f"Linux installer startup smoke receipt arch does not match promoted RID for head '{head}'.")
