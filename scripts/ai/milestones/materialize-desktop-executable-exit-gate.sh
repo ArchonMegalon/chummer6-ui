@@ -2059,6 +2059,8 @@ release_channel_supportability_state = normalize_optional_string_scalar(
 )
 evidence["release_channel_rollout_state"] = release_channel_rollout_state
 evidence["release_channel_supportability_state"] = release_channel_supportability_state
+evidence["release_channel_rollout_state_present"] = bool(release_channel_rollout_state)
+evidence["release_channel_supportability_state_present"] = bool(release_channel_supportability_state)
 
 desktop_install_artifacts = [
     item for item in artifacts
@@ -2638,6 +2640,14 @@ if coverage_incomplete and release_channel_supportability_state != "review_requi
     reasons.append(
         "Release channel must set supportabilityState=review_required when required desktop tuple coverage is incomplete."
     )
+if desktop_install_artifacts and not release_channel_rollout_state:
+    reasons.append(
+        "Release channel rolloutState is missing for desktop install media; tuple-coverage posture cannot be proven."
+    )
+if desktop_install_artifacts and not release_channel_supportability_state:
+    reasons.append(
+        "Release channel supportabilityState is missing for desktop install media; support posture cannot be proven."
+    )
 if not coverage_incomplete and release_channel_rollout_state == "coverage_incomplete":
     reasons.append(
         "Release channel rolloutState cannot remain coverage_incomplete when required desktop tuple coverage is complete."
@@ -2645,6 +2655,22 @@ if not coverage_incomplete and release_channel_rollout_state == "coverage_incomp
 if not coverage_incomplete and release_channel_supportability_state == "review_required":
     reasons.append(
         "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete."
+    )
+if (
+    not coverage_incomplete
+    and release_channel_status in {"published", "ready", "pass", "passed"}
+    and release_channel_rollout_state == "unpublished"
+):
+    reasons.append(
+        "Release channel rolloutState cannot remain unpublished when required desktop tuple coverage is complete."
+    )
+if (
+    not coverage_incomplete
+    and release_channel_status in {"published", "ready", "pass", "passed"}
+    and release_channel_supportability_state == "unpublished"
+):
+    reasons.append(
+        "Release channel supportabilityState cannot remain unpublished when required desktop tuple coverage is complete."
     )
 
 visual_required_heads = normalize_required_token_list(
