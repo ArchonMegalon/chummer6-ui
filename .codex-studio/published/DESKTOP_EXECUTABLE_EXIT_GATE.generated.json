@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-04-04T00:45:21.684822Z",
-  "generatedAt": "2026-04-04T00:45:21.684822Z",
+  "generated_at": "2026-04-04T01:25:05.223016Z",
+  "generatedAt": "2026-04-04T01:25:05.223016Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
   "status": "fail",
   "summary": "Desktop executable exit gate is not fully proven.",
@@ -25,12 +25,12 @@
       "/docker/chummercomplete/chummer-presentation",
       "/docker/chummercomplete/chummer-hub-registry"
     ],
-    "flagship UI release gate proof_generated_at": "2026-04-04T00:38:26.085140Z",
-    "flagship UI release gate proof_age_seconds": 415,
-    "desktop visual familiarity gate proof_generated_at": "2026-04-04T00:40:09.389240Z",
-    "desktop visual familiarity gate proof_age_seconds": 312,
-    "desktop workflow execution gate proof_generated_at": "2026-04-04T00:45:21.472575Z",
-    "desktop workflow execution gate proof_age_seconds": 0,
+    "flagship UI release gate proof_generated_at": "2026-04-04T01:25:00.986975Z",
+    "flagship UI release gate proof_age_seconds": 4,
+    "desktop visual familiarity gate proof_generated_at": "2026-04-04T01:25:01.282620Z",
+    "desktop visual familiarity gate proof_age_seconds": 3,
+    "desktop workflow execution gate proof_generated_at": "2026-04-04T01:25:01.126343Z",
+    "desktop workflow execution gate proof_age_seconds": 4,
     "flagship_status": "pass",
     "visual_familiarity_status": "pass",
     "workflow_execution_status": "pass",
@@ -80,23 +80,23 @@
       "15-creation-section-light.png"
     ],
     "visual_familiarity_missing_screenshots_now": [],
-    "visual_familiarity_screenshot_reference_generated_at": "2026-04-04T00:40:09.389240Z",
+    "visual_familiarity_screenshot_reference_generated_at": "2026-04-04T01:25:01.282620Z",
     "visual_familiarity_screenshot_file_timestamps": {
-      "01-initial-shell-light.png": "2026-04-04T00:34:55.461909Z",
-      "02-menu-open-light.png": "2026-04-04T00:34:55.461909Z",
-      "03-settings-open-light.png": "2026-04-04T00:34:55.461909Z",
-      "04-loaded-runner-light.png": "2026-04-04T00:34:55.462909Z",
-      "05-dense-section-light.png": "2026-04-04T00:34:55.462909Z",
-      "06-dense-section-dark.png": "2026-04-04T00:34:55.462909Z",
-      "07-loaded-runner-tabs-light.png": "2026-04-04T00:34:55.463909Z",
-      "08-cyberware-dialog-light.png": "2026-04-04T00:34:55.463909Z",
-      "09-vehicles-section-light.png": "2026-04-04T00:34:55.463909Z",
-      "10-contacts-section-light.png": "2026-04-04T00:34:55.463909Z",
-      "11-diary-dialog-light.png": "2026-04-04T00:34:55.464909Z",
-      "12-magic-dialog-light.png": "2026-04-04T00:34:55.464909Z",
-      "13-matrix-dialog-light.png": "2026-04-04T00:34:55.464909Z",
-      "14-advancement-dialog-light.png": "2026-04-04T00:34:55.464909Z",
-      "15-creation-section-light.png": "2026-04-04T00:34:55.465909Z"
+      "01-initial-shell-light.png": "2026-04-04T01:22:27.008304Z",
+      "02-menu-open-light.png": "2026-04-04T01:22:27.008304Z",
+      "03-settings-open-light.png": "2026-04-04T01:22:27.008304Z",
+      "04-loaded-runner-light.png": "2026-04-04T01:22:27.009304Z",
+      "05-dense-section-light.png": "2026-04-04T01:22:27.009304Z",
+      "06-dense-section-dark.png": "2026-04-04T01:22:27.009304Z",
+      "07-loaded-runner-tabs-light.png": "2026-04-04T01:22:27.009304Z",
+      "08-cyberware-dialog-light.png": "2026-04-04T01:22:27.010304Z",
+      "09-vehicles-section-light.png": "2026-04-04T01:22:27.010304Z",
+      "10-contacts-section-light.png": "2026-04-04T01:22:27.010304Z",
+      "11-diary-dialog-light.png": "2026-04-04T01:22:27.010304Z",
+      "12-magic-dialog-light.png": "2026-04-04T01:22:27.011304Z",
+      "13-matrix-dialog-light.png": "2026-04-04T01:22:27.011304Z",
+      "14-advancement-dialog-light.png": "2026-04-04T01:22:27.011304Z",
+      "15-creation-section-light.png": "2026-04-04T01:22:27.012304Z"
     },
     "visual_familiarity_stale_screenshots": [],
     "visual_familiarity_screenshots_older_than_receipt": [],
@@ -105,7 +105,7 @@
     "release_channel_version": "local-docker",
     "release_channel_generated_at": "2026-04-04T00:36:34Z",
     "release_channel_freshness_max_age_seconds": 86400,
-    "release_channel_age_seconds": 527,
+    "release_channel_age_seconds": 2911,
     "release_channel_tuple_coverage_required_desktop_platforms": [
       "linux",
       "windows",
@@ -316,7 +316,9 @@
         "visualreview": "pass",
         "themereadabilitycontrast": "pass",
         "bundleddemorunner": "pass",
+        "releaselifecycle": "pass",
         "requiredruntimebackedtests": "pass",
+        "requiredlifecycletests": "pass",
         "sourcetestfile": "pass",
         "testsuites": "pass"
       },
@@ -326,7 +328,9 @@
         "commandsurface": "pass",
         "dialogsurface": "pass",
         "journeypanels": "pass",
+        "releaselifecycle": "pass",
         "requiredshelltests": "pass",
+        "requiredlifecycletests": "pass",
         "sourcetestfile": "pass",
         "testsuites": "pass"
       }
@@ -371,7 +375,9 @@
           "visualreview": "pass",
           "themereadabilitycontrast": "pass",
           "bundleddemorunner": "pass",
+          "releaselifecycle": "pass",
           "requiredruntimebackedtests": "pass",
+          "requiredlifecycletests": "pass",
           "sourcetestfile": "pass",
           "testsuites": "pass"
         },
@@ -384,7 +390,9 @@
           "commandsurface": "pass",
           "dialogsurface": "pass",
           "journeypanels": "pass",
+          "releaselifecycle": "pass",
           "requiredshelltests": "pass",
+          "requiredlifecycletests": "pass",
           "sourcetestfile": "pass",
           "testsuites": "pass"
         },
@@ -404,6 +412,7 @@
           "visualReview": "pass",
           "themeReadabilityContrast": "pass",
           "bundledDemoRunner": "pass",
+          "releaseLifecycle": "pass",
           "requiredRuntimeBackedTests": [
             "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
             "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
@@ -433,6 +442,11 @@
             "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
             "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
             "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+          ],
+          "requiredLifecycleTests": [
+            "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling",
+            "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context",
+            "TryHandleAsync_writes_receipt_when_requested"
           ]
         }
       },
@@ -448,6 +462,7 @@
           "commandSurface": "pass",
           "dialogSurface": "pass",
           "journeyPanels": "pass",
+          "releaseLifecycle": "pass",
           "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
           "requiredShellTests": [
             "MenuBar_invokes_toggle_and_execute_callbacks",
@@ -455,6 +470,11 @@
             "DialogHost_renders_dialog_and_emits_events",
             "StatusStrip_announces_status_via_shared_live_region_semantics",
             "CampaignJournalPanel_renders_explicit_downtime_planner_calendar_and_schedule_views"
+          ],
+          "requiredLifecycleTests": [
+            "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling",
+            "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context",
+            "TryHandleAsync_writes_receipt_when_requested"
           ]
         }
       }
@@ -472,7 +492,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for avalonia_generated_at": "2026-04-03T23:35:04Z",
-        "linux desktop exit gate proof for avalonia_age_seconds": 4217,
+        "linux desktop exit gate proof for avalonia_age_seconds": 6601,
         "gate_reasons": [],
         "receipt_head": {
           "app_key": "avalonia",
@@ -547,7 +567,7 @@
         "primary_receipt_host_class": "local-linux-x64",
         "primary_receipt_operating_system": "Debian GNU/Linux 12 (bookworm)",
         "primary_receipt_recorded_at": "2026-04-03T23:35:01.9693995+00:00",
-        "primary_receipt_age_seconds": 4219,
+        "primary_receipt_age_seconds": 6603,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
@@ -557,7 +577,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for blazor-desktop_generated_at": "2026-04-03T23:33:25Z",
-        "linux desktop exit gate proof for blazor-desktop_age_seconds": 4316,
+        "linux desktop exit gate proof for blazor-desktop_age_seconds": 6700,
         "gate_reasons": [],
         "receipt_head": {
           "app_key": "blazor-desktop",
@@ -632,7 +652,7 @@
         "primary_receipt_host_class": "local-linux-x64",
         "primary_receipt_operating_system": "Debian GNU/Linux 12 (bookworm)",
         "primary_receipt_recorded_at": "2026-04-03T23:33:22.8768308+00:00",
-        "primary_receipt_age_seconds": 4318,
+        "primary_receipt_age_seconds": 6702,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-launch-blazor-desktop-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-wrapper-blazor-desktop-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-desktop-entry-blazor-desktop-linux-x64.desktop",

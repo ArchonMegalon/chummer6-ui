@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T00:45:21.472575Z",
+  "generatedAt": "2026-04-04T01:34:14.816058Z",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
   "status": "pass",
   "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts.",
@@ -29,7 +29,9 @@
         "visualReview",
         "themeReadabilityContrast",
         "bundledDemoRunner",
+        "releaseLifecycle",
         "requiredRuntimeBackedTests",
+        "requiredLifecycleTests",
         "sourceTestFile",
         "testSuites"
       ],
@@ -39,7 +41,9 @@
         "commandSurface",
         "dialogSurface",
         "journeyPanels",
+        "releaseLifecycle",
         "requiredShellTests",
+        "requiredLifecycleTests",
         "sourceTestFile",
         "testSuites"
       ]
@@ -50,7 +54,9 @@
         "visualReview": "pass",
         "themeReadabilityContrast": "pass",
         "bundledDemoRunner": "pass",
+        "releaseLifecycle": "pass",
         "requiredRuntimeBackedTests": "pass",
+        "requiredLifecycleTests": "pass",
         "sourceTestFile": "pass",
         "testSuites": "pass"
       },
@@ -60,7 +66,9 @@
         "commandSurface": "pass",
         "dialogSurface": "pass",
         "journeyPanels": "pass",
+        "releaseLifecycle": "pass",
         "requiredShellTests": "pass",
+        "requiredLifecycleTests": "pass",
         "sourceTestFile": "pass",
         "testSuites": "pass"
       }
