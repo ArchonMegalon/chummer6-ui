@@ -2983,6 +2983,9 @@ desktop_install_artifact_arch_mismatch_tokens: List[str] = []
 desktop_install_artifact_arch_alias_conflict_tokens: List[str] = []
 desktop_install_artifact_channel_alias_conflict_tokens: List[str] = []
 desktop_install_artifact_version_alias_conflict_tokens: List[str] = []
+desktop_install_artifact_missing_generated_at_tokens: List[str] = []
+desktop_install_artifact_generated_at_mismatch_tokens: List[str] = []
+desktop_install_artifact_generated_at_alias_conflict_tokens: List[str] = []
 for desktop_install_artifact in desktop_install_artifacts:
     artifact_channel_id_primary = normalize_token(desktop_install_artifact.get("channelId"))
     artifact_channel_id_fallback = normalize_token(desktop_install_artifact.get("channel"))
@@ -2996,6 +2999,10 @@ for desktop_install_artifact in desktop_install_artifacts:
     artifact_head = normalize_token(desktop_install_artifact.get("head"))
     artifact_platform = normalize_token(desktop_install_artifact.get("platform"))
     artifact_arch = payload_arch(desktop_install_artifact)
+    artifact_generated_at_raw, _ = payload_generated_at(desktop_install_artifact)
+    artifact_generated_at_alias_conflict = generated_at_alias_conflicts(
+        desktop_install_artifact
+    )
     artifact_rid_for_arch = (
         macos_rid_from_artifact(desktop_install_artifact)
         if artifact_platform == "macos"
@@ -3020,6 +3027,21 @@ for desktop_install_artifact in desktop_install_artifacts:
         desktop_install_artifact_version_alias_conflict_tokens.append(artifact_tuple_token or "<unknown>")
     if arch_alias_conflicts(desktop_install_artifact):
         desktop_install_artifact_arch_alias_conflict_tokens.append(artifact_tuple_token or "<unknown>")
+    if not artifact_generated_at_raw:
+        desktop_install_artifact_missing_generated_at_tokens.append(
+            artifact_tuple_token or "<unknown>"
+        )
+    elif (
+        release_channel_generated_at_raw
+        and artifact_generated_at_raw != release_channel_generated_at_raw
+    ):
+        desktop_install_artifact_generated_at_mismatch_tokens.append(
+            artifact_tuple_token or "<unknown>"
+        )
+    if artifact_generated_at_alias_conflict:
+        desktop_install_artifact_generated_at_alias_conflict_tokens.append(
+            artifact_tuple_token or "<unknown>"
+        )
     if not artifact_channel_id:
         desktop_install_artifact_missing_channel_tokens.append(artifact_tuple_token or "<unknown>")
     elif release_channel_channel_id and artifact_channel_id != release_channel_channel_id:
@@ -3067,6 +3089,15 @@ evidence["release_channel_desktop_install_artifacts_version_alias_conflict"] = (
 )
 evidence["release_channel_desktop_install_artifacts_arch_alias_conflict"] = (
     sorted(set(desktop_install_artifact_arch_alias_conflict_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_missing_generated_at"] = (
+    sorted(set(desktop_install_artifact_missing_generated_at_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_generated_at_mismatch"] = (
+    sorted(set(desktop_install_artifact_generated_at_mismatch_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_generated_at_alias_conflict"] = (
+    sorted(set(desktop_install_artifact_generated_at_alias_conflict_tokens))
 )
 if desktop_install_artifact_missing_channel_tokens:
     reasons.append(
@@ -3126,6 +3157,24 @@ if desktop_install_artifact_arch_alias_conflict_tokens:
     reasons.append(
         "Release channel desktop install artifact(s) carry conflicting arch/architecture values: "
         + ", ".join(sorted(set(desktop_install_artifact_arch_alias_conflict_tokens)))
+        + "."
+    )
+if desktop_install_artifact_missing_generated_at_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) are missing generated_at/generatedAt: "
+        + ", ".join(sorted(set(desktop_install_artifact_missing_generated_at_tokens)))
+        + "."
+    )
+if desktop_install_artifact_generated_at_mismatch_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) generated_at does not match release channel generated_at: "
+        + ", ".join(sorted(set(desktop_install_artifact_generated_at_mismatch_tokens)))
+        + "."
+    )
+if desktop_install_artifact_generated_at_alias_conflict_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) carry conflicting generated_at/generatedAt values: "
+        + ", ".join(sorted(set(desktop_install_artifact_generated_at_alias_conflict_tokens)))
         + "."
     )
 duplicate_desktop_install_artifact_tuples = collect_duplicate_install_media_tuples(
