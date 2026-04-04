@@ -107,6 +107,11 @@ STARTUP_SMOKE_MAX_AGE_SECONDS = int(
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
     or "86400"
 )
+STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
 
 
 def now_iso() -> str:
@@ -139,6 +144,26 @@ def read_status(path: Path, expected_contract: str | None = None) -> str:
 
 def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
+
+
+def expected_host_class_platform_token(platform: str) -> str:
+    normalized = normalize_token(platform)
+    if normalized == "windows":
+        return "win"
+    if normalized == "macos":
+        return "osx"
+    if normalized == "linux":
+        return "linux"
+    return normalized
+
+
+def host_class_matches_platform(host_class: str, platform: str) -> bool:
+    normalized_host = normalize_token(host_class)
+    expected_token = expected_host_class_platform_token(platform)
+    if not normalized_host or not expected_token:
+        return False
+    host_tokens = [token for token in normalized_host.split("-") if token]
+    return expected_token in host_tokens
 
 
 def artifact_rid(artifact: Dict[str, Any]) -> str:
@@ -368,14 +393,24 @@ startup_smoke_head = normalize_token(startup_smoke_payload.get("headId"))
 startup_smoke_platform = normalize_token(startup_smoke_payload.get("platform"))
 startup_smoke_arch = normalize_token(startup_smoke_payload.get("arch"))
 startup_smoke_channel = normalize_token(startup_smoke_payload.get("channelId") or startup_smoke_payload.get("channel"))
+startup_smoke_host_class = normalize_token(startup_smoke_payload.get("hostClass"))
+startup_smoke_operating_system = str(startup_smoke_payload.get("operatingSystem") or "").strip()
 evidence["startup_smoke_head"] = startup_smoke_head
 evidence["startup_smoke_platform"] = startup_smoke_platform
 evidence["startup_smoke_arch"] = startup_smoke_arch
 evidence["startup_smoke_channel"] = startup_smoke_channel
+evidence["startup_smoke_host_class"] = startup_smoke_host_class
+evidence["startup_smoke_operating_system"] = startup_smoke_operating_system
 if startup_smoke_receipt_path.is_file() and startup_smoke_head != expected_head:
     reasons.append(f"Windows startup smoke receipt headId does not match promoted head {expected_head}.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_platform != "windows":
     reasons.append("Windows startup smoke receipt platform is not windows.")
+if startup_smoke_receipt_path.is_file() and not startup_smoke_host_class:
+    reasons.append("Windows startup smoke receipt hostClass is missing.")
+if startup_smoke_receipt_path.is_file() and startup_smoke_host_class and not host_class_matches_platform(startup_smoke_host_class, "windows"):
+    reasons.append("Windows startup smoke receipt hostClass does not identify a Windows host.")
+if startup_smoke_receipt_path.is_file() and not startup_smoke_operating_system:
+    reasons.append("Windows startup smoke receipt operatingSystem is missing.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_arch != expected_arch:
     reasons.append(f"Windows startup smoke receipt arch does not match promoted RID {expected_rid}.")
 if startup_smoke_receipt_path.is_file() and release_channel_id and startup_smoke_channel != release_channel_id:
@@ -401,9 +436,18 @@ if startup_smoke_receipt_path.is_file():
     if startup_smoke_timestamp is None:
         reasons.append("Windows startup smoke receipt timestamp is missing or invalid.")
     else:
-        startup_smoke_age_seconds = max(0, int((datetime.now(timezone.utc) - startup_smoke_timestamp).total_seconds()))
+        startup_smoke_age_delta_seconds = int((datetime.now(timezone.utc) - startup_smoke_timestamp).total_seconds())
+        startup_smoke_age_seconds = max(0, startup_smoke_age_delta_seconds)
+        if startup_smoke_age_delta_seconds < 0:
+            startup_smoke_future_skew_seconds = abs(startup_smoke_age_delta_seconds)
+            evidence["startup_smoke_future_skew_seconds"] = startup_smoke_future_skew_seconds
+            if startup_smoke_future_skew_seconds > STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS:
+                reasons.append(
+                    f"Windows startup smoke receipt timestamp is in the future ({startup_smoke_future_skew_seconds}s ahead)."
+                )
         evidence["startup_smoke_age_seconds"] = startup_smoke_age_seconds
         evidence["startup_smoke_max_age_seconds"] = STARTUP_SMOKE_MAX_AGE_SECONDS
+        evidence["startup_smoke_max_future_skew_seconds"] = STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS
         if startup_smoke_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
             reasons.append(f"Windows startup smoke receipt is stale ({startup_smoke_age_seconds}s old).")
 

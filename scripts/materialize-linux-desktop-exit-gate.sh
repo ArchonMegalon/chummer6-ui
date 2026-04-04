@@ -1361,6 +1361,11 @@ max_age_seconds = int(
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
     or "86400"
 )
+max_future_skew_seconds = int(
+    os.environ.get("CHUMMER_LINUX_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
 reasons: list[str] = []
 expected_channel = ""
 
@@ -1483,7 +1488,14 @@ else:
                     if recorded_at.tzinfo is None:
                         recorded_at = recorded_at.replace(tzinfo=dt.timezone.utc)
                     recorded_at = recorded_at.astimezone(dt.timezone.utc)
-                    age_seconds = max(0, int((dt.datetime.now(dt.timezone.utc) - recorded_at).total_seconds()))
+                    age_delta_seconds = int((dt.datetime.now(dt.timezone.utc) - recorded_at).total_seconds())
+                    age_seconds = max(0, age_delta_seconds)
+                    if age_delta_seconds < 0:
+                        future_skew_seconds = abs(age_delta_seconds)
+                        if future_skew_seconds > max_future_skew_seconds:
+                            reasons.append(
+                                f"Linux startup smoke receipt timestamp is in the future ({future_skew_seconds}s ahead)."
+                            )
                     if age_seconds > max_age_seconds:
                         reasons.append(f"Linux startup smoke receipt is stale ({age_seconds}s old).")
                 except ValueError:
