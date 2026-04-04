@@ -93,7 +93,6 @@ PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROJECT_PATH:-$DEFAULT_PROJECT_P
 TEST_PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_PROJECT_PATH:-Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj}"
 RID="${RID:-linux-x64}"
 LAUNCH_TARGET="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LAUNCH_TARGET:-$DEFAULT_LAUNCH_TARGET}"
-VERSION="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_VERSION:-local-hard-gate}"
 RELEASE_CHANNEL_ID_DEFAULT="$(
   python3 - "$RELEASE_CHANNEL_PATH" <<'PY'
 from __future__ import annotations
@@ -116,6 +115,29 @@ if channel_id:
     print(channel_id)
 PY
 )"
+RELEASE_CHANNEL_VERSION_DEFAULT="$(
+  python3 - "$RELEASE_CHANNEL_PATH" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+release_channel_path = Path(sys.argv[1])
+if not release_channel_path.is_file():
+    raise SystemExit(0)
+
+try:
+    payload = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(0)
+
+version = str(payload.get("version") or "").strip()
+if version:
+    print(version)
+PY
+)"
+VERSION="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_VERSION:-${RELEASE_CHANNEL_VERSION_DEFAULT:-local-hard-gate}}"
 CHANNEL="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_CHANNEL:-${RELEASE_CHANNEL_ID_DEFAULT:-local-hard-gate}}"
 FRAMEWORK="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FRAMEWORK:-net10.0}"
 READY_CHECKPOINT="pre_ui_event_loop"
@@ -1420,6 +1442,7 @@ max_future_skew_seconds = int(
 )
 reasons: list[str] = []
 expected_channel = ""
+expected_version = ""
 
 if not release_channel_path.is_file():
     reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
@@ -1432,8 +1455,11 @@ else:
 
     status = str(release_channel.get("status") or "").strip().lower()
     expected_channel = str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower()
+    expected_version = str(release_channel.get("version") or "").strip()
     if status != "published":
         reasons.append("Linux release-channel proof status is not published.")
+    if not expected_version:
+        reasons.append("Linux release-channel proof version is missing.")
 
     expected_artifact = None
     for item in (release_channel.get("artifacts") or []):
@@ -1510,6 +1536,7 @@ else:
             receipt_arch = str(receipt.get("arch") or "").strip().lower()
             receipt_channel = str(receipt.get("channelId") or receipt.get("channel") or "").strip().lower()
             receipt_digest = str(receipt.get("artifactDigest") or "").strip().lower()
+            receipt_version = str(receipt.get("version") or receipt.get("releaseVersion") or "").strip()
             receipt_recorded_at = (
                 str(receipt.get("completedAtUtc") or "").strip()
                 or str(receipt.get("recordedAtUtc") or "").strip()
@@ -1529,6 +1556,10 @@ else:
                 reasons.append("Linux startup smoke receipt arch does not match promoted RID.")
             if expected_channel and receipt_channel != expected_channel:
                 reasons.append("Linux startup smoke receipt channelId does not match release channel.")
+            if expected_version and not receipt_version:
+                reasons.append("Linux startup smoke receipt version is missing.")
+            if expected_version and receipt_version and receipt_version != expected_version:
+                reasons.append("Linux startup smoke receipt version does not match release channel version.")
             if expected_digest and receipt_digest != expected_digest:
                 reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")
             if not receipt_recorded_at:

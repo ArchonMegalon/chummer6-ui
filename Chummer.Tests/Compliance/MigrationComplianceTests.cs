@@ -3889,9 +3889,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "print(normalize(chosen.get(\"rid\")))");
         StringAssert.Contains(linuxGateScriptText, "CURRENT_STAGE=\"promoted_installer_proof_integrity\"");
         StringAssert.Contains(linuxGateScriptText, "Linux release-channel proof status is not published.");
+        StringAssert.Contains(linuxGateScriptText, "RELEASE_CHANNEL_VERSION_DEFAULT");
+        StringAssert.Contains(linuxGateScriptText, "VERSION=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_VERSION:-${RELEASE_CHANNEL_VERSION_DEFAULT:-local-hard-gate}}\"");
+        StringAssert.Contains(linuxGateScriptText, "Linux release-channel proof version is missing.");
         StringAssert.Contains(linuxGateScriptText, "Release channel does not publish a Linux installer artifact for");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes.");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt channelId does not match release channel.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt version is missing.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt version does not match release channel version.");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
