@@ -2801,6 +2801,18 @@ coverage_incomplete = bool(
 )
 evidence["release_channel_desktop_tuple_coverage_incomplete"] = coverage_incomplete
 evidence["release_channel_desktop_tuple_coverage_complete"] = not coverage_incomplete
+release_channel_rollout_state_blocked_for_publishable_complete_values = ["paused", "revoked"]
+release_channel_rollout_state_blocks_publishable_complete = (
+    not coverage_incomplete
+    and release_channel_publishable_status
+    and release_channel_rollout_state in set(release_channel_rollout_state_blocked_for_publishable_complete_values)
+)
+evidence["release_channel_rollout_state_blocked_for_publishable_complete_values"] = (
+    release_channel_rollout_state_blocked_for_publishable_complete_values
+)
+evidence["release_channel_rollout_state_blocks_publishable_complete"] = (
+    release_channel_rollout_state_blocks_publishable_complete
+)
 release_channel_publishable_status_with_incomplete_desktop_tuple_coverage = (
     release_channel_publishable_status and coverage_incomplete
 )
@@ -2848,6 +2860,10 @@ if missing_required_platform_head_rid_tuples_derived:
 if release_channel_publishable_status_with_incomplete_desktop_tuple_coverage:
     reasons.append(
         "Release channel status cannot be publishable while required desktop tuple coverage is incomplete."
+    )
+if release_channel_rollout_state_blocks_publishable_complete:
+    reasons.append(
+        "Release channel rolloutState cannot be paused/revoked when status is publishable and required desktop tuple coverage is complete."
     )
 if coverage_incomplete and release_channel_rollout_state != "coverage_incomplete":
     reasons.append(
