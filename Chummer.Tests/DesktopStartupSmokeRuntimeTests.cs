@@ -27,6 +27,8 @@ public sealed class DesktopStartupSmokeRuntimeTests
         string? priorArtifactDigest = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST");
         string? priorHostClass = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS");
         string? priorCheckpoint = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT");
+        string? priorReleaseVersion = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION");
+        string? priorRid = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RID");
 
         try
         {
@@ -35,6 +37,8 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST", artifactDigest);
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS", "test-host");
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT", "runtime_test_ready");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION", "local-docker");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RID", "linux-x64");
 
             int? exitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(
                 "avalonia",
@@ -50,6 +54,8 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Assert.AreEqual("runtime_test_ready", receipt.RootElement.GetProperty("readyCheckpoint").GetString());
             Assert.AreEqual(artifactDigest, receipt.RootElement.GetProperty("artifactDigest").GetString());
             Assert.AreEqual("environment", receipt.RootElement.GetProperty("artifactDigestSource").GetString());
+            Assert.AreEqual("local-docker", receipt.RootElement.GetProperty("releaseVersion").GetString());
+            Assert.AreEqual("linux-x64", receipt.RootElement.GetProperty("rid").GetString());
             Assert.IsFalse(string.IsNullOrWhiteSpace(receipt.RootElement.GetProperty("platform").GetString()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(receipt.RootElement.GetProperty("arch").GetString()));
         }
@@ -60,6 +66,43 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST", priorArtifactDigest);
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS", priorHostClass);
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT", priorCheckpoint);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION", priorReleaseVersion);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RID", priorRid);
+            if (File.Exists(receiptPath))
+            {
+                File.Delete(receiptPath);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task TryHandleAsync_prefers_explicit_release_channel_override_for_receipt_channel()
+    {
+        string receiptPath = Path.Combine(Path.GetTempPath(), $"startup-smoke-channel-{Guid.NewGuid():N}.json");
+        const string expectedChannel = "docker";
+        string? priorReceiptPath = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT");
+        string? priorReleaseChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT", receiptPath);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", expectedChannel);
+
+            int? exitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(
+                "avalonia",
+                ["--startup-smoke"],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual(0, exitCode);
+            Assert.IsTrue(File.Exists(receiptPath));
+
+            using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+            Assert.AreEqual(expectedChannel, receipt.RootElement.GetProperty("channelId").GetString());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT", priorReceiptPath);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorReleaseChannel);
             if (File.Exists(receiptPath))
             {
                 File.Delete(receiptPath);

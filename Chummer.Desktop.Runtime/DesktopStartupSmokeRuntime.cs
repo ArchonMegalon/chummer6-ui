@@ -14,7 +14,10 @@ public static class DesktopStartupSmokeRuntime
     private const string StartupSmokeArtifactDigestEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST";
     private const string StartupSmokeHostClassEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS";
     private const string StartupSmokeReadyCheckpointEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT";
+    private const string StartupSmokeReleaseVersionEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION";
+    private const string StartupSmokeRidEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_RID";
     private const string StartupSmokeForceCrashEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_FORCE_CRASH";
+    private const string StartupSmokeReleaseChannelEnvironmentVariable = "CHUMMER_DESKTOP_RELEASE_CHANNEL";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -48,9 +51,11 @@ public static class DesktopStartupSmokeRuntime
             DesktopStartupSmokeReceipt receipt = new(
                 HeadId: context.HeadId,
                 Version: context.Version,
+                ReleaseVersion: context.ReleaseVersion,
                 ChannelId: context.ChannelId,
                 Platform: context.Platform,
                 Arch: context.Arch,
+                Rid: context.Rid,
                 ReadyCheckpoint: context.ReadyCheckpoint,
                 HostClass: context.HostClass,
                 ProcessPath: context.ProcessPath,
@@ -98,15 +103,15 @@ public static class DesktopStartupSmokeRuntime
         Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
         string processPath = Environment.ProcessPath ?? AppContext.BaseDirectory;
         (string? artifactDigest, string artifactDigestSource) = ResolveArtifactDigest(processPath);
+        string resolvedVersion = ResolveStartupSmokeVersion(assembly);
         return new DesktopStartupSmokeContext(
             HeadId: ReadAssemblyMetadata(assembly, "ChummerDesktopHeadId") ?? headId,
-            Version: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion")
-                ?? assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-                ?? assembly.GetName().Version?.ToString()
-                ?? string.Empty,
-            ChannelId: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseChannel") ?? "local",
+            Version: resolvedVersion,
+            ReleaseVersion: ResolveReleaseVersion(assembly, resolvedVersion),
+            ChannelId: ResolveStartupSmokeChannelId(assembly),
             Platform: DetectPlatform(),
             Arch: DetectArchitecture(),
+            Rid: ResolveStartupSmokeRid(),
             ReadyCheckpoint: Environment.GetEnvironmentVariable(StartupSmokeReadyCheckpointEnvironmentVariable) ?? "pre_ui_event_loop",
             HostClass: Environment.GetEnvironmentVariable(StartupSmokeHostClassEnvironmentVariable) ?? Environment.MachineName,
             ProcessPath: processPath,
@@ -180,6 +185,58 @@ public static class DesktopStartupSmokeRuntime
             .GetCustomAttributes<AssemblyMetadataAttribute>()
             .FirstOrDefault(attribute => string.Equals(attribute.Key, key, StringComparison.Ordinal))?
             .Value;
+    }
+
+    private static string ResolveStartupSmokeChannelId(Assembly assembly)
+    {
+        string? overrideChannel = Environment.GetEnvironmentVariable(StartupSmokeReleaseChannelEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(overrideChannel))
+        {
+            return overrideChannel;
+        }
+
+        return ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseChannel") ?? "local";
+    }
+
+    private static string ResolveStartupSmokeVersion(Assembly assembly)
+    {
+        string? overrideVersion = Environment.GetEnvironmentVariable(StartupSmokeReleaseVersionEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(overrideVersion))
+        {
+            return overrideVersion.Trim();
+        }
+
+        return ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion")
+            ?? assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? assembly.GetName().Version?.ToString()
+            ?? string.Empty;
+    }
+
+    private static string ResolveReleaseVersion(Assembly assembly, string fallbackVersion)
+    {
+        string? metadataVersion = ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion");
+        if (!string.IsNullOrWhiteSpace(metadataVersion))
+        {
+            return metadataVersion;
+        }
+
+        if (!string.IsNullOrWhiteSpace(fallbackVersion))
+        {
+            return fallbackVersion;
+        }
+
+        return string.Empty;
+    }
+
+    private static string ResolveStartupSmokeRid()
+    {
+        string? overrideRid = Environment.GetEnvironmentVariable(StartupSmokeRidEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(overrideRid))
+        {
+            return overrideRid.Trim().ToLowerInvariant();
+        }
+
+        return string.Empty;
     }
 
     private static void WriteReceipt(string receiptPath, DesktopStartupSmokeReceipt receipt)
@@ -317,9 +374,11 @@ public static class DesktopStartupSmokeRuntime
     public sealed record DesktopStartupSmokeReceipt(
         string HeadId,
         string Version,
+        string ReleaseVersion,
         string ChannelId,
         string Platform,
         string Arch,
+        string Rid,
         string ReadyCheckpoint,
         string HostClass,
         string ProcessPath,
@@ -334,9 +393,11 @@ public static class DesktopStartupSmokeRuntime
     private sealed record DesktopStartupSmokeContext(
         string HeadId,
         string Version,
+        string ReleaseVersion,
         string ChannelId,
         string Platform,
         string Arch,
+        string Rid,
         string ReadyCheckpoint,
         string HostClass,
         string ProcessPath,

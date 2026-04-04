@@ -1534,8 +1534,10 @@ else:
             receipt_head = str(receipt.get("headId") or "").strip().lower()
             receipt_platform = str(receipt.get("platform") or "").strip().lower()
             receipt_arch = str(receipt.get("arch") or "").strip().lower()
+            receipt_rid = str(receipt.get("rid") or "").strip().lower()
             receipt_channel = str(receipt.get("channelId") or receipt.get("channel") or "").strip().lower()
             receipt_digest = str(receipt.get("artifactDigest") or "").strip().lower()
+            receipt_release_version = str(receipt.get("releaseVersion") or "").strip()
             receipt_version = str(receipt.get("version") or receipt.get("releaseVersion") or "").strip()
             receipt_recorded_at = (
                 str(receipt.get("completedAtUtc") or "").strip()
@@ -1554,8 +1556,16 @@ else:
                 reasons.append("Linux startup smoke receipt platform is not linux.")
             if expected_arch and receipt_arch != expected_arch:
                 reasons.append("Linux startup smoke receipt arch does not match promoted RID.")
+            if not receipt_rid:
+                reasons.append("Linux startup smoke receipt rid is missing.")
+            elif receipt_rid != rid.lower():
+                reasons.append("Linux startup smoke receipt rid does not match promoted RID.")
             if expected_channel and receipt_channel != expected_channel:
                 reasons.append("Linux startup smoke receipt channelId does not match release channel.")
+            if expected_version and not receipt_release_version:
+                reasons.append("Linux startup smoke receipt releaseVersion is missing.")
+            if expected_version and receipt_release_version and receipt_release_version != expected_version:
+                reasons.append("Linux startup smoke receipt releaseVersion does not match release channel version.")
             if expected_version and not receipt_version:
                 reasons.append("Linux startup smoke receipt version is missing.")
             if expected_version and receipt_version and receipt_version != expected_version:
