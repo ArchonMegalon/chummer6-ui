@@ -302,6 +302,8 @@ def normalize_required_status_map(
         return {}
     normalized: Dict[str, str] = {}
     malformed_entries: List[str] = []
+    non_canonical_keys: List[str] = []
+    duplicate_normalized_keys: List[str] = []
     for raw_key, raw_value in values.items():
         if not isinstance(raw_key, str):
             malformed_entries.append("<non-string-key>")
@@ -315,6 +317,18 @@ def normalize_required_status_map(
         if not key:
             malformed_entries.append(raw_key)
             reasons.append(f"{field_label} contains a blank key.")
+            continue
+        if raw_key != key:
+            malformed_entries.append(raw_key)
+            non_canonical_keys.append(raw_key)
+            reasons.append(
+                f"{field_label} contains a non-canonical key '{raw_key}' (expected '{key}')."
+            )
+            continue
+        if key in normalized:
+            malformed_entries.append(key)
+            duplicate_normalized_keys.append(key)
+            reasons.append(f"{field_label} contains duplicate normalized key '{key}'.")
             continue
         if not isinstance(raw_value, str):
             malformed_entries.append(key)
@@ -334,6 +348,10 @@ def normalize_required_status_map(
         normalized[key] = value
     evidence[f"{field_label}_normalized"] = normalized
     evidence[f"{field_label}_malformed_entries"] = sorted(set(malformed_entries))
+    evidence[f"{field_label}_non_canonical_keys"] = sorted(set(non_canonical_keys))
+    evidence[f"{field_label}_duplicate_normalized_keys"] = sorted(
+        set(duplicate_normalized_keys)
+    )
     return normalized
 
 
