@@ -161,6 +161,39 @@ bash scripts/ai/milestones/b14-flagship-ui-release-gate.sh
 echo "[verify] checking W1 desktop executable exit gate..."
 bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh
 
+echo "[verify] checking W1 desktop executable gate blocking findings aliases..."
+python3 - <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+receipt_path = Path(".codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json")
+payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+
+reasons = payload.get("reasons")
+blocking_findings = payload.get("blockingFindings")
+blocking_findings_alias = payload.get("blocking_findings")
+blocking_findings_count = payload.get("blockingFindingsCount")
+blocking_findings_count_alias = payload.get("blocking_findings_count")
+
+if not isinstance(reasons, list):
+    raise SystemExit("verify gate failed: desktop executable gate payload is missing reasons list.")
+if not isinstance(blocking_findings, list):
+    raise SystemExit("verify gate failed: desktop executable gate payload is missing blockingFindings list.")
+if not isinstance(blocking_findings_alias, list):
+    raise SystemExit("verify gate failed: desktop executable gate payload is missing blocking_findings list.")
+if blocking_findings != reasons or blocking_findings_alias != reasons:
+    raise SystemExit(
+        "verify gate failed: desktop executable gate payload carries blocking-findings alias drift between reasons/blockingFindings/blocking_findings."
+    )
+if int(blocking_findings_count or -1) != len(reasons):
+    raise SystemExit("verify gate failed: desktop executable gate payload blockingFindingsCount does not match reasons count.")
+if int(blocking_findings_count_alias or -1) != len(reasons):
+    raise SystemExit("verify gate failed: desktop executable gate payload blocking_findings_count does not match reasons count.")
+PY
+
 echo "[verify] checking W1 desktop executable gate fail-close mutation for unexpected desktopTupleCoverage keys..."
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
@@ -214,6 +247,179 @@ if ! rg -F "Release channel desktopTupleCoverage has unexpected keys:" "$desktop
 fi
 
 rm -f "$desktop_tuple_mutation_release_channel" "$desktop_tuple_mutation_output"
+
+echo "[verify] checking W1 desktop executable gate fail-close mutation for unexpected desktop install artifact keys..."
+desktop_artifact_key_mutation_release_channel="$(mktemp)"
+desktop_artifact_key_mutation_output="$(mktemp)"
+python3 - "$release_channel_path_default" "$desktop_artifact_key_mutation_release_channel" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+artifacts = payload.get("artifacts")
+if not isinstance(artifacts, list):
+    artifacts = []
+    payload["artifacts"] = artifacts
+
+desktop_artifact = None
+for artifact in artifacts:
+    if not isinstance(artifact, dict):
+        continue
+    platform = str(artifact.get("platform") or "").strip().lower()
+    kind = str(artifact.get("kind") or "").strip().lower()
+    if platform not in {"windows", "macos", "linux"}:
+        continue
+    if platform == "macos":
+        if kind not in {"installer", "dmg", "pkg"}:
+            continue
+    elif kind != "installer":
+        continue
+    desktop_artifact = artifact
+    break
+
+if desktop_artifact is None:
+    desktop_artifact = {
+        "artifactId": "mutation-desktop-artifact",
+        "platform": "linux",
+        "kind": "installer",
+        "head": "avalonia",
+        "rid": "linux-x64",
+        "fileName": "mutation-desktop-artifact.deb",
+        "channelId": str(payload.get("channelId") or payload.get("channel") or "").strip(),
+        "version": str(payload.get("version") or payload.get("releaseVersion") or "").strip(),
+        "generated_at": str(payload.get("generated_at") or payload.get("generatedAt") or "").strip(),
+    }
+    artifacts.append(desktop_artifact)
+
+desktop_artifact["bonus_noncanonical_install_artifact_key"] = "unexpected"
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+set +e
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$desktop_artifact_key_mutation_release_channel" \
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >"$desktop_artifact_key_mutation_output" 2>&1
+desktop_artifact_key_mutation_exit=$?
+set -e
+
+if [[ "$desktop_artifact_key_mutation_exit" -eq 0 ]]; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject unexpected desktop install artifact keys."
+  cat "$desktop_artifact_key_mutation_output"
+  rm -f "$desktop_artifact_key_mutation_release_channel" "$desktop_artifact_key_mutation_output"
+  exit 29
+fi
+
+if ! rg -F "Release channel desktop install artifact(s) have unexpected keys:" "$desktop_artifact_key_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit unexpected desktop install artifact key marker."
+  cat "$desktop_artifact_key_mutation_output"
+  rm -f "$desktop_artifact_key_mutation_release_channel" "$desktop_artifact_key_mutation_output"
+  exit 30
+fi
+
+rm -f "$desktop_artifact_key_mutation_release_channel" "$desktop_artifact_key_mutation_output"
+
+echo "[verify] checking W1 desktop executable gate fail-close mutation for promotedInstallerTuples artifact metadata drift..."
+promoted_tuple_row_mutation_release_channel="$(mktemp)"
+promoted_tuple_row_mutation_output="$(mktemp)"
+python3 - "$release_channel_path_default" "$promoted_tuple_row_mutation_release_channel" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+desktop_tuple_coverage = payload.get("desktopTupleCoverage")
+if not isinstance(desktop_tuple_coverage, dict):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage object in release channel fixture.")
+rows = desktop_tuple_coverage.get("promotedInstallerTuples")
+if not isinstance(rows, list) or not rows:
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage.promotedInstallerTuples rows in release channel fixture.")
+first_row = rows[0]
+if not isinstance(first_row, dict):
+    raise SystemExit("verify gate failed: expected promotedInstallerTuples rows to be object values.")
+first_row["artifactId"] = "tampered-promoted-installer-artifact-id"
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+set +e
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$promoted_tuple_row_mutation_release_channel" \
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >"$promoted_tuple_row_mutation_output" 2>&1
+promoted_tuple_row_mutation_exit=$?
+set -e
+
+if [[ "$promoted_tuple_row_mutation_exit" -eq 0 ]]; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject promotedInstallerTuples artifact metadata drift."
+  cat "$promoted_tuple_row_mutation_output"
+  rm -f "$promoted_tuple_row_mutation_release_channel" "$promoted_tuple_row_mutation_output"
+  exit 31
+fi
+
+if ! rg -F "Release channel desktopTupleCoverage.promotedInstallerTuples object rows do not match promoted installer artifact metadata." "$promoted_tuple_row_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit promotedInstallerTuples metadata drift marker."
+  cat "$promoted_tuple_row_mutation_output"
+  rm -f "$promoted_tuple_row_mutation_release_channel" "$promoted_tuple_row_mutation_output"
+  exit 32
+fi
+
+rm -f "$promoted_tuple_row_mutation_release_channel" "$promoted_tuple_row_mutation_output"
+
+echo "[verify] checking W1 desktop executable gate fail-close mutation for promotedPlatformHeadRidTuples inventory drift..."
+promoted_platform_head_rid_tuple_mutation_release_channel="$(mktemp)"
+promoted_platform_head_rid_tuple_mutation_output="$(mktemp)"
+python3 - "$release_channel_path_default" "$promoted_platform_head_rid_tuple_mutation_release_channel" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+desktop_tuple_coverage = payload.get("desktopTupleCoverage")
+if not isinstance(desktop_tuple_coverage, dict):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage object in release channel fixture.")
+rows = desktop_tuple_coverage.get("promotedPlatformHeadRidTuples")
+if not isinstance(rows, list) or not rows:
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage.promotedPlatformHeadRidTuples rows in release channel fixture.")
+rows[0] = "tampered-head:tampered-rid:windows"
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+set +e
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$promoted_platform_head_rid_tuple_mutation_release_channel" \
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >"$promoted_platform_head_rid_tuple_mutation_output" 2>&1
+promoted_platform_head_rid_tuple_mutation_exit=$?
+set -e
+
+if [[ "$promoted_platform_head_rid_tuple_mutation_exit" -eq 0 ]]; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject promotedPlatformHeadRidTuples inventory drift."
+  cat "$promoted_platform_head_rid_tuple_mutation_output"
+  rm -f "$promoted_platform_head_rid_tuple_mutation_release_channel" "$promoted_platform_head_rid_tuple_mutation_output"
+  exit 33
+fi
+
+if ! rg -F "Release channel desktopTupleCoverage promotedPlatformHeadRidTuples inventory does not match promoted installer tuples." "$promoted_platform_head_rid_tuple_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit promotedPlatformHeadRidTuples inventory drift marker."
+  cat "$promoted_platform_head_rid_tuple_mutation_output"
+  rm -f "$promoted_platform_head_rid_tuple_mutation_release_channel" "$promoted_platform_head_rid_tuple_mutation_output"
+  exit 34
+fi
+
+rm -f "$promoted_platform_head_rid_tuple_mutation_release_channel" "$promoted_platform_head_rid_tuple_mutation_output"
 
 echo "[verify] checking B15 localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh
