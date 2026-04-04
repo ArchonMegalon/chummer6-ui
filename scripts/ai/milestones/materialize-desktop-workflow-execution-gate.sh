@@ -12,10 +12,19 @@ sr_frontier_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRON
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 sr4_ledger_path="$repo_root/docs/SR4_WORKFLOW_PARITY_LEDGER.json"
 sr6_ledger_path="$repo_root/docs/SR6_WORKFLOW_PARITY_LEDGER.json"
+hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
+  release_channel_path_default="$canonical_release_channel_path"
+else
+  release_channel_path_default="$default_release_channel_path"
+fi
+release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$flagship_gate_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root"
+python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$flagship_gate_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path"
 from __future__ import annotations
 
 import json
@@ -190,7 +199,8 @@ def collect_family_state(ledger_payload: Dict[str, Any]) -> Dict[str, Dict[str, 
     sr4_ledger_path_text,
     sr6_ledger_path_text,
     repo_root_text,
-) = sys.argv[1:10]
+    release_channel_path_text,
+) = sys.argv[1:11]
 
 receipt_path = Path(receipt_path_text)
 ui_workflow_parity_path = Path(ui_workflow_parity_path_text)
@@ -201,17 +211,40 @@ flagship_gate_path = Path(flagship_gate_path_text)
 sr4_ledger_path = Path(sr4_ledger_path_text)
 sr6_ledger_path = Path(sr6_ledger_path_text)
 repo_root = Path(repo_root_text)
+release_channel_path = Path(release_channel_path_text)
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {}
 evidence["proof_freshness_max_age_seconds"] = DESKTOP_PROOF_MAX_AGE_SECONDS
 evidence["proof_freshness_max_future_skew_seconds"] = DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS
+evidence["release_channel_path"] = str(release_channel_path)
 
 check_receipt(ui_workflow_parity_path, "chummer5a_workflow_parity", reasons, evidence)
 check_receipt(sr4_workflow_parity_path, "sr4_workflow_parity", reasons, evidence)
 check_receipt(sr6_workflow_parity_path, "sr6_workflow_parity", reasons, evidence)
 check_receipt(sr_frontier_path, "sr4_sr6_frontier", reasons, evidence)
 flagship_gate = check_receipt(flagship_gate_path, "ui_flagship_release_gate", reasons, evidence)
+release_channel = load_json(release_channel_path)
+release_channel_exists = release_channel_path.is_file()
+release_channel_channel_id = normalize_token(
+    release_channel.get("channelId") or release_channel.get("channel")
+)
+release_channel_generated_at_raw, release_channel_generated_at = payload_generated_at(release_channel)
+evidence["release_channel_receipt_exists"] = release_channel_exists
+evidence["release_channel_channel_id"] = release_channel_channel_id
+evidence["release_channel_generated_at"] = release_channel_generated_at_raw
+if release_channel_exists and not release_channel:
+    reasons.append(
+        "Desktop workflow execution gate release channel receipt is unreadable or not a JSON object."
+    )
+if not release_channel_channel_id:
+    reasons.append(
+        "Desktop workflow execution gate release channel receipt is missing channelId/channel."
+    )
+if not release_channel_generated_at_raw or release_channel_generated_at is None:
+    reasons.append(
+        "Desktop workflow execution gate release channel receipt is missing a valid generatedAt/generated_at timestamp."
+    )
 flagship_head_proofs = flagship_gate.get("headProofs") if isinstance(flagship_gate.get("headProofs"), dict) else {}
 required_desktop_heads = sorted(
     {
@@ -572,6 +605,7 @@ status = "pass" if not reasons else "fail"
 payload = {
     "generatedAt": now_iso(),
     "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
+    "channelId": release_channel_channel_id,
     "status": status,
     "summary": (
         "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts."
