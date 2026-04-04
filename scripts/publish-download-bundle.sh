@@ -240,6 +240,11 @@ STARTUP_SMOKE_MAX_AGE_SECONDS = int(
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
     or "86400"
 )
+STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
 
 release_channel_path = Path(sys.argv[1])
 startup_smoke_root = Path(sys.argv[2])
@@ -253,6 +258,24 @@ seen: set[str] = set()
 
 def normalize(value: Any) -> str:
     return str(value or "").strip().lower()
+
+def expected_host_class_platform_token(platform: str) -> str:
+    normalized = normalize(platform)
+    if normalized == "windows":
+        return "win"
+    if normalized == "macos":
+        return "osx"
+    if normalized == "linux":
+        return "linux"
+    return normalized
+
+def host_class_matches_platform(host_class: str, platform: str) -> bool:
+    normalized_host = normalize(host_class)
+    expected_token = expected_host_class_platform_token(platform)
+    if not normalized_host or not expected_token:
+        return False
+    host_tokens = [token for token in normalized_host.split("-") if token]
+    return expected_token in host_tokens
 
 def rid_to_arch(rid: str) -> str:
     token = normalize(rid)
@@ -310,11 +333,19 @@ for artifact in artifacts:
     receipt_head = normalize(receipt.get("headId"))
     receipt_platform = normalize(receipt.get("platform"))
     receipt_arch = normalize(receipt.get("arch"))
+    receipt_host_class = normalize(receipt.get("hostClass"))
+    receipt_operating_system = str(receipt.get("operatingSystem") or "").strip()
     expected_arch = rid_to_arch(rid)
     if receipt_head != head:
         errors.append(f"startup-smoke receipt headId mismatch for promoted install medium {head}/{platform}/{rid}: {receipt_head or 'missing'}")
     if receipt_platform != platform:
         errors.append(f"startup-smoke receipt platform mismatch for promoted install medium {head}/{platform}/{rid}: {receipt_platform or 'missing'}")
+    if not receipt_host_class:
+        errors.append(f"startup-smoke receipt hostClass is missing for promoted install medium {head}/{platform}/{rid}.")
+    elif not host_class_matches_platform(receipt_host_class, platform):
+        errors.append(f"startup-smoke receipt hostClass does not identify the {platform} host for promoted install medium {head}/{platform}/{rid}.")
+    if not receipt_operating_system:
+        errors.append(f"startup-smoke receipt operatingSystem is missing for promoted install medium {head}/{platform}/{rid}.")
     if expected_arch and receipt_arch != expected_arch:
         errors.append(f"startup-smoke receipt arch mismatch for promoted install medium {head}/{platform}/{rid}: {receipt_arch or 'missing'}")
     promoted_file_path = files_root / file_name
@@ -336,11 +367,19 @@ for artifact in artifacts:
             f"startup-smoke receipt timestamp is missing/invalid for promoted install medium {head}/{platform}/{rid}."
         )
     else:
-        receipt_age_seconds = max(0, int((datetime.now(timezone.utc) - recorded_at).total_seconds()))
-        if receipt_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+        now_utc = datetime.now(timezone.utc)
+        age_delta_seconds = int((now_utc - recorded_at).total_seconds())
+        if age_delta_seconds < 0:
+            future_skew_seconds = abs(age_delta_seconds)
+            if future_skew_seconds > STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS:
+                errors.append(
+                    "startup-smoke receipt timestamp is in the future for promoted install medium "
+                    f"{head}/{platform}/{rid}: {future_skew_seconds}s ahead (max {STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS}s)."
+                )
+        elif age_delta_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
             errors.append(
                 "startup-smoke receipt is stale for promoted install medium "
-                f"{head}/{platform}/{rid}: {receipt_age_seconds}s old (max {STARTUP_SMOKE_MAX_AGE_SECONDS}s)."
+                f"{head}/{platform}/{rid}: {age_delta_seconds}s old (max {STARTUP_SMOKE_MAX_AGE_SECONDS}s)."
             )
     verified_receipts.append(str(receipt_path))
 
