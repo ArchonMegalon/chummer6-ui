@@ -2767,6 +2767,29 @@ desktop_tuple_coverage = (
     else {}
 )
 desktop_tuple_coverage_present = isinstance(release_channel.get("desktopTupleCoverage"), dict)
+allowed_desktop_tuple_coverage_keys = {
+    "requiredDesktopPlatforms",
+    "requiredDesktopHeads",
+    "promotedPlatformHeads",
+    "missingRequiredPlatformHeadPairs",
+    "missingRequiredPlatforms",
+    "missingRequiredHeads",
+    "requiredDesktopPlatformHeadRidTuples",
+    "promotedPlatformHeadRidTuples",
+    "missingRequiredPlatformHeadRidTuples",
+    "promotedInstallerTuples",
+}
+unexpected_desktop_tuple_coverage_keys = sorted(
+    key
+    for key in desktop_tuple_coverage.keys()
+    if isinstance(key, str) and key not in allowed_desktop_tuple_coverage_keys
+)
+evidence["release_channel_tuple_coverage_unexpected_keys"] = unexpected_desktop_tuple_coverage_keys
+if unexpected_desktop_tuple_coverage_keys:
+    reasons.append(
+        "Release channel desktopTupleCoverage has unexpected keys: "
+        + ", ".join(unexpected_desktop_tuple_coverage_keys)
+    )
 desktop_platform_tokens = {"linux", "windows", "macos"}
 tuple_coverage_required_desktop_platforms = normalize_required_token_list(
     desktop_tuple_coverage.get("requiredDesktopPlatforms"),
