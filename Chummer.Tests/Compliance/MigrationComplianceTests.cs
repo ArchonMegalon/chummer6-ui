@@ -3750,6 +3750,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "required_head_contract_markers = {");
         StringAssert.Contains(visualGateScriptText, "\"requiredRuntimeBackedTests\"");
         StringAssert.Contains(visualGateScriptText, "\"requiredShellTests\"");
+        StringAssert.Contains(visualGateScriptText, "def normalize_head_proof_statuses(");
+        StringAssert.Contains(visualGateScriptText, "\"flagship_gate.headProofs.status\"");
+        StringAssert.Contains(visualGateScriptText, "_non_canonical_keys");
+        StringAssert.Contains(visualGateScriptText, "_duplicate_normalized_keys");
+        StringAssert.Contains(visualGateScriptText, "contains a non-canonical key");
+        StringAssert.Contains(visualGateScriptText, "contains duplicate normalized key");
         StringAssert.Contains(visualGateScriptText, "flagship_head_missing_contract_markers");
         StringAssert.Contains(visualGateScriptText, "flagship_head_source_test_file_within_repo_root");
         StringAssert.Contains(visualGateScriptText, "Flagship UI release gate head proof for required desktop head '");
@@ -3887,6 +3893,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt timestamp is in the future (");
+        StringAssert.Contains(linuxGateScriptText, "RUN_RETENTION_COUNT=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_RETENTION_COUNT:-40}\"");
+        StringAssert.Contains(linuxGateScriptText, "prune_old_run_roots()");
+        StringAssert.Contains(linuxGateScriptText, "if path.is_dir() and path.name.startswith(\"run.\")");
+        StringAssert.Contains(linuxGateScriptText, "kept_by_retention = {path.resolve() for path in ranked[:retention_count]}");
+        StringAssert.Contains(linuxGateScriptText, "release_build_lock");
+        StringAssert.Contains(linuxGateScriptText, "prune_old_run_roots");
         StringAssert.Contains(linuxGateScriptText, "FAILURE_REASONS_PATH=\"$RUN_ROOT/failure-reasons.json\"");
         StringAssert.Contains(linuxGateScriptText, "rm -f \"$FAILURE_REASONS_PATH\"");
         StringAssert.Contains(linuxGateScriptText, "failure_reasons_path.write_text(json.dumps({\"reasons\": reasons}, indent=2) + \"\\n\", encoding=\"utf-8\")");
@@ -3968,6 +3980,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "\"requiredLifecycleTests\"");
         StringAssert.Contains(workflowGateScriptText, "\"requiredShellTests\"");
         StringAssert.Contains(workflowGateScriptText, "\"releaseLifecycle\"");
+        StringAssert.Contains(workflowGateScriptText, "def normalize_head_proof_statuses(");
+        StringAssert.Contains(workflowGateScriptText, "\"flagship_gate.headProofs.status\"");
+        StringAssert.Contains(workflowGateScriptText, "_non_canonical_keys");
+        StringAssert.Contains(workflowGateScriptText, "_duplicate_normalized_keys");
+        StringAssert.Contains(workflowGateScriptText, "contains a non-canonical key");
+        StringAssert.Contains(workflowGateScriptText, "contains duplicate normalized key");
         StringAssert.Contains(workflowGateScriptText, "flagship_head_contract_marker_statuses");
         StringAssert.Contains(workflowGateScriptText, "flagship_head_missing_contract_markers");
         StringAssert.Contains(workflowGateScriptText, "flagship_head_source_test_file_within_repo_root");
