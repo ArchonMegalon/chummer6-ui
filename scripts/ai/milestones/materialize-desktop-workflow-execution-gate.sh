@@ -318,6 +318,25 @@ if not release_channel_generated_at_raw or release_channel_generated_at is None:
     reasons.append(
         "Desktop workflow execution gate release channel receipt is missing a valid generatedAt/generated_at timestamp."
     )
+if release_channel_generated_at is not None:
+    release_channel_age_seconds = int(
+        (datetime.now(timezone.utc) - release_channel_generated_at).total_seconds()
+    )
+    if release_channel_age_seconds < 0:
+        release_channel_future_skew_seconds = abs(release_channel_age_seconds)
+        evidence["release_channel_future_skew_seconds"] = release_channel_future_skew_seconds
+        if release_channel_future_skew_seconds > DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:
+            reasons.append(
+                "Desktop workflow execution gate release channel receipt generatedAt is in the future "
+                f"({release_channel_future_skew_seconds}s ahead; max {DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS}s)."
+            )
+        release_channel_age_seconds = 0
+    evidence["release_channel_age_seconds"] = release_channel_age_seconds
+    if release_channel_age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
+        reasons.append(
+            "Desktop workflow execution gate release channel receipt is stale "
+            f"({release_channel_age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
+        )
 
 receipt_channel_ids: Dict[str, str] = {}
 for label, payload in (
