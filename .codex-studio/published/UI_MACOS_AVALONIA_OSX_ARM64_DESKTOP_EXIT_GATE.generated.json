@@ -1,6 +1,8 @@
 {
   "contract_name": "chummer6-ui.macos_desktop_exit_gate",
-  "generated_at": "2026-04-03T17:18:36Z",
+  "generated_at": "2026-04-04T03:42:55Z",
+  "channelId": "docker",
+  "releaseVersion": "local-docker",
   "status": "failed",
   "reason": "macOS desktop exit gate checks failed",
   "head": {
@@ -10,7 +12,7 @@
     "launch_target": "Chummer.Avalonia"
   },
   "artifact": {
-    "installer_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+    "installer_path": "/docker/chummer5a/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
     "installer_exists": true,
     "installer_size_bytes": 50365614,
     "installer_sha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
@@ -21,7 +23,7 @@
       "/docker/chummercomplete/chummer5a/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
     ],
     "installer_primary_shelf_root": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
-    "installer_from_primary_shelf": true
+    "installer_from_primary_shelf": false
   },
   "startup_smoke": {
     "status": "fail",
@@ -29,18 +31,23 @@
     "candidate_paths": [
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
+      "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
     ],
     "ready_checkpoint": "",
     "artifact_digest": "",
+    "channel_id": "",
+    "version": "",
+    "host_class": "",
+    "operating_system": "",
     "receipt_recorded_at": "",
     "receipt_age_seconds": null,
+    "receipt_max_age_seconds": 86400,
+    "receipt_max_future_skew_seconds": 300,
     "receipt": {}
   },
   "checks": {
@@ -49,25 +56,10 @@
     "rid": "osx-arm64",
     "launch_target": "Chummer.Avalonia",
     "release_channel_status": "published",
-    "release_channel_macos_artifact": {
-      "artifactId": "avalonia-osx-arm64-installer",
-      "head": "avalonia",
-      "rid": "osx-arm64",
-      "platform": "macos",
-      "arch": "arm64",
-      "kind": "installer",
-      "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
-      "downloadUrl": "/downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
-      "sha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
-      "sizeBytes": 50365614,
-      "platformLabel": "Avalonia Desktop macOS ARM64 Installer",
-      "updateFeedUrl": null,
-      "embeddedRuntimeBundleHeadId": null,
-      "compatibilityState": "unknown",
-      "installAccessClass": "open_public"
-    },
+    "release_channel_id": "docker",
+    "release_channel_version": "local-docker",
     "artifact": {
-      "installer_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+      "installer_path": "/docker/chummer5a/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
       "installer_exists": true,
       "installer_size_bytes": 50365614,
       "installer_sha256": "086e7c0f2c55da5a3932c324f54b3bd98fabe6dc7715553406c3c9a74f24f89a",
@@ -78,18 +70,17 @@
         "/docker/chummercomplete/chummer5a/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
       ],
       "installer_primary_shelf_root": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
-      "installer_from_primary_shelf": true
+      "installer_from_primary_shelf": false
     },
     "startup_smoke_candidate_paths": [
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
+      "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
     ],
     "startup_smoke": {
       "status": "fail",
@@ -97,22 +88,30 @@
       "candidate_paths": [
         "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-        "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-        "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "/docker/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-        "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
+        "/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
       ],
       "ready_checkpoint": "",
       "artifact_digest": "",
+      "channel_id": "",
+      "version": "",
+      "host_class": "",
+      "operating_system": "",
       "receipt_recorded_at": "",
       "receipt_age_seconds": null,
+      "receipt_max_age_seconds": 86400,
+      "receipt_max_future_skew_seconds": 300,
       "receipt": {}
     }
   },
   "reasons": [
+    "Release channel does not publish a promoted macOS install medium artifact for avalonia (osx-arm64).",
+    "Promoted macOS installer was not resolved from the repo-local desktop shelf for avalonia (osx-arm64).",
+    "Promoted macOS installer was resolved from legacy chummer5a shelf bytes for avalonia (osx-arm64).",
     "macOS startup smoke receipt is missing for avalonia (osx-arm64)."
   ]
 }

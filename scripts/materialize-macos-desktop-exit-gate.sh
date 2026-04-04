@@ -247,10 +247,14 @@ evidence: Dict[str, Any] = {
 release_channel = load_json(release_channel_path)
 release_channel_status = normalize_token(release_channel.get("status"))
 release_channel_id = normalize_token(release_channel.get("channelId") or release_channel.get("channel"))
+release_channel_version = str(release_channel.get("version") or "").strip()
 evidence["release_channel_status"] = release_channel_status
 evidence["release_channel_id"] = release_channel_id
+evidence["release_channel_version"] = release_channel_version
 if release_channel_status != "published":
     reasons.append("macOS release-channel proof status is not published.")
+if not release_channel_version:
+    reasons.append("macOS release channel is missing version.")
 
 artifacts = [
     item for item in (release_channel.get("artifacts") or [])
@@ -345,6 +349,11 @@ startup_smoke_status = normalize_token(startup_smoke_payload.get("status")) or (
 startup_smoke_checkpoint = normalize_token(startup_smoke_payload.get("readyCheckpoint"))
 startup_smoke_artifact_digest = normalize_token(startup_smoke_payload.get("artifactDigest"))
 startup_smoke_channel = normalize_token(startup_smoke_payload.get("channelId") or startup_smoke_payload.get("channel"))
+startup_smoke_version = str(
+    startup_smoke_payload.get("version")
+    or startup_smoke_payload.get("releaseVersion")
+    or ""
+).strip()
 startup_smoke_host_class = normalize_token(startup_smoke_payload.get("hostClass"))
 startup_smoke_operating_system = str(startup_smoke_payload.get("operatingSystem") or "").strip()
 startup_smoke_recorded_at_raw = str(
@@ -371,6 +380,7 @@ evidence["startup_smoke"] = {
     "ready_checkpoint": startup_smoke_checkpoint,
     "artifact_digest": startup_smoke_artifact_digest,
     "channel_id": startup_smoke_channel,
+    "version": startup_smoke_version,
     "host_class": startup_smoke_host_class,
     "operating_system": startup_smoke_operating_system,
     "receipt_recorded_at": startup_smoke_recorded_at_raw,
@@ -399,6 +409,10 @@ else:
         reasons.append(f"macOS startup smoke receipt arch does not match promoted RID {rid}.")
     if release_channel_id and startup_smoke_channel != release_channel_id:
         reasons.append(f"macOS startup smoke receipt channelId does not match release channel {release_channel_id}.")
+    if release_channel_version and not startup_smoke_version:
+        reasons.append("macOS startup smoke receipt version is missing.")
+    if release_channel_version and startup_smoke_version and startup_smoke_version != release_channel_version:
+        reasons.append(f"macOS startup smoke receipt version does not match release channel {release_channel_version}.")
     if startup_smoke_status not in {"pass", "passed", "ready"}:
         reasons.append("macOS startup smoke receipt status is not passing.")
     if startup_smoke_checkpoint != "pre_ui_event_loop":
@@ -423,6 +437,8 @@ status = "passed" if not reasons else "failed"
 payload = {
     "contract_name": "chummer6-ui.macos_desktop_exit_gate",
     "generated_at": now_iso(),
+    "channelId": release_channel_id,
+    "releaseVersion": release_channel_version,
     "status": status,
     "reason": (
         "macOS desktop release-channel publication and startup smoke checks passed"
