@@ -318,6 +318,26 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Linux_exit_gate_materializer_embeds_release_channel_artifact_identity_in_checks_envelope()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "\"channelId\": release_channel_channel_id");
+        StringAssert.Contains(scriptText, "\"releaseVersion\": release_channel_version");
+        StringAssert.Contains(scriptText, "\"checks\": {");
+        StringAssert.Contains(scriptText, "\"release_channel_id\": release_channel_channel_id");
+        StringAssert.Contains(scriptText, "\"release_channel_version\": release_channel_version");
+        StringAssert.Contains(scriptText, "\"release_channel_linux_artifact\": release_channel_linux_artifact");
+        StringAssert.Contains(scriptText, "release_channel_payload.get(\"artifacts\")");
+        StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"platform\")) == \"linux\"");
+        StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"kind\")) == \"installer\"");
+        StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"head\")) == normalize_token(app_key)");
+        StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"rid\")) == normalize_token(rid)");
+    }
+
+    [TestMethod]
     public void Desktop_executable_gate_fail_closes_invalid_platform_gate_contract_names()
     {
         string repoRoot = FindRepoRoot();
