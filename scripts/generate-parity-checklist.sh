@@ -131,6 +131,29 @@ def partition_coverage(legacy_ids: Sequence[str], catalog_ids: Sequence[str]) ->
     return covered, missing, catalog_only
 
 
+def fail_on_unacknowledged_catalog_only(
+    *,
+    surface_label: str,
+    catalog_only_ids: Sequence[str],
+    acknowledged_ids: Sequence[str],
+    source: str,
+) -> None:
+    catalog_only_set = set(catalog_only_ids)
+    acknowledged_set = set(acknowledged_ids)
+    unacknowledged = sorted(catalog_only_set - acknowledged_set)
+    stale = sorted(acknowledged_set - catalog_only_set)
+    if unacknowledged:
+        raise ValueError(
+            f"{source} is missing required acknowledged catalog-only {surface_label} ids "
+            f"({', '.join(unacknowledged)})"
+        )
+    if stale:
+        raise ValueError(
+            f"{source} acknowledged catalog-only {surface_label} ids that are no longer catalog-only "
+            f"({', '.join(stale)})"
+        )
+
+
 def write_summary_row(kind: str, legacy_ids: Sequence[str], covered: Sequence[str], missing: Sequence[str], catalog_only: Sequence[str]) -> str:
     return f"| {kind} | {len(legacy_ids)} | {len(covered)} | {len(missing)} | {len(catalog_only)} |"
 
@@ -165,6 +188,21 @@ desktop_dialog_factory_text = read_text(desktop_dialog_factory_path)
 
 legacy_tabs = parse_required_token_list(parity_oracle, "tabs", source=display_path(parity_oracle_path))
 legacy_actions = parse_required_token_list(parity_oracle, "workspaceActions", source=display_path(parity_oracle_path))
+acknowledged_catalog_only_tabs = parse_required_token_list(
+    parity_oracle,
+    "acknowledgedCatalogOnlyTabs",
+    source=display_path(parity_oracle_path),
+)
+acknowledged_catalog_only_actions = parse_required_token_list(
+    parity_oracle,
+    "acknowledgedCatalogOnlyWorkspaceActions",
+    source=display_path(parity_oracle_path),
+)
+acknowledged_dialog_factory_only_desktop_controls = parse_required_token_list(
+    parity_oracle,
+    "acknowledgedDialogFactoryOnlyDesktopControls",
+    source=display_path(parity_oracle_path),
+)
 legacy_desktop_controls = parse_required_token_list(
     parity_oracle,
     "desktopControls",
@@ -179,6 +217,24 @@ covered_actions, missing_actions, catalog_only_actions = partition_coverage(lega
 covered_desktop_controls, missing_desktop_controls, catalog_only_desktop_controls = partition_coverage(
     legacy_desktop_controls,
     catalog_desktop_controls,
+)
+fail_on_unacknowledged_catalog_only(
+    surface_label="tab",
+    catalog_only_ids=catalog_only_tabs,
+    acknowledged_ids=acknowledged_catalog_only_tabs,
+    source=display_path(parity_oracle_path),
+)
+fail_on_unacknowledged_catalog_only(
+    surface_label="workspace action",
+    catalog_only_ids=catalog_only_actions,
+    acknowledged_ids=acknowledged_catalog_only_actions,
+    source=display_path(parity_oracle_path),
+)
+fail_on_unacknowledged_catalog_only(
+    surface_label="dialog-factory-only desktop control",
+    catalog_only_ids=catalog_only_desktop_controls,
+    acknowledged_ids=acknowledged_dialog_factory_only_desktop_controls,
+    source=display_path(parity_oracle_path),
 )
 if missing_desktop_controls:
     raise ValueError(
@@ -197,7 +253,9 @@ output_lines: list[str] = [
     f"- Action catalog source: `{display_path(action_catalog_path)}`",
     f"- Desktop dialog source: `{display_path(desktop_dialog_factory_path)}`",
     "- Workspace Actions coverage compares parity-oracle action IDs to action `TargetId` values.",
+    "- Catalog-only IDs must be acknowledged explicitly in `docs/PARITY_ORACLE.json`.",
     "- Desktop Controls coverage compares parity-oracle control IDs to dialog control IDs in `DesktopDialogFactory`.",
+    "- Dialog-factory-only desktop controls must be acknowledged explicitly in `docs/PARITY_ORACLE.json`.",
     "",
     "## Summary",
     "",
@@ -223,7 +281,7 @@ output_lines.extend(
         covered_desktop_controls,
         missing_desktop_controls,
         catalog_only_desktop_controls,
-        catalog_only_status="present_in_dialog_factory_only",
+        catalog_only_status="present_in_dialog_factory_acknowledged",
     )
 )
 
