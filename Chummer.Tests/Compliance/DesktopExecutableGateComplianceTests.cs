@@ -149,6 +149,10 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Release channel Windows artifact carries conflicting arch/architecture alias values.");
         StringAssert.Contains(executableScriptText, "Release channel Windows artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.");
+        StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact carries conflicting channelId/channel alias values.");
+        StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact is missing version/releaseVersion.");
+        StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.");
+        StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact carries conflicting version/releaseVersion alias values.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact carries conflicting arch/architecture alias values.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt exists for promoted installer bytes.");
@@ -169,6 +173,10 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Release channel macOS artifact carries conflicting arch/architecture alias values for promoted head");
         StringAssert.Contains(executableScriptText, "Release channel macOS artifact arch does not match promoted RID for head");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact channelId/channel does not match promoted release channel.");
+        StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact carries conflicting channelId/channel alias values.");
+        StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact is missing version/releaseVersion.");
+        StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact version/releaseVersion does not match promoted release channel version.");
+        StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact carries conflicting version/releaseVersion alias values.");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact carries conflicting arch/architecture alias values.");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.");
         StringAssert.Contains(executableScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt exists for promoted head");
@@ -220,9 +228,15 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) carry conflicting version/releaseVersion values:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) carry conflicting arch/architecture values:");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_channel_id");
+        StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_channel_id_alias_conflict");
+        StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_version");
+        StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_version_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_arch");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_arch_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_channel_id");
+        StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_channel_id_alias_conflict");
+        StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_version");
+        StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_version_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_arch");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_arch_alias_conflict");
         StringAssert.Contains(executableScriptText, "macos_artifacts_missing_rid_by_head");

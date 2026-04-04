@@ -1237,9 +1237,30 @@ def validate_windows_gate(
         channel_artifact_channel_id = normalize_token(
             channel_artifact.get("channelId") or channel_artifact.get("channel")
         )
+        channel_artifact_channel_alias_conflict = scalar_alias_conflicts(
+            channel_artifact,
+            "channelId",
+            "channel",
+            normalize=True,
+        )
+        channel_artifact_version_primary = str(channel_artifact.get("version") or "").strip()
+        channel_artifact_version_alias = str(channel_artifact.get("releaseVersion") or "").strip()
+        channel_artifact_version_alias_conflict = (
+            bool(channel_artifact_version_primary)
+            and bool(channel_artifact_version_alias)
+            and channel_artifact_version_primary != channel_artifact_version_alias
+        )
+        channel_artifact_version = str(
+            channel_artifact_version_primary
+            or channel_artifact_version_alias
+            or ""
+        ).strip()
         channel_artifact_arch = payload_arch(channel_artifact)
         channel_artifact_arch_alias_conflict = arch_alias_conflicts(channel_artifact)
         gate_evidence["release_channel_windows_artifact_channel_id"] = channel_artifact_channel_id
+        gate_evidence["release_channel_windows_artifact_channel_id_alias_conflict"] = channel_artifact_channel_alias_conflict
+        gate_evidence["release_channel_windows_artifact_version"] = channel_artifact_version
+        gate_evidence["release_channel_windows_artifact_version_alias_conflict"] = channel_artifact_version_alias_conflict
         gate_evidence["release_channel_windows_artifact_arch"] = channel_artifact_arch
         gate_evidence["release_channel_windows_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
         if normalize_token(channel_artifact.get("head")) != expected_head:
@@ -1250,6 +1271,14 @@ def validate_windows_gate(
             reasons.append("Windows gate embedded release_channel_windows_artifact platform is not 'windows'.")
         if release_channel_id and channel_artifact_channel_id != release_channel_id:
             reasons.append("Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.")
+        if channel_artifact_channel_alias_conflict:
+            reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting channelId/channel alias values.")
+        if release_channel_version and not channel_artifact_version:
+            reasons.append("Windows gate embedded release_channel_windows_artifact is missing version/releaseVersion.")
+        elif release_channel_version and channel_artifact_version != release_channel_version:
+            reasons.append("Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.")
+        if channel_artifact_version_alias_conflict:
+            reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting version/releaseVersion alias values.")
         if channel_artifact_arch_alias_conflict:
             reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting arch/architecture alias values.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
@@ -1664,9 +1693,30 @@ def validate_macos_gate(
         channel_artifact_channel_id = normalize_token(
             channel_artifact.get("channelId") or channel_artifact.get("channel")
         )
+        channel_artifact_channel_alias_conflict = scalar_alias_conflicts(
+            channel_artifact,
+            "channelId",
+            "channel",
+            normalize=True,
+        )
+        channel_artifact_version_primary = str(channel_artifact.get("version") or "").strip()
+        channel_artifact_version_alias = str(channel_artifact.get("releaseVersion") or "").strip()
+        channel_artifact_version_alias_conflict = (
+            bool(channel_artifact_version_primary)
+            and bool(channel_artifact_version_alias)
+            and channel_artifact_version_primary != channel_artifact_version_alias
+        )
+        channel_artifact_version = str(
+            channel_artifact_version_primary
+            or channel_artifact_version_alias
+            or ""
+        ).strip()
         channel_artifact_arch = payload_arch(channel_artifact)
         channel_artifact_arch_alias_conflict = arch_alias_conflicts(channel_artifact)
         gate_evidence["release_channel_macos_artifact_channel_id"] = channel_artifact_channel_id
+        gate_evidence["release_channel_macos_artifact_channel_id_alias_conflict"] = channel_artifact_channel_alias_conflict
+        gate_evidence["release_channel_macos_artifact_version"] = channel_artifact_version
+        gate_evidence["release_channel_macos_artifact_version_alias_conflict"] = channel_artifact_version_alias_conflict
         gate_evidence["release_channel_macos_artifact_arch"] = channel_artifact_arch
         gate_evidence["release_channel_macos_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
         if normalize_token(channel_artifact.get("head")) != head:
@@ -1677,6 +1727,14 @@ def validate_macos_gate(
             reasons.append("macOS gate embedded release_channel_macos_artifact platform is not macOS.")
         if release_channel_id and channel_artifact_channel_id != release_channel_id:
             reasons.append("macOS gate embedded release_channel_macos_artifact channelId/channel does not match promoted release channel.")
+        if channel_artifact_channel_alias_conflict:
+            reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting channelId/channel alias values.")
+        if release_channel_version and not channel_artifact_version:
+            reasons.append("macOS gate embedded release_channel_macos_artifact is missing version/releaseVersion.")
+        elif release_channel_version and channel_artifact_version != release_channel_version:
+            reasons.append("macOS gate embedded release_channel_macos_artifact version/releaseVersion does not match promoted release channel version.")
+        if channel_artifact_version_alias_conflict:
+            reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting version/releaseVersion alias values.")
         if channel_artifact_arch_alias_conflict:
             reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting arch/architecture alias values.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
