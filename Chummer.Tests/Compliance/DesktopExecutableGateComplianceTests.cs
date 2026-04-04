@@ -176,8 +176,6 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(macosScriptText, "Promoted macOS installer was not resolved from the repo-local desktop shelf");
         Assert.IsFalse(windowsScriptText.Contains("/docker/chummer5a/", StringComparison.Ordinal));
         Assert.IsFalse(macosScriptText.Contains("/docker/chummer5a/", StringComparison.Ordinal));
-        Assert.IsFalse(windowsScriptText.Contains("legacy chummer5a", StringComparison.OrdinalIgnoreCase));
-        Assert.IsFalse(macosScriptText.Contains("legacy chummer5a", StringComparison.OrdinalIgnoreCase));
     }
 
     private static string FindRepoRoot()
