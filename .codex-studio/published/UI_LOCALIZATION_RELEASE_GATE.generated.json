@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-04-04T04:08:30Z",
+  "generated_at": "2026-04-04T10:50:15Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -24,8 +24,9 @@
   "explicit_fallback_runtime": "pass",
   "signoff_smoke_runner": {
     "status": "pass",
+    "retry_attempted": false,
+    "retry_reason": "",
     "log_excerpt": [
-      "/usr/share/dotnet/sdk/10.0.201/Microsoft.Common.CurrentVersion.targets(4917,5): warning MSB3026: Could not copy \"obj/Debug/net10.0/Chummer.Run.Contracts.dll\" to \"bin/Debug/net10.0/Chummer.Run.Contracts.dll\". Beginning retry 1 in 1000ms. The process cannot access the file '/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/obj/Debug/net10.0/Chummer.Run.Contracts.dll' because it is being used by another process.  [/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj]",
       "[B15] PASS: localization release smoke runner checks passed."
     ]
   },

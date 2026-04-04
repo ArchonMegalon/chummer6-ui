@@ -27,12 +27,29 @@ fi
 
 echo "[b15] executing localization signoff smoke runner..."
 signoff_log="$(mktemp "${TMPDIR:-/tmp}/chummer-b15-signoff.XXXXXX.log")"
+signoff_retry_attempted=0
+signoff_retry_reason=""
+
+run_signoff_runner() {
+  scripts/ai/with-package-plane.sh run --project "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false
+}
+
 set +e
-scripts/ai/with-package-plane.sh run --project "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false >"$signoff_log" 2>&1
+run_signoff_runner >"$signoff_log" 2>&1
 signoff_status=$?
 set -e
 
-python3 - "$catalog_path" "$receipt_path" "$legacy_lang_root" "$local_release_proof_path" "$signoff_status" "$signoff_log" <<'PY'
+if [[ $signoff_status -ne 0 ]] && rg -q "libhostpolicy\.so|Failed to run as a self-contained app|runtimeconfig\.json' was not found" "$signoff_log"; then
+  signoff_retry_attempted=1
+  signoff_retry_reason="runtimeconfig_bootstrap_repair"
+  set +e
+  scripts/ai/with-package-plane.sh build --project "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false >>"$signoff_log" 2>&1
+  run_signoff_runner >>"$signoff_log" 2>&1
+  signoff_status=$?
+  set -e
+fi
+
+python3 - "$catalog_path" "$receipt_path" "$legacy_lang_root" "$local_release_proof_path" "$signoff_status" "$signoff_log" "$signoff_retry_attempted" "$signoff_retry_reason" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -47,6 +64,8 @@ legacy_lang_root = Path(sys.argv[3])
 local_release_proof_path = Path(sys.argv[4])
 signoff_status = int(sys.argv[5])
 signoff_log_path = Path(sys.argv[6])
+signoff_retry_attempted = int(sys.argv[7])
+signoff_retry_reason = str(sys.argv[8]).strip()
 
 text = catalog_path.read_text(encoding="utf-8")
 
@@ -184,6 +203,8 @@ payload = {
     "explicit_fallback_runtime": "pass" if silent_clone_guard else "fail",
     "signoff_smoke_runner": {
         "status": "pass" if signoff_status == 0 else "fail",
+        "retry_attempted": signoff_retry_attempted > 0,
+        "retry_reason": signoff_retry_reason,
         "log_excerpt": signoff_log_path.read_text(encoding="utf-8").strip().splitlines()[-5:],
     },
     "locale_summary": locale_summary,
