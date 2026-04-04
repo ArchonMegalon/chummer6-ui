@@ -3781,6 +3781,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "for _ in $(seq 1 \"$release_gate_lock_wait_iterations\"); do");
         StringAssert.Contains(visualGateScriptText, "sleep \"$release_gate_lock_poll_seconds\"");
         StringAssert.Contains(visualGateScriptText, "if [[ \"$skip_release_gate_lock_wait\" != \"1\" ]]; then");
+        StringAssert.Contains(visualGateScriptText, "if [[ -d \"$release_gate_lock_dir\" ]]; then");
+        StringAssert.Contains(visualGateScriptText, "[desktop-visual-familiarity-gate] FAIL: release gate lock did not clear within");
+        StringAssert.Contains(visualGateScriptText, "exit 52");
         StringAssert.Contains(visualGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
         StringAssert.Contains(visualGateScriptText, "ruleset_orientation_method_has_markers");
         StringAssert.Contains(visualGateScriptText, "missing_ruleset_orientation_markers");
