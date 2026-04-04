@@ -90,10 +90,14 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "workflow_execution.release_channel_channel_id");
         StringAssert.Contains(executableScriptText, "visual_familiarity_release_channel_id");
         StringAssert.Contains(executableScriptText, "workflow_execution_release_channel_id");
+        StringAssert.Contains(executableScriptText, "visual_familiarity_release_channel_id_alias_conflict");
+        StringAssert.Contains(executableScriptText, "workflow_execution_release_channel_id_alias_conflict");
         StringAssert.Contains(executableScriptText, "visual_familiarity_release_version");
         StringAssert.Contains(executableScriptText, "workflow_execution_release_version");
         StringAssert.Contains(executableScriptText, "\"channelId\": release_channel_channel_id");
         StringAssert.Contains(executableScriptText, "\"releaseVersion\": release_channel_version");
+        StringAssert.Contains(executableScriptText, "Desktop visual familiarity exit gate carries conflicting release-channel identity aliases across evidence and gate envelope.");
+        StringAssert.Contains(executableScriptText, "Desktop workflow execution gate carries conflicting release-channel identity aliases across evidence and gate envelope.");
         StringAssert.Contains(executableScriptText, "Desktop visual familiarity exit gate release-channel identity does not match release channel channelId.");
         StringAssert.Contains(executableScriptText, "Desktop workflow execution gate release-channel identity does not match release channel channelId.");
         StringAssert.Contains(executableScriptText, "Desktop visual familiarity exit gate releaseVersion does not match release channel version.");
@@ -156,11 +160,15 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_version_mismatch");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_missing_arch");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_arch_mismatch");
+        StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_channel_alias_conflict");
+        StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_version_alias_conflict");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing head:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing version/releaseVersion:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) version/releaseVersion does not match release channel version:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing arch:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) arch does not match RID-derived architecture:");
+        StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) carry conflicting channelId/channel values:");
+        StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) carry conflicting version/releaseVersion values:");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_channel_id");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_arch");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_channel_id");
@@ -196,7 +204,13 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "release_channel_supportability_state_invalid_for_publishable_complete");
         StringAssert.Contains(executableScriptText, "Release channel supportabilityState must be preview_supported when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableScriptText, "release_channel_version_uses_unpublished_sentinel");
+        StringAssert.Contains(executableScriptText, "release_channel.releaseVersion");
+        StringAssert.Contains(executableScriptText, "release_channel_version_alias_conflict");
+        StringAssert.Contains(executableScriptText, "release_channel.version and release_channel.releaseVersion disagree after normalization.");
+        StringAssert.Contains(executableScriptText, "Release channel is missing version/releaseVersion, so installer/update truth cannot be aligned by release head.");
         StringAssert.Contains(executableScriptText, "Release channel version cannot be the unpublished sentinel when status is publishable.");
+        StringAssert.Contains(executableScriptText, "release_channel_generated_at_alias_conflict");
+        StringAssert.Contains(executableScriptText, "release_channel.generated_at and release_channel.generatedAt disagree after normalization.");
         StringAssert.Contains(executableScriptText, "Release channel rolloutState cannot remain unpublished when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableScriptText, "Release channel supportabilityState cannot remain unpublished when required desktop tuple coverage is complete.");
 
