@@ -468,6 +468,147 @@ fi
 
 rm -f "$missing_required_platform_head_rid_tuple_mutation_release_channel" "$missing_required_platform_head_rid_tuple_mutation_output"
 
+echo "[verify] checking W1 desktop executable gate fail-close mutation for missingRequiredPlatformHeadPairs inventory drift..."
+missing_required_platform_head_pairs_mutation_release_channel="$(mktemp)"
+missing_required_platform_head_pairs_mutation_output="$(mktemp)"
+python3 - "$release_channel_path_default" "$missing_required_platform_head_pairs_mutation_release_channel" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+desktop_tuple_coverage = payload.get("desktopTupleCoverage")
+if not isinstance(desktop_tuple_coverage, dict):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage object in release channel fixture.")
+rows = desktop_tuple_coverage.get("missingRequiredPlatformHeadPairs")
+if not isinstance(rows, list):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage.missingRequiredPlatformHeadPairs list in release channel fixture.")
+rows.append("tampered-head:tampered-platform")
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+set +e
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$missing_required_platform_head_pairs_mutation_release_channel" \
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >"$missing_required_platform_head_pairs_mutation_output" 2>&1
+missing_required_platform_head_pairs_mutation_exit=$?
+set -e
+
+if [[ "$missing_required_platform_head_pairs_mutation_exit" -eq 0 ]]; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject missingRequiredPlatformHeadPairs inventory drift."
+  cat "$missing_required_platform_head_pairs_mutation_output"
+  rm -f "$missing_required_platform_head_pairs_mutation_release_channel" "$missing_required_platform_head_pairs_mutation_output"
+  exit 37
+fi
+
+if ! rg -F "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples." "$missing_required_platform_head_pairs_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit missingRequiredPlatformHeadPairs inventory drift marker."
+  cat "$missing_required_platform_head_pairs_mutation_output"
+  rm -f "$missing_required_platform_head_pairs_mutation_release_channel" "$missing_required_platform_head_pairs_mutation_output"
+  exit 38
+fi
+
+rm -f "$missing_required_platform_head_pairs_mutation_release_channel" "$missing_required_platform_head_pairs_mutation_output"
+
+echo "[verify] checking W1 desktop executable gate fail-close mutation for missingRequiredPlatforms inventory drift..."
+missing_required_platforms_mutation_release_channel="$(mktemp)"
+missing_required_platforms_mutation_output="$(mktemp)"
+python3 - "$release_channel_path_default" "$missing_required_platforms_mutation_release_channel" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+desktop_tuple_coverage = payload.get("desktopTupleCoverage")
+if not isinstance(desktop_tuple_coverage, dict):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage object in release channel fixture.")
+rows = desktop_tuple_coverage.get("missingRequiredPlatforms")
+if not isinstance(rows, list):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage.missingRequiredPlatforms list in release channel fixture.")
+rows.append("tampered-platform")
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+set +e
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$missing_required_platforms_mutation_release_channel" \
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >"$missing_required_platforms_mutation_output" 2>&1
+missing_required_platforms_mutation_exit=$?
+set -e
+
+if [[ "$missing_required_platforms_mutation_exit" -eq 0 ]]; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject missingRequiredPlatforms inventory drift."
+  cat "$missing_required_platforms_mutation_output"
+  rm -f "$missing_required_platforms_mutation_release_channel" "$missing_required_platforms_mutation_output"
+  exit 39
+fi
+
+if ! rg -F "Release channel desktopTupleCoverage missingRequiredPlatforms inventory does not match promoted installer tuples." "$missing_required_platforms_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit missingRequiredPlatforms inventory drift marker."
+  cat "$missing_required_platforms_mutation_output"
+  rm -f "$missing_required_platforms_mutation_release_channel" "$missing_required_platforms_mutation_output"
+  exit 40
+fi
+
+rm -f "$missing_required_platforms_mutation_release_channel" "$missing_required_platforms_mutation_output"
+
+echo "[verify] checking W1 desktop executable gate fail-close mutation for missingRequiredHeads inventory drift..."
+missing_required_heads_mutation_release_channel="$(mktemp)"
+missing_required_heads_mutation_output="$(mktemp)"
+python3 - "$release_channel_path_default" "$missing_required_heads_mutation_release_channel" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+desktop_tuple_coverage = payload.get("desktopTupleCoverage")
+if not isinstance(desktop_tuple_coverage, dict):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage object in release channel fixture.")
+rows = desktop_tuple_coverage.get("missingRequiredHeads")
+if not isinstance(rows, list):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage.missingRequiredHeads list in release channel fixture.")
+rows.append("tampered-head")
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+set +e
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$missing_required_heads_mutation_release_channel" \
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >"$missing_required_heads_mutation_output" 2>&1
+missing_required_heads_mutation_exit=$?
+set -e
+
+if [[ "$missing_required_heads_mutation_exit" -eq 0 ]]; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject missingRequiredHeads inventory drift."
+  cat "$missing_required_heads_mutation_output"
+  rm -f "$missing_required_heads_mutation_release_channel" "$missing_required_heads_mutation_output"
+  exit 41
+fi
+
+if ! rg -F "Release channel desktopTupleCoverage missingRequiredHeads inventory does not match promoted installer tuples." "$missing_required_heads_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit missingRequiredHeads inventory drift marker."
+  cat "$missing_required_heads_mutation_output"
+  rm -f "$missing_required_heads_mutation_release_channel" "$missing_required_heads_mutation_output"
+  exit 42
+fi
+
+rm -f "$missing_required_heads_mutation_release_channel" "$missing_required_heads_mutation_output"
+
 echo "[verify] checking B15 localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh
 
