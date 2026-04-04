@@ -585,6 +585,7 @@ echo "[b14] materializing desktop workflow execution gate..."
 bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
 
 echo "[b14] materializing desktop visual familiarity exit gate..."
-bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
+CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
+  bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
 
 echo "[b14] PASS"
