@@ -118,6 +118,15 @@ def dedupe_preserve_order(values: List[str]) -> List[str]:
     return deduped
 
 
+def build_platform_head_rid_tuple(head: Any, rid: Any, platform: Any) -> str:
+    head_token = normalize_token(head)
+    rid_token = normalize_token(rid)
+    platform_token = normalize_token(platform)
+    if not head_token or not rid_token or not platform_token:
+        return ""
+    return f"{head_token}:{rid_token}:{platform_token}"
+
+
 def normalized_token_list(values: Any) -> List[str]:
     if not isinstance(values, list):
         return []
@@ -1226,6 +1235,15 @@ tuple_coverage_reported_missing_platforms = normalized_token_list(
 tuple_coverage_reported_missing_heads = normalized_token_list(
     desktop_tuple_coverage.get("missingRequiredHeads")
 )
+tuple_coverage_required_platform_head_rid_tuples = normalized_token_list(
+    desktop_tuple_coverage.get("requiredDesktopPlatformHeadRidTuples")
+)
+tuple_coverage_reported_promoted_platform_head_rid_tuples = normalized_token_list(
+    desktop_tuple_coverage.get("promotedPlatformHeadRidTuples")
+)
+tuple_coverage_reported_missing_platform_head_rid_tuples = normalized_token_list(
+    desktop_tuple_coverage.get("missingRequiredPlatformHeadRidTuples")
+)
 tuple_coverage_declares_missing_required_platform_head_pairs = (
     "missingRequiredPlatformHeadPairs" in desktop_tuple_coverage
     if desktop_tuple_coverage_present
@@ -1241,6 +1259,21 @@ tuple_coverage_declares_missing_required_heads = (
     if desktop_tuple_coverage_present
     else False
 )
+tuple_coverage_declares_required_platform_head_rid_tuples = (
+    "requiredDesktopPlatformHeadRidTuples" in desktop_tuple_coverage
+    if desktop_tuple_coverage_present
+    else False
+)
+tuple_coverage_declares_promoted_platform_head_rid_tuples = (
+    "promotedPlatformHeadRidTuples" in desktop_tuple_coverage
+    if desktop_tuple_coverage_present
+    else False
+)
+tuple_coverage_declares_missing_required_platform_head_rid_tuples = (
+    "missingRequiredPlatformHeadRidTuples" in desktop_tuple_coverage
+    if desktop_tuple_coverage_present
+    else False
+)
 evidence["release_channel_tuple_coverage_required_desktop_platforms"] = tuple_coverage_required_desktop_platforms
 evidence["release_channel_tuple_coverage_required_desktop_heads"] = tuple_coverage_required_desktop_heads
 evidence["release_channel_tuple_coverage_promoted_platform_heads"] = tuple_coverage_promoted_platform_heads
@@ -1253,6 +1286,15 @@ evidence["release_channel_tuple_coverage_reported_missing_required_platforms"] =
 evidence["release_channel_tuple_coverage_reported_missing_required_heads"] = (
     tuple_coverage_reported_missing_heads
 )
+evidence["release_channel_tuple_coverage_required_platform_head_rid_tuples"] = (
+    tuple_coverage_required_platform_head_rid_tuples
+)
+evidence["release_channel_tuple_coverage_promoted_platform_head_rid_tuples"] = (
+    tuple_coverage_reported_promoted_platform_head_rid_tuples
+)
+evidence["release_channel_tuple_coverage_reported_missing_required_platform_head_rid_tuples"] = (
+    tuple_coverage_reported_missing_platform_head_rid_tuples
+)
 evidence["release_channel_tuple_coverage_present"] = desktop_tuple_coverage_present
 evidence["release_channel_tuple_coverage_declares_missing_required_platform_head_pairs"] = (
     tuple_coverage_declares_missing_required_platform_head_pairs
@@ -1262,6 +1304,15 @@ evidence["release_channel_tuple_coverage_declares_missing_required_platforms"] =
 )
 evidence["release_channel_tuple_coverage_declares_missing_required_heads"] = (
     tuple_coverage_declares_missing_required_heads
+)
+evidence["release_channel_tuple_coverage_declares_required_platform_head_rid_tuples"] = (
+    tuple_coverage_declares_required_platform_head_rid_tuples
+)
+evidence["release_channel_tuple_coverage_declares_promoted_platform_head_rid_tuples"] = (
+    tuple_coverage_declares_promoted_platform_head_rid_tuples
+)
+evidence["release_channel_tuple_coverage_declares_missing_required_platform_head_rid_tuples"] = (
+    tuple_coverage_declares_missing_required_platform_head_rid_tuples
 )
 
 if not release_channel_channel_id:
@@ -1307,6 +1358,18 @@ if desktop_install_artifacts and not tuple_coverage_declares_missing_required_pl
 if desktop_install_artifacts and not tuple_coverage_declares_missing_required_heads:
     reasons.append(
         "Release channel desktopTupleCoverage must declare missingRequiredHeads explicitly (empty list when complete)."
+    )
+if desktop_install_artifacts and not tuple_coverage_declares_required_platform_head_rid_tuples:
+    reasons.append(
+        "Release channel desktopTupleCoverage must declare requiredDesktopPlatformHeadRidTuples explicitly for architecture-aware desktop install coverage."
+    )
+if desktop_install_artifacts and not tuple_coverage_declares_promoted_platform_head_rid_tuples:
+    reasons.append(
+        "Release channel desktopTupleCoverage must declare promotedPlatformHeadRidTuples explicitly for architecture-aware desktop install coverage."
+    )
+if desktop_install_artifacts and not tuple_coverage_declares_missing_required_platform_head_rid_tuples:
+    reasons.append(
+        "Release channel desktopTupleCoverage must declare missingRequiredPlatformHeadRidTuples explicitly (empty list when complete)."
     )
 required_desktop_platforms = ("linux", "windows", "macos")
 platform_artifact_counts = {
@@ -1516,6 +1579,42 @@ evidence["missing_required_desktop_platform_head_pairs_derived"] = (
 evidence["missing_required_desktop_platform_head_pairs_by_platform"] = (
     missing_required_platform_head_pairs_by_platform
 )
+required_platform_head_rid_tuples_from_artifacts = sorted(
+    {
+        build_platform_head_rid_tuple(item.get("head"), item.get("rid"), item.get("platform"))
+        for item in desktop_install_artifacts
+        if build_platform_head_rid_tuple(item.get("head"), item.get("rid"), item.get("platform"))
+    }
+)
+missing_required_platform_head_rid_tuples_derived = sorted(
+    {
+        tuple_token
+        for tuple_token in tuple_coverage_required_platform_head_rid_tuples
+        if tuple_token and tuple_token not in set(required_platform_head_rid_tuples_from_artifacts)
+    }
+)
+tuple_coverage_promoted_platform_head_rid_tuple_inventory_mismatch = sorted(
+    set(tuple_coverage_reported_promoted_platform_head_rid_tuples).symmetric_difference(
+        set(required_platform_head_rid_tuples_from_artifacts)
+    )
+)
+tuple_coverage_missing_platform_head_rid_tuple_inventory_mismatch = sorted(
+    set(tuple_coverage_reported_missing_platform_head_rid_tuples).symmetric_difference(
+        set(missing_required_platform_head_rid_tuples_derived)
+    )
+)
+evidence["release_channel_promoted_platform_head_rid_tuples_from_artifacts"] = (
+    required_platform_head_rid_tuples_from_artifacts
+)
+evidence["release_channel_missing_required_platform_head_rid_tuples_derived"] = (
+    missing_required_platform_head_rid_tuples_derived
+)
+evidence["release_channel_tuple_coverage_promoted_platform_head_rid_tuple_inventory_mismatch"] = (
+    tuple_coverage_promoted_platform_head_rid_tuple_inventory_mismatch
+)
+evidence["release_channel_tuple_coverage_missing_platform_head_rid_tuple_inventory_mismatch"] = (
+    tuple_coverage_missing_platform_head_rid_tuple_inventory_mismatch
+)
 missing_required_platforms_derived = sorted(
     {
         platform
@@ -1570,10 +1669,24 @@ if tuple_coverage_missing_head_inventory_mismatch:
     reasons.append(
         "Release channel desktopTupleCoverage missingRequiredHeads inventory does not match promoted installer tuples."
     )
+if tuple_coverage_promoted_platform_head_rid_tuple_inventory_mismatch:
+    reasons.append(
+        "Release channel desktopTupleCoverage promotedPlatformHeadRidTuples inventory does not match promoted installer tuples."
+    )
+if tuple_coverage_missing_platform_head_rid_tuple_inventory_mismatch:
+    reasons.append(
+        "Release channel desktopTupleCoverage missingRequiredPlatformHeadRidTuples inventory does not match promoted installer tuples."
+    )
 if missing_required_platform_head_pairs:
     reasons.append(
         "Release channel is missing required desktop platform/head installer tuple pair(s): "
         + ", ".join(missing_required_platform_head_pairs)
+        + "."
+    )
+if missing_required_platform_head_rid_tuples_derived:
+    reasons.append(
+        "Release channel is missing required desktop platform/head/rid installer tuple(s): "
+        + ", ".join(missing_required_platform_head_rid_tuples_derived)
         + "."
     )
 if coverage_incomplete and release_channel_rollout_state != "coverage_incomplete":
