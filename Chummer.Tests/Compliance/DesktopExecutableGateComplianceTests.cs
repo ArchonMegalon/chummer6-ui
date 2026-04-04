@@ -149,10 +149,12 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "expected_artifact_arch");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifact_channel_ids");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifact_versions");
+        StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_missing_head");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_missing_channel");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_channel_mismatch");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_missing_version");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_version_mismatch");
+        StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing head:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing version/releaseVersion:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) version/releaseVersion does not match release channel version:");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_channel_id");
