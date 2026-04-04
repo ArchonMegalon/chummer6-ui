@@ -171,7 +171,9 @@ required_head_contract_markers = {
         "visualReview",
         "themeReadabilityContrast",
         "bundledDemoRunner",
+        "releaseLifecycle",
         "requiredRuntimeBackedTests",
+        "requiredLifecycleTests",
         "sourceTestFile",
         "testSuites",
     ],
@@ -181,7 +183,9 @@ required_head_contract_markers = {
         "commandSurface",
         "dialogSurface",
         "journeyPanels",
+        "releaseLifecycle",
         "requiredShellTests",
+        "requiredLifecycleTests",
         "sourceTestFile",
         "testSuites",
     ],
@@ -192,6 +196,7 @@ required_head_status_markers = {
         "visualReview",
         "themeReadabilityContrast",
         "bundledDemoRunner",
+        "releaseLifecycle",
     ],
     "blazor-desktop": [
         "status",
@@ -199,15 +204,18 @@ required_head_status_markers = {
         "commandSurface",
         "dialogSurface",
         "journeyPanels",
+        "releaseLifecycle",
     ],
 }
 required_head_list_markers = {
     "avalonia": [
         "requiredRuntimeBackedTests",
+        "requiredLifecycleTests",
         "testSuites",
     ],
     "blazor-desktop": [
         "requiredShellTests",
+        "requiredLifecycleTests",
         "testSuites",
     ],
 }
