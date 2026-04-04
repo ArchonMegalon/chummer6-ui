@@ -3533,6 +3533,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredPlatformHeadPairs explicitly (empty list when complete).");
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredPlatforms explicitly (empty list when complete).");
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredHeads explicitly (empty list when complete).");
+        StringAssert.Contains(executableGateScriptText, "def normalize_required_token_list(");
+        StringAssert.Contains(executableGateScriptText, "def normalize_required_tuple_list(");
+        StringAssert.Contains(executableGateScriptText, "def normalize_promoted_platform_heads(");
+        StringAssert.Contains(executableGateScriptText, "must be a list when present.");
+        StringAssert.Contains(executableGateScriptText, "must be an object when present.");
+        StringAssert.Contains(executableGateScriptText, "contains a non-string item at index");
+        StringAssert.Contains(executableGateScriptText, "contains a blank token at index");
+        StringAssert.Contains(executableGateScriptText, "contains duplicate token(s):");
+        StringAssert.Contains(executableGateScriptText, "contains malformed token(s):");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs_by_platform");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing required desktop platform/head installer tuple pair(s): ");
