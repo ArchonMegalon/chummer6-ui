@@ -23,6 +23,24 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_surfaces_windows_and_macos_per_head_diagnostics_from_required_tuple_policy_when_release_artifacts_are_missing()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "required_windows_policy_tuples");
+        StringAssert.Contains(scriptText, "windows_policy_tuples_missing_release_artifacts");
+        StringAssert.Contains(scriptText, "required_macos_policy_tuples");
+        StringAssert.Contains(scriptText, "macos_policy_tuples_missing_release_artifacts");
+        StringAssert.Contains(scriptText, "required_tuple_policy_missing_release_artifact");
+        StringAssert.Contains(scriptText, "evidence[\"windows_policy_required_head_rid_tuples\"]");
+        StringAssert.Contains(scriptText, "evidence[\"windows_policy_tuples_missing_release_artifacts\"]");
+        StringAssert.Contains(scriptText, "evidence[\"macos_policy_required_head_rid_tuples\"]");
+        StringAssert.Contains(scriptText, "evidence[\"macos_policy_tuples_missing_release_artifacts\"]");
+    }
+
+    [TestMethod]
     public void Desktop_executable_gate_binds_visual_and_workflow_receipts_to_release_channel_identity()
     {
         string repoRoot = FindRepoRoot();
