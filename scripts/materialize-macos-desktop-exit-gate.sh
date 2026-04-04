@@ -360,6 +360,7 @@ startup_smoke_version = str(
 ).strip()
 startup_smoke_host_class = normalize_token(startup_smoke_payload.get("hostClass"))
 startup_smoke_operating_system = str(startup_smoke_payload.get("operatingSystem") or "").strip()
+startup_smoke_artifact_path = str(startup_smoke_payload.get("artifactPath") or "").strip()
 startup_smoke_recorded_at_raw = str(
     startup_smoke_payload.get("completedAtUtc")
     or startup_smoke_payload.get("recordedAtUtc")
@@ -389,6 +390,7 @@ evidence["startup_smoke"] = {
     "version": startup_smoke_version,
     "host_class": startup_smoke_host_class,
     "operating_system": startup_smoke_operating_system,
+    "artifact_path": startup_smoke_artifact_path,
     "receipt_recorded_at": startup_smoke_recorded_at_raw,
     "receipt_age_seconds": startup_smoke_age_seconds,
     "receipt_max_age_seconds": startup_smoke_max_age_seconds,
@@ -428,6 +430,17 @@ else:
         reasons.append("macOS startup smoke receipt status is not passing.")
     if startup_smoke_checkpoint != "pre_ui_event_loop":
         reasons.append("macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop.")
+    if not startup_smoke_artifact_path:
+        reasons.append("macOS startup smoke receipt artifactPath is missing.")
+    else:
+        startup_smoke_artifact_path_obj = Path(startup_smoke_artifact_path)
+        if path_uses_legacy_chummer5a_root(startup_smoke_artifact_path_obj):
+            reasons.append("macOS startup smoke receipt artifactPath points into a legacy chummer5a root.")
+        try:
+            if artifact_path is not None and startup_smoke_artifact_path_obj.resolve() != artifact_path.resolve():
+                reasons.append("macOS startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.")
+        except Exception:
+            reasons.append("macOS startup smoke receipt artifactPath could not be resolved for promoted shelf verification.")
     if not artifact_sha:
         reasons.append("Promoted macOS installer digest could not be computed.")
     elif startup_smoke_artifact_digest != f"sha256:{artifact_sha}":
