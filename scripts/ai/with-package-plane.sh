@@ -16,9 +16,12 @@ campaign_contracts_version="${CHUMMER_CAMPAIGN_CONTRACTS_PACKAGE_VERSION:-0.1.0-
 run_contracts_version="${CHUMMER_RUN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
 hub_registry_contracts_version="${CHUMMER_HUB_REGISTRY_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
 ui_kit_version="${CHUMMER_UI_KIT_PACKAGE_VERSION:-0.1.0-preview}"
+bootstrap_engine_contracts_feed="${CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_FEED:-1}"
 
 workspace_root="$(cd "$repo_root/.." && pwd)"
 contracts_project="$workspace_root/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj"
+engine_contracts_bootstrap_script="$workspace_root/chummer-core-engine/scripts/ai/bootstrap-contracts-feed.sh"
+engine_contracts_feed_root="${CHUMMER_ENGINE_CONTRACTS_FEED:-$workspace_root/chummer-core-engine/.tmp/ai/local-nuget}"
 campaign_contracts_project="$workspace_root/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj"
 run_contracts_project="$workspace_root/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj"
 hub_registry_contracts_project="$workspace_root/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj"
@@ -52,6 +55,17 @@ else
   fi
 
   restore_args+=(-p:ChummerUseLocalCompatibilityTree=true)
+
+  if [[ "$bootstrap_engine_contracts_feed" == "1" ]]; then
+    if [[ ! -x "$engine_contracts_bootstrap_script" ]]; then
+      echo "missing core contracts bootstrap helper: $engine_contracts_bootstrap_script" >&2
+      exit 2
+    fi
+
+    CHUMMER_ENGINE_CONTRACTS_FEED="$engine_contracts_feed_root" \
+      bash "$engine_contracts_bootstrap_script" >/dev/null
+    restore_args+=(-p:RestoreAdditionalProjectSources="$engine_contracts_feed_root")
+  fi
 fi
 
 restore_args+=(
