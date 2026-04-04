@@ -952,11 +952,17 @@ def validate_linux_gate(
         expected_sha = normalize_token(expected_artifact.get("sha256"))
         expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
         expected_arch = arch_from_rid(expected_rid)
+        expected_artifact_arch = normalize_token(expected_artifact.get("arch"))
         expected_artifact_source = normalize_token(expected_artifact.get("source"))
         policy_missing_release_artifact = (
             expected_artifact_source == "required_tuple_policy_missing_release_artifact"
         )
         gate_evidence["expected_artifact_source"] = expected_artifact_source
+        gate_evidence["expected_artifact_arch"] = expected_artifact_arch
+        if expected_arch and expected_artifact_arch and expected_artifact_arch != expected_arch:
+            reasons.append(
+                f"Release channel Linux artifact arch does not match promoted RID for head '{head}' ({expected_rid})."
+            )
         if expected_rid and normalize_token(gate_head.get("rid")) != expected_rid:
             reasons.append(f"Linux desktop exit gate receipt RID does not match promoted head '{head}' ({expected_rid}).")
         if expected_rid and gate_evidence["primary_receipt_rid"] and gate_evidence["primary_receipt_rid"] != expected_rid:
@@ -1082,17 +1088,26 @@ def validate_windows_gate(
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
+    expected_arch = arch_from_rid(expected_rid)
+    expected_artifact_arch = normalize_token(expected_artifact.get("arch"))
     expected_artifact_source = normalize_token(expected_artifact.get("source"))
     policy_missing_release_artifact = expected_artifact_source == "required_tuple_policy_missing_release_artifact"
     gate_evidence["expected_artifact_source"] = expected_artifact_source
+    gate_evidence["expected_artifact_arch"] = expected_artifact_arch
+    if expected_arch and expected_artifact_arch and expected_artifact_arch != expected_arch:
+        reasons.append("Release channel Windows artifact arch does not match promoted release-channel RID.")
 
     if not policy_missing_release_artifact:
+        channel_artifact_arch = normalize_token(channel_artifact.get("arch"))
+        gate_evidence["release_channel_windows_artifact_arch"] = channel_artifact_arch
         if normalize_token(channel_artifact.get("head")) != expected_head:
             reasons.append("Windows gate embedded release_channel_windows_artifact head does not match promoted release channel.")
         if normalize_token(channel_artifact.get("rid")) != expected_rid:
             reasons.append("Windows gate embedded release_channel_windows_artifact RID does not match promoted release channel.")
         if normalize_token(channel_artifact.get("platform")) != "windows":
             reasons.append("Windows gate embedded release_channel_windows_artifact platform is not 'windows'.")
+        if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
+            reasons.append("Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.")
         if str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
             reasons.append("Windows gate embedded release_channel_windows_artifact fileName does not match promoted release channel.")
         if expected_sha and normalize_token(channel_artifact.get("sha256")) != expected_sha:

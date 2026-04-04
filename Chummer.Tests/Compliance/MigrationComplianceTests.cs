@@ -3469,6 +3469,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt hostClass does not identify a Windows host for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt operatingSystem is missing for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableGateScriptText, "Release channel Windows artifact arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt channelId does not match release-channel channelId for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt is stale for promoted installer bytes (");
@@ -3531,6 +3533,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt platform is not linux for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt rid does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "Release channel Linux artifact arch does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass does not identify a Linux host for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt operatingSystem is missing for promoted head");

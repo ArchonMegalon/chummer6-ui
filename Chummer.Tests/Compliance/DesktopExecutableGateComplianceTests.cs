@@ -115,6 +115,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt status is not passing for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid does not match promoted RID for head");
+        StringAssert.Contains(executableScriptText, "Release channel Linux artifact arch does not match promoted RID for head");
         StringAssert.Contains(executableScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt exists for promoted head");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt is missing releaseVersion/version.");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.");
@@ -122,6 +123,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt version does not match release channel version for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt rid is missing for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt rid does not match promoted release-channel RID.");
+        StringAssert.Contains(executableScriptText, "Release channel Windows artifact arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt exists for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt is missing releaseVersion/version for promoted head");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head");
@@ -140,6 +143,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "startup_smoke_receipt_version");
         StringAssert.Contains(executableScriptText, "startup_smoke_receipt_rid");
         StringAssert.Contains(executableScriptText, "expected_artifact_arch");
+        StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_arch");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_arch");
         StringAssert.Contains(executableScriptText, "Release channel is missing canonical required promoted desktop head(s) for milestone-3 executable proof:");
         StringAssert.Contains(executableScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 executable proof:");
