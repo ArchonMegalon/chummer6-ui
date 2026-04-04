@@ -389,6 +389,19 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_materializer_uses_tuple_specific_macos_receipt_paths()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "macos_gate_tuple_path=\"$repo_root/.codex-studio/published/UI_MACOS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json\"");
+        StringAssert.Contains(scriptText, "CHUMMER_UI_MACOS_DESKTOP_EXIT_GATE_PATH=\"$macos_gate_tuple_path\"");
+        StringAssert.Contains(scriptText, "def macos_gate_path_for_head(head: str, rid: str, receipt_root: Path) -> Path:");
+        StringAssert.Contains(scriptText, "return receipt_root / f\"UI_MACOS_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json\"");
+    }
+
+    [TestMethod]
     public void Windows_and_macos_exit_gate_materializers_do_not_resolve_proof_from_legacy_chummer5a_paths()
     {
         string repoRoot = FindRepoRoot();
