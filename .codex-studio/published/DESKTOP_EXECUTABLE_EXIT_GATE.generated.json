@@ -1,13 +1,14 @@
 {
-  "generated_at": "2026-04-04T02:40:29.536479Z",
-  "generatedAt": "2026-04-04T02:40:29.536479Z",
+  "generated_at": "2026-04-04T03:08:58.443987Z",
+  "generatedAt": "2026-04-04T03:08:58.443987Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
   "status": "fail",
   "summary": "Desktop executable exit gate is not fully proven.",
   "reasons": [
     "Release channel does not publish desktop install media for required platform 'windows'.",
     "Release channel does not publish desktop install media for required platform 'macos'.",
-    "Release channel is missing required desktop platform/head installer tuple pair(s): avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos."
+    "Release channel is missing required desktop platform/head installer tuple pair(s): avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos.",
+    "Release channel is missing required desktop platform/head/rid installer tuple(s): avalonia:osx-arm64:macos, avalonia:win-x64:windows, blazor-desktop:osx-arm64:macos, blazor-desktop:win-x64:windows."
   ],
   "evidence": {
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
@@ -25,11 +26,11 @@
       "/docker/chummercomplete/chummer-presentation",
       "/docker/chummercomplete/chummer-hub-registry"
     ],
-    "flagship UI release gate proof_generated_at": "2026-04-04T01:34:14.669240Z",
-    "flagship UI release gate proof_age_seconds": 3974,
-    "desktop visual familiarity gate proof_generated_at": "2026-04-04T02:40:29.098251Z",
+    "flagship UI release gate proof_generated_at": "2026-04-04T03:03:55.166413Z",
+    "flagship UI release gate proof_age_seconds": 303,
+    "desktop visual familiarity gate proof_generated_at": "2026-04-04T03:08:57.942481Z",
     "desktop visual familiarity gate proof_age_seconds": 0,
-    "desktop workflow execution gate proof_generated_at": "2026-04-04T02:40:29.233944Z",
+    "desktop workflow execution gate proof_generated_at": "2026-04-04T03:08:58.144641Z",
     "desktop workflow execution gate proof_age_seconds": 0,
     "flagship_status": "pass",
     "visual_familiarity_status": "pass",
@@ -100,23 +101,23 @@
       "15-creation-section-light.png"
     ],
     "visual_familiarity_missing_screenshots_now": [],
-    "visual_familiarity_screenshot_reference_generated_at": "2026-04-04T02:40:29.098251Z",
+    "visual_familiarity_screenshot_reference_generated_at": "2026-04-04T03:08:57.942481Z",
     "visual_familiarity_screenshot_file_timestamps": {
-      "01-initial-shell-light.png": "2026-04-04T01:31:07.889643Z",
-      "02-menu-open-light.png": "2026-04-04T01:31:07.889643Z",
-      "03-settings-open-light.png": "2026-04-04T01:31:07.890643Z",
-      "04-loaded-runner-light.png": "2026-04-04T01:31:07.890643Z",
-      "05-dense-section-light.png": "2026-04-04T01:31:07.890643Z",
-      "06-dense-section-dark.png": "2026-04-04T01:31:07.890643Z",
-      "07-loaded-runner-tabs-light.png": "2026-04-04T01:31:07.891644Z",
-      "08-cyberware-dialog-light.png": "2026-04-04T01:31:07.891644Z",
-      "09-vehicles-section-light.png": "2026-04-04T01:31:07.891644Z",
-      "10-contacts-section-light.png": "2026-04-04T01:31:07.892643Z",
-      "11-diary-dialog-light.png": "2026-04-04T01:31:07.892643Z",
-      "12-magic-dialog-light.png": "2026-04-04T01:31:07.892643Z",
-      "13-matrix-dialog-light.png": "2026-04-04T01:31:07.892643Z",
-      "14-advancement-dialog-light.png": "2026-04-04T01:31:07.893643Z",
-      "15-creation-section-light.png": "2026-04-04T01:31:07.893643Z"
+      "01-initial-shell-light.png": "2026-04-04T03:00:48.649604Z",
+      "02-menu-open-light.png": "2026-04-04T03:00:48.649604Z",
+      "03-settings-open-light.png": "2026-04-04T03:00:48.649604Z",
+      "04-loaded-runner-light.png": "2026-04-04T03:00:48.650604Z",
+      "05-dense-section-light.png": "2026-04-04T03:00:48.650604Z",
+      "06-dense-section-dark.png": "2026-04-04T03:00:48.650604Z",
+      "07-loaded-runner-tabs-light.png": "2026-04-04T03:00:48.651604Z",
+      "08-cyberware-dialog-light.png": "2026-04-04T03:00:48.651604Z",
+      "09-vehicles-section-light.png": "2026-04-04T03:00:48.651604Z",
+      "10-contacts-section-light.png": "2026-04-04T03:00:48.652604Z",
+      "11-diary-dialog-light.png": "2026-04-04T03:00:48.652604Z",
+      "12-magic-dialog-light.png": "2026-04-04T03:00:48.652604Z",
+      "13-matrix-dialog-light.png": "2026-04-04T03:00:48.653604Z",
+      "14-advancement-dialog-light.png": "2026-04-04T03:00:48.653604Z",
+      "15-creation-section-light.png": "2026-04-04T03:00:48.654604Z"
     },
     "visual_familiarity_stale_screenshots": [],
     "visual_familiarity_screenshots_older_than_receipt": [],
@@ -136,10 +137,10 @@
     "release_channel_status": "published",
     "release_channel_channel_id": "docker",
     "release_channel_version": "local-docker",
-    "release_channel_generated_at": "2026-04-04T00:36:34Z",
+    "release_channel_generated_at": "2026-04-04T02:50:32Z",
     "release_channel_freshness_max_age_seconds": 86400,
     "release_channel_freshness_max_future_skew_seconds": 300,
-    "release_channel_age_seconds": 7435,
+    "release_channel_age_seconds": 1106,
     "desktopTupleCoverage.requiredDesktopPlatforms_normalized": [
       "linux",
       "windows",
@@ -199,7 +200,11 @@
     "desktopTupleCoverage.missingRequiredHeads_whitespace_padded_indexes": [],
     "desktopTupleCoverage.requiredDesktopPlatformHeadRidTuples_normalized": [
       "avalonia:linux-x64:linux",
-      "blazor-desktop:linux-x64:linux"
+      "avalonia:osx-arm64:macos",
+      "avalonia:win-x64:windows",
+      "blazor-desktop:linux-x64:linux",
+      "blazor-desktop:osx-arm64:macos",
+      "blazor-desktop:win-x64:windows"
     ],
     "desktopTupleCoverage.requiredDesktopPlatformHeadRidTuples_whitespace_padded_indexes": [],
     "desktopTupleCoverage.requiredDesktopPlatformHeadRidTuples_malformed_tokens": [],
@@ -209,7 +214,12 @@
     ],
     "desktopTupleCoverage.promotedPlatformHeadRidTuples_whitespace_padded_indexes": [],
     "desktopTupleCoverage.promotedPlatformHeadRidTuples_malformed_tokens": [],
-    "desktopTupleCoverage.missingRequiredPlatformHeadRidTuples_normalized": [],
+    "desktopTupleCoverage.missingRequiredPlatformHeadRidTuples_normalized": [
+      "avalonia:osx-arm64:macos",
+      "avalonia:win-x64:windows",
+      "blazor-desktop:osx-arm64:macos",
+      "blazor-desktop:win-x64:windows"
+    ],
     "desktopTupleCoverage.missingRequiredPlatformHeadRidTuples_whitespace_padded_indexes": [],
     "desktopTupleCoverage.missingRequiredPlatformHeadRidTuples_malformed_tokens": [],
     "release_channel_tuple_coverage_required_desktop_platforms": [
@@ -242,13 +252,22 @@
     "release_channel_tuple_coverage_reported_missing_required_heads": [],
     "release_channel_tuple_coverage_required_platform_head_rid_tuples": [
       "avalonia:linux-x64:linux",
-      "blazor-desktop:linux-x64:linux"
+      "avalonia:osx-arm64:macos",
+      "avalonia:win-x64:windows",
+      "blazor-desktop:linux-x64:linux",
+      "blazor-desktop:osx-arm64:macos",
+      "blazor-desktop:win-x64:windows"
     ],
     "release_channel_tuple_coverage_promoted_platform_head_rid_tuples": [
       "avalonia:linux-x64:linux",
       "blazor-desktop:linux-x64:linux"
     ],
-    "release_channel_tuple_coverage_reported_missing_required_platform_head_rid_tuples": [],
+    "release_channel_tuple_coverage_reported_missing_required_platform_head_rid_tuples": [
+      "avalonia:osx-arm64:macos",
+      "avalonia:win-x64:windows",
+      "blazor-desktop:osx-arm64:macos",
+      "blazor-desktop:win-x64:windows"
+    ],
     "release_channel_tuple_coverage_present": true,
     "release_channel_tuple_coverage_declares_missing_required_platform_head_pairs": true,
     "release_channel_tuple_coverage_declares_missing_required_platforms": true,
@@ -382,7 +401,29 @@
       "avalonia:linux-x64:linux",
       "blazor-desktop:linux-x64:linux"
     ],
-    "release_channel_missing_required_platform_head_rid_tuples_derived": [],
+    "release_channel_required_platform_head_pairs_for_matrix": [
+      "avalonia:linux",
+      "avalonia:macos",
+      "avalonia:windows",
+      "blazor-desktop:linux",
+      "blazor-desktop:macos",
+      "blazor-desktop:windows"
+    ],
+    "release_channel_required_platform_head_pairs_from_required_rid_tuples": [
+      "avalonia:linux",
+      "avalonia:macos",
+      "avalonia:windows",
+      "blazor-desktop:linux",
+      "blazor-desktop:macos",
+      "blazor-desktop:windows"
+    ],
+    "release_channel_missing_required_platform_head_pairs_from_required_rid_tuples": [],
+    "release_channel_missing_required_platform_head_rid_tuples_derived": [
+      "avalonia:osx-arm64:macos",
+      "avalonia:win-x64:windows",
+      "blazor-desktop:osx-arm64:macos",
+      "blazor-desktop:win-x64:windows"
+    ],
     "release_channel_tuple_coverage_promoted_platform_head_rid_tuple_inventory_mismatch": [],
     "release_channel_tuple_coverage_missing_platform_head_rid_tuple_inventory_mismatch": [],
     "missing_required_desktop_platforms_derived": [
@@ -418,6 +459,14 @@
     "workflow_execution.flagship_head_proof_statuses_malformed_entries": [],
     "workflow_execution.flagship_head_proof_statuses_non_canonical_keys": [],
     "workflow_execution.flagship_head_proof_statuses_duplicate_normalized_keys": [],
+    "visual_familiarity.release_channel_channel_id_present": true,
+    "visual_familiarity.release_channel_channel_id_raw_type": "str",
+    "visual_familiarity.release_channel_channel_id_normalized": "docker",
+    "workflow_execution.release_channel_channel_id_present": true,
+    "workflow_execution.release_channel_channel_id_raw_type": "str",
+    "workflow_execution.release_channel_channel_id_normalized": "docker",
+    "visual_familiarity_release_channel_id": "docker",
+    "workflow_execution_release_channel_id": "docker",
     "visual_familiarity_required_desktop_heads": [
       "avalonia",
       "blazor-desktop"
@@ -633,7 +682,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for avalonia_generated_at": "2026-04-03T23:35:04Z",
-        "linux desktop exit gate proof for avalonia_age_seconds": 11125,
+        "linux desktop exit gate proof for avalonia_age_seconds": 12834,
         "gate_reasons": [],
         "receipt_head": {
           "app_key": "avalonia",
@@ -708,7 +757,7 @@
         "primary_receipt_host_class": "local-linux-x64",
         "primary_receipt_operating_system": "Debian GNU/Linux 12 (bookworm)",
         "primary_receipt_recorded_at": "2026-04-03T23:35:01.9693995+00:00",
-        "primary_receipt_age_seconds": 11127,
+        "primary_receipt_age_seconds": 12836,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
@@ -718,7 +767,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for blazor-desktop_generated_at": "2026-04-03T23:33:25Z",
-        "linux desktop exit gate proof for blazor-desktop_age_seconds": 11224,
+        "linux desktop exit gate proof for blazor-desktop_age_seconds": 12933,
         "gate_reasons": [],
         "receipt_head": {
           "app_key": "blazor-desktop",
@@ -793,7 +842,7 @@
         "primary_receipt_host_class": "local-linux-x64",
         "primary_receipt_operating_system": "Debian GNU/Linux 12 (bookworm)",
         "primary_receipt_recorded_at": "2026-04-03T23:33:22.8768308+00:00",
-        "primary_receipt_age_seconds": 11226,
+        "primary_receipt_age_seconds": 12935,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-launch-blazor-desktop-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-wrapper-blazor-desktop-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-desktop-entry-blazor-desktop-linux-x64.desktop",

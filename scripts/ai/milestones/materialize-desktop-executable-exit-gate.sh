@@ -2261,6 +2261,36 @@ workflow_head_missing_contract_markers = {
     for head, markers in workflow_head_missing_contract_markers_raw.items()
     if normalize_token(head) and isinstance(markers, list)
 }
+visual_release_channel_id = normalize_optional_string_scalar(
+    visual_familiarity_evidence.get("release_channel_channel_id")
+    or visual_familiarity_evidence.get("release_channel_id")
+    or visual_familiarity_gate.get("channelId")
+    or visual_familiarity_gate.get("channel"),
+    "visual_familiarity.release_channel_channel_id",
+    evidence,
+    reasons,
+    required=True,
+)
+workflow_release_channel_id = normalize_optional_string_scalar(
+    workflow_execution_evidence.get("release_channel_channel_id")
+    or workflow_execution_evidence.get("release_channel_id")
+    or workflow_execution_gate.get("channelId")
+    or workflow_execution_gate.get("channel"),
+    "workflow_execution.release_channel_channel_id",
+    evidence,
+    reasons,
+    required=True,
+)
+evidence["visual_familiarity_release_channel_id"] = visual_release_channel_id
+evidence["workflow_execution_release_channel_id"] = workflow_release_channel_id
+if release_channel_channel_id and visual_release_channel_id and visual_release_channel_id != release_channel_channel_id:
+    reasons.append(
+        "Desktop visual familiarity exit gate release-channel identity does not match release channel channelId."
+    )
+if release_channel_channel_id and workflow_release_channel_id and workflow_release_channel_id != release_channel_channel_id:
+    reasons.append(
+        "Desktop workflow execution gate release-channel identity does not match release channel channelId."
+    )
 evidence["visual_familiarity_required_desktop_heads"] = visual_required_heads
 evidence["workflow_execution_required_desktop_heads"] = workflow_required_heads
 evidence["visual_familiarity_head_contract_marker_statuses"] = (
