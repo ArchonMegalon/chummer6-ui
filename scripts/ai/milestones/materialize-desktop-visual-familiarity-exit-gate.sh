@@ -47,6 +47,10 @@ if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
     fi
     sleep "$release_gate_lock_poll_seconds"
   done
+  if [[ -d "$release_gate_lock_dir" ]]; then
+    echo "[desktop-visual-familiarity-gate] FAIL: release gate lock did not clear within ${release_gate_lock_wait_seconds}s: $release_gate_lock_dir" >&2
+    exit 52
+  fi
 fi
 
 python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
