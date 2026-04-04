@@ -3408,6 +3408,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is outside trusted local roots.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt file is unreadable or not a JSON object for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "gate_evidence[\"startup_smoke_receipt_source\"] = startup_smoke_receipt_source");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt status is not passing for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes.");
@@ -3436,6 +3438,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt path is outside trusted local roots for promoted head");
         StringAssert.Contains(executableGateScriptText, "startup_receipt_file = (");
         StringAssert.Contains(executableGateScriptText, "startup_smoke_receipt_file_exists");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt file is unreadable or not a JSON object for promoted head");
+        StringAssert.Contains(executableGateScriptText, "gate_evidence[\"startup_smoke_receipt_source\"] = \"file\" if startup_receipt_file else \"missing\"");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt status is not passing for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head");
@@ -3449,6 +3453,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt file is unreadable or not a JSON object for promoted head");
+        StringAssert.Contains(executableGateScriptText, "gate_evidence[\"primary_receipt_source\"] = \"file\" if primary_receipt_file else \"missing\"");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is missing/invalid");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop");
@@ -3562,8 +3568,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"cross-head workflow parity tests\"");
         StringAssert.Contains(flagshipGateScriptText, "\"requiredRuntimeBackedTests\": [");
         StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture");
-        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
         StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr4CodexOrientationModel\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr5CodexOrientationModel\": \"pass\"");
         StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr6CodexOrientationModel\": \"pass\"");
         StringAssert.Contains(flagshipGateScriptText, "\"legacyCreationWorkflowRhythm\": \"pass\"");
         StringAssert.Contains(flagshipGateScriptText, "\"legacyGearWorkflowRhythm\": \"pass\"");
@@ -3586,7 +3593,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "for _ in $(seq 1 \"$release_gate_lock_wait_iterations\"); do");
         StringAssert.Contains(visualGateScriptText, "sleep \"$release_gate_lock_poll_seconds\"");
         StringAssert.Contains(visualGateScriptText, "if [[ \"$skip_release_gate_lock_wait\" != \"1\" ]]; then");
-        StringAssert.Contains(visualGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks");
+        StringAssert.Contains(visualGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
         StringAssert.Contains(visualGateScriptText, "ruleset_orientation_method_has_markers");
         StringAssert.Contains(visualGateScriptText, "missing_ruleset_orientation_markers");
         StringAssert.Contains(visualGateScriptText, "legacy_creation_workflow_rhythm");
@@ -3614,6 +3621,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "skip_dependency_materialize=\"${CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE:-0}\"");
         StringAssert.Contains(executableGateScriptText, "if [[ \"$skip_release_gate_lock_wait\" != \"1\" ]]; then");
         StringAssert.Contains(executableGateScriptText, "if [[ \"$skip_dependency_materialize\" != \"1\" ]]; then");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=\"$skip_release_gate_lock_wait\" \\");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS=\"$release_gate_lock_wait_seconds\" \\");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS=\"$release_gate_lock_poll_seconds\" \\");
         StringAssert.Contains(executableGateScriptText, "bash \"$visual_familiarity_materializer_path\" >/dev/null");
         StringAssert.Contains(executableGateScriptText, "bash \"$workflow_execution_materializer_path\" >/dev/null");
     }

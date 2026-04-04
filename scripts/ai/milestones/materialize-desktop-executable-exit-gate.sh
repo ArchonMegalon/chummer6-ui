@@ -50,7 +50,10 @@ fi
 
 if [[ "$skip_dependency_materialize" != "1" ]]; then
   if [[ -f "$visual_familiarity_materializer_path" ]]; then
-    bash "$visual_familiarity_materializer_path" >/dev/null
+    CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT="$skip_release_gate_lock_wait" \
+      CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS="$release_gate_lock_wait_seconds" \
+      CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS="$release_gate_lock_poll_seconds" \
+      bash "$visual_familiarity_materializer_path" >/dev/null
   fi
   if [[ -f "$workflow_execution_materializer_path" ]]; then
     bash "$workflow_execution_materializer_path" >/dev/null
@@ -371,7 +374,7 @@ def validate_linux_gate(
     primary_receipt_path = Path(primary_receipt_path_raw) if primary_receipt_path_raw else None
     primary_receipt_file_exists = primary_receipt_path is not None and primary_receipt_path.is_file()
     primary_receipt_file = load_json(primary_receipt_path) if primary_receipt_file_exists and primary_receipt_path is not None else {}
-    primary_receipt_for_validation = primary_receipt_file if primary_receipt_file else primary_receipt
+    primary_receipt_for_validation = primary_receipt_file if primary_receipt_file else {}
 
     gate_evidence["primary_receipt_path"] = primary_receipt_path_raw
     gate_evidence["primary_receipt_file_exists"] = primary_receipt_file_exists
@@ -389,6 +392,9 @@ def validate_linux_gate(
 
     gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt.get("artifactDigest"))
     gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt.get("readyCheckpoint"))
+    gate_evidence["primary_receipt_source"] = "file" if primary_receipt_file else "missing"
+    if primary_receipt_file_exists and not primary_receipt_file:
+        reasons.append(f"Linux installer startup smoke receipt file is unreadable or not a JSON object for promoted head '{head}'.")
     recorded_at_raw = (
         str(primary_receipt_for_validation.get("completedAtUtc") or "").strip()
         or str(primary_receipt_for_validation.get("recordedAtUtc") or "").strip()
@@ -579,49 +585,43 @@ def validate_windows_gate(
     ):
         pass
     else:
+        startup_smoke_receipt_source = "file" if startup_smoke_receipt_payload else "missing"
+        gate_evidence["startup_smoke_receipt_source"] = startup_smoke_receipt_source
+        if startup_smoke_receipt_exists and not startup_smoke_receipt_payload:
+            reasons.append("Windows startup smoke receipt file is unreadable or not a JSON object for promoted installer bytes.")
         startup_smoke_status = normalize_token(
             startup_smoke_receipt_payload.get("status")
-            or gate_checks.get("startup_smoke_status")
         )
         startup_smoke_ready_checkpoint = normalize_token(
             startup_smoke_receipt_payload.get("readyCheckpoint")
-            or gate_checks.get("startup_smoke_ready_checkpoint")
         )
         startup_smoke_artifact_digest = normalize_token(
             startup_smoke_receipt_payload.get("artifactDigest")
-            or gate_checks.get("startup_smoke_artifact_digest")
         )
         startup_smoke_head_id = normalize_token(
             startup_smoke_receipt_payload.get("headId")
-            or gate_checks.get("startup_smoke_receipt_head_id")
         )
         startup_smoke_platform = normalize_token(
             startup_smoke_receipt_payload.get("platform")
-            or gate_checks.get("startup_smoke_receipt_platform")
         )
         startup_smoke_arch = normalize_token(
             startup_smoke_receipt_payload.get("arch")
-            or gate_checks.get("startup_smoke_receipt_arch")
         )
         startup_smoke_channel_id = normalize_token(
             startup_smoke_receipt_payload.get("channelId")
             or startup_smoke_receipt_payload.get("channel")
-            or gate_checks.get("startup_smoke_channel")
         )
         startup_smoke_host_class = normalize_token(
             startup_smoke_receipt_payload.get("hostClass")
-            or gate_checks.get("startup_smoke_host_class")
         )
         startup_smoke_operating_system = str(
             startup_smoke_receipt_payload.get("operatingSystem")
-            or gate_checks.get("startup_smoke_operating_system")
             or ""
         ).strip()
         startup_smoke_recorded_at_raw = str(
             startup_smoke_receipt_payload.get("completedAtUtc")
             or startup_smoke_receipt_payload.get("recordedAtUtc")
             or startup_smoke_receipt_payload.get("startedAtUtc")
-            or gate_checks.get("startup_smoke_receipt_timestamp")
             or ""
         ).strip()
         startup_smoke_recorded_at = parse_iso(startup_smoke_recorded_at_raw)
@@ -744,7 +744,7 @@ def validate_macos_gate(
         if startup_receipt_exists and startup_receipt_path is not None
         else {}
     )
-    startup_receipt_for_validation = startup_receipt_file if startup_receipt_file else startup_receipt
+    startup_receipt_for_validation = startup_receipt_file if startup_receipt_file else {}
     startup_smoke_status = normalize_token(
         startup_receipt_for_validation.get("status")
         or startup.get("status")
@@ -779,6 +779,9 @@ def validate_macos_gate(
     gate_evidence["release_channel_macos_artifact"] = channel_artifact
     gate_evidence["startup_smoke_receipt_path"] = str(startup.get("receipt_path") or "").strip()
     gate_evidence["startup_smoke_receipt_file_exists"] = startup_receipt_exists
+    gate_evidence["startup_smoke_receipt_source"] = "file" if startup_receipt_file else "missing"
+    if startup_receipt_exists and not startup_receipt_file:
+        reasons.append(f"macOS startup smoke receipt file is unreadable or not a JSON object for promoted head '{head}' ({rid}).")
     gate_evidence["startup_smoke_ready_checkpoint"] = startup_smoke_ready_checkpoint
     gate_evidence["startup_smoke_artifact_digest"] = startup_smoke_artifact_digest
     gate_evidence["startup_smoke_receipt_head_id"] = startup_smoke_head_id
