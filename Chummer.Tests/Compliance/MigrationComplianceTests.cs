@@ -3481,8 +3481,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "\"visual_familiarity.required_screenshots\"");
         StringAssert.Contains(executableGateScriptText, "must be a list when present.");
         StringAssert.Contains(executableGateScriptText, "contains a non-string item at index");
+        StringAssert.Contains(executableGateScriptText, "contains a token with leading/trailing whitespace at index");
         StringAssert.Contains(executableGateScriptText, "contains a blank token at index");
         StringAssert.Contains(executableGateScriptText, "contains duplicate token(s):");
+        StringAssert.Contains(executableGateScriptText, "_whitespace_padded_indexes");
         StringAssert.Contains(executableGateScriptText, "contains non-basename token(s):");
         StringAssert.Contains(executableGateScriptText, "contains token(s) without an allowed suffix");
         StringAssert.Contains(executableGateScriptText, "_malformed_non_basename_tokens");
