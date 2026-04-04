@@ -3581,8 +3581,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "contains duplicate token(s):");
         StringAssert.Contains(executableGateScriptText, "contains malformed token(s):");
         StringAssert.Contains(executableGateScriptText, "contains unsupported platform key");
+        StringAssert.Contains(executableGateScriptText, "contains a platform key with leading/trailing whitespace");
+        StringAssert.Contains(executableGateScriptText, "contains a non-canonical platform key");
         StringAssert.Contains(executableGateScriptText, "contains duplicate normalized platform key");
         StringAssert.Contains(executableGateScriptText, "_raw_platform_keys_by_normalized");
+        StringAssert.Contains(executableGateScriptText, "_whitespace_padded_platform_keys");
+        StringAssert.Contains(executableGateScriptText, "_non_canonical_platform_keys");
         StringAssert.Contains(executableGateScriptText, "_duplicate_normalized_platform_keys");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs_by_platform");

@@ -351,13 +351,27 @@ def normalize_promoted_platform_heads(
         return {}
     normalized: Dict[str, List[str]] = {}
     raw_platform_keys_by_normalized: Dict[str, List[str]] = {}
+    whitespace_padded_platform_keys: List[str] = []
+    non_canonical_platform_keys: List[str] = []
     for raw_platform, raw_heads in values.items():
         if not isinstance(raw_platform, str):
             reasons.append(f"{field_label} contains a non-string platform key.")
             continue
+        if raw_platform != raw_platform.strip():
+            whitespace_padded_platform_keys.append(raw_platform)
+            reasons.append(
+                f"{field_label} contains a platform key with leading/trailing whitespace: {raw_platform!r}."
+            )
+            continue
         platform_token = normalize_token(raw_platform)
         if not platform_token:
             reasons.append(f"{field_label} contains a blank platform key.")
+            continue
+        if raw_platform != platform_token:
+            non_canonical_platform_keys.append(raw_platform)
+            reasons.append(
+                f"{field_label} contains a non-canonical platform key '{raw_platform}' (expected '{platform_token}')."
+            )
             continue
         if allowed_platform_tokens is not None and platform_token not in allowed_platform_tokens:
             reasons.append(f"{field_label} contains unsupported platform key '{platform_token}'.")
@@ -377,6 +391,12 @@ def normalize_promoted_platform_heads(
         )
     evidence[f"{field_label}_normalized"] = normalized
     evidence[f"{field_label}_raw_platform_keys_by_normalized"] = raw_platform_keys_by_normalized
+    evidence[f"{field_label}_whitespace_padded_platform_keys"] = sorted(
+        set(whitespace_padded_platform_keys)
+    )
+    evidence[f"{field_label}_non_canonical_platform_keys"] = sorted(
+        set(non_canonical_platform_keys)
+    )
     evidence[f"{field_label}_duplicate_normalized_platform_keys"] = sorted(
         [
             platform_token
