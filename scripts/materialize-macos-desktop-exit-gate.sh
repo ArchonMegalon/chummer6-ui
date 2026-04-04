@@ -456,7 +456,7 @@ else:
         if path_uses_legacy_chummer5a_root(startup_smoke_artifact_path_obj):
             reasons.append("macOS startup smoke receipt artifactPath points into a legacy chummer5a root.")
         try:
-            if artifact_path is not None and startup_smoke_artifact_path_obj.resolve() != artifact_path.resolve():
+            if installer_path is not None and startup_smoke_artifact_path_obj.resolve() != installer_path.resolve():
                 reasons.append("macOS startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.")
         except Exception:
             reasons.append("macOS startup smoke receipt artifactPath could not be resolved for promoted shelf verification.")
