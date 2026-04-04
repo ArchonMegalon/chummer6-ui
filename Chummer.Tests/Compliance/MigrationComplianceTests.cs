@@ -4029,6 +4029,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt version does not match release channel");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath is missing.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath points into a legacy chummer5a root.");
+        StringAssert.Contains(macosGateScriptText, "if installer_path is not None and startup_smoke_artifact_path_obj.resolve() != installer_path.resolve():");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath could not be resolved for promoted shelf verification.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted installer bytes.");
