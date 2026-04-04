@@ -434,8 +434,16 @@ public sealed class DesktopExecutableGateComplianceTests
 
         StringAssert.Contains(windowsScriptText, "Promoted Windows installer was not resolved from the repo-local desktop shelf.");
         StringAssert.Contains(macosScriptText, "Promoted macOS installer was not resolved from the repo-local desktop shelf");
+        StringAssert.Contains(macosScriptText, "evidence[\"startup_smoke_external_blocker\"] = startup_smoke_external_blocker");
+        StringAssert.Contains(macosScriptText, "\"external_blocker\": startup_smoke_external_blocker");
+        StringAssert.Contains(macosScriptText, "evidence[\"startup_smoke_receipt_found\"] = startup_smoke_receipt_found");
         Assert.IsFalse(windowsScriptText.Contains("/docker/chummer5a/", StringComparison.Ordinal));
         Assert.IsFalse(macosScriptText.Contains("/docker/chummer5a/", StringComparison.Ordinal));
+
+        string executableGateScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string executableGateScriptText = File.ReadAllText(executableGateScriptPath);
+        StringAssert.Contains(executableGateScriptText, "startup.get(\"external_blocker\")");
+        StringAssert.Contains(executableGateScriptText, "or gate_checks.get(\"startup_smoke_external_blocker\")");
     }
 
     private static string FindRepoRoot()
