@@ -1366,7 +1366,11 @@ def validate_windows_gate(
     gate_evidence["release_channel_windows_artifact"] = channel_artifact
     gate_evidence["windows_installer_path"] = str(gate_checks.get("windows_installer_path") or "").strip()
     gate_evidence["gate_reasons"] = gate_reasons
-    gate_evidence["startup_smoke_receipt_path"] = str(gate_checks.get("startup_smoke_receipt_path") or "").strip()
+    checks_startup_smoke_receipt_found = bool(gate_checks.get("startup_smoke_receipt_found"))
+    checks_startup_smoke_receipt_path = str(gate_checks.get("startup_smoke_receipt_path") or "").strip()
+    gate_evidence["checks_startup_smoke_receipt_found"] = checks_startup_smoke_receipt_found
+    gate_evidence["checks_startup_smoke_receipt_path"] = checks_startup_smoke_receipt_path
+    gate_evidence["startup_smoke_receipt_path"] = checks_startup_smoke_receipt_path
     host_supports_windows_startup_smoke = bool(gate_checks.get("host_supports_windows_startup_smoke"))
     startup_smoke_external_blocker = normalize_token(gate_checks.get("startup_smoke_external_blocker"))
     gate_evidence["host_supports_windows_startup_smoke"] = host_supports_windows_startup_smoke
@@ -1570,6 +1574,15 @@ def validate_windows_gate(
         if startup_smoke_receipt_exists and startup_smoke_receipt_path is not None
         else {}
     )
+    startup_smoke_receipt_path_current = str(startup_smoke_receipt_path) if startup_smoke_receipt_path is not None else ""
+    if checks_startup_smoke_receipt_found != startup_smoke_receipt_exists:
+        reasons.append(
+            "Windows desktop exit gate checks.startup_smoke_receipt_found disagrees with startup smoke receipt file presence for promoted installer bytes."
+        )
+    if checks_startup_smoke_receipt_path and checks_startup_smoke_receipt_path != startup_smoke_receipt_path_current:
+        reasons.append(
+            "Windows desktop exit gate checks.startup_smoke_receipt_path disagrees with startup smoke receipt path for promoted installer bytes."
+        )
     if not startup_smoke_receipt_exists:
         reasons.append("Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.")
         if not host_supports_windows_startup_smoke and startup_smoke_external_blocker != "missing_windows_host_capability":
@@ -1856,7 +1869,10 @@ def validate_macos_gate(
     gate_evidence["expected_artifact_source"] = expected_artifact_source
     gate_evidence["expected_installer_file_name"] = expected_file_name
     gate_evidence["quarantined_installer_candidates"] = quarantine_candidates
-    startup_receipt_path = Path(str(startup.get("receipt_path") or "").strip()) if startup.get("receipt_path") else None
+    checks_startup_smoke_receipt_found = bool(gate_checks.get("startup_smoke_receipt_found"))
+    checks_startup_smoke_receipt_path = str(gate_checks.get("startup_smoke_receipt_path") or "").strip()
+    startup_receipt_path_raw = str(startup.get("receipt_path") or "").strip()
+    startup_receipt_path = Path(startup_receipt_path_raw) if startup_receipt_path_raw else None
     startup_receipt_exists = startup_receipt_path is not None and startup_receipt_path.is_file()
     startup_receipt_file = (
         load_json(startup_receipt_path)
@@ -1914,7 +1930,9 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_status"] = startup_smoke_status
     gate_evidence["artifact"] = artifact
     gate_evidence["release_channel_macos_artifact"] = channel_artifact
-    gate_evidence["startup_smoke_receipt_path"] = str(startup.get("receipt_path") or "").strip()
+    gate_evidence["checks_startup_smoke_receipt_found"] = checks_startup_smoke_receipt_found
+    gate_evidence["checks_startup_smoke_receipt_path"] = checks_startup_smoke_receipt_path
+    gate_evidence["startup_smoke_receipt_path"] = startup_receipt_path_raw
     gate_evidence["startup_smoke_receipt_file_exists"] = startup_receipt_exists
     gate_evidence["startup_smoke_receipt_source"] = "file" if startup_receipt_file else "missing"
     gate_evidence["host_supports_macos_startup_smoke"] = host_supports_macos_startup_smoke
@@ -1954,6 +1972,14 @@ def validate_macos_gate(
     gate_evidence["expected_artifact_arch"] = expected_artifact_arch
     gate_evidence["expected_artifact_arch_alias_conflict"] = expected_artifact_arch_alias_conflict
     gate_evidence["startup_smoke_receipt_arch_alias_conflict"] = startup_smoke_arch_alias_conflict
+    if checks_startup_smoke_receipt_found != startup_receipt_exists:
+        reasons.append(
+            f"macOS desktop exit gate checks.startup_smoke_receipt_found disagrees with startup_smoke.receipt_path file presence for promoted head '{head}' ({rid})."
+        )
+    if checks_startup_smoke_receipt_path and checks_startup_smoke_receipt_path != startup_receipt_path_raw:
+        reasons.append(
+            f"macOS desktop exit gate checks.startup_smoke_receipt_path disagrees with startup_smoke.receipt_path for promoted head '{head}' ({rid})."
+        )
 
     if startup_smoke_status not in {"pass", "passed", "ready"}:
         reasons.append(f"macOS startup smoke is not passing for promoted head '{head}' ({rid}).")
