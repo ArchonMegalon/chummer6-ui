@@ -3743,6 +3743,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"flagship Blazor desktop shell gate tests\"");
         StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"desktop install/update/recovery runtime tests\"");
         StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"cross-head workflow parity tests\"");
+        StringAssert.Contains(flagshipGateScriptText, "CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1");
         StringAssert.Contains(flagshipGateScriptText, "\"requiredRuntimeBackedTests\": [");
         StringAssert.Contains(flagshipGateScriptText, "\"requiredLifecycleTests\": required_lifecycle_runtime_tests");
         StringAssert.Contains(flagshipGateScriptText, "\"releaseLifecycle\": \"pass\"");
