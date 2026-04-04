@@ -147,6 +147,22 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_fail_closes_invalid_platform_gate_contract_names()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "def normalize_contract_name(payload: Dict[str, Any]) -> str:");
+        StringAssert.Contains(scriptText, "chummer6-ui.linux_desktop_exit_gate");
+        StringAssert.Contains(scriptText, "chummer6-ui.windows_desktop_exit_gate");
+        StringAssert.Contains(scriptText, "chummer6-ui.macos_desktop_exit_gate");
+        StringAssert.Contains(scriptText, "Linux desktop exit gate receipt contract_name is invalid for promoted head");
+        StringAssert.Contains(scriptText, "Windows desktop exit gate receipt contract_name is invalid.");
+        StringAssert.Contains(scriptText, "macOS desktop exit gate receipt contract_name is invalid for promoted head");
+    }
+
+    [TestMethod]
     public void Windows_and_macos_exit_gate_materializers_do_not_resolve_proof_from_legacy_chummer5a_paths()
     {
         string repoRoot = FindRepoRoot();
