@@ -3519,6 +3519,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact channelId/channel does not match promoted release channel.");
         StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt channelId does not match release-channel channelId for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
@@ -3569,6 +3571,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt operatingSystem is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt arch does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt channelId does not match release channel for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes");
         StringAssert.Contains(executableGateScriptText, "Linux installer proof path is outside trusted local roots for promoted head");
         StringAssert.Contains(executableGateScriptText, "linux_installer_capture:{head}:{key}");
@@ -3667,6 +3671,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel generated_at is in the future");
         StringAssert.Contains(executableGateScriptText, "Release channel receipt is stale (");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is in the future for promoted installer bytes");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting channelId/channel alias values for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting version/releaseVersion alias values for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is in the future for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is in the future for promoted head");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes Linux desktop media for head");
