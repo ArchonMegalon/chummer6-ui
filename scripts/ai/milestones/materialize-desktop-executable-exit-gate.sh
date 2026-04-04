@@ -925,6 +925,63 @@ def infer_installer_file_name(head: str, rid: str, platform: str) -> str:
     return f"chummer-{head_token}-{rid_token}-installer{suffix}"
 
 
+def infer_startup_smoke_launch_target(head: str, platform: str) -> str:
+    head_token = normalize_token(head)
+    platform_token = normalize_token(platform)
+    if head_token == "blazor-desktop":
+        return "Chummer.Blazor.Desktop.exe" if platform_token == "windows" else "Chummer.Blazor.Desktop"
+    return "Chummer.Avalonia.exe" if platform_token == "windows" else "Chummer.Avalonia"
+
+
+def external_proof_expected_receipt_contract(
+    head: str,
+    rid: str,
+    platform: str,
+    required_host: str,
+) -> Dict[str, Any]:
+    host_token = normalize_token(required_host) or normalize_token(platform) or "required"
+    return {
+        "statusAnyOf": ["pass", "passed", "ready"],
+        "readyCheckpoint": "pre_ui_event_loop",
+        "headId": normalize_token(head),
+        "platform": normalize_token(platform),
+        "rid": normalize_token(rid),
+        "hostClassContains": host_token,
+    }
+
+
+def external_proof_expected_capture_commands(
+    head: str,
+    rid: str,
+    platform: str,
+    installer_file_name: str,
+    required_host: str,
+) -> List[str]:
+    head_token = normalize_token(head)
+    rid_token = normalize_token(rid)
+    platform_token = normalize_token(platform)
+    installer_name = str(installer_file_name or "").strip()
+    if not head_token or not rid_token or not platform_token or not installer_name:
+        return []
+    host_token = normalize_token(required_host) or platform_token
+    repo_root = "/docker/chummercomplete/chummer6-ui"
+    run_smoke = (
+        f"cd {repo_root} && "
+        f"CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS={host_token}-host "
+        "./scripts/run-desktop-startup-smoke.sh "
+        f"{repo_root}/Docker/Downloads/files/{installer_name} "
+        f"{head_token} "
+        f"{rid_token} "
+        f"{infer_startup_smoke_launch_target(head_token, platform_token)} "
+        f"{repo_root}/Docker/Downloads/startup-smoke"
+    )
+    refresh_manifest = (
+        f"cd {repo_root} && "
+        "./scripts/generate-releases-manifest.sh"
+    )
+    return [run_smoke, refresh_manifest]
+
+
 def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Path]) -> List[str]:
     token = str(file_name or "").strip()
     if not token:
@@ -3331,6 +3388,8 @@ allowed_external_proof_request_row_keys = {
     "expectedInstallerFileName",
     "expectedPublicInstallRoute",
     "expectedStartupSmokeReceiptPath",
+    "startupSmokeReceiptContract",
+    "proofCaptureCommands",
 }
 external_proof_request_row_non_object_indexes: List[int] = []
 external_proof_request_row_missing_tuple_id_indexes: List[int] = []
@@ -3340,6 +3399,10 @@ external_proof_request_row_duplicate_tuple_ids: List[str] = []
 external_proof_request_row_invalid_required_host_tokens: List[str] = []
 external_proof_request_row_required_proofs_invalid_indexes: List[int] = []
 external_proof_request_row_required_proofs_mismatch_tokens: List[str] = []
+external_proof_request_row_receipt_contract_invalid_indexes: List[int] = []
+external_proof_request_row_receipt_contract_mismatch_tokens: List[str] = []
+external_proof_request_row_proof_capture_commands_invalid_indexes: List[int] = []
+external_proof_request_row_proof_capture_commands_mismatch_tokens: List[str] = []
 reported_external_proof_request_rows_normalized: List[Dict[str, Any]] = []
 reported_external_proof_request_tuple_ids: List[str] = []
 required_external_proofs = ["promoted_installer_artifact", "startup_smoke_receipt"]
@@ -3394,6 +3457,84 @@ if external_proof_requests_type_valid:
             external_proof_request_row_required_proofs_mismatch_tokens.append(
                 f"row[{row_index}]"
             )
+        row_receipt_contract_raw = raw_row.get("startupSmokeReceiptContract")
+        row_receipt_contract_invalid = False
+        row_receipt_contract: Dict[str, Any] = {
+            "statusAnyOf": [],
+            "readyCheckpoint": "",
+            "headId": "",
+            "platform": "",
+            "rid": "",
+            "hostClassContains": "",
+        }
+        if not isinstance(row_receipt_contract_raw, dict):
+            row_receipt_contract_invalid = True
+        else:
+            row_status_any_of_raw = row_receipt_contract_raw.get("statusAnyOf")
+            row_status_any_of: List[str] = []
+            if not isinstance(row_status_any_of_raw, list):
+                row_receipt_contract_invalid = True
+            else:
+                for raw_status_token in row_status_any_of_raw:
+                    if not isinstance(raw_status_token, str):
+                        row_receipt_contract_invalid = True
+                        continue
+                    if raw_status_token != raw_status_token.strip():
+                        row_receipt_contract_invalid = True
+                        continue
+                    normalized_status_token = normalize_token(raw_status_token)
+                    if not normalized_status_token:
+                        row_receipt_contract_invalid = True
+                        continue
+                    row_status_any_of.append(normalized_status_token)
+            row_receipt_contract = {
+                "statusAnyOf": sorted(set(row_status_any_of)),
+                "readyCheckpoint": normalize_token(row_receipt_contract_raw.get("readyCheckpoint")),
+                "headId": normalize_token(row_receipt_contract_raw.get("headId")),
+                "platform": normalize_token(row_receipt_contract_raw.get("platform")),
+                "rid": normalize_token(row_receipt_contract_raw.get("rid")),
+                "hostClassContains": normalize_token(row_receipt_contract_raw.get("hostClassContains")),
+            }
+        if row_receipt_contract_invalid:
+            external_proof_request_row_receipt_contract_invalid_indexes.append(row_index)
+        expected_row_receipt_contract = external_proof_expected_receipt_contract(
+            head=row_head,
+            rid=row_rid,
+            platform=row_platform,
+            required_host=row_platform,
+        )
+        if row_receipt_contract != expected_row_receipt_contract:
+            external_proof_request_row_receipt_contract_mismatch_tokens.append(
+                f"row[{row_index}]"
+            )
+        row_proof_capture_commands_raw = raw_row.get("proofCaptureCommands")
+        row_proof_capture_commands_invalid = False
+        row_proof_capture_commands: List[str] = []
+        if not isinstance(row_proof_capture_commands_raw, list):
+            row_proof_capture_commands_invalid = True
+        else:
+            for raw_command_token in row_proof_capture_commands_raw:
+                if not isinstance(raw_command_token, str):
+                    row_proof_capture_commands_invalid = True
+                    continue
+                command_token = raw_command_token.strip()
+                if not command_token:
+                    row_proof_capture_commands_invalid = True
+                    continue
+                row_proof_capture_commands.append(command_token)
+        if row_proof_capture_commands_invalid:
+            external_proof_request_row_proof_capture_commands_invalid_indexes.append(row_index)
+        expected_row_proof_capture_commands = external_proof_expected_capture_commands(
+            head=row_head,
+            rid=row_rid,
+            platform=row_platform,
+            installer_file_name=row_expected_installer_file_name,
+            required_host=row_platform,
+        )
+        if row_proof_capture_commands != expected_row_proof_capture_commands:
+            external_proof_request_row_proof_capture_commands_mismatch_tokens.append(
+                f"row[{row_index}]"
+            )
         if not row_tuple_id:
             external_proof_request_row_missing_tuple_id_indexes.append(row_index)
         elif row_tuple_id != row_derived_tuple_id:
@@ -3421,6 +3562,8 @@ if external_proof_requests_type_valid:
                 "expectedInstallerFileName": row_expected_installer_file_name,
                 "expectedPublicInstallRoute": row_expected_public_install_route,
                 "expectedStartupSmokeReceiptPath": row_expected_startup_smoke_receipt_path,
+                "startupSmokeReceiptContract": row_receipt_contract,
+                "proofCaptureCommands": row_proof_capture_commands,
             }
         )
 reported_external_proof_request_rows_sorted = sorted(
@@ -3454,6 +3597,18 @@ evidence["release_channel_external_proof_request_row_required_proofs_invalid_ind
 )
 evidence["release_channel_external_proof_request_row_required_proofs_mismatch"] = (
     sorted(set(external_proof_request_row_required_proofs_mismatch_tokens))
+)
+evidence["release_channel_external_proof_request_row_receipt_contract_invalid_indexes"] = (
+    sorted(set(external_proof_request_row_receipt_contract_invalid_indexes))
+)
+evidence["release_channel_external_proof_request_row_receipt_contract_mismatch"] = (
+    sorted(set(external_proof_request_row_receipt_contract_mismatch_tokens))
+)
+evidence["release_channel_external_proof_request_row_proof_capture_commands_invalid_indexes"] = (
+    sorted(set(external_proof_request_row_proof_capture_commands_invalid_indexes))
+)
+evidence["release_channel_external_proof_request_row_proof_capture_commands_mismatch"] = (
+    sorted(set(external_proof_request_row_proof_capture_commands_mismatch_tokens))
 )
 evidence["release_channel_external_proof_request_rows_reported"] = (
     reported_external_proof_request_rows_sorted
@@ -3545,6 +3700,26 @@ if external_proof_request_row_required_proofs_invalid_indexes:
 if external_proof_request_row_required_proofs_mismatch_tokens:
     reasons.append(
         "Release channel desktopTupleCoverage.externalProofRequests row(s) requiredProofs must match canonical proof contract."
+    )
+if external_proof_request_row_receipt_contract_invalid_indexes:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) startupSmokeReceiptContract must be an object with canonical fields: "
+        + ", ".join(str(index) for index in sorted(set(external_proof_request_row_receipt_contract_invalid_indexes)))
+        + "."
+    )
+if external_proof_request_row_receipt_contract_mismatch_tokens:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) startupSmokeReceiptContract must match canonical receipt contract."
+    )
+if external_proof_request_row_proof_capture_commands_invalid_indexes:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) proofCaptureCommands must be a string list: "
+        + ", ".join(str(index) for index in sorted(set(external_proof_request_row_proof_capture_commands_invalid_indexes)))
+        + "."
+    )
+if external_proof_request_row_proof_capture_commands_mismatch_tokens:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) proofCaptureCommands must match canonical host-proof capture commands."
     )
 
 if desktop_install_artifacts and release_channel_rollout_state_invalid:
@@ -4349,6 +4524,23 @@ expected_external_proof_request_rows = [
         "expectedPublicInstallRoute": f"/downloads/install/{tuple_token.split(':', 2)[0]}-{tuple_token.split(':', 2)[1]}-installer",
         "expectedStartupSmokeReceiptPath": (
             f"startup-smoke/startup-smoke-{tuple_token.split(':', 2)[0]}-{tuple_token.split(':', 2)[1]}.receipt.json"
+        ),
+        "startupSmokeReceiptContract": external_proof_expected_receipt_contract(
+            head=tuple_token.split(":", 2)[0],
+            rid=tuple_token.split(":", 2)[1],
+            platform=tuple_token.split(":", 2)[2],
+            required_host=tuple_token.split(":", 2)[2],
+        ),
+        "proofCaptureCommands": external_proof_expected_capture_commands(
+            head=tuple_token.split(":", 2)[0],
+            rid=tuple_token.split(":", 2)[1],
+            platform=tuple_token.split(":", 2)[2],
+            installer_file_name=infer_installer_file_name(
+                tuple_token.split(":", 2)[0],
+                tuple_token.split(":", 2)[1],
+                tuple_token.split(":", 2)[2],
+            ),
+            required_host=tuple_token.split(":", 2)[2],
         ),
     }
     for tuple_token in missing_required_platform_head_rid_tuples_derived
