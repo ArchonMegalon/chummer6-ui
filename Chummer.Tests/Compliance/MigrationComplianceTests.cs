@@ -3997,6 +3997,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "workflow_parity_receipt_channel_ids");
         StringAssert.Contains(workflowGateScriptText, "receipt is missing channelId/channel");
         StringAssert.Contains(workflowGateScriptText, "receipt channelId does not match desktop workflow execution release-channel channelId");
+        StringAssert.Contains(workflowGateScriptText, "release_channel_future_skew_seconds");
+        StringAssert.Contains(workflowGateScriptText, "release_channel_age_seconds");
+        StringAssert.Contains(workflowGateScriptText, "release channel receipt generatedAt is in the future");
+        StringAssert.Contains(workflowGateScriptText, "release channel receipt is stale");
     }
 
     [TestMethod]
