@@ -31,9 +31,25 @@ public sealed class DesktopExecutableGateComplianceTests
 
         StringAssert.Contains(scriptText, "allowed_desktop_tuple_coverage_keys");
         StringAssert.Contains(scriptText, "promotedInstallerTuples");
+        StringAssert.Contains(scriptText, "externalProofRequests");
         StringAssert.Contains(scriptText, "unexpected_desktop_tuple_coverage_keys");
         StringAssert.Contains(scriptText, "release_channel_tuple_coverage_unexpected_keys");
         StringAssert.Contains(scriptText, "Release channel desktopTupleCoverage has unexpected keys:");
+    }
+
+    [TestMethod]
+    public void Desktop_executable_gate_fail_closes_external_proof_request_contract_drift()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "tuple_coverage_declares_external_proof_requests");
+        StringAssert.Contains(scriptText, "allowed_external_proof_request_row_keys");
+        StringAssert.Contains(scriptText, "release_channel_external_proof_request_rows_expected");
+        StringAssert.Contains(scriptText, "release_channel_external_proof_request_rows_reported");
+        StringAssert.Contains(scriptText, "Release channel desktopTupleCoverage.externalProofRequests does not match missing desktop tuple inventory.");
+        StringAssert.Contains(scriptText, "Release channel desktopTupleCoverage.externalProofRequests object rows do not match canonical missing-tuple external proof contract.");
     }
 
     [TestMethod]
