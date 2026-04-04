@@ -2104,6 +2104,20 @@ expected_windows_artifacts = [
     and normalize_token(item.get("head"))
     and normalize_token(item.get("rid"))
 ]
+windows_artifacts_missing_rid_by_head = sorted(
+    {
+        normalize_token(item.get("head"))
+        for item in desktop_install_artifacts
+        if normalize_token(item.get("platform")) == "windows"
+        and normalize_token(item.get("head"))
+        and not normalize_token(item.get("rid"))
+    }
+)
+evidence["windows_artifacts_missing_rid_by_head"] = windows_artifacts_missing_rid_by_head
+for missing_rid_head in windows_artifacts_missing_rid_by_head:
+    reasons.append(
+        f"Release channel publishes Windows desktop media for head '{missing_rid_head}' without explicit head/rid tuple metadata."
+    )
 windows_artifact_map_by_tuple: Dict[tuple[str, str], Dict[str, Any]] = {
     (
         normalize_token(item.get("head")),
