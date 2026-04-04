@@ -177,6 +177,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Release channel supportabilityState is missing for desktop install media; support posture cannot be proven.");
         StringAssert.Contains(executableScriptText, "Release channel rolloutState cannot remain coverage_incomplete when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableScriptText, "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableScriptText, "release_channel_publishable_status");
+        StringAssert.Contains(executableScriptText, "release_channel_publishable_status_with_incomplete_desktop_tuple_coverage");
+        StringAssert.Contains(executableScriptText, "Release channel status cannot be publishable while required desktop tuple coverage is incomplete.");
         StringAssert.Contains(executableScriptText, "release_channel_version_uses_unpublished_sentinel");
         StringAssert.Contains(executableScriptText, "Release channel version cannot be the unpublished sentinel when status is publishable.");
         StringAssert.Contains(executableScriptText, "Release channel rolloutState cannot remain unpublished when required desktop tuple coverage is complete.");

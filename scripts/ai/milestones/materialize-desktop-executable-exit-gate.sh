@@ -2106,14 +2106,16 @@ if not release_channel_channel_id:
     reasons.append("Release channel is missing channelId, so installer/update truth cannot be aligned by channel.")
 if not release_channel_version:
     reasons.append("Release channel is missing version, so installer/update truth cannot be aligned by release head.")
-if release_channel_status not in {"published", "ready", "pass", "passed"}:
+release_channel_publishable_status = release_channel_status in {"published", "ready", "pass", "passed"}
+evidence["release_channel_publishable_status"] = release_channel_publishable_status
+if not release_channel_publishable_status:
     reasons.append("Release channel status is not in a publishable state for desktop executable proof.")
 release_channel_version_uses_unpublished_sentinel = release_channel_version == "unpublished"
 evidence["release_channel_version_uses_unpublished_sentinel"] = (
     release_channel_version_uses_unpublished_sentinel
 )
 if (
-    release_channel_status in {"published", "ready", "pass", "passed"}
+    release_channel_publishable_status
     and release_channel_version_uses_unpublished_sentinel
 ):
     reasons.append(
@@ -2799,6 +2801,12 @@ coverage_incomplete = bool(
 )
 evidence["release_channel_desktop_tuple_coverage_incomplete"] = coverage_incomplete
 evidence["release_channel_desktop_tuple_coverage_complete"] = not coverage_incomplete
+release_channel_publishable_status_with_incomplete_desktop_tuple_coverage = (
+    release_channel_publishable_status and coverage_incomplete
+)
+evidence["release_channel_publishable_status_with_incomplete_desktop_tuple_coverage"] = (
+    release_channel_publishable_status_with_incomplete_desktop_tuple_coverage
+)
 if tuple_coverage_missing_pair_inventory_mismatch:
     reasons.append(
         "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples."
@@ -2837,6 +2845,10 @@ if missing_required_platform_head_rid_tuples_derived:
         + ", ".join(missing_required_platform_head_rid_tuples_derived)
         + "."
     )
+if release_channel_publishable_status_with_incomplete_desktop_tuple_coverage:
+    reasons.append(
+        "Release channel status cannot be publishable while required desktop tuple coverage is incomplete."
+    )
 if coverage_incomplete and release_channel_rollout_state != "coverage_incomplete":
     reasons.append(
         "Release channel must set rolloutState=coverage_incomplete when required desktop tuple coverage is incomplete."
@@ -2863,7 +2875,7 @@ if not coverage_incomplete and release_channel_supportability_state == "review_r
     )
 if (
     not coverage_incomplete
-    and release_channel_status in {"published", "ready", "pass", "passed"}
+    and release_channel_publishable_status
     and release_channel_rollout_state == "unpublished"
 ):
     reasons.append(
@@ -2871,7 +2883,7 @@ if (
     )
 if (
     not coverage_incomplete
-    and release_channel_status in {"published", "ready", "pass", "passed"}
+    and release_channel_publishable_status
     and release_channel_supportability_state == "unpublished"
 ):
     reasons.append(
