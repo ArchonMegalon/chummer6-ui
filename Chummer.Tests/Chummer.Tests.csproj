@@ -58,7 +58,14 @@
     <Compile Include="Presentation\HttpChummerClientBuildPathTests.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true'">
+    <Compile Include="CharacterSectionServiceTests.cs" />
+    <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
+    <Compile Include="Compliance\MigrationComplianceTests.cs" />
+    <Compile Include="ServiceCollectionDesktopRuntimeExtensionsTests.cs" />
+    <Compile Include="Presentation\FixtureBackedChummerClient.cs" />
     <Compile Include="Presentation\AvaloniaFlagshipUiGateTests.cs" />
+    <Compile Include="Presentation\BlazorShellComponentTests.cs" />
+    <Compile Include="Presentation\DualHeadAcceptanceTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
@@ -187,6 +194,7 @@
     <ProjectReference Include="..\Chummer.Api\Chummer.Api.csproj" Condition="Exists('..\\Chummer.Api\\Chummer.Api.csproj')" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Application\\Chummer.Application.csproj')" />
     <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj" />
+    <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Core\Chummer.Core.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Core\\Chummer.Core.csproj')" />
     <ProjectReference Include="..\Chummer.Hub.Web\Chummer.Hub.Web.csproj" Condition="Exists('..\\Chummer.Hub.Web\\Chummer.Hub.Web.csproj')" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Infrastructure.Browser\Chummer.Infrastructure.Browser.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Infrastructure.Browser\\Chummer.Infrastructure.Browser.csproj')" />
@@ -210,6 +218,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Headless" Version="11.3.7" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.7" />
+    <PackageReference Include="Avalonia.Skia" Version="11.3.7" />
     <PackageReference Include="bunit" Version="2.5.3" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0">

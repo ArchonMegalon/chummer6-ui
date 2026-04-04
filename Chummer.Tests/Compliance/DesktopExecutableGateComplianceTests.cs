@@ -38,6 +38,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "workflow_execution.release_channel_channel_id");
         StringAssert.Contains(executableScriptText, "visual_familiarity_release_channel_id");
         StringAssert.Contains(executableScriptText, "workflow_execution_release_channel_id");
+        StringAssert.Contains(executableScriptText, "\"channelId\": release_channel_channel_id");
+        StringAssert.Contains(executableScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(executableScriptText, "Desktop visual familiarity exit gate release-channel identity does not match release channel channelId.");
         StringAssert.Contains(executableScriptText, "Desktop workflow execution gate release-channel identity does not match release channel channelId.");
 
@@ -52,14 +54,30 @@ public sealed class DesktopExecutableGateComplianceTests
 
     private static string FindRepoRoot()
     {
-        string current = AppContext.BaseDirectory;
+        string current = Path.GetFullPath(AppContext.BaseDirectory);
         while (!string.IsNullOrEmpty(current))
         {
-            string candidate = Path.GetFullPath(Path.Combine(current, "..", "..", "..", ".."));
-            string expectedScriptPath = Path.Combine(candidate, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
-            if (File.Exists(expectedScriptPath))
+            string directCandidateScriptPath = Path.Combine(
+                current,
+                "scripts",
+                "ai",
+                "milestones",
+                "materialize-desktop-executable-exit-gate.sh");
+            if (File.Exists(directCandidateScriptPath))
             {
-                return candidate;
+                return current;
+            }
+
+            string siblingCandidateRoot = Path.Combine(current, "chummer6-ui");
+            string siblingCandidateScriptPath = Path.Combine(
+                siblingCandidateRoot,
+                "scripts",
+                "ai",
+                "milestones",
+                "materialize-desktop-executable-exit-gate.sh");
+            if (File.Exists(siblingCandidateScriptPath))
+            {
+                return siblingCandidateRoot;
             }
 
             string? parent = Directory.GetParent(current)?.FullName;
