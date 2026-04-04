@@ -3456,6 +3456,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "missing_windows_host_capability");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be missing_windows_host_capability when startup smoke receipt is missing on a non-Windows-capable host.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt is missing on a Windows-capable host.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt exists for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is outside trusted local roots.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt file is unreadable or not a JSON object for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "gate_evidence[\"startup_smoke_receipt_source\"] = startup_smoke_receipt_source");
@@ -3492,6 +3493,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "missing_macos_host_capability");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be missing_macos_host_capability when startup smoke receipt is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt exists for promoted head");
         StringAssert.Contains(executableGateScriptText, "startup_receipt_file = (");
         StringAssert.Contains(executableGateScriptText, "startup_smoke_receipt_file_exists");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt file is unreadable or not a JSON object for promoted head");
@@ -3520,6 +3522,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "missing_linux_host_capability");
         StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be missing_linux_host_capability when installer startup smoke receipt is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt exists for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is outside trusted local roots for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt status is not passing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt headId does not match promoted head");
@@ -3688,8 +3691,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state");
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_tuple_coverage_incomplete");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_tuple_coverage_complete");
         StringAssert.Contains(executableGateScriptText, "Release channel must set rolloutState=coverage_incomplete when required desktop tuple coverage is incomplete.");
         StringAssert.Contains(executableGateScriptText, "Release channel must set supportabilityState=review_required when required desktop tuple coverage is incomplete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot remain coverage_incomplete when required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples.");
         StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
         StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");

@@ -846,6 +846,10 @@ def validate_linux_gate(
             f"linux_startup_smoke:{head}",
             f"Linux installer startup smoke receipt path is outside trusted local roots for promoted head '{head}'.",
         )
+        if startup_smoke_external_blocker:
+            reasons.append(
+                f"Linux startup smoke external blocker must be blank when installer startup smoke receipt exists for promoted head '{head}'."
+            )
 
     gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt.get("artifactDigest"))
     gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt.get("readyCheckpoint"))
@@ -1118,6 +1122,10 @@ def validate_windows_gate(
     ):
         pass
     else:
+        if startup_smoke_external_blocker:
+            reasons.append(
+                "Windows startup smoke external blocker must be blank when startup smoke receipt exists for promoted installer bytes."
+            )
         startup_smoke_receipt_source = "file" if startup_smoke_receipt_payload else "missing"
         gate_evidence["startup_smoke_receipt_source"] = startup_smoke_receipt_source
         if startup_smoke_receipt_exists and not startup_smoke_receipt_payload:
@@ -1443,6 +1451,10 @@ def validate_macos_gate(
     ):
         pass
     else:
+        if startup_smoke_external_blocker:
+            reasons.append(
+                f"macOS startup smoke external blocker must be blank when startup smoke receipt exists for promoted head '{head}' ({rid})."
+            )
         if startup_smoke_status not in {"pass", "passed", "ready"}:
             reasons.append(f"macOS startup smoke receipt status is not passing for promoted head '{head}' ({rid}).")
         if startup_smoke_ready_checkpoint != "pre_ui_event_loop":
@@ -2579,6 +2591,7 @@ coverage_incomplete = bool(
     or missing_required_platform_head_pairs
 )
 evidence["release_channel_desktop_tuple_coverage_incomplete"] = coverage_incomplete
+evidence["release_channel_desktop_tuple_coverage_complete"] = not coverage_incomplete
 if tuple_coverage_missing_pair_inventory_mismatch:
     reasons.append(
         "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples."
@@ -2624,6 +2637,14 @@ if coverage_incomplete and release_channel_rollout_state != "coverage_incomplete
 if coverage_incomplete and release_channel_supportability_state != "review_required":
     reasons.append(
         "Release channel must set supportabilityState=review_required when required desktop tuple coverage is incomplete."
+    )
+if not coverage_incomplete and release_channel_rollout_state == "coverage_incomplete":
+    reasons.append(
+        "Release channel rolloutState cannot remain coverage_incomplete when required desktop tuple coverage is complete."
+    )
+if not coverage_incomplete and release_channel_supportability_state == "review_required":
+    reasons.append(
+        "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete."
     )
 
 visual_required_heads = normalize_required_token_list(
