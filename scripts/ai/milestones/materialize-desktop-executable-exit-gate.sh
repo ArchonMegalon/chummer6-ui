@@ -795,6 +795,37 @@ def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Pat
     return sorted(set(matches))
 
 
+def summarize_quarantine_installer_markers(paths: List[str]) -> Dict[str, Any]:
+    summary: Dict[str, Any] = {
+        "candidate_count": len(paths),
+        "payload_marker_present_paths": [],
+        "sample_marker_present_paths": [],
+        "payload_and_sample_marker_present_paths": [],
+        "payload_or_sample_marker_missing_paths": [],
+        "unreadable_paths": [],
+    }
+    payload_marker = b"ChummerInstaller.Payload.zip"
+    sample_marker = b"Samples/Legacy/Soma-Career.chum5"
+    for raw_path in paths:
+        path = Path(str(raw_path))
+        try:
+            blob = path.read_bytes()
+        except OSError:
+            summary["unreadable_paths"].append(str(path))
+            continue
+        payload_present = payload_marker in blob
+        sample_present = sample_marker in blob
+        if payload_present:
+            summary["payload_marker_present_paths"].append(str(path))
+        if sample_present:
+            summary["sample_marker_present_paths"].append(str(path))
+        if payload_present and sample_present:
+            summary["payload_and_sample_marker_present_paths"].append(str(path))
+        else:
+            summary["payload_or_sample_marker_missing_paths"].append(str(path))
+    return summary
+
+
 def expected_host_class_platform_token(platform: str) -> str:
     normalized = normalize_token(platform)
     if normalized == "windows":
@@ -1470,6 +1501,7 @@ def validate_windows_gate(
     if not expected_file_name:
         expected_file_name = infer_installer_file_name(expected_head, expected_rid, "windows")
     quarantine_candidates = collect_matching_quarantine_paths(expected_file_name, quarantine_roots)
+    quarantine_marker_summary = summarize_quarantine_installer_markers(quarantine_candidates)
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
     expected_arch = arch_from_rid(expected_rid)
@@ -1480,6 +1512,7 @@ def validate_windows_gate(
     gate_evidence["expected_artifact_source"] = expected_artifact_source
     gate_evidence["expected_installer_file_name"] = expected_file_name
     gate_evidence["quarantined_installer_candidates"] = quarantine_candidates
+    gate_evidence["quarantined_installer_marker_summary"] = quarantine_marker_summary
     gate_evidence["expected_artifact_arch"] = expected_artifact_arch
     gate_evidence["expected_artifact_arch_alias_conflict"] = expected_artifact_arch_alias_conflict
     if expected_artifact_arch_alias_conflict:
@@ -1572,7 +1605,6 @@ def validate_windows_gate(
             + ", ".join(quarantine_candidates)
             + "."
         )
-
     startup_smoke_receipt_path = (
         Path(gate_evidence["startup_smoke_receipt_path"]) if gate_evidence["startup_smoke_receipt_path"] else None
     )
@@ -1590,6 +1622,20 @@ def validate_windows_gate(
     if checks_startup_smoke_receipt_path and checks_startup_smoke_receipt_path != startup_smoke_receipt_path_current:
         reasons.append(
             "Windows desktop exit gate checks.startup_smoke_receipt_path disagrees with startup smoke receipt path for promoted installer bytes."
+        )
+    if quarantine_marker_summary["payload_and_sample_marker_present_paths"] and (
+        not installer_path.is_file() or not startup_smoke_receipt_exists
+    ):
+        reasons.append(
+            "Windows quarantine contains payload-valid installer candidate bytes, but promotion remains blocked until matching startup smoke proof exists: "
+            + ", ".join(quarantine_marker_summary["payload_and_sample_marker_present_paths"])
+            + "."
+        )
+    if quarantine_marker_summary["payload_or_sample_marker_missing_paths"]:
+        reasons.append(
+            "Windows quarantine contains installer candidate bytes that fail embedded payload/sample marker checks and cannot be promoted: "
+            + ", ".join(quarantine_marker_summary["payload_or_sample_marker_missing_paths"])
+            + "."
         )
     if not startup_smoke_receipt_exists:
         reasons.append("Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.")
@@ -1866,6 +1912,7 @@ def validate_macos_gate(
     if not expected_file_name:
         expected_file_name = infer_installer_file_name(head, rid, "macos")
     quarantine_candidates = collect_matching_quarantine_paths(expected_file_name, quarantine_roots)
+    quarantine_marker_summary = summarize_quarantine_installer_markers(quarantine_candidates)
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
@@ -1877,6 +1924,7 @@ def validate_macos_gate(
     gate_evidence["expected_artifact_source"] = expected_artifact_source
     gate_evidence["expected_installer_file_name"] = expected_file_name
     gate_evidence["quarantined_installer_candidates"] = quarantine_candidates
+    gate_evidence["quarantined_installer_marker_summary"] = quarantine_marker_summary
     checks_startup_smoke_receipt_found = bool(gate_checks.get("startup_smoke_receipt_found"))
     checks_startup_smoke_receipt_path = str(gate_checks.get("startup_smoke_receipt_path") or "").strip()
     startup_receipt_path_raw = str(startup.get("receipt_path") or "").strip()
@@ -2088,6 +2136,20 @@ def validate_macos_gate(
         reasons.append(
             f"macOS promoted installer bytes appear only in quarantine for head '{head}' ({rid}) and cannot count as shipped proof: "
             + ", ".join(quarantine_candidates)
+            + "."
+        )
+    if quarantine_marker_summary["payload_and_sample_marker_present_paths"] and (
+        installer_path is None or not installer_path.is_file() or not startup_receipt_exists
+    ):
+        reasons.append(
+            f"macOS quarantine contains payload-valid installer candidate bytes for head '{head}' ({rid}), but promotion remains blocked until matching startup smoke proof exists: "
+            + ", ".join(quarantine_marker_summary["payload_and_sample_marker_present_paths"])
+            + "."
+        )
+    if quarantine_marker_summary["payload_or_sample_marker_missing_paths"]:
+        reasons.append(
+            f"macOS quarantine contains installer candidate bytes that fail embedded payload/sample marker checks for head '{head}' ({rid}) and cannot be promoted: "
+            + ", ".join(quarantine_marker_summary["payload_or_sample_marker_missing_paths"])
             + "."
         )
 
