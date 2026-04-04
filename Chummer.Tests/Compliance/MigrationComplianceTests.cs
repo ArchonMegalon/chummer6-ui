@@ -3498,6 +3498,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing per-head proof contract markers.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate does not carry per-head proof contract markers for required desktop head");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate has missing/failing per-head proof contract markers for required desktop head");
+        StringAssert.Contains(executableGateScriptText, "\"visual_familiarity.flagship_required_desktop_heads\"");
+        StringAssert.Contains(executableGateScriptText, "\"workflow_execution.flagship_required_desktop_heads\"");
         StringAssert.Contains(executableGateScriptText, "workflow_head_contract_marker_statuses_raw");
         StringAssert.Contains(executableGateScriptText, "workflow_execution_head_contract_marker_statuses");
         StringAssert.Contains(executableGateScriptText, "workflow_execution_head_missing_contract_markers");
