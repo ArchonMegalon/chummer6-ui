@@ -18,6 +18,7 @@ release_channel_path="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$releas
 linux_avalonia_gate_path="$repo_root/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
 linux_blazor_gate_path="$repo_root/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json"
 windows_gate_path_default="$repo_root/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
+linux_gate_materializer_path="$repo_root/scripts/materialize-linux-desktop-exit-gate.sh"
 windows_gate_materializer_path="$repo_root/scripts/materialize-windows-desktop-exit-gate.sh"
 macos_gate_materializer_path="$repo_root/scripts/materialize-macos-desktop-exit-gate.sh"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
@@ -60,9 +61,29 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
   if [[ -f "$workflow_execution_materializer_path" ]]; then
     bash "$workflow_execution_materializer_path" >/dev/null
   fi
-  if [[ -f "$windows_gate_materializer_path" || -f "$macos_gate_materializer_path" ]]; then
+  if [[ -f "$linux_gate_materializer_path" || -f "$windows_gate_materializer_path" || -f "$macos_gate_materializer_path" ]]; then
     while IFS=: read -r head rid platform; do
       [[ -n "$head" && -n "$rid" && -n "$platform" ]] || continue
+      if [[ "$platform" == "linux" && -f "$linux_gate_materializer_path" ]]; then
+        if [[ "$head" == "avalonia" && "$rid" == "linux-x64" ]]; then
+          linux_gate_tuple_path="$linux_avalonia_gate_path"
+        elif [[ "$head" == "blazor-desktop" && "$rid" == "linux-x64" ]]; then
+          linux_gate_tuple_path="$linux_blazor_gate_path"
+        else
+          head_token="${head^^}"
+          head_token="${head_token//-/_}"
+          rid_token="${rid^^}"
+          rid_token="${rid_token//-/_}"
+          linux_gate_tuple_path="$repo_root/.codex-studio/published/UI_LINUX_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
+        fi
+        if ! CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH="$release_channel_path" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY="$head" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID="$rid" \
+          CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH="$linux_gate_tuple_path" \
+          bash "$linux_gate_materializer_path" >/dev/null 2>&1; then
+          :
+        fi
+      fi
       if [[ "$platform" == "windows" && -f "$windows_gate_materializer_path" ]]; then
         if [[ "$head" == "avalonia" && "$rid" == "win-x64" ]]; then
           windows_gate_tuple_path="$windows_gate_path_default"
@@ -132,7 +153,7 @@ for token in required:
     if len(parts) != 3:
         continue
     head, rid, platform = (normalize(parts[0]), normalize(parts[1]), normalize(parts[2]))
-    if not head or not rid or platform not in {"windows", "macos"}:
+    if not head or not rid or platform not in {"windows", "macos", "linux"}:
         continue
     key = (head, rid, platform)
     if key in seen:
@@ -571,12 +592,12 @@ def is_desktop_install_media(platform: Any, kind: Any) -> bool:
     return kind_token == "installer"
 
 
-def linux_gate_path_for_head(head: str, avalonia_path: Path, blazor_path: Path, receipt_root: Path) -> Path:
-    if head == "avalonia":
+def linux_gate_path_for_head(head: str, rid: str, avalonia_path: Path, blazor_path: Path, receipt_root: Path) -> Path:
+    if head == "avalonia" and rid == "linux-x64":
         return avalonia_path
-    if head == "blazor-desktop":
+    if head == "blazor-desktop" and rid == "linux-x64":
         return blazor_path
-    return receipt_root / f"UI_LINUX_{head.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json"
+    return receipt_root / f"UI_LINUX_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json"
 
 
 def macos_gate_path_for_head(head: str, rid: str, receipt_root: Path) -> Path:
@@ -2106,34 +2127,66 @@ for expected_windows_artifact in expected_windows_artifacts:
     windows_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
 evidence["windows_statuses"] = windows_statuses
 
-expected_linux_heads = sorted(
+expected_linux_artifacts = [
+    item
+    for item in desktop_install_artifacts
+    if normalize_token(item.get("platform")) == "linux"
+    and normalize_token(item.get("head"))
+    and normalize_token(item.get("rid"))
+]
+linux_artifact_map_by_tuple: Dict[tuple[str, str], Dict[str, Any]] = {
+    (
+        normalize_token(item.get("head")),
+        normalize_token(item.get("rid")),
+    ): item
+    for item in expected_linux_artifacts
+}
+required_linux_policy_tuples = sorted(
     {
-        normalize_token(item.get("head"))
-        for item in desktop_install_artifacts
-        if normalize_token(item.get("platform")) == "linux"
-        and normalize_token(item.get("head"))
+        (head, rid)
+        for token in tuple_coverage_required_platform_head_rid_tuples
+        for head, rid, platform in [tuple(token.split(":", 2))]
+        if platform == "linux" and head and rid
     }
 )
-evidence["linux_heads_expected"] = expected_linux_heads
-expected_linux_artifacts_by_head = {
-    normalize_token(item.get("head")): item
-    for item in desktop_install_artifacts
-    if normalize_token(item.get("platform")) == "linux"
-    and normalize_token(item.get("head"))
-    and normalize_token(item.get("rid"))
-}
+linux_policy_tuples_missing_release_artifacts: List[str] = []
+for head, rid in required_linux_policy_tuples:
+    tuple_key = (head, rid)
+    if tuple_key in linux_artifact_map_by_tuple:
+        continue
+    linux_policy_tuples_missing_release_artifacts.append(f"{head}:{rid}")
+    expected_linux_artifacts.append(
+        {
+            "head": head,
+            "rid": rid,
+            "platform": "linux",
+            "kind": "installer",
+            "fileName": "",
+            "sha256": "",
+            "sizeBytes": 0,
+            "source": "required_tuple_policy_missing_release_artifact",
+        }
+    )
 promoted_linux_tuples = {
     f"{normalize_token(item.get('head'))}:{normalize_token(item.get('rid'))}"
-    for item in desktop_install_artifacts
-    if normalize_token(item.get("platform")) == "linux"
-    and normalize_token(item.get("head"))
-    and normalize_token(item.get("rid"))
+    for item in expected_linux_artifacts
 }
-for expected_linux_head in expected_linux_heads:
-    if expected_linux_head not in expected_linux_artifacts_by_head:
-        reasons.append(
-            f"Release channel publishes Linux desktop media for head '{expected_linux_head}' without explicit rid metadata."
-        )
+evidence["linux_heads_expected"] = [
+    {
+        "head": normalize_token(item.get("head")),
+        "rid": normalize_token(item.get("rid")),
+        "fileName": str(item.get("fileName") or "").strip(),
+    }
+    for item in expected_linux_artifacts
+]
+evidence["linux_policy_required_head_rid_tuples"] = [
+    f"{head}:{rid}" for head, rid in required_linux_policy_tuples
+]
+evidence["linux_policy_tuples_missing_release_artifacts"] = (
+    linux_policy_tuples_missing_release_artifacts
+)
+if not expected_linux_artifacts and platform_artifact_counts.get("linux", 0) > 0:
+    reasons.append("Release channel publishes Linux desktop media without explicit head/rid tuple metadata.")
 
 promoted_desktop_heads = sorted(
     {
@@ -2731,12 +2784,18 @@ for promoted_head in heads_requiring_flagship_proof:
     )
 
 linux_statuses: Dict[str, str] = {}
-for expected_linux_head in expected_linux_heads:
-    gate_path = linux_gate_path_for_head(expected_linux_head, linux_avalonia_gate_path, linux_blazor_gate_path, receipt_path.parent)
-    validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"linux_gate:{expected_linux_head}")
-    expected_linux_artifact = expected_linux_artifacts_by_head.get(expected_linux_head)
-    expected_linux_rid = normalize_token(expected_linux_artifact.get("rid")) if isinstance(expected_linux_artifact, dict) else ""
-    gate_label = f"{expected_linux_head}:{expected_linux_rid}" if expected_linux_rid else expected_linux_head
+for expected_linux_artifact in expected_linux_artifacts:
+    expected_linux_head = normalize_token(expected_linux_artifact.get("head"))
+    expected_linux_rid = normalize_token(expected_linux_artifact.get("rid"))
+    gate_label = f"{expected_linux_head}:{expected_linux_rid}"
+    gate_path = linux_gate_path_for_head(
+        expected_linux_head,
+        expected_linux_rid,
+        linux_avalonia_gate_path,
+        linux_blazor_gate_path,
+        receipt_path.parent,
+    )
+    validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"linux_gate:{gate_label}")
     reason_count_before = len(reasons)
     validate_linux_gate(
         expected_linux_head,
@@ -2872,7 +2931,7 @@ evidence["windows_missing_or_failing_keys"] = windows_missing_or_failing_keys
 evidence["macos_missing_or_failing_keys"] = macos_missing_or_failing_keys
 
 platform_tokens: List[str] = []
-if expected_linux_heads:
+if expected_linux_artifacts:
     platform_tokens.append("Linux")
 if expected_macos_artifacts:
     platform_tokens.append("macOS")

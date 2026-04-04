@@ -23,28 +23,37 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
-    public void Desktop_executable_gate_surfaces_windows_and_macos_per_head_diagnostics_from_required_tuple_policy_when_release_artifacts_are_missing()
+    public void Desktop_executable_gate_surfaces_linux_windows_and_macos_per_head_diagnostics_from_required_tuple_policy_when_release_artifacts_are_missing()
     {
         string repoRoot = FindRepoRoot();
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
+        StringAssert.Contains(scriptText, "required_linux_policy_tuples");
+        StringAssert.Contains(scriptText, "linux_policy_tuples_missing_release_artifacts");
         StringAssert.Contains(scriptText, "required_windows_policy_tuples");
         StringAssert.Contains(scriptText, "windows_policy_tuples_missing_release_artifacts");
         StringAssert.Contains(scriptText, "required_macos_policy_tuples");
         StringAssert.Contains(scriptText, "macos_policy_tuples_missing_release_artifacts");
         StringAssert.Contains(scriptText, "required_tuple_policy_missing_release_artifact");
+        StringAssert.Contains(scriptText, "evidence[\"linux_policy_required_head_rid_tuples\"]");
+        StringAssert.Contains(scriptText, "evidence[\"linux_policy_tuples_missing_release_artifacts\"]");
         StringAssert.Contains(scriptText, "evidence[\"windows_policy_required_head_rid_tuples\"]");
         StringAssert.Contains(scriptText, "evidence[\"windows_policy_tuples_missing_release_artifacts\"]");
         StringAssert.Contains(scriptText, "evidence[\"macos_policy_required_head_rid_tuples\"]");
         StringAssert.Contains(scriptText, "evidence[\"macos_policy_tuples_missing_release_artifacts\"]");
+        StringAssert.Contains(scriptText, "CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY=\"$head\"");
+        StringAssert.Contains(scriptText, "CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID=\"$rid\"");
+        StringAssert.Contains(scriptText, "CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH=\"$linux_gate_tuple_path\"");
         StringAssert.Contains(scriptText, "CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY=\"$head\"");
         StringAssert.Contains(scriptText, "CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID=\"$rid\"");
         StringAssert.Contains(scriptText, "CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY=\"$head\"");
         StringAssert.Contains(scriptText, "CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID=\"$rid\"");
         StringAssert.Contains(scriptText, "requiredDesktopPlatformHeadRidTuples");
+        StringAssert.Contains(scriptText, "UI_LINUX_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json");
         StringAssert.Contains(scriptText, "UI_WINDOWS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json");
         StringAssert.Contains(scriptText, "UI_MACOS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json");
+        StringAssert.Contains(scriptText, "platform not in {\"windows\", \"macos\", \"linux\"}");
         StringAssert.Contains(scriptText, "expected_artifact_source = normalize_token(expected_artifact.get(\"source\"))");
         StringAssert.Contains(scriptText, "policy_missing_release_artifact = expected_artifact_source == \"required_tuple_policy_missing_release_artifact\"");
         StringAssert.Contains(scriptText, "if not policy_missing_release_artifact:");
