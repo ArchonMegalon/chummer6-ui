@@ -609,6 +609,53 @@ fi
 
 rm -f "$missing_required_heads_mutation_release_channel" "$missing_required_heads_mutation_output"
 
+echo "[verify] checking W1 desktop executable gate fail-close mutation for requiredDesktopPlatformHeadRidTuples missing required platform/head pair coverage..."
+required_platform_head_rid_tuples_pair_coverage_mutation_release_channel="$(mktemp)"
+required_platform_head_rid_tuples_pair_coverage_mutation_output="$(mktemp)"
+python3 - "$release_channel_path_default" "$required_platform_head_rid_tuples_pair_coverage_mutation_release_channel" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+desktop_tuple_coverage = payload.get("desktopTupleCoverage")
+if not isinstance(desktop_tuple_coverage, dict):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage object in release channel fixture.")
+rows = desktop_tuple_coverage.get("requiredDesktopPlatformHeadRidTuples")
+if not isinstance(rows, list) or not rows:
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage.requiredDesktopPlatformHeadRidTuples list in release channel fixture.")
+desktop_tuple_coverage["requiredDesktopPlatformHeadRidTuples"] = rows[1:]
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+set +e
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$required_platform_head_rid_tuples_pair_coverage_mutation_release_channel" \
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >"$required_platform_head_rid_tuples_pair_coverage_mutation_output" 2>&1
+required_platform_head_rid_tuples_pair_coverage_mutation_exit=$?
+set -e
+
+if [[ "$required_platform_head_rid_tuples_pair_coverage_mutation_exit" -eq 0 ]]; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject requiredDesktopPlatformHeadRidTuples missing required desktop platform/head pair coverage."
+  cat "$required_platform_head_rid_tuples_pair_coverage_mutation_output"
+  rm -f "$required_platform_head_rid_tuples_pair_coverage_mutation_release_channel" "$required_platform_head_rid_tuples_pair_coverage_mutation_output"
+  exit 43
+fi
+
+if ! rg -F "Release channel desktopTupleCoverage requiredDesktopPlatformHeadRidTuples is missing required desktop platform/head pair coverage:" "$required_platform_head_rid_tuples_pair_coverage_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit requiredDesktopPlatformHeadRidTuples missing required desktop platform/head pair coverage marker."
+  cat "$required_platform_head_rid_tuples_pair_coverage_mutation_output"
+  rm -f "$required_platform_head_rid_tuples_pair_coverage_mutation_release_channel" "$required_platform_head_rid_tuples_pair_coverage_mutation_output"
+  exit 44
+fi
+
+rm -f "$required_platform_head_rid_tuples_pair_coverage_mutation_release_channel" "$required_platform_head_rid_tuples_pair_coverage_mutation_output"
+
 echo "[verify] checking B15 localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh
 
