@@ -3518,6 +3518,16 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "release_channel_artifacts_total_count");
         StringAssert.Contains(executableGateScriptText, "release_channel_artifacts_object_count");
         StringAssert.Contains(executableGateScriptText, "release_channel_artifacts_non_object_indexes");
+        StringAssert.Contains(executableGateScriptText, "def normalize_optional_string_scalar(");
+        StringAssert.Contains(executableGateScriptText, "release_channel.status");
+        StringAssert.Contains(executableGateScriptText, "release_channel.channelId");
+        StringAssert.Contains(executableGateScriptText, "release_channel.channel");
+        StringAssert.Contains(executableGateScriptText, "release_channel.version");
+        StringAssert.Contains(executableGateScriptText, "release_channel.rolloutState");
+        StringAssert.Contains(executableGateScriptText, "release_channel.supportabilityState");
+        StringAssert.Contains(executableGateScriptText, "must be a string when present.");
+        StringAssert.Contains(executableGateScriptText, "contains leading/trailing whitespace.");
+        StringAssert.Contains(executableGateScriptText, "release_channel.channelId and release_channel.channel disagree after normalization.");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing a valid generated_at timestamp.");
         StringAssert.Contains(executableGateScriptText, "Release channel generated_at is in the future");
         StringAssert.Contains(executableGateScriptText, "Release channel receipt is stale (");
