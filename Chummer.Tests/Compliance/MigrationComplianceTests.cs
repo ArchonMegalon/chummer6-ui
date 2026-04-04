@@ -3548,11 +3548,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_channel_mismatch");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_version");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_version_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_arch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_arch_mismatch");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing head:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing channelId/channel:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing version/releaseVersion:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) version/releaseVersion does not match release channel version:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing arch:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) arch does not match RID-derived architecture:");
         StringAssert.Contains(executableGateScriptText, "macos_artifacts_missing_rid_by_head");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes macOS desktop media for head");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes macOS desktop media without explicit head/rid tuple metadata.");
