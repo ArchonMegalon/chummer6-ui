@@ -289,6 +289,54 @@ def normalize_optional_string_scalar(
     return normalized
 
 
+def normalize_required_status_map(
+    values: Any,
+    field_label: str,
+    evidence: Dict[str, Any],
+    reasons: List[str],
+) -> Dict[str, str]:
+    if values is None:
+        return {}
+    if not isinstance(values, dict):
+        reasons.append(f"{field_label} must be an object when present.")
+        return {}
+    normalized: Dict[str, str] = {}
+    malformed_entries: List[str] = []
+    for raw_key, raw_value in values.items():
+        if not isinstance(raw_key, str):
+            malformed_entries.append("<non-string-key>")
+            reasons.append(f"{field_label} contains a non-string key.")
+            continue
+        if raw_key != raw_key.strip():
+            malformed_entries.append(raw_key)
+            reasons.append(f"{field_label} contains a key with leading/trailing whitespace: {raw_key!r}.")
+            continue
+        key = normalize_token(raw_key)
+        if not key:
+            malformed_entries.append(raw_key)
+            reasons.append(f"{field_label} contains a blank key.")
+            continue
+        if not isinstance(raw_value, str):
+            malformed_entries.append(key)
+            reasons.append(f"{field_label} contains a non-string value for key '{key}'.")
+            continue
+        if raw_value != raw_value.strip():
+            malformed_entries.append(key)
+            reasons.append(
+                f"{field_label} contains a value with leading/trailing whitespace for key '{key}'."
+            )
+            continue
+        value = normalize_token(raw_value)
+        if not value:
+            malformed_entries.append(key)
+            reasons.append(f"{field_label} contains a blank value for key '{key}'.")
+            continue
+        normalized[key] = value
+    evidence[f"{field_label}_normalized"] = normalized
+    evidence[f"{field_label}_malformed_entries"] = sorted(set(malformed_entries))
+    return normalized
+
+
 def normalize_promoted_platform_heads(
     values: Any,
     field_label: str,
@@ -2050,11 +2098,12 @@ visual_head_statuses_raw = (
     if isinstance(visual_familiarity_evidence.get("flagship_head_proof_statuses"), dict)
     else {}
 )
-visual_head_statuses = {
-    normalize_token(head): normalize_token(status)
-    for head, status in visual_head_statuses_raw.items()
-    if normalize_token(head)
-}
+visual_head_statuses = normalize_required_status_map(
+    visual_head_statuses_raw,
+    "visual_familiarity.flagship_head_proof_statuses",
+    evidence,
+    reasons,
+)
 if not visual_head_statuses:
     # Backward-compatible fallback for older visual receipts.
     visual_head_statuses = {
@@ -2105,11 +2154,12 @@ workflow_head_statuses_raw = (
     if isinstance(workflow_execution_evidence.get("flagship_head_proof_statuses"), dict)
     else {}
 )
-workflow_head_statuses = {
-    normalize_token(head): normalize_token(status)
-    for head, status in workflow_head_statuses_raw.items()
-    if normalize_token(head)
-}
+workflow_head_statuses = normalize_required_status_map(
+    workflow_head_statuses_raw,
+    "workflow_execution.flagship_head_proof_statuses",
+    evidence,
+    reasons,
+)
 workflow_head_contract_marker_statuses_raw = (
     workflow_execution_evidence.get("flagship_head_contract_marker_statuses")
     if isinstance(workflow_execution_evidence.get("flagship_head_contract_marker_statuses"), dict)
