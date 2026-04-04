@@ -16,6 +16,11 @@ STARTUP_SMOKE_MAX_AGE_SECONDS = int(
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
     or "86400"
 )
+STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_PUBLIC_PROMOTION_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,6 +48,26 @@ def normalize_token(value: Any) -> str:
 
 def normalize_platform(raw: str | None) -> str:
     return (raw or "").strip().lower()
+
+
+def expected_host_class_platform_token(platform: str) -> str:
+    normalized = normalize_platform(platform)
+    if normalized == "windows":
+        return "win"
+    if normalized == "macos":
+        return "osx"
+    if normalized == "linux":
+        return "linux"
+    return normalized
+
+
+def host_class_matches_platform(host_class: str, platform: str) -> bool:
+    normalized_host = normalize_token(host_class)
+    expected_token = expected_host_class_platform_token(platform)
+    if not normalized_host or not expected_token:
+        return False
+    host_tokens = [token for token in normalized_host.split("-") if token]
+    return expected_token in host_tokens
 
 
 def resolve_file_name(artifact: dict) -> str:
@@ -103,7 +128,7 @@ def receipt_recorded_at(receipt: dict) -> datetime | None:
     return parse_iso_utc(receipt.get("completedAtUtc") or receipt.get("recordedAtUtc") or receipt.get("startedAtUtc"))
 
 
-def validate_receipt_for_artifact(receipt: dict, expected_digest: str, now_utc: datetime) -> tuple[bool, str]:
+def validate_receipt_for_artifact(receipt: dict, expected_platform: str, expected_digest: str, now_utc: datetime) -> tuple[bool, str]:
     status = normalize_token(receipt.get("status"))
     if status and status not in PASSING_STARTUP_SMOKE_STATUSES:
         return False, "startup-smoke receipt status is not passing"
@@ -116,13 +141,30 @@ def validate_receipt_for_artifact(receipt: dict, expected_digest: str, now_utc: 
     if expected_digest and digest and digest != f"sha256:{expected_digest}":
         return False, "startup-smoke receipt artifactDigest does not match manifest sha256"
 
+    host_class = normalize_token(receipt.get("hostClass"))
+    if not host_class:
+        return False, "startup-smoke receipt hostClass is missing"
+    if not host_class_matches_platform(host_class, expected_platform):
+        return False, f"startup-smoke receipt hostClass does not identify the {expected_platform} host"
+
+    operating_system = str(receipt.get("operatingSystem") or "").strip()
+    if not operating_system:
+        return False, "startup-smoke receipt operatingSystem is missing"
+
     timestamp = receipt_recorded_at(receipt)
     if timestamp is None:
         return False, "startup-smoke receipt is missing a valid completed/recorded timestamp"
 
-    age_seconds = max(0, int((now_utc - timestamp).total_seconds()))
-    if age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
-        return False, f"startup-smoke receipt is stale ({age_seconds}s old)"
+    age_delta_seconds = int((now_utc - timestamp).total_seconds())
+    if age_delta_seconds < 0:
+        future_skew_seconds = abs(age_delta_seconds)
+        if future_skew_seconds > STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS:
+            return (
+                False,
+                f"startup-smoke receipt timestamp is in the future ({future_skew_seconds}s ahead)",
+            )
+    elif age_delta_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+        return False, f"startup-smoke receipt is stale ({age_delta_seconds}s old)"
 
     return True, ""
 
@@ -155,7 +197,7 @@ def find_matching_receipt(artifact: dict, receipts: list[dict], now_utc: datetim
 
     matching_receipts.sort(key=receipt_sort_key, reverse=True)
     candidate = matching_receipts[0]
-    is_valid, reason = validate_receipt_for_artifact(candidate, expected_digest, now_utc)
+    is_valid, reason = validate_receipt_for_artifact(candidate, expected_platform, expected_digest, now_utc)
     if not is_valid:
         return None, reason
 
