@@ -3894,7 +3894,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "Linux release-channel proof version is missing.");
         StringAssert.Contains(linuxGateScriptText, "Release channel does not publish a Linux installer artifact for");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(linuxGateScriptText, "receipt_rid = str(receipt.get(\"rid\") or \"\").strip().lower()");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt channelId does not match release channel.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt rid is missing.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt rid does not match promoted RID.");
+        StringAssert.Contains(linuxGateScriptText, "receipt_release_version = str(receipt.get(\"releaseVersion\") or \"\").strip()");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt releaseVersion is missing.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt releaseVersion does not match release channel version.");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt version is missing.");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt version does not match release channel version.");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactDigest does not match promoted installer bytes.");
