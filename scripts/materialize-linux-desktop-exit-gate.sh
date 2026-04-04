@@ -808,6 +808,8 @@ import hashlib
 import json
 import os
 import pathlib
+import platform
+import shutil
 import stat
 import subprocess
 import sys
@@ -1098,6 +1100,19 @@ if normalized_status not in {"pass", "passed", "ready"}:
     reason_lines = [str(reason or "").strip()]
     reason_lines.extend(load_failure_reasons(failure_reasons_path))
     reason_lines = dedupe_preserve_order([line for line in reason_lines if line])
+host_operating_system = str(platform.system() or "").strip()
+host_operating_system_normalized = host_operating_system.lower()
+host_supports_linux_startup_smoke = (
+    host_operating_system_normalized == "linux"
+    and bool(shutil.which("dpkg"))
+    and bool(shutil.which("dpkg-deb"))
+)
+startup_smoke_receipt_exists = pathlib.Path(installer_receipt_path).is_file()
+startup_smoke_external_blocker = (
+    "missing_linux_host_capability"
+    if (not startup_smoke_receipt_exists and not host_supports_linux_startup_smoke)
+    else ""
+)
 
 payload = {
     "contract_name": "chummer6-ui.linux_desktop_exit_gate",
@@ -1147,6 +1162,10 @@ payload = {
         "use_promoted_installer": str(use_promoted_installer).strip() == "1",
         "installer_smoke_artifact_path": installer_smoke_artifact_path,
         "promoted_installer_path": promoted_installer_path,
+        "host_operating_system": host_operating_system,
+        "host_operating_system_normalized": host_operating_system_normalized,
+        "host_supports_linux_startup_smoke": host_supports_linux_startup_smoke,
+        "startup_smoke_external_blocker": startup_smoke_external_blocker,
     },
     "startup_smoke": {
         "primary": {
@@ -1411,6 +1430,8 @@ import hashlib
 import json
 import os
 import pathlib
+import platform
+import shutil
 import sys
 
 (
@@ -1443,6 +1464,13 @@ max_future_skew_seconds = int(
 reasons: list[str] = []
 expected_channel = ""
 expected_version = ""
+host_operating_system = str(platform.system() or "").strip()
+host_operating_system_normalized = host_operating_system.lower()
+host_supports_linux_smoke = (
+    host_operating_system_normalized == "linux"
+    and bool(shutil.which("dpkg"))
+    and bool(shutil.which("dpkg-deb"))
+)
 
 if not release_channel_path.is_file():
     reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
@@ -1522,6 +1550,10 @@ else:
 
         if not installer_receipt_path.is_file():
             reasons.append(f"Linux startup smoke receipt is missing: {installer_receipt_path}")
+            if not host_supports_linux_smoke:
+                reasons.append(
+                    "Linux startup smoke requires a Linux host with dpkg and dpkg-deb; current host cannot run promoted Linux installer smoke."
+                )
         else:
             try:
                 receipt = json.loads(installer_receipt_path.read_text(encoding="utf-8-sig"))
