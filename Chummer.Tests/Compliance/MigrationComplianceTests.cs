@@ -3731,6 +3731,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState is missing for desktop install media; support posture cannot be proven.");
         StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot remain coverage_incomplete when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_version_uses_unpublished_sentinel");
+        StringAssert.Contains(executableGateScriptText, "Release channel version cannot be the unpublished sentinel when status is publishable.");
         StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot remain unpublished when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState cannot remain unpublished when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples.");

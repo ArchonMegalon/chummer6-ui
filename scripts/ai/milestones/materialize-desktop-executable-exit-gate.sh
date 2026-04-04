@@ -2108,6 +2108,17 @@ if not release_channel_version:
     reasons.append("Release channel is missing version, so installer/update truth cannot be aligned by release head.")
 if release_channel_status not in {"published", "ready", "pass", "passed"}:
     reasons.append("Release channel status is not in a publishable state for desktop executable proof.")
+release_channel_version_uses_unpublished_sentinel = release_channel_version == "unpublished"
+evidence["release_channel_version_uses_unpublished_sentinel"] = (
+    release_channel_version_uses_unpublished_sentinel
+)
+if (
+    release_channel_status in {"published", "ready", "pass", "passed"}
+    and release_channel_version_uses_unpublished_sentinel
+):
+    reasons.append(
+        "Release channel version cannot be the unpublished sentinel when status is publishable."
+    )
 release_channel_rollout_state = normalize_optional_string_scalar(
     release_channel.get("rolloutState"),
     "release_channel.rolloutState",
