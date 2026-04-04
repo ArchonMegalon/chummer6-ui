@@ -3690,12 +3690,18 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel is missing required desktop platform/head/rid installer tuple(s): ");
         StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state");
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state");
+        StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_present");
+        StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_present");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_tuple_coverage_incomplete");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_tuple_coverage_complete");
         StringAssert.Contains(executableGateScriptText, "Release channel must set rolloutState=coverage_incomplete when required desktop tuple coverage is incomplete.");
         StringAssert.Contains(executableGateScriptText, "Release channel must set supportabilityState=review_required when required desktop tuple coverage is incomplete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState is missing for desktop install media; tuple-coverage posture cannot be proven.");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState is missing for desktop install media; support posture cannot be proven.");
         StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot remain coverage_incomplete when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot remain unpublished when required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState cannot remain unpublished when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples.");
         StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
         StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");
