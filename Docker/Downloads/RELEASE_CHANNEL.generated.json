@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-04-04T04:17:45Z",
-  "generatedAt": "2026-04-04T04:17:45Z",
+  "generated_at": "2026-04-04T12:26:55Z",
+  "generatedAt": "2026-04-04T12:26:55Z",
   "schemaVersion": 1,
   "product": "chummer6",
   "channelId": "docker",
-  "version": "local-docker",
-  "publishedAt": "2026-04-04T04:17:44Z",
+  "version": "unpublished",
+  "publishedAt": "2026-04-04T12:26:54Z",
   "status": "published",
   "artifactSource": "ui_desktop_bundle",
   "message": null,
@@ -35,7 +35,7 @@
     ],
     "uiLocalizationReleaseGate": {
       "status": "pass",
-      "generatedAt": "2026-04-04T04:08:30Z",
+      "generatedAt": "2026-04-04T10:50:15Z",
       "defaultKeyCount": 383,
       "explicitFallbackRuntime": "pass",
       "signoffSmokeRunnerStatus": "pass",
@@ -49,19 +49,19 @@
       ],
       "localeSummary": [
         {
-          "locale": "de-de",
+          "locale": "en-us",
           "untranslatedKeyCount": 0,
           "overrideCount": 383,
-          "minimumOverrideCount": 40,
+          "minimumOverrideCount": 383,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
           "legacyDataXmlPresent": true
         },
         {
-          "locale": "en-us",
+          "locale": "de-de",
           "untranslatedKeyCount": 0,
           "overrideCount": 383,
-          "minimumOverrideCount": 383,
+          "minimumOverrideCount": 40,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
           "legacyDataXmlPresent": true
@@ -188,7 +188,12 @@
       "embeddedRuntimeBundleHeadId": null,
       "compatibilityState": "compatible",
       "installAccessClass": "open_public",
-      "channel": "docker"
+      "channelId": "docker",
+      "channel": "docker",
+      "version": "unpublished",
+      "releaseVersion": "unpublished",
+      "generated_at": "2026-04-04T12:26:55Z",
+      "generatedAt": "2026-04-04T12:26:55Z"
     },
     {
       "artifactId": "blazor-desktop-linux-x64-installer",
@@ -206,7 +211,12 @@
       "embeddedRuntimeBundleHeadId": null,
       "compatibilityState": "compatible",
       "installAccessClass": "open_public",
-      "channel": "docker"
+      "channelId": "docker",
+      "channel": "docker",
+      "version": "unpublished",
+      "releaseVersion": "unpublished",
+      "generated_at": "2026-04-04T12:26:55Z",
+      "generatedAt": "2026-04-04T12:26:55Z"
     }
   ],
   "desktopTupleCoverage": {
