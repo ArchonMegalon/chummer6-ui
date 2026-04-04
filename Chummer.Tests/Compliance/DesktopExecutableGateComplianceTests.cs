@@ -37,6 +37,35 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_fail_closes_unexpected_desktop_install_artifact_keys()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "allowed_desktop_install_artifact_keys");
+        StringAssert.Contains(scriptText, "desktop_install_artifact_unexpected_keys_tokens");
+        StringAssert.Contains(scriptText, "release_channel_desktop_install_artifacts_unexpected_keys");
+        StringAssert.Contains(scriptText, "Release channel desktop install artifact(s) have unexpected keys:");
+    }
+
+    [TestMethod]
+    public void Desktop_executable_gate_fail_closes_promoted_installer_tuple_row_drift()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "build_promoted_installer_tuple_id");
+        StringAssert.Contains(scriptText, "allowed_promoted_installer_tuple_row_keys");
+        StringAssert.Contains(scriptText, "release_channel_promoted_installer_tuple_rows_expected");
+        StringAssert.Contains(scriptText, "release_channel_promoted_installer_tuple_rows_reported");
+        StringAssert.Contains(scriptText, "release_channel_promoted_installer_tuple_duplicate_tuple_ids");
+        StringAssert.Contains(scriptText, "Release channel desktopTupleCoverage.promotedInstallerTuples does not match promoted installer tuple inventory.");
+        StringAssert.Contains(scriptText, "Release channel desktopTupleCoverage.promotedInstallerTuples object rows do not match promoted installer artifact metadata.");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_runs_active_mutation_for_unexpected_desktop_tuple_coverage_keys()
     {
         string repoRoot = FindRepoRoot();
@@ -47,6 +76,58 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(verifyScriptText, "desktop executable gate should reject unexpected desktopTupleCoverage keys");
         StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit unexpected desktopTupleCoverage key marker");
         StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage has unexpected keys:");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_unexpected_desktop_install_artifact_keys()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "bonus_noncanonical_install_artifact_key");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject unexpected desktop install artifact keys");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit unexpected desktop install artifact key marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktop install artifact(s) have unexpected keys:");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_promoted_installer_tuple_row_drift()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "tampered-promoted-installer-artifact-id");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject promotedInstallerTuples artifact metadata drift");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit promotedInstallerTuples metadata drift marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage.promotedInstallerTuples object rows do not match promoted installer artifact metadata.");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_promoted_platform_head_rid_tuple_inventory_drift()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "tampered-head:tampered-rid:windows");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject promotedPlatformHeadRidTuples inventory drift");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit promotedPlatformHeadRidTuples inventory drift marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage promotedPlatformHeadRidTuples inventory does not match promoted installer tuples.");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_checks_desktop_executable_gate_blocking_findings_alias_alignment()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate blocking findings aliases");
+        StringAssert.Contains(verifyScriptText, "blocking-findings alias drift between reasons/blockingFindings/blocking_findings");
+        StringAssert.Contains(verifyScriptText, "blockingFindingsCount does not match reasons count");
+        StringAssert.Contains(verifyScriptText, "blocking_findings_count does not match reasons count");
     }
 
     [TestMethod]
@@ -121,6 +202,20 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "stale_macos_gate_receipts_without_promoted_tuples");
         StringAssert.Contains(scriptText, "stale_passing_platform_gate_receipts_without_promoted_tuples");
         StringAssert.Contains(scriptText, "Stale passing platform gate receipts exist for non-promoted desktop tuples:");
+    }
+
+    [TestMethod]
+    public void Desktop_executable_gate_emits_blocking_findings_aliases_aligned_with_reasons()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "blocking_findings = list(reasons)");
+        StringAssert.Contains(scriptText, "\"blockingFindings\": blocking_findings");
+        StringAssert.Contains(scriptText, "\"blocking_findings\": blocking_findings");
+        StringAssert.Contains(scriptText, "\"blockingFindingsCount\": blocking_findings_count");
+        StringAssert.Contains(scriptText, "\"blocking_findings_count\": blocking_findings_count");
     }
 
     [TestMethod]
