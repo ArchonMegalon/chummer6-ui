@@ -23,6 +23,20 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_fail_closes_unexpected_desktop_tuple_coverage_keys()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "allowed_desktop_tuple_coverage_keys");
+        StringAssert.Contains(scriptText, "promotedInstallerTuples");
+        StringAssert.Contains(scriptText, "unexpected_desktop_tuple_coverage_keys");
+        StringAssert.Contains(scriptText, "release_channel_tuple_coverage_unexpected_keys");
+        StringAssert.Contains(scriptText, "Release channel desktopTupleCoverage has unexpected keys:");
+    }
+
+    [TestMethod]
     public void Desktop_executable_gate_fail_closes_when_flagship_release_lock_is_still_active_after_wait_window()
     {
         string repoRoot = FindRepoRoot();
