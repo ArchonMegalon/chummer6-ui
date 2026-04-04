@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.macos_desktop_exit_gate",
-  "generated_at": "2026-04-04T05:05:37Z",
+  "generated_at": "2026-04-04T11:08:15Z",
   "channelId": "docker",
   "releaseVersion": "local-docker",
   "status": "failed",
@@ -18,9 +18,9 @@
     "installer_sha256": "",
     "file_name": "chummer-blazor-desktop-osx-arm64-installer.dmg",
     "installer_candidate_paths": [
-      "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-osx-arm64-installer.dmg"
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-blazor-desktop-osx-arm64-installer.dmg"
     ],
-    "installer_primary_shelf_root": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
+    "installer_primary_shelf_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
     "installer_from_primary_shelf": false
   },
   "startup_smoke": {
@@ -29,16 +29,18 @@
     "candidate_paths": [
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json"
     ],
     "ready_checkpoint": "",
     "artifact_digest": "",
     "channel_id": "",
+    "rid": "",
     "version": "",
     "host_class": "",
     "operating_system": "",
+    "artifact_path": "",
     "receipt_recorded_at": "",
     "receipt_age_seconds": null,
     "receipt_max_age_seconds": 86400,
@@ -64,16 +66,16 @@
       "installer_sha256": "",
       "file_name": "chummer-blazor-desktop-osx-arm64-installer.dmg",
       "installer_candidate_paths": [
-        "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-osx-arm64-installer.dmg"
+        "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-blazor-desktop-osx-arm64-installer.dmg"
       ],
-      "installer_primary_shelf_root": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
+      "installer_primary_shelf_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
       "installer_from_primary_shelf": false
     },
     "startup_smoke_candidate_paths": [
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json"
     ],
     "startup_smoke": {
@@ -82,23 +84,28 @@
       "candidate_paths": [
         "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
         "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
-        "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
         "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json"
       ],
       "ready_checkpoint": "",
       "artifact_digest": "",
       "channel_id": "",
+      "rid": "",
       "version": "",
       "host_class": "",
       "operating_system": "",
+      "artifact_path": "",
       "receipt_recorded_at": "",
       "receipt_age_seconds": null,
       "receipt_max_age_seconds": 86400,
       "receipt_max_future_skew_seconds": 300,
       "external_blocker": "missing_macos_host_capability",
       "receipt": {}
-    }
+    },
+    "startup_smoke_receipt_path": "",
+    "startup_smoke_receipt_found": false,
+    "startup_smoke_external_blocker": "missing_macos_host_capability"
   },
   "reasons": [
     "Release channel does not publish a promoted macOS install medium artifact for blazor-desktop (osx-arm64).",

@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR="$(cd -L "$(dirname "${BASH_SOURCE[0]}")" && pwd -L)"
+REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
 HUB_REGISTRY_ROOT="${CHUMMER_HUB_REGISTRY_ROOT:-$("$REPO_ROOT/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 CANONICAL_RELEASE_CHANNEL_PATH="${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 DEFAULT_RELEASE_CHANNEL_PATH="$REPO_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json"
@@ -289,13 +297,13 @@ else:
 
 default_file_name = artifact_file_name or f"chummer-{expected_head}-{expected_rid}-installer.exe"
 if windows_installer_path_override:
-    installer_candidates = [windows_installer_path_override.expanduser().resolve()]
+    installer_candidates = [Path(os.path.abspath(str(windows_installer_path_override.expanduser())))]
 else:
     installer_candidates = [
-        (windows_local_desktop_files_root / default_file_name).resolve(),
-        (repo_root / "Docker" / "Downloads" / "files" / default_file_name).resolve(),
+        Path(os.path.abspath(str(windows_local_desktop_files_root / default_file_name))),
+        Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files" / default_file_name))),
     ]
-installer_candidates = list(dict.fromkeys(path.resolve() for path in installer_candidates))
+installer_candidates = list(dict.fromkeys(installer_candidates))
 installer_path = next((path for path in installer_candidates if path.is_file()), installer_candidates[0])
 
 installer_exists = installer_path.is_file()
@@ -311,7 +319,7 @@ evidence["expected_windows_rid"] = expected_rid
 evidence["expected_windows_arch"] = expected_arch
 if artifact_file_name:
     evidence["expected_windows_file_name"] = artifact_file_name
-primary_shelf_root = (repo_root / "Docker" / "Downloads" / "files").resolve()
+primary_shelf_root = Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files")))
 installer_from_primary_shelf = path_is_within(installer_path, primary_shelf_root)
 evidence["windows_installer_primary_shelf_root"] = str(primary_shelf_root)
 evidence["windows_installer_from_primary_shelf"] = installer_from_primary_shelf

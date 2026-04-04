@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json"
@@ -820,7 +828,7 @@ def validate_receipt_path_scope(path: Path, repo_root: Path, reasons: List[str],
     evidence.setdefault("receipt_scope", {})[label] = {
         "path": str(path),
         "within_repo_root": in_scope,
-        "repo_root": str(repo_root.resolve()),
+        "repo_root": str(repo_root),
     }
     if not in_scope:
         reasons.append(
@@ -844,7 +852,7 @@ def validate_trusted_path_scope(
     evidence.setdefault("trusted_path_scope", {})[label] = {
         "path": str(path),
         "within_trusted_roots": in_scope,
-        "trusted_roots": [str(root.resolve()) for root in trusted_roots],
+        "trusted_roots": [str(root) for root in trusted_roots],
     }
     if not in_scope:
         reasons.append(reason_message)
@@ -2359,15 +2367,15 @@ evidence: Dict[str, Any] = {
     "flagship_gate_path": str(flagship_gate_path),
     "visual_familiarity_gate_path": str(visual_familiarity_gate_path),
     "workflow_execution_gate_path": str(workflow_execution_gate_path),
-    "repo_root": str(repo_root.resolve()),
-    "hub_registry_root": str(hub_registry_root.resolve()) if hub_registry_root is not None else "",
+    "repo_root": str(repo_root),
+    "hub_registry_root": str(hub_registry_root) if hub_registry_root is not None else "",
     "hub_registry_release_channel_path": (
-        str(hub_registry_release_channel_path.resolve())
+        str(hub_registry_release_channel_path)
         if hub_registry_release_channel_path is not None
         else ""
     ),
     "hub_registry_root_trusted_for_startup_smoke_proof": hub_registry_root_trusted,
-    "trusted_local_roots": [str(root.resolve()) for root in trusted_roots],
+    "trusted_local_roots": [str(root) for root in trusted_roots],
 }
 
 release_channel = load_json(release_channel_path)
