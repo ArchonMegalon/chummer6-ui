@@ -235,6 +235,10 @@ def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def normalize_contract_name(payload: Dict[str, Any]) -> str:
+    return str(payload.get("contract_name") or payload.get("contractName") or "").strip()
+
+
 def dedupe_preserve_order(values: List[str]) -> List[str]:
     seen: set[str] = set()
     deduped: List[str] = []
@@ -740,6 +744,12 @@ def validate_linux_gate(
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
     validate_receipt_freshness(f"linux desktop exit gate proof for {gate_label}", gate_payload, gate_evidence, reasons)
+    gate_contract_name = normalize_contract_name(gate_payload)
+    gate_evidence["contract_name"] = gate_contract_name
+    if gate_contract_name != "chummer6-ui.linux_desktop_exit_gate":
+        reasons.append(
+            f"Linux desktop exit gate receipt contract_name is invalid for promoted head '{head}'."
+        )
     gate_reasons = [
         str(item).strip()
         for item in (gate_payload.get("reasons") or [])
@@ -966,6 +976,10 @@ def validate_windows_gate(
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
     validate_receipt_freshness("windows desktop exit gate proof", gate_payload, gate_evidence, reasons)
+    gate_contract_name = normalize_contract_name(gate_payload)
+    gate_evidence["contract_name"] = gate_contract_name
+    if gate_contract_name != "chummer6-ui.windows_desktop_exit_gate":
+        reasons.append("Windows desktop exit gate receipt contract_name is invalid.")
 
     gate_head = gate_payload.get("head") if isinstance(gate_payload.get("head"), dict) else {}
     gate_checks = gate_payload.get("checks") if isinstance(gate_payload.get("checks"), dict) else {}
@@ -1233,6 +1247,10 @@ def validate_macos_gate(
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
     validate_receipt_freshness(f"macOS desktop exit gate proof for {head} ({rid})", gate_payload, gate_evidence, reasons)
+    gate_contract_name = normalize_contract_name(gate_payload)
+    gate_evidence["contract_name"] = gate_contract_name
+    if gate_contract_name != "chummer6-ui.macos_desktop_exit_gate":
+        reasons.append(f"macOS desktop exit gate receipt contract_name is invalid for promoted head '{head}' ({rid}).")
 
     gate_head = gate_payload.get("head") if isinstance(gate_payload.get("head"), dict) else {}
     gate_checks = gate_payload.get("checks") if isinstance(gate_payload.get("checks"), dict) else {}
