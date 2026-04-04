@@ -21,14 +21,41 @@ windows_gate_path_default="$repo_root/.codex-studio/published/UI_WINDOWS_DESKTOP
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 visual_familiarity_gate_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 workflow_execution_gate_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+visual_familiarity_materializer_path="$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh"
+workflow_execution_materializer_path="$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh"
+skip_dependency_materialize="${CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE:-0}"
+skip_release_gate_lock_wait="${CHUMMER_DESKTOP_EXECUTABLE_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
+release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
+release_gate_lock_poll_seconds="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_POLL_SECONDS:-2}"
+if ! [[ "$release_gate_lock_wait_seconds" =~ ^[0-9]+$ ]]; then
+  release_gate_lock_wait_seconds=300
+fi
+if ! [[ "$release_gate_lock_poll_seconds" =~ ^[0-9]+$ ]] || [[ "$release_gate_lock_poll_seconds" -lt 1 ]]; then
+  release_gate_lock_poll_seconds=2
+fi
 
 mkdir -p "$(dirname "$receipt_path")"
-for _ in $(seq 1 150); do
-  if [[ ! -d "$release_gate_lock_dir" ]]; then
-    break
+if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
+  release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))
+  if [[ "$release_gate_lock_wait_iterations" -lt 1 ]]; then
+    release_gate_lock_wait_iterations=1
   fi
-  sleep 2
-done
+  for _ in $(seq 1 "$release_gate_lock_wait_iterations"); do
+    if [[ ! -d "$release_gate_lock_dir" ]]; then
+      break
+    fi
+    sleep "$release_gate_lock_poll_seconds"
+  done
+fi
+
+if [[ "$skip_dependency_materialize" != "1" ]]; then
+  if [[ -f "$visual_familiarity_materializer_path" ]]; then
+    bash "$visual_familiarity_materializer_path" >/dev/null
+  fi
+  if [[ -f "$workflow_execution_materializer_path" ]]; then
+    bash "$workflow_execution_materializer_path" >/dev/null
+  fi
+fi
 
 python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path_default" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root" "$hub_registry_root"
 from __future__ import annotations
@@ -179,6 +206,26 @@ def arch_from_rid(rid: str) -> str:
     if normalized.endswith("arm64"):
         return "arm64"
     return ""
+
+
+def expected_host_class_platform_token(platform: str) -> str:
+    normalized = normalize_token(platform)
+    if normalized == "windows":
+        return "win"
+    if normalized == "macos":
+        return "osx"
+    if normalized == "linux":
+        return "linux"
+    return normalized
+
+
+def host_class_matches_platform(host_class: str, platform: str) -> bool:
+    normalized_host = normalize_token(host_class)
+    expected_token = expected_host_class_platform_token(platform)
+    if not normalized_host or not expected_token:
+        return False
+    host_tokens = [token for token in normalized_host.split("-") if token]
+    return expected_token in host_tokens
 
 
 def path_within_root(path: Path, root: Path) -> bool:
@@ -353,6 +400,8 @@ def validate_linux_gate(
     gate_evidence["primary_receipt_channel_id"] = normalize_token(
         primary_receipt_for_validation.get("channelId") or primary_receipt_for_validation.get("channel")
     )
+    gate_evidence["primary_receipt_host_class"] = normalize_token(primary_receipt_for_validation.get("hostClass"))
+    gate_evidence["primary_receipt_operating_system"] = str(primary_receipt_for_validation.get("operatingSystem") or "").strip()
     gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt_for_validation.get("artifactDigest"))
     gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt_for_validation.get("readyCheckpoint"))
     gate_evidence["primary_receipt_recorded_at"] = recorded_at_raw
@@ -372,6 +421,12 @@ def validate_linux_gate(
         reasons.append(f"Linux installer startup smoke receipt headId does not match promoted head '{head}'.")
     if gate_evidence["primary_receipt_platform"] != "linux":
         reasons.append(f"Linux installer startup smoke receipt platform is not linux for promoted head '{head}'.")
+    if not gate_evidence["primary_receipt_host_class"]:
+        reasons.append(f"Linux installer startup smoke receipt hostClass is missing for promoted head '{head}'.")
+    elif not host_class_matches_platform(gate_evidence["primary_receipt_host_class"], "linux"):
+        reasons.append(f"Linux installer startup smoke receipt hostClass does not identify a Linux host for promoted head '{head}'.")
+    if not gate_evidence["primary_receipt_operating_system"]:
+        reasons.append(f"Linux installer startup smoke receipt operatingSystem is missing for promoted head '{head}'.")
     if release_channel_id and gate_evidence["primary_receipt_channel_id"] != release_channel_id:
         reasons.append(f"Linux installer startup smoke receipt channelId does not match release channel for promoted head '{head}'.")
 
@@ -553,6 +608,15 @@ def validate_windows_gate(
             or startup_smoke_receipt_payload.get("channel")
             or gate_checks.get("startup_smoke_channel")
         )
+        startup_smoke_host_class = normalize_token(
+            startup_smoke_receipt_payload.get("hostClass")
+            or gate_checks.get("startup_smoke_host_class")
+        )
+        startup_smoke_operating_system = str(
+            startup_smoke_receipt_payload.get("operatingSystem")
+            or gate_checks.get("startup_smoke_operating_system")
+            or ""
+        ).strip()
         startup_smoke_recorded_at_raw = str(
             startup_smoke_receipt_payload.get("completedAtUtc")
             or startup_smoke_receipt_payload.get("recordedAtUtc")
@@ -577,6 +641,8 @@ def validate_windows_gate(
         gate_evidence["startup_smoke_platform"] = startup_smoke_platform
         gate_evidence["startup_smoke_arch"] = startup_smoke_arch
         gate_evidence["startup_smoke_channel"] = startup_smoke_channel_id
+        gate_evidence["startup_smoke_host_class"] = startup_smoke_host_class
+        gate_evidence["startup_smoke_operating_system"] = startup_smoke_operating_system
         gate_evidence["startup_smoke_recorded_at"] = startup_smoke_recorded_at_raw
 
         if startup_smoke_status not in {"pass", "passed", "ready"}:
@@ -589,6 +655,12 @@ def validate_windows_gate(
             reasons.append("Windows startup smoke receipt headId does not match promoted release-channel head.")
         if startup_smoke_platform != "windows":
             reasons.append("Windows startup smoke receipt platform is not windows for promoted installer bytes.")
+        if not startup_smoke_host_class:
+            reasons.append("Windows startup smoke receipt hostClass is missing for promoted installer bytes.")
+        elif not host_class_matches_platform(startup_smoke_host_class, "windows"):
+            reasons.append("Windows startup smoke receipt hostClass does not identify a Windows host for promoted installer bytes.")
+        if not startup_smoke_operating_system:
+            reasons.append("Windows startup smoke receipt operatingSystem is missing for promoted installer bytes.")
         if expected_startup_smoke_arch and startup_smoke_arch != expected_startup_smoke_arch:
             reasons.append("Windows startup smoke receipt arch does not match promoted release-channel RID.")
         if release_channel_id and startup_smoke_channel_id != release_channel_id:
@@ -691,6 +763,8 @@ def validate_macos_gate(
     startup_smoke_channel_id = normalize_token(
         startup_receipt_for_validation.get("channelId") or startup_receipt_for_validation.get("channel")
     )
+    startup_smoke_host_class = normalize_token(startup_receipt_for_validation.get("hostClass"))
+    startup_smoke_operating_system = str(startup_receipt_for_validation.get("operatingSystem") or "").strip()
     startup_receipt_recorded_at_raw = str(
         startup_receipt_for_validation.get("completedAtUtc")
         or startup_receipt_for_validation.get("recordedAtUtc")
@@ -711,6 +785,8 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_receipt_platform"] = startup_smoke_platform
     gate_evidence["startup_smoke_receipt_arch"] = startup_smoke_arch
     gate_evidence["startup_smoke_receipt_channel_id"] = startup_smoke_channel_id
+    gate_evidence["startup_smoke_receipt_host_class"] = startup_smoke_host_class
+    gate_evidence["startup_smoke_receipt_operating_system"] = startup_smoke_operating_system
     gate_evidence["startup_smoke_receipt_recorded_at"] = startup_receipt_recorded_at_raw
 
     if startup_smoke_status not in {"pass", "passed", "ready"}:
@@ -773,6 +849,12 @@ def validate_macos_gate(
             reasons.append(f"macOS startup smoke receipt headId does not match promoted head '{head}' ({rid}).")
         if startup_smoke_platform != "macos":
             reasons.append(f"macOS startup smoke receipt platform is not macOS for promoted head '{head}' ({rid}).")
+        if not startup_smoke_host_class:
+            reasons.append(f"macOS startup smoke receipt hostClass is missing for promoted head '{head}' ({rid}).")
+        elif not host_class_matches_platform(startup_smoke_host_class, "macos"):
+            reasons.append(f"macOS startup smoke receipt hostClass does not identify a macOS host for promoted head '{head}' ({rid}).")
+        if not startup_smoke_operating_system:
+            reasons.append(f"macOS startup smoke receipt operatingSystem is missing for promoted head '{head}' ({rid}).")
         if expected_arch and startup_smoke_arch != expected_arch:
             reasons.append(f"macOS startup smoke receipt arch does not match promoted RID for head '{head}' ({rid}).")
         if release_channel_id and startup_smoke_channel_id != release_channel_id:
