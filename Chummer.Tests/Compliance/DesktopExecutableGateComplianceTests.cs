@@ -45,8 +45,14 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
         StringAssert.Contains(executableScriptText, "missing_canonical_promoted_desktop_heads");
         StringAssert.Contains(executableScriptText, "missing_canonical_flagship_desktop_heads");
+        StringAssert.Contains(executableScriptText, "release_channel_tuple_coverage_missing_required_platforms_from_policy");
+        StringAssert.Contains(executableScriptText, "release_channel_tuple_coverage_missing_required_heads_from_policy");
+        StringAssert.Contains(executableScriptText, "release_channel_tuple_coverage_missing_canonical_required_heads");
         StringAssert.Contains(executableScriptText, "Release channel is missing canonical required promoted desktop head(s) for milestone-3 executable proof:");
         StringAssert.Contains(executableScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 executable proof:");
+        StringAssert.Contains(executableScriptText, "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s):");
+        StringAssert.Contains(executableScriptText, "Release channel desktopTupleCoverage requiredDesktopHeads is missing required policy head(s):");
+        StringAssert.Contains(executableScriptText, "Release channel desktopTupleCoverage requiredDesktopHeads is missing canonical required head(s):");
 
         StringAssert.Contains(visualScriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(visualScriptText, "release_channel_channel_id");
