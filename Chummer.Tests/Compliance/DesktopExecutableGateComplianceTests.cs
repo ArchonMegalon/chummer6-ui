@@ -45,6 +45,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "requiredDesktopPlatformHeadRidTuples");
         StringAssert.Contains(scriptText, "UI_WINDOWS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json");
         StringAssert.Contains(scriptText, "UI_MACOS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json");
+        StringAssert.Contains(scriptText, "expected_artifact_source = normalize_token(expected_artifact.get(\"source\"))");
+        StringAssert.Contains(scriptText, "policy_missing_release_artifact = expected_artifact_source == \"required_tuple_policy_missing_release_artifact\"");
+        StringAssert.Contains(scriptText, "if not policy_missing_release_artifact:");
     }
 
     [TestMethod]
