@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-04-04T04:17:45Z",
-  "generatedAt": "2026-04-04T04:17:45Z",
-  "version": "local-docker",
+  "generated_at": "2026-04-04T12:26:55Z",
+  "generatedAt": "2026-04-04T12:26:55Z",
+  "version": "unpublished",
   "channel": "docker",
-  "publishedAt": "2026-04-04T04:17:44Z",
+  "publishedAt": "2026-04-04T12:26:54Z",
   "downloads": [
     {
       "id": "avalonia-linux-x64-installer",
@@ -65,7 +65,7 @@
     ],
     "uiLocalizationReleaseGate": {
       "status": "pass",
-      "generatedAt": "2026-04-04T04:08:30Z",
+      "generatedAt": "2026-04-04T10:50:15Z",
       "defaultKeyCount": 383,
       "explicitFallbackRuntime": "pass",
       "signoffSmokeRunnerStatus": "pass",
@@ -79,19 +79,19 @@
       ],
       "localeSummary": [
         {
-          "locale": "de-de",
+          "locale": "en-us",
           "untranslatedKeyCount": 0,
           "overrideCount": 383,
-          "minimumOverrideCount": 40,
+          "minimumOverrideCount": 383,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
           "legacyDataXmlPresent": true
         },
         {
-          "locale": "en-us",
+          "locale": "de-de",
           "untranslatedKeyCount": 0,
           "overrideCount": 383,
-          "minimumOverrideCount": 383,
+          "minimumOverrideCount": 40,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
           "legacyDataXmlPresent": true
