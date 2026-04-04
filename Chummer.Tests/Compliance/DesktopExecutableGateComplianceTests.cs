@@ -167,10 +167,13 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.");
         StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact carries conflicting version/releaseVersion alias values.");
         StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact carries conflicting arch/architecture alias values.");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact is missing a valid generated_at/generatedAt.");
         StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "Release channel Linux artifact arch does not match promoted RID for head");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing channelId/channel:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId:");
+        StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_invalid_generated_at");
+        StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) carry invalid generated_at/generatedAt timestamps:");
         StringAssert.Contains(executableScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt exists for promoted head");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt is missing releaseVersion/version.");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.");
@@ -218,6 +221,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact carries conflicting version/releaseVersion alias values.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact carries conflicting arch/architecture alias values.");
+        StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact is missing a valid generated_at/generatedAt.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt exists for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt is missing releaseVersion/version for promoted head");
@@ -250,6 +254,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact version/releaseVersion does not match promoted release channel version.");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact carries conflicting version/releaseVersion alias values.");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact carries conflicting arch/architecture alias values.");
+        StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact is missing a valid generated_at/generatedAt.");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.");
         StringAssert.Contains(executableScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt exists for promoted head");
         StringAssert.Contains(executableScriptText, "gate_release_version");
@@ -332,13 +337,13 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_arch_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_generated_at");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_generated_at_alias_conflict");
-        StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact is missing generated_at/generatedAt.");
+        StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact is missing a valid generated_at/generatedAt.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact generated_at does not match promoted release channel generated_at.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact carries conflicting generated_at/generatedAt alias values.");
-        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact is missing generated_at/generatedAt.");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact is missing a valid generated_at/generatedAt.");
         StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at.");
         StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact carries conflicting generated_at/generatedAt alias values.");
-        StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact is missing generated_at/generatedAt.");
+        StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact is missing a valid generated_at/generatedAt.");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact generated_at does not match promoted release channel generated_at.");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact carries conflicting generated_at/generatedAt alias values.");
         StringAssert.Contains(executableScriptText, "macos_artifacts_missing_rid_by_head");
