@@ -968,6 +968,10 @@ def validate_windows_gate(
     gate_evidence["windows_installer_path"] = str(gate_checks.get("windows_installer_path") or "").strip()
     gate_evidence["gate_reasons"] = gate_reasons
     gate_evidence["startup_smoke_receipt_path"] = str(gate_checks.get("startup_smoke_receipt_path") or "").strip()
+    host_supports_windows_startup_smoke = bool(gate_checks.get("host_supports_windows_startup_smoke"))
+    startup_smoke_external_blocker = normalize_token(gate_checks.get("startup_smoke_external_blocker"))
+    gate_evidence["host_supports_windows_startup_smoke"] = host_supports_windows_startup_smoke
+    gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
     embedded_payload_marker_present = bool(gate_checks.get("embedded_payload_marker_present"))
     embedded_sample_marker_present = bool(gate_checks.get("embedded_sample_marker_present"))
     gate_evidence["embedded_payload_marker_present"] = embedded_payload_marker_present
@@ -1057,6 +1061,14 @@ def validate_windows_gate(
     )
     if not startup_smoke_receipt_exists:
         reasons.append("Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.")
+        if not host_supports_windows_startup_smoke and startup_smoke_external_blocker != "missing_windows_host_capability":
+            reasons.append(
+                "Windows startup smoke external blocker must be missing_windows_host_capability when startup smoke receipt is missing on a non-Windows-capable host."
+            )
+        if host_supports_windows_startup_smoke and startup_smoke_external_blocker:
+            reasons.append(
+                "Windows startup smoke external blocker must be blank when startup smoke receipt is missing on a Windows-capable host."
+            )
     elif startup_smoke_receipt_path is not None and not validate_trusted_path_scope(
         startup_smoke_receipt_path,
         trusted_roots,
@@ -1244,6 +1256,8 @@ def validate_macos_gate(
 
     startup = gate_payload.get("startup_smoke") if isinstance(gate_payload.get("startup_smoke"), dict) else {}
     artifact = gate_payload.get("artifact") if isinstance(gate_payload.get("artifact"), dict) else {}
+    host_supports_macos_startup_smoke = bool(gate_checks.get("host_supports_macos_startup_smoke"))
+    startup_smoke_external_blocker = normalize_token(startup.get("external_blocker"))
     startup_receipt = startup.get("receipt") if isinstance(startup.get("receipt"), dict) else {}
     artifact_exists = bool(artifact.get("installer_exists"))
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
@@ -1302,6 +1316,8 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_receipt_path"] = str(startup.get("receipt_path") or "").strip()
     gate_evidence["startup_smoke_receipt_file_exists"] = startup_receipt_exists
     gate_evidence["startup_smoke_receipt_source"] = "file" if startup_receipt_file else "missing"
+    gate_evidence["host_supports_macos_startup_smoke"] = host_supports_macos_startup_smoke
+    gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
     if startup_receipt_exists and not startup_receipt_file:
         reasons.append(f"macOS startup smoke receipt file is unreadable or not a JSON object for promoted head '{head}' ({rid}).")
     gate_evidence["startup_smoke_ready_checkpoint"] = startup_smoke_ready_checkpoint
@@ -1356,6 +1372,14 @@ def validate_macos_gate(
 
     if not startup_receipt_exists:
         reasons.append(f"macOS startup smoke receipt path is missing or unreadable for promoted head '{head}' ({rid}).")
+        if not host_supports_macos_startup_smoke and startup_smoke_external_blocker != "missing_macos_host_capability":
+            reasons.append(
+                f"macOS startup smoke external blocker must be missing_macos_host_capability when startup smoke receipt is missing for promoted head '{head}' ({rid}) on a non-macOS-capable host."
+            )
+        if host_supports_macos_startup_smoke and startup_smoke_external_blocker:
+            reasons.append(
+                f"macOS startup smoke external blocker must be blank when startup smoke receipt is missing for promoted head '{head}' ({rid}) on a macOS-capable host."
+            )
     elif startup_receipt_path is not None and not validate_trusted_path_scope(
         startup_receipt_path,
         trusted_roots,
