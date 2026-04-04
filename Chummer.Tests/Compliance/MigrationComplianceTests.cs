@@ -4916,6 +4916,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(promotionEvidenceText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(promotionEvidenceText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(promotionEvidenceText, "pre_ui_event_loop");
+        StringAssert.Contains(promotionEvidenceText, "if status not in PASSING_STARTUP_SMOKE_STATUSES");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt artifactDigest does not match manifest sha256");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt hostClass is missing");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt hostClass does not identify the");
