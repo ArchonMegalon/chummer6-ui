@@ -3564,6 +3564,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_channel_alias_conflict");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_version_alias_conflict");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_arch_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_generated_at");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_generated_at_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_generated_at_alias_conflict");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing head:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing channelId/channel:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId:");
@@ -3574,6 +3577,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry conflicting channelId/channel values:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry conflicting version/releaseVersion values:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry conflicting arch/architecture values:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing generated_at/generatedAt:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) generated_at does not match release channel generated_at:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry conflicting generated_at/generatedAt values:");
         StringAssert.Contains(executableGateScriptText, "macos_artifacts_missing_rid_by_head");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes macOS desktop media for head");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes macOS desktop media without explicit head/rid tuple metadata.");
