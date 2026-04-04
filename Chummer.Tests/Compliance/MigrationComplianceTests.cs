@@ -3578,8 +3578,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "workflow_execution_release_channel_id");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_release_channel_id_alias_conflict");
         StringAssert.Contains(executableGateScriptText, "workflow_execution_release_channel_id_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_release_version_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_release_version_alias_conflict");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate carries conflicting release-channel identity aliases across evidence and gate envelope.");
         StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate carries conflicting release-channel identity aliases across evidence and gate envelope.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate carries conflicting release-version aliases across evidence and gate envelope.");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate carries conflicting release-version aliases across evidence and gate envelope.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate release-channel identity does not match release channel channelId.");
         StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate release-channel identity does not match release channel channelId.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate is missing or not passing.");
