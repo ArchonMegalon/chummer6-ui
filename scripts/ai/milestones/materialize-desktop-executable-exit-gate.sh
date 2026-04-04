@@ -1752,16 +1752,18 @@ promoted_desktop_heads = sorted(
         and normalize_token(item.get("head"))
     }
 )
+flagship_required_desktop_heads_source = flagship_gate.get("desktopHeads")
+if flagship_required_desktop_heads_source is None and "desktopHead" in flagship_gate:
+    flagship_required_desktop_heads_source = [flagship_gate.get("desktopHead")]
 flagship_required_desktop_heads = sorted(
-    {
-        normalize_token(item)
-        for item in (
-            flagship_gate.get("desktopHeads")
-            if isinstance(flagship_gate.get("desktopHeads"), list)
-            else [flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else []
+    set(
+        normalize_required_token_list(
+            flagship_required_desktop_heads_source,
+            "flagship.desktop_heads",
+            evidence,
+            reasons,
         )
-        if normalize_token(item)
-    }
+    )
 )
 if not promoted_desktop_heads:
     reasons.append("Release channel does not publish any promoted desktop install media artifacts.")
