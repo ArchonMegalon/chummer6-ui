@@ -3915,6 +3915,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt version is missing.");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt version does not match release channel version.");
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactDigest does not match promoted installer bytes.");
+        StringAssert.Contains(linuxGateScriptText, "host_supports_linux_smoke");
+        StringAssert.Contains(linuxGateScriptText, "host_supports_linux_startup_smoke");
+        StringAssert.Contains(linuxGateScriptText, "missing_linux_host_capability");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke requires a Linux host with dpkg and dpkg-deb; current host cannot run promoted Linux installer smoke.");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
