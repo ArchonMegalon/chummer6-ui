@@ -2013,6 +2013,26 @@ required_platform_head_rid_tuples_from_artifacts = sorted(
         if build_platform_head_rid_tuple(item.get("head"), item.get("rid"), item.get("platform"))
     }
 )
+required_platform_head_pairs_from_required_rid_tuples = sorted(
+    {
+        f"{tuple_token.split(':', 2)[0]}:{tuple_token.split(':', 2)[2]}"
+        for tuple_token in tuple_coverage_required_platform_head_rid_tuples
+        if tuple_token.count(":") == 2
+    }
+)
+required_platform_head_pairs_for_matrix = sorted(
+    {
+        f"{head}:{platform}"
+        for platform in required_platforms_for_pair_matrix
+        for head in required_heads_for_pair_matrix
+        if head
+    }
+)
+missing_required_platform_head_pairs_from_required_rid_tuples = sorted(
+    set(required_platform_head_pairs_for_matrix).difference(
+        set(required_platform_head_pairs_from_required_rid_tuples)
+    )
+)
 missing_required_platform_head_rid_tuples_derived = sorted(
     {
         tuple_token
@@ -2032,6 +2052,15 @@ tuple_coverage_missing_platform_head_rid_tuple_inventory_mismatch = sorted(
 )
 evidence["release_channel_promoted_platform_head_rid_tuples_from_artifacts"] = (
     required_platform_head_rid_tuples_from_artifacts
+)
+evidence["release_channel_required_platform_head_pairs_for_matrix"] = (
+    required_platform_head_pairs_for_matrix
+)
+evidence["release_channel_required_platform_head_pairs_from_required_rid_tuples"] = (
+    required_platform_head_pairs_from_required_rid_tuples
+)
+evidence["release_channel_missing_required_platform_head_pairs_from_required_rid_tuples"] = (
+    missing_required_platform_head_pairs_from_required_rid_tuples
 )
 evidence["release_channel_missing_required_platform_head_rid_tuples_derived"] = (
     missing_required_platform_head_rid_tuples_derived
@@ -2103,6 +2132,12 @@ if tuple_coverage_promoted_platform_head_rid_tuple_inventory_mismatch:
 if tuple_coverage_missing_platform_head_rid_tuple_inventory_mismatch:
     reasons.append(
         "Release channel desktopTupleCoverage missingRequiredPlatformHeadRidTuples inventory does not match promoted installer tuples."
+    )
+if missing_required_platform_head_pairs_from_required_rid_tuples:
+    reasons.append(
+        "Release channel desktopTupleCoverage requiredDesktopPlatformHeadRidTuples is missing required desktop platform/head pair coverage: "
+        + ", ".join(missing_required_platform_head_pairs_from_required_rid_tuples)
+        + "."
     )
 if missing_required_platform_head_pairs:
     reasons.append(
