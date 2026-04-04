@@ -159,6 +159,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_arch");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_channel_id");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_arch");
+        StringAssert.Contains(executableScriptText, "macos_artifacts_missing_rid_by_head");
+        StringAssert.Contains(executableScriptText, "Release channel publishes macOS desktop media for head");
+        StringAssert.Contains(executableScriptText, "Release channel publishes macOS desktop media without explicit head/rid tuple metadata.");
         StringAssert.Contains(executableScriptText, "Release channel is missing canonical required promoted desktop head(s) for milestone-3 executable proof:");
         StringAssert.Contains(executableScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 executable proof:");
         StringAssert.Contains(executableScriptText, "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s):");
