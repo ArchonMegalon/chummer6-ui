@@ -3507,6 +3507,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt hostClass does not identify a macOS host for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt operatingSystem is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "Release channel macOS artifact arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt channelId does not match release-channel channelId for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt is stale for promoted head");

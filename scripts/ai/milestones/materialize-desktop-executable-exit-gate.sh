@@ -1350,6 +1350,7 @@ def validate_macos_gate(
     expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
     expected_arch = "arm64" if rid.endswith("arm64") else "x64" if rid.endswith("x64") else ""
+    expected_artifact_arch = normalize_token(expected_artifact.get("arch"))
     expected_artifact_source = normalize_token(expected_artifact.get("source"))
     policy_missing_release_artifact = expected_artifact_source == "required_tuple_policy_missing_release_artifact"
     gate_evidence["expected_artifact_source"] = expected_artifact_source
@@ -1417,18 +1418,27 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_receipt_host_class"] = startup_smoke_host_class
     gate_evidence["startup_smoke_receipt_operating_system"] = startup_smoke_operating_system
     gate_evidence["startup_smoke_receipt_recorded_at"] = startup_receipt_recorded_at_raw
+    gate_evidence["expected_artifact_arch"] = expected_artifact_arch
 
     if startup_smoke_status not in {"pass", "passed", "ready"}:
         reasons.append(f"macOS startup smoke is not passing for promoted head '{head}' ({rid}).")
     if not artifact_exists:
         reasons.append(f"macOS installer artifact is missing for promoted head '{head}' ({rid}).")
+    if expected_arch and expected_artifact_arch and expected_artifact_arch != expected_arch:
+        reasons.append(
+            f"Release channel macOS artifact arch does not match promoted RID for head '{head}' ({rid})."
+        )
     if not policy_missing_release_artifact:
+        channel_artifact_arch = normalize_token(channel_artifact.get("arch"))
+        gate_evidence["release_channel_macos_artifact_arch"] = channel_artifact_arch
         if normalize_token(channel_artifact.get("head")) != head:
             reasons.append("macOS gate embedded release_channel_macos_artifact head does not match promoted release channel.")
         if normalize_token(channel_artifact.get("rid")) != rid:
             reasons.append("macOS gate embedded release_channel_macos_artifact RID does not match promoted release channel.")
         if normalize_token(channel_artifact.get("platform")) != "macos":
             reasons.append("macOS gate embedded release_channel_macos_artifact platform is not macOS.")
+        if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
+            reasons.append("macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.")
         if expected_file_name and str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
             reasons.append("macOS gate embedded release_channel_macos_artifact fileName does not match promoted release channel.")
         if expected_sha and normalize_token(channel_artifact.get("sha256")) != expected_sha:

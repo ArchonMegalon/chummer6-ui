@@ -129,6 +129,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt rid does not match promoted RID for head");
+        StringAssert.Contains(executableScriptText, "Release channel macOS artifact arch does not match promoted RID for head");
+        StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.");
         StringAssert.Contains(executableScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt exists for promoted head");
         StringAssert.Contains(executableScriptText, "gate_release_version");
         StringAssert.Contains(executableScriptText, "startup_smoke_version");
@@ -137,6 +139,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "startup_smoke_rid");
         StringAssert.Contains(executableScriptText, "startup_smoke_receipt_version");
         StringAssert.Contains(executableScriptText, "startup_smoke_receipt_rid");
+        StringAssert.Contains(executableScriptText, "expected_artifact_arch");
+        StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_arch");
         StringAssert.Contains(executableScriptText, "Release channel is missing canonical required promoted desktop head(s) for milestone-3 executable proof:");
         StringAssert.Contains(executableScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 executable proof:");
         StringAssert.Contains(executableScriptText, "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s):");
