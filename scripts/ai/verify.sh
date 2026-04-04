@@ -147,11 +147,22 @@ if ! rg -n 'b3-build-lab-check\.sh|b10-contact-network-check\.sh|b9-campaign-jou
   exit 13
 fi
 
+if ! rg -n 'b15-localization-release-gate\.sh' docs/WORKBENCH_RELEASE_SIGNOFF.md >/dev/null; then
+  echo "[verify] FAIL: workbench release signoff must keep localization release evidence explicit." >&2
+  exit 26
+fi
+
 echo "[verify] checking B13 accessibility signoff guard..."
 CHUMMER_B13_TESTS_REQUIRED=1 bash scripts/ai/milestones/b13-accessibility-signoff-check.sh
 
 echo "[verify] checking B14 flagship UI release gate..."
 bash scripts/ai/milestones/b14-flagship-ui-release-gate.sh
+
+echo "[verify] checking W1 desktop executable exit gate..."
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh
+
+echo "[verify] checking B15 localization release gate..."
+bash scripts/ai/milestones/b15-localization-release-gate.sh
 
 echo "[verify] checking B7 browser deployment signoff guard..."
 CHUMMER_B7_RUNTIME_REQUIRED=1 CHUMMER_B7_ALLOW_RUNTIME_SKIP=0 \
