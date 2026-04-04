@@ -5311,6 +5311,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "normalize_release_channel_artifact_identity_fields");
         StringAssert.Contains(generatorText, "artifact[\"channel\"] = channel_id");
         StringAssert.Contains(generatorText, "artifact[\"version\"] = artifact_version");
+        StringAssert.Contains(generatorText, "Release channel is missing generated_at/generatedAt at top level; cannot normalize artifact generated_at identity.");
+        StringAssert.Contains(generatorText, "artifact[\"generated_at\"] = release_generated_at");
+        StringAssert.Contains(generatorText, "artifact[\"generatedAt\"] = release_generated_at");
         StringAssert.Contains(generatorText, "--compat-output");
         StringAssert.Contains(generatorText, "generate-public-promotion-evidence.py");
         StringAssert.Contains(generatorText, "CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF");

@@ -145,6 +145,7 @@ def normalize_release_channel_artifact_identity_fields(manifest_path: Path) -> b
 
     channel_id = normalize(payload.get("channelId") or payload.get("channel"))
     release_version = str(payload.get("version") or "").strip()
+    release_generated_at = str(payload.get("generated_at") or payload.get("generatedAt") or "").strip()
     if not channel_id:
         raise SystemExit(
             "Release channel is missing channelId/channel at top level; cannot normalize artifact channel identity."
@@ -152,6 +153,10 @@ def normalize_release_channel_artifact_identity_fields(manifest_path: Path) -> b
     if not release_version:
         raise SystemExit(
             "Release channel is missing version at top level; cannot normalize artifact release identity."
+        )
+    if not release_generated_at:
+        raise SystemExit(
+            "Release channel is missing generated_at/generatedAt at top level; cannot normalize artifact generated_at identity."
         )
 
     artifacts = payload.get("artifacts")
@@ -193,6 +198,21 @@ def normalize_release_channel_artifact_identity_fields(manifest_path: Path) -> b
                 changed = True
             if str(artifact.get("releaseVersion") or "").strip() != artifact_version:
                 artifact["releaseVersion"] = artifact_version
+                changed = True
+
+        artifact_generated_at = str(
+            artifact.get("generated_at") or artifact.get("generatedAt") or ""
+        ).strip()
+        if artifact_generated_at != release_generated_at:
+            artifact["generated_at"] = release_generated_at
+            artifact["generatedAt"] = release_generated_at
+            changed = True
+        else:
+            if str(artifact.get("generated_at") or "").strip() != artifact_generated_at:
+                artifact["generated_at"] = artifact_generated_at
+                changed = True
+            if str(artifact.get("generatedAt") or "").strip() != artifact_generated_at:
+                artifact["generatedAt"] = artifact_generated_at
                 changed = True
 
     if not changed:
