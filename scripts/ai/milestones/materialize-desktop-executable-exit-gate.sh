@@ -834,11 +834,22 @@ def validate_linux_gate(
     gate_evidence["gate_reasons"] = gate_reasons
 
     gate_head = gate_payload.get("head") if isinstance(gate_payload.get("head"), dict) else {}
+    gate_checks = gate_payload.get("checks") if isinstance(gate_payload.get("checks"), dict) else {}
+    channel_artifact = (
+        gate_checks.get("release_channel_linux_artifact")
+        if isinstance(gate_checks.get("release_channel_linux_artifact"), dict)
+        else {}
+    )
     gate_evidence["receipt_head"] = gate_head
+    gate_evidence["release_channel_linux_artifact"] = channel_artifact
     gate_head_channel_id = payload_channel_id(gate_head)
     gate_head_channel_alias_conflict = channel_alias_conflicts(gate_head)
+    checks_release_channel_id = normalize_token(gate_checks.get("release_channel_id"))
+    checks_release_channel_version = str(gate_checks.get("release_channel_version") or "").strip()
     gate_evidence["gate_head_channel_id"] = gate_head_channel_id
     gate_evidence["gate_head_channel_id_alias_conflict"] = gate_head_channel_alias_conflict
+    gate_evidence["checks_release_channel_id"] = checks_release_channel_id
+    gate_evidence["checks_release_channel_version"] = checks_release_channel_version
     gate_release_version_primary = str(gate_payload.get("releaseVersion") or "").strip()
     gate_release_version_alias = str(gate_payload.get("version") or "").strip()
     gate_release_version_alias_conflict = (
@@ -867,6 +878,14 @@ def validate_linux_gate(
     if gate_head_channel_alias_conflict:
         reasons.append(
             f"Linux desktop exit gate receipt head carries conflicting channelId/channel alias values for promoted head '{head}'."
+        )
+    if release_channel_id and checks_release_channel_id and checks_release_channel_id != release_channel_id:
+        reasons.append(
+            f"Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head '{head}'."
+        )
+    if release_channel_version and checks_release_channel_version and checks_release_channel_version != release_channel_version:
+        reasons.append(
+            f"Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head '{head}'."
         )
     if gate_release_version_alias_conflict:
         reasons.append(
@@ -1071,6 +1090,67 @@ def validate_linux_gate(
             reasons.append(f"Linux desktop exit gate receipt RID does not match promoted head '{head}' ({expected_rid}).")
         if expected_rid and gate_evidence["primary_receipt_rid"] and gate_evidence["primary_receipt_rid"] != expected_rid:
             reasons.append(f"Linux installer startup smoke receipt rid does not match promoted RID for head '{head}'.")
+        if not channel_artifact:
+            reasons.append(
+                f"Linux gate embedded release_channel_linux_artifact is missing for promoted head '{head}' ({expected_rid})."
+            )
+        else:
+            channel_artifact_channel_id = payload_channel_id(channel_artifact)
+            channel_artifact_channel_alias_conflict = scalar_alias_conflicts(
+                channel_artifact,
+                "channelId",
+                "channel",
+                normalize=True,
+            )
+            channel_artifact_version = str(
+                channel_artifact.get("version")
+                or channel_artifact.get("releaseVersion")
+                or ""
+            ).strip()
+            channel_artifact_version_alias_conflict = (
+                bool(str(channel_artifact.get("version") or "").strip())
+                and bool(str(channel_artifact.get("releaseVersion") or "").strip())
+                and str(channel_artifact.get("version") or "").strip()
+                != str(channel_artifact.get("releaseVersion") or "").strip()
+            )
+            channel_artifact_arch = payload_arch(channel_artifact)
+            channel_artifact_arch_alias_conflict = arch_alias_conflicts(channel_artifact)
+            gate_evidence["release_channel_linux_artifact_channel_id"] = channel_artifact_channel_id
+            gate_evidence["release_channel_linux_artifact_channel_id_alias_conflict"] = channel_artifact_channel_alias_conflict
+            gate_evidence["release_channel_linux_artifact_version"] = channel_artifact_version
+            gate_evidence["release_channel_linux_artifact_version_alias_conflict"] = channel_artifact_version_alias_conflict
+            gate_evidence["release_channel_linux_artifact_arch"] = channel_artifact_arch
+            gate_evidence["release_channel_linux_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
+            if normalize_token(channel_artifact.get("head")) != head:
+                reasons.append("Linux gate embedded release_channel_linux_artifact head does not match promoted release channel.")
+            if expected_rid and normalize_token(channel_artifact.get("rid")) != expected_rid:
+                reasons.append("Linux gate embedded release_channel_linux_artifact RID does not match promoted release channel.")
+            if normalize_token(channel_artifact.get("platform")) != "linux":
+                reasons.append("Linux gate embedded release_channel_linux_artifact platform is not 'linux'.")
+            if release_channel_id and channel_artifact_channel_id != release_channel_id:
+                reasons.append("Linux gate embedded release_channel_linux_artifact channelId/channel does not match promoted release channel.")
+            if channel_artifact_channel_alias_conflict:
+                reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting channelId/channel alias values.")
+            if release_channel_version and not channel_artifact_version:
+                reasons.append("Linux gate embedded release_channel_linux_artifact is missing version/releaseVersion.")
+            elif release_channel_version and channel_artifact_version != release_channel_version:
+                reasons.append("Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.")
+            if channel_artifact_version_alias_conflict:
+                reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting version/releaseVersion alias values.")
+            if channel_artifact_arch_alias_conflict:
+                reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting arch/architecture alias values.")
+            if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
+                reasons.append("Linux gate embedded release_channel_linux_artifact arch does not match promoted release-channel RID.")
+            if not policy_missing_release_artifact:
+                if (
+                    normalize_token(channel_artifact.get("fileName"))
+                    != normalize_token(expected_artifact.get("fileName"))
+                ):
+                    reasons.append("Linux gate embedded release_channel_linux_artifact fileName does not match promoted release channel.")
+                if normalize_token(channel_artifact.get("sha256")) != expected_sha:
+                    reasons.append("Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.")
+                if int(channel_artifact.get("sizeBytes") or 0) != int(expected_artifact.get("sizeBytes") or 0):
+                    reasons.append("Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel.")
         if not policy_missing_release_artifact:
             if expected_arch and gate_evidence["primary_receipt_arch"] != expected_arch:
                 reasons.append(f"Linux installer startup smoke receipt arch does not match promoted RID for head '{head}'.")
