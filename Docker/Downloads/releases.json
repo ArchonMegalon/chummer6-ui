@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-04-03T23:30:39Z",
-  "generatedAt": "2026-04-03T23:30:39Z",
-  "version": "unpublished",
+  "generated_at": "2026-04-04T02:50:32Z",
+  "generatedAt": "2026-04-04T02:50:32Z",
+  "version": "local-docker",
   "channel": "docker",
-  "publishedAt": "2026-04-03T23:30:38Z",
+  "publishedAt": "2026-04-03T23:38:36Z",
   "downloads": [
     {
       "id": "avalonia-linux-x64-installer",
@@ -47,28 +47,95 @@
   "fixAvailabilitySummary": "Do not send fixed notices until required desktop tuple coverage is complete for the promoted shelf.",
   "releaseProof": {
     "status": "passed",
-    "generatedAt": "2026-03-29T09:48:56Z",
-    "baseUrl": "https://chummer.run",
+    "generatedAt": "2026-03-28T14:39:05Z",
+    "baseUrl": "http://127.0.0.1:8091",
     "journeysPassed": [
-      "install_claim_restore_continue",
-      "build_explain_publish",
-      "campaign_session_recover_recap",
-      "report_cluster_release_notify"
+      "public_bridge_boot",
+      "desktop_downloads_projection",
+      "portal_route_probe"
     ],
     "proofRoutes": [
-      "/downloads/install/avalonia-linux-x64-installer",
-      "/home/access",
-      "/home/work",
-      "/account/work",
-      "/account/support",
-      "/contact"
+      "/",
+      "/blazor/",
+      "/hub/",
+      "/avalonia/",
+      "/downloads/",
+      "/downloads/releases.json",
+      "/session/",
+      "/coach/",
+      "/contact",
+      "/what-is-chummer",
+      "/artifacts",
+      "/faq"
     ],
     "uiLocalizationReleaseGate": {
-      "status": "missing",
-      "generatedAt": null,
-      "defaultKeyCount": null,
-      "shippingLocales": [],
-      "localeSummary": []
+      "status": "pass",
+      "generatedAt": "2026-04-03T22:59:41Z",
+      "defaultKeyCount": 383,
+      "explicitFallbackRuntime": "missing",
+      "signoffSmokeRunnerStatus": "missing",
+      "shippingLocales": [
+        "en-us",
+        "de-de",
+        "fr-fr",
+        "ja-jp",
+        "pt-br",
+        "zh-cn"
+      ],
+      "localeSummary": [
+        {
+          "locale": "de-de",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": null,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": false,
+          "legacyDataXmlPresent": false
+        },
+        {
+          "locale": "fr-fr",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": null,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": false,
+          "legacyDataXmlPresent": false
+        },
+        {
+          "locale": "ja-jp",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": null,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": false,
+          "legacyDataXmlPresent": false
+        },
+        {
+          "locale": "pt-br",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": null,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": false,
+          "legacyDataXmlPresent": false
+        },
+        {
+          "locale": "zh-cn",
+          "untranslatedKeyCount": 0,
+          "overrideCount": 383,
+          "minimumOverrideCount": null,
+          "missingReleaseSeedKeys": [],
+          "legacyXmlPresent": false,
+          "legacyDataXmlPresent": false
+        }
+      ],
+      "acceptanceGates": [],
+      "domainCoverage": {},
+      "localeDomainCoverage": {},
+      "blockingFindings": [],
+      "blockingFindingsCount": 0,
+      "translationBacklogFindings": [],
+      "translationBacklogFindingsCount": 0
     }
   },
   "desktopTupleCoverage": {
@@ -109,6 +176,18 @@
       "windows": [],
       "macos": []
     },
+    "requiredDesktopPlatformHeadRidTuples": [
+      "avalonia:linux-x64:linux",
+      "avalonia:osx-arm64:macos",
+      "avalonia:win-x64:windows",
+      "blazor-desktop:linux-x64:linux",
+      "blazor-desktop:osx-arm64:macos",
+      "blazor-desktop:win-x64:windows"
+    ],
+    "promotedPlatformHeadRidTuples": [
+      "avalonia:linux-x64:linux",
+      "blazor-desktop:linux-x64:linux"
+    ],
     "missingRequiredPlatforms": [
       "windows",
       "macos"
@@ -119,6 +198,12 @@
       "blazor-desktop:windows",
       "avalonia:macos",
       "blazor-desktop:macos"
+    ],
+    "missingRequiredPlatformHeadRidTuples": [
+      "avalonia:osx-arm64:macos",
+      "avalonia:win-x64:windows",
+      "blazor-desktop:osx-arm64:macos",
+      "blazor-desktop:win-x64:windows"
     ]
   }
 }
