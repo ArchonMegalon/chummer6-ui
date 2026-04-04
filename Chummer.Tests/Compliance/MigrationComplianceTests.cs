@@ -3546,6 +3546,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing version/releaseVersion:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) version/releaseVersion does not match release channel version:");
+        StringAssert.Contains(executableGateScriptText, "macos_artifacts_missing_rid_by_head");
+        StringAssert.Contains(executableGateScriptText, "Release channel publishes macOS desktop media for head");
+        StringAssert.Contains(executableGateScriptText, "Release channel publishes macOS desktop media without explicit head/rid tuple metadata.");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass does not identify a Linux host for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt operatingSystem is missing for promoted head");
