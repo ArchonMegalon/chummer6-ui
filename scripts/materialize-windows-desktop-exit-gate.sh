@@ -407,6 +407,7 @@ if startup_smoke_receipt_path.is_file() and installer_exists and expected_instal
 startup_smoke_head = normalize_token(startup_smoke_payload.get("headId"))
 startup_smoke_platform = normalize_token(startup_smoke_payload.get("platform"))
 startup_smoke_arch = normalize_token(startup_smoke_payload.get("arch"))
+startup_smoke_rid = normalize_token(startup_smoke_payload.get("rid"))
 startup_smoke_channel = normalize_token(startup_smoke_payload.get("channelId") or startup_smoke_payload.get("channel"))
 startup_smoke_version = str(
     startup_smoke_payload.get("version")
@@ -419,6 +420,7 @@ startup_smoke_artifact_path = str(startup_smoke_payload.get("artifactPath") or "
 evidence["startup_smoke_head"] = startup_smoke_head
 evidence["startup_smoke_platform"] = startup_smoke_platform
 evidence["startup_smoke_arch"] = startup_smoke_arch
+evidence["startup_smoke_rid"] = startup_smoke_rid
 evidence["startup_smoke_channel"] = startup_smoke_channel
 evidence["startup_smoke_version"] = startup_smoke_version
 evidence["startup_smoke_host_class"] = startup_smoke_host_class
@@ -436,6 +438,10 @@ if startup_smoke_receipt_path.is_file() and not startup_smoke_operating_system:
     reasons.append("Windows startup smoke receipt operatingSystem is missing.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_arch != expected_arch:
     reasons.append(f"Windows startup smoke receipt arch does not match promoted RID {expected_rid}.")
+if startup_smoke_receipt_path.is_file() and not startup_smoke_rid:
+    reasons.append("Windows startup smoke receipt rid is missing.")
+if startup_smoke_receipt_path.is_file() and startup_smoke_rid and startup_smoke_rid != expected_rid:
+    reasons.append(f"Windows startup smoke receipt rid does not match promoted RID {expected_rid}.")
 if startup_smoke_receipt_path.is_file() and release_channel_id and startup_smoke_channel != release_channel_id:
     reasons.append(f"Windows startup smoke receipt channelId does not match release channel {release_channel_id}.")
 if startup_smoke_receipt_path.is_file() and release_channel_version and not startup_smoke_version:

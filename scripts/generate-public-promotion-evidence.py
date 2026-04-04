@@ -128,7 +128,13 @@ def receipt_recorded_at(receipt: dict) -> datetime | None:
     return parse_iso_utc(receipt.get("completedAtUtc") or receipt.get("recordedAtUtc") or receipt.get("startedAtUtc"))
 
 
-def validate_receipt_for_artifact(receipt: dict, expected_platform: str, expected_digest: str, now_utc: datetime) -> tuple[bool, str]:
+def validate_receipt_for_artifact(
+    receipt: dict,
+    expected_platform: str,
+    expected_rid: str,
+    expected_digest: str,
+    now_utc: datetime,
+) -> tuple[bool, str]:
     status = normalize_token(receipt.get("status"))
     if status not in PASSING_STARTUP_SMOKE_STATUSES:
         return False, "startup-smoke receipt status is not passing"
@@ -151,6 +157,12 @@ def validate_receipt_for_artifact(receipt: dict, expected_platform: str, expecte
     if not operating_system:
         return False, "startup-smoke receipt operatingSystem is missing"
 
+    receipt_rid = normalize_token(receipt.get("rid"))
+    if not receipt_rid:
+        return False, "startup-smoke receipt rid is missing"
+    if expected_rid and receipt_rid != expected_rid:
+        return False, "startup-smoke receipt rid does not match manifest rid"
+
     timestamp = receipt_recorded_at(receipt)
     if timestamp is None:
         return False, "startup-smoke receipt is missing a valid completed/recorded timestamp"
@@ -172,6 +184,7 @@ def validate_receipt_for_artifact(receipt: dict, expected_platform: str, expecte
 def find_matching_receipt(artifact: dict, receipts: list[dict], now_utc: datetime) -> tuple[dict | None, str]:
     expected_head = (artifact.get("head") or "").strip()
     expected_platform = normalize_platform(artifact.get("platform"))
+    expected_rid = normalize_token(artifact.get("rid"))
     expected_arch = (artifact.get("arch") or "").strip().lower()
     expected_digest = normalize_token(artifact.get("sha256"))
     matching_receipts: list[dict] = []
@@ -180,6 +193,8 @@ def find_matching_receipt(artifact: dict, receipts: list[dict], now_utc: datetim
         if (receipt.get("headId") or "").strip().lower() != expected_head.lower():
             continue
         if normalize_platform(receipt.get("platform")) != expected_platform:
+            continue
+        if normalize_token(receipt.get("rid")) != expected_rid:
             continue
         if (receipt.get("arch") or "").strip().lower() != expected_arch:
             continue
@@ -197,7 +212,7 @@ def find_matching_receipt(artifact: dict, receipts: list[dict], now_utc: datetim
 
     matching_receipts.sort(key=receipt_sort_key, reverse=True)
     candidate = matching_receipts[0]
-    is_valid, reason = validate_receipt_for_artifact(candidate, expected_platform, expected_digest, now_utc)
+    is_valid, reason = validate_receipt_for_artifact(candidate, expected_platform, expected_rid, expected_digest, now_utc)
     if not is_valid:
         return None, reason
 

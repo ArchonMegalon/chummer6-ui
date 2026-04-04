@@ -333,6 +333,7 @@ for artifact in artifacts:
     receipt_head = normalize(receipt.get("headId"))
     receipt_platform = normalize(receipt.get("platform"))
     receipt_arch = normalize(receipt.get("arch"))
+    receipt_rid = normalize(receipt.get("rid"))
     receipt_host_class = normalize(receipt.get("hostClass"))
     receipt_operating_system = str(receipt.get("operatingSystem") or "").strip()
     expected_arch = rid_to_arch(rid)
@@ -348,6 +349,10 @@ for artifact in artifacts:
         errors.append(f"startup-smoke receipt operatingSystem is missing for promoted install medium {head}/{platform}/{rid}.")
     if expected_arch and receipt_arch != expected_arch:
         errors.append(f"startup-smoke receipt arch mismatch for promoted install medium {head}/{platform}/{rid}: {receipt_arch or 'missing'}")
+    if not receipt_rid:
+        errors.append(f"startup-smoke receipt rid is missing for promoted install medium {head}/{platform}/{rid}.")
+    elif receipt_rid != rid:
+        errors.append(f"startup-smoke receipt rid mismatch for promoted install medium {head}/{platform}/{rid}: {receipt_rid}")
     promoted_file_path = files_root / file_name
     expected_sha = normalize(artifact.get("sha256"))
     if promoted_file_path.is_file():

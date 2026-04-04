@@ -3907,6 +3907,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt hostClass does not identify a macOS host.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt operatingSystem is missing.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt arch does not match promoted RID");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt rid is missing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt rid does not match promoted RID");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt channelId does not match release channel");
         StringAssert.Contains(macosGateScriptText, "macOS release channel is missing version.");
         StringAssert.Contains(macosGateScriptText, "startup_smoke_version = str(");
@@ -4046,6 +4048,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt hostClass does not identify a Windows host.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt operatingSystem is missing.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt arch does not match promoted RID {expected_rid}.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt rid is missing.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt rid does not match promoted RID {expected_rid}.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt channelId does not match release channel");
         StringAssert.Contains(windowsGateScriptText, "Release channel is missing version.");
         StringAssert.Contains(windowsGateScriptText, "startup_smoke_version = str(");
@@ -5059,6 +5063,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "startup-smoke receipt hostClass is missing for promoted install medium");
         StringAssert.Contains(publisherText, "startup-smoke receipt hostClass does not identify the");
         StringAssert.Contains(publisherText, "startup-smoke receipt operatingSystem is missing for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt rid is missing for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt rid mismatch for promoted install medium");
         StringAssert.Contains(publisherText, "startup-smoke receipt timestamp is missing/invalid for promoted install medium");
         StringAssert.Contains(publisherText, "startup-smoke receipt timestamp is in the future for promoted install medium");
         StringAssert.Contains(publisherText, "startup-smoke receipt is stale for promoted install medium");
@@ -5187,6 +5193,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt hostClass is missing");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt hostClass does not identify the");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt operatingSystem is missing");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt rid is missing");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt rid does not match manifest rid");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt timestamp is in the future");
         StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReason\": startup_smoke_reason");
         StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReceiptPath\": str((receipt or {}).get(\"__sourcePath\") or \"\")");
