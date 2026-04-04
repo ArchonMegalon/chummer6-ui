@@ -3994,6 +3994,49 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "SR4/SR6 ledgers are missing required canonical workflow families");
         StringAssert.Contains(workflowGateScriptText, "SR4/SR6 required canonical workflow families are missing audit tests");
         StringAssert.Contains(workflowGateScriptText, "SR4/SR6 family-level execution receipts are not explicitly grounded");
+        StringAssert.Contains(workflowGateScriptText, "workflow_parity_receipt_channel_ids");
+        StringAssert.Contains(workflowGateScriptText, "receipt is missing channelId/channel");
+        StringAssert.Contains(workflowGateScriptText, "receipt channelId does not match desktop workflow execution release-channel channelId");
+    }
+
+    [TestMethod]
+    public void Desktop_workflow_parity_scripts_bind_receipts_to_release_channel_identity()
+    {
+        string chummer5aParityScriptPath = FindPath("scripts", "ai", "milestones", "chummer5a-desktop-workflow-parity-check.sh");
+        string chummer5aParityScriptText = File.ReadAllText(chummer5aParityScriptPath);
+        string sr4ParityScriptPath = FindPath("scripts", "ai", "milestones", "sr4-desktop-workflow-parity-check.sh");
+        string sr4ParityScriptText = File.ReadAllText(sr4ParityScriptPath);
+        string sr6ParityScriptPath = FindPath("scripts", "ai", "milestones", "sr6-desktop-workflow-parity-check.sh");
+        string sr6ParityScriptText = File.ReadAllText(sr6ParityScriptPath);
+        string srFrontierScriptPath = FindPath("scripts", "ai", "milestones", "sr4-sr6-desktop-parity-frontier-receipt.sh");
+        string srFrontierScriptText = File.ReadAllText(srFrontierScriptPath);
+
+        StringAssert.Contains(chummer5aParityScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(chummer5aParityScriptText, "canonical_release_channel_path");
+        StringAssert.Contains(chummer5aParityScriptText, "release_channel_channel_id");
+        StringAssert.Contains(chummer5aParityScriptText, "\"channelId\": \"\"");
+        StringAssert.Contains(chummer5aParityScriptText, "\"releaseChannelPath\"");
+
+        StringAssert.Contains(sr4ParityScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(sr4ParityScriptText, "canonical_release_channel_path");
+        StringAssert.Contains(sr4ParityScriptText, "release_channel_channel_id");
+        StringAssert.Contains(sr4ParityScriptText, "\"channelId\": \"\"");
+        StringAssert.Contains(sr4ParityScriptText, "\"releaseChannelPath\"");
+
+        StringAssert.Contains(sr6ParityScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(sr6ParityScriptText, "canonical_release_channel_path");
+        StringAssert.Contains(sr6ParityScriptText, "release_channel_channel_id");
+        StringAssert.Contains(sr6ParityScriptText, "SR4 desktop workflow parity receipt channelId does not match release channel.");
+        StringAssert.Contains(sr6ParityScriptText, "\"channelId\": \"\"");
+        StringAssert.Contains(sr6ParityScriptText, "\"releaseChannelPath\"");
+
+        StringAssert.Contains(srFrontierScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(srFrontierScriptText, "canonical_release_channel_path");
+        StringAssert.Contains(srFrontierScriptText, "release_channel_channel_id");
+        StringAssert.Contains(srFrontierScriptText, "SR4 parity receipt channelId does not match release channel.");
+        StringAssert.Contains(srFrontierScriptText, "SR6 parity receipt channelId does not match release channel.");
+        StringAssert.Contains(srFrontierScriptText, "\"channelId\": \"\"");
+        StringAssert.Contains(srFrontierScriptText, "\"releaseChannelPath\"");
     }
 
     [TestMethod]
