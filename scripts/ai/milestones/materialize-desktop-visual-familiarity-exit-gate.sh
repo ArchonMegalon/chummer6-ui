@@ -541,14 +541,14 @@ required_legacy_interaction_keys = [
     "legacyCreationWorkflowRhythm",
     "legacyAdvancementWorkflowRhythm",
     "legacyBrowseDetailConfirmRhythm",
-    "legacyGearWorkflowRhythm",
-    "legacyVehiclesBuilderRhythm",
-    "legacyCyberwareDialogRhythm",
     "legacyContactsDiaryRhythm",
-    "legacyContactsWorkflowRhythm",
-    "legacyDiaryWorkflowRhythm",
     "legacyMagicWorkflowRhythm",
     "legacyMatrixWorkflowRhythm",
+    "legacyGearWorkflowRhythm",
+    "legacyCyberwareDialogRhythm",
+    "legacyVehiclesBuilderRhythm",
+    "legacyContactsWorkflowRhythm",
+    "legacyDiaryWorkflowRhythm",
 ]
 missing_required_legacy_interaction_keys = [
     key for key in required_legacy_interaction_keys
