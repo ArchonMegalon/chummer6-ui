@@ -1472,6 +1472,35 @@ host_supports_linux_smoke = (
     and bool(shutil.which("dpkg-deb"))
 )
 
+
+def normalize_token(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+def expected_host_class_platform_token(platform_name: str) -> str:
+    normalized = normalize_token(platform_name)
+    if normalized == "linux":
+        return "linux"
+    if normalized == "windows":
+        return "win"
+    if normalized == "macos":
+        return "osx"
+    return normalized
+
+
+def host_class_matches_platform(host_class: str, platform_name: str) -> bool:
+    normalized_host = normalize_token(host_class)
+    expected_token = expected_host_class_platform_token(platform_name)
+    if not normalized_host or not expected_token:
+        return False
+    host_tokens = [token for token in normalized_host.split("-") if token]
+    return expected_token in host_tokens
+
+
+def path_uses_legacy_chummer5a_root(path: pathlib.Path) -> bool:
+    normalized = str(path.resolve()).replace("\\", "/").lower()
+    return "/chummer5a/" in normalized
+
 if not release_channel_path.is_file():
     reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
 else:
@@ -1555,6 +1584,9 @@ else:
                     "Linux startup smoke requires a Linux host with dpkg and dpkg-deb; current host cannot run promoted Linux installer smoke."
                 )
         else:
+            if path_uses_legacy_chummer5a_root(installer_receipt_path):
+                reasons.append("Linux startup smoke receipt was resolved from a legacy chummer5a path.")
+
             try:
                 receipt = json.loads(installer_receipt_path.read_text(encoding="utf-8-sig"))
             except Exception as ex:
@@ -1571,6 +1603,9 @@ else:
             receipt_digest = str(receipt.get("artifactDigest") or "").strip().lower()
             receipt_release_version = str(receipt.get("releaseVersion") or "").strip()
             receipt_version = str(receipt.get("version") or receipt.get("releaseVersion") or "").strip()
+            receipt_host_class = str(receipt.get("hostClass") or "").strip().lower()
+            receipt_operating_system = str(receipt.get("operatingSystem") or "").strip()
+            receipt_artifact_path = str(receipt.get("artifactPath") or "").strip()
             receipt_recorded_at = (
                 str(receipt.get("completedAtUtc") or "").strip()
                 or str(receipt.get("recordedAtUtc") or "").strip()
@@ -1586,6 +1621,12 @@ else:
                 reasons.append("Linux startup smoke receipt headId does not match promoted head.")
             if receipt_platform != "linux":
                 reasons.append("Linux startup smoke receipt platform is not linux.")
+            if not receipt_host_class:
+                reasons.append("Linux startup smoke receipt hostClass is missing.")
+            elif not host_class_matches_platform(receipt_host_class, "linux"):
+                reasons.append("Linux startup smoke receipt hostClass does not identify a Linux host.")
+            if not receipt_operating_system:
+                reasons.append("Linux startup smoke receipt operatingSystem is missing.")
             if expected_arch and receipt_arch != expected_arch:
                 reasons.append("Linux startup smoke receipt arch does not match promoted RID.")
             if not receipt_rid:
@@ -1604,6 +1645,25 @@ else:
                 reasons.append("Linux startup smoke receipt version does not match release channel version.")
             if expected_digest and receipt_digest != expected_digest:
                 reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")
+            if not receipt_artifact_path:
+                reasons.append("Linux startup smoke receipt artifactPath is missing.")
+            else:
+                receipt_artifact_path_obj = pathlib.Path(receipt_artifact_path)
+                if path_uses_legacy_chummer5a_root(receipt_artifact_path_obj):
+                    reasons.append("Linux startup smoke receipt artifactPath points into a legacy chummer5a root.")
+                if str(use_promoted_installer).strip() == "1":
+                    try:
+                        if (
+                            promoted_shelf_artifact_path.is_file()
+                            and receipt_artifact_path_obj.resolve() != promoted_shelf_artifact_path.resolve()
+                        ):
+                            reasons.append(
+                                "Linux startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes."
+                            )
+                    except Exception:
+                        reasons.append(
+                            "Linux startup smoke receipt artifactPath could not be resolved for promoted shelf verification."
+                        )
             if not receipt_recorded_at:
                 reasons.append("Linux startup smoke receipt timestamp is missing.")
             else:
