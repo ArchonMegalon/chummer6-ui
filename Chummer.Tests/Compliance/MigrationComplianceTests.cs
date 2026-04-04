@@ -3600,9 +3600,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "contacts_diary_method_has_rhythm_markers");
 
         StringAssert.Contains(executableGateScriptText, "release_gate_lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
-        StringAssert.Contains(executableGateScriptText, "for _ in $(seq 1 150); do");
-        StringAssert.Contains(executableGateScriptText, "if [[ ! -d \"$release_gate_lock_dir\" ]]; then");
+        StringAssert.Contains(executableGateScriptText, "skip_release_gate_lock_wait=\"${CHUMMER_DESKTOP_EXECUTABLE_SKIP_RELEASE_GATE_LOCK_WAIT:-0}\"");
+        StringAssert.Contains(executableGateScriptText, "release_gate_lock_wait_seconds=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}\"");
+        StringAssert.Contains(executableGateScriptText, "release_gate_lock_poll_seconds=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_POLL_SECONDS:-2}\"");
+        StringAssert.Contains(executableGateScriptText, "release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))");
+        StringAssert.Contains(executableGateScriptText, "for _ in $(seq 1 \"$release_gate_lock_wait_iterations\"); do");
+        StringAssert.Contains(executableGateScriptText, "sleep \"$release_gate_lock_poll_seconds\"");
         StringAssert.Contains(executableGateScriptText, "skip_dependency_materialize=\"${CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE:-0}\"");
+        StringAssert.Contains(executableGateScriptText, "if [[ \"$skip_release_gate_lock_wait\" != \"1\" ]]; then");
         StringAssert.Contains(executableGateScriptText, "if [[ \"$skip_dependency_materialize\" != \"1\" ]]; then");
         StringAssert.Contains(executableGateScriptText, "bash \"$visual_familiarity_materializer_path\" >/dev/null");
         StringAssert.Contains(executableGateScriptText, "bash \"$workflow_execution_materializer_path\" >/dev/null");
