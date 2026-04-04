@@ -121,6 +121,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt carries conflicting releaseVersion/version alias values for promoted head");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt head channelId/channel does not match release channel for promoted head");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt head carries conflicting channelId/channel alias values for promoted head");
+        StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head");
+        StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt is missing version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
@@ -128,6 +130,14 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt status is not passing for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid does not match promoted RID for head");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact is missing for promoted head");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact channelId/channel does not match promoted release channel.");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact carries conflicting channelId/channel alias values.");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact is missing version/releaseVersion.");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact carries conflicting version/releaseVersion alias values.");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact carries conflicting arch/architecture alias values.");
+        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "Release channel Linux artifact arch does not match promoted RID for head");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing channelId/channel:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId:");
@@ -233,6 +243,12 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_version_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_arch");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_arch_alias_conflict");
+        StringAssert.Contains(executableScriptText, "release_channel_linux_artifact_channel_id");
+        StringAssert.Contains(executableScriptText, "release_channel_linux_artifact_channel_id_alias_conflict");
+        StringAssert.Contains(executableScriptText, "release_channel_linux_artifact_version");
+        StringAssert.Contains(executableScriptText, "release_channel_linux_artifact_version_alias_conflict");
+        StringAssert.Contains(executableScriptText, "release_channel_linux_artifact_arch");
+        StringAssert.Contains(executableScriptText, "release_channel_linux_artifact_arch_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_channel_id");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_channel_id_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_version");

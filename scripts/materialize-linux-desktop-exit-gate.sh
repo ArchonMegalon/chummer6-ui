@@ -901,6 +901,10 @@ def dedupe_preserve_order(values: list[str]) -> list[str]:
     return ordered
 
 
+def normalize_token(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
 def sha256_file(path_text: str):
     path = pathlib.Path(path_text)
     if not path.is_file():
@@ -1113,6 +1117,29 @@ startup_smoke_external_blocker = (
     if (not startup_smoke_receipt_exists and not host_supports_linux_startup_smoke)
     else ""
 )
+release_channel_payload = load_json(release_channel_path) if release_channel_path else None
+if not isinstance(release_channel_payload, dict):
+    release_channel_payload = {}
+release_channel_channel_id = normalize_token(
+    release_channel_payload.get("channelId") or release_channel_payload.get("channel")
+)
+release_channel_version = str(
+    release_channel_payload.get("version")
+    or release_channel_payload.get("releaseVersion")
+    or ""
+).strip()
+release_channel_linux_artifact = {}
+for artifact in (release_channel_payload.get("artifacts") or []):
+    if not isinstance(artifact, dict):
+        continue
+    if (
+        normalize_token(artifact.get("platform")) == "linux"
+        and normalize_token(artifact.get("kind")) == "installer"
+        and normalize_token(artifact.get("head")) == normalize_token(app_key)
+        and normalize_token(artifact.get("rid")) == normalize_token(rid)
+    ):
+        release_channel_linux_artifact = artifact
+        break
 
 payload = {
     "contract_name": "chummer6-ui.linux_desktop_exit_gate",
@@ -1132,6 +1159,13 @@ payload = {
         "version": version,
         "channel": channel,
         "ready_checkpoint": ready_checkpoint,
+    },
+    "channelId": release_channel_channel_id,
+    "releaseVersion": release_channel_version,
+    "checks": {
+        "release_channel_id": release_channel_channel_id,
+        "release_channel_version": release_channel_version,
+        "release_channel_linux_artifact": release_channel_linux_artifact,
     },
     "build": {
         "output_base_root": output_base_root,
