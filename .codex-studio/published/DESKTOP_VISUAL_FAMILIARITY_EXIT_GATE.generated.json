@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T12:15:51.507477Z",
+  "generatedAt": "2026-04-04T18:23:21.275897Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "channelId": "docker",
   "releaseVersion": "local-docker",
@@ -30,12 +30,12 @@
     "screenshot_receipt_skew_max_seconds": 86400,
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "flagship_gate_status": "pass",
-    "flagship_ui_release_gate_generated_at": "2026-04-04T10:50:15.461008Z",
-    "flagship_ui_release_gate_age_seconds": 5136,
+    "flagship_ui_release_gate_generated_at": "2026-04-04T13:25:56.555058Z",
+    "flagship_ui_release_gate_age_seconds": 17844,
     "release_channel_receipt_exists": true,
     "release_channel_channel_id": "docker",
     "release_channel_version": "local-docker",
-    "release_channel_generated_at": "2026-04-04T04:17:46Z",
+    "release_channel_generated_at": "2026-04-04T18:19:38Z",
     "flagship_gate.headProofs.status_normalized": {
       "avalonia": "pass",
       "blazor-desktop": "pass"
@@ -106,8 +106,8 @@
       "blazor-desktop": []
     },
     "flagship_head_source_test_file_paths": {
-      "avalonia": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-      "blazor-desktop": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
+      "avalonia": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "blazor-desktop": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
     },
     "flagship_head_source_test_file_exists": {
       "avalonia": true,
@@ -268,23 +268,23 @@
     "missing_screenshots": [],
     "invalid_screenshots": {},
     "undersized_screenshots": {},
-    "flagship_gate_reference_generated_at": "2026-04-04T10:50:15.461008Z",
+    "flagship_gate_reference_generated_at": "2026-04-04T13:25:56.555058Z",
     "screenshot_timestamps": {
-      "01-initial-shell-light.png": "2026-04-04T11:44:53.094390Z",
-      "02-menu-open-light.png": "2026-04-04T11:44:53.094390Z",
-      "03-settings-open-light.png": "2026-04-04T11:44:53.094390Z",
-      "04-loaded-runner-light.png": "2026-04-04T11:44:53.094390Z",
-      "05-dense-section-light.png": "2026-04-04T11:44:53.095390Z",
-      "06-dense-section-dark.png": "2026-04-04T11:44:53.095390Z",
-      "07-loaded-runner-tabs-light.png": "2026-04-04T11:44:53.095390Z",
-      "08-cyberware-dialog-light.png": "2026-04-04T11:44:53.095390Z",
-      "09-vehicles-section-light.png": "2026-04-04T11:44:53.096390Z",
-      "10-contacts-section-light.png": "2026-04-04T11:44:53.096390Z",
-      "11-diary-dialog-light.png": "2026-04-04T11:44:53.096390Z",
-      "12-magic-dialog-light.png": "2026-04-04T11:44:53.096390Z",
-      "13-matrix-dialog-light.png": "2026-04-04T11:44:53.097390Z",
-      "14-advancement-dialog-light.png": "2026-04-04T11:44:53.097390Z",
-      "15-creation-section-light.png": "2026-04-04T11:44:53.097390Z"
+      "01-initial-shell-light.png": "2026-04-04T13:30:04.856192Z",
+      "02-menu-open-light.png": "2026-04-04T13:30:04.857192Z",
+      "03-settings-open-light.png": "2026-04-04T13:30:04.857192Z",
+      "04-loaded-runner-light.png": "2026-04-04T13:30:04.857192Z",
+      "05-dense-section-light.png": "2026-04-04T13:30:04.857192Z",
+      "06-dense-section-dark.png": "2026-04-04T13:30:04.858192Z",
+      "07-loaded-runner-tabs-light.png": "2026-04-04T13:30:04.858192Z",
+      "08-cyberware-dialog-light.png": "2026-04-04T13:30:04.858192Z",
+      "09-vehicles-section-light.png": "2026-04-04T13:30:04.858192Z",
+      "10-contacts-section-light.png": "2026-04-04T13:30:04.859192Z",
+      "11-diary-dialog-light.png": "2026-04-04T13:30:04.859192Z",
+      "12-magic-dialog-light.png": "2026-04-04T13:30:04.859192Z",
+      "13-matrix-dialog-light.png": "2026-04-04T13:30:04.859192Z",
+      "14-advancement-dialog-light.png": "2026-04-04T13:30:04.860192Z",
+      "15-creation-section-light.png": "2026-04-04T13:30:04.860192Z"
     },
     "stale_screenshots": [],
     "screenshots_older_than_flagship_receipt": [],
