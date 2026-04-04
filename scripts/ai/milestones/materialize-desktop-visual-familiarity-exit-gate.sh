@@ -7,6 +7,15 @@ cd "$repo_root"
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
+hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
+  release_channel_path_default="$canonical_release_channel_path"
+else
+  release_channel_path_default="$default_release_channel_path"
+fi
+release_channel_path="${CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
 app_axaml_path="$repo_root/Chummer.Avalonia/App.axaml"
 main_window_axaml_path="$repo_root/Chummer.Avalonia/MainWindow.axaml"
@@ -40,7 +49,7 @@ if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
   done
 fi
 
-python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$legacy_frmcareer_designer_path"
+python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
 from __future__ import annotations
 
 import json
@@ -219,8 +228,8 @@ def path_within_root(path: Path, root: Path) -> bool:
         return False
 
 
-repo_root, receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, legacy_frmcareer_designer_path = [
-    Path(value) for value in sys.argv[1:13]
+repo_root, receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, legacy_frmcareer_designer_path, release_channel_path = [
+    Path(value) for value in sys.argv[1:14]
 ]
 
 reasons: List[str] = []
@@ -240,6 +249,7 @@ evidence: Dict[str, Any] = {
     "proof_freshness_max_future_skew_seconds": DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS,
     "screenshot_max_age_seconds": DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS,
     "screenshot_receipt_skew_max_seconds": DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS,
+    "release_channel_path": str(release_channel_path),
 }
 
 flagship_gate = load_json(flagship_gate_path)
@@ -248,6 +258,26 @@ evidence["flagship_gate_status"] = flagship_status
 if not status_ok(flagship_status):
     reasons.append("Flagship UI release gate is missing or not passing.")
 validate_receipt_freshness("flagship_ui_release_gate", flagship_gate, reasons, evidence)
+release_channel = load_json(release_channel_path)
+evidence["release_channel_receipt_exists"] = release_channel_path.is_file()
+if release_channel_path.is_file() and not release_channel:
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel receipt is unreadable or not a JSON object."
+    )
+release_channel_channel_id = normalize_token(
+    release_channel.get("channelId") or release_channel.get("channel")
+)
+release_channel_generated_at_raw, release_channel_generated_at = payload_generated_at(release_channel)
+evidence["release_channel_channel_id"] = release_channel_channel_id
+evidence["release_channel_generated_at"] = release_channel_generated_at_raw
+if not release_channel_channel_id:
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel receipt is missing channelId/channel."
+    )
+if not release_channel_generated_at_raw or release_channel_generated_at is None:
+    reasons.append(
+        "Desktop visual familiarity exit gate release channel receipt is missing a valid generatedAt/generated_at timestamp."
+    )
 
 interaction_proof = flagship_gate.get("interactionProof") if isinstance(flagship_gate.get("interactionProof"), dict) else {}
 head_proofs = flagship_gate.get("headProofs") if isinstance(flagship_gate.get("headProofs"), dict) else {}
@@ -1004,6 +1034,7 @@ status = "pass" if not reasons else "fail"
 payload = {
     "generatedAt": now_iso(),
     "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
+    "channelId": release_channel_channel_id,
     "status": status,
     "summary": (
         "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR5/SR6 codex orientation."
