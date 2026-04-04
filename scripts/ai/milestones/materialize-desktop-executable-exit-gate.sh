@@ -1481,15 +1481,18 @@ def validate_no_unpromoted_desktop_shelf_installers(
 
 def collect_stale_platform_gate_receipts_without_promoted_tuples(
     receipt_root: Path,
+    promoted_linux_tuples: set[str],
     promoted_windows_tuples: set[str],
     promoted_macos_tuples: set[str],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
+    linux_stale: List[Dict[str, str]] = []
     windows_stale: List[Dict[str, str]] = []
     macos_stale: List[Dict[str, str]] = []
     stale_passing: List[str] = []
     patterns = (
+        ("linux", "UI_LINUX*_DESKTOP_EXIT_GATE.generated.json"),
         ("windows", "UI_WINDOWS*_DESKTOP_EXIT_GATE.generated.json"),
         ("macos", "UI_MACOS*_DESKTOP_EXIT_GATE.generated.json"),
     )
@@ -1502,7 +1505,12 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
             if not gate_head or not gate_rid:
                 continue
             tuple_key = f"{gate_head}:{gate_rid}"
-            promoted_set = promoted_windows_tuples if platform == "windows" else promoted_macos_tuples
+            if platform == "linux":
+                promoted_set = promoted_linux_tuples
+            elif platform == "windows":
+                promoted_set = promoted_windows_tuples
+            else:
+                promoted_set = promoted_macos_tuples
             if tuple_key in promoted_set:
                 continue
             gate_status = normalize_token(payload.get("status"))
@@ -1511,12 +1519,15 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
                 "tuple": tuple_key,
                 "status": gate_status,
             }
-            if platform == "windows":
+            if platform == "linux":
+                linux_stale.append(record)
+            elif platform == "windows":
                 windows_stale.append(record)
             else:
                 macos_stale.append(record)
             if status_ok(gate_status):
                 stale_passing.append(f"{platform}:{tuple_key}")
+    evidence["stale_linux_gate_receipts_without_promoted_tuples"] = linux_stale
     evidence["stale_windows_gate_receipts_without_promoted_tuples"] = windows_stale
     evidence["stale_macos_gate_receipts_without_promoted_tuples"] = macos_stale
     evidence["stale_passing_platform_gate_receipts_without_promoted_tuples"] = stale_passing
@@ -2106,6 +2117,13 @@ expected_linux_heads = sorted(
 evidence["linux_heads_expected"] = expected_linux_heads
 expected_linux_artifacts_by_head = {
     normalize_token(item.get("head")): item
+    for item in desktop_install_artifacts
+    if normalize_token(item.get("platform")) == "linux"
+    and normalize_token(item.get("head"))
+    and normalize_token(item.get("rid"))
+}
+promoted_linux_tuples = {
+    f"{normalize_token(item.get('head'))}:{normalize_token(item.get('rid'))}"
     for item in desktop_install_artifacts
     if normalize_token(item.get("platform")) == "linux"
     and normalize_token(item.get("head"))
@@ -2794,6 +2812,7 @@ evidence["macos_policy_tuples_missing_release_artifacts"] = (
 )
 collect_stale_platform_gate_receipts_without_promoted_tuples(
     receipt_path.parent,
+    promoted_linux_tuples,
     promoted_windows_tuples,
     promoted_macos_tuples,
     evidence,
