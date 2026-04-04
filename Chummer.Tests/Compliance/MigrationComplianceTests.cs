@@ -3441,6 +3441,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "hub_registry_root_trusted_for_startup_smoke_proof");
         StringAssert.Contains(executableGateScriptText, "and release_channel_path.resolve() == hub_registry_release_channel_path.resolve()");
         StringAssert.Contains(executableGateScriptText, "def validate_windows_gate(");
+        StringAssert.Contains(executableGateScriptText, "def normalize_contract_name(payload: Dict[str, Any]) -> str:");
+        StringAssert.Contains(executableGateScriptText, "Linux desktop exit gate receipt contract_name is invalid for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate receipt contract_name is invalid.");
+        StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate receipt contract_name is invalid for promoted head");
         StringAssert.Contains(executableGateScriptText, "gate_reasons = [");
         StringAssert.Contains(executableGateScriptText, "reasons.append(f\"Windows gate reason: {gate_reason}\")");
         StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.");
