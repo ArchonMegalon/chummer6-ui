@@ -294,6 +294,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_channel_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_version_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_arch_alias_conflict");
+        StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_missing_generated_at");
+        StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_generated_at_mismatch");
+        StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifacts_generated_at_alias_conflict");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing head:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing version/releaseVersion:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) version/releaseVersion does not match release channel version:");
@@ -302,6 +305,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) carry conflicting channelId/channel values:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) carry conflicting version/releaseVersion values:");
         StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) carry conflicting arch/architecture values:");
+        StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) are missing generated_at/generatedAt:");
+        StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) generated_at does not match release channel generated_at:");
+        StringAssert.Contains(executableScriptText, "Release channel desktop install artifact(s) carry conflicting generated_at/generatedAt values:");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_channel_id");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_channel_id_alias_conflict");
         StringAssert.Contains(executableScriptText, "release_channel_windows_artifact_version");
