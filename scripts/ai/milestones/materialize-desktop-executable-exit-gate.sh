@@ -1924,11 +1924,12 @@ if coverage_incomplete and release_channel_supportability_state != "review_requi
         "Release channel must set supportabilityState=review_required when required desktop tuple coverage is incomplete."
     )
 
-visual_required_heads = [
-    normalize_token(item)
-    for item in (visual_familiarity_evidence.get("flagship_required_desktop_heads") or [])
-    if normalize_token(item)
-]
+visual_required_heads = normalize_required_token_list(
+    visual_familiarity_evidence.get("flagship_required_desktop_heads"),
+    "visual_familiarity.flagship_required_desktop_heads",
+    evidence,
+    reasons,
+)
 visual_head_statuses_raw = (
     visual_familiarity_evidence.get("flagship_head_proof_statuses")
     if isinstance(visual_familiarity_evidence.get("flagship_head_proof_statuses"), dict)
@@ -1978,11 +1979,12 @@ workflow_execution_evidence = (
     if isinstance(workflow_execution_gate.get("evidence"), dict)
     else {}
 )
-workflow_required_heads = [
-    normalize_token(item)
-    for item in (workflow_execution_evidence.get("flagship_required_desktop_heads") or [])
-    if normalize_token(item)
-]
+workflow_required_heads = normalize_required_token_list(
+    workflow_execution_evidence.get("flagship_required_desktop_heads"),
+    "workflow_execution.flagship_required_desktop_heads",
+    evidence,
+    reasons,
+)
 workflow_head_statuses_raw = (
     workflow_execution_evidence.get("flagship_head_proof_statuses")
     if isinstance(workflow_execution_evidence.get("flagship_head_proof_statuses"), dict)
