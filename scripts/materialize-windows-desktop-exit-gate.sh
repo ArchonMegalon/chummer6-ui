@@ -96,6 +96,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -199,6 +201,11 @@ def path_is_within(path: Path, root: Path) -> bool:
         return False
 
 
+def path_uses_legacy_chummer5a_root(path: Path) -> bool:
+    normalized = str(path.resolve()).replace("\\", "/").lower()
+    return "/chummer5a/" in normalized
+
+
 proof_path = Path(sys.argv[1])
 release_channel_path = Path(sys.argv[2])
 installer_path = Path(sys.argv[3])
@@ -214,6 +221,9 @@ hub_registry_root_arg = str(sys.argv[11] or "").strip()
 hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
 expected_head_override = normalize_token(sys.argv[12])
 expected_rid_override = normalize_token(sys.argv[13])
+host_os_name = platform.system().strip()
+host_os_normalized = normalize_token(host_os_name)
+host_supports_windows_smoke = bool(os.name == "nt" or shutil.which("cygpath"))
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
@@ -225,6 +235,9 @@ evidence: Dict[str, Any] = {
     "ui_workflow_parity_path": str(ui_workflow_parity_path),
     "sr4_workflow_parity_path": str(sr4_workflow_parity_path),
     "sr6_workflow_parity_path": str(sr6_workflow_parity_path),
+    "host_operating_system": host_os_name,
+    "host_operating_system_normalized": host_os_normalized,
+    "host_supports_windows_startup_smoke": host_supports_windows_smoke,
 }
 
 release_channel = load_json(release_channel_path)
@@ -306,6 +319,8 @@ if not windows_installer_path_override and not installer_from_primary_shelf:
     reasons.append(
         "Promoted Windows installer was not resolved from the repo-local desktop shelf."
     )
+if installer_exists and path_uses_legacy_chummer5a_root(installer_path):
+    reasons.append("Promoted Windows installer was resolved from legacy chummer5a shelf bytes.")
 
 if not installer_exists:
     reasons.append("Promoted Windows installer is missing from the active public downloads shelf.")
@@ -357,13 +372,25 @@ startup_smoke_payload = load_json(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_path"] = str(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_candidates"] = [str(path) for path in startup_smoke_candidates]
 evidence["startup_smoke_receipt_found"] = startup_smoke_receipt_path.is_file()
+evidence["startup_smoke_external_blocker"] = (
+    "missing_windows_host_capability"
+    if (not startup_smoke_receipt_path.is_file() and not host_supports_windows_smoke)
+    else ""
+)
 
 startup_smoke_status = normalize_token(startup_smoke_payload.get("status"))
 evidence["startup_smoke_status"] = startup_smoke_status
 if not startup_smoke_receipt_path.is_file():
     reasons.append("Windows startup smoke receipt is missing for promoted installer bytes.")
+    if not host_supports_windows_smoke:
+        reasons.append(
+            "Windows startup smoke requires a Windows-capable host; current host cannot run promoted Windows installer smoke."
+        )
 elif startup_smoke_status not in PASSING_STARTUP_SMOKE_STATUSES:
     reasons.append("Windows startup smoke receipt status is not passing.")
+
+if startup_smoke_receipt_path.is_file() and path_uses_legacy_chummer5a_root(startup_smoke_receipt_path):
+    reasons.append("Windows startup smoke receipt was resolved from a legacy chummer5a path.")
 
 startup_smoke_checkpoint = normalize_token(startup_smoke_payload.get("readyCheckpoint"))
 evidence["startup_smoke_ready_checkpoint"] = startup_smoke_checkpoint
