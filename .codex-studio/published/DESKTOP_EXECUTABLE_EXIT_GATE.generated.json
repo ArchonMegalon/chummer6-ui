@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-04-04T00:25:34.506277Z",
-  "generatedAt": "2026-04-04T00:25:34.506277Z",
+  "generated_at": "2026-04-04T00:28:42.410627Z",
+  "generatedAt": "2026-04-04T00:28:42.410627Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
   "status": "fail",
   "summary": "Desktop executable exit gate is not fully proven.",
@@ -26,11 +26,11 @@
       "/docker/chummercomplete/chummer-hub-registry"
     ],
     "flagship UI release gate proof_generated_at": "2026-04-04T00:19:59.067031Z",
-    "flagship UI release gate proof_age_seconds": 335,
+    "flagship UI release gate proof_age_seconds": 523,
     "desktop visual familiarity gate proof_generated_at": "2026-04-04T00:23:18.921980Z",
-    "desktop visual familiarity gate proof_age_seconds": 135,
+    "desktop visual familiarity gate proof_age_seconds": 323,
     "desktop workflow execution gate proof_generated_at": "2026-04-04T00:23:19.051593Z",
-    "desktop workflow execution gate proof_age_seconds": 135,
+    "desktop workflow execution gate proof_age_seconds": 323,
     "flagship_status": "pass",
     "visual_familiarity_status": "pass",
     "workflow_execution_status": "pass",
@@ -105,7 +105,7 @@
     "release_channel_version": "local-docker",
     "release_channel_generated_at": "2026-04-03T23:38:36Z",
     "release_channel_freshness_max_age_seconds": 86400,
-    "release_channel_age_seconds": 2818,
+    "release_channel_age_seconds": 3006,
     "release_channel_tuple_coverage_required_desktop_platforms": [
       "linux",
       "windows",
@@ -349,7 +349,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for avalonia_generated_at": "2026-04-03T23:35:04Z",
-        "linux desktop exit gate proof for avalonia_age_seconds": 3030,
+        "linux desktop exit gate proof for avalonia_age_seconds": 3218,
         "gate_reasons": [],
         "receipt_head": {
           "app_key": "avalonia",
@@ -380,6 +380,38 @@
               "/docker/chummercomplete/chummer-presentation",
               "/docker/chummercomplete/chummer-hub-registry"
             ]
+          },
+          "linux_installer_capture:avalonia:install_launch_capture_path": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
+          },
+          "linux_installer_capture:avalonia:install_wrapper_capture_path": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
+          },
+          "linux_installer_capture:avalonia:install_desktop_entry_capture_path": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
+          },
+          "linux_installer_capture:avalonia:install_verification_path": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/install-verification-avalonia-linux-x64.json",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
           }
         },
         "primary_receipt_artifact_digest": "sha256:db286c2cde05206a2826817d91abfd331ed0fca1d11df550c368e510d43d8808",
@@ -392,7 +424,7 @@
         "primary_receipt_host_class": "local-linux-x64",
         "primary_receipt_operating_system": "Debian GNU/Linux 12 (bookworm)",
         "primary_receipt_recorded_at": "2026-04-03T23:35:01.9693995+00:00",
-        "primary_receipt_age_seconds": 3032,
+        "primary_receipt_age_seconds": 3220,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.PVeJU2/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
@@ -402,7 +434,7 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for blazor-desktop_generated_at": "2026-04-03T23:33:25Z",
-        "linux desktop exit gate proof for blazor-desktop_age_seconds": 3129,
+        "linux desktop exit gate proof for blazor-desktop_age_seconds": 3317,
         "gate_reasons": [],
         "receipt_head": {
           "app_key": "blazor-desktop",
@@ -433,6 +465,38 @@
               "/docker/chummercomplete/chummer-presentation",
               "/docker/chummercomplete/chummer-hub-registry"
             ]
+          },
+          "linux_installer_capture:blazor-desktop:install_launch_capture_path": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-launch-blazor-desktop-linux-x64.bin",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
+          },
+          "linux_installer_capture:blazor-desktop:install_wrapper_capture_path": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-wrapper-blazor-desktop-linux-x64.sh",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
+          },
+          "linux_installer_capture:blazor-desktop:install_desktop_entry_capture_path": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-desktop-entry-blazor-desktop-linux-x64.desktop",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
+          },
+          "linux_installer_capture:blazor-desktop:install_verification_path": {
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/install-verification-blazor-desktop-linux-x64.json",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer-presentation",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
           }
         },
         "primary_receipt_artifact_digest": "sha256:e045312eab4982b801edcba6edef0ae0d32065fe9c29e1d502b70d83b33fc37e",
@@ -445,7 +509,7 @@
         "primary_receipt_host_class": "local-linux-x64",
         "primary_receipt_operating_system": "Debian GNU/Linux 12 (bookworm)",
         "primary_receipt_recorded_at": "2026-04-03T23:33:22.8768308+00:00",
-        "primary_receipt_age_seconds": 3131,
+        "primary_receipt_age_seconds": 3319,
         "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-launch-blazor-desktop-linux-x64.bin",
         "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-wrapper-blazor-desktop-linux-x64.sh",
         "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.7o7ote/startup-smoke-installer/installed-desktop-entry-blazor-desktop-linux-x64.desktop",
