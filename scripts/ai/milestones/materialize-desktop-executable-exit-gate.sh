@@ -2920,6 +2920,7 @@ allowed_desktop_tuple_coverage_keys = {
     "promotedPlatformHeadRidTuples",
     "missingRequiredPlatformHeadRidTuples",
     "promotedInstallerTuples",
+    "externalProofRequests",
 }
 unexpected_desktop_tuple_coverage_keys = sorted(
     key
@@ -3031,6 +3032,11 @@ tuple_coverage_declares_promoted_installer_tuples = (
     if desktop_tuple_coverage_present
     else False
 )
+tuple_coverage_declares_external_proof_requests = (
+    "externalProofRequests" in desktop_tuple_coverage
+    if desktop_tuple_coverage_present
+    else False
+)
 evidence["release_channel_tuple_coverage_required_desktop_platforms"] = tuple_coverage_required_desktop_platforms
 evidence["release_channel_tuple_coverage_required_desktop_heads"] = tuple_coverage_required_desktop_heads
 evidence["release_channel_tuple_coverage_promoted_platform_heads"] = tuple_coverage_promoted_platform_heads
@@ -3073,6 +3079,9 @@ evidence["release_channel_tuple_coverage_declares_missing_required_platform_head
 )
 evidence["release_channel_tuple_coverage_declares_promoted_installer_tuples"] = (
     tuple_coverage_declares_promoted_installer_tuples
+)
+evidence["release_channel_tuple_coverage_declares_external_proof_requests"] = (
+    tuple_coverage_declares_external_proof_requests
 )
 
 if not release_channel_channel_id:
@@ -3297,6 +3306,162 @@ evidence["release_channel_promoted_installer_tuple_duplicate_tuple_ids"] = (
     duplicate_promoted_installer_tuple_ids
 )
 
+reported_external_proof_requests_raw = desktop_tuple_coverage.get("externalProofRequests")
+reported_external_proof_requests_rows: List[Dict[str, Any]] = []
+external_proof_requests_type_valid = True
+if tuple_coverage_declares_external_proof_requests:
+    if isinstance(reported_external_proof_requests_raw, list):
+        reported_external_proof_requests_rows = reported_external_proof_requests_raw
+    else:
+        external_proof_requests_type_valid = False
+        reasons.append(
+            "Release channel desktopTupleCoverage.externalProofRequests must be a list of object rows when present."
+        )
+evidence["release_channel_tuple_coverage_external_proof_requests_type_valid"] = (
+    external_proof_requests_type_valid
+)
+allowed_external_proof_request_row_keys = {
+    "tupleId",
+    "head",
+    "platform",
+    "rid",
+    "requiredHost",
+    "requiredProofs",
+    "expectedArtifactId",
+    "expectedInstallerFileName",
+    "expectedPublicInstallRoute",
+    "expectedStartupSmokeReceiptPath",
+}
+external_proof_request_row_non_object_indexes: List[int] = []
+external_proof_request_row_missing_tuple_id_indexes: List[int] = []
+external_proof_request_row_derived_tuple_id_mismatch: List[str] = []
+external_proof_request_row_unexpected_keys_tokens: List[str] = []
+external_proof_request_row_duplicate_tuple_ids: List[str] = []
+external_proof_request_row_invalid_required_host_tokens: List[str] = []
+external_proof_request_row_required_proofs_invalid_indexes: List[int] = []
+external_proof_request_row_required_proofs_mismatch_tokens: List[str] = []
+reported_external_proof_request_rows_normalized: List[Dict[str, Any]] = []
+reported_external_proof_request_tuple_ids: List[str] = []
+required_external_proofs = ["promoted_installer_artifact", "startup_smoke_receipt"]
+if external_proof_requests_type_valid:
+    seen_external_request_tuple_ids: set[str] = set()
+    for row_index, raw_row in enumerate(reported_external_proof_requests_rows):
+        if not isinstance(raw_row, dict):
+            external_proof_request_row_non_object_indexes.append(row_index)
+            continue
+        unexpected_row_keys = sorted(
+            key
+            for key in raw_row.keys()
+            if isinstance(key, str) and key not in allowed_external_proof_request_row_keys
+        )
+        if unexpected_row_keys:
+            external_proof_request_row_unexpected_keys_tokens.extend(
+                f"row[{row_index}]:{key}" for key in unexpected_row_keys
+            )
+        row_head = normalize_token(raw_row.get("head"))
+        row_platform = normalize_token(raw_row.get("platform"))
+        row_rid = normalize_token(raw_row.get("rid"))
+        row_tuple_id = normalize_token(raw_row.get("tupleId"))
+        row_derived_tuple_id = build_platform_head_rid_tuple(row_head, row_rid, row_platform)
+        row_required_host = normalize_token(raw_row.get("requiredHost"))
+        expected_row_required_host = normalize_token(row_platform)
+        row_expected_artifact_id = normalize_token(raw_row.get("expectedArtifactId"))
+        row_expected_installer_file_name = str(raw_row.get("expectedInstallerFileName") or "").strip()
+        row_expected_public_install_route = str(raw_row.get("expectedPublicInstallRoute") or "").strip()
+        row_expected_startup_smoke_receipt_path = str(raw_row.get("expectedStartupSmokeReceiptPath") or "").strip()
+        row_required_proofs_raw = raw_row.get("requiredProofs")
+        row_required_proofs: List[str] = []
+        row_required_proofs_invalid = False
+        if not isinstance(row_required_proofs_raw, list):
+            row_required_proofs_invalid = True
+        else:
+            for raw_proof in row_required_proofs_raw:
+                if not isinstance(raw_proof, str):
+                    row_required_proofs_invalid = True
+                    continue
+                if raw_proof != raw_proof.strip():
+                    row_required_proofs_invalid = True
+                    continue
+                proof_token = normalize_token(raw_proof)
+                if not proof_token:
+                    row_required_proofs_invalid = True
+                    continue
+                row_required_proofs.append(proof_token)
+        row_required_proofs = sorted(set(row_required_proofs))
+        if row_required_proofs_invalid:
+            external_proof_request_row_required_proofs_invalid_indexes.append(row_index)
+        if row_required_proofs != required_external_proofs:
+            external_proof_request_row_required_proofs_mismatch_tokens.append(
+                f"row[{row_index}]"
+            )
+        if not row_tuple_id:
+            external_proof_request_row_missing_tuple_id_indexes.append(row_index)
+        elif row_tuple_id != row_derived_tuple_id:
+            external_proof_request_row_derived_tuple_id_mismatch.append(
+                f"row[{row_index}]:{row_tuple_id}"
+            )
+        if row_tuple_id:
+            if row_tuple_id in seen_external_request_tuple_ids:
+                external_proof_request_row_duplicate_tuple_ids.append(row_tuple_id)
+            seen_external_request_tuple_ids.add(row_tuple_id)
+            reported_external_proof_request_tuple_ids.append(row_tuple_id)
+        if row_required_host != expected_row_required_host:
+            external_proof_request_row_invalid_required_host_tokens.append(
+                f"row[{row_index}]"
+            )
+        reported_external_proof_request_rows_normalized.append(
+            {
+                "tupleId": row_tuple_id,
+                "head": row_head,
+                "platform": row_platform,
+                "rid": row_rid,
+                "requiredHost": row_required_host,
+                "requiredProofs": row_required_proofs,
+                "expectedArtifactId": row_expected_artifact_id,
+                "expectedInstallerFileName": row_expected_installer_file_name,
+                "expectedPublicInstallRoute": row_expected_public_install_route,
+                "expectedStartupSmokeReceiptPath": row_expected_startup_smoke_receipt_path,
+            }
+        )
+reported_external_proof_request_rows_sorted = sorted(
+    reported_external_proof_request_rows_normalized,
+    key=lambda row: (
+        str(row.get("platform") or ""),
+        str(row.get("head") or ""),
+        str(row.get("rid") or ""),
+    ),
+)
+evidence["release_channel_external_proof_request_row_non_object_indexes"] = (
+    external_proof_request_row_non_object_indexes
+)
+evidence["release_channel_external_proof_request_row_missing_tuple_id_indexes"] = (
+    external_proof_request_row_missing_tuple_id_indexes
+)
+evidence["release_channel_external_proof_request_row_derived_tuple_id_mismatch"] = (
+    external_proof_request_row_derived_tuple_id_mismatch
+)
+evidence["release_channel_external_proof_request_row_unexpected_keys"] = (
+    sorted(set(external_proof_request_row_unexpected_keys_tokens))
+)
+evidence["release_channel_external_proof_request_row_duplicate_tuple_ids"] = (
+    sorted(set(external_proof_request_row_duplicate_tuple_ids))
+)
+evidence["release_channel_external_proof_request_row_invalid_required_host"] = (
+    sorted(set(external_proof_request_row_invalid_required_host_tokens))
+)
+evidence["release_channel_external_proof_request_row_required_proofs_invalid_indexes"] = (
+    sorted(set(external_proof_request_row_required_proofs_invalid_indexes))
+)
+evidence["release_channel_external_proof_request_row_required_proofs_mismatch"] = (
+    sorted(set(external_proof_request_row_required_proofs_mismatch_tokens))
+)
+evidence["release_channel_external_proof_request_rows_reported"] = (
+    reported_external_proof_request_rows_sorted
+)
+evidence["release_channel_external_proof_request_tuple_ids_reported"] = sorted(
+    set(reported_external_proof_request_tuple_ids)
+)
+
 if promoted_installer_tuple_non_object_indexes:
     reasons.append(
         "Release channel desktopTupleCoverage.promotedInstallerTuples must contain object rows only; invalid indexes: "
@@ -3334,6 +3499,52 @@ if expected_promoted_installer_tuple_ids != reported_promoted_installer_tuple_id
 if expected_promoted_installer_tuple_rows != reported_promoted_installer_tuple_rows_sorted:
     reasons.append(
         "Release channel desktopTupleCoverage.promotedInstallerTuples object rows do not match promoted installer artifact metadata."
+    )
+if external_proof_request_row_non_object_indexes:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests must contain object rows only; invalid indexes: "
+        + ", ".join(str(index) for index in sorted(set(external_proof_request_row_non_object_indexes)))
+        + "."
+    )
+if external_proof_request_row_missing_tuple_id_indexes:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) are missing tupleId: "
+        + ", ".join(str(index) for index in sorted(set(external_proof_request_row_missing_tuple_id_indexes)))
+        + "."
+    )
+if external_proof_request_row_derived_tuple_id_mismatch:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) carry tupleId that does not match head/rid/platform: "
+        + ", ".join(sorted(set(external_proof_request_row_derived_tuple_id_mismatch)))
+        + "."
+    )
+if external_proof_request_row_unexpected_keys_tokens:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests rows have unexpected keys: "
+        + ", ".join(sorted(set(external_proof_request_row_unexpected_keys_tokens)))
+        + "."
+    )
+if external_proof_request_row_duplicate_tuple_ids:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests has duplicate tupleId values: "
+        + ", ".join(sorted(set(external_proof_request_row_duplicate_tuple_ids)))
+        + "."
+    )
+if external_proof_request_row_invalid_required_host_tokens:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) requiredHost does not match platform: "
+        + ", ".join(sorted(set(external_proof_request_row_invalid_required_host_tokens)))
+        + "."
+    )
+if external_proof_request_row_required_proofs_invalid_indexes:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) requiredProofs must be a string list: "
+        + ", ".join(str(index) for index in sorted(set(external_proof_request_row_required_proofs_invalid_indexes)))
+        + "."
+    )
+if external_proof_request_row_required_proofs_mismatch_tokens:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) requiredProofs must match canonical proof contract."
     )
 
 if desktop_install_artifacts and release_channel_rollout_state_invalid:
@@ -3671,6 +3882,10 @@ if desktop_install_artifacts and not tuple_coverage_declares_missing_required_pl
 if desktop_install_artifacts and not tuple_coverage_declares_promoted_installer_tuples:
     reasons.append(
         "Release channel desktopTupleCoverage must declare promotedInstallerTuples explicitly for promoted desktop install media."
+    )
+if desktop_install_artifacts and not tuple_coverage_declares_external_proof_requests:
+    reasons.append(
+        "Release channel desktopTupleCoverage must declare externalProofRequests explicitly (empty list when complete)."
     )
 required_desktop_platforms = ("linux", "windows", "macos")
 platform_artifact_counts = {
@@ -4117,6 +4332,58 @@ evidence["release_channel_missing_required_platform_head_pairs_from_required_rid
 evidence["release_channel_missing_required_platform_head_rid_tuples_derived"] = (
     missing_required_platform_head_rid_tuples_derived
 )
+expected_external_proof_request_rows = [
+    {
+        "tupleId": tuple_token,
+        "head": tuple_token.split(":", 2)[0],
+        "platform": tuple_token.split(":", 2)[2],
+        "rid": tuple_token.split(":", 2)[1],
+        "requiredHost": tuple_token.split(":", 2)[2],
+        "requiredProofs": required_external_proofs,
+        "expectedArtifactId": f"{tuple_token.split(':', 2)[0]}-{tuple_token.split(':', 2)[1]}-installer",
+        "expectedInstallerFileName": infer_installer_file_name(
+            tuple_token.split(":", 2)[0],
+            tuple_token.split(":", 2)[1],
+            tuple_token.split(":", 2)[2],
+        ),
+        "expectedPublicInstallRoute": f"/downloads/install/{tuple_token.split(':', 2)[0]}-{tuple_token.split(':', 2)[1]}-installer",
+        "expectedStartupSmokeReceiptPath": (
+            f"startup-smoke/startup-smoke-{tuple_token.split(':', 2)[0]}-{tuple_token.split(':', 2)[1]}.receipt.json"
+        ),
+    }
+    for tuple_token in missing_required_platform_head_rid_tuples_derived
+    if tuple_token.count(":") == 2
+]
+expected_external_proof_request_rows = sorted(
+    expected_external_proof_request_rows,
+    key=lambda row: (
+        str(row.get("platform") or ""),
+        str(row.get("head") or ""),
+        str(row.get("rid") or ""),
+    ),
+)
+evidence["release_channel_external_proof_request_rows_expected"] = (
+    expected_external_proof_request_rows
+)
+evidence["release_channel_external_proof_request_tuple_ids_expected"] = sorted(
+    row["tupleId"] for row in expected_external_proof_request_rows
+)
+external_proof_request_tuple_inventory_mismatch = sorted(
+    set(evidence["release_channel_external_proof_request_tuple_ids_reported"]).symmetric_difference(
+        set(evidence["release_channel_external_proof_request_tuple_ids_expected"])
+    )
+)
+evidence["release_channel_external_proof_request_tuple_inventory_mismatch"] = (
+    external_proof_request_tuple_inventory_mismatch
+)
+if external_proof_request_tuple_inventory_mismatch:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests does not match missing desktop tuple inventory."
+    )
+if expected_external_proof_request_rows != reported_external_proof_request_rows_sorted:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests object rows do not match canonical missing-tuple external proof contract."
+    )
 evidence["release_channel_tuple_coverage_promoted_platform_head_rid_tuple_inventory_mismatch"] = (
     tuple_coverage_promoted_platform_head_rid_tuple_inventory_mismatch
 )
