@@ -3478,6 +3478,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot_dir does not exist on disk.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot_dir is outside this repo root.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing required_screenshots.");
+        StringAssert.Contains(executableGateScriptText, "\"visual_familiarity.required_screenshots\"");
+        StringAssert.Contains(executableGateScriptText, "must be a list when present.");
+        StringAssert.Contains(executableGateScriptText, "contains a non-string item at index");
+        StringAssert.Contains(executableGateScriptText, "contains a blank token at index");
+        StringAssert.Contains(executableGateScriptText, "contains duplicate token(s):");
+        StringAssert.Contains(executableGateScriptText, "contains non-basename token(s):");
+        StringAssert.Contains(executableGateScriptText, "contains token(s) without an allowed suffix");
+        StringAssert.Contains(executableGateScriptText, "_malformed_non_basename_tokens");
+        StringAssert.Contains(executableGateScriptText, "_malformed_suffix_tokens");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are missing on disk:");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are stale:");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot evidence predates the visual familiarity receipt generation time:");
@@ -3535,6 +3544,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredHeads explicitly (empty list when complete).");
         StringAssert.Contains(executableGateScriptText, "def normalize_required_token_list(");
         StringAssert.Contains(executableGateScriptText, "def normalize_required_tuple_list(");
+        StringAssert.Contains(executableGateScriptText, "def normalize_required_relative_file_list(");
         StringAssert.Contains(executableGateScriptText, "def normalize_promoted_platform_heads(");
         StringAssert.Contains(executableGateScriptText, "must be a list when present.");
         StringAssert.Contains(executableGateScriptText, "must be an object when present.");
