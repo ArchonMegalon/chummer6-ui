@@ -1166,6 +1166,9 @@ payload = {
         "release_channel_id": release_channel_channel_id,
         "release_channel_version": release_channel_version,
         "release_channel_linux_artifact": release_channel_linux_artifact,
+        "startup_smoke_receipt_found": startup_smoke_receipt_exists,
+        "startup_smoke_receipt_path": installer_receipt_path,
+        "startup_smoke_external_blocker": startup_smoke_external_blocker,
     },
     "build": {
         "output_base_root": output_base_root,
