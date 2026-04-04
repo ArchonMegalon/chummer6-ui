@@ -779,6 +779,13 @@ def validate_linux_gate(
         reasons.append(f"Linux gate reason ({head}): {gate_reason}")
 
     startup = gate_payload.get("startup_smoke") if isinstance(gate_payload.get("startup_smoke"), dict) else {}
+    release_channel_evidence = (
+        gate_payload.get("release_channel")
+        if isinstance(gate_payload.get("release_channel"), dict)
+        else {}
+    )
+    host_supports_linux_startup_smoke = bool(release_channel_evidence.get("host_supports_linux_startup_smoke"))
+    startup_smoke_external_blocker = normalize_token(release_channel_evidence.get("startup_smoke_external_blocker"))
     primary = startup.get("primary") if isinstance(startup.get("primary"), dict) else {}
     fallback = startup.get("fallback") if isinstance(startup.get("fallback"), dict) else {}
     unit_tests = gate_payload.get("unit_tests") if isinstance(gate_payload.get("unit_tests"), dict) else {}
@@ -790,6 +797,8 @@ def validate_linux_gate(
     gate_evidence["primary_smoke_status"] = primary_status
     gate_evidence["fallback_smoke_status"] = fallback_status
     gate_evidence["unit_test_status"] = unit_test_status
+    gate_evidence["host_supports_linux_startup_smoke"] = host_supports_linux_startup_smoke
+    gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
     gate_evidence["unit_test_summary"] = unit_tests.get("summary") if isinstance(unit_tests.get("summary"), dict) else {}
 
     if primary_status not in {"pass", "passed", "ready"}:
@@ -810,6 +819,14 @@ def validate_linux_gate(
     gate_evidence["primary_receipt_file_exists"] = primary_receipt_file_exists
     if not primary_receipt_file_exists:
         reasons.append(f"Linux installer startup smoke receipt path is missing/unreadable for promoted head '{head}'.")
+        if not host_supports_linux_startup_smoke and startup_smoke_external_blocker != "missing_linux_host_capability":
+            reasons.append(
+                f"Linux startup smoke external blocker must be missing_linux_host_capability when installer startup smoke receipt is missing for promoted head '{head}' on a non-Linux-capable host."
+            )
+        if host_supports_linux_startup_smoke and startup_smoke_external_blocker:
+            reasons.append(
+                f"Linux startup smoke external blocker must be blank when installer startup smoke receipt is missing for promoted head '{head}' on a Linux-capable host."
+            )
     elif primary_receipt_path is not None:
         validate_trusted_path_scope(
             primary_receipt_path,
