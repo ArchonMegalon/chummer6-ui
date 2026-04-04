@@ -415,6 +415,7 @@ startup_smoke_version = str(
 ).strip()
 startup_smoke_host_class = normalize_token(startup_smoke_payload.get("hostClass"))
 startup_smoke_operating_system = str(startup_smoke_payload.get("operatingSystem") or "").strip()
+startup_smoke_artifact_path = str(startup_smoke_payload.get("artifactPath") or "").strip()
 evidence["startup_smoke_head"] = startup_smoke_head
 evidence["startup_smoke_platform"] = startup_smoke_platform
 evidence["startup_smoke_arch"] = startup_smoke_arch
@@ -422,6 +423,7 @@ evidence["startup_smoke_channel"] = startup_smoke_channel
 evidence["startup_smoke_version"] = startup_smoke_version
 evidence["startup_smoke_host_class"] = startup_smoke_host_class
 evidence["startup_smoke_operating_system"] = startup_smoke_operating_system
+evidence["startup_smoke_artifact_path"] = startup_smoke_artifact_path
 if startup_smoke_receipt_path.is_file() and startup_smoke_head != expected_head:
     reasons.append(f"Windows startup smoke receipt headId does not match promoted head {expected_head}.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_platform != "windows":
@@ -440,6 +442,17 @@ if startup_smoke_receipt_path.is_file() and release_channel_version and not star
     reasons.append("Windows startup smoke receipt version is missing.")
 if startup_smoke_receipt_path.is_file() and release_channel_version and startup_smoke_version and startup_smoke_version != release_channel_version:
     reasons.append(f"Windows startup smoke receipt version does not match release channel {release_channel_version}.")
+if startup_smoke_receipt_path.is_file() and not startup_smoke_artifact_path:
+    reasons.append("Windows startup smoke receipt artifactPath is missing.")
+if startup_smoke_receipt_path.is_file() and startup_smoke_artifact_path:
+    startup_smoke_artifact_path_obj = Path(startup_smoke_artifact_path)
+    if path_uses_legacy_chummer5a_root(startup_smoke_artifact_path_obj):
+        reasons.append("Windows startup smoke receipt artifactPath points into a legacy chummer5a root.")
+    try:
+        if installer_exists and startup_smoke_artifact_path_obj.resolve() != installer_path.resolve():
+            reasons.append("Windows startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.")
+    except Exception:
+        reasons.append("Windows startup smoke receipt artifactPath could not be resolved for promoted shelf verification.")
 
 launch_target_by_head = {
     "avalonia": "Chummer.Avalonia.exe",
