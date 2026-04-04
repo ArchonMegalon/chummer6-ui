@@ -594,6 +594,18 @@ def generated_at_alias_conflicts(payload: Dict[str, Any]) -> bool:
     return generated_at_primary != generated_at_alias
 
 
+def payload_arch(payload: Dict[str, Any]) -> str:
+    return normalize_token(payload.get("arch") or payload.get("architecture"))
+
+
+def arch_alias_conflicts(payload: Dict[str, Any]) -> bool:
+    arch_primary = normalize_token(payload.get("arch"))
+    arch_alias = normalize_token(payload.get("architecture"))
+    if not arch_primary or not arch_alias:
+        return False
+    return arch_primary != arch_alias
+
+
 def scalar_alias_conflicts(
     payload: Dict[str, Any],
     primary_key: str,
@@ -634,7 +646,7 @@ def macos_rid_from_artifact(artifact: Dict[str, Any]) -> str:
     rid = normalize_token(artifact.get("rid"))
     if rid:
         return rid
-    arch = normalize_token(artifact.get("arch"))
+    arch = payload_arch(artifact)
     if arch in {"arm64", "x64"}:
         return f"osx-{arch}"
     return ""
@@ -917,7 +929,10 @@ def validate_linux_gate(
     gate_evidence["primary_receipt_platform"] = normalize_token(primary_receipt_for_validation.get("platform"))
     gate_evidence["primary_receipt_rid"] = normalize_token(primary_receipt_for_validation.get("rid"))
     gate_evidence["primary_receipt_status"] = normalize_token(primary_receipt_for_validation.get("status"))
-    gate_evidence["primary_receipt_arch"] = normalize_token(primary_receipt_for_validation.get("arch"))
+    gate_evidence["primary_receipt_arch"] = payload_arch(primary_receipt_for_validation)
+    gate_evidence["primary_receipt_arch_alias_conflict"] = arch_alias_conflicts(
+        primary_receipt_for_validation
+    )
     gate_evidence["primary_receipt_channel_id"] = normalize_token(
         primary_receipt_for_validation.get("channelId") or primary_receipt_for_validation.get("channel")
     )
@@ -991,19 +1006,29 @@ def validate_linux_gate(
         reasons.append(
             f"Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head '{head}'."
         )
+    if gate_evidence["primary_receipt_arch_alias_conflict"]:
+        reasons.append(
+            f"Linux installer startup smoke receipt carries conflicting arch/architecture alias values for promoted head '{head}'."
+        )
 
     if expected_artifact is not None:
         expected_rid = normalize_token(expected_artifact.get("rid"))
         expected_sha = normalize_token(expected_artifact.get("sha256"))
         expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
         expected_arch = arch_from_rid(expected_rid)
-        expected_artifact_arch = normalize_token(expected_artifact.get("arch"))
+        expected_artifact_arch = payload_arch(expected_artifact)
+        expected_artifact_arch_alias_conflict = arch_alias_conflicts(expected_artifact)
         expected_artifact_source = normalize_token(expected_artifact.get("source"))
         policy_missing_release_artifact = (
             expected_artifact_source == "required_tuple_policy_missing_release_artifact"
         )
         gate_evidence["expected_artifact_source"] = expected_artifact_source
         gate_evidence["expected_artifact_arch"] = expected_artifact_arch
+        gate_evidence["expected_artifact_arch_alias_conflict"] = expected_artifact_arch_alias_conflict
+        if expected_artifact_arch_alias_conflict:
+            reasons.append(
+                f"Release channel Linux artifact carries conflicting arch/architecture alias values for promoted head '{head}' ({expected_rid})."
+            )
         if expected_arch and expected_artifact_arch and expected_artifact_arch != expected_arch:
             reasons.append(
                 f"Release channel Linux artifact arch does not match promoted RID for head '{head}' ({expected_rid})."
@@ -1134,11 +1159,15 @@ def validate_windows_gate(
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
     expected_arch = arch_from_rid(expected_rid)
-    expected_artifact_arch = normalize_token(expected_artifact.get("arch"))
+    expected_artifact_arch = payload_arch(expected_artifact)
+    expected_artifact_arch_alias_conflict = arch_alias_conflicts(expected_artifact)
     expected_artifact_source = normalize_token(expected_artifact.get("source"))
     policy_missing_release_artifact = expected_artifact_source == "required_tuple_policy_missing_release_artifact"
     gate_evidence["expected_artifact_source"] = expected_artifact_source
     gate_evidence["expected_artifact_arch"] = expected_artifact_arch
+    gate_evidence["expected_artifact_arch_alias_conflict"] = expected_artifact_arch_alias_conflict
+    if expected_artifact_arch_alias_conflict:
+        reasons.append("Release channel Windows artifact carries conflicting arch/architecture alias values.")
     if expected_arch and expected_artifact_arch and expected_artifact_arch != expected_arch:
         reasons.append("Release channel Windows artifact arch does not match promoted release-channel RID.")
 
@@ -1146,9 +1175,11 @@ def validate_windows_gate(
         channel_artifact_channel_id = normalize_token(
             channel_artifact.get("channelId") or channel_artifact.get("channel")
         )
-        channel_artifact_arch = normalize_token(channel_artifact.get("arch"))
+        channel_artifact_arch = payload_arch(channel_artifact)
+        channel_artifact_arch_alias_conflict = arch_alias_conflicts(channel_artifact)
         gate_evidence["release_channel_windows_artifact_channel_id"] = channel_artifact_channel_id
         gate_evidence["release_channel_windows_artifact_arch"] = channel_artifact_arch
+        gate_evidence["release_channel_windows_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
         if normalize_token(channel_artifact.get("head")) != expected_head:
             reasons.append("Windows gate embedded release_channel_windows_artifact head does not match promoted release channel.")
         if normalize_token(channel_artifact.get("rid")) != expected_rid:
@@ -1157,6 +1188,8 @@ def validate_windows_gate(
             reasons.append("Windows gate embedded release_channel_windows_artifact platform is not 'windows'.")
         if release_channel_id and channel_artifact_channel_id != release_channel_id:
             reasons.append("Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.")
+        if channel_artifact_arch_alias_conflict:
+            reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting arch/architecture alias values.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
             reasons.append("Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.")
         if str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
@@ -1240,8 +1273,9 @@ def validate_windows_gate(
         startup_smoke_rid = normalize_token(
             startup_smoke_receipt_payload.get("rid")
         )
-        startup_smoke_arch = normalize_token(
-            startup_smoke_receipt_payload.get("arch")
+        startup_smoke_arch = payload_arch(startup_smoke_receipt_payload)
+        startup_smoke_arch_alias_conflict = arch_alias_conflicts(
+            startup_smoke_receipt_payload
         )
         startup_smoke_channel_id = normalize_token(
             startup_smoke_receipt_payload.get("channelId")
@@ -1293,6 +1327,7 @@ def validate_windows_gate(
         gate_evidence["startup_smoke_platform"] = startup_smoke_platform
         gate_evidence["startup_smoke_rid"] = startup_smoke_rid
         gate_evidence["startup_smoke_arch"] = startup_smoke_arch
+        gate_evidence["startup_smoke_arch_alias_conflict"] = startup_smoke_arch_alias_conflict
         gate_evidence["startup_smoke_channel"] = startup_smoke_channel_id
         gate_evidence["startup_smoke_channel_id_alias_conflict"] = startup_smoke_channel_id_alias_conflict
         gate_evidence["startup_smoke_version"] = startup_smoke_version
@@ -1323,6 +1358,8 @@ def validate_windows_gate(
             reasons.append("Windows startup smoke receipt operatingSystem is missing for promoted installer bytes.")
         if expected_startup_smoke_arch and startup_smoke_arch != expected_startup_smoke_arch:
             reasons.append("Windows startup smoke receipt arch does not match promoted release-channel RID.")
+        if startup_smoke_arch_alias_conflict:
+            reasons.append("Windows startup smoke receipt carries conflicting arch/architecture alias values for promoted installer bytes.")
         if release_channel_id and startup_smoke_channel_id != release_channel_id:
             reasons.append("Windows startup smoke receipt channelId does not match release-channel channelId for promoted installer bytes.")
         if startup_smoke_channel_id_alias_conflict:
@@ -1433,7 +1470,8 @@ def validate_macos_gate(
     expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
     expected_arch = "arm64" if rid.endswith("arm64") else "x64" if rid.endswith("x64") else ""
-    expected_artifact_arch = normalize_token(expected_artifact.get("arch"))
+    expected_artifact_arch = payload_arch(expected_artifact)
+    expected_artifact_arch_alias_conflict = arch_alias_conflicts(expected_artifact)
     expected_artifact_source = normalize_token(expected_artifact.get("source"))
     policy_missing_release_artifact = expected_artifact_source == "required_tuple_policy_missing_release_artifact"
     gate_evidence["expected_artifact_source"] = expected_artifact_source
@@ -1460,7 +1498,8 @@ def validate_macos_gate(
     startup_smoke_head_id = normalize_token(startup_receipt_for_validation.get("headId"))
     startup_smoke_platform = normalize_token(startup_receipt_for_validation.get("platform"))
     startup_smoke_rid = normalize_token(startup_receipt_for_validation.get("rid"))
-    startup_smoke_arch = normalize_token(startup_receipt_for_validation.get("arch"))
+    startup_smoke_arch = payload_arch(startup_receipt_for_validation)
+    startup_smoke_arch_alias_conflict = arch_alias_conflicts(startup_receipt_for_validation)
     startup_smoke_channel_id = normalize_token(
         startup_receipt_for_validation.get("channelId") or startup_receipt_for_validation.get("channel")
     )
@@ -1515,11 +1554,17 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_receipt_operating_system"] = startup_smoke_operating_system
     gate_evidence["startup_smoke_receipt_recorded_at"] = startup_receipt_recorded_at_raw
     gate_evidence["expected_artifact_arch"] = expected_artifact_arch
+    gate_evidence["expected_artifact_arch_alias_conflict"] = expected_artifact_arch_alias_conflict
+    gate_evidence["startup_smoke_receipt_arch_alias_conflict"] = startup_smoke_arch_alias_conflict
 
     if startup_smoke_status not in {"pass", "passed", "ready"}:
         reasons.append(f"macOS startup smoke is not passing for promoted head '{head}' ({rid}).")
     if not artifact_exists:
         reasons.append(f"macOS installer artifact is missing for promoted head '{head}' ({rid}).")
+    if expected_artifact_arch_alias_conflict:
+        reasons.append(
+            f"Release channel macOS artifact carries conflicting arch/architecture alias values for promoted head '{head}' ({rid})."
+        )
     if expected_arch and expected_artifact_arch and expected_artifact_arch != expected_arch:
         reasons.append(
             f"Release channel macOS artifact arch does not match promoted RID for head '{head}' ({rid})."
@@ -1528,9 +1573,11 @@ def validate_macos_gate(
         channel_artifact_channel_id = normalize_token(
             channel_artifact.get("channelId") or channel_artifact.get("channel")
         )
-        channel_artifact_arch = normalize_token(channel_artifact.get("arch"))
+        channel_artifact_arch = payload_arch(channel_artifact)
+        channel_artifact_arch_alias_conflict = arch_alias_conflicts(channel_artifact)
         gate_evidence["release_channel_macos_artifact_channel_id"] = channel_artifact_channel_id
         gate_evidence["release_channel_macos_artifact_arch"] = channel_artifact_arch
+        gate_evidence["release_channel_macos_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
         if normalize_token(channel_artifact.get("head")) != head:
             reasons.append("macOS gate embedded release_channel_macos_artifact head does not match promoted release channel.")
         if normalize_token(channel_artifact.get("rid")) != rid:
@@ -1539,6 +1586,8 @@ def validate_macos_gate(
             reasons.append("macOS gate embedded release_channel_macos_artifact platform is not macOS.")
         if release_channel_id and channel_artifact_channel_id != release_channel_id:
             reasons.append("macOS gate embedded release_channel_macos_artifact channelId/channel does not match promoted release channel.")
+        if channel_artifact_arch_alias_conflict:
+            reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting arch/architecture alias values.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
             reasons.append("macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.")
         if expected_file_name and str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
@@ -1615,6 +1664,10 @@ def validate_macos_gate(
             reasons.append(f"macOS startup smoke receipt operatingSystem is missing for promoted head '{head}' ({rid}).")
         if expected_arch and startup_smoke_arch != expected_arch:
             reasons.append(f"macOS startup smoke receipt arch does not match promoted RID for head '{head}' ({rid}).")
+        if startup_smoke_arch_alias_conflict:
+            reasons.append(
+                f"macOS startup smoke receipt carries conflicting arch/architecture alias values for promoted head '{head}' ({rid})."
+            )
         if release_channel_id and startup_smoke_channel_id != release_channel_id:
             reasons.append(f"macOS startup smoke receipt channelId does not match release-channel channelId for promoted head '{head}' ({rid}).")
         if startup_smoke_channel_id_alias_conflict:
@@ -2296,6 +2349,7 @@ desktop_install_artifact_missing_version_tokens: List[str] = []
 desktop_install_artifact_version_mismatch_tokens: List[str] = []
 desktop_install_artifact_missing_arch_tokens: List[str] = []
 desktop_install_artifact_arch_mismatch_tokens: List[str] = []
+desktop_install_artifact_arch_alias_conflict_tokens: List[str] = []
 desktop_install_artifact_channel_alias_conflict_tokens: List[str] = []
 desktop_install_artifact_version_alias_conflict_tokens: List[str] = []
 for desktop_install_artifact in desktop_install_artifacts:
@@ -2310,7 +2364,7 @@ for desktop_install_artifact in desktop_install_artifacts:
     ).strip()
     artifact_head = normalize_token(desktop_install_artifact.get("head"))
     artifact_platform = normalize_token(desktop_install_artifact.get("platform"))
-    artifact_arch = normalize_token(desktop_install_artifact.get("arch"))
+    artifact_arch = payload_arch(desktop_install_artifact)
     artifact_rid_for_arch = (
         macos_rid_from_artifact(desktop_install_artifact)
         if artifact_platform == "macos"
@@ -2333,6 +2387,8 @@ for desktop_install_artifact in desktop_install_artifacts:
         and artifact_version_primary != artifact_version_fallback
     ):
         desktop_install_artifact_version_alias_conflict_tokens.append(artifact_tuple_token or "<unknown>")
+    if arch_alias_conflicts(desktop_install_artifact):
+        desktop_install_artifact_arch_alias_conflict_tokens.append(artifact_tuple_token or "<unknown>")
     if not artifact_channel_id:
         desktop_install_artifact_missing_channel_tokens.append(artifact_tuple_token or "<unknown>")
     elif release_channel_channel_id and artifact_channel_id != release_channel_channel_id:
@@ -2377,6 +2433,9 @@ evidence["release_channel_desktop_install_artifacts_channel_alias_conflict"] = (
 )
 evidence["release_channel_desktop_install_artifacts_version_alias_conflict"] = (
     sorted(set(desktop_install_artifact_version_alias_conflict_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_arch_alias_conflict"] = (
+    sorted(set(desktop_install_artifact_arch_alias_conflict_tokens))
 )
 if desktop_install_artifact_missing_channel_tokens:
     reasons.append(
@@ -2430,6 +2489,12 @@ if desktop_install_artifact_version_alias_conflict_tokens:
     reasons.append(
         "Release channel desktop install artifact(s) carry conflicting version/releaseVersion values: "
         + ", ".join(sorted(set(desktop_install_artifact_version_alias_conflict_tokens)))
+        + "."
+    )
+if desktop_install_artifact_arch_alias_conflict_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) carry conflicting arch/architecture values: "
+        + ", ".join(sorted(set(desktop_install_artifact_arch_alias_conflict_tokens)))
         + "."
     )
 duplicate_desktop_install_artifact_tuples = collect_duplicate_install_media_tuples(
