@@ -700,6 +700,25 @@ def scalar_alias_conflicts(
     return primary_value != alias_value
 
 
+def startup_smoke_timestamp_alias_conflicts(payload: Dict[str, Any]) -> bool:
+    timestamp_keys = ("completedAtUtc", "recordedAtUtc", "startedAtUtc")
+    instants: List[datetime] = []
+    normalized_values: List[str] = []
+    for key in timestamp_keys:
+        raw_value = str(payload.get(key) or "").strip()
+        if not raw_value:
+            continue
+        normalized_values.append(raw_value)
+        parsed = parse_iso(raw_value)
+        if parsed is not None:
+            instants.append(parsed)
+    if len(normalized_values) <= 1:
+        return False
+    if len(instants) == len(normalized_values):
+        return len({instant.isoformat() for instant in instants}) > 1
+    return len(set(normalized_values)) > 1
+
+
 def validate_receipt_freshness(label: str, payload: Dict[str, Any], evidence: Dict[str, Any], reasons: List[str]) -> None:
     generated_at_raw, generated_at = payload_generated_at(payload)
     evidence[f"{label}_generated_at"] = generated_at_raw
@@ -1175,6 +1194,9 @@ def validate_linux_gate(
         "version",
         "releaseVersion",
     )
+    gate_evidence["primary_receipt_timestamp_alias_conflict"] = startup_smoke_timestamp_alias_conflicts(
+        primary_receipt_for_validation
+    )
     gate_evidence["primary_receipt_recorded_at"] = recorded_at_raw
     recorded_at = parse_iso(recorded_at_raw)
     if not recorded_at_raw or recorded_at is None:
@@ -1224,6 +1246,10 @@ def validate_linux_gate(
     if gate_evidence["primary_receipt_version_alias_conflict"]:
         reasons.append(
             f"Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head '{head}'."
+        )
+    if gate_evidence["primary_receipt_timestamp_alias_conflict"]:
+        reasons.append(
+            f"Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted head '{head}'."
         )
     if gate_evidence["primary_receipt_arch_alias_conflict"]:
         reasons.append(
@@ -1738,6 +1764,9 @@ def validate_windows_gate(
             "version",
             "releaseVersion",
         )
+        startup_smoke_timestamp_alias_conflict = startup_smoke_timestamp_alias_conflicts(
+            startup_smoke_receipt_payload
+        )
         startup_smoke_host_class = normalize_token(
             startup_smoke_receipt_payload.get("hostClass")
         )
@@ -1773,6 +1802,7 @@ def validate_windows_gate(
         gate_evidence["startup_smoke_channel_id_alias_conflict"] = startup_smoke_channel_id_alias_conflict
         gate_evidence["startup_smoke_version"] = startup_smoke_version
         gate_evidence["startup_smoke_version_alias_conflict"] = startup_smoke_version_alias_conflict
+        gate_evidence["startup_smoke_timestamp_alias_conflict"] = startup_smoke_timestamp_alias_conflict
         gate_evidence["startup_smoke_host_class"] = startup_smoke_host_class
         gate_evidence["startup_smoke_operating_system"] = startup_smoke_operating_system
         gate_evidence["startup_smoke_recorded_at"] = startup_smoke_recorded_at_raw
@@ -1811,6 +1841,8 @@ def validate_windows_gate(
             reasons.append("Windows startup smoke receipt version does not match release channel version for promoted installer bytes.")
         if startup_smoke_version_alias_conflict:
             reasons.append("Windows startup smoke receipt carries conflicting version/releaseVersion alias values for promoted installer bytes.")
+        if startup_smoke_timestamp_alias_conflict:
+            reasons.append("Windows startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted installer bytes.")
         if not startup_smoke_recorded_at_raw or startup_smoke_recorded_at is None:
             reasons.append("Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.")
         else:
@@ -2004,6 +2036,9 @@ def validate_macos_gate(
         "version",
         "releaseVersion",
     )
+    startup_smoke_timestamp_alias_conflict = startup_smoke_timestamp_alias_conflicts(
+        startup_receipt_for_validation
+    )
     startup_smoke_host_class = normalize_token(startup_receipt_for_validation.get("hostClass"))
     startup_smoke_operating_system = str(startup_receipt_for_validation.get("operatingSystem") or "").strip()
     startup_receipt_recorded_at_raw = str(
@@ -2054,6 +2089,7 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_receipt_channel_id_alias_conflict"] = startup_smoke_channel_id_alias_conflict
     gate_evidence["startup_smoke_receipt_version"] = startup_smoke_version
     gate_evidence["startup_smoke_receipt_version_alias_conflict"] = startup_smoke_version_alias_conflict
+    gate_evidence["startup_smoke_receipt_timestamp_alias_conflict"] = startup_smoke_timestamp_alias_conflict
     gate_evidence["startup_smoke_receipt_host_class"] = startup_smoke_host_class
     gate_evidence["startup_smoke_receipt_operating_system"] = startup_smoke_operating_system
     gate_evidence["startup_smoke_receipt_recorded_at"] = startup_receipt_recorded_at_raw
@@ -2260,6 +2296,10 @@ def validate_macos_gate(
         if startup_smoke_version_alias_conflict:
             reasons.append(
                 f"macOS startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head '{head}' ({rid})."
+            )
+        if startup_smoke_timestamp_alias_conflict:
+            reasons.append(
+                f"macOS startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted head '{head}' ({rid})."
             )
         if not startup_receipt_recorded_at_raw or startup_receipt_recorded_at is None:
             reasons.append(f"macOS startup smoke receipt timestamp is missing/invalid for promoted head '{head}' ({rid}).")
