@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T00:11:34.712076Z",
+  "generatedAt": "2026-04-04T00:45:21.472575Z",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
   "status": "pass",
   "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts.",
@@ -22,6 +22,64 @@
     "flagship_head_proof_statuses": {
       "avalonia": "pass",
       "blazor-desktop": "pass"
+    },
+    "required_head_contract_markers": {
+      "avalonia": [
+        "status",
+        "visualReview",
+        "themeReadabilityContrast",
+        "bundledDemoRunner",
+        "requiredRuntimeBackedTests",
+        "sourceTestFile",
+        "testSuites"
+      ],
+      "blazor-desktop": [
+        "status",
+        "shellChrome",
+        "commandSurface",
+        "dialogSurface",
+        "journeyPanels",
+        "requiredShellTests",
+        "sourceTestFile",
+        "testSuites"
+      ]
+    },
+    "flagship_head_contract_marker_statuses": {
+      "avalonia": {
+        "status": "pass",
+        "visualReview": "pass",
+        "themeReadabilityContrast": "pass",
+        "bundledDemoRunner": "pass",
+        "requiredRuntimeBackedTests": "pass",
+        "sourceTestFile": "pass",
+        "testSuites": "pass"
+      },
+      "blazor-desktop": {
+        "status": "pass",
+        "shellChrome": "pass",
+        "commandSurface": "pass",
+        "dialogSurface": "pass",
+        "journeyPanels": "pass",
+        "requiredShellTests": "pass",
+        "sourceTestFile": "pass",
+        "testSuites": "pass"
+      }
+    },
+    "flagship_head_missing_contract_markers": {
+      "avalonia": [],
+      "blazor-desktop": []
+    },
+    "flagship_head_source_test_file_paths": {
+      "avalonia": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "blazor-desktop": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
+    },
+    "flagship_head_source_test_file_exists": {
+      "avalonia": true,
+      "blazor-desktop": true
+    },
+    "flagship_head_source_test_file_within_repo_root": {
+      "avalonia": true,
+      "blazor-desktop": true
     },
     "flagship_missing_or_not_ready_desktop_heads": [],
     "workflow_family_receipt_count_checked": 60,
