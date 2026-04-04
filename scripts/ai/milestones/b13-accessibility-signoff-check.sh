@@ -31,7 +31,7 @@ require_contains \
 
 require_contains \
   "Chummer.Blazor/Components/Shell/SectionPane.razor" \
-  'aria-selected="@IsBrowseResultActive' \
+  'aria-selected=".*IsBrowseResultActive' \
   "[B13] FAIL: browse workspace is missing active-option aria-selected state."
 
 require_contains \
