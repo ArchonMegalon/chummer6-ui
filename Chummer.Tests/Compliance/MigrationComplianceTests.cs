@@ -3521,6 +3521,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be missing_linux_host_capability when installer startup smoke receipt is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is outside trusted local roots for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt status is not passing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt headId does not match promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt platform is not linux for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt rid is missing for promoted head");
