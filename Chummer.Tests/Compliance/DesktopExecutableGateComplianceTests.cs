@@ -178,6 +178,42 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_required_desktop_platforms_missing_required_policy_coverage()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject requiredDesktopPlatforms missing required policy platform coverage");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit requiredDesktopPlatforms missing required policy platform coverage marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s):");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_required_desktop_heads_missing_required_policy_coverage()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject requiredDesktopHeads missing required policy head coverage");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit requiredDesktopHeads missing required policy head coverage marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage requiredDesktopHeads is missing required policy head(s):");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_required_desktop_heads_missing_canonical_required_head_coverage()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject requiredDesktopHeads missing canonical required head coverage");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit requiredDesktopHeads missing canonical required head coverage marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage requiredDesktopHeads is missing canonical required head(s):");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_checks_desktop_executable_gate_blocking_findings_alias_alignment()
     {
         string repoRoot = FindRepoRoot();
