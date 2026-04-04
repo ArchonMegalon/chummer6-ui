@@ -3489,6 +3489,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing per-head proof contract markers.");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate does not carry per-head proof contract markers for required desktop head");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate has missing/failing per-head proof contract markers for required desktop head");
+        StringAssert.Contains(executableGateScriptText, "workflow_head_contract_marker_statuses_raw");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_head_contract_marker_statuses");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_head_missing_contract_markers");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate evidence is missing per-head proof contract markers.");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate does not carry per-head proof contract markers for required desktop head");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate has missing/failing per-head proof contract markers for required desktop head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
         StringAssert.Contains(executableGateScriptText, "release_channel_generated_at");
         StringAssert.Contains(executableGateScriptText, "release_channel_age_seconds");
@@ -3828,6 +3834,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "expected_proof_kind");
         StringAssert.Contains(workflowGateScriptText, "REQUIRED_WORKFLOW_FAMILY_IDS");
         StringAssert.Contains(workflowGateScriptText, "missing_required_workflow_family_ids");
+        StringAssert.Contains(workflowGateScriptText, "required_head_contract_markers = {");
+        StringAssert.Contains(workflowGateScriptText, "\"requiredRuntimeBackedTests\"");
+        StringAssert.Contains(workflowGateScriptText, "\"requiredShellTests\"");
+        StringAssert.Contains(workflowGateScriptText, "flagship_head_contract_marker_statuses");
+        StringAssert.Contains(workflowGateScriptText, "flagship_head_missing_contract_markers");
+        StringAssert.Contains(workflowGateScriptText, "flagship_head_source_test_file_within_repo_root");
+        StringAssert.Contains(workflowGateScriptText, "Flagship UI release gate head proof for required desktop head '");
+        StringAssert.Contains(workflowGateScriptText, "Flagship UI release gate sourceTestFile for required desktop head '");
         StringAssert.Contains(workflowGateScriptText, "SR4/SR6 ledgers are missing required canonical workflow families");
         StringAssert.Contains(workflowGateScriptText, "SR4/SR6 required canonical workflow families are missing audit tests");
         StringAssert.Contains(workflowGateScriptText, "SR4/SR6 family-level execution receipts are not explicitly grounded");
