@@ -164,6 +164,11 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt rid does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "Release channel Windows artifact carries conflicting arch/architecture alias values.");
         StringAssert.Contains(executableScriptText, "Release channel Windows artifact arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableScriptText, "def infer_installer_file_name(head: str, rid: str, platform: str) -> str:");
+        StringAssert.Contains(executableScriptText, "def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Path]) -> List[str]:");
+        StringAssert.Contains(executableScriptText, "evidence[\"quarantine_roots\"]");
+        StringAssert.Contains(executableScriptText, "gate_evidence[\"quarantined_installer_candidates\"] = quarantine_candidates");
+        StringAssert.Contains(executableScriptText, "Windows promoted installer bytes appear only in quarantine and cannot count as shipped proof:");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact carries conflicting channelId/channel alias values.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact is missing version/releaseVersion.");
@@ -184,6 +189,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting arch/architecture alias values for promoted head");
+        StringAssert.Contains(executableScriptText, "macOS promoted installer bytes appear only in quarantine for head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt rid does not match promoted RID for head");
         StringAssert.Contains(executableScriptText, "Release channel macOS artifact carries conflicting arch/architecture alias values for promoted head");
