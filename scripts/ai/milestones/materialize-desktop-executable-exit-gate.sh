@@ -38,26 +38,82 @@ skip_dependency_materialize="${CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERI
 skip_release_gate_lock_wait="${CHUMMER_DESKTOP_EXECUTABLE_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
 release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
 release_gate_lock_poll_seconds="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_POLL_SECONDS:-2}"
+release_gate_lock_stale_max_age_seconds="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-7200}"
 if ! [[ "$release_gate_lock_wait_seconds" =~ ^[0-9]+$ ]]; then
   release_gate_lock_wait_seconds=300
 fi
 if ! [[ "$release_gate_lock_poll_seconds" =~ ^[0-9]+$ ]] || [[ "$release_gate_lock_poll_seconds" -lt 1 ]]; then
   release_gate_lock_poll_seconds=2
 fi
+if ! [[ "$release_gate_lock_stale_max_age_seconds" =~ ^[0-9]+$ ]]; then
+  release_gate_lock_stale_max_age_seconds=7200
+fi
 
 mkdir -p "$(dirname "$receipt_path")"
 release_gate_lock_blocked=0
+release_gate_lock_stale_removed=0
+release_gate_lock_stale_reason=""
+
+prune_release_gate_lock_if_stale() {
+  if [[ ! -d "$release_gate_lock_dir" ]]; then
+    return 0
+  fi
+  if command -v pgrep >/dev/null 2>&1; then
+    if pgrep -f "scripts/ai/milestones/b14-flagship-ui-release-gate.sh" >/dev/null 2>&1; then
+      return 0
+    fi
+  fi
+
+  lock_stale_probe="$(
+    python3 - <<'PY' "$release_gate_lock_dir" "$release_gate_lock_stale_max_age_seconds"
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
+lock_dir = Path(sys.argv[1])
+max_age = int(sys.argv[2])
+if not lock_dir.is_dir():
+    print("absent")
+    raise SystemExit(0)
+
+entries = list(lock_dir.iterdir())
+if entries:
+    print("nonempty")
+    raise SystemExit(0)
+
+age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
+if age_seconds < max_age:
+    print(f"young:{age_seconds}")
+    raise SystemExit(0)
+
+print(f"stale_empty:{age_seconds}")
+PY
+  )"
+  if [[ "$lock_stale_probe" == stale_empty:* ]]; then
+    rm -rf "$release_gate_lock_dir"
+    if [[ ! -d "$release_gate_lock_dir" ]]; then
+      release_gate_lock_stale_removed=1
+      stale_age_seconds="${lock_stale_probe#stale_empty:}"
+      release_gate_lock_stale_reason="stale_empty_lock_dir_removed_after_${stale_age_seconds}s_without_active_b14_process"
+    fi
+  fi
+}
+
 if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
   release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))
   if [[ "$release_gate_lock_wait_iterations" -lt 1 ]]; then
     release_gate_lock_wait_iterations=1
   fi
   for _ in $(seq 1 "$release_gate_lock_wait_iterations"); do
+    prune_release_gate_lock_if_stale
     if [[ ! -d "$release_gate_lock_dir" ]]; then
       break
     fi
     sleep "$release_gate_lock_poll_seconds"
   done
+  prune_release_gate_lock_if_stale
   if [[ -d "$release_gate_lock_dir" ]]; then
     release_gate_lock_blocked=1
     skip_dependency_materialize=1
@@ -181,7 +237,7 @@ PY
   fi
 fi
 
-python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path_default" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root" "$hub_registry_root" "$release_gate_lock_blocked"
+python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path_default" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root" "$hub_registry_root" "$release_gate_lock_blocked" "$release_gate_lock_stale_removed" "$release_gate_lock_stale_reason"
 from __future__ import annotations
 
 import hashlib
@@ -342,6 +398,15 @@ def build_install_media_tuple_token(artifact: Dict[str, Any]) -> str:
     if not head_token or not rid_token or platform_token not in {"linux", "windows", "macos"}:
         return ""
     return f"{head_token}:{rid_token}:{platform_token}"
+
+
+def build_promoted_installer_tuple_id(head: Any, platform: Any, rid: Any) -> str:
+    head_token = normalize_token(head)
+    platform_token = normalize_token(platform)
+    rid_token = normalize_token(rid)
+    if not head_token or not platform_token or not rid_token:
+        return ""
+    return f"{head_token}:{platform_token}:{rid_token}"
 
 
 def collect_duplicate_install_media_tuples(artifacts: List[Dict[str, Any]]) -> Dict[str, List[int]]:
@@ -822,19 +887,31 @@ def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Pat
     return sorted(set(matches))
 
 
-def summarize_quarantine_installer_markers(paths: List[str]) -> Dict[str, Any]:
+def summarize_quarantine_installer_markers(paths: List[str], platform: str = "") -> Dict[str, Any]:
+    platform_token = normalize_token(platform)
     summary: Dict[str, Any] = {
         "candidate_count": len(paths),
         "payload_marker_present_paths": [],
         "sample_marker_present_paths": [],
         "payload_and_sample_marker_present_paths": [],
         "payload_or_sample_marker_missing_paths": [],
+        "marker_check_supported_paths": [],
+        "marker_check_skipped_paths": [],
         "unreadable_paths": [],
     }
     payload_marker = b"ChummerInstaller.Payload.zip"
     sample_marker = b"Samples/Legacy/Soma-Career.chum5"
     for raw_path in paths:
         path = Path(str(raw_path))
+        suffix = path.suffix.lower()
+        marker_check_supported = (
+            (platform_token == "windows" and suffix in {".exe", ".msix"})
+            or (platform_token == "" and suffix in {".exe", ".msix"})
+        )
+        if not marker_check_supported:
+            summary["marker_check_skipped_paths"].append(str(path))
+            continue
+        summary["marker_check_supported_paths"].append(str(path))
         try:
             blob = path.read_bytes()
         except OSError:
@@ -1552,7 +1629,7 @@ def validate_windows_gate(
     if not expected_file_name:
         expected_file_name = infer_installer_file_name(expected_head, expected_rid, "windows")
     quarantine_candidates = collect_matching_quarantine_paths(expected_file_name, quarantine_roots)
-    quarantine_marker_summary = summarize_quarantine_installer_markers(quarantine_candidates)
+    quarantine_marker_summary = summarize_quarantine_installer_markers(quarantine_candidates, "windows")
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
     expected_arch = arch_from_rid(expected_rid)
@@ -1985,7 +2062,7 @@ def validate_macos_gate(
     if not expected_file_name:
         expected_file_name = infer_installer_file_name(head, rid, "macos")
     quarantine_candidates = collect_matching_quarantine_paths(expected_file_name, quarantine_roots)
-    quarantine_marker_summary = summarize_quarantine_installer_markers(quarantine_candidates)
+    quarantine_marker_summary = summarize_quarantine_installer_markers(quarantine_candidates, "macos")
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
@@ -2236,6 +2313,12 @@ def validate_macos_gate(
         reasons.append(
             f"macOS quarantine contains payload-valid installer candidate bytes for head '{head}' ({rid}), but promotion remains blocked until matching startup smoke proof exists: "
             + ", ".join(quarantine_marker_summary["payload_and_sample_marker_present_paths"])
+            + "."
+        )
+    if quarantine_marker_summary["marker_check_skipped_paths"]:
+        reasons.append(
+            f"macOS quarantine installer marker checks are skipped for unsupported artifact formats on this host; payload/sample markers were not asserted for head '{head}' ({rid}): "
+            + ", ".join(quarantine_marker_summary["marker_check_skipped_paths"])
             + "."
         )
     if quarantine_marker_summary["payload_or_sample_marker_missing_paths"]:
@@ -2493,6 +2576,8 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
 receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path_default, flagship_gate_path, visual_familiarity_gate_path, workflow_execution_gate_path, repo_root = [Path(v) for v in sys.argv[1:10]]
 hub_registry_root_raw = str(sys.argv[10]).strip() if len(sys.argv) > 10 else ""
 release_gate_lock_blocked = str(sys.argv[11]).strip() == "1" if len(sys.argv) > 11 else False
+release_gate_lock_stale_removed = str(sys.argv[12]).strip() == "1" if len(sys.argv) > 12 else False
+release_gate_lock_stale_reason = str(sys.argv[13]).strip() if len(sys.argv) > 13 else ""
 hub_registry_root = Path(hub_registry_root_raw) if hub_registry_root_raw else None
 trusted_roots = [repo_root]
 hub_registry_release_channel_path = None
@@ -2536,6 +2621,8 @@ evidence: Dict[str, Any] = {
     "hub_registry_root_trusted_for_startup_smoke_proof": hub_registry_root_trusted,
     "trusted_local_roots": [str(root) for root in trusted_roots],
     "release_gate_lock_blocked": release_gate_lock_blocked,
+    "release_gate_lock_stale_removed": release_gate_lock_stale_removed,
+    "release_gate_lock_stale_reason": release_gate_lock_stale_reason,
     "release_gate_lock_dir": str(repo_root / ".codex-studio" / "locks" / "b14-flagship-ui-release-gate.lock"),
 }
 
@@ -2884,6 +2971,11 @@ tuple_coverage_declares_missing_required_platform_head_rid_tuples = (
     if desktop_tuple_coverage_present
     else False
 )
+tuple_coverage_declares_promoted_installer_tuples = (
+    "promotedInstallerTuples" in desktop_tuple_coverage
+    if desktop_tuple_coverage_present
+    else False
+)
 evidence["release_channel_tuple_coverage_required_desktop_platforms"] = tuple_coverage_required_desktop_platforms
 evidence["release_channel_tuple_coverage_required_desktop_heads"] = tuple_coverage_required_desktop_heads
 evidence["release_channel_tuple_coverage_promoted_platform_heads"] = tuple_coverage_promoted_platform_heads
@@ -2923,6 +3015,9 @@ evidence["release_channel_tuple_coverage_declares_promoted_platform_head_rid_tup
 )
 evidence["release_channel_tuple_coverage_declares_missing_required_platform_head_rid_tuples"] = (
     tuple_coverage_declares_missing_required_platform_head_rid_tuples
+)
+evidence["release_channel_tuple_coverage_declares_promoted_installer_tuples"] = (
+    tuple_coverage_declares_promoted_installer_tuples
 )
 
 if not release_channel_channel_id:
@@ -2992,6 +3087,200 @@ desktop_install_artifacts = [
     if normalize_token(item.get("platform")) in {"linux", "windows", "macos"}
     and is_desktop_install_media(item.get("platform"), item.get("kind"))
 ]
+reported_promoted_installer_tuples_raw = desktop_tuple_coverage.get("promotedInstallerTuples")
+reported_promoted_installer_tuples: List[Dict[str, Any]] = []
+promoted_installer_tuples_present = tuple_coverage_declares_promoted_installer_tuples
+promoted_installer_tuples_type_valid = True
+if promoted_installer_tuples_present:
+    if isinstance(reported_promoted_installer_tuples_raw, list):
+        reported_promoted_installer_tuples = reported_promoted_installer_tuples_raw
+    else:
+        promoted_installer_tuples_type_valid = False
+        reasons.append(
+            "Release channel desktopTupleCoverage.promotedInstallerTuples must be a list of object rows when present."
+        )
+evidence["release_channel_tuple_coverage_promoted_installer_tuples_present"] = (
+    promoted_installer_tuples_present
+)
+evidence["release_channel_tuple_coverage_promoted_installer_tuples_type_valid"] = (
+    promoted_installer_tuples_type_valid
+)
+
+allowed_promoted_installer_tuple_row_keys = {
+    "tupleId",
+    "head",
+    "platform",
+    "rid",
+    "arch",
+    "kind",
+    "artifactId",
+}
+promoted_installer_tuple_unexpected_keys_tokens: List[str] = []
+promoted_installer_tuple_non_object_indexes: List[int] = []
+promoted_installer_tuple_missing_tuple_id_indexes: List[int] = []
+promoted_installer_tuple_derived_mismatch_tokens: List[str] = []
+reported_promoted_installer_tuple_rows: List[Dict[str, str]] = []
+reported_promoted_installer_tuple_ids: List[str] = []
+
+if promoted_installer_tuples_type_valid:
+    for row_index, raw_row in enumerate(reported_promoted_installer_tuples):
+        if not isinstance(raw_row, dict):
+            promoted_installer_tuple_non_object_indexes.append(row_index)
+            continue
+        unexpected_row_keys = sorted(
+            key
+            for key in raw_row.keys()
+            if isinstance(key, str) and key not in allowed_promoted_installer_tuple_row_keys
+        )
+        if unexpected_row_keys:
+            promoted_installer_tuple_unexpected_keys_tokens.extend(
+                f"row[{row_index}]:{key}" for key in unexpected_row_keys
+            )
+
+        row_head = normalize_token(raw_row.get("head"))
+        row_platform = normalize_token(raw_row.get("platform"))
+        row_rid = normalize_token(raw_row.get("rid"))
+        row_tuple_id = normalize_token(raw_row.get("tupleId"))
+        row_derived_tuple_id = build_promoted_installer_tuple_id(
+            row_head,
+            row_platform,
+            row_rid,
+        )
+        row_arch = payload_arch(raw_row)
+        row_kind = normalize_token(raw_row.get("kind"))
+        row_artifact_id = normalize_token(raw_row.get("artifactId"))
+
+        if not row_tuple_id:
+            promoted_installer_tuple_missing_tuple_id_indexes.append(row_index)
+        elif row_tuple_id != row_derived_tuple_id:
+            promoted_installer_tuple_derived_mismatch_tokens.append(
+                f"row[{row_index}]:{row_tuple_id}"
+            )
+
+        reported_promoted_installer_tuple_ids.append(row_tuple_id)
+        reported_promoted_installer_tuple_rows.append(
+            {
+                "tupleId": row_tuple_id,
+                "head": row_head,
+                "platform": row_platform,
+                "rid": row_rid,
+                "arch": row_arch,
+                "kind": row_kind,
+                "artifactId": row_artifact_id,
+            }
+        )
+
+expected_promoted_installer_tuple_rows = [
+    {
+        "tupleId": build_promoted_installer_tuple_id(
+            item.get("head"),
+            item.get("platform"),
+            macos_rid_from_artifact(item) if normalize_token(item.get("platform")) == "macos" else item.get("rid"),
+        ),
+        "head": normalize_token(item.get("head")),
+        "platform": normalize_token(item.get("platform")),
+        "rid": (
+            macos_rid_from_artifact(item)
+            if normalize_token(item.get("platform")) == "macos"
+            else normalize_token(item.get("rid"))
+        ),
+        "arch": payload_arch(item),
+        "kind": normalize_token(item.get("kind")),
+        "artifactId": normalize_token(item.get("artifactId")),
+    }
+    for item in desktop_install_artifacts
+]
+expected_promoted_installer_tuple_rows = [
+    row for row in expected_promoted_installer_tuple_rows if row["tupleId"]
+]
+expected_promoted_installer_tuple_rows.sort(
+    key=lambda row: (row["platform"], row["head"], row["rid"], row["artifactId"])
+)
+reported_promoted_installer_tuple_rows_sorted = sorted(
+    reported_promoted_installer_tuple_rows,
+    key=lambda row: (row["platform"], row["head"], row["rid"], row["artifactId"]),
+)
+expected_promoted_installer_tuple_ids = sorted(
+    [row["tupleId"] for row in expected_promoted_installer_tuple_rows]
+)
+reported_promoted_installer_tuple_ids_non_blank = sorted(
+    [tuple_id for tuple_id in reported_promoted_installer_tuple_ids if tuple_id]
+)
+duplicate_promoted_installer_tuple_ids = sorted(
+    {
+        tuple_id
+        for tuple_id in reported_promoted_installer_tuple_ids_non_blank
+        if reported_promoted_installer_tuple_ids_non_blank.count(tuple_id) > 1
+    }
+)
+
+evidence["release_channel_promoted_installer_tuple_row_non_object_indexes"] = (
+    promoted_installer_tuple_non_object_indexes
+)
+evidence["release_channel_promoted_installer_tuple_row_missing_tuple_id_indexes"] = (
+    promoted_installer_tuple_missing_tuple_id_indexes
+)
+evidence["release_channel_promoted_installer_tuple_row_derived_tuple_id_mismatch"] = (
+    promoted_installer_tuple_derived_mismatch_tokens
+)
+evidence["release_channel_promoted_installer_tuple_rows_unexpected_keys"] = (
+    sorted(set(promoted_installer_tuple_unexpected_keys_tokens))
+)
+evidence["release_channel_promoted_installer_tuple_ids_expected"] = (
+    expected_promoted_installer_tuple_ids
+)
+evidence["release_channel_promoted_installer_tuple_ids_reported"] = (
+    reported_promoted_installer_tuple_ids_non_blank
+)
+evidence["release_channel_promoted_installer_tuple_rows_expected"] = (
+    expected_promoted_installer_tuple_rows
+)
+evidence["release_channel_promoted_installer_tuple_rows_reported"] = (
+    reported_promoted_installer_tuple_rows_sorted
+)
+evidence["release_channel_promoted_installer_tuple_duplicate_tuple_ids"] = (
+    duplicate_promoted_installer_tuple_ids
+)
+
+if promoted_installer_tuple_non_object_indexes:
+    reasons.append(
+        "Release channel desktopTupleCoverage.promotedInstallerTuples must contain object rows only; invalid indexes: "
+        + ", ".join(str(index) for index in sorted(set(promoted_installer_tuple_non_object_indexes)))
+        + "."
+    )
+if promoted_installer_tuple_missing_tuple_id_indexes:
+    reasons.append(
+        "Release channel desktopTupleCoverage.promotedInstallerTuples row(s) are missing tupleId: "
+        + ", ".join(str(index) for index in sorted(set(promoted_installer_tuple_missing_tuple_id_indexes)))
+        + "."
+    )
+if promoted_installer_tuple_derived_mismatch_tokens:
+    reasons.append(
+        "Release channel desktopTupleCoverage.promotedInstallerTuples row(s) carry tupleId that does not match head/platform/rid: "
+        + ", ".join(sorted(set(promoted_installer_tuple_derived_mismatch_tokens)))
+        + "."
+    )
+if promoted_installer_tuple_unexpected_keys_tokens:
+    reasons.append(
+        "Release channel desktopTupleCoverage.promotedInstallerTuples rows have unexpected keys: "
+        + ", ".join(sorted(set(promoted_installer_tuple_unexpected_keys_tokens)))
+        + "."
+    )
+if duplicate_promoted_installer_tuple_ids:
+    reasons.append(
+        "Release channel desktopTupleCoverage.promotedInstallerTuples has duplicate tupleId values: "
+        + ", ".join(duplicate_promoted_installer_tuple_ids)
+        + "."
+    )
+if expected_promoted_installer_tuple_ids != reported_promoted_installer_tuple_ids_non_blank:
+    reasons.append(
+        "Release channel desktopTupleCoverage.promotedInstallerTuples does not match promoted installer tuple inventory."
+    )
+if expected_promoted_installer_tuple_rows != reported_promoted_installer_tuple_rows_sorted:
+    reasons.append(
+        "Release channel desktopTupleCoverage.promotedInstallerTuples object rows do not match promoted installer artifact metadata."
+    )
+
 if desktop_install_artifacts and release_channel_rollout_state_invalid:
     reasons.append(
         "Release channel rolloutState is not a recognized registry rollout posture for desktop install media: "
@@ -3018,16 +3307,51 @@ desktop_install_artifact_missing_generated_at_tokens: List[str] = []
 desktop_install_artifact_invalid_generated_at_tokens: List[str] = []
 desktop_install_artifact_generated_at_mismatch_tokens: List[str] = []
 desktop_install_artifact_generated_at_alias_conflict_tokens: List[str] = []
+allowed_desktop_install_artifact_keys = {
+    "arch",
+    "architecture",
+    "artifactId",
+    "channel",
+    "channelId",
+    "compatibilityState",
+    "downloadUrl",
+    "embeddedRuntimeBundleHeadId",
+    "fileName",
+    "generated_at",
+    "generatedAt",
+    "head",
+    "installAccessClass",
+    "kind",
+    "platform",
+    "platformLabel",
+    "releaseVersion",
+    "rid",
+    "sha256",
+    "sizeBytes",
+    "updateFeedUrl",
+    "version",
+}
+desktop_install_artifact_unexpected_keys_tokens: List[str] = []
 for desktop_install_artifact in desktop_install_artifacts:
+    artifact_tuple_token = build_install_media_tuple_token(desktop_install_artifact) or str(
+        desktop_install_artifact.get("artifactId") or ""
+    ).strip()
+    unexpected_desktop_install_artifact_keys = sorted(
+        key
+        for key in desktop_install_artifact.keys()
+        if isinstance(key, str) and key not in allowed_desktop_install_artifact_keys
+    )
+    if unexpected_desktop_install_artifact_keys:
+        artifact_token = artifact_tuple_token or "<unknown>"
+        desktop_install_artifact_unexpected_keys_tokens.extend(
+            f"{artifact_token}:{key}" for key in unexpected_desktop_install_artifact_keys
+        )
     artifact_channel_id_primary = normalize_token(desktop_install_artifact.get("channelId"))
     artifact_channel_id_fallback = normalize_token(desktop_install_artifact.get("channel"))
     artifact_channel_id = artifact_channel_id_primary or artifact_channel_id_fallback
     artifact_version_primary = normalize_token(desktop_install_artifact.get("version"))
     artifact_version_fallback = normalize_token(desktop_install_artifact.get("releaseVersion"))
     artifact_version = artifact_version_primary or artifact_version_fallback
-    artifact_tuple_token = build_install_media_tuple_token(desktop_install_artifact) or str(
-        desktop_install_artifact.get("artifactId") or ""
-    ).strip()
     artifact_head = normalize_token(desktop_install_artifact.get("head"))
     artifact_platform = normalize_token(desktop_install_artifact.get("platform"))
     artifact_arch = payload_arch(desktop_install_artifact)
@@ -3138,6 +3462,9 @@ evidence["release_channel_desktop_install_artifacts_generated_at_mismatch"] = (
 evidence["release_channel_desktop_install_artifacts_generated_at_alias_conflict"] = (
     sorted(set(desktop_install_artifact_generated_at_alias_conflict_tokens))
 )
+evidence["release_channel_desktop_install_artifacts_unexpected_keys"] = (
+    sorted(set(desktop_install_artifact_unexpected_keys_tokens))
+)
 if desktop_install_artifact_missing_channel_tokens:
     reasons.append(
         "Release channel desktop install artifact(s) are missing channelId/channel: "
@@ -3222,6 +3549,12 @@ if desktop_install_artifact_generated_at_alias_conflict_tokens:
         + ", ".join(sorted(set(desktop_install_artifact_generated_at_alias_conflict_tokens)))
         + "."
     )
+if desktop_install_artifact_unexpected_keys_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) have unexpected keys: "
+        + ", ".join(sorted(set(desktop_install_artifact_unexpected_keys_tokens)))
+        + "."
+    )
 duplicate_desktop_install_artifact_tuples = collect_duplicate_install_media_tuples(
     desktop_install_artifacts
 )
@@ -3279,6 +3612,10 @@ if desktop_install_artifacts and not tuple_coverage_declares_promoted_platform_h
 if desktop_install_artifacts and not tuple_coverage_declares_missing_required_platform_head_rid_tuples:
     reasons.append(
         "Release channel desktopTupleCoverage must declare missingRequiredPlatformHeadRidTuples explicitly (empty list when complete)."
+    )
+if desktop_install_artifacts and not tuple_coverage_declares_promoted_installer_tuples:
+    reasons.append(
+        "Release channel desktopTupleCoverage must declare promotedInstallerTuples explicitly for promoted desktop install media."
     )
 required_desktop_platforms = ("linux", "windows", "macos")
 platform_artifact_counts = {
@@ -4548,6 +4885,8 @@ for platform_token in ("linux", "windows", "macos"):
             source="global_reason",
         )
 status = "pass" if not reasons else "fail"
+blocking_findings = list(reasons)
+blocking_findings_count = len(blocking_findings)
 generated_at = now_iso()
 payload = {
     "generated_at": generated_at,
@@ -4562,6 +4901,10 @@ payload = {
         else "Desktop executable exit gate is not fully proven."
     ),
     "reasons": reasons,
+    "blockingFindings": blocking_findings,
+    "blocking_findings": blocking_findings,
+    "blockingFindingsCount": blocking_findings_count,
+    "blocking_findings_count": blocking_findings_count,
     "evidence": evidence,
 }
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
