@@ -1919,6 +1919,7 @@ promoted_desktop_heads = sorted(
         and normalize_token(item.get("head"))
     }
 )
+canonical_required_desktop_heads = ["avalonia", "blazor-desktop"]
 flagship_required_desktop_heads_source = flagship_gate.get("desktopHeads")
 if flagship_required_desktop_heads_source is None and "desktopHead" in flagship_gate:
     flagship_required_desktop_heads_source = [flagship_gate.get("desktopHead")]
@@ -1938,6 +1939,29 @@ if not flagship_required_desktop_heads:
     reasons.append("Flagship UI release gate is missing required desktopHeads desktop head inventory.")
 evidence["promoted_desktop_heads"] = promoted_desktop_heads
 evidence["flagship_required_desktop_heads"] = flagship_required_desktop_heads
+evidence["canonical_required_desktop_heads"] = canonical_required_desktop_heads
+missing_canonical_promoted_heads = [
+    head for head in canonical_required_desktop_heads
+    if head not in promoted_desktop_heads
+]
+missing_canonical_flagship_heads = [
+    head for head in canonical_required_desktop_heads
+    if head not in flagship_required_desktop_heads
+]
+evidence["missing_canonical_promoted_desktop_heads"] = missing_canonical_promoted_heads
+evidence["missing_canonical_flagship_desktop_heads"] = missing_canonical_flagship_heads
+if missing_canonical_promoted_heads:
+    reasons.append(
+        "Release channel is missing canonical required promoted desktop head(s) for milestone-3 executable proof: "
+        + ", ".join(missing_canonical_promoted_heads)
+        + "."
+    )
+if missing_canonical_flagship_heads:
+    reasons.append(
+        "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 executable proof: "
+        + ", ".join(missing_canonical_flagship_heads)
+        + "."
+    )
 missing_required_promoted_heads = [
     head for head in flagship_required_desktop_heads
     if head not in promoted_desktop_heads
@@ -1950,7 +1974,9 @@ if missing_required_promoted_heads:
         + "."
     )
 heads_requiring_flagship_proof = sorted(
-    set(promoted_desktop_heads).union(set(flagship_required_desktop_heads))
+    set(promoted_desktop_heads)
+    .union(set(flagship_required_desktop_heads))
+    .union(set(canonical_required_desktop_heads))
 )
 evidence["heads_requiring_flagship_proof"] = heads_requiring_flagship_proof
 required_platforms_for_pair_matrix = tuple_coverage_required_desktop_platforms or list(required_desktop_platforms)

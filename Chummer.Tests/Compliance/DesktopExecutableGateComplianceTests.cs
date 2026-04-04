@@ -42,14 +42,25 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(executableScriptText, "Desktop visual familiarity exit gate release-channel identity does not match release channel channelId.");
         StringAssert.Contains(executableScriptText, "Desktop workflow execution gate release-channel identity does not match release channel channelId.");
+        StringAssert.Contains(executableScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
+        StringAssert.Contains(executableScriptText, "missing_canonical_promoted_desktop_heads");
+        StringAssert.Contains(executableScriptText, "missing_canonical_flagship_desktop_heads");
+        StringAssert.Contains(executableScriptText, "Release channel is missing canonical required promoted desktop head(s) for milestone-3 executable proof:");
+        StringAssert.Contains(executableScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 executable proof:");
 
         StringAssert.Contains(visualScriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(visualScriptText, "release_channel_channel_id");
         StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing channelId/channel.");
+        StringAssert.Contains(visualScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
+        StringAssert.Contains(visualScriptText, "flagship_missing_canonical_required_desktop_heads");
+        StringAssert.Contains(visualScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head visual proof:");
 
         StringAssert.Contains(workflowScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(workflowScriptText, "release_channel_channel_id");
         StringAssert.Contains(workflowScriptText, "Desktop workflow execution gate release channel receipt is missing channelId/channel.");
+        StringAssert.Contains(workflowScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
+        StringAssert.Contains(workflowScriptText, "flagship_missing_canonical_required_desktop_heads");
+        StringAssert.Contains(workflowScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head workflow execution proof:");
     }
 
     private static string FindRepoRoot()

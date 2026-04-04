@@ -286,10 +286,16 @@ evidence["proof_freshness_max_age_seconds"] = DESKTOP_PROOF_MAX_AGE_SECONDS
 evidence["proof_freshness_max_future_skew_seconds"] = DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS
 evidence["release_channel_path"] = str(release_channel_path)
 
-check_receipt(ui_workflow_parity_path, "chummer5a_workflow_parity", reasons, evidence)
-check_receipt(sr4_workflow_parity_path, "sr4_workflow_parity", reasons, evidence)
-check_receipt(sr6_workflow_parity_path, "sr6_workflow_parity", reasons, evidence)
-check_receipt(sr_frontier_path, "sr4_sr6_frontier", reasons, evidence)
+chummer5a_workflow_parity = check_receipt(
+    ui_workflow_parity_path, "chummer5a_workflow_parity", reasons, evidence
+)
+sr4_workflow_parity = check_receipt(
+    sr4_workflow_parity_path, "sr4_workflow_parity", reasons, evidence
+)
+sr6_workflow_parity = check_receipt(
+    sr6_workflow_parity_path, "sr6_workflow_parity", reasons, evidence
+)
+sr4_sr6_frontier = check_receipt(sr_frontier_path, "sr4_sr6_frontier", reasons, evidence)
 flagship_gate = check_receipt(flagship_gate_path, "ui_flagship_release_gate", reasons, evidence)
 release_channel = load_json(release_channel_path)
 release_channel_exists = release_channel_path.is_file()
@@ -312,6 +318,24 @@ if not release_channel_generated_at_raw or release_channel_generated_at is None:
     reasons.append(
         "Desktop workflow execution gate release channel receipt is missing a valid generatedAt/generated_at timestamp."
     )
+
+receipt_channel_ids: Dict[str, str] = {}
+for label, payload in (
+    ("chummer5a_workflow_parity", chummer5a_workflow_parity),
+    ("sr4_workflow_parity", sr4_workflow_parity),
+    ("sr6_workflow_parity", sr6_workflow_parity),
+    ("sr4_sr6_frontier", sr4_sr6_frontier),
+):
+    channel_id = normalize_token(payload.get("channelId") or payload.get("channel"))
+    receipt_channel_ids[label] = channel_id
+    if not channel_id:
+        reasons.append(f"{label} receipt is missing channelId/channel.")
+        continue
+    if release_channel_channel_id and channel_id != release_channel_channel_id:
+        reasons.append(
+            f"{label} receipt channelId does not match desktop workflow execution release-channel channelId."
+        )
+evidence["workflow_parity_receipt_channel_ids"] = receipt_channel_ids
 flagship_head_proofs = flagship_gate.get("headProofs") if isinstance(flagship_gate.get("headProofs"), dict) else {}
 required_desktop_heads = sorted(
     {
@@ -324,6 +348,11 @@ required_desktop_heads = sorted(
         if normalize_token(item)
     }
 )
+canonical_required_desktop_heads = ["avalonia", "blazor-desktop"]
+missing_canonical_required_desktop_heads = [
+    head for head in canonical_required_desktop_heads
+    if head not in required_desktop_heads
+]
 flagship_head_proof_statuses = normalize_head_proof_statuses(
     flagship_head_proofs,
     "flagship_gate.headProofs.status",
@@ -448,6 +477,10 @@ for required_head in required_desktop_heads:
             f"Flagship UI release gate sourceTestFile for required desktop head '{required_head}' is missing/unreadable on disk."
         )
 evidence["flagship_required_desktop_heads"] = required_desktop_heads
+evidence["canonical_required_desktop_heads"] = canonical_required_desktop_heads
+evidence["flagship_missing_canonical_required_desktop_heads"] = (
+    missing_canonical_required_desktop_heads
+)
 evidence["flagship_head_proof_statuses"] = flagship_head_proof_statuses
 evidence["required_head_contract_markers"] = required_head_contract_markers
 evidence["flagship_head_contract_marker_statuses"] = (
@@ -467,6 +500,11 @@ evidence["flagship_head_source_test_file_within_repo_root"] = (
 )
 if not required_desktop_heads:
     reasons.append("Flagship UI release gate is missing required desktopHeads inventory for per-head workflow execution proof.")
+if missing_canonical_required_desktop_heads:
+    reasons.append(
+        "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head workflow execution proof: "
+        + ", ".join(missing_canonical_required_desktop_heads)
+    )
 missing_or_not_ready_heads = [
     head
     for head in required_desktop_heads
