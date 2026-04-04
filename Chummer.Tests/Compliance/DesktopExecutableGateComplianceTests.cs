@@ -141,6 +141,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt is missing releaseVersion/version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt carries conflicting releaseVersion/version alias values for promoted head");
+        StringAssert.Contains(executableScriptText, "linux desktop exit gate proof for ");
+        StringAssert.Contains(executableScriptText, "carries conflicting generated_at/generatedAt alias values.");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt head channelId/channel does not match release channel for promoted head");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt head carries conflicting channelId/channel alias values for promoted head");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head");
@@ -174,6 +176,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt channelId/channel does not match release channel channelId.");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt carries conflicting channelId/channel alias values.");
+        StringAssert.Contains(executableScriptText, "windows desktop exit gate proof");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt checks.release_channel_id does not match release channel channelId.");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt checks.release_channel_version does not match release channel version.");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt carries conflicting releaseVersion/version alias values.");
@@ -221,6 +224,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt channelId/channel does not match release channel channelId for promoted head");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt carries conflicting channelId/channel alias values for promoted head");
+        StringAssert.Contains(executableScriptText, "macOS desktop exit gate proof for ");
+        StringAssert.Contains(executableScriptText, "carries conflicting generated_at/generatedAt alias values.");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt carries conflicting releaseVersion/version alias values for promoted head");

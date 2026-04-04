@@ -720,6 +720,10 @@ def startup_smoke_timestamp_alias_conflicts(payload: Dict[str, Any]) -> bool:
 
 
 def validate_receipt_freshness(label: str, payload: Dict[str, Any], evidence: Dict[str, Any], reasons: List[str]) -> None:
+    generated_at_alias_conflict = generated_at_alias_conflicts(payload)
+    evidence[f"{label}_generated_at_alias_conflict"] = generated_at_alias_conflict
+    if generated_at_alias_conflict:
+        reasons.append(f"{label} carries conflicting generated_at/generatedAt alias values.")
     generated_at_raw, generated_at = payload_generated_at(payload)
     evidence[f"{label}_generated_at"] = generated_at_raw
     if not generated_at_raw or generated_at is None:
