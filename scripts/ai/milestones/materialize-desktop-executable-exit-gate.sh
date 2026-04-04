@@ -1918,6 +1918,39 @@ expected_windows_artifacts = [
     and normalize_token(item.get("head"))
     and normalize_token(item.get("rid"))
 ]
+windows_artifact_map_by_tuple: Dict[tuple[str, str], Dict[str, Any]] = {
+    (
+        normalize_token(item.get("head")),
+        normalize_token(item.get("rid")),
+    ): item
+    for item in expected_windows_artifacts
+}
+required_windows_policy_tuples = sorted(
+    {
+        (head, rid)
+        for token in tuple_coverage_required_platform_head_rid_tuples
+        for head, rid, platform in [tuple(token.split(":", 2))]
+        if platform == "windows" and head and rid
+    }
+)
+windows_policy_tuples_missing_release_artifacts: List[str] = []
+for head, rid in required_windows_policy_tuples:
+    tuple_key = (head, rid)
+    if tuple_key in windows_artifact_map_by_tuple:
+        continue
+    windows_policy_tuples_missing_release_artifacts.append(f"{head}:{rid}")
+    expected_windows_artifacts.append(
+        {
+            "head": head,
+            "rid": rid,
+            "platform": "windows",
+            "kind": "installer",
+            "fileName": "",
+            "sha256": "",
+            "sizeBytes": 0,
+            "source": "required_tuple_policy_missing_release_artifact",
+        }
+    )
 promoted_windows_tuples = {
     f"{normalize_token(item.get('head'))}:{normalize_token(item.get('rid'))}"
     for item in expected_windows_artifacts
@@ -1930,6 +1963,12 @@ evidence["windows_heads_expected"] = [
     }
     for item in expected_windows_artifacts
 ]
+evidence["windows_policy_required_head_rid_tuples"] = [
+    f"{head}:{rid}" for head, rid in required_windows_policy_tuples
+]
+evidence["windows_policy_tuples_missing_release_artifacts"] = (
+    windows_policy_tuples_missing_release_artifacts
+)
 if not expected_windows_artifacts and platform_artifact_counts.get("windows", 0) > 0:
     reasons.append("Release channel publishes Windows desktop media without explicit head/rid tuple metadata.")
 windows_statuses: Dict[str, str] = {}
@@ -2607,6 +2646,39 @@ expected_macos_artifacts = [
     and normalize_token(item.get("head"))
     and macos_rid_from_artifact(item)
 ]
+macos_artifact_map_by_tuple: Dict[tuple[str, str], Dict[str, Any]] = {
+    (
+        normalize_token(item.get("head")),
+        macos_rid_from_artifact(item),
+    ): item
+    for item in expected_macos_artifacts
+}
+required_macos_policy_tuples = sorted(
+    {
+        (head, rid)
+        for token in tuple_coverage_required_platform_head_rid_tuples
+        for head, rid, platform in [tuple(token.split(":", 2))]
+        if platform == "macos" and head and rid
+    }
+)
+macos_policy_tuples_missing_release_artifacts: List[str] = []
+for head, rid in required_macos_policy_tuples:
+    tuple_key = (head, rid)
+    if tuple_key in macos_artifact_map_by_tuple:
+        continue
+    macos_policy_tuples_missing_release_artifacts.append(f"{head}:{rid}")
+    expected_macos_artifacts.append(
+        {
+            "head": head,
+            "rid": rid,
+            "platform": "macos",
+            "kind": "dmg",
+            "fileName": "",
+            "sha256": "",
+            "sizeBytes": 0,
+            "source": "required_tuple_policy_missing_release_artifact",
+        }
+    )
 promoted_macos_tuples = {
     f"{normalize_token(item.get('head'))}:{macos_rid_from_artifact(item)}"
     for item in expected_macos_artifacts
@@ -2619,6 +2691,12 @@ evidence["macos_heads_expected"] = [
     }
     for item in expected_macos_artifacts
 ]
+evidence["macos_policy_required_head_rid_tuples"] = [
+    f"{head}:{rid}" for head, rid in required_macos_policy_tuples
+]
+evidence["macos_policy_tuples_missing_release_artifacts"] = (
+    macos_policy_tuples_missing_release_artifacts
+)
 collect_stale_platform_gate_receipts_without_promoted_tuples(
     receipt_path.parent,
     promoted_windows_tuples,
