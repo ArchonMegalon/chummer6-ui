@@ -19,6 +19,7 @@ python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parit
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,6 +37,16 @@ REQUIRED_WORKFLOW_FAMILY_IDS = {
     "recovery-reload-migration-roundtrips",
     "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
 }
+DESKTOP_PROOF_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_WORKFLOW_PROOF_MAX_AGE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_AGE_SECONDS")
+    or "86400"
+)
+DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_WORKFLOW_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
 
 
 def now_iso() -> str:
@@ -65,6 +76,56 @@ def path_within_root(path: Path, root: Path) -> bool:
         return False
 
 
+def parse_iso(value: Any) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def payload_generated_at(payload: Dict[str, Any]) -> tuple[str, datetime | None]:
+    for key in ("generated_at", "generatedAt"):
+        if key in payload:
+            raw = str(payload.get(key) or "").strip()
+            return raw, parse_iso(raw)
+    return "", None
+
+
+def validate_receipt_freshness(
+    label: str,
+    payload: Dict[str, Any],
+    reasons: List[str],
+    evidence: Dict[str, Any],
+) -> None:
+    generated_at_raw, generated_at = payload_generated_at(payload)
+    evidence[f"{label}_generated_at"] = generated_at_raw
+    if not generated_at_raw or generated_at is None:
+        reasons.append(f"{label} receipt is missing a valid generatedAt/generated_at timestamp.")
+        return
+    age_seconds = int((datetime.now(timezone.utc) - generated_at).total_seconds())
+    if age_seconds < 0:
+        future_skew_seconds = abs(age_seconds)
+        evidence[f"{label}_future_skew_seconds"] = future_skew_seconds
+        if future_skew_seconds > DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:
+            reasons.append(
+                f"{label} receipt generatedAt is in the future ({future_skew_seconds}s ahead; max {DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS}s)."
+            )
+        age_seconds = 0
+    evidence[f"{label}_age_seconds"] = age_seconds
+    if age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
+        reasons.append(
+            f"{label} receipt is stale ({age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
+        )
+
+
 def check_receipt(path: Path, label: str, reasons: List[str], evidence: Dict[str, Any]) -> Dict[str, Any]:
     payload = load_json(path)
     status = str(payload.get("status") or "").strip().lower()
@@ -72,6 +133,7 @@ def check_receipt(path: Path, label: str, reasons: List[str], evidence: Dict[str
     evidence[f"{label}_status"] = status
     if not status_ok(status):
         reasons.append(f"{label} receipt is missing or not passing.")
+    validate_receipt_freshness(label, payload, reasons, evidence)
     return payload
 
 
@@ -142,6 +204,8 @@ repo_root = Path(repo_root_text)
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {}
+evidence["proof_freshness_max_age_seconds"] = DESKTOP_PROOF_MAX_AGE_SECONDS
+evidence["proof_freshness_max_future_skew_seconds"] = DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS
 
 check_receipt(ui_workflow_parity_path, "chummer5a_workflow_parity", reasons, evidence)
 check_receipt(sr4_workflow_parity_path, "sr4_workflow_parity", reasons, evidence)
