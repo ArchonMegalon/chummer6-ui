@@ -2193,6 +2193,20 @@ expected_linux_artifacts = [
     and normalize_token(item.get("head"))
     and normalize_token(item.get("rid"))
 ]
+linux_artifacts_missing_rid_by_head = sorted(
+    {
+        normalize_token(item.get("head"))
+        for item in desktop_install_artifacts
+        if normalize_token(item.get("platform")) == "linux"
+        and normalize_token(item.get("head"))
+        and not normalize_token(item.get("rid"))
+    }
+)
+evidence["linux_artifacts_missing_rid_by_head"] = linux_artifacts_missing_rid_by_head
+for missing_rid_head in linux_artifacts_missing_rid_by_head:
+    reasons.append(
+        f"Release channel publishes Linux desktop media for head '{missing_rid_head}' without explicit head/rid tuple metadata."
+    )
 linux_artifact_map_by_tuple: Dict[tuple[str, str], Dict[str, Any]] = {
     (
         normalize_token(item.get("head")),
