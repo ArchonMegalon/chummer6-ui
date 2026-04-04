@@ -1979,6 +1979,42 @@ heads_requiring_flagship_proof = sorted(
     .union(set(canonical_required_desktop_heads))
 )
 evidence["heads_requiring_flagship_proof"] = heads_requiring_flagship_proof
+tuple_coverage_missing_required_platforms_from_policy = sorted(
+    set(required_desktop_platforms).difference(set(tuple_coverage_required_desktop_platforms))
+)
+tuple_coverage_missing_required_heads_from_policy = sorted(
+    set(heads_requiring_flagship_proof).difference(set(tuple_coverage_required_desktop_heads))
+)
+tuple_coverage_missing_canonical_required_heads = sorted(
+    set(canonical_required_desktop_heads).difference(set(tuple_coverage_required_desktop_heads))
+)
+evidence["release_channel_tuple_coverage_missing_required_platforms_from_policy"] = (
+    tuple_coverage_missing_required_platforms_from_policy
+)
+evidence["release_channel_tuple_coverage_missing_required_heads_from_policy"] = (
+    tuple_coverage_missing_required_heads_from_policy
+)
+evidence["release_channel_tuple_coverage_missing_canonical_required_heads"] = (
+    tuple_coverage_missing_canonical_required_heads
+)
+if desktop_install_artifacts and tuple_coverage_missing_required_platforms_from_policy:
+    reasons.append(
+        "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): "
+        + ", ".join(tuple_coverage_missing_required_platforms_from_policy)
+        + "."
+    )
+if desktop_install_artifacts and tuple_coverage_missing_required_heads_from_policy:
+    reasons.append(
+        "Release channel desktopTupleCoverage requiredDesktopHeads is missing required policy head(s): "
+        + ", ".join(tuple_coverage_missing_required_heads_from_policy)
+        + "."
+    )
+if desktop_install_artifacts and tuple_coverage_missing_canonical_required_heads:
+    reasons.append(
+        "Release channel desktopTupleCoverage requiredDesktopHeads is missing canonical required head(s): "
+        + ", ".join(tuple_coverage_missing_canonical_required_heads)
+        + "."
+    )
 required_platforms_for_pair_matrix = tuple_coverage_required_desktop_platforms or list(required_desktop_platforms)
 required_heads_for_pair_matrix = tuple_coverage_required_desktop_heads or heads_requiring_flagship_proof
 promoted_platform_heads_for_pair_matrix: Dict[str, List[str]] = {}
