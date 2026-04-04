@@ -259,6 +259,32 @@ def build_platform_head_rid_tuple(head: Any, rid: Any, platform: Any) -> str:
     return f"{head_token}:{rid_token}:{platform_token}"
 
 
+def build_install_media_tuple_token(artifact: Dict[str, Any]) -> str:
+    platform_token = normalize_token(artifact.get("platform"))
+    head_token = normalize_token(artifact.get("head"))
+    if platform_token == "macos":
+        rid_token = macos_rid_from_artifact(artifact)
+    else:
+        rid_token = normalize_token(artifact.get("rid"))
+    if not head_token or not rid_token or platform_token not in {"linux", "windows", "macos"}:
+        return ""
+    return f"{head_token}:{rid_token}:{platform_token}"
+
+
+def collect_duplicate_install_media_tuples(artifacts: List[Dict[str, Any]]) -> Dict[str, List[int]]:
+    tuple_indexes: Dict[str, List[int]] = {}
+    for artifact_index, artifact in enumerate(artifacts):
+        tuple_token = build_install_media_tuple_token(artifact)
+        if not tuple_token:
+            continue
+        tuple_indexes.setdefault(tuple_token, []).append(artifact_index)
+    return {
+        tuple_token: indexes
+        for tuple_token, indexes in tuple_indexes.items()
+        if len(indexes) > 1
+    }
+
+
 def normalized_token_list(values: Any) -> List[str]:
     if not isinstance(values, list):
         return []
@@ -2067,6 +2093,24 @@ desktop_install_artifacts = [
     if normalize_token(item.get("platform")) in {"linux", "windows", "macos"}
     and is_desktop_install_media(item.get("platform"), item.get("kind"))
 ]
+duplicate_desktop_install_artifact_tuples = collect_duplicate_install_media_tuples(
+    desktop_install_artifacts
+)
+duplicate_desktop_install_artifact_tuple_tokens = sorted(
+    duplicate_desktop_install_artifact_tuples
+)
+evidence["duplicate_desktop_install_artifact_tuples"] = (
+    duplicate_desktop_install_artifact_tuples
+)
+evidence["duplicate_desktop_install_artifact_tuple_tokens"] = (
+    duplicate_desktop_install_artifact_tuple_tokens
+)
+if duplicate_desktop_install_artifact_tuple_tokens:
+    reasons.append(
+        "Release channel publishes duplicate desktop install media tuple entries (head:rid:platform): "
+        + ", ".join(duplicate_desktop_install_artifact_tuple_tokens)
+        + "."
+    )
 if desktop_install_artifacts and not desktop_tuple_coverage_present:
     reasons.append(
         "Release channel is missing desktopTupleCoverage metadata for promoted desktop install artifacts."
