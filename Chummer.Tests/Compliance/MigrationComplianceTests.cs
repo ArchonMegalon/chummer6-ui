@@ -3469,6 +3469,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt is stale for promoted installer bytes (");
         StringAssert.Contains(executableGateScriptText, "def windows_gate_path_for_head(");
         StringAssert.Contains(executableGateScriptText, "UI_WINDOWS_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json");
+        StringAssert.Contains(executableGateScriptText, "windows_artifacts_missing_rid_by_head");
+        StringAssert.Contains(executableGateScriptText, "Release channel publishes Windows desktop media for head '");
         StringAssert.Contains(executableGateScriptText, "for expected_windows_artifact in expected_windows_artifacts:");
         StringAssert.Contains(executableGateScriptText, "validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f\"windows_gate:{gate_label}\")");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate receipt head/RID does not match promoted release-channel Windows artifact tuple");
