@@ -359,6 +359,11 @@ flagship_required_desktop_heads = sorted(
         if normalize_token(item)
     }
 )
+canonical_required_desktop_heads = ["avalonia", "blazor-desktop"]
+missing_canonical_required_desktop_heads = [
+    head for head in canonical_required_desktop_heads
+    if head not in flagship_required_desktop_heads
+]
 flagship_head_proof_statuses = normalize_head_proof_statuses(
     head_proofs,
     "flagship_gate.headProofs.status",
@@ -471,6 +476,10 @@ evidence["flagship_theme_readability_contrast"] = theme_readability_contrast
 evidence["flagship_avalonia_head_proof_status"] = str(avalonia_head_proof.get("status") or "").strip().lower()
 evidence["flagship_blazor_head_proof_status"] = str(blazor_head_proof.get("status") or "").strip().lower()
 evidence["flagship_required_desktop_heads"] = flagship_required_desktop_heads
+evidence["canonical_required_desktop_heads"] = canonical_required_desktop_heads
+evidence["flagship_missing_canonical_required_desktop_heads"] = (
+    missing_canonical_required_desktop_heads
+)
 evidence["flagship_head_proof_statuses"] = flagship_head_proof_statuses
 evidence["required_head_contract_markers"] = required_head_contract_markers
 evidence["flagship_head_contract_marker_statuses"] = flagship_head_contract_marker_statuses
@@ -575,6 +584,11 @@ if not status_ok(str(blazor_head_proof.get("status") or "").strip().lower()):
     reasons.append("Flagship UI release gate does not carry a passing Blazor desktop head proof.")
 if not flagship_required_desktop_heads:
     reasons.append("Flagship UI release gate is missing required desktopHeads inventory for per-head visual proof.")
+if missing_canonical_required_desktop_heads:
+    reasons.append(
+        "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head visual proof: "
+        + ", ".join(missing_canonical_required_desktop_heads)
+    )
 for required_head in flagship_required_desktop_heads:
     required_head_status = flagship_head_proof_statuses.get(required_head, "")
     if not status_ok(required_head_status):
