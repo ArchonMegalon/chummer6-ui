@@ -3953,6 +3953,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(localizationGateText, "\"locale_domain_coverage\"");
         StringAssert.Contains(localizationGateText, "\"app_chrome\"");
         StringAssert.Contains(localizationGateText, "\"install_update_support\"");
+        StringAssert.Contains(localizationGateText, "signoff_retry_attempted=0");
+        StringAssert.Contains(localizationGateText, "runtimeconfig_bootstrap_repair");
+        StringAssert.Contains(localizationGateText, "\"retry_attempted\": signoff_retry_attempted > 0");
+        StringAssert.Contains(localizationGateText, "\"retry_reason\": signoff_retry_reason");
         Assert.IsFalse(localizationGateText.Contains("--no-build", StringComparison.Ordinal),
             "Localization release gate must run the signoff project with build enabled so runtimeconfig output is always present across compatibility-tree layouts.");
         Assert.IsFalse(localizationGateText.Contains("bash -lc", StringComparison.Ordinal),
