@@ -115,7 +115,8 @@ required_avalonia_tests = [
     "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
     "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
     "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
-    "Magic_matrix_and_consumables_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+    "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+    "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
 ]
 missing_avalonia = [name for name in required_avalonia_tests if name not in avalonia_text]
 if missing_avalonia:
@@ -295,9 +296,10 @@ expected_screenshots = [
     "09-vehicles-section-light.png",
     "10-contacts-section-light.png",
     "11-diary-dialog-light.png",
-    "12-magic-matrix-dialog-light.png",
-    "13-advancement-dialog-light.png",
-    "14-creation-section-light.png",
+    "12-magic-dialog-light.png",
+    "13-matrix-dialog-light.png",
+    "14-advancement-dialog-light.png",
+    "15-creation-section-light.png",
 ]
 required_full_workflow_tests = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
@@ -472,7 +474,8 @@ payload = {
                 "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
                 "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
                 "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
-                "Magic_matrix_and_consumables_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+                "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+                "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
             ]
         },
         "blazor-desktop": {

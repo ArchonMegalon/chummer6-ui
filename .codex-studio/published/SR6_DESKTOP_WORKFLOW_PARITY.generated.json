@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-04-03T17:28:49.403300Z",
+  "generatedAt": "2026-04-04T00:04:13.927926Z",
   "contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
   "status": "pass",
   "summary": "SR6 desktop workflow carry-forward parity is explicitly proven.",
   "reasons": [],
   "evidence": {
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "ledgerPath": "/docker/chummercomplete/chummer6-ui/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "sr4ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "missingFamilyIds": [],
     "nonReadyFamilyIds": [],
     "missingTestRefs": {},

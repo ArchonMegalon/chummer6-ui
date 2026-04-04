@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T16:04:01.508111Z",
+  "generatedAt": "2026-04-04T00:02:17.939639Z",
   "contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
   "status": "pass",
   "summary": "Chummer5a desktop workflow parity is explicitly proven across the promoted head.",

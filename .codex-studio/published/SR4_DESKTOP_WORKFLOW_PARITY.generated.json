@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-04-03T17:27:48.672976Z",
+  "generatedAt": "2026-04-04T00:03:36.743134Z",
   "contract_name": "chummer6-ui.sr4_desktop_workflow_parity",
   "status": "pass",
   "summary": "SR4 desktop workflow parity is explicitly proven against the local Chummer4 oracle.",
   "reasons": [],
   "evidence": {
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer6-ui/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer6-ui/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
     "sourceRepoPath": "/docker/fleet/repos/chummer4",
     "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71",
     "missingFamilyIds": [],

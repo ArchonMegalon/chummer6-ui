@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T19:54:30.092582Z",
+  "generatedAt": "2026-04-04T00:11:34.712076Z",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
   "status": "pass",
   "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts.",
@@ -31,6 +31,7 @@
     "workflow_execution_missing_receipts": [],
     "workflow_execution_failing_receipts": [],
     "workflow_execution_weak_receipts": [],
+    "legacy_execution_receipt_paths": [],
     "required_workflow_family_ids": [
       "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
       "attributes-skills-skill-groups-specializations-knowledge-languages",

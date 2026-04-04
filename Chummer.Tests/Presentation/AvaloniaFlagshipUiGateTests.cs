@@ -1144,7 +1144,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Magic_matrix_and_consumables_workflows_execute_with_specific_dialog_fields_and_confirm_actions()
+    public void Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions()
     {
         WithLoadedRunnerHarness(harness =>
         {
@@ -1174,6 +1174,21 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             AssertQuickActionDialogFlow(
                 harness,
+                sectionId: "initiationgrades",
+                actionControlId: "initiation_add",
+                expectedTitle: "Add Initiation / Submersion",
+                requiredFieldLabel: "Grade",
+                requiredActionId: "add");
+        });
+    }
+
+    [TestMethod]
+    public void Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            AssertQuickActionDialogFlow(
+                harness,
                 sectionId: "complexforms",
                 actionControlId: "complex_form_add",
                 expectedTitle: "Add Complex Form",
@@ -1186,14 +1201,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                 actionControlId: "matrix_program_add",
                 expectedTitle: "Add Program / Cyberdeck Item",
                 requiredFieldLabel: "Program",
-                requiredActionId: "add");
-
-            AssertQuickActionDialogFlow(
-                harness,
-                sectionId: "initiationgrades",
-                actionControlId: "initiation_add",
-                expectedTitle: "Add Initiation / Submersion",
-                requiredFieldLabel: "Grade",
                 requiredActionId: "add");
         });
     }
@@ -1287,9 +1294,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             "09-vehicles-section-light.png",
             "10-contacts-section-light.png",
             "11-diary-dialog-light.png",
-            "12-magic-matrix-dialog-light.png",
-            "13-advancement-dialog-light.png",
-            "14-creation-section-light.png"
+            "12-magic-dialog-light.png",
+            "13-matrix-dialog-light.png",
+            "14-advancement-dialog-light.png",
+            "15-creation-section-light.png"
         ];
 
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -1427,6 +1435,19 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
+                harness.SetActiveSectionForTesting("complexforms");
+                harness.WaitUntil(() =>
+                    harness.FindControlOrDefault<Control>("SectionQuickAction_matrix_program_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_matrix_program_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Program / Cyberdeck Item",
+                        StringComparison.Ordinal));
+                captured[expectedFiles[12]] = harness.CaptureScreenshotBytes();
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
                 harness.SetActiveSectionForTesting("initiationgrades");
                 harness.WaitUntil(() =>
                     harness.FindControlOrDefault<Control>("SectionQuickAction_initiation_add")?.IsVisible == true);
@@ -1436,7 +1457,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Initiation / Submersion",
                         StringComparison.Ordinal));
-                captured[expectedFiles[12]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[13]] = harness.CaptureScreenshotBytes();
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -1447,7 +1468,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsNotNull(attributeRow, "Expected visible attributes rows before capturing character-creation familiarity proof.");
                 attributeRows.SelectedItem = attributeRow;
                 harness.WaitUntil(() => ReferenceEquals(attributeRows.SelectedItem, attributeRow));
-                captured[expectedFiles[13]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[14]] = harness.CaptureScreenshotBytes();
 
                 return captured;
             });
