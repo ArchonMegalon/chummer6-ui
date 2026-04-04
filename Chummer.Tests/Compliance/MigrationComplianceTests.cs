@@ -3656,6 +3656,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_EXECUTABLE_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "carries conflicting generated_at/generatedAt alias values.");
         StringAssert.Contains(executableGateScriptText, "release_channel_generated_at");
         StringAssert.Contains(executableGateScriptText, "release_channel_future_skew_seconds");
         StringAssert.Contains(executableGateScriptText, "release_channel_age_seconds");
