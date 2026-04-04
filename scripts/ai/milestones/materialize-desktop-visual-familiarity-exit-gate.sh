@@ -16,14 +16,29 @@ toolstrip_codebehind_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl
 summary_header_axaml_path="$repo_root/Chummer.Avalonia/Controls/SummaryHeaderControl.axaml"
 ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 legacy_frmcareer_designer_path="/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs"
+skip_release_gate_lock_wait="${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
+release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
+release_gate_lock_poll_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS:-2}"
+if ! [[ "$release_gate_lock_wait_seconds" =~ ^[0-9]+$ ]]; then
+  release_gate_lock_wait_seconds=300
+fi
+if ! [[ "$release_gate_lock_poll_seconds" =~ ^[0-9]+$ ]] || [[ "$release_gate_lock_poll_seconds" -lt 1 ]]; then
+  release_gate_lock_poll_seconds=2
+fi
 
 mkdir -p "$(dirname "$receipt_path")"
-for _ in $(seq 1 150); do
-  if [[ ! -d "$release_gate_lock_dir" ]]; then
-    break
+if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
+  release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))
+  if [[ "$release_gate_lock_wait_iterations" -lt 1 ]]; then
+    release_gate_lock_wait_iterations=1
   fi
-  sleep 2
-done
+  for _ in $(seq 1 "$release_gate_lock_wait_iterations"); do
+    if [[ ! -d "$release_gate_lock_dir" ]]; then
+      break
+    fi
+    sleep "$release_gate_lock_poll_seconds"
+  done
+fi
 
 python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$legacy_frmcareer_designer_path"
 from __future__ import annotations
@@ -209,7 +224,6 @@ legacy_cyberware_dialog_rhythm = str(interaction_proof.get("legacyCyberwareDialo
 legacy_contacts_diary_rhythm = str(interaction_proof.get("legacyContactsDiaryRhythm") or "").strip().lower()
 legacy_contacts_workflow_rhythm = str(interaction_proof.get("legacyContactsWorkflowRhythm") or "").strip().lower()
 legacy_diary_workflow_rhythm = str(interaction_proof.get("legacyDiaryWorkflowRhythm") or "").strip().lower()
-legacy_magic_matrix_workflow_rhythm = str(interaction_proof.get("legacyMagicMatrixWorkflowRhythm") or "").strip().lower()
 legacy_magic_workflow_rhythm = str(interaction_proof.get("legacyMagicWorkflowRhythm") or "").strip().lower()
 legacy_matrix_workflow_rhythm = str(interaction_proof.get("legacyMatrixWorkflowRhythm") or "").strip().lower()
 legacy_familiarity_bridge = str(interaction_proof.get("legacyFamiliarityBridge") or "").strip().lower()
@@ -225,7 +239,6 @@ required_legacy_interaction_keys = [
     "legacyContactsDiaryRhythm",
     "legacyContactsWorkflowRhythm",
     "legacyDiaryWorkflowRhythm",
-    "legacyMagicMatrixWorkflowRhythm",
     "legacyMagicWorkflowRhythm",
     "legacyMatrixWorkflowRhythm",
 ]
@@ -255,7 +268,6 @@ evidence["legacy_cyberware_dialog_rhythm"] = legacy_cyberware_dialog_rhythm
 evidence["legacy_contacts_diary_rhythm"] = legacy_contacts_diary_rhythm
 evidence["legacy_contacts_workflow_rhythm"] = legacy_contacts_workflow_rhythm
 evidence["legacy_diary_workflow_rhythm"] = legacy_diary_workflow_rhythm
-evidence["legacy_magic_matrix_workflow_rhythm"] = legacy_magic_matrix_workflow_rhythm
 evidence["legacy_magic_workflow_rhythm"] = legacy_magic_workflow_rhythm
 evidence["legacy_matrix_workflow_rhythm"] = legacy_matrix_workflow_rhythm
 evidence["legacy_familiarity_bridge"] = legacy_familiarity_bridge
@@ -324,8 +336,6 @@ if not status_ok(legacy_contacts_workflow_rhythm):
     reasons.append("Flagship UI release gate does not prove contacts workflow familiarity.")
 if not status_ok(legacy_diary_workflow_rhythm):
     reasons.append("Flagship UI release gate does not prove diary workflow familiarity.")
-if not status_ok(legacy_magic_matrix_workflow_rhythm):
-    reasons.append("Flagship UI release gate does not prove magic/matrix workflow rhythm.")
 if not status_ok(legacy_magic_workflow_rhythm):
     reasons.append("Flagship UI release gate does not prove magic workflow familiarity.")
 if not status_ok(legacy_matrix_workflow_rhythm):

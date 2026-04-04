@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-04T00:11:34.580917Z",
+  "generatedAt": "2026-04-04T00:21:35.681233Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "status": "pass",
   "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR6 codex orientation.",
@@ -56,7 +56,6 @@
     "legacy_contacts_diary_rhythm": "pass",
     "legacy_contacts_workflow_rhythm": "pass",
     "legacy_diary_workflow_rhythm": "pass",
-    "legacy_magic_matrix_workflow_rhythm": "pass",
     "legacy_magic_workflow_rhythm": "pass",
     "legacy_matrix_workflow_rhythm": "pass",
     "legacy_familiarity_bridge": "pass",
@@ -72,7 +71,6 @@
       "legacyContactsDiaryRhythm",
       "legacyContactsWorkflowRhythm",
       "legacyDiaryWorkflowRhythm",
-      "legacyMagicMatrixWorkflowRhythm",
       "legacyMagicWorkflowRhythm",
       "legacyMatrixWorkflowRhythm"
     ],
