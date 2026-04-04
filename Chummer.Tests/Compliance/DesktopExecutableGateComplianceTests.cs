@@ -51,6 +51,20 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_fail_closes_stale_passing_linux_windows_and_macos_tuple_receipts_that_are_not_promoted()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "(\"linux\", \"UI_LINUX*_DESKTOP_EXIT_GATE.generated.json\")");
+        StringAssert.Contains(scriptText, "promoted_linux_tuples");
+        StringAssert.Contains(scriptText, "stale_linux_gate_receipts_without_promoted_tuples");
+        StringAssert.Contains(scriptText, "stale_passing_platform_gate_receipts_without_promoted_tuples");
+        StringAssert.Contains(scriptText, "Stale passing platform gate receipts exist for non-promoted desktop tuples:");
+    }
+
+    [TestMethod]
     public void Desktop_executable_gate_binds_visual_and_workflow_receipts_to_release_channel_identity()
     {
         string repoRoot = FindRepoRoot();
