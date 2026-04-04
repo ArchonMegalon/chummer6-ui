@@ -45,11 +45,32 @@ from __future__ import annotations
 
 import json
 import binascii
+import os
 import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
+
+DESKTOP_PROOF_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_VISUAL_PROOF_MAX_AGE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_AGE_SECONDS")
+    or "86400"
+)
+DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_VISUAL_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
+DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_AGE_SECONDS")
+    or "86400"
+)
+DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS")
+    or "900"
+)
 
 
 def now_iso() -> str:
@@ -69,6 +90,56 @@ def status_ok(value: str) -> bool:
 
 def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
+
+
+def parse_iso(value: Any) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def payload_generated_at(payload: Dict[str, Any]) -> tuple[str, datetime | None]:
+    for key in ("generated_at", "generatedAt"):
+        if key in payload:
+            raw = str(payload.get(key) or "").strip()
+            return raw, parse_iso(raw)
+    return "", None
+
+
+def validate_receipt_freshness(
+    label: str,
+    payload: Dict[str, Any],
+    reasons: List[str],
+    evidence: Dict[str, Any],
+) -> None:
+    generated_at_raw, generated_at = payload_generated_at(payload)
+    evidence[f"{label}_generated_at"] = generated_at_raw
+    if not generated_at_raw or generated_at is None:
+        reasons.append(f"{label} is missing a valid generatedAt/generated_at timestamp.")
+        return
+    age_seconds = int((datetime.now(timezone.utc) - generated_at).total_seconds())
+    if age_seconds < 0:
+        future_skew_seconds = abs(age_seconds)
+        evidence[f"{label}_future_skew_seconds"] = future_skew_seconds
+        if future_skew_seconds > DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:
+            reasons.append(
+                f"{label} generatedAt is in the future ({future_skew_seconds}s ahead; max {DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS}s)."
+            )
+        age_seconds = 0
+    evidence[f"{label}_age_seconds"] = age_seconds
+    if age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
+        reasons.append(
+            f"{label} is stale ({age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
+        )
 
 
 def validate_png(path: Path) -> tuple[str, int, int]:
@@ -165,6 +236,10 @@ evidence: Dict[str, Any] = {
     "legacy_frmcareer_designer_path": str(legacy_frmcareer_designer_path),
     "minimum_shell_review_size": {"width": 1280, "height": 800},
     "minimum_dialog_review_size": {"width": 900, "height": 700},
+    "proof_freshness_max_age_seconds": DESKTOP_PROOF_MAX_AGE_SECONDS,
+    "proof_freshness_max_future_skew_seconds": DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS,
+    "screenshot_max_age_seconds": DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS,
+    "screenshot_receipt_skew_max_seconds": DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS,
 }
 
 flagship_gate = load_json(flagship_gate_path)
@@ -172,6 +247,7 @@ flagship_status = str(flagship_gate.get("status") or "").strip().lower()
 evidence["flagship_gate_status"] = flagship_status
 if not status_ok(flagship_status):
     reasons.append("Flagship UI release gate is missing or not passing.")
+validate_receipt_freshness("flagship_ui_release_gate", flagship_gate, reasons, evidence)
 
 interaction_proof = flagship_gate.get("interactionProof") if isinstance(flagship_gate.get("interactionProof"), dict) else {}
 head_proofs = flagship_gate.get("headProofs") if isinstance(flagship_gate.get("headProofs"), dict) else {}
@@ -696,6 +772,27 @@ evidence["required_screenshots"] = required_screenshots
 evidence["missing_screenshots"] = missing_screenshots
 evidence["invalid_screenshots"] = invalid_screenshots
 evidence["undersized_screenshots"] = undersized_screenshots
+screenshot_timestamps: Dict[str, str] = {}
+stale_screenshots: List[str] = []
+screenshots_older_than_flagship_receipt: List[str] = []
+flagship_generated_at_raw, flagship_generated_at = payload_generated_at(flagship_gate)
+evidence["flagship_gate_reference_generated_at"] = flagship_generated_at_raw
+for name in required_screenshots:
+    screenshot_path = screenshot_dir / name
+    if not screenshot_path.is_file():
+        continue
+    screenshot_mtime = datetime.fromtimestamp(screenshot_path.stat().st_mtime, timezone.utc)
+    screenshot_timestamps[name] = screenshot_mtime.isoformat().replace("+00:00", "Z")
+    screenshot_age_seconds = max(0, int((datetime.now(timezone.utc) - screenshot_mtime).total_seconds()))
+    if screenshot_age_seconds > DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS:
+        stale_screenshots.append(f"{name} ({screenshot_age_seconds}s old)")
+    if flagship_generated_at is not None:
+        skew_seconds = int((flagship_generated_at - screenshot_mtime).total_seconds())
+        if skew_seconds > DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS:
+            screenshots_older_than_flagship_receipt.append(f"{name} ({skew_seconds}s older)")
+evidence["screenshot_timestamps"] = screenshot_timestamps
+evidence["stale_screenshots"] = stale_screenshots
+evidence["screenshots_older_than_flagship_receipt"] = screenshots_older_than_flagship_receipt
 if missing_screenshots:
     reasons.append("Visual familiarity screenshots are missing: " + ", ".join(missing_screenshots))
 if invalid_screenshots:
@@ -710,6 +807,15 @@ if undersized_screenshots:
             f"{name} ({size['width']}x{size['height']})"
             for name, size in undersized_screenshots.items()
         )
+    )
+if stale_screenshots:
+    reasons.append(
+        "Visual familiarity screenshots are stale: " + ", ".join(stale_screenshots)
+    )
+if screenshots_older_than_flagship_receipt:
+    reasons.append(
+        "Visual familiarity screenshots predate the flagship release gate receipt beyond the allowed skew: "
+        + ", ".join(screenshots_older_than_flagship_receipt)
     )
 
 navigator_text = navigator_axaml_path.read_text(encoding="utf-8") if navigator_axaml_path.is_file() else ""
