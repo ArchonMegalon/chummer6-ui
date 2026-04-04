@@ -37,6 +37,19 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_unexpected_desktop_tuple_coverage_keys()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "bonus_noncanonical_tuple_coverage_key");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject unexpected desktopTupleCoverage keys");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit unexpected desktopTupleCoverage key marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage has unexpected keys:");
+    }
+
+    [TestMethod]
     public void Desktop_executable_gate_fail_closes_when_flagship_release_lock_is_still_active_after_wait_window()
     {
         string repoRoot = FindRepoRoot();
