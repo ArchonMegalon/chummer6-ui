@@ -141,7 +141,7 @@ if ! rg -n '^# Compatibility Cargo$|`Chummer/`|`ChummerDataViewer/`|`TextblockCo
   exit 12
 fi
 
-if ! rg -n 'b3-build-lab-check\.sh|b10-contact-network-check\.sh|b9-campaign-journal-check\.sh|b8-runtime-inspector-check\.sh|b12-generated-asset-dispatch-check\.sh|b11-npc-persona-studio-check\.sh|b4-gm-board-spider-feed-check\.sh|b13-accessibility-signoff-check\.sh|b14-flagship-ui-release-gate\.sh|b7-browser-isolation-check\.sh|b2-browse-virtualization-check\.sh|RulesetExplainRenderer\.cs' \
+if ! rg -n 'b3-build-lab-check\.sh|b10-contact-network-check\.sh|b9-campaign-journal-check\.sh|b8-runtime-inspector-check\.sh|b12-generated-asset-dispatch-check\.sh|b11-npc-persona-studio-check\.sh|b4-gm-board-spider-feed-check\.sh|b13-accessibility-signoff-check\.sh|b14-flagship-ui-release-gate\.sh|materialize-desktop-executable-exit-gate\.sh|b7-browser-isolation-check\.sh|b2-browse-virtualization-check\.sh|RulesetExplainRenderer\.cs' \
   docs/WORKBENCH_RELEASE_SIGNOFF.md >/dev/null; then
   echo "[verify] FAIL: workbench release signoff must keep E0/F0 evidence explicit." >&2
   exit 13
