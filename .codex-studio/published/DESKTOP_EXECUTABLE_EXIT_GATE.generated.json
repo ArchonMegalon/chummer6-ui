@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-04-04T19:56:30.542147Z",
-  "generatedAt": "2026-04-04T19:56:30.542147Z",
+  "generated_at": "2026-04-04T20:13:29.867285Z",
+  "generatedAt": "2026-04-04T20:13:29.867285Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
   "channelId": "docker",
   "releaseVersion": "local-docker",
@@ -268,13 +268,13 @@
     "release_gate_lock_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/locks/b14-flagship-ui-release-gate.lock",
     "flagship UI release gate proof_generated_at_alias_conflict": false,
     "flagship UI release gate proof_generated_at": "2026-04-04T13:25:56.555058Z",
-    "flagship UI release gate proof_age_seconds": 23433,
+    "flagship UI release gate proof_age_seconds": 24453,
     "desktop visual familiarity gate proof_generated_at_alias_conflict": false,
     "desktop visual familiarity gate proof_generated_at": "2026-04-04T19:52:46.965337Z",
-    "desktop visual familiarity gate proof_age_seconds": 223,
+    "desktop visual familiarity gate proof_age_seconds": 1242,
     "desktop workflow execution gate proof_generated_at_alias_conflict": false,
     "desktop workflow execution gate proof_generated_at": "2026-04-04T19:52:47.195724Z",
-    "desktop workflow execution gate proof_age_seconds": 223,
+    "desktop workflow execution gate proof_age_seconds": 1242,
     "flagship_status": "pass",
     "visual_familiarity_status": "pass",
     "workflow_execution_status": "pass",
@@ -403,11 +403,11 @@
     "release_channel_status": "published",
     "release_channel_channel_id": "docker",
     "release_channel_version": "local-docker",
-    "release_channel_generated_at": "2026-04-04T18:37:08Z",
+    "release_channel_generated_at": "2026-04-04T20:06:45Z",
     "release_channel_generated_at_alias_conflict": false,
     "release_channel_freshness_max_age_seconds": 86400,
     "release_channel_freshness_max_future_skew_seconds": 300,
-    "release_channel_age_seconds": 4762,
+    "release_channel_age_seconds": 404,
     "release_channel_tuple_coverage_unexpected_keys": [],
     "desktopTupleCoverage.requiredDesktopPlatforms_normalized": [
       "linux",
@@ -639,6 +639,10 @@
     "release_channel_external_proof_request_row_invalid_required_host": [],
     "release_channel_external_proof_request_row_required_proofs_invalid_indexes": [],
     "release_channel_external_proof_request_row_required_proofs_mismatch": [],
+    "release_channel_external_proof_request_row_receipt_contract_invalid_indexes": [],
+    "release_channel_external_proof_request_row_receipt_contract_mismatch": [],
+    "release_channel_external_proof_request_row_proof_capture_commands_invalid_indexes": [],
+    "release_channel_external_proof_request_row_proof_capture_commands_mismatch": [],
     "release_channel_external_proof_request_rows_reported": [
       {
         "tupleId": "avalonia:osx-arm64:macos",
@@ -653,7 +657,23 @@
         "expectedArtifactId": "avalonia-osx-arm64-installer",
         "expectedInstallerFileName": "chummer-avalonia-osx-arm64-installer.dmg",
         "expectedPublicInstallRoute": "/downloads/install/avalonia-osx-arm64-installer",
-        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
+        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "startupSmokeReceiptContract": {
+          "statusAnyOf": [
+            "pass",
+            "passed",
+            "ready"
+          ],
+          "readyCheckpoint": "pre_ui_event_loop",
+          "headId": "avalonia",
+          "platform": "macos",
+          "rid": "osx-arm64",
+          "hostClassContains": "macos"
+        },
+        "proofCaptureCommands": [
+          "cd /docker/chummercomplete/chummer6-ui && CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS=macos-host ./scripts/run-desktop-startup-smoke.sh /docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg avalonia osx-arm64 Chummer.Avalonia /docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke",
+          "cd /docker/chummercomplete/chummer6-ui && ./scripts/generate-releases-manifest.sh"
+        ]
       },
       {
         "tupleId": "blazor-desktop:osx-arm64:macos",
@@ -668,7 +688,23 @@
         "expectedArtifactId": "blazor-desktop-osx-arm64-installer",
         "expectedInstallerFileName": "chummer-blazor-desktop-osx-arm64-installer.dmg",
         "expectedPublicInstallRoute": "/downloads/install/blazor-desktop-osx-arm64-installer",
-        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json"
+        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+        "startupSmokeReceiptContract": {
+          "statusAnyOf": [
+            "pass",
+            "passed",
+            "ready"
+          ],
+          "readyCheckpoint": "pre_ui_event_loop",
+          "headId": "blazor-desktop",
+          "platform": "macos",
+          "rid": "osx-arm64",
+          "hostClassContains": "macos"
+        },
+        "proofCaptureCommands": [
+          "cd /docker/chummercomplete/chummer6-ui && CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS=macos-host ./scripts/run-desktop-startup-smoke.sh /docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-blazor-desktop-osx-arm64-installer.dmg blazor-desktop osx-arm64 Chummer.Blazor.Desktop /docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke",
+          "cd /docker/chummercomplete/chummer6-ui && ./scripts/generate-releases-manifest.sh"
+        ]
       },
       {
         "tupleId": "avalonia:win-x64:windows",
@@ -683,7 +719,23 @@
         "expectedArtifactId": "avalonia-win-x64-installer",
         "expectedInstallerFileName": "chummer-avalonia-win-x64-installer.exe",
         "expectedPublicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
-        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-win-x64.receipt.json"
+        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+        "startupSmokeReceiptContract": {
+          "statusAnyOf": [
+            "pass",
+            "passed",
+            "ready"
+          ],
+          "readyCheckpoint": "pre_ui_event_loop",
+          "headId": "avalonia",
+          "platform": "windows",
+          "rid": "win-x64",
+          "hostClassContains": "windows"
+        },
+        "proofCaptureCommands": [
+          "cd /docker/chummercomplete/chummer6-ui && CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS=windows-host ./scripts/run-desktop-startup-smoke.sh /docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe avalonia win-x64 Chummer.Avalonia.exe /docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke",
+          "cd /docker/chummercomplete/chummer6-ui && ./scripts/generate-releases-manifest.sh"
+        ]
       },
       {
         "tupleId": "blazor-desktop:win-x64:windows",
@@ -698,7 +750,23 @@
         "expectedArtifactId": "blazor-desktop-win-x64-installer",
         "expectedInstallerFileName": "chummer-blazor-desktop-win-x64-installer.exe",
         "expectedPublicInstallRoute": "/downloads/install/blazor-desktop-win-x64-installer",
-        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-blazor-desktop-win-x64.receipt.json"
+        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-blazor-desktop-win-x64.receipt.json",
+        "startupSmokeReceiptContract": {
+          "statusAnyOf": [
+            "pass",
+            "passed",
+            "ready"
+          ],
+          "readyCheckpoint": "pre_ui_event_loop",
+          "headId": "blazor-desktop",
+          "platform": "windows",
+          "rid": "win-x64",
+          "hostClassContains": "windows"
+        },
+        "proofCaptureCommands": [
+          "cd /docker/chummercomplete/chummer6-ui && CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS=windows-host ./scripts/run-desktop-startup-smoke.sh /docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-blazor-desktop-win-x64-installer.exe blazor-desktop win-x64 Chummer.Blazor.Desktop.exe /docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke",
+          "cd /docker/chummercomplete/chummer6-ui && ./scripts/generate-releases-manifest.sh"
+        ]
       }
     ],
     "release_channel_external_proof_request_tuple_ids_reported": [
@@ -857,7 +925,7 @@
         "status": "failed",
         "windows desktop exit gate proof_generated_at_alias_conflict": false,
         "windows desktop exit gate proof_generated_at": "2026-04-04T19:54:18Z",
-        "windows desktop exit gate proof_age_seconds": 132,
+        "windows desktop exit gate proof_age_seconds": 1151,
         "contract_name": "chummer6-ui.windows_desktop_exit_gate",
         "receipt_head": {
           "app_key": "avalonia",
@@ -924,7 +992,7 @@
         "status": "failed",
         "windows desktop exit gate proof_generated_at_alias_conflict": false,
         "windows desktop exit gate proof_generated_at": "2026-04-04T19:55:46Z",
-        "windows desktop exit gate proof_age_seconds": 44,
+        "windows desktop exit gate proof_age_seconds": 1063,
         "contract_name": "chummer6-ui.windows_desktop_exit_gate",
         "receipt_head": {
           "app_key": "blazor-desktop",
@@ -1109,7 +1177,23 @@
         "expectedArtifactId": "avalonia-osx-arm64-installer",
         "expectedInstallerFileName": "chummer-avalonia-osx-arm64-installer.dmg",
         "expectedPublicInstallRoute": "/downloads/install/avalonia-osx-arm64-installer",
-        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
+        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "startupSmokeReceiptContract": {
+          "statusAnyOf": [
+            "pass",
+            "passed",
+            "ready"
+          ],
+          "readyCheckpoint": "pre_ui_event_loop",
+          "headId": "avalonia",
+          "platform": "macos",
+          "rid": "osx-arm64",
+          "hostClassContains": "macos"
+        },
+        "proofCaptureCommands": [
+          "cd /docker/chummercomplete/chummer6-ui && CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS=macos-host ./scripts/run-desktop-startup-smoke.sh /docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg avalonia osx-arm64 Chummer.Avalonia /docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke",
+          "cd /docker/chummercomplete/chummer6-ui && ./scripts/generate-releases-manifest.sh"
+        ]
       },
       {
         "tupleId": "blazor-desktop:osx-arm64:macos",
@@ -1124,7 +1208,23 @@
         "expectedArtifactId": "blazor-desktop-osx-arm64-installer",
         "expectedInstallerFileName": "chummer-blazor-desktop-osx-arm64-installer.dmg",
         "expectedPublicInstallRoute": "/downloads/install/blazor-desktop-osx-arm64-installer",
-        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json"
+        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+        "startupSmokeReceiptContract": {
+          "statusAnyOf": [
+            "pass",
+            "passed",
+            "ready"
+          ],
+          "readyCheckpoint": "pre_ui_event_loop",
+          "headId": "blazor-desktop",
+          "platform": "macos",
+          "rid": "osx-arm64",
+          "hostClassContains": "macos"
+        },
+        "proofCaptureCommands": [
+          "cd /docker/chummercomplete/chummer6-ui && CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS=macos-host ./scripts/run-desktop-startup-smoke.sh /docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-blazor-desktop-osx-arm64-installer.dmg blazor-desktop osx-arm64 Chummer.Blazor.Desktop /docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke",
+          "cd /docker/chummercomplete/chummer6-ui && ./scripts/generate-releases-manifest.sh"
+        ]
       },
       {
         "tupleId": "avalonia:win-x64:windows",
@@ -1139,7 +1239,23 @@
         "expectedArtifactId": "avalonia-win-x64-installer",
         "expectedInstallerFileName": "chummer-avalonia-win-x64-installer.exe",
         "expectedPublicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
-        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-win-x64.receipt.json"
+        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+        "startupSmokeReceiptContract": {
+          "statusAnyOf": [
+            "pass",
+            "passed",
+            "ready"
+          ],
+          "readyCheckpoint": "pre_ui_event_loop",
+          "headId": "avalonia",
+          "platform": "windows",
+          "rid": "win-x64",
+          "hostClassContains": "windows"
+        },
+        "proofCaptureCommands": [
+          "cd /docker/chummercomplete/chummer6-ui && CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS=windows-host ./scripts/run-desktop-startup-smoke.sh /docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe avalonia win-x64 Chummer.Avalonia.exe /docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke",
+          "cd /docker/chummercomplete/chummer6-ui && ./scripts/generate-releases-manifest.sh"
+        ]
       },
       {
         "tupleId": "blazor-desktop:win-x64:windows",
@@ -1154,7 +1270,23 @@
         "expectedArtifactId": "blazor-desktop-win-x64-installer",
         "expectedInstallerFileName": "chummer-blazor-desktop-win-x64-installer.exe",
         "expectedPublicInstallRoute": "/downloads/install/blazor-desktop-win-x64-installer",
-        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-blazor-desktop-win-x64.receipt.json"
+        "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-blazor-desktop-win-x64.receipt.json",
+        "startupSmokeReceiptContract": {
+          "statusAnyOf": [
+            "pass",
+            "passed",
+            "ready"
+          ],
+          "readyCheckpoint": "pre_ui_event_loop",
+          "headId": "blazor-desktop",
+          "platform": "windows",
+          "rid": "win-x64",
+          "hostClassContains": "windows"
+        },
+        "proofCaptureCommands": [
+          "cd /docker/chummercomplete/chummer6-ui && CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS=windows-host ./scripts/run-desktop-startup-smoke.sh /docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-blazor-desktop-win-x64-installer.exe blazor-desktop win-x64 Chummer.Blazor.Desktop.exe /docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke",
+          "cd /docker/chummercomplete/chummer6-ui && ./scripts/generate-releases-manifest.sh"
+        ]
       }
     ],
     "release_channel_external_proof_request_tuple_ids_expected": [
@@ -1469,8 +1601,8 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for avalonia:linux-x64_generated_at_alias_conflict": false,
-        "linux desktop exit gate proof for avalonia:linux-x64_generated_at": "2026-04-04T19:54:17Z",
-        "linux desktop exit gate proof for avalonia:linux-x64_age_seconds": 133,
+        "linux desktop exit gate proof for avalonia:linux-x64_generated_at": "2026-04-04T20:10:01Z",
+        "linux desktop exit gate proof for avalonia:linux-x64_age_seconds": 208,
         "contract_name": "chummer6-ui.linux_desktop_exit_gate",
         "gate_reasons": [],
         "receipt_head": {
@@ -1498,13 +1630,13 @@
           "updateFeedUrl": null,
           "embeddedRuntimeBundleHeadId": null,
           "compatibilityState": "compatible",
-          "installAccessClass": "open_public",
           "channelId": "docker",
           "channel": "docker",
           "version": "local-docker",
           "releaseVersion": "local-docker",
-          "generated_at": "2026-04-04T18:37:08Z",
-          "generatedAt": "2026-04-04T18:37:08Z"
+          "installAccessClass": "open_public",
+          "generated_at": "2026-04-04T20:06:45Z",
+          "generatedAt": "2026-04-04T20:06:45Z"
         },
         "gate_head_channel_id": "docker",
         "gate_head_channel_id_alias_conflict": false,
@@ -1520,18 +1652,18 @@
         "host_supports_linux_startup_smoke": true,
         "startup_smoke_external_blocker": "",
         "checks_startup_smoke_receipt_found": true,
-        "checks_startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+        "checks_startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
         "unit_test_summary": {
           "total": 14,
           "passed": 14,
           "failed": 0,
           "skipped": 0
         },
-        "primary_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+        "primary_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
         "primary_receipt_file_exists": true,
         "trusted_path_scope": {
           "linux_startup_smoke:avalonia": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1539,7 +1671,7 @@
             ]
           },
           "linux_installer_capture:avalonia:install_launch_capture_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1547,7 +1679,7 @@
             ]
           },
           "linux_installer_capture:avalonia:install_wrapper_capture_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1555,7 +1687,7 @@
             ]
           },
           "linux_installer_capture:avalonia:install_desktop_entry_capture_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1563,7 +1695,7 @@
             ]
           },
           "linux_installer_capture:avalonia:install_verification_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/install-verification-avalonia-linux-x64.json",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/install-verification-avalonia-linux-x64.json",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1587,8 +1719,8 @@
         "primary_receipt_version": "local-docker",
         "primary_receipt_version_alias_conflict": false,
         "primary_receipt_timestamp_alias_conflict": false,
-        "primary_receipt_recorded_at": "2026-04-04T19:54:15.6228586+00:00",
-        "primary_receipt_age_seconds": 134,
+        "primary_receipt_recorded_at": "2026-04-04T20:09:59.3766355+00:00",
+        "primary_receipt_age_seconds": 210,
         "expected_artifact_source": "",
         "expected_installer_file_name": "chummer-avalonia-linux-x64-installer.deb",
         "quarantined_installer_candidates": [],
@@ -1600,21 +1732,21 @@
         "release_channel_linux_artifact_version_alias_conflict": false,
         "release_channel_linux_artifact_arch": "x64",
         "release_channel_linux_artifact_arch_alias_conflict": false,
-        "release_channel_linux_artifact_generated_at": "2026-04-04T18:37:08Z",
+        "release_channel_linux_artifact_generated_at": "2026-04-04T20:06:45Z",
         "release_channel_linux_artifact_generated_at_valid": true,
         "release_channel_linux_artifact_generated_at_alias_conflict": false,
         "expected_linux_shelf_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-linux-x64-installer.deb",
-        "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
-        "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
-        "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
-        "install_verification_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.zw3bV7/startup-smoke-installer/install-verification-avalonia-linux-x64.json"
+        "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
+        "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
+        "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
+        "install_verification_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.AMoghv/startup-smoke-installer/install-verification-avalonia-linux-x64.json"
       },
       "blazor-desktop:linux-x64": {
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for blazor-desktop:linux-x64_generated_at_alias_conflict": false,
-        "linux desktop exit gate proof for blazor-desktop:linux-x64_generated_at": "2026-04-04T19:55:45Z",
-        "linux desktop exit gate proof for blazor-desktop:linux-x64_age_seconds": 45,
+        "linux desktop exit gate proof for blazor-desktop:linux-x64_generated_at": "2026-04-04T20:13:18Z",
+        "linux desktop exit gate proof for blazor-desktop:linux-x64_age_seconds": 11,
         "contract_name": "chummer6-ui.linux_desktop_exit_gate",
         "gate_reasons": [],
         "receipt_head": {
@@ -1642,13 +1774,13 @@
           "updateFeedUrl": null,
           "embeddedRuntimeBundleHeadId": null,
           "compatibilityState": "compatible",
-          "installAccessClass": "open_public",
           "channelId": "docker",
           "channel": "docker",
           "version": "local-docker",
           "releaseVersion": "local-docker",
-          "generated_at": "2026-04-04T18:37:08Z",
-          "generatedAt": "2026-04-04T18:37:08Z"
+          "installAccessClass": "open_public",
+          "generated_at": "2026-04-04T20:06:45Z",
+          "generatedAt": "2026-04-04T20:06:45Z"
         },
         "gate_head_channel_id": "docker",
         "gate_head_channel_id_alias_conflict": false,
@@ -1664,18 +1796,18 @@
         "host_supports_linux_startup_smoke": true,
         "startup_smoke_external_blocker": "",
         "checks_startup_smoke_receipt_found": true,
-        "checks_startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+        "checks_startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/startup-smoke-blazor-desktop-linux-x64.receipt.json",
         "unit_test_summary": {
           "total": 14,
           "passed": 14,
           "failed": 0,
           "skipped": 0
         },
-        "primary_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+        "primary_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/startup-smoke-blazor-desktop-linux-x64.receipt.json",
         "primary_receipt_file_exists": true,
         "trusted_path_scope": {
           "linux_startup_smoke:blazor-desktop": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/startup-smoke-blazor-desktop-linux-x64.receipt.json",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1683,7 +1815,7 @@
             ]
           },
           "linux_installer_capture:blazor-desktop:install_launch_capture_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/installed-launch-blazor-desktop-linux-x64.bin",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/installed-launch-blazor-desktop-linux-x64.bin",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1691,7 +1823,7 @@
             ]
           },
           "linux_installer_capture:blazor-desktop:install_wrapper_capture_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/installed-wrapper-blazor-desktop-linux-x64.sh",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/installed-wrapper-blazor-desktop-linux-x64.sh",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1699,7 +1831,7 @@
             ]
           },
           "linux_installer_capture:blazor-desktop:install_desktop_entry_capture_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/installed-desktop-entry-blazor-desktop-linux-x64.desktop",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/installed-desktop-entry-blazor-desktop-linux-x64.desktop",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1707,7 +1839,7 @@
             ]
           },
           "linux_installer_capture:blazor-desktop:install_verification_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/install-verification-blazor-desktop-linux-x64.json",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/install-verification-blazor-desktop-linux-x64.json",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1731,8 +1863,8 @@
         "primary_receipt_version": "local-docker",
         "primary_receipt_version_alias_conflict": false,
         "primary_receipt_timestamp_alias_conflict": false,
-        "primary_receipt_recorded_at": "2026-04-04T19:55:43.6373533+00:00",
-        "primary_receipt_age_seconds": 46,
+        "primary_receipt_recorded_at": "2026-04-04T20:13:16.6644845+00:00",
+        "primary_receipt_age_seconds": 13,
         "expected_artifact_source": "",
         "expected_installer_file_name": "chummer-blazor-desktop-linux-x64-installer.deb",
         "quarantined_installer_candidates": [
@@ -1747,14 +1879,14 @@
         "release_channel_linux_artifact_version_alias_conflict": false,
         "release_channel_linux_artifact_arch": "x64",
         "release_channel_linux_artifact_arch_alias_conflict": false,
-        "release_channel_linux_artifact_generated_at": "2026-04-04T18:37:08Z",
+        "release_channel_linux_artifact_generated_at": "2026-04-04T20:06:45Z",
         "release_channel_linux_artifact_generated_at_valid": true,
         "release_channel_linux_artifact_generated_at_alias_conflict": false,
         "expected_linux_shelf_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
-        "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/installed-launch-blazor-desktop-linux-x64.bin",
-        "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/installed-wrapper-blazor-desktop-linux-x64.sh",
-        "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/installed-desktop-entry-blazor-desktop-linux-x64.desktop",
-        "install_verification_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MXdJYd/startup-smoke-installer/install-verification-blazor-desktop-linux-x64.json"
+        "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/installed-launch-blazor-desktop-linux-x64.bin",
+        "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/installed-wrapper-blazor-desktop-linux-x64.sh",
+        "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/installed-desktop-entry-blazor-desktop-linux-x64.desktop",
+        "install_verification_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.A3INr8/startup-smoke-installer/install-verification-blazor-desktop-linux-x64.json"
       }
     },
     "linux_statuses": {
@@ -1798,7 +1930,7 @@
         "status": "failed",
         "macOS desktop exit gate proof for avalonia (osx-arm64)_generated_at_alias_conflict": false,
         "macOS desktop exit gate proof for avalonia (osx-arm64)_generated_at": "2026-04-04T19:54:18Z",
-        "macOS desktop exit gate proof for avalonia (osx-arm64)_age_seconds": 132,
+        "macOS desktop exit gate proof for avalonia (osx-arm64)_age_seconds": 1151,
         "contract_name": "chummer6-ui.macos_desktop_exit_gate",
         "receipt_head": {
           "app_key": "avalonia",
@@ -1881,7 +2013,7 @@
         "status": "failed",
         "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_generated_at_alias_conflict": false,
         "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_generated_at": "2026-04-04T19:55:46Z",
-        "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_age_seconds": 44,
+        "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_age_seconds": 1063,
         "contract_name": "chummer6-ui.macos_desktop_exit_gate",
         "receipt_head": {
           "app_key": "blazor-desktop",
