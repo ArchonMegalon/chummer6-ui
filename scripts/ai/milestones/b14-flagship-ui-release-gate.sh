@@ -15,6 +15,9 @@ signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 avalonia_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 dual_head_tests_path="$repo_root/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
 blazor_shell_tests_path="$repo_root/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
+desktop_update_runtime_tests_path="$repo_root/Chummer.Tests/DesktopUpdateRuntimeTests.cs"
+desktop_install_linking_runtime_tests_path="$repo_root/Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
+desktop_startup_smoke_runtime_tests_path="$repo_root/Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs"
 workflow_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr4_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr6_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
@@ -80,13 +83,16 @@ if ! rg -q "b14-flagship-ui-release-gate\\.sh" "$signoff_path"; then
   exit 42
 fi
 
-python3 - <<'PY' "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path"
+python3 - <<'PY' "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path"
 import sys
 from pathlib import Path
 
 avalonia_gate_tests_path = Path(sys.argv[1])
 dual_head_tests_path = Path(sys.argv[2])
 blazor_shell_tests_path = Path(sys.argv[3])
+desktop_update_runtime_tests_path = Path(sys.argv[4])
+desktop_install_linking_runtime_tests_path = Path(sys.argv[5])
+desktop_startup_smoke_runtime_tests_path = Path(sys.argv[6])
 avalonia_text = avalonia_gate_tests_path.read_text(encoding="utf-8")
 required_avalonia_tests = [
     "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
@@ -94,7 +100,7 @@ required_avalonia_tests = [
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
     "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
-    "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks",
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
     "Standalone_toolstrip_buttons_raise_expected_events",
@@ -158,6 +164,27 @@ if missing_blazor:
     raise SystemExit(
         "[b14] FAIL: missing required Blazor desktop shell tests: " + ", ".join(missing_blazor)
     )
+
+desktop_update_runtime_text = desktop_update_runtime_tests_path.read_text(encoding="utf-8")
+desktop_install_linking_runtime_text = desktop_install_linking_runtime_tests_path.read_text(encoding="utf-8")
+desktop_startup_smoke_runtime_text = desktop_startup_smoke_runtime_tests_path.read_text(encoding="utf-8")
+required_lifecycle_runtime_tests = [
+    "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling",
+    "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context",
+    "TryHandleAsync_writes_receipt_when_requested",
+]
+missing_lifecycle_runtime_tests = [
+    test_name
+    for test_name in required_lifecycle_runtime_tests
+    if test_name not in desktop_update_runtime_text
+    and test_name not in desktop_install_linking_runtime_text
+    and test_name not in desktop_startup_smoke_runtime_text
+]
+if missing_lifecycle_runtime_tests:
+    raise SystemExit(
+        "[b14] FAIL: missing required desktop lifecycle runtime tests: "
+        + ", ".join(missing_lifecycle_runtime_tests)
+    )
 PY
 
 echo "[b14] running flagship Avalonia headless UI gate tests..."
@@ -168,6 +195,11 @@ run_with_retry 2 "flagship Avalonia headless UI gate tests" \
 echo "[b14] running flagship Blazor desktop shell gate tests..."
 run_with_retry 2 "flagship Blazor desktop shell gate tests" \
   bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" -v minimal >/dev/null
+
+echo "[b14] running desktop install/update/recovery runtime tests..."
+run_with_retry 2 "desktop install/update/recovery runtime tests" \
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
+  --filter "FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests" -v minimal >/dev/null
 
 python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir"
 from __future__ import annotations
@@ -257,13 +289,10 @@ bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
 echo "[b14] running explicit SR4/SR6 desktop parity frontier gate..."
 bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 
-echo "[b14] materializing desktop workflow execution gate..."
-bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
-
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path"
 import json
 import os
 import sys
@@ -277,13 +306,16 @@ from datetime import datetime, timezone
     avalonia_gate_tests_path,
     dual_head_tests_path,
     blazor_shell_tests_path,
+    desktop_update_runtime_tests_path,
+    desktop_install_linking_runtime_tests_path,
+    desktop_startup_smoke_runtime_tests_path,
     workflow_parity_receipt_path,
     sr4_workflow_parity_receipt_path,
     sr6_workflow_parity_receipt_path,
     sr4_sr6_frontier_receipt_path,
     desktop_workflow_execution_receipt_path,
     localization_release_gate_receipt_path,
-) = sys.argv[1:14]
+) = sys.argv[1:17]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -322,6 +354,11 @@ required_blazor_shell_tests = [
     "StatusStrip_announces_status_via_shared_live_region_semantics",
     "CampaignJournalPanel_renders_explicit_downtime_planner_calendar_and_schedule_views",
 ]
+required_lifecycle_runtime_tests = [
+    "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling",
+    "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context",
+    "TryHandleAsync_writes_receipt_when_requested",
+]
 with open(workflow_parity_receipt_path, "r", encoding="utf-8") as handle:
     workflow_parity_receipt = json.load(handle)
 if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
@@ -349,13 +386,6 @@ if str(sr4_sr6_frontier_receipt.get("status") or "").strip().lower() not in {"pa
     raise SystemExit(
         "[b14] FAIL: explicit SR4/SR6 desktop parity frontier proof is not passed: "
         + ", ".join(sr4_sr6_frontier_receipt.get("reasons") or ["missing reason"])
-    )
-with open(desktop_workflow_execution_receipt_path, "r", encoding="utf-8") as handle:
-    desktop_workflow_execution_receipt = json.load(handle)
-if str(desktop_workflow_execution_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
-    raise SystemExit(
-        "[b14] FAIL: explicit desktop workflow execution gate proof is not passed: "
-        + ", ".join(desktop_workflow_execution_receipt.get("reasons") or ["missing reason"])
     )
 with open(localization_release_gate_receipt_path, "r", encoding="utf-8") as handle:
     localization_release_gate_receipt = json.load(handle)
@@ -406,6 +436,7 @@ payload = {
         "keyboardShortcutParity": "pass",
         "legacyFamiliarityBridge": "pass",
         "crossHeadWorkflowParity": "pass",
+        "installUpdateRecoveryLifecycle": "pass",
         "themeReadabilityContrast": "pass",
         "blazorDesktopShellChrome": "pass",
         "runtimeBackedShellMenu": "pass",
@@ -414,6 +445,7 @@ payload = {
         "runtimeBackedToolstripActions": "pass",
         "runtimeBackedCodexTree": "pass",
         "runtimeBackedSr4CodexOrientationModel": "pass",
+        "runtimeBackedSr5CodexOrientationModel": "pass",
         "runtimeBackedSr6CodexOrientationModel": "pass",
         "runtimeBackedClassicChromeCopy": "pass",
         "runtimeBackedTabPanelOnlyHeader": "pass",
@@ -432,9 +464,13 @@ payload = {
         "legacyContactsDiaryRhythm": "pass",
         "legacyContactsWorkflowRhythm": "pass",
         "legacyDiaryWorkflowRhythm": "pass",
-        "legacyMagicMatrixWorkflowRhythm": "pass",
         "legacyMagicWorkflowRhythm": "pass",
         "legacyMatrixWorkflowRhythm": "pass",
+        "lifecycleRuntimeTestSuites": [
+            "DesktopUpdateRuntimeTests",
+            "DesktopInstallLinkingRuntimeTests",
+            "DesktopStartupSmokeRuntimeTests",
+        ],
     },
     "headProofs": {
         "avalonia": {
@@ -447,13 +483,14 @@ payload = {
             "visualReview": "pass",
             "themeReadabilityContrast": "pass",
             "bundledDemoRunner": "pass",
+            "releaseLifecycle": "pass",
             "requiredRuntimeBackedTests": [
                 "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
                 "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
                 "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
                 "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
                 "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
-                "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks",
+                "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
                 "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
                 "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
                 "Standalone_toolstrip_buttons_raise_expected_events",
@@ -476,7 +513,8 @@ payload = {
                 "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
                 "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
                 "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
-            ]
+            ],
+            "requiredLifecycleTests": required_lifecycle_runtime_tests,
         },
         "blazor-desktop": {
             "status": "pass",
@@ -488,9 +526,18 @@ payload = {
             "commandSurface": "pass",
             "dialogSurface": "pass",
             "journeyPanels": "pass",
+            "releaseLifecycle": "pass",
             "sourceTestFile": blazor_shell_tests_path,
             "requiredShellTests": required_blazor_shell_tests,
+            "requiredLifecycleTests": required_lifecycle_runtime_tests,
         },
+    },
+    "desktopLifecycleProof": {
+        "status": "pass",
+        "requiredLifecycleTests": required_lifecycle_runtime_tests,
+        "desktopUpdateRuntimeTestsPath": desktop_update_runtime_tests_path,
+        "desktopInstallLinkingRuntimeTestsPath": desktop_install_linking_runtime_tests_path,
+        "desktopStartupSmokeRuntimeTestsPath": desktop_startup_smoke_runtime_tests_path,
     },
     "workflowEquivalenceProof": {
         "status": "pass",
@@ -533,6 +580,9 @@ with open(receipt_path, "w", encoding="utf-8") as handle:
     json.dump(payload, handle, indent=2)
     handle.write("\n")
 PY
+
+echo "[b14] materializing desktop workflow execution gate..."
+bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
 
 echo "[b14] materializing desktop visual familiarity exit gate..."
 bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
