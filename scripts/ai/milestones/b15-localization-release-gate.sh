@@ -107,7 +107,21 @@ locale_summary = []
 status = "pass"
 blocking_findings: list[str] = []
 translation_backlog_findings: list[str] = []
-for locale in non_default_locales:
+for locale in shipping_locales:
+    if locale == "en-us":
+        locale_summary.append(
+            {
+                "locale": locale,
+                "override_count": len(default_keys),
+                "minimum_override_count": len(default_keys),
+                "default_key_count": len(default_keys),
+                "untranslated_key_count": 0,
+                "missing_release_seed_keys": [],
+                "legacy_xml_present": legacy_language_files[locale]["xml"],
+                "legacy_data_xml_present": legacy_language_files[locale]["data_xml"],
+            }
+        )
+        continue
     override_keys = locale_overrides[locale]
     missing_seed_keys = [key for key in release_seed_keys if key not in override_keys]
     untranslated_key_count = len(default_keys) - len(override_keys)

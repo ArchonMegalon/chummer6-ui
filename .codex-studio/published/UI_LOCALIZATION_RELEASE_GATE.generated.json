@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-04-03T22:59:41Z",
+  "generated_at": "2026-04-04T03:47:12Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -29,6 +29,16 @@
     ]
   },
   "locale_summary": [
+    {
+      "locale": "en-us",
+      "override_count": 383,
+      "minimum_override_count": 383,
+      "default_key_count": 383,
+      "untranslated_key_count": 0,
+      "missing_release_seed_keys": [],
+      "legacy_xml_present": true,
+      "legacy_data_xml_present": true
+    },
     {
       "locale": "de-de",
       "override_count": 383,
