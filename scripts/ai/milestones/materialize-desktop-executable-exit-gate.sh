@@ -264,6 +264,7 @@ def normalize_promoted_platform_heads(
         reasons.append(f"{field_label} must be an object when present.")
         return {}
     normalized: Dict[str, List[str]] = {}
+    raw_platform_keys_by_normalized: Dict[str, List[str]] = {}
     for raw_platform, raw_heads in values.items():
         if not isinstance(raw_platform, str):
             reasons.append(f"{field_label} contains a non-string platform key.")
@@ -275,6 +276,12 @@ def normalize_promoted_platform_heads(
         if allowed_platform_tokens is not None and platform_token not in allowed_platform_tokens:
             reasons.append(f"{field_label} contains unsupported platform key '{platform_token}'.")
             continue
+        raw_platform_keys_by_normalized.setdefault(platform_token, []).append(raw_platform)
+        if len(raw_platform_keys_by_normalized[platform_token]) > 1:
+            reasons.append(
+                f"{field_label} contains duplicate normalized platform key '{platform_token}'."
+            )
+            continue
         head_field_label = f"{field_label}.{platform_token}"
         normalized[platform_token] = normalize_required_token_list(
             raw_heads,
@@ -283,6 +290,14 @@ def normalize_promoted_platform_heads(
             reasons,
         )
     evidence[f"{field_label}_normalized"] = normalized
+    evidence[f"{field_label}_raw_platform_keys_by_normalized"] = raw_platform_keys_by_normalized
+    evidence[f"{field_label}_duplicate_normalized_platform_keys"] = sorted(
+        [
+            platform_token
+            for platform_token, raw_keys in raw_platform_keys_by_normalized.items()
+            if len(raw_keys) > 1
+        ]
+    )
     return normalized
 
 
