@@ -2132,6 +2132,7 @@ desktop_install_artifacts = [
 ]
 desktop_install_artifact_channel_ids: List[str] = []
 desktop_install_artifact_versions: List[str] = []
+desktop_install_artifact_missing_head_tokens: List[str] = []
 desktop_install_artifact_missing_channel_tokens: List[str] = []
 desktop_install_artifact_channel_mismatch_tokens: List[str] = []
 desktop_install_artifact_missing_version_tokens: List[str] = []
@@ -2146,8 +2147,11 @@ for desktop_install_artifact in desktop_install_artifacts:
     artifact_tuple_token = build_install_media_tuple_token(desktop_install_artifact) or str(
         desktop_install_artifact.get("artifactId") or ""
     ).strip()
+    artifact_head = normalize_token(desktop_install_artifact.get("head"))
     desktop_install_artifact_channel_ids.append(artifact_channel_id)
     desktop_install_artifact_versions.append(artifact_version)
+    if not artifact_head:
+        desktop_install_artifact_missing_head_tokens.append(artifact_tuple_token or "<unknown>")
     if not artifact_channel_id:
         desktop_install_artifact_missing_channel_tokens.append(artifact_tuple_token or "<unknown>")
     elif release_channel_channel_id and artifact_channel_id != release_channel_channel_id:
@@ -2161,6 +2165,9 @@ evidence["release_channel_desktop_install_artifact_channel_ids"] = (
 )
 evidence["release_channel_desktop_install_artifact_versions"] = (
     desktop_install_artifact_versions
+)
+evidence["release_channel_desktop_install_artifacts_missing_head"] = (
+    sorted(set(desktop_install_artifact_missing_head_tokens))
 )
 evidence["release_channel_desktop_install_artifacts_missing_channel"] = (
     sorted(set(desktop_install_artifact_missing_channel_tokens))
@@ -2178,6 +2185,12 @@ if desktop_install_artifact_missing_channel_tokens:
     reasons.append(
         "Release channel desktop install artifact(s) are missing channelId/channel: "
         + ", ".join(sorted(set(desktop_install_artifact_missing_channel_tokens)))
+        + "."
+    )
+if desktop_install_artifact_missing_head_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) are missing head: "
+        + ", ".join(sorted(set(desktop_install_artifact_missing_head_tokens)))
         + "."
     )
 if desktop_install_artifact_channel_mismatch_tokens:
