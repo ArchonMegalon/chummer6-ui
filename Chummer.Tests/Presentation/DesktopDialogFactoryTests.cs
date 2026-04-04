@@ -135,7 +135,11 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexAdjacentSr6OracleLane"), "1/2");
         Assert.AreEqual("adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexAdjacentSr6OracleReceipt"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageLane"), "50%");
+        Assert.AreEqual("50% (1/2)", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageCoverage"));
         Assert.AreEqual("online storage lane is partial: 1/2 continuity receipts are current with stale release proof on one required host lane.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageReceipt"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6SupplementLane"));
+        Assert.AreEqual("4/5", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6DesignerCoverage"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexHouseRuleLane"));
         Assert.AreEqual("sr6 successor lane is partial: supplement/governed designers/house-rule posture remains mixed.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6SuccessorReceipt"));
     }
 
