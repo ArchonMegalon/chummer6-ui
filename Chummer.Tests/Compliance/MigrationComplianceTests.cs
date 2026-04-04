@@ -3470,6 +3470,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt operatingSystem is missing for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableGateScriptText, "Release channel Windows artifact arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.");
         StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt channelId does not match release-channel channelId for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.");
@@ -3510,6 +3511,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt operatingSystem is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt arch does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "Release channel macOS artifact arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact channelId/channel does not match promoted release channel.");
         StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt channelId does not match release-channel channelId for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
@@ -3534,6 +3536,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt rid does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "Release channel Linux artifact arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifact_channel_ids");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_channel");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_channel_mismatch");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing channelId/channel:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId:");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass does not identify a Linux host for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt operatingSystem is missing for promoted head");

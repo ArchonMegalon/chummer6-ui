@@ -1098,7 +1098,11 @@ def validate_windows_gate(
         reasons.append("Release channel Windows artifact arch does not match promoted release-channel RID.")
 
     if not policy_missing_release_artifact:
+        channel_artifact_channel_id = normalize_token(
+            channel_artifact.get("channelId") or channel_artifact.get("channel")
+        )
         channel_artifact_arch = normalize_token(channel_artifact.get("arch"))
+        gate_evidence["release_channel_windows_artifact_channel_id"] = channel_artifact_channel_id
         gate_evidence["release_channel_windows_artifact_arch"] = channel_artifact_arch
         if normalize_token(channel_artifact.get("head")) != expected_head:
             reasons.append("Windows gate embedded release_channel_windows_artifact head does not match promoted release channel.")
@@ -1106,6 +1110,8 @@ def validate_windows_gate(
             reasons.append("Windows gate embedded release_channel_windows_artifact RID does not match promoted release channel.")
         if normalize_token(channel_artifact.get("platform")) != "windows":
             reasons.append("Windows gate embedded release_channel_windows_artifact platform is not 'windows'.")
+        if release_channel_id and channel_artifact_channel_id != release_channel_id:
+            reasons.append("Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
             reasons.append("Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.")
         if str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
@@ -1444,7 +1450,11 @@ def validate_macos_gate(
             f"Release channel macOS artifact arch does not match promoted RID for head '{head}' ({rid})."
         )
     if not policy_missing_release_artifact:
+        channel_artifact_channel_id = normalize_token(
+            channel_artifact.get("channelId") or channel_artifact.get("channel")
+        )
         channel_artifact_arch = normalize_token(channel_artifact.get("arch"))
+        gate_evidence["release_channel_macos_artifact_channel_id"] = channel_artifact_channel_id
         gate_evidence["release_channel_macos_artifact_arch"] = channel_artifact_arch
         if normalize_token(channel_artifact.get("head")) != head:
             reasons.append("macOS gate embedded release_channel_macos_artifact head does not match promoted release channel.")
@@ -1452,6 +1462,8 @@ def validate_macos_gate(
             reasons.append("macOS gate embedded release_channel_macos_artifact RID does not match promoted release channel.")
         if normalize_token(channel_artifact.get("platform")) != "macos":
             reasons.append("macOS gate embedded release_channel_macos_artifact platform is not macOS.")
+        if release_channel_id and channel_artifact_channel_id != release_channel_id:
+            reasons.append("macOS gate embedded release_channel_macos_artifact channelId/channel does not match promoted release channel.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
             reasons.append("macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.")
         if expected_file_name and str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
@@ -2118,6 +2130,42 @@ desktop_install_artifacts = [
     if normalize_token(item.get("platform")) in {"linux", "windows", "macos"}
     and is_desktop_install_media(item.get("platform"), item.get("kind"))
 ]
+desktop_install_artifact_channel_ids: List[str] = []
+desktop_install_artifact_missing_channel_tokens: List[str] = []
+desktop_install_artifact_channel_mismatch_tokens: List[str] = []
+for desktop_install_artifact in desktop_install_artifacts:
+    artifact_channel_id = normalize_token(
+        desktop_install_artifact.get("channelId") or desktop_install_artifact.get("channel")
+    )
+    artifact_tuple_token = build_install_media_tuple_token(desktop_install_artifact) or str(
+        desktop_install_artifact.get("artifactId") or ""
+    ).strip()
+    desktop_install_artifact_channel_ids.append(artifact_channel_id)
+    if not artifact_channel_id:
+        desktop_install_artifact_missing_channel_tokens.append(artifact_tuple_token or "<unknown>")
+    elif release_channel_channel_id and artifact_channel_id != release_channel_channel_id:
+        desktop_install_artifact_channel_mismatch_tokens.append(artifact_tuple_token or "<unknown>")
+evidence["release_channel_desktop_install_artifact_channel_ids"] = (
+    desktop_install_artifact_channel_ids
+)
+evidence["release_channel_desktop_install_artifacts_missing_channel"] = (
+    sorted(set(desktop_install_artifact_missing_channel_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_channel_mismatch"] = (
+    sorted(set(desktop_install_artifact_channel_mismatch_tokens))
+)
+if desktop_install_artifact_missing_channel_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) are missing channelId/channel: "
+        + ", ".join(sorted(set(desktop_install_artifact_missing_channel_tokens)))
+        + "."
+    )
+if desktop_install_artifact_channel_mismatch_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId: "
+        + ", ".join(sorted(set(desktop_install_artifact_channel_mismatch_tokens)))
+        + "."
+    )
 duplicate_desktop_install_artifact_tuples = collect_duplicate_install_media_tuples(
     desktop_install_artifacts
 )
