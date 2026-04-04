@@ -230,10 +230,14 @@ evidence: Dict[str, Any] = {
 release_channel = load_json(release_channel_path)
 release_channel_status = str(release_channel.get("status") or "").strip().lower()
 release_channel_id = normalize_token(release_channel.get("channelId") or release_channel.get("channel"))
+release_channel_version = str(release_channel.get("version") or "").strip()
 evidence["release_channel_status"] = release_channel_status
 evidence["release_channel_id"] = release_channel_id
+evidence["release_channel_version"] = release_channel_version
 if release_channel_status != "published":
     reasons.append("Release channel is not published.")
+if not release_channel_version:
+    reasons.append("Release channel is missing version.")
 
 artifacts = [
     item for item in (release_channel.get("artifacts") or [])
@@ -393,12 +397,18 @@ startup_smoke_head = normalize_token(startup_smoke_payload.get("headId"))
 startup_smoke_platform = normalize_token(startup_smoke_payload.get("platform"))
 startup_smoke_arch = normalize_token(startup_smoke_payload.get("arch"))
 startup_smoke_channel = normalize_token(startup_smoke_payload.get("channelId") or startup_smoke_payload.get("channel"))
+startup_smoke_version = str(
+    startup_smoke_payload.get("version")
+    or startup_smoke_payload.get("releaseVersion")
+    or ""
+).strip()
 startup_smoke_host_class = normalize_token(startup_smoke_payload.get("hostClass"))
 startup_smoke_operating_system = str(startup_smoke_payload.get("operatingSystem") or "").strip()
 evidence["startup_smoke_head"] = startup_smoke_head
 evidence["startup_smoke_platform"] = startup_smoke_platform
 evidence["startup_smoke_arch"] = startup_smoke_arch
 evidence["startup_smoke_channel"] = startup_smoke_channel
+evidence["startup_smoke_version"] = startup_smoke_version
 evidence["startup_smoke_host_class"] = startup_smoke_host_class
 evidence["startup_smoke_operating_system"] = startup_smoke_operating_system
 if startup_smoke_receipt_path.is_file() and startup_smoke_head != expected_head:
@@ -415,6 +425,10 @@ if startup_smoke_receipt_path.is_file() and startup_smoke_arch != expected_arch:
     reasons.append(f"Windows startup smoke receipt arch does not match promoted RID {expected_rid}.")
 if startup_smoke_receipt_path.is_file() and release_channel_id and startup_smoke_channel != release_channel_id:
     reasons.append(f"Windows startup smoke receipt channelId does not match release channel {release_channel_id}.")
+if startup_smoke_receipt_path.is_file() and release_channel_version and not startup_smoke_version:
+    reasons.append("Windows startup smoke receipt version is missing.")
+if startup_smoke_receipt_path.is_file() and release_channel_version and startup_smoke_version and startup_smoke_version != release_channel_version:
+    reasons.append(f"Windows startup smoke receipt version does not match release channel {release_channel_version}.")
 
 launch_target_by_head = {
     "avalonia": "Chummer.Avalonia.exe",
@@ -489,6 +503,8 @@ status = "passed" if not reasons else "failed"
 payload = {
     "contract_name": "chummer6-ui.windows_desktop_exit_gate",
     "generated_at": now_iso(),
+    "channelId": release_channel_id,
+    "releaseVersion": release_channel_version,
     "status": status,
     "reason": (
         "windows desktop release-channel publication and workflow proof checks passed"
