@@ -48,6 +48,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "allowed_external_proof_request_row_keys");
         StringAssert.Contains(scriptText, "release_channel_external_proof_request_rows_expected");
         StringAssert.Contains(scriptText, "release_channel_external_proof_request_rows_reported");
+        StringAssert.Contains(scriptText, "channelId");
         StringAssert.Contains(scriptText, "startupSmokeReceiptContract");
         StringAssert.Contains(scriptText, "proofCaptureCommands");
         StringAssert.Contains(scriptText, "Release channel desktopTupleCoverage.externalProofRequests does not match missing desktop tuple inventory.");
