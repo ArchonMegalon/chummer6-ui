@@ -156,7 +156,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
-        StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted head");
+        StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt status is not passing for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid does not match promoted RID for head");
@@ -192,7 +192,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt carries conflicting channelId/channel alias values for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt carries conflicting version/releaseVersion alias values for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt carries conflicting arch/architecture alias values for promoted installer bytes.");
-        StringAssert.Contains(executableScriptText, "Windows startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted installer bytes.");
+        StringAssert.Contains(executableScriptText, "Windows startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt rid is missing for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt rid does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "Release channel Windows artifact carries conflicting arch/architecture alias values.");
@@ -240,7 +240,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting arch/architecture alias values for promoted head");
-        StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc/startedAtUtc alias values for promoted head");
+        StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head");
         StringAssert.Contains(executableScriptText, "macOS promoted installer bytes appear only in quarantine for head");
         StringAssert.Contains(executableScriptText, "macOS quarantine contains payload-valid installer candidate bytes for head");
         StringAssert.Contains(executableScriptText, "macOS quarantine contains installer candidate bytes that fail embedded payload/sample marker checks for head");
