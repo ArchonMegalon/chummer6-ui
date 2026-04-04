@@ -1001,7 +1001,12 @@ def validate_linux_gate(
         else {}
     )
     host_supports_linux_startup_smoke = bool(release_channel_evidence.get("host_supports_linux_startup_smoke"))
-    startup_smoke_external_blocker = normalize_token(release_channel_evidence.get("startup_smoke_external_blocker"))
+    startup_smoke_external_blocker = normalize_token(
+        release_channel_evidence.get("startup_smoke_external_blocker")
+        or gate_checks.get("startup_smoke_external_blocker")
+    )
+    checks_startup_smoke_receipt_found = bool(gate_checks.get("startup_smoke_receipt_found"))
+    checks_startup_smoke_receipt_path = str(gate_checks.get("startup_smoke_receipt_path") or "").strip()
     primary = startup.get("primary") if isinstance(startup.get("primary"), dict) else {}
     fallback = startup.get("fallback") if isinstance(startup.get("fallback"), dict) else {}
     unit_tests = gate_payload.get("unit_tests") if isinstance(gate_payload.get("unit_tests"), dict) else {}
@@ -1015,6 +1020,8 @@ def validate_linux_gate(
     gate_evidence["unit_test_status"] = unit_test_status
     gate_evidence["host_supports_linux_startup_smoke"] = host_supports_linux_startup_smoke
     gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
+    gate_evidence["checks_startup_smoke_receipt_found"] = checks_startup_smoke_receipt_found
+    gate_evidence["checks_startup_smoke_receipt_path"] = checks_startup_smoke_receipt_path
     gate_evidence["unit_test_summary"] = unit_tests.get("summary") if isinstance(unit_tests.get("summary"), dict) else {}
     register_external_blocker(
         evidence,
@@ -1050,6 +1057,14 @@ def validate_linux_gate(
 
     gate_evidence["primary_receipt_path"] = primary_receipt_path_raw
     gate_evidence["primary_receipt_file_exists"] = primary_receipt_file_exists
+    if checks_startup_smoke_receipt_found != primary_receipt_file_exists:
+        reasons.append(
+            f"Linux desktop exit gate checks.startup_smoke_receipt_found disagrees with startup_smoke.primary receipt file presence for promoted head '{head}'."
+        )
+    if checks_startup_smoke_receipt_path and checks_startup_smoke_receipt_path != primary_receipt_path_raw:
+        reasons.append(
+            f"Linux desktop exit gate checks.startup_smoke_receipt_path disagrees with startup_smoke.primary.receipt_path for promoted head '{head}'."
+        )
     if not primary_receipt_file_exists:
         reasons.append(f"Linux installer startup smoke receipt path is missing/unreadable for promoted head '{head}'.")
         if not host_supports_linux_startup_smoke and startup_smoke_external_blocker != "missing_linux_host_capability":
