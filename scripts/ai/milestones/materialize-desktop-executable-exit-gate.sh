@@ -216,6 +216,41 @@ def normalize_required_tuple_list(
     return valid
 
 
+def normalize_required_relative_file_list(
+    values: Any,
+    field_label: str,
+    allowed_suffixes: List[str],
+    evidence: Dict[str, Any],
+    reasons: List[str],
+) -> List[str]:
+    normalized_tokens = normalize_required_token_list(values, field_label, evidence, reasons)
+    normalized_suffixes = [normalize_token(suffix) for suffix in allowed_suffixes if normalize_token(suffix)]
+    malformed_location: List[str] = []
+    malformed_suffix: List[str] = []
+    valid: List[str] = []
+    for token in normalized_tokens:
+        file_name = Path(token).name
+        if token != file_name or "\\" in token:
+            malformed_location.append(token)
+            continue
+        if normalized_suffixes and not any(token.endswith(suffix) for suffix in normalized_suffixes):
+            malformed_suffix.append(token)
+            continue
+        valid.append(token)
+    if malformed_location:
+        reasons.append(
+            f"{field_label} contains non-basename token(s): {', '.join(sorted(set(malformed_location)))}."
+        )
+    if malformed_suffix:
+        reasons.append(
+            f"{field_label} contains token(s) without an allowed suffix ({', '.join(normalized_suffixes)}): "
+            f"{', '.join(sorted(set(malformed_suffix)))}."
+        )
+    evidence[f"{field_label}_malformed_non_basename_tokens"] = sorted(set(malformed_location))
+    evidence[f"{field_label}_malformed_suffix_tokens"] = sorted(set(malformed_suffix))
+    return valid
+
+
 def normalize_promoted_platform_heads(
     values: Any,
     field_label: str,
@@ -1267,11 +1302,13 @@ visual_familiarity_evidence = (
 )
 visual_screenshot_dir_raw = str(visual_familiarity_evidence.get("screenshot_dir") or "").strip()
 visual_screenshot_dir = Path(visual_screenshot_dir_raw) if visual_screenshot_dir_raw else None
-visual_required_screenshots = [
-    str(item).strip()
-    for item in (visual_familiarity_evidence.get("required_screenshots") or [])
-    if str(item).strip()
-]
+visual_required_screenshots = normalize_required_relative_file_list(
+    visual_familiarity_evidence.get("required_screenshots"),
+    "visual_familiarity.required_screenshots",
+    [".png"],
+    evidence,
+    reasons,
+)
 evidence["visual_familiarity_screenshot_dir"] = visual_screenshot_dir_raw
 evidence["visual_familiarity_required_screenshots"] = visual_required_screenshots
 if visual_screenshot_dir is None:
