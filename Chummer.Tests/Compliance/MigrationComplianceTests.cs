@@ -3495,6 +3495,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshot_file_timestamps");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshots_older_than_receipt");
         StringAssert.Contains(executableGateScriptText, "visual_head_contract_marker_statuses_raw");
+        StringAssert.Contains(executableGateScriptText, "def normalize_required_status_map(");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity.flagship_head_proof_statuses");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution.flagship_head_proof_statuses");
+        StringAssert.Contains(executableGateScriptText, "contains a non-string key.");
+        StringAssert.Contains(executableGateScriptText, "contains a key with leading/trailing whitespace");
+        StringAssert.Contains(executableGateScriptText, "contains a non-string value for key");
+        StringAssert.Contains(executableGateScriptText, "_malformed_entries");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_head_contract_marker_statuses");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_head_missing_contract_markers");
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing per-head proof contract markers.");
