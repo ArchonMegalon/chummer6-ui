@@ -349,6 +349,12 @@ startup_smoke_path = resolve_existing_path(
     [candidate for candidate in startup_smoke_candidates if candidate is not None],
 )
 startup_smoke_payload = load_json(startup_smoke_path) if startup_smoke_path else {}
+startup_smoke_receipt_found = startup_smoke_path is not None and startup_smoke_path.is_file()
+startup_smoke_external_blocker = (
+    "missing_macos_host_capability"
+    if (not startup_smoke_receipt_found and not host_supports_macos_smoke)
+    else ""
+)
 startup_smoke_status = normalize_token(startup_smoke_payload.get("status")) or ("pass" if startup_smoke_payload else "fail")
 startup_smoke_checkpoint = normalize_token(startup_smoke_payload.get("readyCheckpoint"))
 startup_smoke_artifact_digest = normalize_token(startup_smoke_payload.get("artifactDigest"))
@@ -397,13 +403,12 @@ evidence["startup_smoke"] = {
     "receipt_age_seconds": startup_smoke_age_seconds,
     "receipt_max_age_seconds": startup_smoke_max_age_seconds,
     "receipt_max_future_skew_seconds": startup_smoke_max_future_skew_seconds,
-    "external_blocker": (
-        "missing_macos_host_capability"
-        if (not startup_smoke_payload and not host_supports_macos_smoke)
-        else ""
-    ),
+    "external_blocker": startup_smoke_external_blocker,
     "receipt": startup_smoke_payload,
 }
+evidence["startup_smoke_receipt_path"] = str(startup_smoke_path) if startup_smoke_path else ""
+evidence["startup_smoke_receipt_found"] = startup_smoke_receipt_found
+evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
 if not startup_smoke_payload:
     reasons.append(f"macOS startup smoke receipt is missing for {app_key} ({rid}).")
     if not host_supports_macos_smoke:
