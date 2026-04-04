@@ -3746,6 +3746,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_invalid_for_publishable_complete");
         StringAssert.Contains(executableGateScriptText, "Release channel rolloutState must be promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_allowed_for_publishable_complete_values");
+        StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_invalid_for_publishable_complete");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState must be preview_supported when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "release_channel_version_uses_unpublished_sentinel");
         StringAssert.Contains(executableGateScriptText, "Release channel version cannot be the unpublished sentinel when status is publishable.");
         StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot remain unpublished when required desktop tuple coverage is complete.");
