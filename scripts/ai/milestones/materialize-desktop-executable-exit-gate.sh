@@ -700,6 +700,38 @@ def arch_from_rid(rid: str) -> str:
     return ""
 
 
+def infer_installer_file_name(head: str, rid: str, platform: str) -> str:
+    head_token = normalize_token(head)
+    rid_token = normalize_token(rid)
+    platform_token = normalize_token(platform)
+    if not head_token or not rid_token or platform_token not in {"linux", "windows", "macos"}:
+        return ""
+    if platform_token == "windows":
+        suffix = ".exe"
+    elif platform_token == "macos":
+        suffix = ".dmg"
+    else:
+        suffix = ".deb"
+    return f"chummer-{head_token}-{rid_token}-installer{suffix}"
+
+
+def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Path]) -> List[str]:
+    token = str(file_name or "").strip()
+    if not token:
+        return []
+    matches: List[str] = []
+    for quarantine_root in quarantine_roots:
+        if not quarantine_root.is_dir():
+            continue
+        try:
+            for candidate in quarantine_root.rglob(token):
+                if candidate.is_file() and candidate.name == token:
+                    matches.append(str(candidate))
+        except OSError:
+            continue
+    return sorted(set(matches))
+
+
 def expected_host_class_platform_token(platform: str) -> str:
     normalized = normalize_token(platform)
     if normalized == "windows":
@@ -1195,6 +1227,7 @@ def validate_windows_gate(
     desktop_files_root: Path,
     repo_root: Path,
     trusted_roots: List[Path],
+    quarantine_roots: List[Path],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -1298,6 +1331,9 @@ def validate_windows_gate(
         return
 
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
+    if not expected_file_name:
+        expected_file_name = infer_installer_file_name(expected_head, expected_rid, "windows")
+    quarantine_candidates = collect_matching_quarantine_paths(expected_file_name, quarantine_roots)
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
     expected_arch = arch_from_rid(expected_rid)
@@ -1306,6 +1342,8 @@ def validate_windows_gate(
     expected_artifact_source = normalize_token(expected_artifact.get("source"))
     policy_missing_release_artifact = expected_artifact_source == "required_tuple_policy_missing_release_artifact"
     gate_evidence["expected_artifact_source"] = expected_artifact_source
+    gate_evidence["expected_installer_file_name"] = expected_file_name
+    gate_evidence["quarantined_installer_candidates"] = quarantine_candidates
     gate_evidence["expected_artifact_arch"] = expected_artifact_arch
     gate_evidence["expected_artifact_arch_alias_conflict"] = expected_artifact_arch_alias_conflict
     if expected_artifact_arch_alias_conflict:
@@ -1388,6 +1426,16 @@ def validate_windows_gate(
         gate_evidence["expected_windows_shelf_sha256"] = shelf_sha
         if shelf_sha != normalize_token(gate_evidence.get("windows_installer_sha256")):
             reasons.append("Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.")
+    if quarantine_candidates and (
+        not installer_path.is_file()
+        or not shelf_path.is_file()
+        or policy_missing_release_artifact
+    ):
+        reasons.append(
+            "Windows promoted installer bytes appear only in quarantine and cannot count as shipped proof: "
+            + ", ".join(quarantine_candidates)
+            + "."
+        )
 
     startup_smoke_receipt_path = (
         Path(gate_evidence["startup_smoke_receipt_path"]) if gate_evidence["startup_smoke_receipt_path"] else None
@@ -1579,6 +1627,7 @@ def validate_macos_gate(
     desktop_files_root: Path,
     repo_root: Path,
     trusted_roots: List[Path],
+    quarantine_roots: List[Path],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -1666,6 +1715,9 @@ def validate_macos_gate(
     startup_receipt = startup.get("receipt") if isinstance(startup.get("receipt"), dict) else {}
     artifact_exists = bool(artifact.get("installer_exists"))
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
+    if not expected_file_name:
+        expected_file_name = infer_installer_file_name(head, rid, "macos")
+    quarantine_candidates = collect_matching_quarantine_paths(expected_file_name, quarantine_roots)
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
@@ -1675,6 +1727,8 @@ def validate_macos_gate(
     expected_artifact_source = normalize_token(expected_artifact.get("source"))
     policy_missing_release_artifact = expected_artifact_source == "required_tuple_policy_missing_release_artifact"
     gate_evidence["expected_artifact_source"] = expected_artifact_source
+    gate_evidence["expected_installer_file_name"] = expected_file_name
+    gate_evidence["quarantined_installer_candidates"] = quarantine_candidates
     startup_receipt_path = Path(str(startup.get("receipt_path") or "").strip()) if startup.get("receipt_path") else None
     startup_receipt_exists = startup_receipt_path is not None and startup_receipt_path.is_file()
     startup_receipt_file = (
@@ -1846,6 +1900,18 @@ def validate_macos_gate(
             gate_evidence["expected_macos_shelf_sha256"] = shelf_sha
             if shelf_sha != installer_sha:
                 reasons.append("macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.")
+    if quarantine_candidates and (
+        installer_path is None
+        or not installer_path.is_file()
+        or not expected_file_name
+        or not (desktop_files_root / expected_file_name).is_file()
+        or policy_missing_release_artifact
+    ):
+        reasons.append(
+            f"macOS promoted installer bytes appear only in quarantine for head '{head}' ({rid}) and cannot count as shipped proof: "
+            + ", ".join(quarantine_candidates)
+            + "."
+        )
 
     if not startup_receipt_exists:
         reasons.append(f"macOS startup smoke receipt path is missing or unreadable for promoted head '{head}' ({rid}).")
@@ -2809,6 +2875,11 @@ evidence["platform_artifact_counts"] = platform_artifact_counts
 evidence["platform_heads_from_release_channel"] = platform_heads_from_release_channel
 desktop_files_root = repo_root / "Docker" / "Downloads" / "files"
 evidence["desktop_files_root"] = str(desktop_files_root)
+quarantine_roots = [
+    repo_root / "Docker" / "Downloads" / "quarantine",
+    repo_root / ".codex-studio" / "quarantine",
+]
+evidence["quarantine_roots"] = [str(path) for path in quarantine_roots]
 for required_platform in required_desktop_platforms:
     if platform_artifact_counts.get(required_platform, 0) < 1:
         reasons.append(
@@ -2876,7 +2947,7 @@ for head, rid in required_windows_policy_tuples:
             "rid": rid,
             "platform": "windows",
             "kind": "installer",
-            "fileName": "",
+            "fileName": infer_installer_file_name(head, rid, "windows"),
             "sha256": "",
             "sizeBytes": 0,
             "source": "required_tuple_policy_missing_release_artifact",
@@ -2925,6 +2996,7 @@ for expected_windows_artifact in expected_windows_artifacts:
         desktop_files_root,
         repo_root,
         trusted_roots,
+        quarantine_roots,
         evidence,
         reasons,
     )
@@ -3932,7 +4004,7 @@ for head, rid in required_macos_policy_tuples:
             "rid": rid,
             "platform": "macos",
             "kind": "dmg",
-            "fileName": "",
+            "fileName": infer_installer_file_name(head, rid, "macos"),
             "sha256": "",
             "sizeBytes": 0,
             "source": "required_tuple_policy_missing_release_artifact",
@@ -3985,6 +4057,7 @@ for macos_artifact in expected_macos_artifacts:
         desktop_files_root,
         repo_root,
         trusted_roots,
+        quarantine_roots,
         evidence,
         reasons,
     )
