@@ -3723,6 +3723,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state");
         StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_present");
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_present");
+        StringAssert.Contains(executableGateScriptText, "release_channel_allowed_rollout_states");
+        StringAssert.Contains(executableGateScriptText, "release_channel_allowed_supportability_states");
+        StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_invalid");
+        StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_invalid");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState is not a recognized registry rollout posture for desktop install media:");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState is not a recognized registry support posture for desktop install media:");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_tuple_coverage_incomplete");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_tuple_coverage_complete");
         StringAssert.Contains(executableGateScriptText, "Release channel must set rolloutState=coverage_incomplete when required desktop tuple coverage is incomplete.");

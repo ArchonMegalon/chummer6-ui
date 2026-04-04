@@ -2137,12 +2137,48 @@ evidence["release_channel_rollout_state"] = release_channel_rollout_state
 evidence["release_channel_supportability_state"] = release_channel_supportability_state
 evidence["release_channel_rollout_state_present"] = bool(release_channel_rollout_state)
 evidence["release_channel_supportability_state_present"] = bool(release_channel_supportability_state)
+release_channel_allowed_rollout_states = [
+    "local_docker_preview",
+    "coverage_incomplete",
+    "promoted_preview",
+    "release_candidate",
+    "public_stable",
+    "paused",
+    "revoked",
+    "unpublished",
+]
+release_channel_allowed_supportability_states = [
+    "local_docker_proven",
+    "preview_supported",
+    "review_required",
+    "unpublished",
+]
+release_channel_rollout_state_invalid = bool(release_channel_rollout_state) and (
+    release_channel_rollout_state not in set(release_channel_allowed_rollout_states)
+)
+release_channel_supportability_state_invalid = bool(release_channel_supportability_state) and (
+    release_channel_supportability_state not in set(release_channel_allowed_supportability_states)
+)
+evidence["release_channel_allowed_rollout_states"] = release_channel_allowed_rollout_states
+evidence["release_channel_allowed_supportability_states"] = release_channel_allowed_supportability_states
+evidence["release_channel_rollout_state_invalid"] = release_channel_rollout_state_invalid
+evidence["release_channel_supportability_state_invalid"] = release_channel_supportability_state_invalid
 
 desktop_install_artifacts = [
     item for item in artifacts
     if normalize_token(item.get("platform")) in {"linux", "windows", "macos"}
     and is_desktop_install_media(item.get("platform"), item.get("kind"))
 ]
+if desktop_install_artifacts and release_channel_rollout_state_invalid:
+    reasons.append(
+        "Release channel rolloutState is not a recognized registry rollout posture for desktop install media: "
+        + f"{release_channel_rollout_state}."
+    )
+if desktop_install_artifacts and release_channel_supportability_state_invalid:
+    reasons.append(
+        "Release channel supportabilityState is not a recognized registry support posture for desktop install media: "
+        + f"{release_channel_supportability_state}."
+    )
 desktop_install_artifact_channel_ids: List[str] = []
 desktop_install_artifact_versions: List[str] = []
 desktop_install_artifact_missing_head_tokens: List[str] = []
