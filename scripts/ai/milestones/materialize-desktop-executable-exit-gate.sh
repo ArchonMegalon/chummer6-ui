@@ -2531,6 +2531,8 @@ payload = {
     "generated_at": generated_at,
     "generatedAt": generated_at,
     "contract_name": "chummer6-ui.desktop_executable_exit_gate",
+    "channelId": release_channel_channel_id,
+    "releaseVersion": release_channel_version,
     "status": status,
     "summary": (
         f"Desktop executable exit gate is proven by passing packaged-head receipts for promoted desktop platforms ({platform_scope}) and per-head flagship UI release proof."
