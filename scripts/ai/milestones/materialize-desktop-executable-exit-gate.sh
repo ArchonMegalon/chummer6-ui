@@ -71,11 +71,30 @@ from datetime import datetime, timezone
 
 
 DESKTOP_PROOF_MAX_AGE_SECONDS = int(os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_PROOF_MAX_AGE_SECONDS", "86400"))
+DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
 STARTUP_SMOKE_MAX_AGE_SECONDS = int(
-    os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS", "86400")
+    os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_STARTUP_SMOKE_MAX_AGE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
+    or "86400"
+)
+STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
 )
 RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS = int(
-    os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS", "86400")
+    os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS")
+    or "86400"
+)
+RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
 )
 VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS", "900")
@@ -164,7 +183,13 @@ def validate_receipt_freshness(label: str, payload: Dict[str, Any], evidence: Di
     if not generated_at_raw or generated_at is None:
         reasons.append(f"{label} is missing a valid generated_at timestamp.")
         return
-    age_seconds = max(0, int((datetime.now(timezone.utc) - generated_at).total_seconds()))
+    age_delta_seconds = int((datetime.now(timezone.utc) - generated_at).total_seconds())
+    age_seconds = max(0, age_delta_seconds)
+    if age_delta_seconds < 0:
+        future_skew_seconds = abs(age_delta_seconds)
+        evidence[f"{label}_future_skew_seconds"] = future_skew_seconds
+        if future_skew_seconds > DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:
+            reasons.append(f"{label} generated_at is in the future ({future_skew_seconds}s ahead).")
     evidence[f"{label}_age_seconds"] = age_seconds
     if age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
         reasons.append(f"{label} is stale ({age_seconds}s old).")
@@ -424,7 +449,16 @@ def validate_linux_gate(
     if not recorded_at_raw or recorded_at is None:
         reasons.append(f"Linux installer startup smoke receipt timestamp is missing/invalid for promoted head '{head}'.")
     else:
-        age_seconds = max(0, int((datetime.now(timezone.utc) - recorded_at).total_seconds()))
+        age_delta_seconds = int((datetime.now(timezone.utc) - recorded_at).total_seconds())
+        age_seconds = max(0, age_delta_seconds)
+        if age_delta_seconds < 0:
+            future_skew_seconds = abs(age_delta_seconds)
+            gate_evidence["primary_receipt_future_skew_seconds"] = future_skew_seconds
+            if future_skew_seconds > STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS:
+                reasons.append(
+                    f"Linux installer startup smoke receipt timestamp is in the future for promoted head '{head}' "
+                    f"({future_skew_seconds}s ahead)."
+                )
         gate_evidence["primary_receipt_age_seconds"] = age_seconds
         if age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
             reasons.append(
@@ -688,7 +722,16 @@ def validate_windows_gate(
         if not startup_smoke_recorded_at_raw or startup_smoke_recorded_at is None:
             reasons.append("Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.")
         else:
-            startup_smoke_age_seconds = max(0, int((datetime.now(timezone.utc) - startup_smoke_recorded_at).total_seconds()))
+            startup_smoke_age_delta_seconds = int((datetime.now(timezone.utc) - startup_smoke_recorded_at).total_seconds())
+            startup_smoke_age_seconds = max(0, startup_smoke_age_delta_seconds)
+            if startup_smoke_age_delta_seconds < 0:
+                startup_smoke_future_skew_seconds = abs(startup_smoke_age_delta_seconds)
+                gate_evidence["startup_smoke_receipt_future_skew_seconds"] = startup_smoke_future_skew_seconds
+                if startup_smoke_future_skew_seconds > STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS:
+                    reasons.append(
+                        "Windows startup smoke receipt timestamp is in the future for promoted installer bytes "
+                        f"({startup_smoke_future_skew_seconds}s ahead)."
+                    )
             gate_evidence["startup_smoke_receipt_age_seconds"] = startup_smoke_age_seconds
             if startup_smoke_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
                 reasons.append(
@@ -885,7 +928,16 @@ def validate_macos_gate(
         if not startup_receipt_recorded_at_raw or startup_receipt_recorded_at is None:
             reasons.append(f"macOS startup smoke receipt timestamp is missing/invalid for promoted head '{head}' ({rid}).")
         else:
-            startup_age_seconds = max(0, int((datetime.now(timezone.utc) - startup_receipt_recorded_at).total_seconds()))
+            startup_age_delta_seconds = int((datetime.now(timezone.utc) - startup_receipt_recorded_at).total_seconds())
+            startup_age_seconds = max(0, startup_age_delta_seconds)
+            if startup_age_delta_seconds < 0:
+                startup_future_skew_seconds = abs(startup_age_delta_seconds)
+                gate_evidence["startup_smoke_receipt_future_skew_seconds"] = startup_future_skew_seconds
+                if startup_future_skew_seconds > STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS:
+                    reasons.append(
+                        f"macOS startup smoke receipt timestamp is in the future for promoted head '{head}' ({rid}) "
+                        f"({startup_future_skew_seconds}s ahead)."
+                    )
             gate_evidence["startup_smoke_receipt_age_seconds"] = startup_age_seconds
             if startup_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
                 reasons.append(
@@ -1195,10 +1247,20 @@ evidence["release_channel_version"] = release_channel_version
 release_channel_generated_at_raw, release_channel_generated_at = payload_generated_at(release_channel)
 evidence["release_channel_generated_at"] = release_channel_generated_at_raw
 evidence["release_channel_freshness_max_age_seconds"] = RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS
+evidence["release_channel_freshness_max_future_skew_seconds"] = RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS
 if not release_channel_generated_at_raw or release_channel_generated_at is None:
     reasons.append("Release channel is missing a valid generated_at timestamp.")
 else:
-    release_channel_age_seconds = max(0, int((datetime.now(timezone.utc) - release_channel_generated_at).total_seconds()))
+    release_channel_age_delta_seconds = int((datetime.now(timezone.utc) - release_channel_generated_at).total_seconds())
+    release_channel_age_seconds = max(0, release_channel_age_delta_seconds)
+    if release_channel_age_delta_seconds < 0:
+        release_channel_future_skew_seconds = abs(release_channel_age_delta_seconds)
+        evidence["release_channel_future_skew_seconds"] = release_channel_future_skew_seconds
+        if release_channel_future_skew_seconds > RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS:
+            reasons.append(
+                "Release channel generated_at is in the future "
+                f"({release_channel_future_skew_seconds}s ahead; max {RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS}s)."
+            )
     evidence["release_channel_age_seconds"] = release_channel_age_seconds
     if release_channel_age_seconds > RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS:
         reasons.append(
