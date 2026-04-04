@@ -281,10 +281,6 @@ else:
     installer_candidates = [
         (windows_local_desktop_files_root / default_file_name).resolve(),
         (repo_root / "Docker" / "Downloads" / "files" / default_file_name).resolve(),
-        Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/files") / default_file_name,
-        Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/files") / default_file_name,
-        Path("/docker/chummer5a/Docker/Downloads/files") / default_file_name,
-        Path("/docker/chummercomplete/chummer5a/Docker/Downloads/files") / default_file_name,
     ]
 installer_candidates = list(dict.fromkeys(path.resolve() for path in installer_candidates))
 installer_path = next((path for path in installer_candidates if path.is_file()), installer_candidates[0])
@@ -309,10 +305,6 @@ evidence["windows_installer_from_primary_shelf"] = installer_from_primary_shelf
 if not windows_installer_path_override and not installer_from_primary_shelf:
     reasons.append(
         "Promoted Windows installer was not resolved from the repo-local desktop shelf."
-    )
-if not windows_installer_path_override and "/chummer5a/" in str(installer_path).replace("\\", "/").lower():
-    reasons.append(
-        "Promoted Windows installer was resolved from legacy chummer5a shelf bytes."
     )
 
 if not installer_exists:
@@ -351,11 +343,6 @@ else:
         proof_path.parent / "startup-smoke" / startup_smoke_receipt_name,
         repo_root / ".codex-studio" / "published" / "startup-smoke" / startup_smoke_receipt_name,
         repo_root / "Docker" / "Downloads" / "startup-smoke" / startup_smoke_receipt_name,
-        Path("/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke") / startup_smoke_receipt_name,
-        Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
-        Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
-        Path("/docker/chummer5a/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
-        Path("/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke") / startup_smoke_receipt_name,
     ]
     if hub_registry_root is not None:
         startup_smoke_candidates.extend(
@@ -370,9 +357,6 @@ startup_smoke_payload = load_json(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_path"] = str(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_candidates"] = [str(path) for path in startup_smoke_candidates]
 evidence["startup_smoke_receipt_found"] = startup_smoke_receipt_path.is_file()
-if startup_smoke_receipt_path.is_file() and not startup_smoke_receipt_override:
-    if "/chummer5a/" in str(startup_smoke_receipt_path).replace("\\", "/").lower():
-        reasons.append("Windows startup smoke receipt was resolved from a legacy chummer5a path.")
 
 startup_smoke_status = normalize_token(startup_smoke_payload.get("status"))
 evidence["startup_smoke_status"] = startup_smoke_status
