@@ -379,6 +379,61 @@ def infer_external_blockers_from_reasons(platform: str, reasons: List[str]) -> L
     return dedupe_preserve_order(inferred)
 
 
+EXTERNAL_REASON_MARKERS = (
+    "requires a windows-capable host",
+    "requires a macos host",
+    "requires a linux host",
+    "current host cannot run promoted windows installer smoke",
+    "current host cannot run promoted macos installer smoke",
+    "current host cannot run promoted linux installer smoke",
+)
+
+PLATFORM_COVERAGE_EXTERNAL_MARKERS = (
+    "release channel does not publish desktop install media for required platform",
+    "release channel does not publish a promoted",
+    "promoted windows installer is missing from the active public downloads shelf",
+    "promoted macos installer file is missing locally",
+    "startup smoke receipt is missing",
+    "startup smoke receipt path is missing",
+    "startup smoke is not passing",
+    "desktop exit gate is missing or not passing",
+    "windows_installer_path does not exist",
+    "promoted installer bytes appear only in quarantine",
+    "quarantine contains",
+    "quarantine installer marker checks are skipped",
+    "installer path is missing",
+    "installer artifact is missing",
+    "installer receipt does not confirm",
+    "release channel is missing required desktop platform/head",
+    "required desktop tuple coverage is incomplete",
+)
+
+
+def split_external_and_local_reasons(reasons: List[str]) -> Tuple[List[str], List[str]]:
+    external_reasons: List[str] = []
+    local_reasons: List[str] = []
+    for reason in reasons:
+        normalized_reason = normalize_token(reason)
+        is_external = bool(normalized_reason) and any(
+            marker in normalized_reason for marker in EXTERNAL_REASON_MARKERS
+        )
+        if not is_external and normalized_reason:
+            mentions_platform_or_tuple_coverage = (
+                "windows" in normalized_reason
+                or "macos" in normalized_reason
+                or "required desktop tuple coverage is incomplete" in normalized_reason
+            )
+            if mentions_platform_or_tuple_coverage and any(
+                marker in normalized_reason for marker in PLATFORM_COVERAGE_EXTERNAL_MARKERS
+            ):
+                is_external = True
+        if is_external:
+            external_reasons.append(reason)
+        else:
+            local_reasons.append(reason)
+    return external_reasons, local_reasons
+
+
 def build_platform_head_rid_tuple(head: Any, rid: Any, platform: Any) -> str:
     head_token = normalize_token(head)
     rid_token = normalize_token(rid)
@@ -4887,6 +4942,10 @@ for platform_token in ("linux", "windows", "macos"):
 status = "pass" if not reasons else "fail"
 blocking_findings = list(reasons)
 blocking_findings_count = len(blocking_findings)
+external_blocking_findings, local_blocking_findings = split_external_and_local_reasons(blocking_findings)
+external_blocking_findings_count = len(external_blocking_findings)
+local_blocking_findings_count = len(local_blocking_findings)
+blocked_by_external_constraints_only = bool(external_blocking_findings) and not local_blocking_findings
 generated_at = now_iso()
 payload = {
     "generated_at": generated_at,
@@ -4905,6 +4964,16 @@ payload = {
     "blocking_findings": blocking_findings,
     "blockingFindingsCount": blocking_findings_count,
     "blocking_findings_count": blocking_findings_count,
+    "externalBlockingFindings": external_blocking_findings,
+    "external_blocking_findings": external_blocking_findings,
+    "externalBlockingFindingsCount": external_blocking_findings_count,
+    "external_blocking_findings_count": external_blocking_findings_count,
+    "localBlockingFindings": local_blocking_findings,
+    "local_blocking_findings": local_blocking_findings,
+    "localBlockingFindingsCount": local_blocking_findings_count,
+    "local_blocking_findings_count": local_blocking_findings_count,
+    "blockedByExternalConstraintsOnly": blocked_by_external_constraints_only,
+    "blocked_by_external_constraints_only": blocked_by_external_constraints_only,
     "evidence": evidence,
 }
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
