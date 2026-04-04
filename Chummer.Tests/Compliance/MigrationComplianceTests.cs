@@ -3483,6 +3483,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot evidence predates the visual familiarity receipt generation time:");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshot_file_timestamps");
         StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshots_older_than_receipt");
+        StringAssert.Contains(executableGateScriptText, "visual_head_contract_marker_statuses_raw");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_head_contract_marker_statuses");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_head_missing_contract_markers");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing per-head proof contract markers.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate does not carry per-head proof contract markers for required desktop head");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate has missing/failing per-head proof contract markers for required desktop head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
         StringAssert.Contains(executableGateScriptText, "release_channel_generated_at");
         StringAssert.Contains(executableGateScriptText, "release_channel_age_seconds");
@@ -3615,6 +3621,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "legacy_diary_workflow_rhythm");
         StringAssert.Contains(visualGateScriptText, "legacy_magic_workflow_rhythm");
         StringAssert.Contains(visualGateScriptText, "legacy_matrix_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "required_head_contract_markers = {");
+        StringAssert.Contains(visualGateScriptText, "\"requiredRuntimeBackedTests\"");
+        StringAssert.Contains(visualGateScriptText, "\"requiredShellTests\"");
+        StringAssert.Contains(visualGateScriptText, "flagship_head_missing_contract_markers");
+        StringAssert.Contains(visualGateScriptText, "flagship_head_source_test_file_within_repo_root");
+        StringAssert.Contains(visualGateScriptText, "Flagship UI release gate head proof for required desktop head '");
+        StringAssert.Contains(visualGateScriptText, "Flagship UI release gate sourceTestFile for required desktop head '");
         StringAssert.Contains(visualGateScriptText, "magic_method_has_rhythm_markers");
         StringAssert.Contains(visualGateScriptText, "matrix_method_has_rhythm_markers");
         StringAssert.Contains(visualGateScriptText, "12-magic-dialog-light.png");

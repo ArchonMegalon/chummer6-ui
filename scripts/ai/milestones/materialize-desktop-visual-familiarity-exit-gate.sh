@@ -140,6 +140,14 @@ def segment_between(text: str, start_marker: str, end_marker: str) -> str:
     return text[start:] if end < 0 else text[start:end]
 
 
+def path_within_root(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except Exception:
+        return False
+
+
 repo_root, receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, legacy_frmcareer_designer_path = [
     Path(value) for value in sys.argv[1:13]
 ]
@@ -183,6 +191,105 @@ flagship_head_proof_statuses = {
     for head, proof in head_proofs.items()
     if normalize_token(head) and isinstance(proof, dict)
 }
+required_head_contract_markers = {
+    "avalonia": [
+        "status",
+        "visualReview",
+        "themeReadabilityContrast",
+        "bundledDemoRunner",
+        "requiredRuntimeBackedTests",
+        "sourceTestFile",
+        "testSuites",
+    ],
+    "blazor-desktop": [
+        "status",
+        "shellChrome",
+        "commandSurface",
+        "dialogSurface",
+        "journeyPanels",
+        "requiredShellTests",
+        "sourceTestFile",
+        "testSuites",
+    ],
+}
+required_head_status_markers = {
+    "avalonia": [
+        "status",
+        "visualReview",
+        "themeReadabilityContrast",
+        "bundledDemoRunner",
+    ],
+    "blazor-desktop": [
+        "status",
+        "shellChrome",
+        "commandSurface",
+        "dialogSurface",
+        "journeyPanels",
+    ],
+}
+required_head_list_markers = {
+    "avalonia": [
+        "requiredRuntimeBackedTests",
+        "testSuites",
+    ],
+    "blazor-desktop": [
+        "requiredShellTests",
+        "testSuites",
+    ],
+}
+flagship_head_contract_marker_statuses: Dict[str, Dict[str, str]] = {}
+flagship_head_missing_contract_markers: Dict[str, List[str]] = {}
+flagship_head_source_test_file_paths: Dict[str, str] = {}
+flagship_head_source_test_file_exists: Dict[str, bool] = {}
+flagship_head_source_test_file_within_repo_root: Dict[str, bool] = {}
+for required_head in flagship_required_desktop_heads:
+    proof_payload = head_proofs.get(required_head) if isinstance(head_proofs.get(required_head), dict) else {}
+    required_markers = required_head_contract_markers.get(required_head, ["status", "sourceTestFile", "testSuites"])
+    status_markers = set(required_head_status_markers.get(required_head, ["status"]))
+    list_markers = set(required_head_list_markers.get(required_head, ["testSuites"]))
+    marker_statuses: Dict[str, str] = {}
+    missing_markers: List[str] = []
+    source_test_file_value = str(proof_payload.get("sourceTestFile") or "").strip()
+    source_test_file_path = Path(source_test_file_value) if source_test_file_value else None
+    source_test_file_exists = source_test_file_path is not None and source_test_file_path.is_file()
+    source_test_file_within_repo_root = (
+        path_within_root(source_test_file_path, repo_root) if source_test_file_path is not None else False
+    )
+    flagship_head_source_test_file_paths[required_head] = source_test_file_value
+    flagship_head_source_test_file_exists[required_head] = source_test_file_exists
+    flagship_head_source_test_file_within_repo_root[required_head] = source_test_file_within_repo_root
+    for marker in required_markers:
+        marker_value = proof_payload.get(marker)
+        marker_ok = False
+        if marker == "sourceTestFile":
+            marker_ok = source_test_file_exists and source_test_file_within_repo_root
+        elif marker in list_markers:
+            marker_ok = (
+                isinstance(marker_value, list)
+                and any(str(item).strip() for item in marker_value)
+            )
+        elif marker in status_markers:
+            marker_ok = status_ok(str(marker_value or "").strip().lower())
+        else:
+            marker_ok = bool(str(marker_value or "").strip())
+        marker_statuses[marker] = "pass" if marker_ok else "fail"
+        if not marker_ok:
+            missing_markers.append(marker)
+    flagship_head_contract_marker_statuses[required_head] = marker_statuses
+    flagship_head_missing_contract_markers[required_head] = missing_markers
+    if missing_markers:
+        reasons.append(
+            f"Flagship UI release gate head proof for required desktop head '{required_head}' is missing required contract marker(s): "
+            + ", ".join(missing_markers)
+        )
+    if source_test_file_value and source_test_file_exists and not source_test_file_within_repo_root:
+        reasons.append(
+            f"Flagship UI release gate sourceTestFile for required desktop head '{required_head}' is outside this repo root."
+        )
+    if source_test_file_value and not source_test_file_exists:
+        reasons.append(
+            f"Flagship UI release gate sourceTestFile for required desktop head '{required_head}' is missing/unreadable on disk."
+        )
 avalonia_head_proof = head_proofs.get("avalonia") if isinstance(head_proofs.get("avalonia"), dict) else {}
 blazor_head_proof = head_proofs.get("blazor-desktop") if isinstance(head_proofs.get("blazor-desktop"), dict) else {}
 theme_readability_contrast = str(interaction_proof.get("themeReadabilityContrast") or "").strip().lower()
@@ -191,6 +298,14 @@ evidence["flagship_avalonia_head_proof_status"] = str(avalonia_head_proof.get("s
 evidence["flagship_blazor_head_proof_status"] = str(blazor_head_proof.get("status") or "").strip().lower()
 evidence["flagship_required_desktop_heads"] = flagship_required_desktop_heads
 evidence["flagship_head_proof_statuses"] = flagship_head_proof_statuses
+evidence["required_head_contract_markers"] = required_head_contract_markers
+evidence["flagship_head_contract_marker_statuses"] = flagship_head_contract_marker_statuses
+evidence["flagship_head_missing_contract_markers"] = flagship_head_missing_contract_markers
+evidence["flagship_head_source_test_file_paths"] = flagship_head_source_test_file_paths
+evidence["flagship_head_source_test_file_exists"] = flagship_head_source_test_file_exists
+evidence["flagship_head_source_test_file_within_repo_root"] = (
+    flagship_head_source_test_file_within_repo_root
+)
 runtime_backed_shell_menu = str(interaction_proof.get("runtimeBackedShellMenu") or "").strip().lower()
 runtime_backed_menu_bar_labels = str(interaction_proof.get("runtimeBackedMenuBarLabels") or "").strip().lower()
 runtime_backed_clickable_primary_menus = str(interaction_proof.get("runtimeBackedClickablePrimaryMenus") or "").strip().lower()
@@ -376,7 +491,7 @@ required_test_names = [
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
     "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
-    "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks",
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
     "Standalone_toolstrip_buttons_raise_expected_events",
@@ -754,9 +869,10 @@ if not contacts_diary_method:
 elif not contacts_diary_method_has_rhythm:
     reasons.append("Contacts/diary familiarity is not proven: contact + diary action markers are missing from the dedicated test.")
 
-ruleset_orientation_method = extract_test_method(test_text, "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks")
+ruleset_orientation_method = extract_test_method(test_text, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks")
 required_ruleset_orientation_markers = [
     "RulesetDefaults.Sr4",
+    "RulesetDefaults.Sr5",
     "RulesetDefaults.Sr6",
     "SetPreferredRulesetAsync(",
     "BuildOpenWorkspacesHeading",
@@ -771,10 +887,10 @@ ruleset_orientation_method_has_markers = not missing_ruleset_orientation_markers
 evidence["ruleset_orientation_method_has_markers"] = ruleset_orientation_method_has_markers
 evidence["missing_ruleset_orientation_markers"] = missing_ruleset_orientation_markers
 if not ruleset_orientation_method:
-    reasons.append("SR4/SR6 codex orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is not present in test sources.")
+    reasons.append("SR4/SR5/SR6 codex orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is not present in test sources.")
 elif not ruleset_orientation_method_has_markers:
     reasons.append(
-        "SR4/SR6 codex orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is missing markers: "
+        "SR4/SR5/SR6 codex orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is missing markers: "
         + ", ".join(missing_ruleset_orientation_markers)
     )
 
@@ -784,7 +900,7 @@ payload = {
     "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
     "status": status,
     "summary": (
-        "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR6 codex orientation."
+        "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR5/SR6 codex orientation."
         if status == "pass"
         else "Desktop visual familiarity is not fully proven."
     ),
