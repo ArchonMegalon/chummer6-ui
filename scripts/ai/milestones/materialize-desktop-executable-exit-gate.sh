@@ -2131,28 +2131,48 @@ desktop_install_artifacts = [
     and is_desktop_install_media(item.get("platform"), item.get("kind"))
 ]
 desktop_install_artifact_channel_ids: List[str] = []
+desktop_install_artifact_versions: List[str] = []
 desktop_install_artifact_missing_channel_tokens: List[str] = []
 desktop_install_artifact_channel_mismatch_tokens: List[str] = []
+desktop_install_artifact_missing_version_tokens: List[str] = []
+desktop_install_artifact_version_mismatch_tokens: List[str] = []
 for desktop_install_artifact in desktop_install_artifacts:
     artifact_channel_id = normalize_token(
         desktop_install_artifact.get("channelId") or desktop_install_artifact.get("channel")
+    )
+    artifact_version = normalize_token(
+        desktop_install_artifact.get("version") or desktop_install_artifact.get("releaseVersion")
     )
     artifact_tuple_token = build_install_media_tuple_token(desktop_install_artifact) or str(
         desktop_install_artifact.get("artifactId") or ""
     ).strip()
     desktop_install_artifact_channel_ids.append(artifact_channel_id)
+    desktop_install_artifact_versions.append(artifact_version)
     if not artifact_channel_id:
         desktop_install_artifact_missing_channel_tokens.append(artifact_tuple_token or "<unknown>")
     elif release_channel_channel_id and artifact_channel_id != release_channel_channel_id:
         desktop_install_artifact_channel_mismatch_tokens.append(artifact_tuple_token or "<unknown>")
+    if not artifact_version:
+        desktop_install_artifact_missing_version_tokens.append(artifact_tuple_token or "<unknown>")
+    elif release_channel_version and artifact_version != release_channel_version:
+        desktop_install_artifact_version_mismatch_tokens.append(artifact_tuple_token or "<unknown>")
 evidence["release_channel_desktop_install_artifact_channel_ids"] = (
     desktop_install_artifact_channel_ids
+)
+evidence["release_channel_desktop_install_artifact_versions"] = (
+    desktop_install_artifact_versions
 )
 evidence["release_channel_desktop_install_artifacts_missing_channel"] = (
     sorted(set(desktop_install_artifact_missing_channel_tokens))
 )
 evidence["release_channel_desktop_install_artifacts_channel_mismatch"] = (
     sorted(set(desktop_install_artifact_channel_mismatch_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_missing_version"] = (
+    sorted(set(desktop_install_artifact_missing_version_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_version_mismatch"] = (
+    sorted(set(desktop_install_artifact_version_mismatch_tokens))
 )
 if desktop_install_artifact_missing_channel_tokens:
     reasons.append(
@@ -2164,6 +2184,18 @@ if desktop_install_artifact_channel_mismatch_tokens:
     reasons.append(
         "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId: "
         + ", ".join(sorted(set(desktop_install_artifact_channel_mismatch_tokens)))
+        + "."
+    )
+if desktop_install_artifact_missing_version_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) are missing version/releaseVersion: "
+        + ", ".join(sorted(set(desktop_install_artifact_missing_version_tokens)))
+        + "."
+    )
+if desktop_install_artifact_version_mismatch_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) version/releaseVersion does not match release channel version: "
+        + ", ".join(sorted(set(desktop_install_artifact_version_mismatch_tokens)))
         + "."
     )
 duplicate_desktop_install_artifact_tuples = collect_duplicate_install_media_tuples(

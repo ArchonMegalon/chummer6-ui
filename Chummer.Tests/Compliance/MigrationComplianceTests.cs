@@ -3537,10 +3537,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt rid does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "Release channel Linux artifact arch does not match promoted RID for head");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifact_channel_ids");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifact_versions");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_channel");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_channel_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_version");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_version_mismatch");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing channelId/channel:");
         StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing version/releaseVersion:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) version/releaseVersion does not match release channel version:");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass does not identify a Linux host for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt operatingSystem is missing for promoted head");
