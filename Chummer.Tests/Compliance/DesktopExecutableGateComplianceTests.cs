@@ -226,6 +226,30 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_missing_required_desktop_platforms_coverage()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject missing requiredDesktopPlatforms coverage");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit missing requiredDesktopPlatforms coverage marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage is missing requiredDesktopPlatforms for desktop install media.");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_missing_required_desktop_heads_coverage()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject missing requiredDesktopHeads coverage");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit missing requiredDesktopHeads coverage marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage is missing requiredDesktopHeads for desktop install media.");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_runs_active_mutation_for_missing_promoted_platform_heads_mapping()
     {
         string repoRoot = FindRepoRoot();
@@ -258,10 +282,19 @@ public sealed class DesktopExecutableGateComplianceTests
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "release_gate_lock_blocked=0");
+        StringAssert.Contains(scriptText, "release_gate_lock_stale_removed=0");
+        StringAssert.Contains(scriptText, "release_gate_lock_stale_reason=\"\"");
+        StringAssert.Contains(scriptText, "prune_release_gate_lock_if_stale()");
+        StringAssert.Contains(scriptText, "release_gate_lock_stale_max_age_seconds");
+        StringAssert.Contains(scriptText, "stale_empty_lock_dir_removed_after_");
+        StringAssert.Contains(scriptText, "without_active_b14_process");
+        StringAssert.Contains(scriptText, "if pgrep -f \"scripts/ai/milestones/b14-flagship-ui-release-gate.sh\" >/dev/null 2>&1; then");
         StringAssert.Contains(scriptText, "if [[ -d \"$release_gate_lock_dir\" ]]; then");
         StringAssert.Contains(scriptText, "release_gate_lock_blocked=1");
         StringAssert.Contains(scriptText, "skip_dependency_materialize=1");
         StringAssert.Contains(scriptText, "\"release_gate_lock_blocked\": release_gate_lock_blocked");
+        StringAssert.Contains(scriptText, "\"release_gate_lock_stale_removed\": release_gate_lock_stale_removed");
+        StringAssert.Contains(scriptText, "\"release_gate_lock_stale_reason\": release_gate_lock_stale_reason");
         StringAssert.Contains(scriptText, "\"release_gate_lock_dir\": str(repo_root / \".codex-studio\" / \"locks\" / \"b14-flagship-ui-release-gate.lock\")");
         StringAssert.Contains(scriptText, "Flagship release gate lock remained active after wait window; executable gate skipped dependency rematerialization and fail-closes to prevent partial proof races.");
     }
@@ -441,7 +474,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Release channel Windows artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "def infer_installer_file_name(head: str, rid: str, platform: str) -> str:");
         StringAssert.Contains(executableScriptText, "def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Path]) -> List[str]:");
-        StringAssert.Contains(executableScriptText, "def summarize_quarantine_installer_markers(paths: List[str]) -> Dict[str, Any]:");
+        StringAssert.Contains(executableScriptText, "def summarize_quarantine_installer_markers(paths: List[str], platform: str = \"\") -> Dict[str, Any]:");
         StringAssert.Contains(executableScriptText, "def register_external_blocker(");
         StringAssert.Contains(executableScriptText, "def infer_external_blockers_from_reasons(platform: str, reasons: List[str]) -> List[str]:");
         StringAssert.Contains(executableScriptText, "evidence.setdefault(\"external_blockers\", [])");
@@ -485,6 +518,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head");
         StringAssert.Contains(executableScriptText, "macOS promoted installer bytes appear only in quarantine for head");
         StringAssert.Contains(executableScriptText, "macOS quarantine contains payload-valid installer candidate bytes for head");
+        StringAssert.Contains(executableScriptText, "macOS quarantine installer marker checks are skipped for unsupported artifact formats on this host; payload/sample markers were not asserted for head");
         StringAssert.Contains(executableScriptText, "macOS quarantine contains installer candidate bytes that fail embedded payload/sample marker checks for head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt rid does not match promoted RID for head");
@@ -765,6 +799,10 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(macosScriptText, "REPO_ROOT=\"$(cd -L \"$REPO_ROOT_ALIAS_CANDIDATE\" && pwd -L)\"");
         StringAssert.Contains(windowsScriptText, "Promoted Windows installer was not resolved from the repo-local desktop shelf.");
         StringAssert.Contains(macosScriptText, "Promoted macOS installer was not resolved from the repo-local desktop shelf");
+        StringAssert.Contains(windowsScriptText, "\"summary\": summary");
+        StringAssert.Contains(macosScriptText, "\"summary\": summary");
+        StringAssert.Contains(windowsScriptText, "Windows desktop exit gate failed:");
+        StringAssert.Contains(macosScriptText, "macOS desktop exit gate failed:");
         StringAssert.Contains(macosScriptText, "evidence[\"startup_smoke_external_blocker\"] = startup_smoke_external_blocker");
         StringAssert.Contains(macosScriptText, "\"external_blocker\": startup_smoke_external_blocker");
         StringAssert.Contains(macosScriptText, "evidence[\"startup_smoke_receipt_found\"] = startup_smoke_receipt_found");
