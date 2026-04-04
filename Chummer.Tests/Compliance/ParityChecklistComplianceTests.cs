@@ -23,6 +23,16 @@ public sealed class ParityChecklistComplianceTests
         StringAssert.Contains(parityGeneratorText, "is missing required legacy");
     }
 
+    [TestMethod]
+    public void Parity_generator_fail_closes_non_canonical_catalog_token_aliases()
+    {
+        string parityGeneratorPath = FindPath("scripts", "generate-parity-checklist.sh");
+        string parityGeneratorText = File.ReadAllText(parityGeneratorPath);
+
+        StringAssert.Contains(parityGeneratorText, "contains non-canonical alias for normalized catalog token");
+        StringAssert.Contains(parityGeneratorText, "existing_token != token");
+    }
+
     private static string FindPath(params string[] parts)
     {
         foreach (string? root in CandidateRoots())

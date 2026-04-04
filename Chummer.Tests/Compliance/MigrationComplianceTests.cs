@@ -2661,6 +2661,44 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Parity_oracle_lists_use_canonical_string_tokens()
+    {
+        string parityOraclePath = FindPath("docs", "PARITY_ORACLE.json");
+        using JsonDocument oracle = JsonDocument.Parse(File.ReadAllText(parityOraclePath));
+        JsonElement root = oracle.RootElement;
+
+        AssertCanonicalTokenArray(root, "tabs");
+        AssertCanonicalTokenArray(root, "workspaceActions");
+        AssertCanonicalTokenArray(root, "acknowledgedCatalogOnlyTabs");
+        AssertCanonicalTokenArray(root, "acknowledgedCatalogOnlyWorkspaceActions");
+        AssertCanonicalTokenArray(root, "acknowledgedDialogFactoryOnlyDesktopControls");
+        AssertCanonicalTokenArray(root, "desktopControls");
+
+        static void AssertCanonicalTokenArray(JsonElement rootElement, string propertyName)
+        {
+            Assert.IsTrue(rootElement.TryGetProperty(propertyName, out JsonElement values), $"{propertyName} must exist");
+            Assert.AreEqual(JsonValueKind.Array, values.ValueKind, $"{propertyName} must be an array");
+
+            HashSet<string> normalized = new(StringComparer.Ordinal);
+            int index = 0;
+            foreach (JsonElement value in values.EnumerateArray())
+            {
+                Assert.AreEqual(JsonValueKind.String, value.ValueKind, $"{propertyName}[{index}] must be a string");
+
+                string token = value.GetString() ?? string.Empty;
+                Assert.IsFalse(string.IsNullOrWhiteSpace(token), $"{propertyName}[{index}] must not be blank");
+                Assert.AreEqual(token.Trim(), token, $"{propertyName}[{index}] must not be whitespace padded");
+
+                string normalizedToken = token.ToLowerInvariant();
+                Assert.IsTrue(
+                    normalized.Add(normalizedToken),
+                    $"{propertyName}[{index}] duplicates normalized token '{token}'");
+                index++;
+            }
+        }
+    }
+
+    [TestMethod]
     public void Ui_exposes_summary_validate_and_metadata_actions()
     {
         HashSet<string> actionTargets = WorkspaceSurfaceActionCatalog.All
@@ -3603,6 +3641,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "requiredDesktopPlatformHeadRidTuples");
         StringAssert.Contains(executableGateScriptText, "promotedPlatformHeadRidTuples");
         StringAssert.Contains(executableGateScriptText, "missingRequiredPlatformHeadRidTuples");
+        StringAssert.Contains(executableGateScriptText, "release_channel_required_platform_head_pairs_for_matrix");
+        StringAssert.Contains(executableGateScriptText, "release_channel_required_platform_head_pairs_from_required_rid_tuples");
+        StringAssert.Contains(executableGateScriptText, "release_channel_missing_required_platform_head_pairs_from_required_rid_tuples");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage requiredDesktopPlatformHeadRidTuples is missing required desktop platform/head pair coverage:");
         StringAssert.Contains(executableGateScriptText, "build_platform_head_rid_tuple");
         StringAssert.Contains(executableGateScriptText, "release_channel_promoted_platform_head_rid_tuples_from_artifacts");
         StringAssert.Contains(executableGateScriptText, "release_channel_missing_required_platform_head_rid_tuples_derived");
@@ -5017,11 +5059,21 @@ public class MigrationComplianceTests
         StringAssert.Contains(amendValidatorText, "data");
         StringAssert.Contains(amendValidatorText, "lang");
         StringAssert.Contains(parityGeneratorText, "PARITY_ORACLE.json");
+        StringAssert.Contains(parityGeneratorText, "fail_on_unacknowledged_catalog_only");
+        StringAssert.Contains(parityGeneratorText, "acknowledgedCatalogOnlyTabs");
+        StringAssert.Contains(parityGeneratorText, "acknowledgedCatalogOnlyWorkspaceActions");
+        StringAssert.Contains(parityGeneratorText, "acknowledgedDialogFactoryOnlyDesktopControls");
+        StringAssert.Contains(parityGeneratorText, "present_in_dialog_factory_acknowledged");
+        StringAssert.Contains(parityGeneratorText, "dialog-factory-only desktop control");
+        StringAssert.Contains(parityGeneratorText, "contains non-canonical alias for normalized catalog token");
+        StringAssert.Contains(parityGeneratorText, "existing_token != token");
         StringAssert.Contains(parityGeneratorText, "Workspace Actions coverage compares parity-oracle action IDs to action `TargetId` values.");
         StringAssert.Contains(parityGeneratorText, "Wrote parity checklist");
         StringAssert.Contains(parityChecklistText, "# UI Parity Checklist");
         StringAssert.Contains(parityChecklistText, "Parity oracle source");
         StringAssert.Contains(parityChecklistText, "| Workspace Actions |");
+        StringAssert.Contains(parityChecklistText, "Dialog-factory-only desktop controls must be acknowledged explicitly");
+        StringAssert.Contains(parityChecklistText, "present_in_dialog_factory_acknowledged");
     }
 
     [TestMethod]

@@ -93,6 +93,12 @@ def parse_catalog_token_matches(matches: Sequence[str], *, source: str) -> list[
         token = normalize_required_token(raw_value, source=f"{source}[{index}]")
         normalized_key = token.casefold()
         if normalized_key in normalized_tokens:
+            existing_token = normalized_tokens[normalized_key]
+            if existing_token != token:
+                raise ValueError(
+                    f"{source} contains non-canonical alias for normalized catalog token '{token}' "
+                    f"(existing '{existing_token}')"
+                )
             continue
         normalized_tokens[normalized_key] = token
     return sorted(normalized_tokens.values())
