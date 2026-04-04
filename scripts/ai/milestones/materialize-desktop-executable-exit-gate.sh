@@ -167,9 +167,16 @@ def normalize_required_token_list(
         reasons.append(f"{field_label} must be a list when present.")
         return []
     normalized: List[str] = []
+    whitespace_padded_indexes: List[int] = []
     for index, item in enumerate(values):
         if not isinstance(item, str):
             reasons.append(f"{field_label} contains a non-string item at index {index}.")
+            continue
+        if item != item.strip():
+            whitespace_padded_indexes.append(index)
+            reasons.append(
+                f"{field_label} contains a token with leading/trailing whitespace at index {index}."
+            )
             continue
         token = normalize_token(item)
         if not token:
@@ -183,6 +190,7 @@ def normalize_required_token_list(
             f"{field_label} contains duplicate token(s): {', '.join(duplicate_values)}."
         )
     evidence[f"{field_label}_normalized"] = deduped
+    evidence[f"{field_label}_whitespace_padded_indexes"] = whitespace_padded_indexes
     return deduped
 
 
