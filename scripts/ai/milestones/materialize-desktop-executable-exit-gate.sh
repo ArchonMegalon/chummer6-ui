@@ -586,6 +586,14 @@ def payload_generated_at(payload: Dict[str, Any]) -> tuple[str, datetime | None]
     return "", None
 
 
+def generated_at_alias_conflicts(payload: Dict[str, Any]) -> bool:
+    generated_at_primary = str(payload.get("generated_at") or "").strip()
+    generated_at_alias = str(payload.get("generatedAt") or "").strip()
+    if not generated_at_primary or not generated_at_alias:
+        return False
+    return generated_at_primary != generated_at_alias
+
+
 def validate_receipt_freshness(label: str, payload: Dict[str, Any], evidence: Dict[str, Any], reasons: List[str]) -> None:
     generated_at_raw, generated_at = payload_generated_at(payload)
     evidence[f"{label}_generated_at"] = generated_at_raw
@@ -1927,13 +1935,32 @@ if (
 release_channel_channel_id = (
     release_channel_channel_id_primary or release_channel_channel_id_fallback
 )
-release_channel_version = normalize_optional_string_scalar(
+release_channel_version_primary = normalize_optional_string_scalar(
     release_channel.get("version"),
     "release_channel.version",
     evidence,
     reasons,
     lowercase=False,
-    required=True,
+)
+release_channel_version_fallback = normalize_optional_string_scalar(
+    release_channel.get("releaseVersion"),
+    "release_channel.releaseVersion",
+    evidence,
+    reasons,
+    lowercase=False,
+)
+release_channel_version_alias_conflict = (
+    bool(release_channel_version_primary)
+    and bool(release_channel_version_fallback)
+    and release_channel_version_primary != release_channel_version_fallback
+)
+evidence["release_channel_version_alias_conflict"] = release_channel_version_alias_conflict
+if release_channel_version_alias_conflict:
+    reasons.append(
+        "release_channel.version and release_channel.releaseVersion disagree after normalization."
+    )
+release_channel_version = (
+    release_channel_version_primary or release_channel_version_fallback
 )
 
 evidence["release_channel_status"] = release_channel_status
@@ -1941,8 +1968,14 @@ evidence["release_channel_channel_id"] = release_channel_channel_id
 evidence["release_channel_version"] = release_channel_version
 release_channel_generated_at_raw, release_channel_generated_at = payload_generated_at(release_channel)
 evidence["release_channel_generated_at"] = release_channel_generated_at_raw
+release_channel_generated_at_alias_conflict = generated_at_alias_conflicts(release_channel)
+evidence["release_channel_generated_at_alias_conflict"] = release_channel_generated_at_alias_conflict
 evidence["release_channel_freshness_max_age_seconds"] = RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS
 evidence["release_channel_freshness_max_future_skew_seconds"] = RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS
+if release_channel_generated_at_alias_conflict:
+    reasons.append(
+        "release_channel.generated_at and release_channel.generatedAt disagree after normalization."
+    )
 if not release_channel_generated_at_raw or release_channel_generated_at is None:
     reasons.append("Release channel is missing a valid generated_at timestamp.")
 else:
@@ -2105,7 +2138,7 @@ evidence["release_channel_tuple_coverage_declares_missing_required_platform_head
 if not release_channel_channel_id:
     reasons.append("Release channel is missing channelId, so installer/update truth cannot be aligned by channel.")
 if not release_channel_version:
-    reasons.append("Release channel is missing version, so installer/update truth cannot be aligned by release head.")
+    reasons.append("Release channel is missing version/releaseVersion, so installer/update truth cannot be aligned by release head.")
 release_channel_publishable_status = release_channel_status in {"published", "ready", "pass", "passed"}
 evidence["release_channel_publishable_status"] = release_channel_publishable_status
 if not release_channel_publishable_status:
@@ -2188,13 +2221,15 @@ desktop_install_artifact_missing_version_tokens: List[str] = []
 desktop_install_artifact_version_mismatch_tokens: List[str] = []
 desktop_install_artifact_missing_arch_tokens: List[str] = []
 desktop_install_artifact_arch_mismatch_tokens: List[str] = []
+desktop_install_artifact_channel_alias_conflict_tokens: List[str] = []
+desktop_install_artifact_version_alias_conflict_tokens: List[str] = []
 for desktop_install_artifact in desktop_install_artifacts:
-    artifact_channel_id = normalize_token(
-        desktop_install_artifact.get("channelId") or desktop_install_artifact.get("channel")
-    )
-    artifact_version = normalize_token(
-        desktop_install_artifact.get("version") or desktop_install_artifact.get("releaseVersion")
-    )
+    artifact_channel_id_primary = normalize_token(desktop_install_artifact.get("channelId"))
+    artifact_channel_id_fallback = normalize_token(desktop_install_artifact.get("channel"))
+    artifact_channel_id = artifact_channel_id_primary or artifact_channel_id_fallback
+    artifact_version_primary = normalize_token(desktop_install_artifact.get("version"))
+    artifact_version_fallback = normalize_token(desktop_install_artifact.get("releaseVersion"))
+    artifact_version = artifact_version_primary or artifact_version_fallback
     artifact_tuple_token = build_install_media_tuple_token(desktop_install_artifact) or str(
         desktop_install_artifact.get("artifactId") or ""
     ).strip()
@@ -2211,6 +2246,18 @@ for desktop_install_artifact in desktop_install_artifacts:
     desktop_install_artifact_versions.append(artifact_version)
     if not artifact_head:
         desktop_install_artifact_missing_head_tokens.append(artifact_tuple_token or "<unknown>")
+    if (
+        artifact_channel_id_primary
+        and artifact_channel_id_fallback
+        and artifact_channel_id_primary != artifact_channel_id_fallback
+    ):
+        desktop_install_artifact_channel_alias_conflict_tokens.append(artifact_tuple_token or "<unknown>")
+    if (
+        artifact_version_primary
+        and artifact_version_fallback
+        and artifact_version_primary != artifact_version_fallback
+    ):
+        desktop_install_artifact_version_alias_conflict_tokens.append(artifact_tuple_token or "<unknown>")
     if not artifact_channel_id:
         desktop_install_artifact_missing_channel_tokens.append(artifact_tuple_token or "<unknown>")
     elif release_channel_channel_id and artifact_channel_id != release_channel_channel_id:
@@ -2249,6 +2296,12 @@ evidence["release_channel_desktop_install_artifacts_missing_arch"] = (
 )
 evidence["release_channel_desktop_install_artifacts_arch_mismatch"] = (
     sorted(set(desktop_install_artifact_arch_mismatch_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_channel_alias_conflict"] = (
+    sorted(set(desktop_install_artifact_channel_alias_conflict_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_version_alias_conflict"] = (
+    sorted(set(desktop_install_artifact_version_alias_conflict_tokens))
 )
 if desktop_install_artifact_missing_channel_tokens:
     reasons.append(
@@ -2290,6 +2343,18 @@ if desktop_install_artifact_arch_mismatch_tokens:
     reasons.append(
         "Release channel desktop install artifact(s) arch does not match RID-derived architecture: "
         + ", ".join(sorted(set(desktop_install_artifact_arch_mismatch_tokens)))
+        + "."
+    )
+if desktop_install_artifact_channel_alias_conflict_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) carry conflicting channelId/channel values: "
+        + ", ".join(sorted(set(desktop_install_artifact_channel_alias_conflict_tokens)))
+        + "."
+    )
+if desktop_install_artifact_version_alias_conflict_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) carry conflicting version/releaseVersion values: "
+        + ", ".join(sorted(set(desktop_install_artifact_version_alias_conflict_tokens)))
         + "."
     )
 duplicate_desktop_install_artifact_tuples = collect_duplicate_install_media_tuples(
@@ -3085,26 +3150,107 @@ workflow_head_missing_contract_markers = {
     for head, markers in workflow_head_missing_contract_markers_raw.items()
     if normalize_token(head) and isinstance(markers, list)
 }
-visual_release_channel_id = normalize_optional_string_scalar(
-    visual_familiarity_evidence.get("release_channel_channel_id")
-    or visual_familiarity_evidence.get("release_channel_id")
-    or visual_familiarity_gate.get("channelId")
-    or visual_familiarity_gate.get("channel"),
+visual_release_channel_id_from_evidence_primary = normalize_optional_string_scalar(
+    visual_familiarity_evidence.get("release_channel_channel_id"),
     "visual_familiarity.release_channel_channel_id",
     evidence,
     reasons,
-    required=True,
 )
-workflow_release_channel_id = normalize_optional_string_scalar(
-    workflow_execution_evidence.get("release_channel_channel_id")
-    or workflow_execution_evidence.get("release_channel_id")
-    or workflow_execution_gate.get("channelId")
-    or workflow_execution_gate.get("channel"),
+visual_release_channel_id_from_evidence_alias = normalize_optional_string_scalar(
+    visual_familiarity_evidence.get("release_channel_id"),
+    "visual_familiarity.release_channel_id",
+    evidence,
+    reasons,
+)
+visual_release_channel_id_from_gate_primary = normalize_optional_string_scalar(
+    visual_familiarity_gate.get("channelId"),
+    "visual_familiarity.channelId",
+    evidence,
+    reasons,
+)
+visual_release_channel_id_from_gate_alias = normalize_optional_string_scalar(
+    visual_familiarity_gate.get("channel"),
+    "visual_familiarity.channel",
+    evidence,
+    reasons,
+)
+visual_release_channel_id_candidates = [
+    token
+    for token in (
+        visual_release_channel_id_from_evidence_primary,
+        visual_release_channel_id_from_evidence_alias,
+        visual_release_channel_id_from_gate_primary,
+        visual_release_channel_id_from_gate_alias,
+    )
+    if token
+]
+visual_release_channel_id_alias_conflict = len(set(visual_release_channel_id_candidates)) > 1
+evidence["visual_familiarity_release_channel_id_alias_conflict"] = (
+    visual_release_channel_id_alias_conflict
+)
+visual_release_channel_id = (
+    visual_release_channel_id_from_evidence_primary
+    or visual_release_channel_id_from_evidence_alias
+    or visual_release_channel_id_from_gate_primary
+    or visual_release_channel_id_from_gate_alias
+)
+if not visual_release_channel_id:
+    reasons.append("visual_familiarity.release_channel_channel_id is missing.")
+if visual_release_channel_id_alias_conflict:
+    reasons.append(
+        "Desktop visual familiarity exit gate carries conflicting release-channel identity aliases across evidence and gate envelope."
+    )
+
+workflow_release_channel_id_from_evidence_primary = normalize_optional_string_scalar(
+    workflow_execution_evidence.get("release_channel_channel_id"),
     "workflow_execution.release_channel_channel_id",
     evidence,
     reasons,
-    required=True,
 )
+workflow_release_channel_id_from_evidence_alias = normalize_optional_string_scalar(
+    workflow_execution_evidence.get("release_channel_id"),
+    "workflow_execution.release_channel_id",
+    evidence,
+    reasons,
+)
+workflow_release_channel_id_from_gate_primary = normalize_optional_string_scalar(
+    workflow_execution_gate.get("channelId"),
+    "workflow_execution.channelId",
+    evidence,
+    reasons,
+)
+workflow_release_channel_id_from_gate_alias = normalize_optional_string_scalar(
+    workflow_execution_gate.get("channel"),
+    "workflow_execution.channel",
+    evidence,
+    reasons,
+)
+workflow_release_channel_id_candidates = [
+    token
+    for token in (
+        workflow_release_channel_id_from_evidence_primary,
+        workflow_release_channel_id_from_evidence_alias,
+        workflow_release_channel_id_from_gate_primary,
+        workflow_release_channel_id_from_gate_alias,
+    )
+    if token
+]
+workflow_release_channel_id_alias_conflict = len(set(workflow_release_channel_id_candidates)) > 1
+evidence["workflow_execution_release_channel_id_alias_conflict"] = (
+    workflow_release_channel_id_alias_conflict
+)
+workflow_release_channel_id = (
+    workflow_release_channel_id_from_evidence_primary
+    or workflow_release_channel_id_from_evidence_alias
+    or workflow_release_channel_id_from_gate_primary
+    or workflow_release_channel_id_from_gate_alias
+)
+if not workflow_release_channel_id:
+    reasons.append("workflow_execution.release_channel_channel_id is missing.")
+if workflow_release_channel_id_alias_conflict:
+    reasons.append(
+        "Desktop workflow execution gate carries conflicting release-channel identity aliases across evidence and gate envelope."
+    )
 visual_release_version = normalize_optional_string_scalar(
     visual_familiarity_evidence.get("release_channel_version")
     or visual_familiarity_gate.get("releaseVersion"),
