@@ -3579,8 +3579,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "Loaded_runner_header_stays_tab_panel_only_without_metric_cards");
 
         StringAssert.Contains(visualGateScriptText, "release_gate_lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
-        StringAssert.Contains(visualGateScriptText, "for _ in $(seq 1 150); do");
-        StringAssert.Contains(visualGateScriptText, "if [[ ! -d \"$release_gate_lock_dir\" ]]; then");
+        StringAssert.Contains(visualGateScriptText, "skip_release_gate_lock_wait=\"${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}\"");
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_wait_seconds=\"${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}\"");
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_poll_seconds=\"${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS:-2}\"");
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))");
+        StringAssert.Contains(visualGateScriptText, "for _ in $(seq 1 \"$release_gate_lock_wait_iterations\"); do");
+        StringAssert.Contains(visualGateScriptText, "sleep \"$release_gate_lock_poll_seconds\"");
+        StringAssert.Contains(visualGateScriptText, "if [[ \"$skip_release_gate_lock_wait\" != \"1\" ]]; then");
         StringAssert.Contains(visualGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks");
         StringAssert.Contains(visualGateScriptText, "ruleset_orientation_method_has_markers");
         StringAssert.Contains(visualGateScriptText, "missing_ruleset_orientation_markers");
