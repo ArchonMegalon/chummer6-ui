@@ -189,6 +189,7 @@ def normalize_required_tuple_list(
     values: Any,
     field_label: str,
     expected_part_count: int,
+    allowed_platform_tokens: set[str] | None,
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> List[str]:
@@ -200,6 +201,11 @@ def normalize_required_tuple_list(
         if len(parts) != expected_part_count or any(not part for part in parts):
             malformed.append(token)
             continue
+        if expected_part_count == 3 and allowed_platform_tokens is not None:
+            platform_token = parts[2]
+            if platform_token not in allowed_platform_tokens:
+                malformed.append(token)
+                continue
         valid.append(token)
     if malformed:
         reasons.append(
@@ -212,6 +218,7 @@ def normalize_required_tuple_list(
 def normalize_promoted_platform_heads(
     values: Any,
     field_label: str,
+    allowed_platform_tokens: set[str] | None,
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> Dict[str, List[str]]:
@@ -228,6 +235,9 @@ def normalize_promoted_platform_heads(
         platform_token = normalize_token(raw_platform)
         if not platform_token:
             reasons.append(f"{field_label} contains a blank platform key.")
+            continue
+        if allowed_platform_tokens is not None and platform_token not in allowed_platform_tokens:
+            reasons.append(f"{field_label} contains unsupported platform key '{platform_token}'.")
             continue
         head_field_label = f"{field_label}.{platform_token}"
         normalized[platform_token] = normalize_required_token_list(
@@ -1358,6 +1368,7 @@ desktop_tuple_coverage = (
     else {}
 )
 desktop_tuple_coverage_present = isinstance(release_channel.get("desktopTupleCoverage"), dict)
+desktop_platform_tokens = {"linux", "windows", "macos"}
 tuple_coverage_required_desktop_platforms = normalize_required_token_list(
     desktop_tuple_coverage.get("requiredDesktopPlatforms"),
     "desktopTupleCoverage.requiredDesktopPlatforms",
@@ -1373,6 +1384,7 @@ tuple_coverage_required_desktop_heads = normalize_required_token_list(
 tuple_coverage_promoted_platform_heads = normalize_promoted_platform_heads(
     desktop_tuple_coverage.get("promotedPlatformHeads"),
     "desktopTupleCoverage.promotedPlatformHeads",
+    desktop_platform_tokens,
     evidence,
     reasons,
 )
@@ -1380,6 +1392,7 @@ tuple_coverage_reported_missing_platform_head_pairs = normalize_required_tuple_l
     desktop_tuple_coverage.get("missingRequiredPlatformHeadPairs"),
     "desktopTupleCoverage.missingRequiredPlatformHeadPairs",
     2,
+    None,
     evidence,
     reasons,
 )
@@ -1399,6 +1412,7 @@ tuple_coverage_required_platform_head_rid_tuples = normalize_required_tuple_list
     desktop_tuple_coverage.get("requiredDesktopPlatformHeadRidTuples"),
     "desktopTupleCoverage.requiredDesktopPlatformHeadRidTuples",
     3,
+    desktop_platform_tokens,
     evidence,
     reasons,
 )
@@ -1406,6 +1420,7 @@ tuple_coverage_reported_promoted_platform_head_rid_tuples = normalize_required_t
     desktop_tuple_coverage.get("promotedPlatformHeadRidTuples"),
     "desktopTupleCoverage.promotedPlatformHeadRidTuples",
     3,
+    desktop_platform_tokens,
     evidence,
     reasons,
 )
@@ -1413,6 +1428,7 @@ tuple_coverage_reported_missing_platform_head_rid_tuples = normalize_required_tu
     desktop_tuple_coverage.get("missingRequiredPlatformHeadRidTuples"),
     "desktopTupleCoverage.missingRequiredPlatformHeadRidTuples",
     3,
+    desktop_platform_tokens,
     evidence,
     reasons,
 )
