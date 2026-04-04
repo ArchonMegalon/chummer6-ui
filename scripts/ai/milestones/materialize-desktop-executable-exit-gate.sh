@@ -3142,6 +3142,20 @@ expected_macos_artifacts = [
     and normalize_token(item.get("head"))
     and macos_rid_from_artifact(item)
 ]
+macos_artifacts_missing_rid_by_head = sorted(
+    {
+        normalize_token(item.get("head"))
+        for item in desktop_install_artifacts
+        if normalize_token(item.get("platform")) == "macos"
+        and normalize_token(item.get("head"))
+        and not macos_rid_from_artifact(item)
+    }
+)
+evidence["macos_artifacts_missing_rid_by_head"] = macos_artifacts_missing_rid_by_head
+for missing_rid_head in macos_artifacts_missing_rid_by_head:
+    reasons.append(
+        f"Release channel publishes macOS desktop media for head '{missing_rid_head}' without explicit head/rid tuple metadata."
+    )
 macos_artifact_map_by_tuple: Dict[tuple[str, str], Dict[str, Any]] = {
     (
         normalize_token(item.get("head")),
@@ -3193,6 +3207,8 @@ evidence["macos_policy_required_head_rid_tuples"] = [
 evidence["macos_policy_tuples_missing_release_artifacts"] = (
     macos_policy_tuples_missing_release_artifacts
 )
+if not expected_macos_artifacts and platform_artifact_counts.get("macos", 0) > 0:
+    reasons.append("Release channel publishes macOS desktop media without explicit head/rid tuple metadata.")
 collect_stale_platform_gate_receipts_without_promoted_tuples(
     receipt_path.parent,
     promoted_linux_tuples,
