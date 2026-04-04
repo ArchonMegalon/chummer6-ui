@@ -129,6 +129,11 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt head carries conflicting channelId/channel alias values for promoted head");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head");
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head");
+        StringAssert.Contains(executableScriptText, "or gate_checks.get(\"startup_smoke_external_blocker\")");
+        StringAssert.Contains(executableScriptText, "checks_startup_smoke_receipt_found");
+        StringAssert.Contains(executableScriptText, "checks_startup_smoke_receipt_path");
+        StringAssert.Contains(executableScriptText, "Linux desktop exit gate checks.startup_smoke_receipt_found disagrees with startup_smoke.primary receipt file presence for promoted head");
+        StringAssert.Contains(executableScriptText, "Linux desktop exit gate checks.startup_smoke_receipt_path disagrees with startup_smoke.primary.receipt_path for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt is missing version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
@@ -351,6 +356,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "\"release_channel_id\": release_channel_channel_id");
         StringAssert.Contains(scriptText, "\"release_channel_version\": release_channel_version");
         StringAssert.Contains(scriptText, "\"release_channel_linux_artifact\": release_channel_linux_artifact");
+        StringAssert.Contains(scriptText, "\"startup_smoke_receipt_found\": startup_smoke_receipt_exists");
+        StringAssert.Contains(scriptText, "\"startup_smoke_receipt_path\": installer_receipt_path");
+        StringAssert.Contains(scriptText, "\"startup_smoke_external_blocker\": startup_smoke_external_blocker");
         StringAssert.Contains(scriptText, "release_channel_payload.get(\"artifacts\")");
         StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"platform\")) == \"linux\"");
         StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"kind\")) == \"installer\"");
