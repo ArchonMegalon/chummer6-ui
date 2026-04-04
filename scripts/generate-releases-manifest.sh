@@ -15,10 +15,12 @@ RELEASE_CHANNEL="${RELEASE_CHANNEL:-docker}"
 RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 REQUIRE_STARTUP_SMOKE_PROOF="${CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF:-1}"
 REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}"
+PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS:-1}"
 UI_LOCALIZATION_RELEASE_GATE_PATH="${CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json}"
 CANONICAL_MANIFEST_PATH="${CANONICAL_MANIFEST_PATH:-$(dirname "$MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PORTAL_CANONICAL_MANIFEST_PATH="${PORTAL_CANONICAL_MANIFEST_PATH:-$(dirname "$PORTAL_MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PROMOTION_EVIDENCE_PATH="${PROMOTION_EVIDENCE_PATH:-$(dirname "$MANIFEST_PATH")/release-evidence/public-promotion.json}"
+QUARANTINE_PROMOTION_EVIDENCE_PATH="${QUARANTINE_PROMOTION_EVIDENCE_PATH:-$REPO_ROOT/.codex-studio/published/QUARANTINED_INSTALLER_PROMOTION.generated.json}"
 SOURCE_MANIFEST_PATH="${SOURCE_MANIFEST_PATH:-}"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
 
@@ -82,16 +84,163 @@ resolve_release_proof_path() {
   printf '%s\n' ""
 }
 
+sanitize_release_proof_payload() {
+  local source_path="${1:-}"
+  local output_path="${2:-}"
+  python3 - "$source_path" "$output_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit(f"release proof payload must be a JSON object: {source_path}")
+
+allowed = {
+    "status",
+    "generatedAt",
+    "generated_at",
+    "baseUrl",
+    "base_url",
+    "journeysPassed",
+    "journeys_passed",
+    "proofRoutes",
+    "proof_routes",
+    "uiLocalizationReleaseGate",
+    "ui_localization_release_gate",
+}
+sanitized = {key: payload[key] for key in payload if key in allowed}
+output_path.parent.mkdir(parents=True, exist_ok=True)
+output_path.write_text(json.dumps(sanitized, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+sanitize_ui_localization_release_gate_payload() {
+  local source_path="${1:-}"
+  local output_path="${2:-}"
+  python3 - "$source_path" "$output_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit(f"ui localization release gate payload must be a JSON object: {source_path}")
+
+allowed = {
+    "status",
+    "generatedAt",
+    "generated_at",
+    "defaultKeyCount",
+    "default_key_count",
+    "explicitFallbackRuntime",
+    "explicit_fallback_runtime",
+    "signoffSmokeRunner",
+    "signoff_smoke_runner",
+    "signoffSmokeRunnerStatus",
+    "signoff_smoke_runner_status",
+    "shippingLocales",
+    "shipping_locales",
+    "acceptanceGates",
+    "acceptance_gates",
+    "domainCoverage",
+    "domain_coverage",
+    "localeDomainCoverage",
+    "locale_domain_coverage",
+    "blockingFindings",
+    "blocking_findings",
+    "blockingFindingsCount",
+    "blocking_findings_count",
+    "translationBacklogFindings",
+    "translation_backlog_findings",
+    "translationBacklogFindingsCount",
+    "translation_backlog_findings_count",
+    "localeSummary",
+    "locale_summary",
+}
+sanitized = {key: payload[key] for key in payload if key in allowed}
+row_allowed = {
+    "locale",
+    "untranslated_key_count",
+    "untranslatedKeyCount",
+    "override_count",
+    "overrideCount",
+    "minimum_override_count",
+    "minimumOverrideCount",
+    "missing_release_seed_keys",
+    "missingReleaseSeedKeys",
+    "legacy_xml_present",
+    "legacyXmlPresent",
+    "legacy_data_xml_present",
+    "legacyDataXmlPresent",
+}
+locale_rows = sanitized.get("localeSummary")
+if isinstance(locale_rows, list):
+    sanitized["localeSummary"] = [
+        {key: value for key, value in row.items() if key in row_allowed}
+        for row in locale_rows
+        if isinstance(row, dict)
+    ]
+locale_rows_alias = sanitized.get("locale_summary")
+if isinstance(locale_rows_alias, list):
+    sanitized["locale_summary"] = [
+        {key: value for key, value in row.items() if key in row_allowed}
+        for row in locale_rows_alias
+        if isinstance(row, dict)
+    ]
+output_path.parent.mkdir(parents=True, exist_ok=True)
+output_path.write_text(json.dumps(sanitized, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
 if [[ ! -f "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" ]]; then
   echo "Missing registry materializer: $REGISTRY_ROOT/scripts/materialize_public_release_channel.py" >&2
   exit 1
 fi
 
 RELEASE_PROOF_PATH="$(resolve_release_proof_path "$RELEASE_PROOF_PATH")"
+SANITIZED_RELEASE_PROOF_PATH=""
+SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH=""
+cleanup_generate_release_manifest() {
+  if [[ -n "$SANITIZED_RELEASE_PROOF_PATH" && -f "$SANITIZED_RELEASE_PROOF_PATH" ]]; then
+    rm -f "$SANITIZED_RELEASE_PROOF_PATH"
+  fi
+  if [[ -n "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
+    rm -f "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH"
+  fi
+}
+trap cleanup_generate_release_manifest EXIT
+if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
+  SANITIZED_RELEASE_PROOF_PATH="$(mktemp)"
+  sanitize_release_proof_payload "$RELEASE_PROOF_PATH" "$SANITIZED_RELEASE_PROOF_PATH"
+  RELEASE_PROOF_PATH="$SANITIZED_RELEASE_PROOF_PATH"
+fi
+if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
+  SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH="$(mktemp)"
+  sanitize_ui_localization_release_gate_payload \
+    "$UI_LOCALIZATION_RELEASE_GATE_PATH" \
+    "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH"
+  UI_LOCALIZATION_RELEASE_GATE_PATH="$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH"
+fi
 
 mkdir -p "$(dirname "$MANIFEST_PATH")"
 mkdir -p "$(dirname "$PORTAL_MANIFEST_PATH")"
 mkdir -p "$DOWNLOADS_DIR"
+
+if [[ "$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" != "0" ]]; then
+  python3 "$SCRIPT_DIR/promote-proof-backed-quarantined-installers.py" \
+    --repo-root "$REPO_ROOT" \
+    --downloads-dir "$DOWNLOADS_DIR" \
+    --startup-smoke-dir "$STARTUP_SMOKE_DIR" \
+    --release-channel "$RELEASE_CHANNEL" \
+    --release-version "$RELEASE_VERSION" \
+    --output "$QUARANTINE_PROMOTION_EVIDENCE_PATH" \
+    >/dev/null
+fi
 
 readarray -t promoted_file_names < <(true)
 
