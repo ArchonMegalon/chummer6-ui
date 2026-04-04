@@ -166,6 +166,13 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Release channel Windows artifact arch does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "def infer_installer_file_name(head: str, rid: str, platform: str) -> str:");
         StringAssert.Contains(executableScriptText, "def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Path]) -> List[str]:");
+        StringAssert.Contains(executableScriptText, "def register_external_blocker(");
+        StringAssert.Contains(executableScriptText, "def infer_external_blockers_from_reasons(platform: str, reasons: List[str]) -> List[str]:");
+        StringAssert.Contains(executableScriptText, "evidence.setdefault(\"external_blockers\", [])");
+        StringAssert.Contains(executableScriptText, "source=\"windows_gate_reason\"");
+        StringAssert.Contains(executableScriptText, "source=\"macos_gate_reason\"");
+        StringAssert.Contains(executableScriptText, "source=\"linux_gate_reason\"");
+        StringAssert.Contains(executableScriptText, "source=\"global_reason\"");
         StringAssert.Contains(executableScriptText, "evidence[\"quarantine_roots\"]");
         StringAssert.Contains(executableScriptText, "gate_evidence[\"quarantined_installer_candidates\"] = quarantine_candidates");
         StringAssert.Contains(executableScriptText, "gate_evidence[\"expected_linux_shelf_path\"] = str(shelf_path)");

@@ -250,6 +250,61 @@ def dedupe_preserve_order(values: List[str]) -> List[str]:
     return deduped
 
 
+def register_external_blocker(
+    evidence: Dict[str, Any],
+    *,
+    platform: str,
+    head: str,
+    rid: str,
+    blocker: str,
+    source: str,
+) -> None:
+    blocker_token = normalize_token(blocker)
+    if not blocker_token:
+        return
+
+    entry = {
+        "platform": normalize_token(platform),
+        "head": normalize_token(head),
+        "rid": normalize_token(rid),
+        "blocker": blocker_token,
+        "source": normalize_token(source),
+    }
+    external_blockers = evidence.setdefault("external_blockers", [])
+    if not isinstance(external_blockers, list):
+        return
+
+    if any(
+        isinstance(candidate, dict)
+        and normalize_token(candidate.get("platform")) == entry["platform"]
+        and normalize_token(candidate.get("head")) == entry["head"]
+        and normalize_token(candidate.get("rid")) == entry["rid"]
+        and normalize_token(candidate.get("blocker")) == entry["blocker"]
+        for candidate in external_blockers
+    ):
+        return
+    external_blockers.append(entry)
+
+
+def infer_external_blockers_from_reasons(platform: str, reasons: List[str]) -> List[str]:
+    platform_token = normalize_token(platform)
+    inferred: List[str] = []
+    for reason in reasons:
+        reason_token = normalize_token(reason)
+        if not reason_token:
+            continue
+        if platform_token == "windows":
+            if "requires a windows-capable host" in reason_token or "missing_windows_host_capability" in reason_token:
+                inferred.append("missing_windows_host_capability")
+        elif platform_token == "macos":
+            if "requires a macos host" in reason_token or "missing_macos_host_capability" in reason_token:
+                inferred.append("missing_macos_host_capability")
+        elif platform_token == "linux":
+            if "requires a linux host" in reason_token or "missing_linux_host_capability" in reason_token:
+                inferred.append("missing_linux_host_capability")
+    return dedupe_preserve_order(inferred)
+
+
 def build_platform_head_rid_tuple(head: Any, rid: Any, platform: Any) -> str:
     head_token = normalize_token(head)
     rid_token = normalize_token(rid)
@@ -961,6 +1016,23 @@ def validate_linux_gate(
     gate_evidence["host_supports_linux_startup_smoke"] = host_supports_linux_startup_smoke
     gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
     gate_evidence["unit_test_summary"] = unit_tests.get("summary") if isinstance(unit_tests.get("summary"), dict) else {}
+    register_external_blocker(
+        evidence,
+        platform="linux",
+        head=head,
+        rid=normalize_token(expected_artifact.get("rid")),
+        blocker=startup_smoke_external_blocker,
+        source="linux_gate",
+    )
+    for inferred_blocker in infer_external_blockers_from_reasons("linux", gate_reasons):
+        register_external_blocker(
+            evidence,
+            platform="linux",
+            head=head,
+            rid=normalize_token(expected_artifact.get("rid")),
+            blocker=inferred_blocker,
+            source="linux_gate_reason",
+        )
 
     if primary_status not in {"pass", "passed", "ready"}:
         reasons.append(f"Linux installer startup smoke is not passing for promoted head '{head}'.")
@@ -1338,6 +1410,23 @@ def validate_windows_gate(
 
     expected_head = normalize_token(expected_artifact.get("head"))
     expected_rid = normalize_token(expected_artifact.get("rid"))
+    register_external_blocker(
+        evidence,
+        platform="windows",
+        head=expected_head,
+        rid=expected_rid,
+        blocker=startup_smoke_external_blocker,
+        source="windows_gate",
+    )
+    for inferred_blocker in infer_external_blockers_from_reasons("windows", gate_reasons):
+        register_external_blocker(
+            evidence,
+            platform="windows",
+            head=expected_head,
+            rid=expected_rid,
+            blocker=inferred_blocker,
+            source="windows_gate_reason",
+        )
     expected_tuple = (expected_head, expected_rid)
     gate_tuple = (
         normalize_token(gate_head.get("app_key")),
@@ -1812,6 +1901,23 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_receipt_source"] = "file" if startup_receipt_file else "missing"
     gate_evidence["host_supports_macos_startup_smoke"] = host_supports_macos_startup_smoke
     gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
+    register_external_blocker(
+        evidence,
+        platform="macos",
+        head=head,
+        rid=rid,
+        blocker=startup_smoke_external_blocker,
+        source="macos_gate",
+    )
+    for inferred_blocker in infer_external_blockers_from_reasons("macos", gate_reasons):
+        register_external_blocker(
+            evidence,
+            platform="macos",
+            head=head,
+            rid=rid,
+            blocker=inferred_blocker,
+            source="macos_gate_reason",
+        )
     if startup_receipt_exists and not startup_receipt_file:
         reasons.append(f"macOS startup smoke receipt file is unreadable or not a JSON object for promoted head '{head}' ({rid}).")
     gate_evidence["startup_smoke_ready_checkpoint"] = startup_smoke_ready_checkpoint
@@ -4123,8 +4229,18 @@ if platform_artifact_counts.get("windows", 0) > 0:
     platform_tokens.append("Windows")
 platform_scope = ", ".join(platform_tokens) if platform_tokens else "none"
 
-status = "pass" if not reasons else "fail"
 reasons = dedupe_preserve_order(reasons)
+for platform_token in ("linux", "windows", "macos"):
+    for inferred_blocker in infer_external_blockers_from_reasons(platform_token, reasons):
+        register_external_blocker(
+            evidence,
+            platform=platform_token,
+            head="",
+            rid="",
+            blocker=inferred_blocker,
+            source="global_reason",
+        )
+status = "pass" if not reasons else "fail"
 generated_at = now_iso()
 payload = {
     "generated_at": generated_at,
