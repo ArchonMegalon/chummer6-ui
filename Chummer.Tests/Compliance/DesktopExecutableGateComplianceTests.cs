@@ -68,8 +68,14 @@ public sealed class DesktopExecutableGateComplianceTests
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "(\"linux\", \"UI_LINUX*_DESKTOP_EXIT_GATE.generated.json\")");
+        StringAssert.Contains(scriptText, "(\"windows\", \"UI_WINDOWS*_DESKTOP_EXIT_GATE.generated.json\")");
+        StringAssert.Contains(scriptText, "(\"macos\", \"UI_MACOS*_DESKTOP_EXIT_GATE.generated.json\")");
         StringAssert.Contains(scriptText, "promoted_linux_tuples");
+        StringAssert.Contains(scriptText, "promoted_windows_tuples");
+        StringAssert.Contains(scriptText, "promoted_macos_tuples");
         StringAssert.Contains(scriptText, "stale_linux_gate_receipts_without_promoted_tuples");
+        StringAssert.Contains(scriptText, "stale_windows_gate_receipts_without_promoted_tuples");
+        StringAssert.Contains(scriptText, "stale_macos_gate_receipts_without_promoted_tuples");
         StringAssert.Contains(scriptText, "stale_passing_platform_gate_receipts_without_promoted_tuples");
         StringAssert.Contains(scriptText, "Stale passing platform gate receipts exist for non-promoted desktop tuples:");
     }
