@@ -3555,6 +3555,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "contains duplicate token(s):");
         StringAssert.Contains(executableGateScriptText, "contains malformed token(s):");
         StringAssert.Contains(executableGateScriptText, "contains unsupported platform key");
+        StringAssert.Contains(executableGateScriptText, "contains duplicate normalized platform key");
+        StringAssert.Contains(executableGateScriptText, "_raw_platform_keys_by_normalized");
+        StringAssert.Contains(executableGateScriptText, "_duplicate_normalized_platform_keys");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs");
         StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs_by_platform");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing required desktop platform/head installer tuple pair(s): ");
