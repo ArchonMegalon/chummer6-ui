@@ -797,6 +797,91 @@ fi
 
 rm -f "$required_desktop_heads_canonical_mutation_release_channel" "$required_desktop_heads_canonical_mutation_output"
 
+echo "[verify] checking W1 desktop executable gate fail-close mutation for missing desktopTupleCoverage metadata..."
+missing_desktop_tuple_coverage_mutation_release_channel="$(mktemp)"
+missing_desktop_tuple_coverage_mutation_output="$(mktemp)"
+python3 - "$release_channel_path_default" "$missing_desktop_tuple_coverage_mutation_release_channel" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+payload.pop("desktopTupleCoverage", None)
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+set +e
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$missing_desktop_tuple_coverage_mutation_release_channel" \
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >"$missing_desktop_tuple_coverage_mutation_output" 2>&1
+missing_desktop_tuple_coverage_mutation_exit=$?
+set -e
+
+if [[ "$missing_desktop_tuple_coverage_mutation_exit" -eq 0 ]]; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject missing desktopTupleCoverage metadata."
+  cat "$missing_desktop_tuple_coverage_mutation_output"
+  rm -f "$missing_desktop_tuple_coverage_mutation_release_channel" "$missing_desktop_tuple_coverage_mutation_output"
+  exit 51
+fi
+
+if ! rg -F "Release channel is missing desktopTupleCoverage metadata for promoted desktop install artifacts." "$missing_desktop_tuple_coverage_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit missing desktopTupleCoverage metadata marker."
+  cat "$missing_desktop_tuple_coverage_mutation_output"
+  rm -f "$missing_desktop_tuple_coverage_mutation_release_channel" "$missing_desktop_tuple_coverage_mutation_output"
+  exit 52
+fi
+
+rm -f "$missing_desktop_tuple_coverage_mutation_release_channel" "$missing_desktop_tuple_coverage_mutation_output"
+
+echo "[verify] checking W1 desktop executable gate fail-close mutation for missing promotedPlatformHeads mapping..."
+missing_promoted_platform_heads_mutation_release_channel="$(mktemp)"
+missing_promoted_platform_heads_mutation_output="$(mktemp)"
+python3 - "$release_channel_path_default" "$missing_promoted_platform_heads_mutation_release_channel" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+desktop_tuple_coverage = payload.get("desktopTupleCoverage")
+if not isinstance(desktop_tuple_coverage, dict):
+    raise SystemExit("verify gate failed: expected desktopTupleCoverage object in release channel fixture.")
+desktop_tuple_coverage.pop("promotedPlatformHeads", None)
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+set +e
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$missing_promoted_platform_heads_mutation_release_channel" \
+bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >"$missing_promoted_platform_heads_mutation_output" 2>&1
+missing_promoted_platform_heads_mutation_exit=$?
+set -e
+
+if [[ "$missing_promoted_platform_heads_mutation_exit" -eq 0 ]]; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject missing promotedPlatformHeads mapping."
+  cat "$missing_promoted_platform_heads_mutation_output"
+  rm -f "$missing_promoted_platform_heads_mutation_release_channel" "$missing_promoted_platform_heads_mutation_output"
+  exit 53
+fi
+
+if ! rg -F "Release channel desktopTupleCoverage is missing promotedPlatformHeads mapping for desktop install media." "$missing_promoted_platform_heads_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit missing promotedPlatformHeads mapping marker."
+  cat "$missing_promoted_platform_heads_mutation_output"
+  rm -f "$missing_promoted_platform_heads_mutation_release_channel" "$missing_promoted_platform_heads_mutation_output"
+  exit 54
+fi
+
+rm -f "$missing_promoted_platform_heads_mutation_release_channel" "$missing_promoted_platform_heads_mutation_output"
+
 echo "[verify] checking B15 localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh
 

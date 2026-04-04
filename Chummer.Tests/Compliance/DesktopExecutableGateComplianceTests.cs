@@ -214,6 +214,30 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_missing_desktop_tuple_coverage_metadata()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject missing desktopTupleCoverage metadata");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit missing desktopTupleCoverage metadata marker");
+        StringAssert.Contains(verifyScriptText, "Release channel is missing desktopTupleCoverage metadata for promoted desktop install artifacts.");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_missing_promoted_platform_heads_mapping()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject missing promotedPlatformHeads mapping");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit missing promotedPlatformHeads mapping marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage is missing promotedPlatformHeads mapping for desktop install media.");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_checks_desktop_executable_gate_blocking_findings_alias_alignment()
     {
         string repoRoot = FindRepoRoot();
