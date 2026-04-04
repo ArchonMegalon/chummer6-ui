@@ -18,6 +18,8 @@ release_channel_path="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$releas
 linux_avalonia_gate_path="$repo_root/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
 linux_blazor_gate_path="$repo_root/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json"
 windows_gate_path_default="$repo_root/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
+windows_gate_materializer_path="$repo_root/scripts/materialize-windows-desktop-exit-gate.sh"
+macos_gate_materializer_path="$repo_root/scripts/materialize-macos-desktop-exit-gate.sh"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 visual_familiarity_gate_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 workflow_execution_gate_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
@@ -57,6 +59,91 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
   fi
   if [[ -f "$workflow_execution_materializer_path" ]]; then
     bash "$workflow_execution_materializer_path" >/dev/null
+  fi
+  if [[ -f "$windows_gate_materializer_path" || -f "$macos_gate_materializer_path" ]]; then
+    while IFS=: read -r head rid platform; do
+      [[ -n "$head" && -n "$rid" && -n "$platform" ]] || continue
+      if [[ "$platform" == "windows" && -f "$windows_gate_materializer_path" ]]; then
+        if [[ "$head" == "avalonia" && "$rid" == "win-x64" ]]; then
+          windows_gate_tuple_path="$windows_gate_path_default"
+        else
+          head_token="${head^^}"
+          head_token="${head_token//-/_}"
+          rid_token="${rid^^}"
+          rid_token="${rid_token//-/_}"
+          windows_gate_tuple_path="$repo_root/.codex-studio/published/UI_WINDOWS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
+        fi
+        if ! CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="$release_channel_path" \
+          CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY="$head" \
+          CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID="$rid" \
+          CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$windows_gate_tuple_path" \
+          bash "$windows_gate_materializer_path" >/dev/null 2>&1; then
+          :
+        fi
+      fi
+      if [[ "$platform" == "macos" && -f "$macos_gate_materializer_path" ]]; then
+        head_token="${head^^}"
+        head_token="${head_token//-/_}"
+        rid_token="${rid^^}"
+        rid_token="${rid_token//-/_}"
+        macos_gate_tuple_path="$repo_root/.codex-studio/published/UI_MACOS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
+        if ! CHUMMER_MACOS_RELEASE_CHANNEL_PATH="$release_channel_path" \
+          CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY="$head" \
+          CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID="$rid" \
+          CHUMMER_UI_MACOS_DESKTOP_EXIT_GATE_PATH="$macos_gate_tuple_path" \
+          bash "$macos_gate_materializer_path" >/dev/null 2>&1; then
+          :
+        fi
+      fi
+    done < <(python3 - <<'PY' "$release_channel_path"
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+release_channel_path = Path(sys.argv[1])
+if not release_channel_path.is_file():
+    raise SystemExit(0)
+
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+try:
+    payload = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(0)
+
+tuple_coverage = payload.get("desktopTupleCoverage")
+if not isinstance(tuple_coverage, dict):
+    raise SystemExit(0)
+
+required = tuple_coverage.get("requiredDesktopPlatformHeadRidTuples")
+if not isinstance(required, list):
+    raise SystemExit(0)
+
+tuples: list[tuple[str, str, str]] = []
+seen: set[tuple[str, str, str]] = set()
+for token in required:
+    raw = str(token or "").strip()
+    if not raw:
+        continue
+    parts = raw.split(":")
+    if len(parts) != 3:
+        continue
+    head, rid, platform = (normalize(parts[0]), normalize(parts[1]), normalize(parts[2]))
+    if not head or not rid or platform not in {"windows", "macos"}:
+        continue
+    key = (head, rid, platform)
+    if key in seen:
+        continue
+    seen.add(key)
+    tuples.append(key)
+
+for head, rid, platform in sorted(tuples):
+    print(f"{head}:{rid}:{platform}")
+PY
+)
   fi
 fi
 
