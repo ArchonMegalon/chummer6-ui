@@ -1129,6 +1129,9 @@ def validate_windows_gate(
         startup_smoke_platform = normalize_token(
             startup_smoke_receipt_payload.get("platform")
         )
+        startup_smoke_rid = normalize_token(
+            startup_smoke_receipt_payload.get("rid")
+        )
         startup_smoke_arch = normalize_token(
             startup_smoke_receipt_payload.get("arch")
         )
@@ -1169,6 +1172,7 @@ def validate_windows_gate(
         gate_evidence["startup_smoke_artifact_digest"] = startup_smoke_artifact_digest
         gate_evidence["startup_smoke_head_id"] = startup_smoke_head_id
         gate_evidence["startup_smoke_platform"] = startup_smoke_platform
+        gate_evidence["startup_smoke_rid"] = startup_smoke_rid
         gate_evidence["startup_smoke_arch"] = startup_smoke_arch
         gate_evidence["startup_smoke_channel"] = startup_smoke_channel_id
         gate_evidence["startup_smoke_version"] = startup_smoke_version
@@ -1186,6 +1190,10 @@ def validate_windows_gate(
             reasons.append("Windows startup smoke receipt headId does not match promoted release-channel head.")
         if startup_smoke_platform != "windows":
             reasons.append("Windows startup smoke receipt platform is not windows for promoted installer bytes.")
+        if not startup_smoke_rid:
+            reasons.append("Windows startup smoke receipt rid is missing for promoted installer bytes.")
+        elif startup_smoke_rid != expected_rid:
+            reasons.append("Windows startup smoke receipt rid does not match promoted release-channel RID.")
         if not startup_smoke_host_class:
             reasons.append("Windows startup smoke receipt hostClass is missing for promoted installer bytes.")
         elif not host_class_matches_platform(startup_smoke_host_class, "windows"):
@@ -1325,6 +1333,7 @@ def validate_macos_gate(
     )
     startup_smoke_head_id = normalize_token(startup_receipt_for_validation.get("headId"))
     startup_smoke_platform = normalize_token(startup_receipt_for_validation.get("platform"))
+    startup_smoke_rid = normalize_token(startup_receipt_for_validation.get("rid"))
     startup_smoke_arch = normalize_token(startup_receipt_for_validation.get("arch"))
     startup_smoke_channel_id = normalize_token(
         startup_receipt_for_validation.get("channelId") or startup_receipt_for_validation.get("channel")
@@ -1359,6 +1368,7 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_artifact_digest"] = startup_smoke_artifact_digest
     gate_evidence["startup_smoke_receipt_head_id"] = startup_smoke_head_id
     gate_evidence["startup_smoke_receipt_platform"] = startup_smoke_platform
+    gate_evidence["startup_smoke_receipt_rid"] = startup_smoke_rid
     gate_evidence["startup_smoke_receipt_arch"] = startup_smoke_arch
     gate_evidence["startup_smoke_receipt_channel_id"] = startup_smoke_channel_id
     gate_evidence["startup_smoke_receipt_version"] = startup_smoke_version
@@ -1435,6 +1445,10 @@ def validate_macos_gate(
             reasons.append(f"macOS startup smoke receipt headId does not match promoted head '{head}' ({rid}).")
         if startup_smoke_platform != "macos":
             reasons.append(f"macOS startup smoke receipt platform is not macOS for promoted head '{head}' ({rid}).")
+        if not startup_smoke_rid:
+            reasons.append(f"macOS startup smoke receipt rid is missing for promoted head '{head}' ({rid}).")
+        elif startup_smoke_rid != rid:
+            reasons.append(f"macOS startup smoke receipt rid does not match promoted RID for head '{head}' ({rid}).")
         if not startup_smoke_host_class:
             reasons.append(f"macOS startup smoke receipt hostClass is missing for promoted head '{head}' ({rid}).")
         elif not host_class_matches_platform(startup_smoke_host_class, "macos"):
