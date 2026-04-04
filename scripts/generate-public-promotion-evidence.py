@@ -130,7 +130,7 @@ def receipt_recorded_at(receipt: dict) -> datetime | None:
 
 def validate_receipt_for_artifact(receipt: dict, expected_platform: str, expected_digest: str, now_utc: datetime) -> tuple[bool, str]:
     status = normalize_token(receipt.get("status"))
-    if status and status not in PASSING_STARTUP_SMOKE_STATUSES:
+    if status not in PASSING_STARTUP_SMOKE_STATUSES:
         return False, "startup-smoke receipt status is not passing"
 
     checkpoint = normalize_token(receipt.get("readyCheckpoint"))
