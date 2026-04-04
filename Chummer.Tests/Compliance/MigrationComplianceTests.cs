@@ -3526,6 +3526,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is in the future for promoted head");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes Linux desktop media for head");
         StringAssert.Contains(executableGateScriptText, "flagship_required_desktop_heads = sorted(");
+        StringAssert.Contains(executableGateScriptText, "flagship_required_desktop_heads_source = flagship_gate.get(\"desktopHeads\")");
+        StringAssert.Contains(executableGateScriptText, "\"flagship.desktop_heads\"");
         StringAssert.Contains(executableGateScriptText, "Flagship UI release gate is missing required desktopHeads desktop head inventory.");
         StringAssert.Contains(executableGateScriptText, "missing_promoted_desktop_heads");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing promoted desktop install media for flagship-required head(s): ");
