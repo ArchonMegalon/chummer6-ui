@@ -111,6 +111,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -211,6 +213,11 @@ def path_is_within(path: Path, root: Path) -> bool:
         return False
 
 
+def path_uses_legacy_chummer5a_root(path: Path) -> bool:
+    normalized = str(path.resolve()).replace("\\", "/").lower()
+    return "/chummer5a/" in normalized
+
+
 proof_path = Path(sys.argv[1])
 release_channel_path = Path(sys.argv[2])
 app_key = sys.argv[3]
@@ -221,6 +228,9 @@ installer_path_arg = sys.argv[7].strip()
 repo_root = Path(sys.argv[8])
 hub_registry_root_arg = str(sys.argv[9] or "").strip()
 hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
+host_os_name = platform.system().strip()
+host_os_normalized = normalize_token(host_os_name)
+host_supports_macos_smoke = bool(host_os_normalized == "darwin" and shutil.which("hdiutil"))
 startup_smoke_max_age_seconds = int(
     str(
         os.environ.get("CHUMMER_MACOS_STARTUP_SMOKE_MAX_AGE_SECONDS")
@@ -242,6 +252,9 @@ evidence: Dict[str, Any] = {
     "app_key": app_key,
     "rid": rid,
     "launch_target": launch_target,
+    "host_operating_system": host_os_name,
+    "host_operating_system_normalized": host_os_normalized,
+    "host_supports_macos_startup_smoke": host_supports_macos_smoke,
 }
 
 release_channel = load_json(release_channel_path)
@@ -302,6 +315,8 @@ if not artifact_exists:
     reasons.append(f"Promoted macOS installer file is missing locally for {app_key} ({rid}).")
 elif not installer_path_arg and not installer_from_primary_shelf:
     reasons.append(f"Promoted macOS installer was not resolved from the repo-local desktop shelf for {app_key} ({rid}).")
+if installer_path is not None and path_uses_legacy_chummer5a_root(installer_path):
+    reasons.append(f"Promoted macOS installer was resolved from legacy chummer5a shelf bytes for {app_key} ({rid}).")
 
 if macos_artifact is not None:
     artifact_size_expected = int(macos_artifact.get("sizeBytes") or 0)
@@ -362,6 +377,8 @@ startup_smoke_age_seconds = (
     if startup_smoke_age_delta_seconds is not None
     else None
 )
+if startup_smoke_path is not None and startup_smoke_path.is_file() and path_uses_legacy_chummer5a_root(startup_smoke_path):
+    reasons.append("macOS startup smoke receipt was resolved from a legacy chummer5a path.")
 evidence["startup_smoke"] = {
     "status": startup_smoke_status,
     "receipt_path": str(startup_smoke_path) if startup_smoke_path else "",
@@ -376,10 +393,17 @@ evidence["startup_smoke"] = {
     "receipt_age_seconds": startup_smoke_age_seconds,
     "receipt_max_age_seconds": startup_smoke_max_age_seconds,
     "receipt_max_future_skew_seconds": startup_smoke_max_future_skew_seconds,
+    "external_blocker": (
+        "missing_macos_host_capability"
+        if (not startup_smoke_payload and not host_supports_macos_smoke)
+        else ""
+    ),
     "receipt": startup_smoke_payload,
 }
 if not startup_smoke_payload:
     reasons.append(f"macOS startup smoke receipt is missing for {app_key} ({rid}).")
+    if not host_supports_macos_smoke:
+        reasons.append("macOS startup smoke requires a macOS host with hdiutil; current host cannot run promoted macOS installer smoke.")
 else:
     expected_arch = expected_arch_from_rid(rid)
     if normalize_token(startup_smoke_payload.get("headId")) != normalize_token(app_key):
