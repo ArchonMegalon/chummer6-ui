@@ -280,10 +280,6 @@ else:
 
 downloads_candidates = [
     repo_root / "Docker" / "Downloads" / "files" / file_name,
-    Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/files") / file_name,
-    Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/files") / file_name,
-    Path("/docker/chummer5a/Docker/Downloads/files") / file_name,
-    Path("/docker/chummercomplete/chummer5a/Docker/Downloads/files") / file_name,
 ]
 downloads_candidates = list(dict.fromkeys(candidate.resolve() for candidate in downloads_candidates))
 installer_path = resolve_existing_path(installer_path_arg, downloads_candidates)
@@ -306,8 +302,6 @@ if not artifact_exists:
     reasons.append(f"Promoted macOS installer file is missing locally for {app_key} ({rid}).")
 elif not installer_path_arg and not installer_from_primary_shelf:
     reasons.append(f"Promoted macOS installer was not resolved from the repo-local desktop shelf for {app_key} ({rid}).")
-    if "/chummer5a/" in str(installer_path).replace("\\", "/").lower():
-        reasons.append(f"Promoted macOS installer was resolved from legacy chummer5a shelf bytes for {app_key} ({rid}).")
 
 if macos_artifact is not None:
     artifact_size_expected = int(macos_artifact.get("sizeBytes") or 0)
@@ -323,11 +317,6 @@ startup_smoke_candidates = [
     release_channel_path.parent.parent / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     repo_root / ".codex-studio" / "published" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     repo_root / "Docker" / "Downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
-    Path("/docker/chummercomplete/chummer-presentation/.codex-studio/published/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
-    Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
-    Path("/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
-    Path("/docker/chummer5a/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
-    Path("/docker/chummercomplete/chummer5a/Docker/Downloads/startup-smoke") / f"startup-smoke-{app_key}-{rid}.receipt.json",
 ]
 if hub_registry_root is not None:
     startup_smoke_candidates.extend(
@@ -392,8 +381,6 @@ evidence["startup_smoke"] = {
 if not startup_smoke_payload:
     reasons.append(f"macOS startup smoke receipt is missing for {app_key} ({rid}).")
 else:
-    if not startup_smoke_receipt_arg and "/chummer5a/" in str(startup_smoke_path).replace("\\", "/").lower():
-        reasons.append("macOS startup smoke receipt was resolved from a legacy chummer5a path.")
     expected_arch = expected_arch_from_rid(rid)
     if normalize_token(startup_smoke_payload.get("headId")) != normalize_token(app_key):
         reasons.append(f"macOS startup smoke receipt headId does not match promoted head {app_key}.")
