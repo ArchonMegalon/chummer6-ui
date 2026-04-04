@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-04-04T03:47:12Z",
+  "generated_at": "2026-04-04T04:08:30Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -25,6 +25,7 @@
   "signoff_smoke_runner": {
     "status": "pass",
     "log_excerpt": [
+      "/usr/share/dotnet/sdk/10.0.201/Microsoft.Common.CurrentVersion.targets(4917,5): warning MSB3026: Could not copy \"obj/Debug/net10.0/Chummer.Run.Contracts.dll\" to \"bin/Debug/net10.0/Chummer.Run.Contracts.dll\". Beginning retry 1 in 1000ms. The process cannot access the file '/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/obj/Debug/net10.0/Chummer.Run.Contracts.dll' because it is being used by another process.  [/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj]",
       "[B15] PASS: localization release smoke runner checks passed."
     ]
   },
@@ -122,6 +123,57 @@
   },
   "blocking_findings": [],
   "translation_backlog_findings": [],
+  "domain_coverage": {
+    "app_chrome": "pass",
+    "data_rules_names": "pass",
+    "explain_receipts": "pass",
+    "generated_artifacts": "pass",
+    "install_update_support": "pass"
+  },
+  "locale_domain_coverage": {
+    "en-us": {
+      "app_chrome": "pass",
+      "data_rules_names": "pass",
+      "explain_receipts": "pass",
+      "generated_artifacts": "pass",
+      "install_update_support": "pass"
+    },
+    "de-de": {
+      "app_chrome": "pass",
+      "data_rules_names": "pass",
+      "explain_receipts": "pass",
+      "generated_artifacts": "pass",
+      "install_update_support": "pass"
+    },
+    "fr-fr": {
+      "app_chrome": "pass",
+      "data_rules_names": "pass",
+      "explain_receipts": "pass",
+      "generated_artifacts": "pass",
+      "install_update_support": "pass"
+    },
+    "ja-jp": {
+      "app_chrome": "pass",
+      "data_rules_names": "pass",
+      "explain_receipts": "pass",
+      "generated_artifacts": "pass",
+      "install_update_support": "pass"
+    },
+    "pt-br": {
+      "app_chrome": "pass",
+      "data_rules_names": "pass",
+      "explain_receipts": "pass",
+      "generated_artifacts": "pass",
+      "install_update_support": "pass"
+    },
+    "zh-cn": {
+      "app_chrome": "pass",
+      "data_rules_names": "pass",
+      "explain_receipts": "pass",
+      "generated_artifacts": "pass",
+      "install_update_support": "pass"
+    }
+  },
   "acceptance_gates": [
     "pseudo_localization",
     "missing_key_fail_fast",

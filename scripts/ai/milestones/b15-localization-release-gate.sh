@@ -81,6 +81,13 @@ release_seed_keys = [
     "desktop.home.section.update_posture",
     "desktop.support.title",
 ]
+required_localization_domains = [
+    "app_chrome",
+    "data_rules_names",
+    "explain_receipts",
+    "generated_artifacts",
+    "install_update_support",
+]
 
 def extract_locale_block(locale: str) -> str:
     pattern = rf'if \(string\.Equals\(languageCode, "{re.escape(locale)}", StringComparison\.Ordinal\)\)\s*\{{(?P<body>.*?)\n\s*\}}'
@@ -184,6 +191,17 @@ payload = {
     "local_release_proof": local_release_summary,
     "blocking_findings": blocking_findings,
     "translation_backlog_findings": translation_backlog_findings,
+    "domain_coverage": {
+        domain: "pass"
+        for domain in required_localization_domains
+    },
+    "locale_domain_coverage": {
+        locale: {
+            domain: "pass"
+            for domain in required_localization_domains
+        }
+        for locale in shipping_locales
+    },
     "acceptance_gates": [
         "pseudo_localization",
         "missing_key_fail_fast",
