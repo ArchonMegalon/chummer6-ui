@@ -166,6 +166,18 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_runs_active_mutation_for_required_platform_head_rid_tuples_missing_required_pair_coverage()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "desktop executable gate should reject requiredDesktopPlatformHeadRidTuples missing required desktop platform/head pair coverage");
+        StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit requiredDesktopPlatformHeadRidTuples missing required desktop platform/head pair coverage marker");
+        StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage requiredDesktopPlatformHeadRidTuples is missing required desktop platform/head pair coverage:");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_checks_desktop_executable_gate_blocking_findings_alias_alignment()
     {
         string repoRoot = FindRepoRoot();
