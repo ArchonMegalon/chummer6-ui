@@ -839,10 +839,20 @@ def validate_linux_gate(
     gate_head_channel_alias_conflict = channel_alias_conflicts(gate_head)
     gate_evidence["gate_head_channel_id"] = gate_head_channel_id
     gate_evidence["gate_head_channel_id_alias_conflict"] = gate_head_channel_alias_conflict
+    gate_release_version_primary = str(gate_payload.get("releaseVersion") or "").strip()
+    gate_release_version_alias = str(gate_payload.get("version") or "").strip()
+    gate_release_version_alias_conflict = (
+        bool(gate_release_version_primary)
+        and bool(gate_release_version_alias)
+        and gate_release_version_primary != gate_release_version_alias
+    )
+    gate_evidence["gate_release_version_primary"] = gate_release_version_primary
+    gate_evidence["gate_release_version_alias"] = gate_release_version_alias
+    gate_evidence["gate_release_version_alias_conflict"] = gate_release_version_alias_conflict
     gate_release_version = str(
         gate_head.get("version")
-        or gate_payload.get("releaseVersion")
-        or gate_payload.get("version")
+        or gate_release_version_primary
+        or gate_release_version_alias
         or ""
     ).strip()
     gate_evidence["gate_release_version"] = gate_release_version
@@ -857,6 +867,10 @@ def validate_linux_gate(
     if gate_head_channel_alias_conflict:
         reasons.append(
             f"Linux desktop exit gate receipt head carries conflicting channelId/channel alias values for promoted head '{head}'."
+        )
+    if gate_release_version_alias_conflict:
+        reasons.append(
+            f"Linux desktop exit gate receipt carries conflicting releaseVersion/version alias values for promoted head '{head}'."
         )
     if release_channel_version and not gate_release_version:
         reasons.append(
@@ -1151,10 +1165,20 @@ def validate_windows_gate(
     gate_channel_id = payload_channel_id(gate_payload)
     gate_channel_id_alias_conflict = channel_alias_conflicts(gate_payload)
     checks_release_channel_id = normalize_token(gate_checks.get("release_channel_id"))
+    gate_release_version_primary = str(gate_payload.get("releaseVersion") or "").strip()
+    gate_release_version_alias = str(gate_payload.get("version") or "").strip()
+    gate_release_version_alias_conflict = (
+        bool(gate_release_version_primary)
+        and bool(gate_release_version_alias)
+        and gate_release_version_primary != gate_release_version_alias
+    )
     gate_evidence["gate_release_version"] = gate_release_version
     gate_evidence["gate_channel_id"] = gate_channel_id
     gate_evidence["gate_channel_id_alias_conflict"] = gate_channel_id_alias_conflict
     gate_evidence["checks_release_channel_id"] = checks_release_channel_id
+    gate_evidence["gate_release_version_primary"] = gate_release_version_primary
+    gate_evidence["gate_release_version_alias"] = gate_release_version_alias
+    gate_evidence["gate_release_version_alias_conflict"] = gate_release_version_alias_conflict
 
     if normalize_token(gate_head.get("platform")) != "windows":
         reasons.append("Windows desktop exit gate receipt platform is not 'windows'.")
@@ -1164,6 +1188,8 @@ def validate_windows_gate(
         reasons.append("Windows desktop exit gate receipt carries conflicting channelId/channel alias values.")
     if release_channel_id and checks_release_channel_id and checks_release_channel_id != release_channel_id:
         reasons.append("Windows desktop exit gate receipt checks.release_channel_id does not match release channel channelId.")
+    if gate_release_version_alias_conflict:
+        reasons.append("Windows desktop exit gate receipt carries conflicting releaseVersion/version alias values.")
     if release_channel_version and not gate_release_version:
         reasons.append("Windows desktop exit gate receipt is missing releaseVersion/version.")
     elif release_channel_version and gate_release_version != release_channel_version:
@@ -1471,8 +1497,16 @@ def validate_macos_gate(
     gate_channel_id = payload_channel_id(gate_payload)
     gate_channel_id_alias_conflict = channel_alias_conflicts(gate_payload)
     checks_release_channel_id = normalize_token(gate_checks.get("release_channel_id"))
+    gate_release_version_primary = str(gate_payload.get("releaseVersion") or "").strip()
+    gate_release_version_alias = str(gate_payload.get("version") or "").strip()
+    gate_release_version_alias_conflict = (
+        bool(gate_release_version_primary)
+        and bool(gate_release_version_alias)
+        and gate_release_version_primary != gate_release_version_alias
+    )
     gate_release_version = str(
-        gate_payload.get("releaseVersion")
+        gate_release_version_primary
+        or gate_release_version_alias
         or gate_checks.get("release_channel_version")
         or gate_checks.get("releaseVersion")
         or gate_head.get("version")
@@ -1481,6 +1515,9 @@ def validate_macos_gate(
     gate_evidence["gate_channel_id"] = gate_channel_id
     gate_evidence["gate_channel_id_alias_conflict"] = gate_channel_id_alias_conflict
     gate_evidence["checks_release_channel_id"] = checks_release_channel_id
+    gate_evidence["gate_release_version_primary"] = gate_release_version_primary
+    gate_evidence["gate_release_version_alias"] = gate_release_version_alias
+    gate_evidence["gate_release_version_alias_conflict"] = gate_release_version_alias_conflict
     gate_evidence["gate_release_version"] = gate_release_version
     if normalize_token(gate_head.get("app_key")) != head:
         reasons.append(f"macOS desktop exit gate receipt head does not match promoted head '{head}'.")
@@ -1494,6 +1531,8 @@ def validate_macos_gate(
         reasons.append(f"macOS desktop exit gate receipt carries conflicting channelId/channel alias values for promoted head '{head}' ({rid}).")
     if release_channel_id and checks_release_channel_id and checks_release_channel_id != release_channel_id:
         reasons.append(f"macOS desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head '{head}' ({rid}).")
+    if gate_release_version_alias_conflict:
+        reasons.append(f"macOS desktop exit gate receipt carries conflicting releaseVersion/version alias values for promoted head '{head}' ({rid}).")
     if release_channel_version and not gate_release_version:
         reasons.append(f"macOS desktop exit gate receipt is missing releaseVersion/version for promoted head '{head}' ({rid}).")
     elif release_channel_version and gate_release_version != release_channel_version:
