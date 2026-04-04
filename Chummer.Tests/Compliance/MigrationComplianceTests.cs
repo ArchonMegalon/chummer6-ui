@@ -3509,6 +3509,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt is stale for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is missing/unreadable for promoted head");
+        StringAssert.Contains(executableGateScriptText, "host_supports_linux_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "startup_smoke_external_blocker");
+        StringAssert.Contains(executableGateScriptText, "missing_linux_host_capability");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be missing_linux_host_capability when installer startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is outside trusted local roots for promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt headId does not match promoted head");
         StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt platform is not linux for promoted head");
@@ -3706,6 +3711,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "missing_macos_host_capability");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be missing_macos_host_capability when startup smoke receipt is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "host_supports_linux_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "missing_linux_host_capability");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be missing_linux_host_capability when installer startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt is missing for promoted head");
     }
 
     [TestMethod]
