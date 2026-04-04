@@ -119,6 +119,24 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(workflowScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head workflow execution proof:");
     }
 
+    [TestMethod]
+    public void Windows_and_macos_exit_gate_materializers_do_not_resolve_proof_from_legacy_chummer5a_paths()
+    {
+        string repoRoot = FindRepoRoot();
+        string windowsScriptPath = Path.Combine(repoRoot, "scripts", "materialize-windows-desktop-exit-gate.sh");
+        string macosScriptPath = Path.Combine(repoRoot, "scripts", "materialize-macos-desktop-exit-gate.sh");
+
+        string windowsScriptText = File.ReadAllText(windowsScriptPath);
+        string macosScriptText = File.ReadAllText(macosScriptPath);
+
+        StringAssert.Contains(windowsScriptText, "Promoted Windows installer was not resolved from the repo-local desktop shelf.");
+        StringAssert.Contains(macosScriptText, "Promoted macOS installer was not resolved from the repo-local desktop shelf");
+        Assert.IsFalse(windowsScriptText.Contains("/docker/chummer5a/", StringComparison.Ordinal));
+        Assert.IsFalse(macosScriptText.Contains("/docker/chummer5a/", StringComparison.Ordinal));
+        Assert.IsFalse(windowsScriptText.Contains("legacy chummer5a", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(macosScriptText.Contains("legacy chummer5a", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static string FindRepoRoot()
     {
         string current = Path.GetFullPath(AppContext.BaseDirectory);
