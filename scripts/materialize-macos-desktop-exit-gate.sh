@@ -155,6 +155,26 @@ def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def expected_host_class_platform_token(platform: str) -> str:
+    normalized = normalize_token(platform)
+    if normalized == "windows":
+        return "win"
+    if normalized == "macos":
+        return "osx"
+    if normalized == "linux":
+        return "linux"
+    return normalized
+
+
+def host_class_matches_platform(host_class: str, platform: str) -> bool:
+    normalized_host = normalize_token(host_class)
+    expected_token = expected_host_class_platform_token(platform)
+    if not normalized_host or not expected_token:
+        return False
+    host_tokens = [token for token in normalized_host.split("-") if token]
+    return expected_token in host_tokens
+
+
 def artifact_rid(artifact: Dict[str, Any]) -> str:
     rid = normalize_token(artifact.get("rid"))
     if rid:
@@ -206,6 +226,13 @@ startup_smoke_max_age_seconds = int(
         os.environ.get("CHUMMER_MACOS_STARTUP_SMOKE_MAX_AGE_SECONDS")
         or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
         or "86400"
+    ).strip()
+)
+startup_smoke_max_future_skew_seconds = int(
+    str(
+        os.environ.get("CHUMMER_MACOS_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+        or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
+        or "300"
     ).strip()
 )
 
@@ -318,6 +345,8 @@ startup_smoke_status = normalize_token(startup_smoke_payload.get("status")) or (
 startup_smoke_checkpoint = normalize_token(startup_smoke_payload.get("readyCheckpoint"))
 startup_smoke_artifact_digest = normalize_token(startup_smoke_payload.get("artifactDigest"))
 startup_smoke_channel = normalize_token(startup_smoke_payload.get("channelId") or startup_smoke_payload.get("channel"))
+startup_smoke_host_class = normalize_token(startup_smoke_payload.get("hostClass"))
+startup_smoke_operating_system = str(startup_smoke_payload.get("operatingSystem") or "").strip()
 startup_smoke_recorded_at_raw = str(
     startup_smoke_payload.get("completedAtUtc")
     or startup_smoke_payload.get("recordedAtUtc")
@@ -325,9 +354,14 @@ startup_smoke_recorded_at_raw = str(
     or ""
 ).strip()
 startup_smoke_recorded_at = parse_iso(startup_smoke_recorded_at_raw)
-startup_smoke_age_seconds = (
-    max(0, int((datetime.now(timezone.utc) - startup_smoke_recorded_at).total_seconds()))
+startup_smoke_age_delta_seconds = (
+    int((datetime.now(timezone.utc) - startup_smoke_recorded_at).total_seconds())
     if startup_smoke_recorded_at is not None
+    else None
+)
+startup_smoke_age_seconds = (
+    max(0, startup_smoke_age_delta_seconds)
+    if startup_smoke_age_delta_seconds is not None
     else None
 )
 evidence["startup_smoke"] = {
@@ -337,8 +371,12 @@ evidence["startup_smoke"] = {
     "ready_checkpoint": startup_smoke_checkpoint,
     "artifact_digest": startup_smoke_artifact_digest,
     "channel_id": startup_smoke_channel,
+    "host_class": startup_smoke_host_class,
+    "operating_system": startup_smoke_operating_system,
     "receipt_recorded_at": startup_smoke_recorded_at_raw,
     "receipt_age_seconds": startup_smoke_age_seconds,
+    "receipt_max_age_seconds": startup_smoke_max_age_seconds,
+    "receipt_max_future_skew_seconds": startup_smoke_max_future_skew_seconds,
     "receipt": startup_smoke_payload,
 }
 if not startup_smoke_payload:
@@ -351,6 +389,12 @@ else:
         reasons.append(f"macOS startup smoke receipt headId does not match promoted head {app_key}.")
     if normalize_token(startup_smoke_payload.get("platform")) != "macos":
         reasons.append("macOS startup smoke receipt platform is not macOS.")
+    if not startup_smoke_host_class:
+        reasons.append("macOS startup smoke receipt hostClass is missing.")
+    elif not host_class_matches_platform(startup_smoke_host_class, "macos"):
+        reasons.append("macOS startup smoke receipt hostClass does not identify a macOS host.")
+    if not startup_smoke_operating_system:
+        reasons.append("macOS startup smoke receipt operatingSystem is missing.")
     if expected_arch and normalize_token(startup_smoke_payload.get("arch")) != expected_arch:
         reasons.append(f"macOS startup smoke receipt arch does not match promoted RID {rid}.")
     if release_channel_id and startup_smoke_channel != release_channel_id:
@@ -365,6 +409,13 @@ else:
         reasons.append("macOS startup smoke receipt artifactDigest does not match promoted installer bytes.")
     if startup_smoke_recorded_at is None:
         reasons.append("macOS startup smoke receipt timestamp is missing or invalid.")
+    elif startup_smoke_age_delta_seconds is not None and startup_smoke_age_delta_seconds < 0:
+        startup_smoke_future_skew_seconds = abs(startup_smoke_age_delta_seconds)
+        evidence["startup_smoke"]["receipt_future_skew_seconds"] = startup_smoke_future_skew_seconds
+        if startup_smoke_future_skew_seconds > startup_smoke_max_future_skew_seconds:
+            reasons.append(
+                f"macOS startup smoke receipt timestamp is in the future ({startup_smoke_future_skew_seconds}s ahead)."
+            )
     elif startup_smoke_age_seconds is not None and startup_smoke_age_seconds > startup_smoke_max_age_seconds:
         reasons.append(f"macOS startup smoke receipt is stale ({startup_smoke_age_seconds}s old).")
 

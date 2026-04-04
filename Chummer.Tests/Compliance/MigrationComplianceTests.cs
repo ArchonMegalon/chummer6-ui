@@ -3496,10 +3496,18 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate does not carry per-head proof contract markers for required desktop head");
         StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate has missing/failing per-head proof contract markers for required desktop head");
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_EXECUTABLE_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(executableGateScriptText, "release_channel_generated_at");
+        StringAssert.Contains(executableGateScriptText, "release_channel_future_skew_seconds");
         StringAssert.Contains(executableGateScriptText, "release_channel_age_seconds");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing a valid generated_at timestamp.");
+        StringAssert.Contains(executableGateScriptText, "Release channel generated_at is in the future");
         StringAssert.Contains(executableGateScriptText, "Release channel receipt is stale (");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is in the future for promoted installer bytes");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is in the future for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is in the future for promoted head");
         StringAssert.Contains(executableGateScriptText, "Release channel publishes Linux desktop media for head");
         StringAssert.Contains(executableGateScriptText, "flagship_required_desktop_heads = sorted(");
         StringAssert.Contains(executableGateScriptText, "Flagship UI release gate is missing required desktopHeads desktop head inventory.");
@@ -3740,6 +3748,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt channelId does not match release channel");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt timestamp is missing or invalid.");
+        StringAssert.Contains(macosGateScriptText, "CHUMMER_MACOS_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(macosGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt timestamp is in the future (");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt is stale (");
     }
 
@@ -3772,6 +3783,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt timestamp is in the future (");
         StringAssert.Contains(linuxGateScriptText, "FAILURE_REASONS_PATH=\"$RUN_ROOT/failure-reasons.json\"");
         StringAssert.Contains(linuxGateScriptText, "rm -f \"$FAILURE_REASONS_PATH\"");
         StringAssert.Contains(linuxGateScriptText, "failure_reasons_path.write_text(json.dumps({\"reasons\": reasons}, indent=2) + \"\\n\", encoding=\"utf-8\")");
@@ -3800,6 +3814,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "print(artifact_rid(chosen))");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(windowsGateScriptText, "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
         StringAssert.Contains(windowsGateScriptText, "RELEASE_CHANNEL_PATH_DEFAULT");
         StringAssert.Contains(windowsGateScriptText, "hub_registry_root_arg = str(sys.argv[11] or \"\").strip()");
@@ -3828,6 +3844,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt arch does not match promoted RID {expected_rid}.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt channelId does not match release channel");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt timestamp is missing or invalid.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt timestamp is in the future (");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is stale (");
     }
 
