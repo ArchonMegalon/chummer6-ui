@@ -160,6 +160,10 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt checks.release_channel_id does not match release channel channelId.");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt checks.release_channel_version does not match release channel version.");
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt carries conflicting releaseVersion/version alias values.");
+        StringAssert.Contains(executableScriptText, "checks_startup_smoke_receipt_found = bool(gate_checks.get(\"startup_smoke_receipt_found\"))");
+        StringAssert.Contains(executableScriptText, "checks_startup_smoke_receipt_path = str(gate_checks.get(\"startup_smoke_receipt_path\") or \"\").strip()");
+        StringAssert.Contains(executableScriptText, "Windows desktop exit gate checks.startup_smoke_receipt_found disagrees with startup smoke receipt file presence for promoted installer bytes.");
+        StringAssert.Contains(executableScriptText, "Windows desktop exit gate checks.startup_smoke_receipt_path disagrees with startup smoke receipt path for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt is missing version for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt version does not match release channel version for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt carries conflicting channelId/channel alias values for promoted installer bytes.");
@@ -198,6 +202,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt carries conflicting releaseVersion/version alias values for promoted head");
+        StringAssert.Contains(executableScriptText, "macOS desktop exit gate checks.startup_smoke_receipt_found disagrees with startup_smoke.receipt_path file presence for promoted head");
+        StringAssert.Contains(executableScriptText, "macOS desktop exit gate checks.startup_smoke_receipt_path disagrees with startup_smoke.receipt_path for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt is missing version for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
