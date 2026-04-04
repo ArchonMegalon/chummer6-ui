@@ -3447,6 +3447,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "host_supports_windows_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "startup_smoke_external_blocker");
+        StringAssert.Contains(executableGateScriptText, "missing_windows_host_capability");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be missing_windows_host_capability when startup smoke receipt is missing on a non-Windows-capable host.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt is missing on a Windows-capable host.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is outside trusted local roots.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt file is unreadable or not a JSON object for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "gate_evidence[\"startup_smoke_receipt_source\"] = startup_smoke_receipt_source");
@@ -3476,6 +3481,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
         StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt path is outside trusted local roots for promoted head");
+        StringAssert.Contains(executableGateScriptText, "host_supports_macos_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "external_blocker");
+        StringAssert.Contains(executableGateScriptText, "missing_macos_host_capability");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be missing_macos_host_capability when startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt is missing for promoted head");
         StringAssert.Contains(executableGateScriptText, "startup_receipt_file = (");
         StringAssert.Contains(executableGateScriptText, "startup_smoke_receipt_file_exists");
         StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt file is unreadable or not a JSON object for promoted head");
@@ -3679,6 +3689,23 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "f\"Desktop executable exit gate is proven by passing packaged-head receipts for promoted desktop platforms ({platform_scope})");
         StringAssert.Contains(executableGateScriptText, "print(\"[desktop-executable-exit-gate] FAIL\", file=sys.stderr)");
         StringAssert.Contains(executableGateScriptText, "print(f\"[desktop-executable-exit-gate] reason: {reason}\", file=sys.stderr)");
+    }
+
+    [TestMethod]
+    public void Desktop_executable_exit_gate_requires_explicit_host_capability_blockers_when_startup_smoke_receipts_are_missing()
+    {
+        string executableGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string executableGateScriptText = File.ReadAllText(executableGateScriptPath);
+
+        StringAssert.Contains(executableGateScriptText, "host_supports_windows_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "startup_smoke_external_blocker");
+        StringAssert.Contains(executableGateScriptText, "missing_windows_host_capability");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be missing_windows_host_capability when startup smoke receipt is missing on a non-Windows-capable host.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt is missing on a Windows-capable host.");
+        StringAssert.Contains(executableGateScriptText, "host_supports_macos_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "missing_macos_host_capability");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be missing_macos_host_capability when startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt is missing for promoted head");
     }
 
     [TestMethod]
