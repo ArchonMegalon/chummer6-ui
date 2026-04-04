@@ -1820,7 +1820,10 @@ def validate_macos_gate(
     startup = gate_payload.get("startup_smoke") if isinstance(gate_payload.get("startup_smoke"), dict) else {}
     artifact = gate_payload.get("artifact") if isinstance(gate_payload.get("artifact"), dict) else {}
     host_supports_macos_startup_smoke = bool(gate_checks.get("host_supports_macos_startup_smoke"))
-    startup_smoke_external_blocker = normalize_token(startup.get("external_blocker"))
+    startup_smoke_external_blocker = normalize_token(
+        startup.get("external_blocker")
+        or gate_checks.get("startup_smoke_external_blocker")
+    )
     startup_receipt = startup.get("receipt") if isinstance(startup.get("receipt"), dict) else {}
     artifact_exists = bool(artifact.get("installer_exists"))
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
