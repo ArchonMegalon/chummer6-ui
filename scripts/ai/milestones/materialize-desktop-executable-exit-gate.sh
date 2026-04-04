@@ -1323,9 +1323,12 @@ def validate_linux_gate(
             gate_evidence["release_channel_linux_artifact_version_alias_conflict"] = channel_artifact_version_alias_conflict
             gate_evidence["release_channel_linux_artifact_arch"] = channel_artifact_arch
             gate_evidence["release_channel_linux_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
-            channel_artifact_generated_at_raw, _ = payload_generated_at(channel_artifact)
+            channel_artifact_generated_at_raw, channel_artifact_generated_at = payload_generated_at(channel_artifact)
             channel_artifact_generated_at_alias_conflict = generated_at_alias_conflicts(channel_artifact)
             gate_evidence["release_channel_linux_artifact_generated_at"] = channel_artifact_generated_at_raw
+            gate_evidence["release_channel_linux_artifact_generated_at_valid"] = (
+                channel_artifact_generated_at is not None
+            )
             gate_evidence["release_channel_linux_artifact_generated_at_alias_conflict"] = (
                 channel_artifact_generated_at_alias_conflict
             )
@@ -1347,8 +1350,8 @@ def validate_linux_gate(
                 reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting version/releaseVersion alias values.")
             if channel_artifact_arch_alias_conflict:
                 reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting arch/architecture alias values.")
-            if not channel_artifact_generated_at_raw:
-                reasons.append("Linux gate embedded release_channel_linux_artifact is missing generated_at/generatedAt.")
+            if not channel_artifact_generated_at_raw or channel_artifact_generated_at is None:
+                reasons.append("Linux gate embedded release_channel_linux_artifact is missing a valid generated_at/generatedAt.")
             elif release_channel_generated_at_raw and channel_artifact_generated_at_raw != release_channel_generated_at_raw:
                 reasons.append("Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at.")
             if channel_artifact_generated_at_alias_conflict:
@@ -1599,9 +1602,12 @@ def validate_windows_gate(
         gate_evidence["release_channel_windows_artifact_version_alias_conflict"] = channel_artifact_version_alias_conflict
         gate_evidence["release_channel_windows_artifact_arch"] = channel_artifact_arch
         gate_evidence["release_channel_windows_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
-        channel_artifact_generated_at_raw, _ = payload_generated_at(channel_artifact)
+        channel_artifact_generated_at_raw, channel_artifact_generated_at = payload_generated_at(channel_artifact)
         channel_artifact_generated_at_alias_conflict = generated_at_alias_conflicts(channel_artifact)
         gate_evidence["release_channel_windows_artifact_generated_at"] = channel_artifact_generated_at_raw
+        gate_evidence["release_channel_windows_artifact_generated_at_valid"] = (
+            channel_artifact_generated_at is not None
+        )
         gate_evidence["release_channel_windows_artifact_generated_at_alias_conflict"] = (
             channel_artifact_generated_at_alias_conflict
         )
@@ -1623,8 +1629,8 @@ def validate_windows_gate(
             reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting version/releaseVersion alias values.")
         if channel_artifact_arch_alias_conflict:
             reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting arch/architecture alias values.")
-        if not channel_artifact_generated_at_raw:
-            reasons.append("Windows gate embedded release_channel_windows_artifact is missing generated_at/generatedAt.")
+        if not channel_artifact_generated_at_raw or channel_artifact_generated_at is None:
+            reasons.append("Windows gate embedded release_channel_windows_artifact is missing a valid generated_at/generatedAt.")
         elif release_channel_generated_at_raw and channel_artifact_generated_at_raw != release_channel_generated_at_raw:
             reasons.append("Windows gate embedded release_channel_windows_artifact generated_at does not match promoted release channel generated_at.")
         if channel_artifact_generated_at_alias_conflict:
@@ -2151,9 +2157,12 @@ def validate_macos_gate(
         gate_evidence["release_channel_macos_artifact_version_alias_conflict"] = channel_artifact_version_alias_conflict
         gate_evidence["release_channel_macos_artifact_arch"] = channel_artifact_arch
         gate_evidence["release_channel_macos_artifact_arch_alias_conflict"] = channel_artifact_arch_alias_conflict
-        channel_artifact_generated_at_raw, _ = payload_generated_at(channel_artifact)
+        channel_artifact_generated_at_raw, channel_artifact_generated_at = payload_generated_at(channel_artifact)
         channel_artifact_generated_at_alias_conflict = generated_at_alias_conflicts(channel_artifact)
         gate_evidence["release_channel_macos_artifact_generated_at"] = channel_artifact_generated_at_raw
+        gate_evidence["release_channel_macos_artifact_generated_at_valid"] = (
+            channel_artifact_generated_at is not None
+        )
         gate_evidence["release_channel_macos_artifact_generated_at_alias_conflict"] = (
             channel_artifact_generated_at_alias_conflict
         )
@@ -2175,8 +2184,8 @@ def validate_macos_gate(
             reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting version/releaseVersion alias values.")
         if channel_artifact_arch_alias_conflict:
             reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting arch/architecture alias values.")
-        if not channel_artifact_generated_at_raw:
-            reasons.append("macOS gate embedded release_channel_macos_artifact is missing generated_at/generatedAt.")
+        if not channel_artifact_generated_at_raw or channel_artifact_generated_at is None:
+            reasons.append("macOS gate embedded release_channel_macos_artifact is missing a valid generated_at/generatedAt.")
         elif release_channel_generated_at_raw and channel_artifact_generated_at_raw != release_channel_generated_at_raw:
             reasons.append("macOS gate embedded release_channel_macos_artifact generated_at does not match promoted release channel generated_at.")
         if channel_artifact_generated_at_alias_conflict:
@@ -2984,6 +2993,7 @@ desktop_install_artifact_arch_alias_conflict_tokens: List[str] = []
 desktop_install_artifact_channel_alias_conflict_tokens: List[str] = []
 desktop_install_artifact_version_alias_conflict_tokens: List[str] = []
 desktop_install_artifact_missing_generated_at_tokens: List[str] = []
+desktop_install_artifact_invalid_generated_at_tokens: List[str] = []
 desktop_install_artifact_generated_at_mismatch_tokens: List[str] = []
 desktop_install_artifact_generated_at_alias_conflict_tokens: List[str] = []
 for desktop_install_artifact in desktop_install_artifacts:
@@ -2999,7 +3009,7 @@ for desktop_install_artifact in desktop_install_artifacts:
     artifact_head = normalize_token(desktop_install_artifact.get("head"))
     artifact_platform = normalize_token(desktop_install_artifact.get("platform"))
     artifact_arch = payload_arch(desktop_install_artifact)
-    artifact_generated_at_raw, _ = payload_generated_at(desktop_install_artifact)
+    artifact_generated_at_raw, artifact_generated_at = payload_generated_at(desktop_install_artifact)
     artifact_generated_at_alias_conflict = generated_at_alias_conflicts(
         desktop_install_artifact
     )
@@ -3029,6 +3039,10 @@ for desktop_install_artifact in desktop_install_artifacts:
         desktop_install_artifact_arch_alias_conflict_tokens.append(artifact_tuple_token or "<unknown>")
     if not artifact_generated_at_raw:
         desktop_install_artifact_missing_generated_at_tokens.append(
+            artifact_tuple_token or "<unknown>"
+        )
+    elif artifact_generated_at is None:
+        desktop_install_artifact_invalid_generated_at_tokens.append(
             artifact_tuple_token or "<unknown>"
         )
     elif (
@@ -3092,6 +3106,9 @@ evidence["release_channel_desktop_install_artifacts_arch_alias_conflict"] = (
 )
 evidence["release_channel_desktop_install_artifacts_missing_generated_at"] = (
     sorted(set(desktop_install_artifact_missing_generated_at_tokens))
+)
+evidence["release_channel_desktop_install_artifacts_invalid_generated_at"] = (
+    sorted(set(desktop_install_artifact_invalid_generated_at_tokens))
 )
 evidence["release_channel_desktop_install_artifacts_generated_at_mismatch"] = (
     sorted(set(desktop_install_artifact_generated_at_mismatch_tokens))
@@ -3163,6 +3180,12 @@ if desktop_install_artifact_missing_generated_at_tokens:
     reasons.append(
         "Release channel desktop install artifact(s) are missing generated_at/generatedAt: "
         + ", ".join(sorted(set(desktop_install_artifact_missing_generated_at_tokens)))
+        + "."
+    )
+if desktop_install_artifact_invalid_generated_at_tokens:
+    reasons.append(
+        "Release channel desktop install artifact(s) carry invalid generated_at/generatedAt timestamps: "
+        + ", ".join(sorted(set(desktop_install_artifact_invalid_generated_at_tokens)))
         + "."
     )
 if desktop_install_artifact_generated_at_mismatch_tokens:

@@ -3799,6 +3799,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState must be preview_supported when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "release_channel_version_uses_unpublished_sentinel");
         StringAssert.Contains(executableGateScriptText, "Release channel version cannot be the unpublished sentinel when status is publishable.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_invalid_generated_at");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry invalid generated_at/generatedAt timestamps:");
+        StringAssert.Contains(executableGateScriptText, "Linux gate embedded release_channel_linux_artifact is missing a valid generated_at/generatedAt.");
+        StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact is missing a valid generated_at/generatedAt.");
+        StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact is missing a valid generated_at/generatedAt.");
         StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot remain unpublished when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState cannot remain unpublished when required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples.");
