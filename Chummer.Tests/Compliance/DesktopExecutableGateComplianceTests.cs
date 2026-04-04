@@ -120,6 +120,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt is missing version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt version does not match release channel version for promoted head");
+        StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
+        StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt status is not passing for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt rid does not match promoted RID for head");
@@ -131,6 +133,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt is missing version for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt version does not match release channel version for promoted installer bytes.");
+        StringAssert.Contains(executableScriptText, "Windows startup smoke receipt carries conflicting channelId/channel alias values for promoted installer bytes.");
+        StringAssert.Contains(executableScriptText, "Windows startup smoke receipt carries conflicting version/releaseVersion alias values for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt rid is missing for promoted installer bytes.");
         StringAssert.Contains(executableScriptText, "Windows startup smoke receipt rid does not match promoted release-channel RID.");
         StringAssert.Contains(executableScriptText, "Release channel Windows artifact arch does not match promoted release-channel RID.");
@@ -141,6 +145,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "macOS desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt is missing version for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt version does not match release channel version for promoted head");
+        StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
+        StringAssert.Contains(executableScriptText, "macOS startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt rid is missing for promoted head");
         StringAssert.Contains(executableScriptText, "macOS startup smoke receipt rid does not match promoted RID for head");
         StringAssert.Contains(executableScriptText, "Release channel macOS artifact arch does not match promoted RID for head");
@@ -151,8 +157,14 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "startup_smoke_version");
         StringAssert.Contains(executableScriptText, "primary_receipt_status");
         StringAssert.Contains(executableScriptText, "primary_receipt_rid");
+        StringAssert.Contains(executableScriptText, "primary_receipt_channel_id_alias_conflict");
+        StringAssert.Contains(executableScriptText, "primary_receipt_version_alias_conflict");
         StringAssert.Contains(executableScriptText, "startup_smoke_rid");
+        StringAssert.Contains(executableScriptText, "startup_smoke_channel_id_alias_conflict");
+        StringAssert.Contains(executableScriptText, "startup_smoke_version_alias_conflict");
         StringAssert.Contains(executableScriptText, "startup_smoke_receipt_version");
+        StringAssert.Contains(executableScriptText, "startup_smoke_receipt_channel_id_alias_conflict");
+        StringAssert.Contains(executableScriptText, "startup_smoke_receipt_version_alias_conflict");
         StringAssert.Contains(executableScriptText, "startup_smoke_receipt_rid");
         StringAssert.Contains(executableScriptText, "expected_artifact_arch");
         StringAssert.Contains(executableScriptText, "release_channel_desktop_install_artifact_channel_ids");
