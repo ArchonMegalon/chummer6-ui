@@ -860,6 +860,7 @@ def validate_linux_gate(
     gate_evidence["primary_receipt_head_id"] = normalize_token(primary_receipt_for_validation.get("headId"))
     gate_evidence["primary_receipt_platform"] = normalize_token(primary_receipt_for_validation.get("platform"))
     gate_evidence["primary_receipt_rid"] = normalize_token(primary_receipt_for_validation.get("rid"))
+    gate_evidence["primary_receipt_status"] = normalize_token(primary_receipt_for_validation.get("status"))
     gate_evidence["primary_receipt_arch"] = normalize_token(primary_receipt_for_validation.get("arch"))
     gate_evidence["primary_receipt_channel_id"] = normalize_token(
         primary_receipt_for_validation.get("channelId") or primary_receipt_for_validation.get("channel")
@@ -895,6 +896,8 @@ def validate_linux_gate(
             )
     if gate_evidence["primary_receipt_ready_checkpoint"] != "pre_ui_event_loop":
         reasons.append(f"Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head '{head}'.")
+    if gate_evidence["primary_receipt_status"] not in {"pass", "passed", "ready"}:
+        reasons.append(f"Linux installer startup smoke receipt status is not passing for promoted head '{head}'.")
     if gate_evidence["primary_receipt_head_id"] != head:
         reasons.append(f"Linux installer startup smoke receipt headId does not match promoted head '{head}'.")
     if gate_evidence["primary_receipt_platform"] != "linux":
