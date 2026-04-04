@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR="$(cd -L "$(dirname "${BASH_SOURCE[0]}")" && pwd -L)"
+REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
 CURRENT_STAGE="init"
 
 APP_KEY_OVERRIDE="${CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY:-}"
@@ -294,12 +302,12 @@ else:
 downloads_candidates = [
     repo_root / "Docker" / "Downloads" / "files" / file_name,
 ]
-downloads_candidates = list(dict.fromkeys(candidate.resolve() for candidate in downloads_candidates))
+downloads_candidates = list(dict.fromkeys(Path(os.path.abspath(str(candidate))) for candidate in downloads_candidates))
 installer_path = resolve_existing_path(installer_path_arg, downloads_candidates)
 artifact_exists = installer_path is not None
 artifact_size = installer_path.stat().st_size if installer_path else 0
 artifact_sha = sha256_file(installer_path) if installer_path else ""
-primary_shelf_root = (repo_root / "Docker" / "Downloads" / "files").resolve()
+primary_shelf_root = Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files")))
 installer_from_primary_shelf = installer_path is not None and path_is_within(installer_path, primary_shelf_root)
 evidence["artifact"] = {
     "installer_path": str(installer_path) if installer_path else "",
