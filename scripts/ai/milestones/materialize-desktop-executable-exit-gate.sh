@@ -837,8 +837,10 @@ def validate_linux_gate(
     expected_artifact: Dict[str, Any] | None,
     release_channel_id: str,
     release_channel_version: str,
+    desktop_files_root: Path,
     repo_root: Path,
     trusted_roots: List[Path],
+    quarantine_roots: List[Path],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -1107,7 +1109,13 @@ def validate_linux_gate(
         policy_missing_release_artifact = (
             expected_artifact_source == "required_tuple_policy_missing_release_artifact"
         )
+        expected_file_name = str(expected_artifact.get("fileName") or "").strip()
+        if not expected_file_name:
+            expected_file_name = infer_installer_file_name(head, expected_rid, "linux")
+        quarantine_candidates = collect_matching_quarantine_paths(expected_file_name, quarantine_roots)
         gate_evidence["expected_artifact_source"] = expected_artifact_source
+        gate_evidence["expected_installer_file_name"] = expected_file_name
+        gate_evidence["quarantined_installer_candidates"] = quarantine_candidates
         gate_evidence["expected_artifact_arch"] = expected_artifact_arch
         gate_evidence["expected_artifact_arch_alias_conflict"] = expected_artifact_arch_alias_conflict
         if expected_artifact_arch_alias_conflict:
@@ -1190,6 +1198,18 @@ def validate_linux_gate(
                 reasons.append(
                     f"Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}'."
                 )
+
+        shelf_path = desktop_files_root / expected_file_name
+        gate_evidence["expected_linux_shelf_path"] = str(shelf_path)
+        if quarantine_candidates and (
+            policy_missing_release_artifact
+            or not shelf_path.is_file()
+        ):
+            reasons.append(
+                f"Linux promoted installer bytes appear only in quarantine for head '{head}' ({expected_rid}) and cannot count as shipped proof: "
+                + ", ".join(quarantine_candidates)
+                + "."
+            )
 
     for key, value in (
         ("install_launch_capture_path", str(primary_receipt.get("artifactInstallLaunchCapturePath") or "").strip()),
@@ -3949,8 +3969,10 @@ for expected_linux_artifact in expected_linux_artifacts:
         expected_linux_artifact,
         release_channel_channel_id,
         release_channel_version,
+        desktop_files_root,
         repo_root,
         trusted_roots,
+        quarantine_roots,
         evidence,
         reasons,
     )

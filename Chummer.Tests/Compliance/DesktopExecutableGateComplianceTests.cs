@@ -168,6 +168,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Path]) -> List[str]:");
         StringAssert.Contains(executableScriptText, "evidence[\"quarantine_roots\"]");
         StringAssert.Contains(executableScriptText, "gate_evidence[\"quarantined_installer_candidates\"] = quarantine_candidates");
+        StringAssert.Contains(executableScriptText, "gate_evidence[\"expected_linux_shelf_path\"] = str(shelf_path)");
+        StringAssert.Contains(executableScriptText, "Linux promoted installer bytes appear only in quarantine for head");
         StringAssert.Contains(executableScriptText, "Windows promoted installer bytes appear only in quarantine and cannot count as shipped proof:");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact carries conflicting channelId/channel alias values.");
