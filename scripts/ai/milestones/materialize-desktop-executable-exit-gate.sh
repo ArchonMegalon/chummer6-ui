@@ -981,19 +981,23 @@ def validate_windows_gate(
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
+    expected_artifact_source = normalize_token(expected_artifact.get("source"))
+    policy_missing_release_artifact = expected_artifact_source == "required_tuple_policy_missing_release_artifact"
+    gate_evidence["expected_artifact_source"] = expected_artifact_source
 
-    if normalize_token(channel_artifact.get("head")) != expected_head:
-        reasons.append("Windows gate embedded release_channel_windows_artifact head does not match promoted release channel.")
-    if normalize_token(channel_artifact.get("rid")) != expected_rid:
-        reasons.append("Windows gate embedded release_channel_windows_artifact RID does not match promoted release channel.")
-    if normalize_token(channel_artifact.get("platform")) != "windows":
-        reasons.append("Windows gate embedded release_channel_windows_artifact platform is not 'windows'.")
-    if str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
-        reasons.append("Windows gate embedded release_channel_windows_artifact fileName does not match promoted release channel.")
-    if expected_sha and normalize_token(channel_artifact.get("sha256")) != expected_sha:
-        reasons.append("Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.")
-    if expected_size and int(channel_artifact.get("sizeBytes") or 0) != expected_size:
-        reasons.append("Windows gate embedded release_channel_windows_artifact sizeBytes does not match promoted release channel.")
+    if not policy_missing_release_artifact:
+        if normalize_token(channel_artifact.get("head")) != expected_head:
+            reasons.append("Windows gate embedded release_channel_windows_artifact head does not match promoted release channel.")
+        if normalize_token(channel_artifact.get("rid")) != expected_rid:
+            reasons.append("Windows gate embedded release_channel_windows_artifact RID does not match promoted release channel.")
+        if normalize_token(channel_artifact.get("platform")) != "windows":
+            reasons.append("Windows gate embedded release_channel_windows_artifact platform is not 'windows'.")
+        if str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
+            reasons.append("Windows gate embedded release_channel_windows_artifact fileName does not match promoted release channel.")
+        if expected_sha and normalize_token(channel_artifact.get("sha256")) != expected_sha:
+            reasons.append("Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.")
+        if expected_size and int(channel_artifact.get("sizeBytes") or 0) != expected_size:
+            reasons.append("Windows gate embedded release_channel_windows_artifact sizeBytes does not match promoted release channel.")
 
     installer_path = Path(str(gate_checks.get("windows_installer_path") or "").strip())
     if not installer_path.is_file():
@@ -1219,6 +1223,9 @@ def validate_macos_gate(
     expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
     expected_arch = "arm64" if rid.endswith("arm64") else "x64" if rid.endswith("x64") else ""
+    expected_artifact_source = normalize_token(expected_artifact.get("source"))
+    policy_missing_release_artifact = expected_artifact_source == "required_tuple_policy_missing_release_artifact"
+    gate_evidence["expected_artifact_source"] = expected_artifact_source
     startup_receipt_path = Path(str(startup.get("receipt_path") or "").strip()) if startup.get("receipt_path") else None
     startup_receipt_exists = startup_receipt_path is not None and startup_receipt_path.is_file()
     startup_receipt_file = (
@@ -1284,18 +1291,19 @@ def validate_macos_gate(
         reasons.append(f"macOS startup smoke is not passing for promoted head '{head}' ({rid}).")
     if not artifact_exists:
         reasons.append(f"macOS installer artifact is missing for promoted head '{head}' ({rid}).")
-    if normalize_token(channel_artifact.get("head")) != head:
-        reasons.append("macOS gate embedded release_channel_macos_artifact head does not match promoted release channel.")
-    if normalize_token(channel_artifact.get("rid")) != rid:
-        reasons.append("macOS gate embedded release_channel_macos_artifact RID does not match promoted release channel.")
-    if normalize_token(channel_artifact.get("platform")) != "macos":
-        reasons.append("macOS gate embedded release_channel_macos_artifact platform is not macOS.")
-    if expected_file_name and str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
-        reasons.append("macOS gate embedded release_channel_macos_artifact fileName does not match promoted release channel.")
-    if expected_sha and normalize_token(channel_artifact.get("sha256")) != expected_sha:
-        reasons.append("macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.")
-    if expected_size and int(channel_artifact.get("sizeBytes") or 0) != expected_size:
-        reasons.append("macOS gate embedded release_channel_macos_artifact sizeBytes does not match promoted release channel.")
+    if not policy_missing_release_artifact:
+        if normalize_token(channel_artifact.get("head")) != head:
+            reasons.append("macOS gate embedded release_channel_macos_artifact head does not match promoted release channel.")
+        if normalize_token(channel_artifact.get("rid")) != rid:
+            reasons.append("macOS gate embedded release_channel_macos_artifact RID does not match promoted release channel.")
+        if normalize_token(channel_artifact.get("platform")) != "macos":
+            reasons.append("macOS gate embedded release_channel_macos_artifact platform is not macOS.")
+        if expected_file_name and str(channel_artifact.get("fileName") or "").strip() != expected_file_name:
+            reasons.append("macOS gate embedded release_channel_macos_artifact fileName does not match promoted release channel.")
+        if expected_sha and normalize_token(channel_artifact.get("sha256")) != expected_sha:
+            reasons.append("macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.")
+        if expected_size and int(channel_artifact.get("sizeBytes") or 0) != expected_size:
+            reasons.append("macOS gate embedded release_channel_macos_artifact sizeBytes does not match promoted release channel.")
 
     installer_path = Path(str(artifact.get("installer_path") or "").strip()) if artifact.get("installer_path") else None
     if installer_path is None or not installer_path.is_file():
