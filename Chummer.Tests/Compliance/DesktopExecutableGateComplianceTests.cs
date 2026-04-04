@@ -370,6 +370,25 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_materializer_preserves_linux_head_specific_receipt_paths_for_avalonia_and_blazor()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "if [[ \"$head\" == \"avalonia\" && \"$rid\" == \"linux-x64\" ]]; then");
+        StringAssert.Contains(scriptText, "linux_gate_tuple_path=\"$linux_avalonia_gate_path\"");
+        StringAssert.Contains(scriptText, "elif [[ \"$head\" == \"blazor-desktop\" && \"$rid\" == \"linux-x64\" ]]; then");
+        StringAssert.Contains(scriptText, "linux_gate_tuple_path=\"$linux_blazor_gate_path\"");
+        StringAssert.Contains(scriptText, "linux_gate_tuple_path=\"$repo_root/.codex-studio/published/UI_LINUX_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json\"");
+        StringAssert.Contains(scriptText, "CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH=\"$linux_gate_tuple_path\"");
+        StringAssert.Contains(scriptText, "def linux_gate_path_for_head(head: str, rid: str, avalonia_path: Path, blazor_path: Path, receipt_root: Path) -> Path:");
+        StringAssert.Contains(scriptText, "if head == \"avalonia\" and rid == \"linux-x64\":");
+        StringAssert.Contains(scriptText, "if head == \"blazor-desktop\" and rid == \"linux-x64\":");
+        StringAssert.Contains(scriptText, "return receipt_root / f\"UI_LINUX_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json\"");
+    }
+
+    [TestMethod]
     public void Windows_and_macos_exit_gate_materializers_do_not_resolve_proof_from_legacy_chummer5a_paths()
     {
         string repoRoot = FindRepoRoot();
