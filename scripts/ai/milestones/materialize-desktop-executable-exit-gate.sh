@@ -3251,24 +3251,96 @@ if workflow_release_channel_id_alias_conflict:
     reasons.append(
         "Desktop workflow execution gate carries conflicting release-channel identity aliases across evidence and gate envelope."
     )
-visual_release_version = normalize_optional_string_scalar(
-    visual_familiarity_evidence.get("release_channel_version")
-    or visual_familiarity_gate.get("releaseVersion"),
+visual_release_version_from_evidence = normalize_optional_string_scalar(
+    visual_familiarity_evidence.get("release_channel_version"),
     "visual_familiarity.release_channel_version",
     evidence,
     reasons,
     lowercase=False,
-    required=True,
 )
-workflow_release_version = normalize_optional_string_scalar(
-    workflow_execution_evidence.get("release_channel_version")
-    or workflow_execution_gate.get("releaseVersion"),
+visual_release_version_from_gate_primary = normalize_optional_string_scalar(
+    visual_familiarity_gate.get("releaseVersion"),
+    "visual_familiarity.releaseVersion",
+    evidence,
+    reasons,
+    lowercase=False,
+)
+visual_release_version_from_gate_alias = normalize_optional_string_scalar(
+    visual_familiarity_gate.get("version"),
+    "visual_familiarity.version",
+    evidence,
+    reasons,
+    lowercase=False,
+)
+visual_release_version_candidates = [
+    token
+    for token in (
+        visual_release_version_from_evidence,
+        visual_release_version_from_gate_primary,
+        visual_release_version_from_gate_alias,
+    )
+    if token
+]
+visual_release_version_alias_conflict = len(set(visual_release_version_candidates)) > 1
+evidence["visual_familiarity_release_version_alias_conflict"] = (
+    visual_release_version_alias_conflict
+)
+visual_release_version = (
+    visual_release_version_from_evidence
+    or visual_release_version_from_gate_primary
+    or visual_release_version_from_gate_alias
+)
+if not visual_release_version:
+    reasons.append("visual_familiarity.release_channel_version is missing.")
+if visual_release_version_alias_conflict:
+    reasons.append(
+        "Desktop visual familiarity exit gate carries conflicting release-version aliases across evidence and gate envelope."
+    )
+workflow_release_version_from_evidence = normalize_optional_string_scalar(
+    workflow_execution_evidence.get("release_channel_version"),
     "workflow_execution.release_channel_version",
     evidence,
     reasons,
     lowercase=False,
-    required=True,
 )
+workflow_release_version_from_gate_primary = normalize_optional_string_scalar(
+    workflow_execution_gate.get("releaseVersion"),
+    "workflow_execution.releaseVersion",
+    evidence,
+    reasons,
+    lowercase=False,
+)
+workflow_release_version_from_gate_alias = normalize_optional_string_scalar(
+    workflow_execution_gate.get("version"),
+    "workflow_execution.version",
+    evidence,
+    reasons,
+    lowercase=False,
+)
+workflow_release_version_candidates = [
+    token
+    for token in (
+        workflow_release_version_from_evidence,
+        workflow_release_version_from_gate_primary,
+        workflow_release_version_from_gate_alias,
+    )
+    if token
+]
+workflow_release_version_alias_conflict = len(set(workflow_release_version_candidates)) > 1
+evidence["workflow_execution_release_version_alias_conflict"] = (
+    workflow_release_version_alias_conflict
+)
+workflow_release_version = (
+    workflow_release_version_from_evidence
+    or workflow_release_version_from_gate_primary
+    or workflow_release_version_from_gate_alias
+)
+if not workflow_release_version:
+    reasons.append("workflow_execution.release_channel_version is missing.")
+if workflow_release_version_alias_conflict:
+    reasons.append(
+        "Desktop workflow execution gate carries conflicting release-version aliases across evidence and gate envelope."
+    )
 evidence["visual_familiarity_release_channel_id"] = visual_release_channel_id
 evidence["workflow_execution_release_channel_id"] = workflow_release_channel_id
 evidence["visual_familiarity_release_version"] = visual_release_version
