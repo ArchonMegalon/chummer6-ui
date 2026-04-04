@@ -3379,6 +3379,7 @@ evidence["release_channel_tuple_coverage_external_proof_requests_type_valid"] = 
 )
 allowed_external_proof_request_row_keys = {
     "tupleId",
+    "channelId",
     "head",
     "platform",
     "rid",
@@ -3396,6 +3397,7 @@ external_proof_request_row_missing_tuple_id_indexes: List[int] = []
 external_proof_request_row_derived_tuple_id_mismatch: List[str] = []
 external_proof_request_row_unexpected_keys_tokens: List[str] = []
 external_proof_request_row_duplicate_tuple_ids: List[str] = []
+external_proof_request_row_invalid_channel_id_tokens: List[str] = []
 external_proof_request_row_invalid_required_host_tokens: List[str] = []
 external_proof_request_row_required_proofs_invalid_indexes: List[int] = []
 external_proof_request_row_required_proofs_mismatch_tokens: List[str] = []
@@ -3425,7 +3427,9 @@ if external_proof_requests_type_valid:
         row_platform = normalize_token(raw_row.get("platform"))
         row_rid = normalize_token(raw_row.get("rid"))
         row_tuple_id = normalize_token(raw_row.get("tupleId"))
+        row_channel_id = normalize_token(raw_row.get("channelId"))
         row_derived_tuple_id = build_platform_head_rid_tuple(row_head, row_rid, row_platform)
+        expected_row_channel_id = release_channel_channel_id
         row_required_host = normalize_token(raw_row.get("requiredHost"))
         expected_row_required_host = normalize_token(row_platform)
         row_expected_artifact_id = normalize_token(raw_row.get("expectedArtifactId"))
@@ -3550,9 +3554,14 @@ if external_proof_requests_type_valid:
             external_proof_request_row_invalid_required_host_tokens.append(
                 f"row[{row_index}]"
             )
+        if row_channel_id != expected_row_channel_id:
+            external_proof_request_row_invalid_channel_id_tokens.append(
+                f"row[{row_index}]"
+            )
         reported_external_proof_request_rows_normalized.append(
             {
                 "tupleId": row_tuple_id,
+                "channelId": row_channel_id,
                 "head": row_head,
                 "platform": row_platform,
                 "rid": row_rid,
@@ -3588,6 +3597,9 @@ evidence["release_channel_external_proof_request_row_unexpected_keys"] = (
 )
 evidence["release_channel_external_proof_request_row_duplicate_tuple_ids"] = (
     sorted(set(external_proof_request_row_duplicate_tuple_ids))
+)
+evidence["release_channel_external_proof_request_row_invalid_channel_id"] = (
+    sorted(set(external_proof_request_row_invalid_channel_id_tokens))
 )
 evidence["release_channel_external_proof_request_row_invalid_required_host"] = (
     sorted(set(external_proof_request_row_invalid_required_host_tokens))
@@ -3683,6 +3695,12 @@ if external_proof_request_row_duplicate_tuple_ids:
     reasons.append(
         "Release channel desktopTupleCoverage.externalProofRequests has duplicate tupleId values: "
         + ", ".join(sorted(set(external_proof_request_row_duplicate_tuple_ids)))
+        + "."
+    )
+if external_proof_request_row_invalid_channel_id_tokens:
+    reasons.append(
+        "Release channel desktopTupleCoverage.externalProofRequests row(s) channelId does not match release channel channelId: "
+        + ", ".join(sorted(set(external_proof_request_row_invalid_channel_id_tokens)))
         + "."
     )
 if external_proof_request_row_invalid_required_host_tokens:
@@ -4510,6 +4528,7 @@ evidence["release_channel_missing_required_platform_head_rid_tuples_derived"] = 
 expected_external_proof_request_rows = [
     {
         "tupleId": tuple_token,
+        "channelId": release_channel_channel_id,
         "head": tuple_token.split(":", 2)[0],
         "platform": tuple_token.split(":", 2)[2],
         "rid": tuple_token.split(":", 2)[1],

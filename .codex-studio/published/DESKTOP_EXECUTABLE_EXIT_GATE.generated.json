@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-04-04T20:13:29.867285Z",
-  "generatedAt": "2026-04-04T20:13:29.867285Z",
+  "generated_at": "2026-04-04T20:22:28.246539Z",
+  "generatedAt": "2026-04-04T20:22:28.246539Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
   "channelId": "docker",
   "releaseVersion": "local-docker",
@@ -29,6 +29,7 @@
     "Release channel is missing required desktop platform/head installer tuple pair(s): avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos.",
     "Release channel is missing required desktop platform/head/rid installer tuple(s): avalonia:osx-arm64:macos, avalonia:win-x64:windows, blazor-desktop:osx-arm64:macos, blazor-desktop:win-x64:windows.",
     "Release channel status cannot be publishable while required desktop tuple coverage is incomplete.",
+    "Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at.",
     "macOS desktop exit gate is missing or not passing for promoted head 'avalonia' (osx-arm64).",
     "macOS gate reason (avalonia/osx-arm64): Release channel does not publish a promoted macOS install medium artifact for avalonia (osx-arm64).",
     "macOS gate reason (avalonia/osx-arm64): Promoted macOS installer file is missing locally for avalonia (osx-arm64).",
@@ -75,6 +76,7 @@
     "Release channel is missing required desktop platform/head installer tuple pair(s): avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos.",
     "Release channel is missing required desktop platform/head/rid installer tuple(s): avalonia:osx-arm64:macos, avalonia:win-x64:windows, blazor-desktop:osx-arm64:macos, blazor-desktop:win-x64:windows.",
     "Release channel status cannot be publishable while required desktop tuple coverage is incomplete.",
+    "Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at.",
     "macOS desktop exit gate is missing or not passing for promoted head 'avalonia' (osx-arm64).",
     "macOS gate reason (avalonia/osx-arm64): Release channel does not publish a promoted macOS install medium artifact for avalonia (osx-arm64).",
     "macOS gate reason (avalonia/osx-arm64): Promoted macOS installer file is missing locally for avalonia (osx-arm64).",
@@ -121,6 +123,7 @@
     "Release channel is missing required desktop platform/head installer tuple pair(s): avalonia:windows, blazor-desktop:windows, avalonia:macos, blazor-desktop:macos.",
     "Release channel is missing required desktop platform/head/rid installer tuple(s): avalonia:osx-arm64:macos, avalonia:win-x64:windows, blazor-desktop:osx-arm64:macos, blazor-desktop:win-x64:windows.",
     "Release channel status cannot be publishable while required desktop tuple coverage is incomplete.",
+    "Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at.",
     "macOS desktop exit gate is missing or not passing for promoted head 'avalonia' (osx-arm64).",
     "macOS gate reason (avalonia/osx-arm64): Release channel does not publish a promoted macOS install medium artifact for avalonia (osx-arm64).",
     "macOS gate reason (avalonia/osx-arm64): Promoted macOS installer file is missing locally for avalonia (osx-arm64).",
@@ -144,8 +147,8 @@
     "macOS quarantine installer marker checks are skipped for unsupported artifact formats on this host; payload/sample markers were not asserted for head 'blazor-desktop' (osx-arm64): /docker/chummercomplete/chummer6-ui/.codex-studio/quarantine/unpromoted-desktop-installers-20260403T2110Z/chummer-blazor-desktop-osx-arm64-installer.dmg.",
     "macOS startup smoke receipt path is missing or unreadable for promoted head 'blazor-desktop' (osx-arm64)."
   ],
-  "blockingFindingsCount": 44,
-  "blocking_findings_count": 44,
+  "blockingFindingsCount": 45,
+  "blocking_findings_count": 45,
   "externalBlockingFindings": [
     "Release channel does not publish desktop install media for required platform 'windows'.",
     "Release channel does not publish desktop install media for required platform 'macos'.",
@@ -240,12 +243,16 @@
   ],
   "externalBlockingFindingsCount": 44,
   "external_blocking_findings_count": 44,
-  "localBlockingFindings": [],
-  "local_blocking_findings": [],
-  "localBlockingFindingsCount": 0,
-  "local_blocking_findings_count": 0,
-  "blockedByExternalConstraintsOnly": true,
-  "blocked_by_external_constraints_only": true,
+  "localBlockingFindings": [
+    "Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at."
+  ],
+  "local_blocking_findings": [
+    "Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at."
+  ],
+  "localBlockingFindingsCount": 1,
+  "local_blocking_findings_count": 1,
+  "blockedByExternalConstraintsOnly": false,
+  "blocked_by_external_constraints_only": false,
   "evidence": {
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "linux_avalonia_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
@@ -268,13 +275,13 @@
     "release_gate_lock_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/locks/b14-flagship-ui-release-gate.lock",
     "flagship UI release gate proof_generated_at_alias_conflict": false,
     "flagship UI release gate proof_generated_at": "2026-04-04T13:25:56.555058Z",
-    "flagship UI release gate proof_age_seconds": 24453,
+    "flagship UI release gate proof_age_seconds": 24991,
     "desktop visual familiarity gate proof_generated_at_alias_conflict": false,
     "desktop visual familiarity gate proof_generated_at": "2026-04-04T19:52:46.965337Z",
-    "desktop visual familiarity gate proof_age_seconds": 1242,
+    "desktop visual familiarity gate proof_age_seconds": 1780,
     "desktop workflow execution gate proof_generated_at_alias_conflict": false,
     "desktop workflow execution gate proof_generated_at": "2026-04-04T19:52:47.195724Z",
-    "desktop workflow execution gate proof_age_seconds": 1242,
+    "desktop workflow execution gate proof_age_seconds": 1780,
     "flagship_status": "pass",
     "visual_familiarity_status": "pass",
     "workflow_execution_status": "pass",
@@ -403,11 +410,11 @@
     "release_channel_status": "published",
     "release_channel_channel_id": "docker",
     "release_channel_version": "local-docker",
-    "release_channel_generated_at": "2026-04-04T20:06:45Z",
+    "release_channel_generated_at": "2026-04-04T20:22:27Z",
     "release_channel_generated_at_alias_conflict": false,
     "release_channel_freshness_max_age_seconds": 86400,
     "release_channel_freshness_max_future_skew_seconds": 300,
-    "release_channel_age_seconds": 404,
+    "release_channel_age_seconds": 0,
     "release_channel_tuple_coverage_unexpected_keys": [],
     "desktopTupleCoverage.requiredDesktopPlatforms_normalized": [
       "linux",
@@ -636,6 +643,7 @@
     "release_channel_external_proof_request_row_derived_tuple_id_mismatch": [],
     "release_channel_external_proof_request_row_unexpected_keys": [],
     "release_channel_external_proof_request_row_duplicate_tuple_ids": [],
+    "release_channel_external_proof_request_row_invalid_channel_id": [],
     "release_channel_external_proof_request_row_invalid_required_host": [],
     "release_channel_external_proof_request_row_required_proofs_invalid_indexes": [],
     "release_channel_external_proof_request_row_required_proofs_mismatch": [],
@@ -646,6 +654,7 @@
     "release_channel_external_proof_request_rows_reported": [
       {
         "tupleId": "avalonia:osx-arm64:macos",
+        "channelId": "docker",
         "head": "avalonia",
         "platform": "macos",
         "rid": "osx-arm64",
@@ -677,6 +686,7 @@
       },
       {
         "tupleId": "blazor-desktop:osx-arm64:macos",
+        "channelId": "docker",
         "head": "blazor-desktop",
         "platform": "macos",
         "rid": "osx-arm64",
@@ -708,6 +718,7 @@
       },
       {
         "tupleId": "avalonia:win-x64:windows",
+        "channelId": "docker",
         "head": "avalonia",
         "platform": "windows",
         "rid": "win-x64",
@@ -739,6 +750,7 @@
       },
       {
         "tupleId": "blazor-desktop:win-x64:windows",
+        "channelId": "docker",
         "head": "blazor-desktop",
         "platform": "windows",
         "rid": "win-x64",
@@ -925,7 +937,7 @@
         "status": "failed",
         "windows desktop exit gate proof_generated_at_alias_conflict": false,
         "windows desktop exit gate proof_generated_at": "2026-04-04T19:54:18Z",
-        "windows desktop exit gate proof_age_seconds": 1151,
+        "windows desktop exit gate proof_age_seconds": 1689,
         "contract_name": "chummer6-ui.windows_desktop_exit_gate",
         "receipt_head": {
           "app_key": "avalonia",
@@ -992,7 +1004,7 @@
         "status": "failed",
         "windows desktop exit gate proof_generated_at_alias_conflict": false,
         "windows desktop exit gate proof_generated_at": "2026-04-04T19:55:46Z",
-        "windows desktop exit gate proof_age_seconds": 1063,
+        "windows desktop exit gate proof_age_seconds": 1602,
         "contract_name": "chummer6-ui.windows_desktop_exit_gate",
         "receipt_head": {
           "app_key": "blazor-desktop",
@@ -1166,6 +1178,7 @@
     "release_channel_external_proof_request_rows_expected": [
       {
         "tupleId": "avalonia:osx-arm64:macos",
+        "channelId": "docker",
         "head": "avalonia",
         "platform": "macos",
         "rid": "osx-arm64",
@@ -1197,6 +1210,7 @@
       },
       {
         "tupleId": "blazor-desktop:osx-arm64:macos",
+        "channelId": "docker",
         "head": "blazor-desktop",
         "platform": "macos",
         "rid": "osx-arm64",
@@ -1228,6 +1242,7 @@
       },
       {
         "tupleId": "avalonia:win-x64:windows",
+        "channelId": "docker",
         "head": "avalonia",
         "platform": "windows",
         "rid": "win-x64",
@@ -1259,6 +1274,7 @@
       },
       {
         "tupleId": "blazor-desktop:win-x64:windows",
+        "channelId": "docker",
         "head": "blazor-desktop",
         "platform": "windows",
         "rid": "win-x64",
@@ -1602,7 +1618,7 @@
         "status": "passed",
         "linux desktop exit gate proof for avalonia:linux-x64_generated_at_alias_conflict": false,
         "linux desktop exit gate proof for avalonia:linux-x64_generated_at": "2026-04-04T20:10:01Z",
-        "linux desktop exit gate proof for avalonia:linux-x64_age_seconds": 208,
+        "linux desktop exit gate proof for avalonia:linux-x64_age_seconds": 747,
         "contract_name": "chummer6-ui.linux_desktop_exit_gate",
         "gate_reasons": [],
         "receipt_head": {
@@ -1720,7 +1736,7 @@
         "primary_receipt_version_alias_conflict": false,
         "primary_receipt_timestamp_alias_conflict": false,
         "primary_receipt_recorded_at": "2026-04-04T20:09:59.3766355+00:00",
-        "primary_receipt_age_seconds": 210,
+        "primary_receipt_age_seconds": 748,
         "expected_artifact_source": "",
         "expected_installer_file_name": "chummer-avalonia-linux-x64-installer.deb",
         "quarantined_installer_candidates": [],
@@ -1746,7 +1762,7 @@
         "status": "passed",
         "linux desktop exit gate proof for blazor-desktop:linux-x64_generated_at_alias_conflict": false,
         "linux desktop exit gate proof for blazor-desktop:linux-x64_generated_at": "2026-04-04T20:13:18Z",
-        "linux desktop exit gate proof for blazor-desktop:linux-x64_age_seconds": 11,
+        "linux desktop exit gate proof for blazor-desktop:linux-x64_age_seconds": 550,
         "contract_name": "chummer6-ui.linux_desktop_exit_gate",
         "gate_reasons": [],
         "receipt_head": {
@@ -1864,7 +1880,7 @@
         "primary_receipt_version_alias_conflict": false,
         "primary_receipt_timestamp_alias_conflict": false,
         "primary_receipt_recorded_at": "2026-04-04T20:13:16.6644845+00:00",
-        "primary_receipt_age_seconds": 13,
+        "primary_receipt_age_seconds": 551,
         "expected_artifact_source": "",
         "expected_installer_file_name": "chummer-blazor-desktop-linux-x64-installer.deb",
         "quarantined_installer_candidates": [
@@ -1890,8 +1906,8 @@
       }
     },
     "linux_statuses": {
-      "avalonia:linux-x64": "pass",
-      "blazor-desktop:linux-x64": "pass"
+      "avalonia:linux-x64": "fail",
+      "blazor-desktop:linux-x64": "fail"
     },
     "macos_artifacts_missing_rid_by_head": [],
     "macos_heads_expected": [
@@ -1930,7 +1946,7 @@
         "status": "failed",
         "macOS desktop exit gate proof for avalonia (osx-arm64)_generated_at_alias_conflict": false,
         "macOS desktop exit gate proof for avalonia (osx-arm64)_generated_at": "2026-04-04T19:54:18Z",
-        "macOS desktop exit gate proof for avalonia (osx-arm64)_age_seconds": 1151,
+        "macOS desktop exit gate proof for avalonia (osx-arm64)_age_seconds": 1690,
         "contract_name": "chummer6-ui.macos_desktop_exit_gate",
         "receipt_head": {
           "app_key": "avalonia",
@@ -2013,7 +2029,7 @@
         "status": "failed",
         "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_generated_at_alias_conflict": false,
         "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_generated_at": "2026-04-04T19:55:46Z",
-        "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_age_seconds": 1063,
+        "macOS desktop exit gate proof for blazor-desktop (osx-arm64)_age_seconds": 1602,
         "contract_name": "chummer6-ui.macos_desktop_exit_gate",
         "receipt_head": {
           "app_key": "blazor-desktop",
@@ -2096,7 +2112,10 @@
       "avalonia:osx-arm64": "fail",
       "blazor-desktop:osx-arm64": "fail"
     },
-    "linux_missing_or_failing_keys": [],
+    "linux_missing_or_failing_keys": [
+      "avalonia:linux-x64",
+      "blazor-desktop:linux-x64"
+    ],
     "windows_missing_or_failing_keys": [
       "avalonia:win-x64",
       "avalonia:windows",
