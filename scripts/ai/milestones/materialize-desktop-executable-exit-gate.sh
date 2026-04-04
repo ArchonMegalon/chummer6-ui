@@ -2343,8 +2343,28 @@ workflow_release_channel_id = normalize_optional_string_scalar(
     reasons,
     required=True,
 )
+visual_release_version = normalize_optional_string_scalar(
+    visual_familiarity_evidence.get("release_channel_version")
+    or visual_familiarity_gate.get("releaseVersion"),
+    "visual_familiarity.release_channel_version",
+    evidence,
+    reasons,
+    lowercase=False,
+    required=True,
+)
+workflow_release_version = normalize_optional_string_scalar(
+    workflow_execution_evidence.get("release_channel_version")
+    or workflow_execution_gate.get("releaseVersion"),
+    "workflow_execution.release_channel_version",
+    evidence,
+    reasons,
+    lowercase=False,
+    required=True,
+)
 evidence["visual_familiarity_release_channel_id"] = visual_release_channel_id
 evidence["workflow_execution_release_channel_id"] = workflow_release_channel_id
+evidence["visual_familiarity_release_version"] = visual_release_version
+evidence["workflow_execution_release_version"] = workflow_release_version
 if release_channel_channel_id and visual_release_channel_id and visual_release_channel_id != release_channel_channel_id:
     reasons.append(
         "Desktop visual familiarity exit gate release-channel identity does not match release channel channelId."
@@ -2352,6 +2372,14 @@ if release_channel_channel_id and visual_release_channel_id and visual_release_c
 if release_channel_channel_id and workflow_release_channel_id and workflow_release_channel_id != release_channel_channel_id:
     reasons.append(
         "Desktop workflow execution gate release-channel identity does not match release channel channelId."
+    )
+if release_channel_version and visual_release_version and visual_release_version != release_channel_version:
+    reasons.append(
+        "Desktop visual familiarity exit gate releaseVersion does not match release channel version."
+    )
+if release_channel_version and workflow_release_version and workflow_release_version != release_channel_version:
+    reasons.append(
+        "Desktop workflow execution gate releaseVersion does not match release channel version."
     )
 evidence["visual_familiarity_required_desktop_heads"] = visual_required_heads
 evidence["workflow_execution_required_desktop_heads"] = workflow_required_heads
