@@ -251,6 +251,36 @@ def normalize_required_relative_file_list(
     return valid
 
 
+def normalize_optional_string_scalar(
+    value: Any,
+    field_label: str,
+    evidence: Dict[str, Any],
+    reasons: List[str],
+    *,
+    lowercase: bool = True,
+    required: bool = False,
+) -> str:
+    if value is None:
+        evidence[f"{field_label}_present"] = False
+        if required:
+            reasons.append(f"{field_label} is missing.")
+        return ""
+    evidence[f"{field_label}_present"] = True
+    evidence[f"{field_label}_raw_type"] = type(value).__name__
+    if not isinstance(value, str):
+        reasons.append(f"{field_label} must be a string when present.")
+        return ""
+    if value != value.strip():
+        reasons.append(f"{field_label} contains leading/trailing whitespace.")
+    normalized = value.strip()
+    if lowercase:
+        normalized = normalized.lower()
+    if not normalized and required:
+        reasons.append(f"{field_label} is blank.")
+    evidence[f"{field_label}_normalized"] = normalized
+    return normalized
+
+
 def normalize_promoted_platform_heads(
     values: Any,
     field_label: str,
@@ -1398,14 +1428,47 @@ else:
             )
             continue
         artifacts.append(artifact_item)
-evidence["release_channel_artifacts_total_count"] = (
-    len(raw_artifacts) if isinstance(raw_artifacts, list) else 0
-)
+evidence["release_channel_artifacts_total_count"] = len(raw_artifacts) if isinstance(raw_artifacts, list) else 0
 evidence["release_channel_artifacts_object_count"] = len(artifacts)
 evidence["release_channel_artifacts_non_object_indexes"] = non_object_artifact_indexes
-release_channel_status = normalize_token(release_channel.get("status"))
-release_channel_channel_id = normalize_token(release_channel.get("channelId") or release_channel.get("channel"))
-release_channel_version = str(release_channel.get("version") or "").strip()
+release_channel_status = normalize_optional_string_scalar(
+    release_channel.get("status"),
+    "release_channel.status",
+    evidence,
+    reasons,
+    required=True,
+)
+release_channel_channel_id_primary = normalize_optional_string_scalar(
+    release_channel.get("channelId"),
+    "release_channel.channelId",
+    evidence,
+    reasons,
+)
+release_channel_channel_id_fallback = normalize_optional_string_scalar(
+    release_channel.get("channel"),
+    "release_channel.channel",
+    evidence,
+    reasons,
+)
+if (
+    release_channel_channel_id_primary
+    and release_channel_channel_id_fallback
+    and release_channel_channel_id_primary != release_channel_channel_id_fallback
+):
+    reasons.append(
+        "release_channel.channelId and release_channel.channel disagree after normalization."
+    )
+release_channel_channel_id = (
+    release_channel_channel_id_primary or release_channel_channel_id_fallback
+)
+release_channel_version = normalize_optional_string_scalar(
+    release_channel.get("version"),
+    "release_channel.version",
+    evidence,
+    reasons,
+    lowercase=False,
+    required=True,
+)
 
 evidence["release_channel_status"] = release_channel_status
 evidence["release_channel_channel_id"] = release_channel_channel_id
@@ -1579,8 +1642,18 @@ if not release_channel_version:
     reasons.append("Release channel is missing version, so installer/update truth cannot be aligned by release head.")
 if release_channel_status not in {"published", "ready", "pass", "passed"}:
     reasons.append("Release channel status is not in a publishable state for desktop executable proof.")
-release_channel_rollout_state = normalize_token(release_channel.get("rolloutState"))
-release_channel_supportability_state = normalize_token(release_channel.get("supportabilityState"))
+release_channel_rollout_state = normalize_optional_string_scalar(
+    release_channel.get("rolloutState"),
+    "release_channel.rolloutState",
+    evidence,
+    reasons,
+)
+release_channel_supportability_state = normalize_optional_string_scalar(
+    release_channel.get("supportabilityState"),
+    "release_channel.supportabilityState",
+    evidence,
+    reasons,
+)
 evidence["release_channel_rollout_state"] = release_channel_rollout_state
 evidence["release_channel_supportability_state"] = release_channel_supportability_state
 
