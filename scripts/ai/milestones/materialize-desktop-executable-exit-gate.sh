@@ -2867,6 +2867,22 @@ evidence["release_channel_rollout_state_allowed_for_publishable_complete_values"
 evidence["release_channel_rollout_state_invalid_for_publishable_complete"] = (
     release_channel_rollout_state_invalid_for_publishable_complete
 )
+release_channel_supportability_state_allowed_for_publishable_complete_values = [
+    "preview_supported",
+]
+release_channel_supportability_state_invalid_for_publishable_complete = (
+    not coverage_incomplete
+    and release_channel_publishable_status
+    and bool(release_channel_supportability_state)
+    and release_channel_supportability_state
+    not in set(release_channel_supportability_state_allowed_for_publishable_complete_values)
+)
+evidence["release_channel_supportability_state_allowed_for_publishable_complete_values"] = (
+    release_channel_supportability_state_allowed_for_publishable_complete_values
+)
+evidence["release_channel_supportability_state_invalid_for_publishable_complete"] = (
+    release_channel_supportability_state_invalid_for_publishable_complete
+)
 release_channel_publishable_status_with_incomplete_desktop_tuple_coverage = (
     release_channel_publishable_status and coverage_incomplete
 )
@@ -2922,6 +2938,10 @@ if release_channel_rollout_state_blocks_publishable_complete:
 if release_channel_rollout_state_invalid_for_publishable_complete:
     reasons.append(
         "Release channel rolloutState must be promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete."
+    )
+if release_channel_supportability_state_invalid_for_publishable_complete:
+    reasons.append(
+        "Release channel supportabilityState must be preview_supported when status is publishable and required desktop tuple coverage is complete."
     )
 if coverage_incomplete and release_channel_rollout_state != "coverage_incomplete":
     reasons.append(
