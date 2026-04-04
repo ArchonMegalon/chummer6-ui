@@ -722,6 +722,7 @@ def validate_cross_gate_head_proof(
 
 
 def validate_linux_gate(
+    gate_label: str,
     head: str,
     gate_path: Path,
     gate_payload: Dict[str, Any],
@@ -738,7 +739,7 @@ def validate_linux_gate(
     }
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
-    validate_receipt_freshness(f"linux desktop exit gate proof for {head}", gate_payload, gate_evidence, reasons)
+    validate_receipt_freshness(f"linux desktop exit gate proof for {gate_label}", gate_payload, gate_evidence, reasons)
     gate_reasons = [
         str(item).strip()
         for item in (gate_payload.get("reasons") or [])
@@ -888,14 +889,20 @@ def validate_linux_gate(
         expected_sha = normalize_token(expected_artifact.get("sha256"))
         expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
         expected_arch = arch_from_rid(expected_rid)
+        expected_artifact_source = normalize_token(expected_artifact.get("source"))
+        policy_missing_release_artifact = (
+            expected_artifact_source == "required_tuple_policy_missing_release_artifact"
+        )
+        gate_evidence["expected_artifact_source"] = expected_artifact_source
         if expected_rid and normalize_token(gate_head.get("rid")) != expected_rid:
             reasons.append(f"Linux desktop exit gate receipt RID does not match promoted head '{head}' ({expected_rid}).")
-        if expected_arch and gate_evidence["primary_receipt_arch"] != expected_arch:
-            reasons.append(f"Linux installer startup smoke receipt arch does not match promoted RID for head '{head}'.")
-        if expected_digest and gate_evidence["primary_receipt_artifact_digest"] != expected_digest:
-            reasons.append(
-                f"Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}'."
-            )
+        if not policy_missing_release_artifact:
+            if expected_arch and gate_evidence["primary_receipt_arch"] != expected_arch:
+                reasons.append(f"Linux installer startup smoke receipt arch does not match promoted RID for head '{head}'.")
+            if expected_digest and gate_evidence["primary_receipt_artifact_digest"] != expected_digest:
+                reasons.append(
+                    f"Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}'."
+                )
 
     for key, value in (
         ("install_launch_capture_path", str(primary_receipt.get("artifactInstallLaunchCapturePath") or "").strip()),
@@ -920,7 +927,7 @@ def validate_linux_gate(
             f"Linux installer proof path is outside trusted local roots for promoted head '{head}' ({key}).",
         )
 
-    evidence.setdefault("linux_gates", {})[head] = gate_evidence
+    evidence.setdefault("linux_gates", {})[gate_label] = gate_evidence
 
 
 def validate_windows_gate(
@@ -2798,6 +2805,7 @@ for expected_linux_artifact in expected_linux_artifacts:
     validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"linux_gate:{gate_label}")
     reason_count_before = len(reasons)
     validate_linux_gate(
+        gate_label,
         expected_linux_head,
         gate_path,
         load_json(gate_path),
