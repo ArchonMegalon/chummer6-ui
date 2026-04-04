@@ -4912,12 +4912,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF");
         StringAssert.Contains(generatorText, "startup smoke proof is required for promoted installer artifacts");
         StringAssert.Contains(promotionEvidenceText, "CHUMMER_PUBLIC_PROMOTION_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(promotionEvidenceText, "CHUMMER_PUBLIC_PROMOTION_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(promotionEvidenceText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(promotionEvidenceText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(promotionEvidenceText, "pre_ui_event_loop");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt artifactDigest does not match manifest sha256");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt hostClass is missing");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt hostClass does not identify the");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt operatingSystem is missing");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt timestamp is in the future");
         StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReason\": startup_smoke_reason");
         StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReceiptPath\": str((receipt or {}).get(\"__sourcePath\") or \"\")");
 
