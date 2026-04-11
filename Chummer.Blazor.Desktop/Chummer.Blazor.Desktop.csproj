@@ -9,22 +9,39 @@
     <ChummerDesktopHeadId>blazor-desktop</ChummerDesktopHeadId>
     <ChummerDesktopReleaseVersion Condition="'$(ChummerDesktopReleaseVersion)' == ''">$(Version)</ChummerDesktopReleaseVersion>
     <ChummerDesktopReleaseChannel Condition="'$(ChummerDesktopReleaseChannel)' == ''">local</ChummerDesktopReleaseChannel>
+    <ApplicationIcon>..\Chummer.Desktop.Assets\chummer.ico</ApplicationIcon>
+    <AssemblyTitle>Chummer Blazor</AssemblyTitle>
+    <Product>Chummer Blazor</Product>
+    <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">$(ChummerDesktopRuntimeIdentifiers)</RuntimeIdentifiers>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <BlazorDesktopObjDir>$(MSBuildProjectDirectory)/obj/$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/</BlazorDesktopObjDir>
+    <BlazorDesktopReferenceRidOutputDir>$(MSBuildProjectDirectory)/../Chummer.Blazor/bin/$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/</BlazorDesktopReferenceRidOutputDir>
   </PropertyGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
-    <ProjectReference Include="$(ChummerLocalContractsProject)" />
-    <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalContractsProject)"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
+    <ProjectReference Include="$(ChummerLocalRunContractsProject)"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
     <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.JSInterop" Version="10.0.0" />
     <PackageReference Include="Photino.Blazor" Version="4.0.13" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj" />
-    <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
-    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
+    <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
+    <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
+    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="wwwroot/**">
@@ -46,4 +63,21 @@
       <_Parameter2>$(ChummerDesktopReleaseChannel)</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
+
+  <Target Name="BackfillBlazorDesktopRuntimeArtifacts"
+          AfterTargets="Build;Publish"
+          Condition="'$(RuntimeIdentifier)' != ''">
+    <Copy SourceFiles="$(BlazorDesktopObjDir)$(AssemblyName).deps.json"
+          DestinationFiles="$(TargetDir)$(AssemblyName).deps.json"
+          Condition="Exists('$(BlazorDesktopObjDir)$(AssemblyName).deps.json') and !Exists('$(TargetDir)$(AssemblyName).deps.json')" />
+    <Copy SourceFiles="$(BlazorDesktopReferenceRidOutputDir)Chummer.Blazor.runtimeconfig.json"
+          DestinationFiles="$(TargetDir)$(AssemblyName).runtimeconfig.json"
+          Condition="Exists('$(BlazorDesktopReferenceRidOutputDir)Chummer.Blazor.runtimeconfig.json') and !Exists('$(TargetDir)$(AssemblyName).runtimeconfig.json')" />
+    <Copy SourceFiles="$(BlazorDesktopObjDir)$(AssemblyName).deps.json"
+          DestinationFiles="$(PublishDir)$(AssemblyName).deps.json"
+          Condition="'$(PublishDir)' != '' and Exists('$(BlazorDesktopObjDir)$(AssemblyName).deps.json') and !Exists('$(PublishDir)$(AssemblyName).deps.json')" />
+    <Copy SourceFiles="$(BlazorDesktopReferenceRidOutputDir)Chummer.Blazor.runtimeconfig.json"
+          DestinationFiles="$(PublishDir)$(AssemblyName).runtimeconfig.json"
+          Condition="'$(PublishDir)' != '' and Exists('$(BlazorDesktopReferenceRidOutputDir)Chummer.Blazor.runtimeconfig.json') and !Exists('$(PublishDir)$(AssemblyName).runtimeconfig.json')" />
+  </Target>
 </Project>
