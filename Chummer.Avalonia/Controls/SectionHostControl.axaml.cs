@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Overview;
 using System.Globalization;
@@ -9,6 +11,7 @@ public partial class SectionHostControl : UserControl
 {
     private BuildLabConceptIntakeState? _buildLab;
     private BrowseWorkspaceState? _browseWorkspace;
+    public event EventHandler<string>? QuickActionRequested;
 
     public SectionHostControl()
     {
@@ -22,6 +25,7 @@ public partial class SectionHostControl : UserControl
     {
         SetNotice(state.Notice);
         SetSectionPreview(state.PreviewJson, state.Rows);
+        SetSectionQuickActions(state.QuickActions);
         SetBuildLab(state.BuildLab);
         SetBrowseWorkspace(state.BrowseWorkspace);
         SetContactGraph(state.ContactGraph);
@@ -38,6 +42,17 @@ public partial class SectionHostControl : UserControl
     {
         SectionPreviewBox.Text = previewJson;
         SectionRowsList.ItemsSource = rows.ToArray();
+    }
+
+    public void SetSectionQuickActions(IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+    {
+        SectionQuickActionsPanel.Children.Clear();
+        SectionQuickActionsBorder.IsVisible = quickActions.Count > 0;
+
+        foreach (SectionQuickActionDisplayItem quickAction in quickActions)
+        {
+            SectionQuickActionsPanel.Children.Add(CreateQuickActionButton(quickAction));
+        }
     }
 
     public void SetBuildLab(BuildLabConceptIntakeState? buildLab)
@@ -601,12 +616,36 @@ public partial class SectionHostControl : UserControl
             .Select(day => $"{day.Date}: {day.ItemCount} items · {day.Summary}");
         return "Calendar view" + Environment.NewLine + string.Join(Environment.NewLine, lines);
     }
+
+    private Button CreateQuickActionButton(SectionQuickActionDisplayItem quickAction)
+    {
+        Button button = new()
+        {
+            Name = $"SectionQuickAction_{quickAction.ControlId}",
+            Content = quickAction.Label,
+            Tag = quickAction.ControlId,
+            Margin = new Thickness(0d, 0d, 8d, 0d)
+        };
+        button.Classes.Add("shell-action");
+        button.Classes.Add(quickAction.IsPrimary ? "primary" : "quiet");
+        button.Click += SectionQuickActionButton_OnClick;
+        return button;
+    }
+
+    private void SectionQuickActionButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string controlId })
+        {
+            QuickActionRequested?.Invoke(this, controlId);
+        }
+    }
 }
 
 public sealed record SectionHostState(
     string Notice,
     string PreviewJson,
     SectionRowDisplayItem[] Rows,
+    SectionQuickActionDisplayItem[] QuickActions,
     BuildLabConceptIntakeState? BuildLab,
     BrowseWorkspaceState? BrowseWorkspace,
     ContactRelationshipGraphState? ContactGraph,
@@ -628,3 +667,5 @@ public sealed record BrowseResultDisplayItem(string ItemId, string Label)
         return Label;
     }
 }
+
+public sealed record SectionQuickActionDisplayItem(string ControlId, string Label, bool IsPrimary);

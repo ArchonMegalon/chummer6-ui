@@ -38,18 +38,25 @@ public partial class ToolStripControl : UserControl
     private void ApplyLocalization()
     {
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
-        DesktopHomeButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
-        CampaignWorkspaceButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language);
-        UpdateStatusButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.update_status", language);
-        InstallLinkingButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language);
-        SupportButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language);
-        ReportIssueButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.report_issue", language);
-        SettingsButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language);
-        LoadDemoRunnerButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language);
-        ImportFileButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language);
-        ImportRawButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language);
-        SaveButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.save_workspace", language);
-        CloseWorkspaceButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.close_active_workspace", language);
+        foreach ((Button button, string label) in new (Button Button, string Label)[]
+                 {
+                     (DesktopHomeButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language)),
+                     (CampaignWorkspaceButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language)),
+                     (UpdateStatusButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.update_status", language)),
+                     (InstallLinkingButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language)),
+                     (SupportButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language)),
+                     (ReportIssueButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.report_issue", language)),
+                     (SettingsButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language)),
+                     (LoadDemoRunnerButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language)),
+                     (ImportFileButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language)),
+                     (ImportRawButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language)),
+                     (SaveButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.save_workspace", language)),
+                     (CloseWorkspaceButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.close_active_workspace", language)),
+                 })
+        {
+            button.Content = label;
+        }
+
         StatusText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.status_idle", language);
     }
 

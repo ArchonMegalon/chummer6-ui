@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-04-12T15:48:59.839761Z",
+  "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
+  "status": "pass",
+  "summary": "SR6 workflow-family execution evidence is explicitly grounded for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr6",
+    "familyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+    "proofKind": "sr6_family_release_gated_execution",
+    "ledgerPath": "/docker/chummercomplete/chummer6-ui-finish/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer6-ui-finish/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+      "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
+      "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
+    ],
+    "oracle": {
+      "classification": "carry-forward",
+      "rationale": "The dense classic workbench posture remains a promoted SR6 desktop parity requirement.",
+      "releaseGateTests": [
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+        "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
+        "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
+      ]
+    },
+    "dotnetTest": {
+      "project": "Chummer.Tests/Chummer.Tests.csproj",
+      "configuration": "Release",
+      "trxPath": "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
+      "exitCode": 0
+    },
+    "matchedPassedTests": [
+      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+      "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
+      "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
+    ],
+    "missingAuditTests": [],
+    "failedAuditTests": {}
+  }
+}

@@ -18,7 +18,8 @@ internal static class MainWindowShellFrameProjector
         ICommandAvailabilityEvaluator commandAvailabilityEvaluator)
     {
         string language = DesktopLocalizationCatalog.NormalizeOrDefault(state.Preferences.Language);
-        ActiveWorkspaceContext workspaceContext = ResolveActiveWorkspaceContext(shellSurface);
+        OpenWorkspaceState[] resolvedOpenWorkspaces = ResolveOpenWorkspaces(state, shellSurface);
+        ActiveWorkspaceContext workspaceContext = ResolveActiveWorkspaceContext(state, shellSurface, resolvedOpenWorkspaces);
         IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById = BuildWorkspaceActionLookup(shellSurface.WorkspaceActions);
         CommandPaletteItem[] commands = ProjectCommands(state, shellSurface, commandAvailabilityEvaluator);
 
@@ -33,14 +34,15 @@ internal static class MainWindowShellFrameProjector
                     IsBusy: state.IsBusy)),
             ChromeState: new MainWindowChromeState(
                 WorkspaceStrip: new WorkspaceStripState(
-                    BuildWorkspaceStripText(workspaceContext, language)),
+                    BuildWorkspaceStripText(workspaceContext, language),
+                    ShowQuickStartAction: state.WorkspaceId is null
+                        && state.Session.OpenWorkspaces.Count == 0
+                        && state.OpenWorkspaces.Count == 0),
                 SummaryHeader: new SummaryHeaderState(
-                    Name: state.Profile?.Name,
-                    Alias: state.Profile?.Alias,
-                    Karma: state.Progress?.Karma.ToString(),
-                    Skills: state.Skills?.Count.ToString(),
-                    RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId),
-                    CanInspectRuntime: shellSurface.ActiveRuntime is not null),
+                    NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
+                    NavigationTabs: ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator),
+                    ActiveTabId: shellSurface.ActiveTabId,
+                    RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId)),
                 StatusStrip: new StatusStripState(
                     CharacterState: BuildCharacterStateText(workspaceContext, language),
                     ServiceState: BuildServiceStateText(shellSurface, language),
@@ -52,6 +54,7 @@ internal static class MainWindowShellFrameProjector
                 Rows: state.ActiveSectionRows
                     .Select(row => new SectionRowDisplayItem(row.Path, row.Value))
                     .ToArray(),
+                QuickActions: ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId),
                 BuildLab: state.ActiveBuildLab,
                 BrowseWorkspace: state.ActiveBrowseWorkspace,
                 ContactGraph: BuildContactGraph(state),
@@ -166,11 +169,16 @@ internal static class MainWindowShellFrameProjector
                     : "desktop.shell.state.value.error",
                 language));
 
-    private static ActiveWorkspaceContext ResolveActiveWorkspaceContext(ShellSurfaceState shellSurface)
+    private static ActiveWorkspaceContext ResolveActiveWorkspaceContext(
+        CharacterOverviewState overviewState,
+        ShellSurfaceState shellSurface,
+        IReadOnlyList<OpenWorkspaceState> openWorkspaces)
     {
-        int openWorkspaceCount = shellSurface.OpenWorkspaces.Count;
-        CharacterWorkspaceId? activeWorkspaceId = shellSurface.ActiveWorkspaceId;
-        OpenWorkspaceState? activeWorkspace = shellSurface.OpenWorkspaces
+        int openWorkspaceCount = openWorkspaces.Count;
+        CharacterWorkspaceId? activeWorkspaceId = shellSurface.ActiveWorkspaceId
+            ?? overviewState.Session.ActiveWorkspaceId
+            ?? overviewState.WorkspaceId;
+        OpenWorkspaceState? activeWorkspace = openWorkspaces
             .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, activeWorkspaceId?.Value, StringComparison.Ordinal));
         string activeWorkspaceSaveStatus = activeWorkspace is null
             ? "n/a"
@@ -230,7 +238,7 @@ internal static class MainWindowShellFrameProjector
 
     private static NavigatorWorkspaceItem[] ProjectOpenWorkspaces(CharacterOverviewState state, ShellSurfaceState shellSurface)
     {
-        return shellSurface.OpenWorkspaces
+        return ResolveOpenWorkspaces(state, shellSurface)
             .Select(workspace => new NavigatorWorkspaceItem(
                 workspace.Id.Value,
                 workspace.Name,
@@ -239,6 +247,26 @@ internal static class MainWindowShellFrameProjector
                 workspace.HasSavedWorkspace,
                 Enabled: !state.IsBusy))
             .ToArray();
+    }
+
+    private static SectionQuickActionDisplayItem[] ProjectSectionQuickActions(string? rulesetId, string? sectionId)
+    {
+        return SectionQuickActionCatalog.ForSection(rulesetId, sectionId)
+            .Select(action => new SectionQuickActionDisplayItem(action.ControlId, action.Label, action.IsPrimary))
+            .ToArray();
+    }
+
+    private static OpenWorkspaceState[] ResolveOpenWorkspaces(CharacterOverviewState overviewState, ShellSurfaceState shellSurface)
+    {
+        if (shellSurface.OpenWorkspaces.Count > 0)
+        {
+            return shellSurface.OpenWorkspaces.ToArray();
+        }
+
+        IReadOnlyList<OpenWorkspaceState> overviewOpenWorkspaces = overviewState.Session.OpenWorkspaces.Count > 0
+            ? overviewState.Session.OpenWorkspaces
+            : overviewState.OpenWorkspaces;
+        return overviewOpenWorkspaces.ToArray();
     }
 
     private static NavigatorTabItem[] ProjectNavigationTabs(

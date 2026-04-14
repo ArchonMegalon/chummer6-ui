@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "scope": "chummer5a_desktop_head",
+  "requiredFamilies": [
+    {
+      "id": "create-open-import-save-save-as-print-export",
+      "status": "ready",
+      "notes": "Executable desktop file and workspace flow parity is covered by the promoted cross-head import, save, export, and multi-workspace gates.",
+      "auditTests": [
+        "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
+        "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/create-open-import-save-save-as-print-export.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/create-open-import-save-save-as-print-export.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    },
+    {
+      "id": "metatype-priorities-karma-entry",
+      "status": "ready",
+      "notes": "Character creation parity is exercised through all-section action coverage plus representative legacy workflow fixtures on the promoted desktop head.",
+      "auditTests": [
+        "Avalonia_and_Blazor_character_settings_save_updates_shared_state",
+        "Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections",
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/metatype-priorities-karma-entry.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/metatype-priorities-karma-entry.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    },
+    {
+      "id": "attributes-skills-skill-groups-specializations-knowledge-languages",
+      "status": "ready",
+      "notes": "Attribute, skill, and specialization editing parity is executable in dual-head workflow coverage.",
+      "auditTests": [
+        "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
+        "Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    },
+    {
+      "id": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+      "status": "ready",
+      "notes": "Support-family workflows are explicitly covered by release-gated cross-head tests and promoted desktop shell checks.",
+      "auditTests": [
+        "Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections",
+        "Contacts_diary_and_support_routes_execute_with_public_path_visibility"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    },
+    {
+      "id": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+      "status": "ready",
+      "notes": "Combat, inventory, vehicle, and gear workflow families are covered by executable dual-head acceptance tests.",
+      "auditTests": [
+        "Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
+        "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    },
+    {
+      "id": "cyberware-bioware-modular-hierarchies-nested-plugins",
+      "status": "ready",
+      "notes": "Modular ware and nested plugin parity is covered by dedicated fixture-backed workflow and release-gate tests.",
+      "auditTests": [
+        "Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
+        "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    },
+    {
+      "id": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+      "status": "ready",
+      "notes": "Magic, resonance, spirit, and matrix workflow families are release-gated in dual-head parity coverage.",
+      "auditTests": [
+        "Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
+        "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+        "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    },
+    {
+      "id": "improvements-explain-result-parity",
+      "status": "ready",
+      "notes": "Explain and result surfaces are covered by workspace summary and receipt parity coverage across the promoted desktop head.",
+      "auditTests": [
+        "Avalonia_and_Blazor_workspace_action_summary_matches"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/improvements-explain-result-parity.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/improvements-explain-result-parity.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    },
+    {
+      "id": "recovery-reload-migration-roundtrips",
+      "status": "ready",
+      "notes": "Recovery, reload, and migration roundtrips are exercised through metadata, tab reload, and workspace restoration parity tests.",
+      "auditTests": [
+        "Avalonia_and_Blazor_metadata_save_roundtrip_match",
+        "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/recovery-reload-migration-roundtrips.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/recovery-reload-migration-roundtrips.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    },
+    {
+      "id": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+      "status": "ready",
+      "notes": "Dense workbench affordances are covered by all-section parity, dialog workflow parity, and promoted shell interaction gates.",
+      "auditTests": [
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+        "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
+        "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
+      ],
+      "parityReceipts": [
+        ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json",
+        ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json"
+      ],
+      "verificationReceipts": [
+        ".codex-studio/published/workflow-family-parity/sr4/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json",
+        ".codex-studio/published/workflow-family-parity/sr6/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json"
+      ],
+      "executionReceipts": [
+        ".codex-studio/published/workflow-family-parity/executed/sr4/{familyId}.generated.json",
+        ".codex-studio/published/workflow-family-parity/executed/sr6/{familyId}.generated.json"
+      ]
+    }
+  ]
+}

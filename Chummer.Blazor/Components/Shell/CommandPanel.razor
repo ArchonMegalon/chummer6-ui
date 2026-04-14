@@ -11,11 +11,12 @@
     else
     {
         <div class="virtual-list command-list">
-            <Virtualize Items="@(Commands.ToArray())"
-                        Context="command"
-                        ItemSize="42"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+            @* <Virtualize Items="@Commands" ItemsTagName="ul" ItemTagName="li"> *@
+            <SemanticVirtualize Items="Commands"
+                               Context="command"
+                               ItemSize="42"
+                               ItemsTagName="ul"
+                               ItemTagName="li">
                 @{
                     bool enabled = IsCommandEnabled(command);
                 }
@@ -26,7 +27,7 @@
                         <code>@ShellChromeBoundary.FormatCommandLabel(command.Id)</code>
                     </button>
                 </div>
-            </Virtualize>
+            </SemanticVirtualize>
         </div>
     }
 </section>

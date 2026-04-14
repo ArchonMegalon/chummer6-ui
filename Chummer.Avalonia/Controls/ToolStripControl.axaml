@@ -1,10 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.ToolStripControl">
-  <Grid ColumnDefinitions="*,300" ColumnSpacing="14">
-    <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
-      <TextBlock Classes="shell-kicker" Text="Quick Actions" />
-      <WrapPanel Orientation="Horizontal" ItemHeight="36">
+  <Grid ColumnDefinitions="*,288" ColumnSpacing="10">
+    <StackPanel Grid.Column="0" Classes="shell-toolstrip-band" Spacing="4" VerticalAlignment="Center">
+      <TextBlock Classes="shell-kicker" Text="Runner Workbench" />
+      <WrapPanel Orientation="Horizontal" ItemHeight="28">
         <Button x:Name="DesktopHomeButton" Classes="shell-action primary" Content="Desktop Home" MinWidth="120" Margin="0,0,8,0" Click="DesktopHomeButton_OnClick" />
         <Button x:Name="CampaignWorkspaceButton" Classes="shell-action" Content="Campaign Workspace" MinWidth="156" Margin="0,0,8,0" Click="CampaignWorkspaceButton_OnClick" />
         <Button x:Name="LoadDemoRunnerButton" Classes="shell-action quiet" Content="Load Demo Runner" MinWidth="148" Margin="0,0,8,0" Click="LoadDemoRunnerButton_OnClick" />
@@ -12,7 +12,7 @@
         <Button x:Name="SaveButton" Classes="shell-action" Content="Save Workspace" MinWidth="136" Margin="0,0,8,0" Click="SaveButton_OnClick" />
         <Button x:Name="SettingsButton" Classes="shell-action quiet" Content="Settings" MinWidth="108" Click="SettingsButton_OnClick" />
       </WrapPanel>
-      <WrapPanel Orientation="Horizontal" ItemHeight="36">
+      <WrapPanel Orientation="Horizontal" ItemHeight="28">
         <Button x:Name="ImportRawButton" Classes="shell-action quiet" Content="Import Raw XML" MinWidth="132" Margin="0,0,8,0" Click="ImportRawButton_OnClick" />
         <Button x:Name="UpdateStatusButton" Classes="shell-action" Content="Update Status" MinWidth="128" Margin="0,0,8,0" Click="UpdateStatusButton_OnClick" />
         <Button x:Name="InstallLinkingButton" Classes="shell-action" Content="Link This Copy" MinWidth="124" Margin="0,0,8,0" Click="InstallLinkingButton_OnClick" />
@@ -22,15 +22,15 @@
       </WrapPanel>
     </StackPanel>
 
-    <Border Grid.Column="1" Classes="shell-card subtle" Padding="10,8">
+    <Border Grid.Column="1" Classes="shell-card subtle shell-toolstrip-state" Padding="8,6">
       <StackPanel Spacing="4" VerticalAlignment="Center">
-        <TextBlock Classes="shell-kicker" Text="Workbench State" />
+        <TextBlock Classes="shell-kicker" Text="Section Commands" />
         <TextBlock x:Name="StatusText"
                    Classes="shell-section-title"
                    Text="State: idle"
                    TextWrapping="Wrap" />
         <TextBlock Classes="shell-caption"
-                   Text="Important state stays in the strip, not hidden behind the content." />
+                   Text="Important state stays visible in the strip while you work." />
       </StackPanel>
     </Border>
   </Grid>

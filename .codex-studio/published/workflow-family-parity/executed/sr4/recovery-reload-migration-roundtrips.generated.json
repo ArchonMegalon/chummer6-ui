@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-04-12T15:48:37.974392Z",
+  "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
+  "status": "pass",
+  "summary": "SR4 workflow-family execution evidence is explicitly grounded for recovery-reload-migration-roundtrips.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr4",
+    "familyId": "recovery-reload-migration-roundtrips",
+    "proofKind": "sr4_family_oracle",
+    "ledgerPath": "/docker/chummercomplete/chummer6-ui-finish/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer6-ui-finish/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_metadata_save_roundtrip_match",
+      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
+    ],
+    "oracle": {
+      "sourceRepoPath": "/docker/fleet/repos/chummer4",
+      "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
+    },
+    "dotnetTest": {
+      "project": "Chummer.Tests/Chummer.Tests.csproj",
+      "configuration": "Release",
+      "trxPath": "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/out/workflow-family-parity/executed/sr4/sr4-workflow-family-execution.trx",
+      "exitCode": 0
+    },
+    "matchedPassedTests": [
+      "Avalonia_and_Blazor_metadata_save_roundtrip_match",
+      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
+    ],
+    "missingAuditTests": [],
+    "failedAuditTests": {}
+  }
+}

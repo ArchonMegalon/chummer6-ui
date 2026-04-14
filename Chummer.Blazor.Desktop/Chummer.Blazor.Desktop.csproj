@@ -9,7 +9,7 @@
     <ChummerDesktopHeadId>blazor-desktop</ChummerDesktopHeadId>
     <ChummerDesktopReleaseVersion Condition="'$(ChummerDesktopReleaseVersion)' == ''">$(Version)</ChummerDesktopReleaseVersion>
     <ChummerDesktopReleaseChannel Condition="'$(ChummerDesktopReleaseChannel)' == ''">local</ChummerDesktopReleaseChannel>
-    <ApplicationIcon>..\Chummer.Desktop.Assets\chummer.ico</ApplicationIcon>
+    <ApplicationIcon Condition="Exists('..\Chummer\chummer.ico')">..\Chummer\chummer.ico</ApplicationIcon>
     <AssemblyTitle>Chummer Blazor</AssemblyTitle>
     <Product>Chummer Blazor</Product>
     <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">$(ChummerDesktopRuntimeIdentifiers)</RuntimeIdentifiers>

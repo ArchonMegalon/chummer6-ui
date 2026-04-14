@@ -5953,7 +5953,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(navigatorControlText, "x:Name=\"CodexKickerText\"");
         StringAssert.Contains(navigatorControlText, "x:Name=\"NavigatorTree\"");
         StringAssert.Contains(navigatorControlText, "TreeDataTemplate");
-        StringAssert.Contains(commandPaneControlText, "Command Palette");
+        StringAssert.Contains(commandPaneControlText, "Section Commands");
     }
 
     [TestMethod]

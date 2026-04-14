@@ -423,7 +423,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string rosterContext = roster.Count switch
         {
             0 => "No open runners. The utility still works as a standalone dice and initiative pad.",
-            _ => $"{roster.Count} open runner{(roster.Count == 1 ? string.Empty : "s")} · {savedCount} saved · active {(currentWorkspace?.Value ?? roster[0].Id.Value)}"
+            _ => $"{roster.Count} open runner{(roster.Count == 1 ? string.Empty : "s")} · {savedCount} saved · active {ResolveDialogWorkspaceLabel(currentWorkspace, roster, BuildStableWorkspaceLabel(roster[0]) ?? roster[0].Id.Value)}"
         };
 
         return
@@ -450,7 +450,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
         OpenWorkspaceState[] ordered = roster
-            .OrderByDescending(candidate => candidate.LastOpenedUtc)
+            .OrderByDescending(candidate =>
+                currentWorkspace is not null
+                && string.Equals(candidate.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal))
+            .ThenBy(candidate => candidate.Alias, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(candidate => candidate.HasSavedWorkspace)
+            .ThenBy(candidate => RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId, StringComparer.OrdinalIgnoreCase)
             .ToArray();
         int savedCount = ordered.Count(candidate => candidate.HasSavedWorkspace);
         string rulesetMix = ordered.Length == 0
@@ -466,15 +472,79 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ordered.Select(candidate =>
                     $"{candidate.Alias} · {candidate.Name} · {(candidate.HasSavedWorkspace ? "saved" : "unsaved")} · {(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}"));
 
+        string activeWorkspaceLabel = ResolveDialogWorkspaceLabel(
+            currentWorkspace,
+            ordered,
+            BuildStableWorkspaceLabel(ordered.FirstOrDefault()) ?? workspace);
+
         return
         [
             new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true),
             new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true),
             new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true),
-            new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true),
+            new DesktopDialogField(
+                "rosterActiveWorkspace",
+                "Active Workspace",
+                activeWorkspaceLabel,
+                activeWorkspaceLabel,
+                IsReadOnly: true),
             new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true),
             new DesktopDialogField("rosterEntries", "Roster Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true)
         ];
+    }
+
+    private static string ResolveDialogWorkspaceLabel(
+        CharacterWorkspaceId? currentWorkspace,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces,
+        string fallback)
+    {
+        if (currentWorkspace is null)
+        {
+            return fallback;
+        }
+
+        string workspaceId = currentWorkspace.Value.Value;
+        if (!ShouldNormalizeDialogWorkspaceId(workspaceId))
+        {
+            return workspaceId;
+        }
+
+        OpenWorkspaceState? matchingWorkspace = openWorkspaces?.FirstOrDefault(candidate =>
+            string.Equals(candidate.Id.Value, workspaceId, StringComparison.Ordinal));
+        return BuildStableWorkspaceLabel(matchingWorkspace) ?? fallback;
+    }
+
+    private static string? BuildStableWorkspaceLabel(OpenWorkspaceState? workspace)
+    {
+        if (workspace is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(workspace.Alias)
+            && !string.IsNullOrWhiteSpace(workspace.Name)
+            && !string.Equals(workspace.Alias, workspace.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{workspace.Alias} · {workspace.Name}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(workspace.Alias))
+        {
+            return workspace.Alias;
+        }
+
+        return string.IsNullOrWhiteSpace(workspace.Name) ? null : workspace.Name;
+    }
+
+    private static bool ShouldNormalizeDialogWorkspaceId(string workspaceId)
+    {
+        if (string.IsNullOrWhiteSpace(workspaceId))
+        {
+            return false;
+        }
+
+        return Guid.TryParse(workspaceId, out _)
+            || (workspaceId.Length == 32 && workspaceId.All(static character => Uri.IsHexDigit(character)));
     }
 
     private static string BuildInitiativePreview(int baseValue, int diceCount, int woundModifier, int pass)

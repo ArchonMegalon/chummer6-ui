@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +28,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Chummer.Tests.Presentation;
 
 [TestClass]
+[DoNotParallelize]
 public class DualHeadAcceptanceTests
 {
     private static readonly Uri BaseUri = ResolveBaseUri();
@@ -35,6 +38,15 @@ public class DualHeadAcceptanceTests
     private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
     private static readonly Regex WorkspaceFileNameRegex = new("^[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex WorkspaceFileTokenRegex = new("[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex RuntimeGeneratedAtRegex = new(@"Generated:\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}Z", RegexOptions.Compiled);
+
+    [TestInitialize]
+    public async Task ResetWorkspaceCatalogAsync()
+    {
+        using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
+        await ClearShellSessionAsync(http);
+    }
 
     private static RulesetShellCatalogResolverService CreateShellCatalogResolver()
     {
@@ -58,7 +70,7 @@ public class DualHeadAcceptanceTests
             var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -68,7 +80,7 @@ public class DualHeadAcceptanceTests
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.IsNotNull(avaloniaState.WorkspaceId);
@@ -97,7 +109,7 @@ public class DualHeadAcceptanceTests
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await presenter.UpdateMetadataAsync(update, CancellationToken.None);
             await presenter.SaveAsync(CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -109,7 +121,7 @@ public class DualHeadAcceptanceTests
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await presenter.UpdateMetadataAsync(update, CancellationToken.None);
             await presenter.SaveAsync(CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("Updated Name", avaloniaState.Profile?.Name);
@@ -134,7 +146,7 @@ public class DualHeadAcceptanceTests
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.SelectTabAsync("tab-skills", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -146,7 +158,7 @@ public class DualHeadAcceptanceTests
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.SelectTabAsync("tab-skills", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("tab-skills", avaloniaState.ActiveTabId);
@@ -170,7 +182,7 @@ public class DualHeadAcceptanceTests
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.ExecuteCommandAsync("save_character", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -181,7 +193,7 @@ public class DualHeadAcceptanceTests
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.ExecuteCommandAsync("save_character", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("save_character", avaloniaState.LastCommandId);
@@ -203,7 +215,7 @@ public class DualHeadAcceptanceTests
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.ExecuteCommandAsync("global_settings", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -214,7 +226,7 @@ public class DualHeadAcceptanceTests
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.ExecuteCommandAsync("global_settings", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("global_settings", avaloniaState.LastCommandId);
@@ -239,7 +251,7 @@ public class DualHeadAcceptanceTests
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.ExecuteCommandAsync("global_settings", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("globalUiScale", "125", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -251,7 +263,7 @@ public class DualHeadAcceptanceTests
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.ExecuteCommandAsync("global_settings", CancellationToken.None);
             await bridge.UpdateDialogFieldAsync("globalUiScale", "125", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         string? avaloniaUiScale = avaloniaState.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "globalUiScale", StringComparison.Ordinal)).Value;
@@ -276,7 +288,7 @@ public class DualHeadAcceptanceTests
             await adapter.UpdateDialogFieldAsync("globalUiScale", "120", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("globalTheme", "steel", CancellationToken.None);
             await adapter.ExecuteDialogActionAsync("save", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -290,7 +302,7 @@ public class DualHeadAcceptanceTests
             await bridge.UpdateDialogFieldAsync("globalUiScale", "120", CancellationToken.None);
             await bridge.UpdateDialogFieldAsync("globalTheme", "steel", CancellationToken.None);
             await bridge.ExecuteDialogActionAsync("save", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual(120, avaloniaState.Preferences.UiScalePercent);
@@ -318,15 +330,15 @@ public class DualHeadAcceptanceTests
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.SelectTabAsync("tab-info", CancellationToken.None);
-            avaloniaBeforeDialog = BuildShellRegionSnapshot(adapter.State, evaluator);
+            avaloniaBeforeDialog = BuildShellRegionSnapshot(presenter.State, evaluator);
 
             await adapter.ExecuteCommandAsync("global_settings", CancellationToken.None);
-            avaloniaDialogOpen = BuildShellRegionSnapshot(adapter.State, evaluator);
+            avaloniaDialogOpen = BuildShellRegionSnapshot(presenter.State, evaluator);
 
             await adapter.UpdateDialogFieldAsync("globalTheme", "mint", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("globalUiScale", "130", CancellationToken.None);
             await adapter.ExecuteDialogActionAsync("save", CancellationToken.None);
-            avaloniaAfterDialogSave = BuildShellRegionSnapshot(adapter.State, evaluator);
+            avaloniaAfterDialogSave = BuildShellRegionSnapshot(presenter.State, evaluator);
         }
 
         ShellRegionSnapshot blazorBeforeDialog;
@@ -337,7 +349,7 @@ public class DualHeadAcceptanceTests
             var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -392,7 +404,7 @@ public class DualHeadAcceptanceTests
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -404,7 +416,7 @@ public class DualHeadAcceptanceTests
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("summary", avaloniaState.ActiveSectionId);
@@ -465,7 +477,7 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
+                CharacterOverviewState state = presenter.State;
                 avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
@@ -476,7 +488,7 @@ public class DualHeadAcceptanceTests
             var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -539,7 +551,7 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
+                CharacterOverviewState state = presenter.State;
                 avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
@@ -550,7 +562,7 @@ public class DualHeadAcceptanceTests
             var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -577,6 +589,13 @@ public class DualHeadAcceptanceTests
             Assert.AreEqual(avalonia.Json, blazor.Json);
             Assert.AreEqual(avalonia.RowCount, blazor.RowCount);
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
     }
 
     [TestMethod]
@@ -615,7 +634,7 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
+                CharacterOverviewState state = presenter.State;
                 avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
@@ -626,7 +645,7 @@ public class DualHeadAcceptanceTests
             var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -653,6 +672,13 @@ public class DualHeadAcceptanceTests
             Assert.AreEqual(avalonia.Json, blazor.Json);
             Assert.AreEqual(avalonia.RowCount, blazor.RowCount);
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
     }
 
     [TestMethod]
@@ -691,7 +717,7 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
+                CharacterOverviewState state = presenter.State;
                 avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
@@ -702,7 +728,7 @@ public class DualHeadAcceptanceTests
             var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -729,6 +755,13 @@ public class DualHeadAcceptanceTests
             Assert.AreEqual(avalonia.Json, blazor.Json);
             Assert.AreEqual(avalonia.RowCount, blazor.RowCount);
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
     }
 
     [TestMethod]
@@ -765,7 +798,7 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
+                CharacterOverviewState state = presenter.State;
                 avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
@@ -776,7 +809,7 @@ public class DualHeadAcceptanceTests
             var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -803,6 +836,13 @@ public class DualHeadAcceptanceTests
             Assert.AreEqual(avalonia.Json, blazor.Json);
             Assert.AreEqual(avalonia.RowCount, blazor.RowCount);
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
     }
 
     [TestMethod]
@@ -841,7 +881,7 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
+                CharacterOverviewState state = presenter.State;
                 avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
@@ -852,7 +892,7 @@ public class DualHeadAcceptanceTests
             var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -882,6 +922,19 @@ public class DualHeadAcceptanceTests
     }
 
     [TestMethod]
+    public async Task Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details()
+    {
+        await Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
+    }
+
+    [TestMethod]
     public async Task Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections()
     {
         string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
@@ -907,6 +960,16 @@ public class DualHeadAcceptanceTests
             Assert.AreEqual(avalonia.Json, blazor.Json, $"Section payload mismatch for action '{action.Id}'.");
             Assert.AreEqual(avalonia.RowCount, blazor.RowCount, $"Section row count mismatch for action '{action.Id}'.");
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections()
+    {
+        await Avalonia_and_Blazor_info_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
     }
 
     [TestMethod]
@@ -949,7 +1012,7 @@ public class DualHeadAcceptanceTests
             await adapter.UpdateDialogFieldAsync("characterHouseRulesEnabled", "true", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("characterNotes", "Shared parity notes", CancellationToken.None);
             await adapter.ExecuteDialogActionAsync("save", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -1025,7 +1088,7 @@ public class DualHeadAcceptanceTests
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.SelectTabAsync("tab-info", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
@@ -1037,7 +1100,7 @@ public class DualHeadAcceptanceTests
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.SelectTabAsync("tab-info", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         string[] avaloniaCommandIds = avaloniaState.Commands
@@ -1099,22 +1162,22 @@ public class DualHeadAcceptanceTests
 
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(firstDocument, CancellationToken.None);
-            avaloniaFirstWorkspace = adapter.State.WorkspaceId!.Value;
+            avaloniaFirstWorkspace = presenter.State.WorkspaceId!.Value;
             await adapter.SelectTabAsync("tab-skills", CancellationToken.None);
             await presenter.UpdateMetadataAsync(new UpdateWorkspaceMetadata("Avalonia One", "AV1", "Notes 1"), CancellationToken.None);
             await presenter.SaveAsync(CancellationToken.None);
 
             await adapter.ImportAsync(secondDocument, CancellationToken.None);
-            avaloniaSecondWorkspace = adapter.State.WorkspaceId!.Value;
+            avaloniaSecondWorkspace = presenter.State.WorkspaceId!.Value;
             await adapter.SelectTabAsync("tab-info", CancellationToken.None);
             await presenter.UpdateMetadataAsync(new UpdateWorkspaceMetadata("Avalonia Two", "AV2", "Notes 2"), CancellationToken.None);
             await presenter.SaveAsync(CancellationToken.None);
 
             await adapter.SwitchWorkspaceAsync(avaloniaFirstWorkspace, CancellationToken.None);
-            avaloniaAfterSwitchToFirst = adapter.State;
+            avaloniaAfterSwitchToFirst = presenter.State;
 
             await adapter.SwitchWorkspaceAsync(avaloniaSecondWorkspace, CancellationToken.None);
-            avaloniaAfterSwitchToSecond = adapter.State;
+            avaloniaAfterSwitchToSecond = presenter.State;
         }
 
         CharacterWorkspaceId blazorFirstWorkspace;
@@ -1127,7 +1190,7 @@ public class DualHeadAcceptanceTests
             var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(firstDocument, CancellationToken.None);
@@ -1184,6 +1247,7 @@ public class DualHeadAcceptanceTests
     {
         var snapshots = new Dictionary<string, WorkspaceActionSnapshot>(StringComparer.Ordinal);
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
@@ -1192,7 +1256,7 @@ public class DualHeadAcceptanceTests
         foreach (WorkspaceSurfaceActionDefinition action in actions)
         {
             await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-            CharacterOverviewState state = adapter.State;
+            CharacterOverviewState state = presenter.State;
             snapshots[action.Id] = new WorkspaceActionSnapshot(
                 state.ActiveTabId,
                 state.ActiveActionId,
@@ -1210,6 +1274,7 @@ public class DualHeadAcceptanceTests
     {
         var snapshots = new Dictionary<string, WorkspaceActionSnapshot>(StringComparer.Ordinal);
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
@@ -1237,6 +1302,7 @@ public class DualHeadAcceptanceTests
     {
         var snapshots = new Dictionary<string, CommandDialogSnapshot>(StringComparer.Ordinal);
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
@@ -1245,7 +1311,7 @@ public class DualHeadAcceptanceTests
         foreach (string commandId in commandIds)
         {
             await adapter.ExecuteCommandAsync(commandId, CancellationToken.None);
-            snapshots[commandId] = TakeCommandDialogSnapshot(commandId, adapter.State);
+            snapshots[commandId] = TakeCommandDialogSnapshot(commandId, presenter.State);
             await adapter.CloseDialogAsync(CancellationToken.None);
         }
 
@@ -1258,6 +1324,7 @@ public class DualHeadAcceptanceTests
     {
         var snapshots = new Dictionary<string, CommandDialogSnapshot>(StringComparer.Ordinal);
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
@@ -1280,6 +1347,7 @@ public class DualHeadAcceptanceTests
         string? dialogActionId = null)
     {
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
@@ -1290,7 +1358,7 @@ public class DualHeadAcceptanceTests
             await adapter.ExecuteDialogActionAsync(dialogActionId, CancellationToken.None);
         }
 
-        return TakePendingDownloadSnapshot(adapter.State);
+        return TakePendingDownloadSnapshot(presenter.State);
     }
 
     private static async Task<PendingDownloadSnapshot> CaptureBlazorDownloadSnapshotAsync(
@@ -1299,6 +1367,7 @@ public class DualHeadAcceptanceTests
         string? dialogActionId = null)
     {
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
@@ -1319,6 +1388,7 @@ public class DualHeadAcceptanceTests
         string? dialogActionId = null)
     {
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
@@ -1329,7 +1399,7 @@ public class DualHeadAcceptanceTests
             await adapter.ExecuteDialogActionAsync(dialogActionId, CancellationToken.None);
         }
 
-        return TakePendingExportSnapshot(adapter.State);
+        return TakePendingExportSnapshot(presenter.State);
     }
 
     private static async Task<PendingExportSnapshot> CaptureBlazorExportSnapshotAsync(
@@ -1338,6 +1408,7 @@ public class DualHeadAcceptanceTests
         string? dialogActionId = null)
     {
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
@@ -1357,12 +1428,13 @@ public class DualHeadAcceptanceTests
         string commandId)
     {
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
         await adapter.ImportAsync(documentBytes, CancellationToken.None);
         await adapter.ExecuteCommandAsync(commandId, CancellationToken.None);
-        return TakePendingPrintSnapshot(adapter.State);
+        return TakePendingPrintSnapshot(presenter.State);
     }
 
     private static async Task<PendingPrintSnapshot> CaptureBlazorPrintSnapshotAsync(
@@ -1370,6 +1442,7 @@ public class DualHeadAcceptanceTests
         string commandId)
     {
         using HttpClient http = CreateClient();
+        await ClearAllWorkspacesAsync(http);
         var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
@@ -1383,7 +1456,7 @@ public class DualHeadAcceptanceTests
         CharacterOverviewState callbackState,
         CharacterOverviewStateBridge bridge)
     {
-        return callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+        return bridge.Current;
     }
 
     private static CommandDialogSnapshot TakeCommandDialogSnapshot(string commandId, CharacterOverviewState state)
@@ -1456,6 +1529,12 @@ public class DualHeadAcceptanceTests
 
         if (string.Equals(fieldId, "dataExportPreview", StringComparison.Ordinal))
             return WorkspaceTokenRegex.Replace(value, "<workspace>");
+
+        if (string.Equals(fieldId, "runtimeProfileDiagnostics", StringComparison.Ordinal)
+            || string.Equals(fieldId, "runtimeHubClientDiagnostics", StringComparison.Ordinal))
+        {
+            return RuntimeGeneratedAtRegex.Replace(value, "Generated: <timestamp>");
+        }
 
         return value;
     }
@@ -1699,6 +1778,66 @@ public class DualHeadAcceptanceTests
             ?? string.Empty;
     }
 
+    private static async Task ClearAllWorkspacesAsync(HttpClient client)
+    {
+        const int maxAttempts = 20;
+        const int batchSize = 500;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            JsonObject listed = await GetRequiredJsonObject(client, $"/api/workspaces?maxCount={batchSize}");
+            JsonArray workspaces = listed["workspaces"] as JsonArray ?? [];
+            if (workspaces.Count == 0)
+            {
+                return;
+            }
+
+            int deletedCount = 0;
+            foreach (JsonNode? node in workspaces)
+            {
+                string workspaceId = node?["id"]?.GetValue<string>() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(workspaceId))
+                {
+                    continue;
+                }
+
+                using HttpResponseMessage response = await client.DeleteAsync($"/api/workspaces/{workspaceId}");
+                Assert.IsTrue(
+                    response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound,
+                    $"DELETE /api/workspaces/{workspaceId} failed with {(int)response.StatusCode}");
+                deletedCount++;
+            }
+
+            if (deletedCount == 0)
+            {
+                break;
+            }
+        }
+
+        JsonObject remaining = await GetRequiredJsonObject(client, "/api/workspaces?maxCount=1");
+        JsonArray remainingWorkspaces = remaining["workspaces"] as JsonArray ?? [];
+        Assert.IsEmpty(remainingWorkspaces, "Unable to clear all persisted workspaces before running test.");
+    }
+
+    private static async Task ClearShellSessionAsync(HttpClient client)
+    {
+        using var request = new StringContent(new JsonObject().ToJsonString(), Encoding.UTF8, "application/json");
+        using HttpResponseMessage response = await client.PostAsync("/api/shell/session", request);
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.IsTrue(response.IsSuccessStatusCode, $"POST /api/shell/session failed with {(int)response.StatusCode}: {content}");
+    }
+
+    private static async Task<JsonObject> GetRequiredJsonObject(HttpClient client, string relativePath)
+    {
+        using HttpResponseMessage response = await client.GetAsync(relativePath);
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.IsTrue(response.IsSuccessStatusCode, $"GET {relativePath} failed with {(int)response.StatusCode}: {content}");
+
+        JsonNode parsed = JsonNode.Parse(content) ?? throw new InvalidOperationException($"Response for '{relativePath}' was empty.");
+        Assert.IsInstanceOfType<JsonObject>(parsed);
+        return (JsonObject)parsed;
+    }
+
     private static HttpClient CreateClient()
     {
         var client = new HttpClient
@@ -1721,6 +1860,8 @@ public class DualHeadAcceptanceTests
         string? raw = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
         if (string.IsNullOrWhiteSpace(raw))
             raw = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        if (string.IsNullOrWhiteSpace(raw) && TryResolveLoopbackBaseUri(out Uri? loopbackUri))
+            return loopbackUri;
         if (string.IsNullOrWhiteSpace(raw))
             raw = "http://chummer-api:8080";
 
@@ -1728,6 +1869,34 @@ public class DualHeadAcceptanceTests
             throw new InvalidOperationException($"Invalid CHUMMER_API_BASE_URL/CHUMMER_WEB_BASE_URL: '{raw}'");
 
         return uri;
+    }
+
+    private static bool TryResolveLoopbackBaseUri(out Uri? uri)
+    {
+        uri = null;
+
+        string? portText = Environment.GetEnvironmentVariable("CHUMMER_API_PORT");
+        if (string.IsNullOrWhiteSpace(portText))
+            portText = Environment.GetEnvironmentVariable("CHUMMER_WEB_PORT");
+        if (string.IsNullOrWhiteSpace(portText))
+            portText = "8088";
+        if (!int.TryParse(portText, out int port) || port <= 0)
+            return false;
+
+        using TcpClient socket = new();
+        try
+        {
+            Task connectTask = socket.ConnectAsync("127.0.0.1", port);
+            if (!connectTask.Wait(TimeSpan.FromMilliseconds(200)) || !socket.Connected)
+                return false;
+
+            uri = new Uri($"http://127.0.0.1:{port}", UriKind.Absolute);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static string? ResolveApiKey()

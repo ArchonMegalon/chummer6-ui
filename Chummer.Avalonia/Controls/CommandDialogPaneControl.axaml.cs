@@ -12,6 +12,7 @@ public partial class CommandDialogPaneControl : UserControl
     public CommandDialogPaneControl()
     {
         InitializeComponent();
+        CommandPaneHeadingText.Text = "Section Commands";
         CommandsList.SelectionChanged += CommandsList_OnSelectionChanged;
     }
 

@@ -81,6 +81,13 @@
             <span>@GetInvalidatedCardCount() Spider @(GetInvalidatedCardCount() == 1 ? "card is" : "cards are") stale in @CurrentSessionContext and need refresh before action.</span>
         </section>
     }
+    else if (ShouldShowPinnedVisibilityBanner())
+    {
+        <section class="gm-board-stale-banner" data-gm-board-stale-banner role="status" aria-live="polite">
+            <strong>Pinned cards remain visible.</strong>
+            <span>Autonomy is Off, but pinned Spider cards stay on the board until you unpin or dismiss them.</span>
+        </section>
+    }
 
     @if (Cards.Count == 0)
     {
@@ -325,6 +332,10 @@
         => card.InvalidatesOnContextShift
            && !string.IsNullOrWhiteSpace(card.ContextSnapshot)
            && !string.Equals(card.ContextSnapshot, CurrentSessionContext, StringComparison.OrdinalIgnoreCase);
+
+    private bool ShouldShowPinnedVisibilityBanner()
+        => string.Equals(AutonomyLevel, "Off", StringComparison.OrdinalIgnoreCase)
+            && Cards.Any(card => card.IsPinned);
 
     public sealed record GmBoardCard(
         string Id,

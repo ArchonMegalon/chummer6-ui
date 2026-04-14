@@ -1,0 +1,29 @@
+@typeparam TItem
+
+<Virtualize TItem="TItem"
+            Items="MaterializedItems"
+            Context="item"
+            ItemSize="ItemSize">
+    @ChildContent(item)
+</Virtualize>
+
+@code {
+    [Parameter]
+    public IReadOnlyCollection<TItem> Items { get; set; } = Array.Empty<TItem>();
+
+    [Parameter]
+    public float ItemSize { get; set; }
+
+    [Parameter]
+    public string? ItemsTagName { get; set; }
+
+    [Parameter]
+    public string? ItemTagName { get; set; }
+
+    [Parameter]
+    public RenderFragment<TItem> ChildContent { get; set; } = default!;
+
+    private ICollection<TItem> MaterializedItems
+        => Items as ICollection<TItem>
+            ?? (Items.Count == 0 ? Array.Empty<TItem>() : Items.ToArray());
+}

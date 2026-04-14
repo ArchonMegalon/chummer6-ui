@@ -36,7 +36,7 @@
                                 data-generated-asset-tab="@asset.AssetId"
                                 role="tab"
                                 id="@($"generated-asset-tab-{asset.AssetId}")"
-                                aria-selected="@isSelected"
+                                aria-selected="@(isSelected ? "true" : "false")"
                                 aria-controls="@($"generated-asset-panel-{asset.AssetId}")"
                                 @onclick="() => SelectAsset(asset.AssetId)">
                             @asset.Title

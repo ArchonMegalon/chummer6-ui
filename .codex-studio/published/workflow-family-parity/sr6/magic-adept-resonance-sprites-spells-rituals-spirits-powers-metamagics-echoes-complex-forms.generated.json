@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-04-12T15:48:59.879027Z",
+  "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
+  "status": "pass",
+  "summary": "SR6 workflow-family verification evidence is explicitly grounded for magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr6",
+    "familyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+    "proofKind": "sr6_family_carry_forward",
+    "ledgerPath": "/docker/chummercomplete/chummer6-ui-finish/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer6-ui-finish/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices",
+      "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
+      "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+      "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+    ],
+    "oracle": {
+      "classification": "carry-forward",
+      "rationale": "Magic, resonance, and spirit-family flows stay in scope for SR6 release gating.",
+      "releaseGateTests": [
+        "Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
+        "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+        "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+      ]
+    },
+    "executionReceipts": [
+      "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/workflow-family-parity/executed/sr6/magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json"
+    ],
+    "executionFailures": []
+  }
+}

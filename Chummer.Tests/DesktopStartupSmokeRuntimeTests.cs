@@ -22,6 +22,7 @@ public sealed class DesktopStartupSmokeRuntimeTests
     {
         string receiptPath = Path.Combine(Path.GetTempPath(), $"startup-smoke-{Guid.NewGuid():N}.json");
         string artifactDigest = $"sha256:{new string('a', 64)}";
+        const string expectedReleaseVersion = "runtime-test-unpublished";
         string? priorReceiptPath = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT");
         string? priorFailurePacketPath = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET");
         string? priorArtifactDigest = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST");
@@ -37,7 +38,7 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST", artifactDigest);
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS", "test-host");
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT", "runtime_test_ready");
-            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION", "local-docker");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION", expectedReleaseVersion);
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RID", "linux-x64");
 
             int? exitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(
@@ -54,7 +55,8 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Assert.AreEqual("runtime_test_ready", receipt.RootElement.GetProperty("readyCheckpoint").GetString());
             Assert.AreEqual(artifactDigest, receipt.RootElement.GetProperty("artifactDigest").GetString());
             Assert.AreEqual("environment", receipt.RootElement.GetProperty("artifactDigestSource").GetString());
-            Assert.AreEqual("local-docker", receipt.RootElement.GetProperty("releaseVersion").GetString());
+            Assert.AreEqual(expectedReleaseVersion, receipt.RootElement.GetProperty("version").GetString());
+            Assert.AreEqual(expectedReleaseVersion, receipt.RootElement.GetProperty("releaseVersion").GetString());
             Assert.AreEqual("linux-x64", receipt.RootElement.GetProperty("rid").GetString());
             Assert.IsFalse(string.IsNullOrWhiteSpace(receipt.RootElement.GetProperty("platform").GetString()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(receipt.RootElement.GetProperty("arch").GetString()));

@@ -1,40 +1,16 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.SummaryHeaderControl">
-  <Grid ColumnDefinitions="1.35*,1.15*,0.95*,0.95*,1.7*" ColumnSpacing="10">
-    <Border Grid.Column="0" Classes="shell-card subtle">
-      <StackPanel>
-        <TextBlock x:Name="NameLabelText" Classes="shell-kicker" Text="Name" />
-        <TextBlock x:Name="NameValueText" Classes="shell-metric-value" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="1" Classes="shell-card subtle">
-      <StackPanel>
-        <TextBlock x:Name="AliasLabelText" Classes="shell-kicker" Text="Alias" />
-        <TextBlock x:Name="AliasValueText" Classes="shell-metric-value" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="2" Classes="shell-card">
-      <StackPanel>
-        <TextBlock x:Name="KarmaLabelText" Classes="shell-kicker" Text="Karma" />
-        <TextBlock x:Name="KarmaValueText" Classes="shell-metric-value" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="3" Classes="shell-card">
-      <StackPanel>
-        <TextBlock x:Name="SkillsLabelText" Classes="shell-kicker" Text="Skills" />
-        <TextBlock x:Name="SkillsValueText" Classes="shell-metric-value" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="4" Classes="shell-card">
-      <StackPanel Spacing="8">
-        <TextBlock x:Name="RuntimeLabelText" Classes="shell-kicker" Text="Runtime" />
-        <TextBlock x:Name="RuntimeValueText" Classes="shell-section-title" Text="-" TextWrapping="Wrap" />
-        <Button x:Name="RuntimeInspectButton"
-                Classes="shell-action quiet"
-                Content="Inspect Runtime"
-                HorizontalAlignment="Left" />
-      </StackPanel>
-    </Border>
-  </Grid>
+  <Border x:Name="LoadedRunnerTabStripBorder"
+          Classes="shell-card subtle"
+          Padding="10,8"
+          IsVisible="False">
+    <StackPanel Spacing="8">
+      <TextBlock x:Name="LoadedRunnerTabStripHeading"
+                 Classes="shell-kicker"
+                 Text="Runner Tabs" />
+      <WrapPanel x:Name="LoadedRunnerTabStripPanel"
+                 Orientation="Horizontal" />
+    </StackPanel>
+  </Border>
 </UserControl>

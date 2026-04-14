@@ -12,11 +12,12 @@
     else
     {
         <div class="virtual-list navigator-list" data-testid="open-workspace-tree">
-            <Virtualize Items="@(OpenWorkspaces.ToArray())"
-                        Context="workspace"
-                        ItemSize="52"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+            @* <Virtualize Items="@OpenWorkspaces" ItemsTagName="ul" ItemTagName="li"> *@
+            <SemanticVirtualize Items="OpenWorkspaces"
+                               Context="workspace"
+                               ItemSize="52"
+                               ItemsTagName="ul"
+                               ItemTagName="li">
                 @{
                     bool isActive = string.Equals(ActiveWorkspaceId?.Value, workspace.Id.Value, StringComparison.Ordinal);
                     string workspaceLabel = RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel(
@@ -39,7 +40,7 @@
                         Close
                     </button>
                 </div>
-            </Virtualize>
+            </SemanticVirtualize>
         </div>
     }
 </section>

@@ -251,13 +251,13 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks()
+    public void Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks()
     {
         WithRuntimeHarness(harness =>
         {
             harness.WaitForReady();
 
-            foreach (string rulesetId in new[] { RulesetDefaults.Sr4, RulesetDefaults.Sr6 })
+            foreach (string rulesetId in new[] { RulesetDefaults.Sr4, RulesetDefaults.Sr5, RulesetDefaults.Sr6 })
             {
                 harness.ShellPresenter.SetPreferredRulesetAsync(rulesetId, CancellationToken.None).GetAwaiter().GetResult();
                 harness.WaitUntil(() =>
@@ -1297,7 +1297,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             "12-magic-dialog-light.png",
             "13-matrix-dialog-light.png",
             "14-advancement-dialog-light.png",
-            "15-creation-section-light.png"
+            "15-creation-section-light.png",
+            "16-master-index-dialog-light.png",
+            "17-character-roster-dialog-light.png"
         ];
 
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -1470,6 +1472,26 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => ReferenceEquals(attributeRows.SelectedItem, attributeRow));
                 captured[expectedFiles[14]] = harness.CaptureScreenshotBytes();
 
+                harness.Presenter.ExecuteCommandAsync("master_index", CancellationToken.None).GetAwaiter().GetResult();
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Master Index",
+                        StringComparison.Ordinal));
+                captured[expectedFiles[15]] = harness.CaptureScreenshotBytes();
+                harness.InvokeDialogAction("close");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.Presenter.ExecuteCommandAsync("character_roster", CancellationToken.None).GetAwaiter().GetResult();
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Character Roster",
+                        StringComparison.Ordinal));
+                captured[expectedFiles[16]] = harness.CaptureScreenshotBytes();
+                harness.InvokeDialogAction("close");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
                 return captured;
             });
 
@@ -1610,16 +1632,13 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static string FindTestFilePath(string fileName)
     {
-        string[] candidates =
-        {
-            Path.Combine(Directory.GetCurrentDirectory(), "Chummer.Tests", "TestFiles", fileName),
-            Path.Combine(Directory.GetCurrentDirectory(), "TestFiles", fileName),
-            Path.Combine(AppContext.BaseDirectory, "TestFiles", fileName),
+        string? match = ResolveExistingPath(
+            Path.Combine("Chummer.Tests", "TestFiles", fileName),
+            Path.Combine("TestFiles", fileName),
             Path.Combine("/src", "Chummer.Tests", "TestFiles", fileName),
-            Path.Combine("/docker/chummercomplete/chummer-presentation/Chummer.Tests/TestFiles", fileName)
-        };
-
-        string? match = candidates.FirstOrDefault(path => File.Exists(path));
+            Path.Combine("/docker/chummercomplete/chummer-presentation", "Chummer.Tests", "TestFiles", fileName),
+            Path.Combine("/docker/chummercomplete/chummer6-ui", "Chummer.Tests", "TestFiles", fileName),
+            Path.Combine("/docker/chummercomplete/chummer6-ui-finish", "Chummer.Tests", "TestFiles", fileName));
         if (match is null)
         {
             throw new FileNotFoundException("Could not locate test file.", fileName);
@@ -1630,21 +1649,80 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static string ResolveSourceFile(params string[] segments)
     {
-        string[] candidates =
-        {
-            Path.Combine(Directory.GetCurrentDirectory(), Path.Combine(segments)),
-            Path.Combine(AppContext.BaseDirectory, Path.Combine(segments)),
-            Path.Combine("/docker/chummercomplete/chummer-presentation", Path.Combine(segments)),
-            Path.Combine("/docker/chummercomplete/chummer6-ui", Path.Combine(segments))
-        };
-
-        string? match = candidates.FirstOrDefault(path => File.Exists(path));
+        string relativePath = Path.Combine(segments);
+        string? match = ResolveExistingPath(
+            relativePath,
+            Path.Combine("/docker/chummercomplete/chummer6-ui-finish", relativePath),
+            Path.Combine("/docker/chummercomplete/chummer-presentation", relativePath),
+            Path.Combine("/docker/chummercomplete/chummer6-ui", relativePath));
         if (match is null)
         {
             throw new FileNotFoundException("Could not locate source file.", Path.Combine(segments));
         }
 
         return match;
+    }
+
+    private static string? ResolveExistingPath(params string[] candidates)
+    {
+        foreach (string candidate in candidates)
+        {
+            if (Path.IsPathRooted(candidate) && File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            string? relativeMatch = ResolveRelativePathFromKnownRoots(candidate);
+            if (relativeMatch is not null)
+            {
+                return relativeMatch;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ResolveRelativePathFromKnownRoots(string relativePath)
+    {
+        foreach (string root in EnumerateSearchRoots())
+        {
+            string candidate = Path.Combine(root, relativePath);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> EnumerateSearchRoots()
+    {
+        foreach (string root in EnumerateAncestorDirectories(Directory.GetCurrentDirectory()))
+        {
+            yield return root;
+        }
+
+        foreach (string root in EnumerateAncestorDirectories(AppContext.BaseDirectory))
+        {
+            yield return root;
+        }
+    }
+
+    private static IEnumerable<string> EnumerateAncestorDirectories(string startPath)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        DirectoryInfo? current = new(Path.GetFullPath(startPath));
+
+        while (current is not null)
+        {
+            if (seen.Add(current.FullName))
+            {
+                yield return current.FullName;
+            }
+
+            current = current.Parent;
+        }
     }
 
     private static Dictionary<string, Dictionary<string, Color>> LoadThemeBrushes(string path)

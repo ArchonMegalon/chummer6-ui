@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-04-12T15:48:38.008931Z",
+  "contract_name": "chummer6-ui.sr4_workflow_family_verification_receipt",
+  "status": "pass",
+  "summary": "SR4 workflow-family verification evidence is explicitly grounded for metatype-priorities-karma-entry.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr4",
+    "familyId": "metatype-priorities-karma-entry",
+    "proofKind": "sr4_family_oracle",
+    "ledgerPath": "/docker/chummercomplete/chummer6-ui-finish/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer6-ui-finish/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_character_settings_save_updates_shared_state",
+      "Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections",
+      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+    ],
+    "oracle": {
+      "sourceRepoPath": "/docker/fleet/repos/chummer4",
+      "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
+    },
+    "executionReceipts": [
+      "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/workflow-family-parity/executed/sr4/metatype-priorities-karma-entry.generated.json"
+    ],
+    "executionFailures": []
+  }
+}

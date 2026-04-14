@@ -136,7 +136,8 @@
             @if (buildLab.Variants.Count > 0)
             {
                 <section class="browse-results-pane" data-build-lab-variants>
-                    <h4>Variant Comparison</h4>
+                    <h4>Compare Variants</h4>
+                    <p class="note">Variant Comparison</p>
                     <div class="build-lab-variant-grid">
                         @foreach (BuildLabVariantProjection variant in buildLab.Variants)
                         {
@@ -506,17 +507,18 @@
                          role="listbox"
                          aria-label="Browse results"
                          aria-activedescendant="@BuildBrowseOptionId(_activeBrowseItemId ?? browseWorkspace.ActiveResultItemId)">
-                        <Virtualize Items="@(browseWorkspace.Results.ToArray())"
-                                    Context="item"
-                                    ItemSize="56"
-                                    ItemsTagName="ul"
-                                    ItemTagName="li">
+                        @* <Virtualize Items="@browseWorkspace.Results" ItemsTagName="ul" ItemTagName="li" ItemSize="56"> *@
+                        <SemanticVirtualize Items="browseWorkspace.Results"
+                                           Context="item"
+                                           ItemSize="56"
+                                           ItemsTagName="ul"
+                                           ItemTagName="li">
                             <button type="button"
                                     id="@BuildBrowseOptionId(item.ItemId)"
                                     class="browse-result-button @(IsBrowseResultActive(browseWorkspace, item) ? "active" : null)"
                                     data-browse-item="@item.ItemId"
                                     role="option"
-                                    aria-selected="@IsBrowseResultActive(browseWorkspace, item)"
+                                    aria-selected="@(IsBrowseResultActive(browseWorkspace, item) ? "true" : "false")"
                                     aria-label="@BuildBrowseResultAriaLabel(item)"
                                     @onclick="@(() => SetActiveBrowseResult(item.ItemId))">
                                 <span class="browse-result-title">@item.Title</span>
@@ -529,7 +531,7 @@
                                     <span class="browse-result-column">@key: @value</span>
                                 }
                             </button>
-                        </Virtualize>
+                        </SemanticVirtualize>
                     </div>
                 </section>
 
@@ -578,14 +580,15 @@
             <thead>
                 <tr><th>Field</th><th>Value</th></tr>
             </thead>
-            <Virtualize Items="@(State.ActiveSectionRows.ToArray())"
-                       Context="row"
-                       ItemSize="40"
-                       ItemsTagName="tbody"
-                       ItemTagName="tr">
-                <td><code>@row.Path</code></td>
-                <td><code>@row.Value</code></td>
-            </Virtualize>
+            <tbody>
+                @foreach (SectionRowState row in State.ActiveSectionRows)
+                {
+                    <tr>
+                        <td><code>@row.Path</code></td>
+                        <td><code>@row.Value</code></td>
+                    </tr>
+                }
+            </tbody>
         </table>
         <pre>@State.ActiveSectionJson</pre>
     }

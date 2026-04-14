@@ -64,7 +64,7 @@
       "auditTests": [
         "Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices",
         "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections",
-        "Avalonia_and_Blazor_support_routes_and_dialog_controls_are_public_and_actionable"
+        "Contacts_diary_and_support_routes_execute_with_public_path_visibility"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json"
@@ -177,7 +177,7 @@
       "auditTests": [
         "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
         "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
-        "Menu_click_surfaces_visible_command_choices_in_shell"
+        "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json"

@@ -5,7 +5,7 @@
     <StackPanel Spacing="12">
       <Border Classes="shell-card subtle">
         <StackPanel Spacing="6">
-          <TextBlock Classes="shell-kicker" Text="Coach Sidecar" />
+          <TextBlock Classes="shell-kicker" Text="Reference &amp; Notes" />
           <TextBlock x:Name="CoachStatusText" Classes="shell-section-title" Text="Status: unloaded" TextWrapping="Wrap" />
           <TextBlock x:Name="CoachPromptPolicyText" Classes="shell-caption" Text="Prompt Policy: n/a" TextWrapping="Wrap" />
           <TextBlock x:Name="CoachBudgetText" Classes="shell-caption" Text="Coach Budget: n/a" TextWrapping="Wrap" />
@@ -16,7 +16,7 @@
 
       <Border Classes="shell-card">
         <StackPanel Spacing="8">
-          <TextBlock Classes="shell-section-title" Text="Coach Launch" />
+          <TextBlock Classes="shell-section-title" Text="Reference Link" />
           <TextBox x:Name="CoachLaunchUriTextBox" IsReadOnly="True" Watermark="/coach/" />
           <Button x:Name="CopyCoachLaunchButton"
                   Classes="shell-action"
@@ -49,7 +49,7 @@
 
       <Border Classes="shell-card">
         <StackPanel Spacing="8">
-          <TextBlock Classes="shell-section-title" Text="Recent Coach Guidance" />
+          <TextBlock Classes="shell-section-title" Text="Recent Notes" />
           <ListBox x:Name="AuditList">
             <ListBox.ItemTemplate>
               <DataTemplate>

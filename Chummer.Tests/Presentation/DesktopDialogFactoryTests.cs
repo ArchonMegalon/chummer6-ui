@@ -256,6 +256,50 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateCommandDialog_dice_roller_normalizes_generated_workspace_ids_to_stable_labels()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "dice_roller",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: new CharacterWorkspaceId("4418977043cb4ca0993d1489db010f66"),
+            rulesetId: RulesetDefaults.Sr5,
+            openWorkspaces:
+            [
+                new OpenWorkspaceState(new CharacterWorkspaceId("d5ca4b6f65c84d2ea6ac7f50dfbc4f44"), "Apex", "APX", DateTimeOffset.Parse("2026-04-04T11:00:00+00:00"), RulesetDefaults.Sr5, true),
+                new OpenWorkspaceState(new CharacterWorkspaceId("4418977043cb4ca0993d1489db010f66"), "Ghost", "GST", DateTimeOffset.Parse("2026-04-04T12:00:00+00:00"), RulesetDefaults.Sr6, false)
+            ]);
+
+        string rosterContext = DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext");
+        StringAssert.Contains(rosterContext, "active GST · Ghost");
+        Assert.IsFalse(rosterContext.Contains("4418977043cb4ca0993d1489db010f66", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_character_roster_normalizes_generated_workspace_ids_to_stable_labels()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "character_roster",
+            profile: CreateProfile("Fallback Runner", "FALL"),
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: new CharacterWorkspaceId("4418977043cb4ca0993d1489db010f66"),
+            rulesetId: RulesetDefaults.Sr5,
+            openWorkspaces:
+            [
+                new OpenWorkspaceState(new CharacterWorkspaceId("d5ca4b6f65c84d2ea6ac7f50dfbc4f44"), "Apex", "APX", DateTimeOffset.Parse("2026-04-04T11:00:00+00:00"), RulesetDefaults.Sr5, true),
+                new OpenWorkspaceState(new CharacterWorkspaceId("4418977043cb4ca0993d1489db010f66"), "Ghost", "GST", DateTimeOffset.Parse("2026-04-04T12:00:00+00:00"), RulesetDefaults.Sr6, false)
+            ]);
+
+        Assert.AreEqual("GST · Ghost", DesktopDialogFieldValueParser.GetValue(dialog, "rosterActiveWorkspace"));
+    }
+
+    [TestMethod]
     public void DialogFieldValueParser_normalizes_and_parses_checkbox_values()
     {
         DesktopDialogField checkboxField = new(

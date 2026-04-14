@@ -58,6 +58,7 @@
     <Compile Include="Presentation\HttpChummerClientBuildPathTests.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true'">
+    <Compile Include="GlobalUsings.cs" />
     <Compile Include="CharacterSectionServiceTests.cs" />
     <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
     <Compile Include="Compliance\MigrationComplianceTests.cs" />

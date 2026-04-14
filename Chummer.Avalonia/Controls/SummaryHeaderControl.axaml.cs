@@ -1,57 +1,75 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia.Controls;
 
 public partial class SummaryHeaderControl : UserControl
 {
-    public event EventHandler? RuntimeInspectorRequested;
+    public event EventHandler<string>? NavigationTabSelected;
 
     public SummaryHeaderControl()
     {
         InitializeComponent();
-        ApplyLocalization();
-        RuntimeInspectButton.Click += RuntimeInspectButton_OnClick;
     }
 
     public void SetState(SummaryHeaderState state)
     {
-        SetValues(state.Name, state.Alias, state.Karma, state.Skills, state.RuntimeSummary, state.CanInspectRuntime);
+        SetNavigationTabs(state.NavigationTabsHeading, state.NavigationTabs, state.ActiveTabId);
     }
 
-    public void SetValues(string? name, string? alias, string? karma, string? skills, string? runtimeSummary, bool canInspectRuntime)
+    public void SetNavigationTabs(
+        string heading,
+        IReadOnlyList<NavigatorTabItem> navigationTabs,
+        string? activeTabId)
     {
-        string language = DesktopLocalizationCatalog.GetCurrentLanguage();
-        string emptyValue = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.summary.empty_value", language);
-        NameValueText.Text = string.IsNullOrWhiteSpace(name) ? emptyValue : name;
-        AliasValueText.Text = string.IsNullOrWhiteSpace(alias) ? emptyValue : alias;
-        KarmaValueText.Text = string.IsNullOrWhiteSpace(karma) ? emptyValue : karma;
-        SkillsValueText.Text = string.IsNullOrWhiteSpace(skills) ? emptyValue : skills;
-        RuntimeValueText.Text = string.IsNullOrWhiteSpace(runtimeSummary) ? emptyValue : runtimeSummary;
-        RuntimeInspectButton.IsEnabled = canInspectRuntime;
+        LoadedRunnerTabStripHeading.Text = string.IsNullOrWhiteSpace(heading) ? "Runner Tabs" : heading;
+        LoadedRunnerTabStripPanel.Children.Clear();
+
+        NavigatorTabItem[] visibleTabs = navigationTabs
+            .Where(tab => tab.Enabled)
+            .ToArray();
+        LoadedRunnerTabStripBorder.IsVisible = visibleTabs.Length > 0;
+
+        foreach (NavigatorTabItem tab in visibleTabs)
+        {
+            LoadedRunnerTabStripPanel.Children.Add(CreateTabButton(tab, activeTabId));
+        }
     }
 
-    private void ApplyLocalization()
+    private Button CreateTabButton(NavigatorTabItem tab, string? activeTabId)
     {
-        string language = DesktopLocalizationCatalog.GetCurrentLanguage();
-        NameLabelText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.summary.name", language);
-        AliasLabelText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.summary.alias", language);
-        KarmaLabelText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.summary.karma", language);
-        SkillsLabelText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.summary.skills", language);
-        RuntimeLabelText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.summary.runtime", language);
-        RuntimeInspectButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.summary.inspect_runtime", language);
+        Button button = new()
+        {
+            Content = tab.Label,
+            IsEnabled = tab.Enabled,
+            Tag = tab.Id,
+            Margin = new Thickness(0d, 0d, 8d, 0d)
+        };
+        button.Classes.Add("shell-action");
+        button.Classes.Add("quiet");
+        if (string.Equals(tab.Id, activeTabId, StringComparison.Ordinal))
+        {
+            button.Classes.Add("selected");
+        }
+
+        button.Click += LoadedRunnerTabButton_OnClick;
+        return button;
     }
 
-    private void RuntimeInspectButton_OnClick(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    private void LoadedRunnerTabButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        RuntimeInspectorRequested?.Invoke(this, EventArgs.Empty);
+        if (sender is Button { Tag: string tabId })
+        {
+            NavigationTabSelected?.Invoke(this, tabId);
+        }
     }
 }
 
 public sealed record SummaryHeaderState(
-    string? Name,
-    string? Alias,
-    string? Karma,
-    string? Skills,
-    string? RuntimeSummary,
-    bool CanInspectRuntime);
+    string NavigationTabsHeading,
+    NavigatorTabItem[] NavigationTabs,
+    string? ActiveTabId,
+    string? RuntimeSummary = null);

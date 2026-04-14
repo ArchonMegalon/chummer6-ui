@@ -6,7 +6,7 @@ cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
 catalog_path="$repo_root/Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs"
-signoff_project_path="$repo_root/Chummer.Tests/Presentation/Chummer.Presentation.Localization.Signoff.Tests.csproj"
+signoff_project_path="$repo_root/Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 local_release_proof_path="$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json"
 legacy_lang_root="$repo_root/Chummer/lang"

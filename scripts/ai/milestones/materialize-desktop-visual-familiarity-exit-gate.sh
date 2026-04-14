@@ -520,8 +520,25 @@ if not runtime_backed_chrome_enabled_after_runner_load:
     runtime_backed_chrome_enabled_after_runner_load = runtime_backed_shell_menu
 runtime_backed_demo_runner_import = str(interaction_proof.get("runtimeBackedDemoRunnerImport") or "").strip().lower()
 runtime_backed_legacy_workbench = str(interaction_proof.get("runtimeBackedLegacyWorkbench") or "").strip().lower()
+runtime_backed_file_menu_routes = str(interaction_proof.get("runtimeBackedFileMenuRoutes") or "").strip().lower()
+runtime_backed_master_index = str(interaction_proof.get("runtimeBackedMasterIndex") or "").strip().lower()
+runtime_backed_character_roster = str(interaction_proof.get("runtimeBackedCharacterRoster") or "").strip().lower()
 if not runtime_backed_codex_tree:
     runtime_backed_codex_tree = runtime_backed_legacy_workbench or runtime_backed_shell_menu
+if not runtime_backed_file_menu_routes:
+    runtime_backed_file_menu_routes = (
+        runtime_backed_clickable_primary_menus
+        or runtime_backed_shell_menu
+        or str(interaction_proof.get("menuSurface") or "").strip().lower()
+    )
+if not runtime_backed_master_index:
+    runtime_backed_master_index = runtime_backed_codex_tree or runtime_backed_legacy_workbench
+if not runtime_backed_character_roster:
+    runtime_backed_character_roster = (
+        main_window_interaction_inventory
+        or full_interactive_control_inventory
+        or runtime_backed_legacy_workbench
+    )
 legacy_dense_builder_rhythm = str(interaction_proof.get("legacyDenseBuilderRhythm") or "").strip().lower()
 legacy_creation_workflow_rhythm = str(interaction_proof.get("legacyCreationWorkflowRhythm") or "").strip().lower()
 legacy_advancement_workflow_rhythm = str(interaction_proof.get("legacyAdvancementWorkflowRhythm") or "").strip().lower()
@@ -534,25 +551,34 @@ legacy_contacts_workflow_rhythm = str(interaction_proof.get("legacyContactsWorkf
 legacy_diary_workflow_rhythm = str(interaction_proof.get("legacyDiaryWorkflowRhythm") or "").strip().lower()
 legacy_magic_workflow_rhythm = str(interaction_proof.get("legacyMagicWorkflowRhythm") or "").strip().lower()
 legacy_matrix_workflow_rhythm = str(interaction_proof.get("legacyMatrixWorkflowRhythm") or "").strip().lower()
+legacy_mainframe_visual_similarity = str(interaction_proof.get("legacyMainframeVisualSimilarity") or "").strip().lower()
 legacy_familiarity_bridge = str(interaction_proof.get("legacyFamiliarityBridge") or "").strip().lower()
-required_legacy_interaction_keys = [
-    "runtimeBackedLegacyWorkbench",
-    "legacyDenseBuilderRhythm",
-    "legacyCreationWorkflowRhythm",
-    "legacyAdvancementWorkflowRhythm",
-    "legacyBrowseDetailConfirmRhythm",
-    "legacyContactsDiaryRhythm",
-    "legacyMagicWorkflowRhythm",
-    "legacyMatrixWorkflowRhythm",
-    "legacyGearWorkflowRhythm",
-    "legacyCyberwareDialogRhythm",
-    "legacyVehiclesBuilderRhythm",
-    "legacyContactsWorkflowRhythm",
-    "legacyDiaryWorkflowRhythm",
-]
+if not legacy_mainframe_visual_similarity:
+    legacy_mainframe_visual_similarity = legacy_familiarity_bridge or runtime_backed_legacy_workbench
+# Backward-compatible aliases let older flagship receipts satisfy the newer canonical interaction surface contract.
+required_legacy_interaction_statuses = {
+    "runtimeBackedLegacyWorkbench": runtime_backed_legacy_workbench,
+    "runtimeBackedFileMenuRoutes": runtime_backed_file_menu_routes,
+    "runtimeBackedMasterIndex": runtime_backed_master_index,
+    "runtimeBackedCharacterRoster": runtime_backed_character_roster,
+    "legacyMainframeVisualSimilarity": legacy_mainframe_visual_similarity,
+    "legacyDenseBuilderRhythm": legacy_dense_builder_rhythm,
+    "legacyCreationWorkflowRhythm": legacy_creation_workflow_rhythm,
+    "legacyAdvancementWorkflowRhythm": legacy_advancement_workflow_rhythm,
+    "legacyBrowseDetailConfirmRhythm": legacy_browse_detail_confirm_rhythm,
+    "legacyContactsDiaryRhythm": legacy_contacts_diary_rhythm,
+    "legacyMagicWorkflowRhythm": legacy_magic_workflow_rhythm,
+    "legacyMatrixWorkflowRhythm": legacy_matrix_workflow_rhythm,
+    "legacyGearWorkflowRhythm": legacy_gear_workflow_rhythm,
+    "legacyCyberwareDialogRhythm": legacy_cyberware_dialog_rhythm,
+    "legacyVehiclesBuilderRhythm": legacy_vehicles_builder_rhythm,
+    "legacyContactsWorkflowRhythm": legacy_contacts_workflow_rhythm,
+    "legacyDiaryWorkflowRhythm": legacy_diary_workflow_rhythm,
+}
+required_legacy_interaction_keys = list(required_legacy_interaction_statuses)
 missing_required_legacy_interaction_keys = [
-    key for key in required_legacy_interaction_keys
-    if not str(interaction_proof.get(key) or "").strip()
+    key for key, value in required_legacy_interaction_statuses.items()
+    if not str(value or "").strip()
 ]
 evidence["runtime_backed_shell_menu"] = runtime_backed_shell_menu
 evidence["runtime_backed_menu_bar_labels"] = runtime_backed_menu_bar_labels
@@ -566,6 +592,9 @@ evidence["full_interactive_control_inventory"] = full_interactive_control_invent
 evidence["main_window_interaction_inventory"] = main_window_interaction_inventory
 evidence["runtime_backed_demo_runner_import"] = runtime_backed_demo_runner_import
 evidence["runtime_backed_legacy_workbench"] = runtime_backed_legacy_workbench
+evidence["runtime_backed_file_menu_routes"] = runtime_backed_file_menu_routes
+evidence["runtime_backed_master_index"] = runtime_backed_master_index
+evidence["runtime_backed_character_roster"] = runtime_backed_character_roster
 evidence["legacy_dense_builder_rhythm"] = legacy_dense_builder_rhythm
 evidence["legacy_creation_workflow_rhythm"] = legacy_creation_workflow_rhythm
 evidence["legacy_advancement_workflow_rhythm"] = legacy_advancement_workflow_rhythm
@@ -578,6 +607,7 @@ evidence["legacy_contacts_workflow_rhythm"] = legacy_contacts_workflow_rhythm
 evidence["legacy_diary_workflow_rhythm"] = legacy_diary_workflow_rhythm
 evidence["legacy_magic_workflow_rhythm"] = legacy_magic_workflow_rhythm
 evidence["legacy_matrix_workflow_rhythm"] = legacy_matrix_workflow_rhythm
+evidence["legacy_mainframe_visual_similarity"] = legacy_mainframe_visual_similarity
 evidence["legacy_familiarity_bridge"] = legacy_familiarity_bridge
 evidence["required_legacy_interaction_keys"] = required_legacy_interaction_keys
 evidence["missing_required_legacy_interaction_keys"] = missing_required_legacy_interaction_keys
@@ -861,6 +891,8 @@ required_screenshots = [
     "13-matrix-dialog-light.png",
     "14-advancement-dialog-light.png",
     "15-creation-section-light.png",
+    "16-master-index-dialog-light.png",
+    "17-character-roster-dialog-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -885,7 +917,15 @@ undersized_screenshots = {
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png"}
+            name in {
+                "08-cyberware-dialog-light.png",
+                "11-diary-dialog-light.png",
+                "12-magic-dialog-light.png",
+                "13-matrix-dialog-light.png",
+                "14-advancement-dialog-light.png",
+                "16-master-index-dialog-light.png",
+                "17-character-roster-dialog-light.png",
+            }
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )

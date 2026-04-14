@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Chummer6 Blazor Desktop
+Exec=/usr/bin/chummer6-blazor-desktop
+Terminal=false
+Categories=Game;
+StartupNotify=true

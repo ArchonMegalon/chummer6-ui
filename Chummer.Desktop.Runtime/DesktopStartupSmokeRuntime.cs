@@ -214,6 +214,12 @@ public static class DesktopStartupSmokeRuntime
 
     private static string ResolveReleaseVersion(Assembly assembly, string fallbackVersion)
     {
+        string? overrideVersion = Environment.GetEnvironmentVariable(StartupSmokeReleaseVersionEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(overrideVersion))
+        {
+            return overrideVersion.Trim();
+        }
+
         string? metadataVersion = ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion");
         if (!string.IsNullOrWhiteSpace(metadataVersion))
         {

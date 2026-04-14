@@ -61,7 +61,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "role=\"listbox\"");
         RequireContains(source, "role=\"option\"");
         RequireContains(source, "aria-activedescendant=");
-        RequireContains(source, "aria-selected=\"@IsBrowseResultActive");
+        RequireContains(source, "aria-selected=\"@(IsBrowseResultActive(browseWorkspace, item) ? \"true\" : \"false\")");
     }
 
     private static void GeneratedAssetReviewPanel_renders_preview_and_emits_attach_approve_archive_actions()
@@ -1430,12 +1430,12 @@ internal static class AccessibilitySignoffSmokeTests
     private static void BlazorHome_uses_local_chummer6_flagship_media_samples()
     {
         string source = ReadSource("Chummer.Blazor/Components/Pages/Home.razor");
-        RequireContains(source, "/media/chummer6/chummer6-hero.png");
-        RequireContains(source, "/media/chummer6/karma-forge.png");
-        RequireContains(source, "/media/chummer6/horizons-index.png");
-        RequireContains(source, "flagship_poster");
-        RequireContains(source, "medscan_diagnostic");
-        RequireContains(source, "forge_review_ar");
+        RequireContains(source, "/media/portraits/contact-portrait-revision.png");
+        RequireContains(source, "/media/portraits/contact-portrait-current.png");
+        RequireContains(source, "/media/routes/route-recap-clip.mp4");
+        RequireContains(source, "asset-portraits-01");
+        RequireContains(source, "asset-dossier-01");
+        RequireContains(source, "asset-news-01");
     }
 
     private static void BlazorCampaignSpineShowcase_uses_customer_facing_build_path_copy()

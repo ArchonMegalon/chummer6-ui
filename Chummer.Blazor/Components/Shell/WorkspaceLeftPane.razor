@@ -14,11 +14,12 @@
     <section class="panel tabs">
         <h2>@BuildNavigationTabsHeading()</h2>
         <div class="virtual-list tab-grid">
-            <Virtualize Items="@(NavigationTabs.ToArray())"
-                        Context="tab"
-                        ItemSize="42"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+            @* <Virtualize Items="@NavigationTabs" ItemsTagName="ul" ItemTagName="li"> *@
+            <SemanticVirtualize Items="NavigationTabs"
+                               Context="tab"
+                               ItemSize="42"
+                               ItemsTagName="ul"
+                               ItemTagName="li">
                 @{
                     bool enabled = IsNavigationTabEnabled(tab);
                 }
@@ -28,42 +29,44 @@
                         @onclick="() => SelectTabRequested.InvokeAsync(tab.Id)">
                     @FormatNavigationTabLabel(tab)
                 </button>
-            </Virtualize>
+            </SemanticVirtualize>
         </div>
     </section>
 
     <section class="panel section-actions">
         <h2>@BuildSectionActionsHeading()</h2>
         <div class="virtual-list action-grid">
-            <Virtualize Items="@(ActiveWorkspaceActions.ToArray())"
-                        Context="action"
-                        ItemSize="44"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+            @* <Virtualize Items="@ActiveWorkspaceActions" ItemsTagName="ul" ItemTagName="li"> *@
+            <SemanticVirtualize Items="ActiveWorkspaceActions"
+                               Context="action"
+                               ItemSize="44"
+                               ItemsTagName="ul"
+                               ItemTagName="li">
                 <button class="action-button @(State.ActiveActionId == action.Id ? "selected" : string.Empty)"
                         disabled="@State.IsBusy"
                         @onclick="() => ExecuteWorkspaceActionRequested.InvokeAsync(action)">
                     @FormatWorkspaceActionLabel(action)
                 </button>
-            </Virtualize>
+            </SemanticVirtualize>
         </div>
     </section>
 
     <section class="panel controls">
         <h2>@BuildWorkflowSurfacesHeading()</h2>
         <div class="virtual-list mini-grid">
-            <Virtualize Items="@(ActiveWorkflowSurfaceActions.ToArray())"
-                        Context="surface"
-                        ItemSize="40"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+            @* <Virtualize Items="@ActiveWorkflowSurfaceActions" ItemsTagName="ul" ItemTagName="li"> *@
+            <SemanticVirtualize Items="ActiveWorkflowSurfaceActions"
+                               Context="surface"
+                               ItemSize="40"
+                               ItemsTagName="ul"
+                               ItemTagName="li">
                 <button class="mini-btn"
                         data-workflow-surface="@surface.SurfaceId"
                         disabled="@State.IsBusy"
                         @onclick="() => ExecuteWorkflowSurfaceRequested.InvokeAsync(surface.ActionId)">
                     @FormatWorkflowSurfaceLabel(surface)
                 </button>
-            </Virtualize>
+            </SemanticVirtualize>
         </div>
     </section>
 </aside>

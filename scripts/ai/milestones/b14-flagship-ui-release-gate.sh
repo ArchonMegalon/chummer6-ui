@@ -332,6 +332,8 @@ expected_screenshots = [
     "13-matrix-dialog-light.png",
     "14-advancement-dialog-light.png",
     "15-creation-section-light.png",
+    "16-master-index-dialog-light.png",
+    "17-character-roster-dialog-light.png",
 ]
 required_full_workflow_tests = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
@@ -444,6 +446,9 @@ payload = {
         "runtimeBackedClickablePrimaryMenus": "pass",
         "runtimeBackedToolstripActions": "pass",
         "runtimeBackedCodexTree": "pass",
+        "runtimeBackedFileMenuRoutes": "pass",
+        "runtimeBackedMasterIndex": "pass",
+        "runtimeBackedCharacterRoster": "pass",
         "runtimeBackedSr4CodexOrientationModel": "pass",
         "runtimeBackedSr5CodexOrientationModel": "pass",
         "runtimeBackedSr6CodexOrientationModel": "pass",
@@ -458,6 +463,7 @@ payload = {
         "legacyCreationWorkflowRhythm": "pass",
         "legacyAdvancementWorkflowRhythm": "pass",
         "legacyBrowseDetailConfirmRhythm": "pass",
+        "legacyMainframeVisualSimilarity": "pass",
         "legacyGearWorkflowRhythm": "pass",
         "legacyVehiclesBuilderRhythm": "pass",
         "legacyCyberwareDialogRhythm": "pass",

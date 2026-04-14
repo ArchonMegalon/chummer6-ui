@@ -91,6 +91,7 @@ public partial class MainWindow : Window
             onNavigationTabSelected: NavigatorPane_OnNavigationTabSelected,
             onSectionActionSelected: NavigatorPane_OnSectionActionSelected,
             onWorkflowSurfaceSelected: NavigatorPane_OnWorkflowSurfaceSelected,
+            onSectionQuickActionRequested: SectionHost_OnQuickActionRequested,
             onCoachLaunchCopyRequested: CoachSidecar_OnCopyLaunchRequested,
             onCommandSelected: CommandDialogPane_OnCommandSelected,
             onDialogActionSelected: CommandDialogPane_OnDialogActionSelected,

@@ -16,6 +16,16 @@
     <PackageReference Include="$(ChummerHubRegistryContractsPackageId)" Version="$(ChummerHubRegistryContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
+    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj"
+                      Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Application\\Chummer.Application.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Infrastructure\Chummer.Infrastructure.csproj"
+                      Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Infrastructure\\Chummer.Infrastructure.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj"
+                      Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Rulesets.Hosting\\Chummer.Rulesets.Hosting.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
   </ItemGroup>
 </Project>

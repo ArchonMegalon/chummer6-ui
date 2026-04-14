@@ -24,6 +24,10 @@ public partial class NavigatorPaneControl : UserControl
     {
         CodexHeadingText.Text = BuildCodexHeading(state);
         CodexCaptionText.Text = BuildCodexCaption(state);
+        OpenWorkspacesHeader.Text = state.OpenWorkspacesHeading;
+        NavigationTabsHeader.Text = state.NavigationTabsHeading;
+        SectionActionsHeader.Text = state.SectionActionsHeading;
+        WorkflowSurfacesHeader.Text = state.WorkflowSurfacesHeading;
         SetNavigatorTree(state);
     }
 
@@ -94,7 +98,7 @@ public partial class NavigatorPaneControl : UserControl
     {
         string tabLabel = state.NavigationTabs.FirstOrDefault(item => string.Equals(item.Id, state.ActiveTabId, StringComparison.Ordinal))?.Label
             ?? "Pick a runner to restore the workbench";
-        return $"Legacy tree navigator with runners, tabs, actions, and workflow routes. Active tab: {tabLabel}.";
+        return $"Tree navigator for runners, tabs, actions, and workflow routes. Active tab: {tabLabel}.";
     }
 
     private static NavigatorTreeItem[] BuildTreeItems(NavigatorPaneState state)

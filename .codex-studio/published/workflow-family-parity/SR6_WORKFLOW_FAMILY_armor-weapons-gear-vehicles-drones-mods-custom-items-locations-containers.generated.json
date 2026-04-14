@@ -1,0 +1,32 @@
+{
+  "generatedAt": "2026-04-12T15:48:59.913860Z",
+  "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
+  "status": "pass",
+  "summary": "SR6 workflow-family parity evidence is explicitly grounded for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr6",
+    "familyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+    "proofKind": "sr6_family_carry_forward",
+    "ledgerPath": "/docker/chummercomplete/chummer6-ui-finish/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer6-ui-finish/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices",
+      "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
+      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+    ],
+    "oracle": {
+      "classification": "carry-forward",
+      "rationale": "Inventory, combat, and vehicle workflows remain explicit promoted-head SR6 proof targets.",
+      "releaseGateTests": [
+        "Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
+        "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+      ]
+    },
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/workflow-family-parity/sr6/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json"
+    ],
+    "verificationFailures": []
+  }
+}

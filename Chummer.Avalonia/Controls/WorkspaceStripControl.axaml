@@ -8,7 +8,24 @@
                VerticalAlignment="Center"
                Text="Workspace: none"
                TextWrapping="Wrap" />
-    <TextBlock Classes="shell-caption"
-               Text="Ruleset posture and current tab context stay visible while you move through dense builder sections." />
+    <Border x:Name="QuickStartContainer"
+            Classes="shell-card subtle"
+            Padding="8,6"
+            IsVisible="False">
+      <StackPanel Spacing="4">
+        <TextBlock Classes="shell-kicker" Text="Quick Start" />
+        <TextBlock x:Name="QuickStartCaptionText"
+                   Text="Load the bundled demo runner to open a real workbench immediately."
+                   TextWrapping="Wrap" />
+        <Button x:Name="LoadDemoRunnerQuickActionButton"
+                Classes="shell-action quiet"
+                Content="Load Demo Runner"
+                HorizontalAlignment="Left"
+                Click="LoadDemoRunnerQuickActionButton_OnClick" />
+      </StackPanel>
+    </Border>
+    <TextBlock x:Name="WorkspaceCaptionText"
+               Classes="shell-caption"
+               Text="Ruleset, tabs, and save posture stay visible while you move through dense builder sections." />
   </StackPanel>
 </UserControl>

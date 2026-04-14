@@ -35,6 +35,7 @@ internal static class MainWindowControlBinder
         EventHandler<string> onNavigationTabSelected,
         EventHandler<string> onSectionActionSelected,
         EventHandler<string> onWorkflowSurfaceSelected,
+        EventHandler<string> onSectionQuickActionRequested,
         EventHandler onCoachLaunchCopyRequested,
         EventHandler<string> onCommandSelected,
         EventHandler<string> onDialogActionSelected,
@@ -53,12 +54,14 @@ internal static class MainWindowControlBinder
         toolStrip.ReportIssueRequested += onReportIssueRequested;
         toolStrip.SettingsRequested += onSettingsRequested;
         toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
-        summaryHeader.RuntimeInspectorRequested += onRuntimeInspectorRequested;
+        workspaceStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
+        summaryHeader.NavigationTabSelected += onNavigationTabSelected;
         menuBar.MenuSelected += onMenuSelected;
         navigatorPane.WorkspaceSelected += onWorkspaceSelected;
         navigatorPane.NavigationTabSelected += onNavigationTabSelected;
         navigatorPane.SectionActionSelected += onSectionActionSelected;
         navigatorPane.WorkflowSurfaceSelected += onWorkflowSurfaceSelected;
+        sectionHost.QuickActionRequested += onSectionQuickActionRequested;
         coachSidecar.CopyLaunchRequested += onCoachLaunchCopyRequested;
         commandDialogPane.CommandSelected += onCommandSelected;
         commandDialogPane.DialogActionSelected += onDialogActionSelected;

@@ -21,14 +21,14 @@
         <CreatorPublicationPanel Publication="_creatorPublication" />
 
         <GmBoardFeed InterruptionBudget="_interruptionBudget"
-                     CurrentSessionContext="_currentSessionContext"
+                     CurrentSessionContext="@_currentSessionContext"
                      SessionContexts="SessionContexts"
                      SessionContextChanged="OnSessionContextChanged"
-                     AutonomyLevel="_autonomyLevel"
+                     AutonomyLevel="@_autonomyLevel"
                      AutonomyLevelChanged="OnAutonomyLevelChanged"
                      InterruptionBudgetChanged="OnBudgetChanged"
                      MuteRequested="OnMuteRequested"
-                     MutedUntilLabel="_mutedUntilLabel"
+                     MutedUntilLabel="@_mutedUntilLabel"
                      Cards="VisibleGmCards"
                      QuickActionRequested="OnCardQuickAction"
                      PinRequested="OnCardPinned"
@@ -36,7 +36,7 @@
                      SnoozeRequested="OnCardSnoozed" />
 
         <GeneratedAssetReviewPanel Assets="_assets"
-                                   SelectedAssetId="_selectedAssetId"
+                                   SelectedAssetId="@_selectedAssetId"
                                    SelectedAssetChanged="OnSelectedAssetChanged"
                                    ActionRequested="OnAssetActionRequested" />
     </section>
@@ -925,324 +925,267 @@
     private IReadOnlyList<GeneratedAssetProjection> _assets =
     [
         new GeneratedAssetProjection(
-            AssetId: "asset-chummer6-hero",
-            Title: "Chummer6 streetdoc hero",
-            AssetKind: "Flagship hero",
-            Source: "Chummer6 Media Factory",
-            Summary: "Promoted room-first flagship hero with the stronger local clinic read and a finished flagship pass.",
+            AssetId: "asset-portraits-01",
+            Title: "Contact portrait revision",
+            AssetKind: "Portrait",
+            Source: "Portrait Forge",
+            Summary: "Side portrait draft for a player-facing reveal surface with table-safe provenance attached.",
             PreviewKind: GeneratedAssetPreviewKinds.Image,
             ReviewState: "review:queued",
             CreatedAtUtc: DateTimeOffset.UtcNow.AddMinutes(-4),
             IsCanonical: false,
-            PreviewUri: "/media/chummer6/chummer6-hero.png",
-            PreviewBody: "Wide barrens treatment bay with the room, grime, chrome, and medscan posture visible at a glance.",
+            PreviewUri: "/media/portraits/contact-portrait-revision.png",
+            PreviewBody: "Portrait revision ready for final attach.",
             Badges:
             [
-                new GeneratedAssetBadge("flagship", "flagship", GeneratedAssetBadgeKinds.Source, true),
-                new GeneratedAssetBadge("guide-hero", "guide-hero", GeneratedAssetBadgeKinds.Audience),
+                new GeneratedAssetBadge("portrait", "portrait", GeneratedAssetBadgeKinds.Source),
+                new GeneratedAssetBadge("player-safe", "player-safe", GeneratedAssetBadgeKinds.Audience),
                 new GeneratedAssetBadge("runtime", "runtime-backed", GeneratedAssetBadgeKinds.Provenance, true)
             ],
             Metadata:
             [
-                new GeneratedAssetMetadataField("provenance", "Source", "Promoted from the latest Chummer6 smoke pair for room-first flagship review."),
-                new GeneratedAssetMetadataField("trace", "Why this draft", "Keeps the clinic bay, chrome clutter, and medscan posture visible instead of collapsing to a doctor/patient close-up.", true),
-                new GeneratedAssetMetadataField("share", "Attach target", "README hero / guide hero"),
-                new GeneratedAssetMetadataField("criticalStyleMode", "Style Lane", "flagship_poster"),
-                new GeneratedAssetMetadataField("requiredOverlayMode", "Overlay Mode", "medscan_diagnostic"),
-                new GeneratedAssetMetadataField("overlayGeometry", "Overlay Geometry", "slim attribute rail,seam-following anchors,capsule chips,curved callout splines,tiny radial halos"),
-                new GeneratedAssetMetadataField("worldMarkersVisible", "World Markers", "troll patient,metahuman clinician,patched cyberware,garage-clinic grime,off-brand med gear"),
-                new GeneratedAssetMetadataField("visualGate", "Gate Verdict", "inspection: flagship-ready after archived promotion and finish pass", true),
-                new GeneratedAssetMetadataField("framing", "Framing", "wide treatment bay / room-first"),
-                new GeneratedAssetMetadataField("environment", "Environment", "barrens streetdoc clinic"),
+                new GeneratedAssetMetadataField("provenance", "Source", "Prompt seed: cyberpunk noir portrait, cinematic lighting"),
+                new GeneratedAssetMetadataField("trace", "Why this draft", "Prepared for a fast player reveal lane with no builder-only chrome.", true),
+                new GeneratedAssetMetadataField("share", "Attach target", "Contact dossier / player reveal shelf"),
+                new GeneratedAssetMetadataField("portraitPromptSeed", "Prompt Seed", "cyberpunk noir portrait, cinematic lighting"),
+                new GeneratedAssetMetadataField("portraitStyleSelected", "Style", "Noir Ink"),
+                new GeneratedAssetMetadataField("portraitStyleOptions", "Style Options", "Noir Ink,Neon Street,Chrome Editorial"),
+                new GeneratedAssetMetadataField("canonicalAssetId", "Canonical Asset", "asset-portraits-baseline"),
                 new GeneratedAssetMetadataField("coachRouteType", "Coach Route", "coach"),
                 new GeneratedAssetMetadataField("coachRouteClass", "Route Class", "bounded_fix"),
-                new GeneratedAssetMetadataField("coachOperator", "Operator", "flagship-media-review"),
+                new GeneratedAssetMetadataField("coachOperator", "Operator", "portrait-ops"),
                 new GeneratedAssetMetadataField("coachModel", "Model", "gpt-5.3-codex")
             ],
             ComparisonSlots:
             [
                 new GeneratedAssetComparisonSlot(
-                    SlotId: "hero-baseline",
-                    Label: "Earlier tight pass",
+                    SlotId: "portrait-baseline",
+                    Label: "Current reveal portrait",
                     Role: GeneratedAssetComparisonRoles.Baseline,
-                    Summary: "Earlier smoke pass that stayed too close to the bed and dropped too much of the clinic bay.",
-                    PreviewUri: "/media/chummer6/chummer6-hero-baseline.png",
+                    Summary: "Current approved reveal portrait kept for fast side-by-side ops review.",
+                    PreviewUri: "/media/portraits/contact-portrait-current.png",
                     Badges:
                     [
                         new GeneratedAssetBadge("baseline", "current", GeneratedAssetBadgeKinds.State, true)
                     ],
                     Metadata:
                     [
-                        new GeneratedAssetMetadataField("framing", "Framing", "doctor/patient close-up"),
-                        new GeneratedAssetMetadataField("ops", "Ops note", "Lost the garage-clinic environment")
+                        new GeneratedAssetMetadataField("lighting", "Lighting", "Existing table-approved lighting"),
+                        new GeneratedAssetMetadataField("provenance", "Source", "Approved contact dossier portrait")
                     ]),
                 new GeneratedAssetComparisonSlot(
-                    SlotId: "hero-candidate",
-                    Label: "Room-first candidate",
+                    SlotId: "portrait-candidate",
+                    Label: "Candidate revision",
                     Role: GeneratedAssetComparisonRoles.Candidate,
-                    Summary: "Promoted archived candidate gives the treatment bay, clutter, and runner-life markers more of the frame.",
-                    PreviewUri: "/media/chummer6/chummer6-hero.png",
+                    Summary: "New crop improves face readability on tablet reveal surfaces without extra builder chrome.",
+                    PreviewUri: "/media/portraits/contact-portrait-revision.png",
                     Badges:
                     [
                         new GeneratedAssetBadge("candidate", "candidate", GeneratedAssetBadgeKinds.State),
-                        new GeneratedAssetBadge("flagship", "flagship", GeneratedAssetBadgeKinds.Audience)
+                        new GeneratedAssetBadge("player-safe", "player-safe", GeneratedAssetBadgeKinds.Audience)
                     ],
                     Metadata:
                     [
-                        new GeneratedAssetMetadataField("framing", "Framing", "room-first treatment bay"),
-                        new GeneratedAssetMetadataField("ops", "Ops note", "Promoted archived champion; clears the current local flagship floor", true)
+                        new GeneratedAssetMetadataField("framing", "Framing", "Tighter crop for portrait reveal"),
+                        new GeneratedAssetMetadataField("ops", "Ops note", "Faster ID at the table", true)
                     ])
             ],
             PreviewSections:
             [
                 new GeneratedAssetPreviewSection(
-                    SectionId: "hero-brief",
-                    Label: "Scene Brief",
-                    Summary: "The frame should sell an in-game streetdoc clinic immediately, not just the operation itself.",
-                    Body: "Keep the room loud with grime, jury-rigged gear, chrome, med clutter, and a visible treatment bay that feels usable in play.",
+                    SectionId: "portrait-reroll-01",
+                    Label: "Reroll #1",
+                    Summary: "Neon Street style drifted too hard into background clutter.",
+                    Body: "Seed preserved, style adjusted for cleaner silhouette.",
                     Badges:
                     [
-                        new GeneratedAssetBadge("contract", "contract", GeneratedAssetBadgeKinds.Source, true)
+                        new GeneratedAssetBadge("rejected", "rejected", GeneratedAssetBadgeKinds.State)
                     ]),
                 new GeneratedAssetPreviewSection(
-                    SectionId: "hero-audit",
-                    Label: "Visual Audit",
-                    Summary: "Archived champion promotion plus finish pass now clears the local flagship bar.",
-                    Body: "Calibration callouts must stay limb-anchored and the medscan layer needs to feel like diegetic AR instead of a pasted slab.",
+                    SectionId: "portrait-reroll-02",
+                    Label: "Reroll #2",
+                    Summary: "Noir Ink keeps face readability and table-safe contrast.",
+                    Body: "Current candidate promoted for canonical review.",
                     Badges:
                     [
-                        new GeneratedAssetBadge("inspection", "inspection", GeneratedAssetBadgeKinds.State, true)
+                        new GeneratedAssetBadge("candidate", "candidate", GeneratedAssetBadgeKinds.State, true)
                     ])
             ],
             AttachmentTargets:
             [
-                new GeneratedAssetAttachmentTarget("guide-hero", "Guide hero", "guide"),
-                new GeneratedAssetAttachmentTarget("readme-hero", "README hero", "landing")
+                new GeneratedAssetAttachmentTarget("contact-dossier", "Contact dossier", "dossier"),
+                new GeneratedAssetAttachmentTarget("player-reveal", "Player reveal shelf", "reveal")
             ],
             Actions:
             [
-                new GeneratedAssetActionDescriptor("mark-canonical-hero", "Mark Canonical", GeneratedAssetActionKindMarkCanonical, true),
-                new GeneratedAssetActionDescriptor("dispatch-hero", "Dispatch to Coach", GeneratedAssetActionKindDispatch, true),
-                new GeneratedAssetActionDescriptor("review-hero", "Queue Review", GeneratedAssetActionKindReview, true),
-                new GeneratedAssetActionDescriptor("approve-hero", "Approve", GeneratedAssetActionKinds.Approve, true),
-                new GeneratedAssetActionDescriptor("archive-hero", "Archive", GeneratedAssetActionKinds.Archive, true)
+                new GeneratedAssetActionDescriptor("mark-canonical-portrait", "Mark Canonical", GeneratedAssetActionKindMarkCanonical, true),
+                new GeneratedAssetActionDescriptor("dispatch-portrait", "Dispatch to Coach", GeneratedAssetActionKindDispatch, true),
+                new GeneratedAssetActionDescriptor("review-portrait", "Queue Review", GeneratedAssetActionKindReview, true),
+                new GeneratedAssetActionDescriptor("approve-portrait", "Approve", GeneratedAssetActionKinds.Approve, true),
+                new GeneratedAssetActionDescriptor("archive-portrait", "Archive", GeneratedAssetActionKinds.Archive, true)
             ]),
         new GeneratedAssetProjection(
-            AssetId: "asset-chummer6-forge",
-            Title: "Karma Forge proving bay",
-            AssetKind: "Flagship horizon",
-            Source: "Chummer6 Media Factory",
-            Summary: "Machine-first industrial research forge where the apparatus dominates over the people in frame.",
-            PreviewKind: GeneratedAssetPreviewKinds.Image,
-            ReviewState: "review:queued",
+            AssetId: "asset-dossier-01",
+            Title: "Johnson dossier packet",
+            AssetKind: "Dossier",
+            Source: "Johnson's Briefcase",
+            Summary: "Two-page op brief with provenance notes and attach-ready summary blocks.",
+            PreviewKind: GeneratedAssetPreviewKinds.Document,
+            ReviewState: "pending",
             CreatedAtUtc: DateTimeOffset.UtcNow.AddMinutes(-11),
             IsCanonical: false,
-            PreviewUri: "/media/chummer6/karma-forge.png",
-            PreviewBody: "Industrial review rails, rollback machinery, and packet flow stay visible before the human operators take over the frame.",
+            PreviewBody: "Executive summary, threat markers, handoff notes, and provenance lines for the GM prep rail.",
             Badges:
             [
-                new GeneratedAssetBadge("flagship", "flagship", GeneratedAssetBadgeKinds.Source, true),
-                new GeneratedAssetBadge("horizon", "horizon", GeneratedAssetBadgeKinds.Audience),
+                new GeneratedAssetBadge("dossier", "dossier", GeneratedAssetBadgeKinds.Source),
+                new GeneratedAssetBadge("gm-prep", "gm-prep", GeneratedAssetBadgeKinds.Audience),
                 new GeneratedAssetBadge("source", "source-linked", GeneratedAssetBadgeKinds.Provenance, true)
             ],
             Metadata:
             [
-                new GeneratedAssetMetadataField("provenance", "Source", "Promoted from the latest Chummer6 flagship forge smoke run."),
-                new GeneratedAssetMetadataField("trace", "Why this draft", "Pushes the room toward an industrial proving bay instead of a two-person workstation scene.", true),
-                new GeneratedAssetMetadataField("share", "Attach target", "Horizons detail / flagship horizon card"),
-                new GeneratedAssetMetadataField("criticalStyleMode", "Style Lane", "flagship_poster"),
-                new GeneratedAssetMetadataField("requiredOverlayMode", "Overlay Mode", "forge_review_ar"),
-                new GeneratedAssetMetadataField("overlayGeometry", "Overlay Geometry", "approval rails,provenance seals,rollback vectors,witness chips,compatibility arcs"),
-                new GeneratedAssetMetadataField("worldMarkersVisible", "World Markers", "industrial lab grime,rule cassettes,rollback apparatus,off-brand corp hardware,awakened material cues"),
-                new GeneratedAssetMetadataField("visualGate", "Gate Verdict", "inspection: flagship-ready apparatus-first read after finish pass", true),
-                new GeneratedAssetMetadataField("framing", "Framing", "wide proving bay / machine-first"),
-                new GeneratedAssetMetadataField("environment", "Environment", "industrial research forge"),
+                new GeneratedAssetMetadataField("provenance", "Source", "Compiled from current session notes, route tags, and approved contacts."),
+                new GeneratedAssetMetadataField("state", "Ops posture", "Pending attach to prep board and dossier lane."),
+                new GeneratedAssetMetadataField("offline", "Offline status", "Safe to carry locally for table use.", true),
                 new GeneratedAssetMetadataField("coachRouteType", "Coach Route", "coach"),
                 new GeneratedAssetMetadataField("coachRouteClass", "Route Class", "bounded_fix"),
-                new GeneratedAssetMetadataField("coachOperator", "Operator", "flagship-media-review"),
+                new GeneratedAssetMetadataField("coachOperator", "Operator", "dossier-review"),
                 new GeneratedAssetMetadataField("coachModel", "Model", "gpt-5.3-codex")
-            ],
-            ComparisonSlots:
-            [
-                new GeneratedAssetComparisonSlot(
-                    SlotId: "forge-baseline",
-                    Label: "Workstation-heavy pass",
-                    Role: GeneratedAssetComparisonRoles.Baseline,
-                    Summary: "Earlier pass let the review slab and operators dominate the frame too early.",
-                    PreviewUri: "/media/chummer6/karma-forge-baseline.png",
-                    Badges:
-                    [
-                        new GeneratedAssetBadge("baseline", "current", GeneratedAssetBadgeKinds.State, true)
-                    ],
-                    Metadata:
-                    [
-                        new GeneratedAssetMetadataField("framing", "Framing", "people-first workstation"),
-                        new GeneratedAssetMetadataField("ops", "Ops note", "Lost too much of the industrial apparatus")
-                    ]),
-                new GeneratedAssetComparisonSlot(
-                    SlotId: "forge-candidate",
-                    Label: "Machine-first candidate",
-                    Role: GeneratedAssetComparisonRoles.Candidate,
-                    Summary: "Current smoke candidate gives the proving bay, heat, rails, and rollback machinery more of the screen.",
-                    PreviewUri: "/media/chummer6/karma-forge.png",
-                    Badges:
-                    [
-                        new GeneratedAssetBadge("candidate", "candidate", GeneratedAssetBadgeKinds.State),
-                        new GeneratedAssetBadge("flagship", "flagship", GeneratedAssetBadgeKinds.Audience)
-                    ],
-                    Metadata:
-                    [
-                        new GeneratedAssetMetadataField("framing", "Framing", "wide proving bay / apparatus-first"),
-                        new GeneratedAssetMetadataField("ops", "Ops note", "Clears the current local forge floor after the finish pass", true)
-                    ])
             ],
             PreviewSections:
             [
                 new GeneratedAssetPreviewSection(
-                    SectionId: "forge-brief",
-                    Label: "Scene Brief",
-                    Summary: "The forge must read like a dangerous materials-test lab under governed change, not a tidy workshop.",
-                    Body: "Let the packet flow, approval rails, and consequence machinery own the frame before the people settle into it.",
+                    SectionId: "dossier-summary",
+                    Label: "Executive Summary",
+                    Summary: "Quick read for the GM ops board before the briefing starts.",
+                    Body: "Johnson needs a deniable extraction with low astral noise and minimal matrix chatter.",
                     Badges:
                     [
-                        new GeneratedAssetBadge("contract", "contract", GeneratedAssetBadgeKinds.Source, true)
+                        new GeneratedAssetBadge("gm", "gm-only", GeneratedAssetBadgeKinds.Audience, true)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("source", "Source", "Current session brief + approved contacts"),
+                        new GeneratedAssetMetadataField("confidence", "Confidence", "Ready for prep attach")
                     ]),
                 new GeneratedAssetPreviewSection(
-                    SectionId: "forge-audit",
-                    Label: "Visual Audit",
-                    Summary: "Apparatus dominance and finish now clear the local flagship bar.",
-                    Body: "Approval rails and provenance cues should explain the machinery without turning into floating review labels.",
+                    SectionId: "dossier-threats",
+                    Label: "Threat Markers",
+                    Summary: "Operational flags that should stay visible during live play.",
+                    Body: "Knight Errant patrol uptick, one compromised contact, and a probable drone tail on the pickup lane.",
                     Badges:
                     [
-                        new GeneratedAssetBadge("inspection", "inspection", GeneratedAssetBadgeKinds.State, true)
+                        new GeneratedAssetBadge("alert", "ops-alert", GeneratedAssetBadgeKinds.State, true)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("staleness", "Refresh posture", "Refresh after each scene break"),
+                        new GeneratedAssetMetadataField("provenance", "Provenance", "Session notes, route tags, approved heat markers", true)
+                    ]),
+                new GeneratedAssetPreviewSection(
+                    SectionId: "dossier-handoff",
+                    Label: "Handoff Notes",
+                    Summary: "Attach-ready notes for the briefcase and GM prep board.",
+                    Body: "Hand players the clean executive summary only; keep the threat markers in the GM lane.",
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("share", "Share path", "Johnson briefcase + GM prep board"),
+                        new GeneratedAssetMetadataField("offline", "Offline carry", "Safe for local session cache", true)
                     ])
             ],
             AttachmentTargets:
             [
-                new GeneratedAssetAttachmentTarget("horizons-detail", "Horizons detail", "guide"),
-                new GeneratedAssetAttachmentTarget("horizon-card", "Horizon card", "landing")
+                new GeneratedAssetAttachmentTarget("gm-prep-board", "GM prep board", "ops-board"),
+                new GeneratedAssetAttachmentTarget("briefcase", "Johnson briefcase", "briefcase")
             ],
             Actions:
             [
-                new GeneratedAssetActionDescriptor("mark-canonical-forge", "Mark Canonical", GeneratedAssetActionKindMarkCanonical, true),
-                new GeneratedAssetActionDescriptor("dispatch-forge", "Dispatch to Coach", GeneratedAssetActionKindDispatch, true),
-                new GeneratedAssetActionDescriptor("review-forge", "Queue Review", GeneratedAssetActionKindReview, true),
-                new GeneratedAssetActionDescriptor("approve-forge", "Approve", GeneratedAssetActionKinds.Approve, true),
-                new GeneratedAssetActionDescriptor("archive-forge", "Archive", GeneratedAssetActionKinds.Archive, true)
+                new GeneratedAssetActionDescriptor("dispatch-dossier", "Dispatch to Coach", GeneratedAssetActionKindDispatch, true),
+                new GeneratedAssetActionDescriptor("review-dossier", "Queue Review", GeneratedAssetActionKindReview, true),
+                new GeneratedAssetActionDescriptor("approve-dossier", "Approve", GeneratedAssetActionKinds.Approve, true),
+                new GeneratedAssetActionDescriptor("archive-dossier", "Archive", GeneratedAssetActionKinds.Archive, true)
             ]),
         new GeneratedAssetProjection(
-            AssetId: "asset-chummer6-horizons-index",
-            Title: "Horizons index wide poster",
-            AssetKind: "Flagship page art",
-            Source: "Chummer6 Media Factory",
-            Summary: "Wide environmental horizon index that lets the city and route plurality do the storytelling.",
-            PreviewKind: GeneratedAssetPreviewKinds.Image,
-            ReviewState: "canonical:selected",
+            AssetId: "asset-news-01",
+            Title: "Route recap clip",
+            AssetKind: "Route video",
+            Source: "Route Cinema",
+            Summary: "Short route video draft tuned for a one-tap recap reveal after the scene break.",
+            PreviewKind: GeneratedAssetPreviewKinds.Video,
+            ReviewState: "pending",
             CreatedAtUtc: DateTimeOffset.UtcNow.AddMinutes(-17),
-            IsCanonical: true,
-            PreviewUri: "/media/chummer6/horizons-index.png",
-            PreviewBody: "Multi-lane city crossroads with enough room for district cues and subtle ambient route guidance.",
+            IsCanonical: false,
+            PreviewUri: "/media/routes/route-recap-clip.mp4",
+            PreviewBody: "Narrated route clip with scene-safe beats.",
             Badges:
             [
-                new GeneratedAssetBadge("flagship", "flagship", GeneratedAssetBadgeKinds.Source, true),
-                new GeneratedAssetBadge("index", "index", GeneratedAssetBadgeKinds.Audience),
-                new GeneratedAssetBadge("canonical", "canonical", GeneratedAssetBadgeKinds.State, true)
+                new GeneratedAssetBadge("video", "route-video", GeneratedAssetBadgeKinds.Source),
+                new GeneratedAssetBadge("share", "share-ready", GeneratedAssetBadgeKinds.Audience),
+                new GeneratedAssetBadge("queued", "queued-sync", GeneratedAssetBadgeKinds.Provenance)
             ],
             Metadata:
             [
-                new GeneratedAssetMetadataField("provenance", "Source", "Promoted from the current strongest local Chummer6 horizons index render."),
-                new GeneratedAssetMetadataField("trace", "Why this draft", "Uses more room and route plurality so the environment carries the page story at a glance.", true),
-                new GeneratedAssetMetadataField("share", "Attach target", "Horizons index / guide navigation page"),
-                new GeneratedAssetMetadataField("criticalStyleMode", "Style Lane", "flagship_poster"),
-                new GeneratedAssetMetadataField("requiredOverlayMode", "Overlay Mode", "ambient_diegetic"),
-                new GeneratedAssetMetadataField("overlayGeometry", "Overlay Geometry", "route arcs,district markers,subtle lane glyphs"),
-                new GeneratedAssetMetadataField("worldMarkersVisible", "World Markers", "rain-slick streets,metahuman silhouettes,cables and signage,jury-rigged infrastructure,market and rail hints"),
-                new GeneratedAssetMetadataField("visualGate", "Gate Verdict", "inspection: flagship-ready wide environmental read after finish pass", true),
-                new GeneratedAssetMetadataField("canonicalAssetId", "Canonical Asset", "asset-chummer6-horizons-index"),
-                new GeneratedAssetMetadataField("framing", "Framing", "wide crossroads / room-first"),
-                new GeneratedAssetMetadataField("environment", "Environment", "branching city index"),
+                new GeneratedAssetMetadataField("provenance", "Source", "Route recap, scene markers, and share-safe notes were merged into this cut."),
+                new GeneratedAssetMetadataField("delivery", "Delivery", "Queued for reveal after approval."),
+                new GeneratedAssetMetadataField("ops", "GM note", "Use the shared viewer instead of per-feature one-offs.", true),
                 new GeneratedAssetMetadataField("coachRouteType", "Coach Route", "coach"),
                 new GeneratedAssetMetadataField("coachRouteClass", "Route Class", "bounded_fix"),
-                new GeneratedAssetMetadataField("coachOperator", "Operator", "flagship-media-review"),
+                new GeneratedAssetMetadataField("coachOperator", "Operator", "shadowfeed-dispatch"),
                 new GeneratedAssetMetadataField("coachModel", "Model", "gpt-5.3-codex"),
-                new GeneratedAssetMetadataField("shadowfeedDispatchChannel", "Dispatch Channel", "flagship.review"),
+                new GeneratedAssetMetadataField("shadowfeedDispatchChannel", "Dispatch Channel", "shadowfeed.ops"),
                 new GeneratedAssetMetadataField("shadowfeedDispatchReceipt", "Dispatch Receipt", "pending"),
-                new GeneratedAssetMetadataField("shadowfeedReviewQueue", "Review Queue", "flagship.visual"),
+                new GeneratedAssetMetadataField("shadowfeedReviewQueue", "Review Queue", "shadowfeed.review"),
                 new GeneratedAssetMetadataField("shadowfeedReviewer", "Reviewer", "unassigned"),
                 new GeneratedAssetMetadataField("dispatchContext", "Dispatch Context", "Pass 2"),
                 new GeneratedAssetMetadataField("invalidatesOnContextShift", "Context Invalidation", "true")
             ],
-            ComparisonSlots:
-            [
-                new GeneratedAssetComparisonSlot(
-                    SlotId: "horizons-baseline",
-                    Label: "Earlier route pass",
-                    Role: GeneratedAssetComparisonRoles.Baseline,
-                    Summary: "Earlier smoke pass stayed narrower and let signage do too much of the scene work.",
-                    PreviewUri: "/media/chummer6/horizons-index-baseline.png",
-                    Badges:
-                    [
-                        new GeneratedAssetBadge("baseline", "current", GeneratedAssetBadgeKinds.State, true)
-                    ],
-                    Metadata:
-                    [
-                        new GeneratedAssetMetadataField("framing", "Framing", "narrower route read"),
-                        new GeneratedAssetMetadataField("ops", "Ops note", "Needed more city context")
-                    ]),
-                new GeneratedAssetComparisonSlot(
-                    SlotId: "horizons-candidate",
-                    Label: "Wide index candidate",
-                    Role: GeneratedAssetComparisonRoles.Candidate,
-                    Summary: "Current smoke candidate gives the city, lanes, and districts enough room to act like a real index poster.",
-                    PreviewUri: "/media/chummer6/horizons-index.png",
-                    Badges:
-                    [
-                        new GeneratedAssetBadge("candidate", "candidate", GeneratedAssetBadgeKinds.State),
-                        new GeneratedAssetBadge("flagship", "flagship", GeneratedAssetBadgeKinds.Audience)
-                    ],
-                    Metadata:
-                    [
-                        new GeneratedAssetMetadataField("framing", "Framing", "wide crossroads"),
-                        new GeneratedAssetMetadataField("ops", "Ops note", "Best current page-scale environment read; finish pass applied", true)
-                    ])
-            ],
             PreviewSections:
             [
                 new GeneratedAssetPreviewSection(
-                    SectionId: "horizons-brief",
-                    Label: "Scene Brief",
-                    Summary: "The page art should feel like a city full of differentiated futures, not a single sign plus empty road.",
-                    Body: "Let districts, rails, rooftops, alleys, and route options carry the index logic before any text or navigation chrome does.",
+                    SectionId: "route-recap-card",
+                    Label: "Recap Card",
+                    Summary: "One-tap scene-break summary for the player reveal lane.",
+                    Body: "Summarizes the last route turn, highlights the clean extraction beat, and keeps the player-facing timeline short.",
                     Badges:
                     [
-                        new GeneratedAssetBadge("contract", "contract", GeneratedAssetBadgeKinds.Source, true)
+                        new GeneratedAssetBadge("recap", "recap-ready", GeneratedAssetBadgeKinds.Audience, true)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("audience", "Audience", "Player share surface"),
+                        new GeneratedAssetMetadataField("timing", "Reveal timing", "Scene break", true)
                     ]),
                 new GeneratedAssetPreviewSection(
-                    SectionId: "horizons-audit",
-                    Label: "Visual Audit",
-                    Summary: "This is the strongest room-first environmental poster in the set and now clears the flagship finish bar.",
-                    Body: "Ambient route cues are enough here; a heavy HUD would only flatten the city read.",
+                    SectionId: "route-news-card",
+                    Label: "Sixth World News Card",
+                    Summary: "Prep-friendly headline card generated from the same route-video cut.",
+                    Body: "Frames the route as a public incident blip so the GM can drop the aftermath into the table feed without extra prep duplication.",
                     Badges:
                     [
-                        new GeneratedAssetBadge("strongest", "strongest", GeneratedAssetBadgeKinds.State, true)
+                        new GeneratedAssetBadge("news", "news-card", GeneratedAssetBadgeKinds.Source),
+                        new GeneratedAssetBadge("gm", "gm-prep", GeneratedAssetBadgeKinds.Audience)
+                    ],
+                    Metadata:
+                    [
+                        new GeneratedAssetMetadataField("share", "Share path", "News rail + recap feed"),
+                        new GeneratedAssetMetadataField("provenance", "Provenance", "Scene markers, approved reveal notes", true)
                     ])
             ],
             AttachmentTargets:
             [
-                new GeneratedAssetAttachmentTarget("horizons-index-page", "Horizons index page", "guide"),
-                new GeneratedAssetAttachmentTarget("guide-nav", "Guide nav shelf", "landing")
+                new GeneratedAssetAttachmentTarget("recap-feed", "Recap feed", "recap"),
+                new GeneratedAssetAttachmentTarget("news-card", "News card", "news")
             ],
             Actions:
             [
-                new GeneratedAssetActionDescriptor("dispatch-horizons", "Dispatch to Coach", GeneratedAssetActionKindDispatch, true),
-                new GeneratedAssetActionDescriptor("review-horizons", "Queue Review", GeneratedAssetActionKindReview, true),
-                new GeneratedAssetActionDescriptor("refresh-horizons-dispatch", "Refresh Dispatch", GeneratedAssetActionKindRefreshDispatch, true),
-                new GeneratedAssetActionDescriptor("approve-horizons", "Approve", GeneratedAssetActionKinds.Approve, true),
-                new GeneratedAssetActionDescriptor("archive-horizons", "Archive", GeneratedAssetActionKinds.Archive, true)
+                new GeneratedAssetActionDescriptor("dispatch-route", "Dispatch to Shadowfeed", GeneratedAssetActionKindDispatch, true),
+                new GeneratedAssetActionDescriptor("review-route", "Queue Shadowfeed Review", GeneratedAssetActionKindReview, true),
+                new GeneratedAssetActionDescriptor("refresh-route-dispatch", "Refresh Dispatch", GeneratedAssetActionKindRefreshDispatch, true),
+                new GeneratedAssetActionDescriptor("approve-route", "Approve", GeneratedAssetActionKinds.Approve, true),
+                new GeneratedAssetActionDescriptor("archive-route", "Archive", GeneratedAssetActionKinds.Archive, true)
             ])
     ];
 
-    private string _selectedAssetId = "asset-chummer6-hero";
+    private string _selectedAssetId = "asset-portraits-01";
 
     private static readonly MapExplainTextLocalization ExplainLocalization = new(
         new Dictionary<string, string>(StringComparer.Ordinal)
@@ -1276,43 +1219,40 @@
     private readonly LocalizedExplainChrome _sampleExplainChrome = RulesetExplainRenderer.CreateChrome(ExplainLocalization);
 
     private readonly LocalizedRulesetExplainTrace _sampleExplainTrace = RulesetExplainRenderer.Project(
-        RulesetExplainContractFactory.CreateTrace(
-            new ExplainTraceSeed(
-                Subject: new ExplainTextSeed("subject.agent_trace_example"),
-                Providers:
-                [
-                    new ExplainProviderSeed(
-                        Provider: new ExplainProvenanceSeed("provider.runtime", new ExplainTextSeed("provider.runtime")),
-                        Capability: new ExplainProvenanceSeed("capability.skill_check", new ExplainTextSeed("capability.skill_check")),
-                        Pack: new ExplainProvenanceSeed("pack.street_magic", new ExplainTextSeed("pack.street_magic")),
-                        Success: true,
-                        Fragments:
-                        [
-                            new ExplainFragmentSeed(
-                                Label: new ExplainTextSeed("fragment.label.base"),
-                                Value: "10",
-                                Reason: new ExplainTextSeed("fragment.reason.active_traits"),
-                                Pack: new ExplainProvenanceSeed("pack.street_magic", new ExplainTextSeed("pack.street_magic")),
-                                Provider: new ExplainProvenanceSeed("provider.runtime", new ExplainTextSeed("provider.runtime"))),
-                            new ExplainFragmentSeed(
-                                Label: new ExplainTextSeed("fragment.label.modified"),
-                                Value: "12",
-                                Reason: new ExplainTextSeed("fragment.reason.active_traits"),
-                                Pack: new ExplainProvenanceSeed("pack.street_magic", new ExplainTextSeed("pack.street_magic")),
-                                Provider: new ExplainProvenanceSeed("provider.runtime", new ExplainTextSeed("provider.runtime")))
-                        ],
-                        GasUsage: new RulesetGasUsage(3, 8, 256),
-                        Messages:
-                        [
-                            new ExplainTextSeed("explain.message.provider_delta")
-                        ])
-                ],
-                Messages:
-                [
-                    new ExplainTextSeed("explain.message.base_value"),
-                    new ExplainTextSeed("explain.message.pack_context")
-                ],
-                AggregateGasUsage: new RulesetGasUsage(3, 8, 256))),
+        new RulesetExplainTrace(
+            TargetKey: "subject.agent_trace_example",
+            FinalValue: new RulesetCapabilityValue(RulesetCapabilityValueKinds.Decimal, DecimalValue: 12m),
+            SummaryKey: "explain.message.base_value",
+            SummaryParameters: [],
+            Providers:
+            [
+                new RulesetProviderTrace(
+                    ProviderId: "provider.runtime",
+                    CapabilityId: "capability.skill_check",
+                    PackId: "pack.street_magic",
+                    Success: true,
+                    Steps:
+                    [
+                        new RulesetTraceStep(
+                            ProviderId: "provider.runtime",
+                            CapabilityId: "capability.skill_check",
+                            PackId: "pack.street_magic",
+                            ExplanationKey: "fragment.label.base",
+                            ExplanationParameters: [],
+                            Category: "sample",
+                            Modifier: 10m),
+                        new RulesetTraceStep(
+                            ProviderId: "provider.runtime",
+                            CapabilityId: "capability.skill_check",
+                            PackId: "pack.street_magic",
+                            ExplanationKey: "fragment.label.modified",
+                            ExplanationParameters: [],
+                            Category: "sample",
+                            Modifier: 12m)
+                    ],
+                    GasUsage: new RulesetGasUsage(3, 8, 256))
+            ],
+            AggregateGasUsage: new RulesetGasUsage(3, 8, 256)),
         ExplainLocalization)!;
 
     protected override void OnInitialized()

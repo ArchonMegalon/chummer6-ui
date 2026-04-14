@@ -1,0 +1,51 @@
+{
+  "generatedAt": "2026-04-11T19:42:21Z",
+  "generated_at": "2026-04-11T19:42:21Z",
+  "contract_name": "chummer6-ui.proof_backed_quarantine_installer_promotion",
+  "downloadsDir": "/docker/chummercomplete/chummer6-ui-finish/Docker/Downloads/files",
+  "startupSmokeDir": "/docker/chummercomplete/chummer6-ui-finish/Docker/Downloads/startup-smoke",
+  "releaseChannel": "docker",
+  "releaseVersion": "unpublished",
+  "quarantineDirs": [
+    "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/quarantine",
+    "/docker/chummercomplete/chummer6-ui-finish/Docker/Downloads/quarantine"
+  ],
+  "promotedCount": 0,
+  "candidatesEvaluated": 2,
+  "entries": [
+    {
+      "candidatePath": "/docker/chummercomplete/chummer6-ui-finish/Docker/Downloads/quarantine/20260403-blazor-linux-installer-startup-smoke-abort/chummer-blazor-desktop-linux-x64-installer.deb",
+      "fileName": "chummer-blazor-desktop-linux-x64-installer.deb",
+      "head": "blazor-desktop",
+      "rid": "linux-x64",
+      "platform": "linux",
+      "arch": "x64",
+      "status": "skipped",
+      "reasons": [
+        "startup smoke artifactDigest does not match candidate bytes",
+        "destination already exists with different bytes"
+      ],
+      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer6-ui-finish/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+      "candidateSha256": "b36624a7b8a5a1b4e06cac6ead3040d86db542dd8dfe5694252d3b5cc54e6f56",
+      "destinationPath": "/docker/chummercomplete/chummer6-ui-finish/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
+      "destinationSha256": "ecb5d916470f84cc58c97653a6079634145014c235f7c8ff5255f22e889e999a"
+    },
+    {
+      "candidatePath": "/docker/chummercomplete/chummer6-ui-finish/Docker/Downloads/quarantine/chummer-blazor-desktop-linux-x64-installer.deb",
+      "fileName": "chummer-blazor-desktop-linux-x64-installer.deb",
+      "head": "blazor-desktop",
+      "rid": "linux-x64",
+      "platform": "linux",
+      "arch": "x64",
+      "status": "skipped",
+      "reasons": [
+        "startup smoke artifactDigest does not match candidate bytes",
+        "destination already exists with different bytes"
+      ],
+      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer6-ui-finish/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+      "candidateSha256": "b36624a7b8a5a1b4e06cac6ead3040d86db542dd8dfe5694252d3b5cc54e6f56",
+      "destinationPath": "/docker/chummercomplete/chummer6-ui-finish/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
+      "destinationSha256": "ecb5d916470f84cc58c97653a6079634145014c235f7c8ff5255f22e889e999a"
+    }
+  ]
+}

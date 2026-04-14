@@ -307,7 +307,7 @@ internal sealed class DesktopUpdateWindow : Window
             if (result.ExitRequested)
             {
                 _statusText.Text = S("desktop.update.apply_scheduled");
-                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {
                     desktop.Shutdown();
                 }

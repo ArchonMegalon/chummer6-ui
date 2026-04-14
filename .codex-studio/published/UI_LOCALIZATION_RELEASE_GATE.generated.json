@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-04-04T10:50:15Z",
+  "generated_at": "2026-04-12T15:49:07Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -27,7 +27,7 @@
     "retry_attempted": false,
     "retry_reason": "",
     "log_excerpt": [
-      "[B15] PASS: localization release smoke runner checks passed."
+      "[B13] PASS: targeted accessibility smoke runner checks passed."
     ]
   },
   "locale_summary": [
@@ -92,20 +92,19 @@
       "legacy_data_xml_present": true
     }
   ],
-  "legacy_language_root": "/docker/chummercomplete/chummer6-ui/Chummer/lang",
+  "legacy_language_root": "/docker/chummercomplete/chummer6-ui-finish/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-03-28T14:39:05Z",
+    "generated_at": "2026-04-11T18:52:38Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
     "playwright_timeout_seconds": 240,
     "edge_rebuild_skipped": true,
-    "route_probe_executed": true,
+    "route_probe_executed": false,
     "journeys_passed": [
       "public_bridge_boot",
-      "desktop_downloads_projection",
-      "portal_route_probe"
+      "desktop_downloads_projection"
     ],
     "proof_routes": [
       "/",

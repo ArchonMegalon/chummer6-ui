@@ -119,7 +119,8 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             context.State.ActiveSectionJson,
             context.CurrentWorkspace,
             ResolveDialogRulesetId(context),
-            runtimeInspector: null);
+            runtimeInspector: null,
+            openWorkspaces: context.State.OpenWorkspaces);
     }
 
     private static async Task OpenRuntimeInspectorDialogAsync(OverviewCommandExecutionContext context, CancellationToken ct)
@@ -160,7 +161,8 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             context.State.ActiveSectionJson,
             context.CurrentWorkspace,
             activeRuntime.RulesetId,
-            runtimeInspector);
+            runtimeInspector,
+            openWorkspaces: context.State.OpenWorkspaces);
         context.Publish(context.State with
         {
             ActiveDialog = dialog,

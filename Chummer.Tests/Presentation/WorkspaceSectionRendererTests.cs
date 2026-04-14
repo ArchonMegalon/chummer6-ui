@@ -145,6 +145,35 @@ public class WorkspaceSectionRendererTests
     }
 
     [TestMethod]
+    public async Task RenderSectionAsync_build_lab_falls_back_to_deterministic_projection_when_host_section_is_missing()
+    {
+        WorkspaceSectionRenderer renderer = new();
+        BuildLabFallbackSectionRendererClientStub client = new();
+
+        WorkspaceSectionRenderResult result = await renderer.RenderSectionAsync(
+            client,
+            new CharacterWorkspaceId("4418977043cb4ca0993d1489db010f66"),
+            sectionId: "build-lab",
+            tabId: "tab-create",
+            actionId: "tab-create.intake",
+            currentTabId: "tab-gear",
+            currentActionId: "tab-gear.weapons",
+            ct: CancellationToken.None);
+
+        Assert.AreEqual("tab-create", result.ActiveTabId);
+        Assert.AreEqual("tab-create.intake", result.ActiveActionId);
+        Assert.AreEqual("build-lab", result.ActiveSectionId);
+        Assert.IsNotNull(result.ActiveBuildLab);
+        Assert.AreEqual("build-lab", result.ActiveBuildLab.WorkspaceId);
+        Assert.AreEqual("Build Lab Intake", result.ActiveBuildLab.Title);
+        Assert.AreEqual("next-variants", result.ActiveBuildLab.NextSafeAction);
+        Assert.IsGreaterThan(0, result.ActiveSectionRows.Count);
+        StringAssert.Contains(result.ActiveSectionJson, "\"WorkflowId\": \"workflow.build-lab\"");
+        Assert.IsNull(result.ActiveBrowseWorkspace);
+        Assert.IsNull(result.ActiveNpcPersonaStudio);
+    }
+
+    [TestMethod]
     public async Task RenderSectionAsync_projects_browse_workspace_state_from_contract_payload()
     {
         WorkspaceSectionRenderer renderer = new();
@@ -770,6 +799,14 @@ public class WorkspaceSectionRendererTests
             };
 
             return Task.FromResult<JsonNode>(payload);
+        }
+    }
+
+    private sealed class BuildLabFallbackSectionRendererClientStub : SectionRendererClientStub
+    {
+        public override Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
+        {
+            throw new InvalidOperationException("build-lab section is unavailable on this host");
         }
     }
 }

@@ -950,6 +950,17 @@ def external_proof_expected_receipt_contract(
     }
 
 
+def external_proof_expected_operating_system_hint(platform: str) -> str:
+    platform_token = normalize_token(platform)
+    if platform_token == "windows":
+        return "Windows"
+    if platform_token == "macos":
+        return "macOS"
+    if platform_token == "linux":
+        return "Linux"
+    return ""
+
+
 def external_proof_expected_capture_commands(
     head: str,
     rid: str,
@@ -964,10 +975,20 @@ def external_proof_expected_capture_commands(
     if not head_token or not rid_token or not platform_token or not installer_name:
         return []
     host_token = normalize_token(required_host) or platform_token
+    operating_system_hint = (
+        external_proof_expected_operating_system_hint(host_token)
+        or external_proof_expected_operating_system_hint(platform_token)
+    )
     repo_root = "/docker/chummercomplete/chummer6-ui"
+    operating_system_env = (
+        f"CHUMMER_DESKTOP_STARTUP_SMOKE_OPERATING_SYSTEM={operating_system_hint} "
+        if operating_system_hint
+        else ""
+    )
     run_smoke = (
         f"cd {repo_root} && "
         f"CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS={host_token}-host "
+        f"{operating_system_env}"
         "./scripts/run-desktop-startup-smoke.sh "
         f"{repo_root}/Docker/Downloads/files/{installer_name} "
         f"{head_token} "
@@ -2978,6 +2999,7 @@ allowed_desktop_tuple_coverage_keys = {
     "missingRequiredPlatformHeadRidTuples",
     "promotedInstallerTuples",
     "externalProofRequests",
+    "complete",
 }
 unexpected_desktop_tuple_coverage_keys = sorted(
     key
@@ -3387,6 +3409,8 @@ allowed_external_proof_request_row_keys = {
     "requiredProofs",
     "expectedArtifactId",
     "expectedInstallerFileName",
+    "expectedInstallerRelativePath",
+    "expectedInstallerSha256",
     "expectedPublicInstallRoute",
     "expectedStartupSmokeReceiptPath",
     "startupSmokeReceiptContract",
@@ -3779,6 +3803,7 @@ allowed_desktop_install_artifact_keys = {
     "generated_at",
     "generatedAt",
     "head",
+    "id",
     "installAccessClass",
     "kind",
     "platform",
@@ -4750,11 +4775,11 @@ if release_channel_supportability_state_invalid_for_publishable_complete:
     reasons.append(
         "Release channel supportabilityState must be preview_supported when status is publishable and required desktop tuple coverage is complete."
     )
-if coverage_incomplete and release_channel_rollout_state != "coverage_incomplete":
+if coverage_incomplete and release_channel_publishable_status and release_channel_rollout_state != "coverage_incomplete":
     reasons.append(
         "Release channel must set rolloutState=coverage_incomplete when required desktop tuple coverage is incomplete."
     )
-if coverage_incomplete and release_channel_supportability_state != "review_required":
+if coverage_incomplete and release_channel_publishable_status and release_channel_supportability_state != "review_required":
     reasons.append(
         "Release channel must set supportabilityState=review_required when required desktop tuple coverage is incomplete."
     )

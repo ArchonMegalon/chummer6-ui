@@ -1,19 +1,31 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.SectionHostControl">
-  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
     <Border Grid.Row="0" Classes="shell-card subtle">
-      <StackPanel Spacing="6">
-        <TextBlock Classes="shell-kicker" Text="Section Briefing" />
+      <StackPanel Spacing="4">
+        <TextBlock Classes="shell-kicker" Text="Section Focus" />
         <TextBlock x:Name="NoticeText" Classes="shell-section-title" Text="Notice: Ready." TextWrapping="Wrap" />
       </StackPanel>
     </Border>
 
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
       <Border Classes="shell-card">
-      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,*" RowSpacing="6">
-        <TextBlock Grid.Row="0" Text="Active Section Preview" Classes="shell-section-title" />
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,*" RowSpacing="6">
+        <TextBlock Grid.Row="0" Text="Section Workbench" Classes="shell-section-title" />
         <Border Grid.Row="1"
+                x:Name="SectionQuickActionsBorder"
+                Classes="shell-card subtle"
+                IsVisible="False"
+                Padding="6">
+          <StackPanel Spacing="4">
+            <TextBlock Classes="shell-kicker" Text="Section Commands" />
+            <WrapPanel x:Name="SectionQuickActionsPanel"
+                       Orientation="Horizontal"
+                       ItemHeight="28" />
+          </StackPanel>
+        </Border>
+        <Border Grid.Row="2"
                 x:Name="BuildLabBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -83,7 +95,7 @@
             </ListBox>
           </Grid>
         </Border>
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 x:Name="BrowseWorkspaceBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -133,7 +145,7 @@
             </ListBox>
           </Grid>
         </Border>
-        <Border Grid.Row="3"
+        <Border Grid.Row="4"
                 x:Name="ContactGraphBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -170,7 +182,7 @@
                      IsReadOnly="True" />
           </Grid>
         </Border>
-        <Border Grid.Row="4"
+        <Border Grid.Row="5"
                 x:Name="NpcPersonaStudioBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -209,7 +221,7 @@
                      IsReadOnly="True" />
           </Grid>
         </Border>
-        <Border Grid.Row="5"
+        <Border Grid.Row="6"
                 x:Name="DowntimePlannerBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -243,14 +255,14 @@
             </ListBox>
           </Grid>
         </Border>
-        <ListBox Grid.Row="6" x:Name="SectionRowsList" Height="120">
+        <ListBox Grid.Row="7" x:Name="SectionRowsList" Height="120">
           <ListBox.ItemsPanel>
             <ItemsPanelTemplate>
               <VirtualizingStackPanel />
             </ItemsPanelTemplate>
           </ListBox.ItemsPanel>
         </ListBox>
-        <TextBox Grid.Row="7"
+        <TextBox Grid.Row="8"
                  x:Name="SectionPreviewBox"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
@@ -261,13 +273,13 @@
 
     <Border Grid.Row="2" Classes="shell-card subtle">
       <StackPanel Spacing="4">
-        <TextBlock Classes="shell-kicker" Text="Developer Utility" />
-        <TextBlock Text="Raw XML Import" Classes="shell-section-title" />
+        <TextBlock Classes="shell-kicker" Text="Advanced Import" />
+        <TextBlock Text="Raw XML Intake" Classes="shell-section-title" />
         <TextBox x:Name="XmlInputBox"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  Height="100"
-                 Watermark="Optional raw XML payload for diagnostics" />
+                 Watermark="Paste raw XML when you need a direct import or diagnostics." />
       </StackPanel>
     </Border>
   </Grid>
