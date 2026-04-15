@@ -121,8 +121,16 @@ public sealed class CampaignSpineShowcaseComponentTests
             .Add(component => component.Projection, projection));
 
         StringAssert.Contains(cut.Markup, "Campaign-safe decision rail");
+        StringAssert.Contains(cut.Markup, "Build blocker receipt");
+        StringAssert.Contains(cut.Markup, "1 blocker signal(s)");
+        StringAssert.Contains(cut.Markup, "Rule environment");
+        StringAssert.Contains(cut.Markup, "sr5 / Priority");
+        StringAssert.Contains(cut.Markup, "Before");
+        StringAssert.Contains(cut.Markup, "After");
+        StringAssert.Contains(cut.Markup, "Support reuse");
         StringAssert.Contains(cut.Markup, "Rebind runtime before export.");
         StringAssert.Contains(cut.Markup, "Fits sparse-ops crews.");
+        StringAssert.Contains(cut.Markup, "Support can cite the same runtime fingerprint.");
         StringAssert.Contains(cut.Markup, "Do not export until the runtime rebind receipt exists.");
         StringAssert.Contains(cut.Markup, "Planner + team coverage");
         StringAssert.Contains(cut.Markup, "Covered roles: Face | Legwork");
@@ -134,6 +142,7 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "25 Karma");
         StringAssert.Contains(cut.Markup, "Astral gap");
         Assert.IsNotNull(cut.Find("[data-build-lab-decision-rail]"));
+        Assert.IsNotNull(cut.Find("[data-build-blocker-explain-receipt]"));
         Assert.IsNotNull(cut.Find("[data-build-lab-optimizer-rail]"));
         Assert.IsNotNull(cut.Find("[data-build-lab-timeline-step-badges='social-25']"));
     }
