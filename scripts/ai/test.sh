@@ -20,7 +20,7 @@ for arg in "${args[@]}"; do
 done
 
 if [[ "$is_solution_test" -eq 1 ]] && [[ "$has_parallelism_override" -eq 0 ]]; then
-  exec dotnet test "${args[@]}" --nologo --disable-build-servers -m:1
+  exec "$SCRIPT_DIR/with-package-plane.sh" test "${args[@]}" --nologo --disable-build-servers -m:1
 fi
 
-exec dotnet test "${args[@]}" --nologo --disable-build-servers
+exec "$SCRIPT_DIR/with-package-plane.sh" test "${args[@]}" --nologo --disable-build-servers

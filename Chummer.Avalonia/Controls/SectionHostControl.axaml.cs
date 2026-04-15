@@ -1,6 +1,11 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Media;
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Overview;
+using System.Globalization;
+using System.Text.Json.Nodes;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -8,6 +13,7 @@ public partial class SectionHostControl : UserControl
 {
     private BuildLabConceptIntakeState? _buildLab;
     private BrowseWorkspaceState? _browseWorkspace;
+    public event EventHandler<string>? QuickActionRequested;
 
     public SectionHostControl()
     {
@@ -20,7 +26,9 @@ public partial class SectionHostControl : UserControl
     public void SetState(SectionHostState state)
     {
         SetNotice(state.Notice);
+        SetClassicCharacterSheet(state.SectionId, state.PreviewJson, state.Rows);
         SetSectionPreview(state.PreviewJson, state.Rows);
+        SetSectionQuickActions(state.QuickActions);
         SetBuildLab(state.BuildLab);
         SetBrowseWorkspace(state.BrowseWorkspace);
         SetContactGraph(state.ContactGraph);
@@ -39,6 +47,56 @@ public partial class SectionHostControl : UserControl
         SectionRowsList.ItemsSource = rows.ToArray();
     }
 
+    public void SetClassicCharacterSheet(string? sectionId, string previewJson, IEnumerable<SectionRowDisplayItem> rows)
+    {
+        ClassicCharacterFactsPanel.Children.Clear();
+        ClassicAttributeFactsPanel.Children.Clear();
+
+        IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts = BuildCharacterSummaryFacts(previewJson);
+        IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts = BuildCharacterAttributeFacts(previewJson, rows);
+
+        bool hasFacts = summaryFacts.Count > 0 || attributeFacts.Count > 0;
+        bool sectionTargetsClassicCharacterSheet =
+            string.Equals(sectionId, "attributes", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sectionId, "attributedetails", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sectionId, "armor", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sectionId, "cyberwares", StringComparison.OrdinalIgnoreCase)
+            || summaryFacts.Count > 0;
+
+        ClassicCharacterSheetBorder.IsVisible = hasFacts && sectionTargetsClassicCharacterSheet;
+        if (!ClassicCharacterSheetBorder.IsVisible)
+        {
+            ClassicCharacterSummaryTitle.Text = "Runner Summary";
+            return;
+        }
+
+        ClassicCharacterSummaryTitle.Text = string.Equals(sectionId, "attributes", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sectionId, "attributedetails", StringComparison.OrdinalIgnoreCase)
+            ? "Attributes"
+            : "Runner Summary";
+
+        foreach (ClassicSheetFactDisplayItem fact in summaryFacts)
+        {
+            ClassicCharacterFactsPanel.Children.Add(CreateClassicFactCard(fact, emphasizeValue: false));
+        }
+
+        foreach (ClassicSheetFactDisplayItem fact in attributeFacts)
+        {
+            ClassicAttributeFactsPanel.Children.Add(CreateClassicFactCard(fact, emphasizeValue: true));
+        }
+    }
+
+    public void SetSectionQuickActions(IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+    {
+        SectionQuickActionsPanel.Children.Clear();
+        SectionQuickActionsBorder.IsVisible = quickActions.Count > 0;
+
+        foreach (SectionQuickActionDisplayItem quickAction in quickActions)
+        {
+            SectionQuickActionsPanel.Children.Add(CreateQuickActionButton(quickAction));
+        }
+    }
+
     public void SetBuildLab(BuildLabConceptIntakeState? buildLab)
     {
         _buildLab = buildLab;
@@ -51,6 +109,7 @@ public partial class SectionHostControl : UserControl
             BuildLabConstraintsList.ItemsSource = Array.Empty<string>();
             BuildLabProvenanceBox.Text = string.Empty;
             BuildLabVariantsList.ItemsSource = Array.Empty<string>();
+            BuildLabCoverageBox.Text = string.Empty;
             BuildLabTimelinesBox.Text = string.Empty;
             BuildLabExportPayloadsBox.Text = string.Empty;
             BuildLabExportTargetsList.ItemsSource = Array.Empty<string>();
@@ -67,6 +126,7 @@ public partial class SectionHostControl : UserControl
         BuildLabVariantsList.ItemsSource = buildLab.Variants
             .Select(BuildVariantLine)
             .ToArray();
+        BuildLabCoverageBox.Text = BuildCoverageText(buildLab);
         BuildLabTimelinesBox.Text = BuildTimelineText(buildLab);
         BuildLabExportPayloadsBox.Text = BuildExportPayloadText(buildLab);
         BuildLabExportTargetsList.ItemsSource = buildLab.ExportTargets
@@ -268,8 +328,79 @@ public partial class SectionHostControl : UserControl
             lines.Add($"Source: {buildLab.SourceDocumentId}");
         }
 
+        if (!string.IsNullOrWhiteSpace(buildLab.NextSafeAction))
+        {
+            lines.Add($"Next safe action: {buildLab.NextSafeAction}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildLab.RuntimeCompatibilitySummary))
+        {
+            lines.Add($"Runtime: {buildLab.RuntimeCompatibilitySummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildLab.CampaignFitSummary))
+        {
+            lines.Add($"Campaign fit: {buildLab.CampaignFitSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildLab.SupportClosureSummary))
+        {
+            lines.Add($"Support: {buildLab.SupportClosureSummary}");
+        }
+
+        if (buildLab.Watchouts is { Count: > 0 })
+        {
+            lines.Add($"Watchouts: {string.Join(" | ", buildLab.Watchouts.Take(3))}");
+        }
+
+        if (HasBuildBlockerReceipt(buildLab))
+        {
+            lines.Add($"Build blocker receipt: {BuildBuildBlockerBadge(buildLab)}");
+            lines.Add($"Rule environment: {buildLab.RulesetId} / {buildLab.BuildMethod}");
+            lines.Add($"Before: {BuildBuildBlockerBefore(buildLab)}");
+            lines.Add($"After: {BuildBuildBlockerAfter(buildLab)}");
+            lines.Add($"Support reuse: {BuildBuildBlockerSupport(buildLab)}");
+        }
+
         return string.Join(Environment.NewLine, lines);
     }
+
+    private static bool HasBuildBlockerReceipt(BuildLabConceptIntakeState buildLab)
+        => !buildLab.CanContinue
+            || !string.IsNullOrWhiteSpace(buildLab.RuntimeCompatibilitySummary)
+            || !string.IsNullOrWhiteSpace(buildLab.SupportClosureSummary)
+            || buildLab.Watchouts is { Count: > 0 }
+            || buildLab.Variants.Any(variant => variant.Warnings.Count > 0);
+
+    private static string BuildBuildBlockerBadge(BuildLabConceptIntakeState buildLab)
+    {
+        int warningCount = buildLab.Variants.Sum(static variant => variant.Warnings.Count)
+            + (buildLab.Watchouts?.Count ?? 0);
+        return warningCount == 0 && buildLab.CanContinue ? "receipt" : $"{warningCount} blocker signal(s)";
+    }
+
+    private static string BuildBuildBlockerBefore(BuildLabConceptIntakeState buildLab)
+    {
+        string summary = FirstNonBlank(
+            buildLab.RuntimeCompatibilitySummary,
+            buildLab.CampaignFitSummary,
+            buildLab.Variants
+                .SelectMany(static variant => variant.Warnings)
+                .Select(static warning => warning.Detail)
+                .FirstOrDefault(),
+            buildLab.Watchouts?.FirstOrDefault());
+
+        return string.IsNullOrWhiteSpace(summary) ? "No blocker was emitted before this build decision." : summary;
+    }
+
+    private static string BuildBuildBlockerAfter(BuildLabConceptIntakeState buildLab)
+        => FirstNonBlank(buildLab.NextSafeAction, buildLab.SupportClosureSummary, buildLab.CanContinue ? "Build can continue with the current receipt." : "Resolve the blocker before handoff.");
+
+    private static string BuildBuildBlockerSupport(BuildLabConceptIntakeState buildLab)
+        => FirstNonBlank(buildLab.SupportClosureSummary, string.IsNullOrWhiteSpace(buildLab.ExplainEntryId) ? "Support can cite the visible blocker receipt." : $"Support can cite explain receipt {buildLab.ExplainEntryId}.");
+
+    private static string FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
 
     private static string BuildVariantLine(BuildLabVariantProjection variant)
     {
@@ -280,6 +411,112 @@ public partial class SectionHostControl : UserControl
             ? string.Empty
             : $" · {string.Join(" · ", variant.Warnings.Select(warning => warning.Label))}";
         return $"{variant.Label} ({variant.TableFit}){metrics}{warnings}";
+    }
+
+    private static string BuildCoverageText(BuildLabConceptIntakeState buildLab)
+    {
+        List<string> lines = [];
+        AppendTeamCoverageLines(lines, buildLab.TeamCoverage);
+
+        int optimizerReadyVariants = 0;
+        foreach (BuildLabVariantProjection variant in buildLab.Variants)
+        {
+            List<string> signals = [];
+
+            string coverageMetrics = string.Join(
+                " · ",
+                variant.Metrics
+                    .Where(IsCoverageMetric)
+                    .Select(metric => $"{metric.Label}: {metric.Value}"));
+            if (!string.IsNullOrWhiteSpace(coverageMetrics))
+            {
+                signals.Add(coverageMetrics);
+            }
+
+            if (variant.OverlapBadges.Count > 0)
+            {
+                signals.Add($"Overlap: {string.Join(" | ", variant.OverlapBadges.Select(badge => badge.Label))}");
+            }
+
+            if (signals.Count == 0)
+            {
+                continue;
+            }
+
+            optimizerReadyVariants++;
+            lines.Add($"{variant.Label}: {string.Join(" · ", signals)}");
+        }
+
+        foreach (BuildLabProgressionTimeline timeline in buildLab.ProgressionTimelines)
+        {
+            BuildLabProgressionStep? strongestCoverageStep = null;
+            foreach (BuildLabProgressionStep step in timeline.Steps)
+            {
+                if (step.Outcomes.Any(IsCoverageMetric))
+                {
+                    strongestCoverageStep = step;
+                }
+            }
+
+            if (strongestCoverageStep is null)
+            {
+                lines.Add($"{timeline.Title}: {timeline.Steps.Count} checkpoint(s) keep the planner ready for handoff.");
+                continue;
+            }
+
+            string coverageOutcomes = string.Join(
+                " | ",
+                strongestCoverageStep.Outcomes
+                    .Where(IsCoverageMetric)
+                    .Select(metric => $"{metric.Label}: {metric.Value}"));
+            lines.Add($"{timeline.Title}: strongest coverage checkpoint at {strongestCoverageStep.KarmaTarget} Karma · {coverageOutcomes}");
+        }
+
+        if (lines.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        lines.Insert(0, $"Planner + team coverage · {optimizerReadyVariants} optimizer-ready variant(s) · {buildLab.ProgressionTimelines.Count} progression timeline(s)");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static void AppendTeamCoverageLines(List<string> lines, BuildLabTeamCoverageProjection? teamCoverage)
+    {
+        if (teamCoverage is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.CoverageSummary))
+        {
+            lines.Add($"Coverage: {teamCoverage.CoverageSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.RolePressureSummary))
+        {
+            lines.Add($"Role pressure: {teamCoverage.RolePressureSummary}");
+        }
+
+        if (teamCoverage.CoveredRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Covered roles: {FormatRoleTags(teamCoverage.CoveredRoleTags)}");
+        }
+
+        if (teamCoverage.MissingRoleTags.Count > 0)
+        {
+            lines.Add($"Missing roles: {FormatRoleTags(teamCoverage.MissingRoleTags)}");
+        }
+
+        if (teamCoverage.DuplicateRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Duplicate roles: {FormatRoleTags(teamCoverage.DuplicateRoleTags)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.ExplainEntryId))
+        {
+            lines.Add($"Explain: {teamCoverage.ExplainEntryId}");
+        }
     }
 
     private static string BuildTimelineText(BuildLabConceptIntakeState buildLab)
@@ -308,6 +545,23 @@ public partial class SectionHostControl : UserControl
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static bool IsCoverageMetric(BuildLabVariantMetric metric)
+    {
+        return metric.Label.Contains("coverage", StringComparison.OrdinalIgnoreCase)
+            || metric.Label.Contains("role", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string FormatRoleTags(IEnumerable<string> roleTags)
+        => string.Join(" | ", roleTags.Select(FormatRoleTag));
+
+    private static string FormatRoleTag(string roleTag)
+    {
+        string normalized = roleTag.Replace('-', ' ').Replace('_', ' ').Trim();
+        return string.IsNullOrWhiteSpace(normalized)
+            ? roleTag
+            : CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
     }
 
     private static string BuildExportPayloadText(BuildLabConceptIntakeState buildLab)
@@ -450,12 +704,201 @@ public partial class SectionHostControl : UserControl
             .Select(day => $"{day.Date}: {day.ItemCount} items · {day.Summary}");
         return "Calendar view" + Environment.NewLine + string.Join(Environment.NewLine, lines);
     }
+
+    private Button CreateQuickActionButton(SectionQuickActionDisplayItem quickAction)
+    {
+        Button button = new()
+        {
+            Name = $"SectionQuickAction_{quickAction.ControlId}",
+            Content = quickAction.Label,
+            Tag = quickAction.ControlId,
+            Margin = new Thickness(0d, 0d, 8d, 0d)
+        };
+        button.Classes.Add("shell-action");
+        button.Classes.Add(quickAction.IsPrimary ? "primary" : "quiet");
+        button.Click += SectionQuickActionButton_OnClick;
+        return button;
+    }
+
+    private void SectionQuickActionButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string controlId })
+        {
+            QuickActionRequested?.Invoke(this, controlId);
+        }
+    }
+
+    private static IReadOnlyList<ClassicSheetFactDisplayItem> BuildCharacterSummaryFacts(string previewJson)
+    {
+        JsonObject? root = TryParseRootObject(previewJson);
+        if (root is null)
+        {
+            return Array.Empty<ClassicSheetFactDisplayItem>();
+        }
+
+        List<ClassicSheetFactDisplayItem> facts = [];
+        AppendFact(facts, "Name", ReadString(root, "name"));
+        AppendFact(facts, "Metatype", ReadString(root, "metatype"));
+        AppendFact(facts, "Role", ReadString(root, "role"));
+        AppendFact(facts, "Priority", ReadString(root, "priority"));
+        AppendFact(facts, "Ruleset", ReadString(root, "ruleset")?.ToUpperInvariant());
+
+        JsonObject? combat = root["combat"] as JsonObject;
+        if (combat is not null)
+        {
+            AppendFact(facts, "Init", ReadString(combat, "initiative"));
+            AppendFact(facts, "Armor", ReadScalar(combat, "armor"));
+            AppendFact(facts, "Essence", ReadScalar(combat, "essence"));
+        }
+
+        return facts;
+    }
+
+    private static IReadOnlyList<ClassicSheetFactDisplayItem> BuildCharacterAttributeFacts(
+        string previewJson,
+        IEnumerable<SectionRowDisplayItem> rows)
+    {
+        JsonObject? root = TryParseRootObject(previewJson);
+        JsonObject? attributes = root?["attributes"] as JsonObject;
+        List<ClassicSheetFactDisplayItem> facts = [];
+
+        if (attributes is not null)
+        {
+            foreach (string key in new[] { "Body", "Agility", "Reaction", "Strength", "Willpower", "Logic", "Intuition", "Charisma", "Edge", "Magic", "Resonance" })
+            {
+                string? value = ReadScalar(attributes, key);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    facts.Add(new ClassicSheetFactDisplayItem(ShortAttributeLabel(key), value));
+                }
+            }
+        }
+
+        if (facts.Count > 0)
+        {
+            return facts;
+        }
+
+        foreach (SectionRowDisplayItem row in rows)
+        {
+            if (!row.Path.StartsWith("attributes.", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string attributeName = row.Path["attributes.".Length..];
+            facts.Add(new ClassicSheetFactDisplayItem(ShortAttributeLabel(attributeName), row.DisplayValue));
+        }
+
+        return facts;
+    }
+
+    private static JsonObject? TryParseRootObject(string previewJson)
+    {
+        if (string.IsNullOrWhiteSpace(previewJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonNode.Parse(previewJson) as JsonObject;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void AppendFact(List<ClassicSheetFactDisplayItem> facts, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            facts.Add(new ClassicSheetFactDisplayItem(label, value));
+        }
+    }
+
+    private static string? ReadString(JsonObject source, string propertyName)
+        => source.TryGetPropertyValue(propertyName, out JsonNode? node)
+            ? SanitizeJsonValue(node)
+            : null;
+
+    private static string? ReadScalar(JsonObject source, string propertyName)
+        => source.TryGetPropertyValue(propertyName, out JsonNode? node)
+            ? SanitizeJsonValue(node)
+            : null;
+
+    private static string SanitizeJsonValue(JsonNode? node)
+    {
+        if (node is null)
+        {
+            return string.Empty;
+        }
+
+        string raw = node.ToJsonString();
+        if (raw.Length >= 2 && raw[0] == '"' && raw[^1] == '"')
+        {
+            return raw[1..^1];
+        }
+
+        return raw;
+    }
+
+    private static string ShortAttributeLabel(string attributeName)
+        => attributeName.Trim().ToLowerInvariant() switch
+        {
+            "body" => "BOD",
+            "agility" => "AGI",
+            "reaction" => "REA",
+            "strength" => "STR",
+            "willpower" => "WIL",
+            "logic" => "LOG",
+            "intuition" => "INT",
+            "charisma" => "CHA",
+            "edge" => "EDG",
+            "magic" => "MAG",
+            "resonance" => "RES",
+            _ => attributeName.Length <= 3 ? attributeName.ToUpperInvariant() : attributeName[..Math.Min(3, attributeName.Length)].ToUpperInvariant()
+        };
+
+    private static Control CreateClassicFactCard(ClassicSheetFactDisplayItem fact, bool emphasizeValue)
+    {
+        Border card = new()
+        {
+            Margin = new Thickness(0d, 0d, 6d, 6d),
+            Padding = new Thickness(6d, 4d),
+            MinWidth = emphasizeValue ? 54d : 112d,
+            Background = new SolidColorBrush(Color.Parse("#FFFDFDFB")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#FFB7C2CF")),
+            BorderThickness = new Thickness(1d)
+        };
+
+        StackPanel stack = new()
+        {
+            Spacing = 1d
+        };
+        stack.Children.Add(new TextBlock
+        {
+            Text = fact.Label,
+            FontSize = 11d
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = fact.Value,
+            FontSize = emphasizeValue ? 18d : 14d,
+            FontWeight = FontWeight.SemiBold
+        });
+        card.Child = stack;
+        return card;
+    }
 }
 
 public sealed record SectionHostState(
+    string? SectionId,
     string Notice,
     string PreviewJson,
     SectionRowDisplayItem[] Rows,
+    SectionQuickActionDisplayItem[] QuickActions,
     BuildLabConceptIntakeState? BuildLab,
     BrowseWorkspaceState? BrowseWorkspace,
     ContactRelationshipGraphState? ContactGraph,
@@ -464,9 +907,34 @@ public sealed record SectionHostState(
 
 public sealed record SectionRowDisplayItem(string Path, string Value)
 {
+    public string DisplayPath => BuildDisplayPath(Path);
+    public string DisplayValue => SanitizeValue(Value);
+
     public override string ToString()
     {
         return $"{Path} = {Value}";
+    }
+
+    private static string BuildDisplayPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return "(value)";
+        }
+
+        return path.Replace('.', ' ');
+    }
+
+    private static string SanitizeValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        return value.Length >= 2 && value[0] == '"' && value[^1] == '"'
+            ? value[1..^1]
+            : value;
     }
 }
 
@@ -477,3 +945,7 @@ public sealed record BrowseResultDisplayItem(string ItemId, string Label)
         return Label;
     }
 }
+
+public sealed record SectionQuickActionDisplayItem(string ControlId, string Label, bool IsPrimary);
+
+public sealed record ClassicSheetFactDisplayItem(string Label, string Value);

@@ -3,7 +3,9 @@ using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
+using Chummer.Presentation.UiKit;
 using System.Text.Json;
 
 namespace Chummer.Avalonia;
@@ -15,39 +17,45 @@ internal static class MainWindowShellFrameProjector
         ShellSurfaceState shellSurface,
         ICommandAvailabilityEvaluator commandAvailabilityEvaluator)
     {
-        ActiveWorkspaceContext workspaceContext = ResolveActiveWorkspaceContext(shellSurface);
+        string language = DesktopLocalizationCatalog.NormalizeOrDefault(state.Preferences.Language);
+        OpenWorkspaceState[] resolvedOpenWorkspaces = ResolveOpenWorkspaces(state, shellSurface);
+        ActiveWorkspaceContext workspaceContext = ResolveActiveWorkspaceContext(state, shellSurface, resolvedOpenWorkspaces);
         IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById = BuildWorkspaceActionLookup(shellSurface.WorkspaceActions);
         CommandPaletteItem[] commands = ProjectCommands(state, shellSurface, commandAvailabilityEvaluator);
+        NavigatorTabItem[] navigationTabs = ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator);
 
         return new MainWindowShellFrame(
             HeaderState: new MainWindowHeaderState(
                 ToolStrip: new ToolStripState(
-                    BuildToolStripStatusText(state, shellSurface, workspaceContext)),
+                    BuildToolStripStatusText(state, shellSurface, workspaceContext, language)),
                 MenuBar: new MenuBarState(
                     OpenMenuId: shellSurface.OpenMenuId,
                     KnownMenuIds: shellSurface.MenuRoots.Select(menu => menu.Id).ToArray(),
+                    OpenMenuCommands: ProjectMenuCommands(state, shellSurface, commandAvailabilityEvaluator),
+                    MenuCommandsByMenuId: ProjectMenuCommandGroups(state, shellSurface, commandAvailabilityEvaluator),
                     IsBusy: state.IsBusy)),
             ChromeState: new MainWindowChromeState(
                 WorkspaceStrip: new WorkspaceStripState(
-                    $"Workspace: {(workspaceContext.ActiveWorkspaceId?.Value ?? "none")} (open: {workspaceContext.OpenWorkspaceCount}, {workspaceContext.ActiveWorkspaceSaveStatus})"),
+                    BuildWorkspaceStripText(workspaceContext, language),
+                    ShowQuickStartAction: false),
                 SummaryHeader: new SummaryHeaderState(
-                    Name: state.Profile?.Name,
-                    Alias: state.Profile?.Alias,
-                    Karma: state.Progress?.Karma.ToString(),
-                    Skills: state.Skills?.Count.ToString(),
-                    RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime),
-                    CanInspectRuntime: shellSurface.ActiveRuntime is not null),
+                    NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
+                    NavigationTabs: navigationTabs,
+                    ActiveTabId: shellSurface.ActiveTabId,
+                    RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId)),
                 StatusStrip: new StatusStripState(
-                    CharacterState: $"Character: {(workspaceContext.ActiveWorkspaceId is null ? "none" : "loaded")}",
-                    ServiceState: $"Service: {(shellSurface.Error is null ? "online" : "error")}",
-                    TimeState: $"Time: {DateTimeOffset.UtcNow:u}",
+                    CharacterState: BuildCharacterStateText(workspaceContext, language),
+                    ServiceState: BuildServiceStateText(shellSurface, language),
+                    TimeState: DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.shell.status.time", language, DateTimeOffset.UtcNow.ToString("u")),
                     ComplianceState: ShellStatusTextFormatter.BuildComplianceState(shellSurface, state.Preferences))),
             SectionHostState: new SectionHostState(
-                Notice: $"Notice: {(shellSurface.Notice ?? "Ready.")}",
+                SectionId: state.ActiveSectionId,
+                Notice: BuildSectionNotice(state, shellSurface),
                 PreviewJson: state.ActiveSectionJson ?? string.Empty,
                 Rows: state.ActiveSectionRows
                     .Select(row => new SectionRowDisplayItem(row.Path, row.Value))
                     .ToArray(),
+                QuickActions: ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId),
                 BuildLab: state.ActiveBuildLab,
                 BrowseWorkspace: state.ActiveBrowseWorkspace,
                 ContactGraph: BuildContactGraph(state),
@@ -55,40 +63,160 @@ internal static class MainWindowShellFrameProjector
                 NpcPersonaStudio: state.ActiveNpcPersonaStudio),
             CommandDialogPaneState: ProjectCommandDialogState(state, commands, shellSurface.LastCommandId),
             NavigatorPaneState: new NavigatorPaneState(
+                OpenWorkspacesHeading: RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(shellSurface.ActiveRulesetId),
                 OpenWorkspaces: ProjectOpenWorkspaces(state, shellSurface),
                 SelectedWorkspaceId: shellSurface.ActiveWorkspaceId?.Value,
-                NavigationTabs: ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator),
+                NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
+                NavigationTabs: navigationTabs,
                 ActiveTabId: shellSurface.ActiveTabId,
+                SectionActionsHeading: RulesetUiDirectiveCatalog.BuildSectionActionsHeading(shellSurface.ActiveRulesetId),
                 SectionActions: ProjectSectionActions(shellSurface),
                 ActiveActionId: state.ActiveActionId,
+                WorkflowSurfacesHeading: RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(shellSurface.ActiveRulesetId),
                 WorkflowSurfaces: ProjectWorkflowSurfaces(shellSurface)),
             WorkspaceActionsById: workspaceActionsById);
     }
 
+    private static string BuildSectionNotice(CharacterOverviewState state, ShellSurfaceState shellSurface)
+    {
+        List<string> lines =
+        [
+            $"Notice: {(shellSurface.Notice ?? "Ready.")}",
+            RulesetUiDirectiveCatalog.BuildSectionNotice(
+                rulesetId: shellSurface.ActiveRulesetId,
+                sectionId: state.ActiveSectionId,
+                actionId: state.ActiveActionId,
+                activeRuntime: shellSurface.ActiveRuntime)
+        ];
+
+        WorkspacePortabilityActivity? portability = state.LatestPortabilityActivity;
+        if (portability is null)
+        {
+            return string.Join(
+                Environment.NewLine,
+                lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
+        }
+
+        lines.Add($"{portability.Title}: {portability.Receipt.ReceiptSummary}");
+        lines.Add($"Context: {portability.Receipt.ContextSummary}");
+        lines.Add($"Import environment before: {BuildImportDiffBefore(portability.Receipt)}");
+        lines.Add($"Import environment after: {BuildImportDiffAfter(portability.Receipt)}");
+        lines.Add($"Import explain receipt: {portability.Receipt.ProvenanceSummary}");
+        lines.Add($"Next safe action: {portability.Receipt.NextSafeAction}");
+        lines.Add($"Support reuse: {BuildImportSupportReuse(portability.Receipt)}");
+
+        if (portability.Receipt.SupportedExchangeModes.Count > 0)
+        {
+            lines.Add($"Exchange modes: {string.Join(", ", portability.Receipt.SupportedExchangeModes)}");
+        }
+
+        string? watchout = portability.Receipt.Notes
+            .FirstOrDefault(note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase))
+            ?.Summary;
+        if (!string.IsNullOrWhiteSpace(watchout))
+        {
+            lines.Add($"Watchout: {watchout}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildImportDiffBefore(WorkspacePortabilityReceipt receipt)
+        => string.IsNullOrWhiteSpace(receipt.ContextSummary)
+            ? $"Incoming {receipt.FormatId} payload before workspace merge."
+            : receipt.ContextSummary;
+
+    private static string BuildImportDiffAfter(WorkspacePortabilityReceipt receipt)
+    {
+        string? watchout = receipt.Notes
+            .FirstOrDefault(note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase))
+            ?.Summary;
+
+        return string.IsNullOrWhiteSpace(watchout)
+            ? receipt.NextSafeAction
+            : $"{receipt.NextSafeAction} Diff signal: {watchout}";
+    }
+
+    private static string BuildImportSupportReuse(WorkspacePortabilityReceipt receipt)
+        => string.IsNullOrWhiteSpace(receipt.PayloadSha256)
+            ? receipt.ProvenanceSummary
+            : $"Support can cite payload {receipt.PayloadSha256} with {receipt.CompatibilityState} compatibility.";
+
     private static string BuildToolStripStatusText(
         CharacterOverviewState state,
         ShellSurfaceState shellSurface,
-        ActiveWorkspaceContext workspaceContext)
+        ActiveWorkspaceContext workspaceContext,
+        string language)
     {
         if (shellSurface.Error is not null)
         {
-            return $"State: error - {shellSurface.Error}";
+            return DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.shell.state.error", language, shellSurface.Error);
         }
 
-        return $"State: {(state.IsBusy ? "busy" : "ready")}, workspace={(workspaceContext.ActiveWorkspaceId?.Value ?? "none")}, open={workspaceContext.OpenWorkspaceCount}, saved={state.HasSavedWorkspace}, last-command={(shellSurface.LastCommandId ?? "none")}";
+        return DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.state.snapshot",
+            language,
+            DesktopLocalizationCatalog.GetRequiredString(
+                state.IsBusy ? "desktop.shell.state.value.busy" : "desktop.shell.state.value.ready",
+                language),
+            workspaceContext.ActiveWorkspaceId?.Value ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language),
+            workspaceContext.OpenWorkspaceCount,
+            state.HasSavedWorkspace
+                ? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.saved", language)
+                : DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.unsaved", language),
+            shellSurface.LastCommandId ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language));
     }
 
-    private static ActiveWorkspaceContext ResolveActiveWorkspaceContext(ShellSurfaceState shellSurface)
+    private static string BuildWorkspaceStripText(ActiveWorkspaceContext workspaceContext, string language)
+        => DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.workspace_strip.summary",
+            language,
+            workspaceContext.ActiveWorkspaceId?.Value ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language),
+            workspaceContext.OpenWorkspaceCount,
+            LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language));
+
+    private static string BuildCharacterStateText(ActiveWorkspaceContext workspaceContext, string language)
+        => DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.status.character",
+            language,
+            DesktopLocalizationCatalog.GetRequiredString(
+                workspaceContext.ActiveWorkspaceId is null
+                    ? "desktop.shell.value.none"
+                    : "desktop.shell.state.value.loaded",
+                language));
+
+    private static string BuildServiceStateText(ShellSurfaceState shellSurface, string language)
+        => DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.status.service",
+            language,
+            DesktopLocalizationCatalog.GetRequiredString(
+                shellSurface.Error is null
+                    ? "desktop.shell.state.value.online"
+                    : "desktop.shell.state.value.error",
+                language));
+
+    private static ActiveWorkspaceContext ResolveActiveWorkspaceContext(
+        CharacterOverviewState overviewState,
+        ShellSurfaceState shellSurface,
+        IReadOnlyList<OpenWorkspaceState> openWorkspaces)
     {
-        int openWorkspaceCount = shellSurface.OpenWorkspaces.Count;
+        int openWorkspaceCount = openWorkspaces.Count;
         CharacterWorkspaceId? activeWorkspaceId = shellSurface.ActiveWorkspaceId;
-        OpenWorkspaceState? activeWorkspace = shellSurface.OpenWorkspaces
+        OpenWorkspaceState? activeWorkspace = openWorkspaces
             .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, activeWorkspaceId?.Value, StringComparison.Ordinal));
         string activeWorkspaceSaveStatus = activeWorkspace is null
             ? "n/a"
             : activeWorkspace.HasSavedWorkspace ? "saved" : "unsaved";
         return new ActiveWorkspaceContext(activeWorkspaceId, openWorkspaceCount, activeWorkspaceSaveStatus);
     }
+
+    private static string LocalizeSaveStatus(string saveStatus, string language)
+        => saveStatus switch
+        {
+            "saved" => DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.saved", language),
+            "unsaved" => DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.unsaved", language),
+            _ => DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.na", language)
+        };
 
     private static CommandPaletteItem[] ProjectCommands(
         CharacterOverviewState state,
@@ -105,21 +233,86 @@ internal static class MainWindowShellFrameProjector
         return visibleCommands
             .Select(command => new CommandPaletteItem(
                 command.Id,
+                ShellChromeBoundary.FormatCommandLabel(command.Id),
                 command.Group,
                 commandAvailabilityEvaluator.IsCommandEnabled(command, state)))
             .ToArray();
     }
 
+    private static MenuCommandItem[] ProjectMenuCommands(
+        CharacterOverviewState state,
+        ShellSurfaceState shellSurface,
+        ICommandAvailabilityEvaluator commandAvailabilityEvaluator)
+    {
+        if (string.IsNullOrWhiteSpace(shellSurface.OpenMenuId))
+        {
+            return Array.Empty<MenuCommandItem>();
+        }
+
+        return shellSurface.Commands
+            .Where(command => string.Equals(command.Group, shellSurface.OpenMenuId, StringComparison.Ordinal))
+            .Select(command => new MenuCommandItem(
+                command.Id,
+                ShellChromeBoundary.FormatCommandLabel(command.Id),
+                commandAvailabilityEvaluator.IsCommandEnabled(command, state),
+                IsPrimary: string.Equals(command.Id, "open_character", StringComparison.Ordinal)
+                    || string.Equals(command.Id, "save_character", StringComparison.Ordinal)))
+            .ToArray();
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<MenuCommandItem>> ProjectMenuCommandGroups(
+        CharacterOverviewState state,
+        ShellSurfaceState shellSurface,
+        ICommandAvailabilityEvaluator commandAvailabilityEvaluator)
+    {
+        return shellSurface.MenuRoots
+            .Select(menu => menu.Id)
+            .Distinct(StringComparer.Ordinal)
+            .ToDictionary(
+                menuId => menuId,
+                menuId => (IReadOnlyList<MenuCommandItem>)shellSurface.Commands
+                    .Where(command => string.Equals(command.Group, menuId, StringComparison.Ordinal))
+                    .Select(command => new MenuCommandItem(
+                        command.Id,
+                        ShellChromeBoundary.FormatCommandLabel(command.Id),
+                        commandAvailabilityEvaluator.IsCommandEnabled(command, state),
+                        IsPrimary: string.Equals(command.Id, "open_character", StringComparison.Ordinal)
+                            || string.Equals(command.Id, "save_character", StringComparison.Ordinal)))
+                    .ToArray(),
+                StringComparer.Ordinal);
+    }
+
     private static NavigatorWorkspaceItem[] ProjectOpenWorkspaces(CharacterOverviewState state, ShellSurfaceState shellSurface)
     {
-        return shellSurface.OpenWorkspaces
+        return ResolveOpenWorkspaces(state, shellSurface)
             .Select(workspace => new NavigatorWorkspaceItem(
                 workspace.Id.Value,
                 workspace.Name,
                 workspace.Alias,
+                workspace.RulesetId,
                 workspace.HasSavedWorkspace,
                 Enabled: !state.IsBusy))
             .ToArray();
+    }
+
+    private static SectionQuickActionDisplayItem[] ProjectSectionQuickActions(string? rulesetId, string? sectionId)
+    {
+        return SectionQuickActionCatalog.ForSection(rulesetId, sectionId)
+            .Select(action => new SectionQuickActionDisplayItem(action.ControlId, action.Label, action.IsPrimary))
+            .ToArray();
+    }
+
+    private static OpenWorkspaceState[] ResolveOpenWorkspaces(CharacterOverviewState overviewState, ShellSurfaceState shellSurface)
+    {
+        if (shellSurface.OpenWorkspaces.Count > 0)
+        {
+            return shellSurface.OpenWorkspaces.ToArray();
+        }
+
+        IReadOnlyList<OpenWorkspaceState> overviewOpenWorkspaces = overviewState.Session.OpenWorkspaces.Count > 0
+            ? overviewState.Session.OpenWorkspaces
+            : overviewState.OpenWorkspaces;
+        return overviewOpenWorkspaces.ToArray();
     }
 
     private static NavigatorTabItem[] ProjectNavigationTabs(
@@ -130,7 +323,7 @@ internal static class MainWindowShellFrameProjector
         return shellSurface.NavigationTabs
             .Select(tab => new NavigatorTabItem(
                 tab.Id,
-                tab.Label,
+                RulesetUiDirectiveCatalog.FormatNavigationTabLabel(tab.RulesetId, tab.Id, tab.Label),
                 tab.SectionId,
                 tab.Group,
                 commandAvailabilityEvaluator.IsNavigationTabEnabled(tab, state)))
@@ -142,7 +335,7 @@ internal static class MainWindowShellFrameProjector
         return shellSurface.WorkspaceActions
             .Select(action => new NavigatorSectionActionItem(
                 action.Id,
-                action.Label,
+                RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(action.RulesetId, action.Id, action.TargetId, action.Label),
                 action.Kind))
             .ToArray();
     }
@@ -153,7 +346,7 @@ internal static class MainWindowShellFrameProjector
             .Select(surface => new NavigatorWorkflowSurfaceItem(
                 surface.SurfaceId,
                 surface.WorkflowId,
-                surface.Label,
+                RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(shellSurface.ActiveRulesetId, surface.ActionId, surface.Label),
                 surface.ActionId))
             .ToArray();
     }
@@ -175,7 +368,14 @@ internal static class MainWindowShellFrameProjector
         }
 
         DialogFieldDisplayItem[] fields = state.ActiveDialog.Fields
-            .Select(field => new DialogFieldDisplayItem(field.Id, field.Label, field.Value))
+            .Select(field => new DialogFieldDisplayItem(
+                field.Id,
+                field.Label,
+                field.Value,
+                field.Placeholder,
+                field.IsMultiline,
+                field.IsReadOnly,
+                field.InputType))
             .ToArray();
         DialogActionDisplayItem[] actions = state.ActiveDialog.Actions
             .Select(action => new DialogActionDisplayItem(action.Id, action.Label, action.IsPrimary))

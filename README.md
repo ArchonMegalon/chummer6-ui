@@ -22,6 +22,11 @@ This repo does not own:
 
 The shipped play/mobile heads now live outside this repo in `chummer6-mobile`, and shared UI-kit primitives belong in `Chummer.Ui.Kit`.
 
+Legacy head policy: `Chummer` and `Chummer.Web` are oracle/parity assets only.
+Net-new user-facing behavior belongs in the shared seam and active heads; legacy changes must be limited to regression-oracle maintenance, parity extraction, or compatibility verification.
+Legacy hub policy: `ChummerHub` and `ChummerHub.Client` are archived compatibility assets only.
+They are not part of the active solution, public runtime, or future ChummerHub product path; all public-edge and hub work belongs behind `Chummer.Portal`.
+
 ## Current mission
 
 The work here is purification:
@@ -54,8 +59,13 @@ Legacy root `chummer-presentation.design*.md` files remain only as compatibility
 
 ## Verification
 
-Run:
+Run repo-local restore/build/test flows through the package-plane helpers so shared contracts resolve through published feeds or an explicit compatibility tree, instead of ambient sibling-project auto-detection:
 
 ```bash
+bash scripts/ai/restore.sh Chummer.Tests/Chummer.Tests.csproj -p:TargetFramework=net10.0
+bash scripts/ai/build.sh Chummer.Blazor/Chummer.Blazor.csproj
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj -f net10.0 -p:TargetFramework=net10.0
 bash scripts/ai/verify.sh
 ```
+
+If you intentionally want the mounted sibling compatibility tree instead of the local package feed, pass `-p:ChummerUseLocalCompatibilityTree=true` explicitly.

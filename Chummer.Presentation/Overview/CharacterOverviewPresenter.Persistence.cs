@@ -229,7 +229,10 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveDialog = null,
                 IsBusy = false,
                 Error = null,
-                Notice = $"Export prepared: {result.Receipt.FileName} ({result.Receipt.DocumentLength} bytes).",
+                LatestPortabilityActivity = result.Receipt.Portability is null
+                    ? null
+                    : new WorkspacePortabilityActivity("Last portable export", result.Receipt.Portability),
+                Notice = BuildExportNotice(result.Receipt),
                 PendingDownload = null,
                 PendingExport = result.Receipt,
                 PendingExportVersion = State.PendingExportVersion + 1,
@@ -247,6 +250,16 @@ public sealed partial class CharacterOverviewPresenter
                 PendingPrint = null
             });
         }
+    }
+
+    private static string BuildExportNotice(WorkspaceExportReceipt receipt)
+    {
+        if (receipt.Portability is { } portability)
+        {
+            return $"Portable export prepared: {receipt.FileName} ({receipt.DocumentLength} bytes). {portability.ReceiptSummary}";
+        }
+
+        return $"Export prepared: {receipt.FileName} ({receipt.DocumentLength} bytes).";
     }
 
     public async Task PrintAsync(CancellationToken ct)

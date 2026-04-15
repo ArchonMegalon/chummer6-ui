@@ -9,6 +9,7 @@ Principle: **one shell contract, one behavior path, two renderers**.
 
 Finish migration execution without re-architecting again. Keep existing seams (`Api`, `Application`, `Contracts`, `Infrastructure`, `Presentation`) and drive parity through shared presenter behavior used by both `Chummer.Blazor` and `Chummer.Avalonia`.
 Current runtime registration remains explicit: default headless/desktop/web paths register SR5 and SR6, while `Chummer.Rulesets.Sr4` remains scaffolded/experimental and is not yet part of the default runtime path.
+The UI-side ruleset adaptation lane is now published in `docs/RULESET_UI_DIRECTIVE.md`.
 
 ## Guardrails (Non-Negotiable)
 
@@ -217,8 +218,9 @@ Acceptance criteria: workspace lifecycle policy (retention, cleanup, recovery) i
 - [ ] `MIG-094` Publish first-class release artifacts for API, Blazor, and Avalonia.
 Acceptance criteria: CI produces versioned, reproducible deliverables for all active heads and documents deployment procedures.
 
-- [ ] `MIG-095` Add benchmark guardrails for import/section/save paths.
+- [x] `MIG-095` Add benchmark guardrails for import/section/save paths.
 Acceptance criteria: `Chummer.Benchmarks` includes migration-critical workloads with performance budgets checked in CI.
+Progress: benchmark ownership stays in `../chummer-core-engine/Chummer.Benchmarks`, where `workspace.import.bastion`, `workspace.section.skills.bastion`, and `workspace.save.bastion` now run against explicit budgets in CI via `.github/workflows/benchmark-guardrails.yml`; this repo treats its retained `Chummer.Benchmarks/` root as compatibility cargo instead of duplicating the owner-repo benchmark surface.
 
 ### Phase 10: Public portal and tunnel gateway
 

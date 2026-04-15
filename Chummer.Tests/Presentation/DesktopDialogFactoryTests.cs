@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Rulesets;
@@ -38,6 +39,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("neo", DesktopDialogFieldValueParser.GetValue(dialog, "globalTheme"));
         Assert.AreEqual("de-de", DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalCompactMode"));
+        StringAssert.Contains(dialog.Message ?? string.Empty, "Phase-1 desktop language changes apply on restart.");
     }
 
     [TestMethod]
@@ -85,6 +87,172 @@ public class DesktopDialogFactoryTests
         Assert.IsNotNull(gearAddDialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "add", StringComparison.Ordinal)));
         Assert.IsNotNull(gearEditDialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)));
         Assert.IsNotNull(gearDeleteDialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_translator_lists_locked_shipping_locales()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "translator",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null);
+
+        CollectionAssert.AreEquivalent(
+            DesktopLocalizationCatalog.ShippingLanguages.Select(language => language.Code).ToArray(),
+            dialog.Fields.Where(field => field.Id.StartsWith("lang", StringComparison.Ordinal)).Select(field => field.Value).ToArray());
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_master_index_surfaces_sourcebook_and_parity_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "master_index",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null,
+            masterIndex: CreateMasterIndexResponse());
+
+        Assert.AreEqual("dialog.master_index", dialog.Id);
+        Assert.AreEqual("12", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourcebooks"));
+        Assert.AreEqual("67% (8/12)", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexReferenceCoverage"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSettingsLane"));
+        Assert.AreEqual("all sourcebooks expose governed PDF/URL/site-snapshot references.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexReferenceSourceReceipt"));
+        Assert.AreEqual("sourcebook selection is governed by 24 toggles across 12 sourcebooks (67% coverage).", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceSelectionReceipt"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceSelectionSummary"), "2 sourcebooks");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourcebook1"), "Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourcebook2"), "Street Wyrd");
+        Assert.AreEqual("custom-data authoring is partial: 2 configured custom-data directories with stale overlay bridge posture.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCustomDataAuthoringReceipt"));
+        Assert.AreEqual("xml bridge is governed: 2 enabled data overlays expose XML payloads.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexXmlBridgeReceipt"));
+        Assert.AreEqual("translator lane is governed: 6 translator corpus files and 3 enabled language overlays.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexTranslatorReceipt"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleLane"), "75%");
+        Assert.AreEqual("import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleReceipt"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleMatrix"), "Chummer4 fixtures 18");
+        Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleMissingSources"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexAdjacentSr6OracleLane"), "1/2");
+        Assert.AreEqual("adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexAdjacentSr6OracleReceipt"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageLane"), "50%");
+        Assert.AreEqual("50% (1/2)", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageCoverage"));
+        Assert.AreEqual("online storage lane is partial: 1/2 continuity receipts are current with stale release proof on one required host lane.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageReceipt"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6SupplementLane"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6DesignerToolsLane"));
+        Assert.AreEqual("4/5", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6DesignerCoverage"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexHouseRuleLane"));
+        Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexHouseRuleOverlayCount"));
+        Assert.AreEqual("sr6 successor lane is partial: supplement/governed designers/house-rule posture remains mixed.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6SuccessorReceipt"));
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_character_settings_surfaces_rules_environment_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "character_settings",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null,
+            masterIndex: CreateMasterIndexResponse());
+
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "characterSettingsLanePosture"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "characterSourceToggleLanePosture"));
+        Assert.AreEqual("67% (24 toggles)", DesktopDialogFieldValueParser.GetValue(dialog, "characterSourceToggleCoverage"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "characterCustomDataLanePosture"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "characterXmlBridgePosture"));
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_translator_prefers_catalog_languages_and_surfaces_lane_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "translator",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null,
+            masterIndex: CreateMasterIndexResponse(),
+            translatorLanguages: new TranslatorLanguagesResponse(
+                Count: 2,
+                Languages:
+                [
+                    new TranslatorLanguageEntry("en-us", "English"),
+                    new TranslatorLanguageEntry("de-de", "Deutsch")
+                ],
+                TranslatorBridgePosture: "governed",
+                EnabledLanguageOverlayCount: 3));
+
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "translatorLanePosture"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "translatorBridgePosture"));
+        Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(dialog, "translatorOverlayCount"));
+        CollectionAssert.AreEquivalent(
+            new[] { "en-us", "de-de" },
+            dialog.Fields.Where(field => field.Id.StartsWith("lang", StringComparison.Ordinal)).Select(field => field.Value).ToArray());
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_dice_roller_surfaces_initiative_preview_and_roster_context()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "dice_roller",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: new CharacterWorkspaceId("ws-2"),
+            rulesetId: RulesetDefaults.Sr5,
+            openWorkspaces:
+            [
+                new OpenWorkspaceState(new CharacterWorkspaceId("ws-1"), "Apex", "APX", DateTimeOffset.Parse("2026-04-04T11:00:00+00:00"), RulesetDefaults.Sr5, true),
+                new OpenWorkspaceState(new CharacterWorkspaceId("ws-2"), "Ghost", "GST", DateTimeOffset.Parse("2026-04-04T12:00:00+00:00"), RulesetDefaults.Sr6, false)
+            ]);
+
+        Assert.AreEqual("dialog.dice_roller", dialog.Id);
+        Assert.AreEqual("ruleset-backed roll + initiative preview", DesktopDialogFieldValueParser.GetValue(dialog, "diceUtilityLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "2 open runners");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "active ws-2");
+        Assert.AreEqual("10 + 1d6 · pass 1 · range 11-16 · avg 13.5", DesktopDialogFieldValueParser.GetValue(dialog, "initiativePreview"));
+        Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "derive_initiative", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_character_roster_summarizes_open_workspaces()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "character_roster",
+            profile: CreateProfile("Fallback Runner", "FALL"),
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: new CharacterWorkspaceId("ws-2"),
+            rulesetId: RulesetDefaults.Sr5,
+            openWorkspaces:
+            [
+                new OpenWorkspaceState(new CharacterWorkspaceId("ws-1"), "Apex", "APX", DateTimeOffset.Parse("2026-04-04T11:00:00+00:00"), RulesetDefaults.Sr5, true),
+                new OpenWorkspaceState(new CharacterWorkspaceId("ws-2"), "Ghost", "GST", DateTimeOffset.Parse("2026-04-04T12:00:00+00:00"), RulesetDefaults.Sr6, false)
+            ]);
+
+        Assert.AreEqual("dialog.character_roster", dialog.Id);
+        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(dialog, "rosterOpenCount"));
+        Assert.AreEqual("1", DesktopDialogFieldValueParser.GetValue(dialog, "rosterSavedCount"));
+        Assert.AreEqual("sr6, sr5", DesktopDialogFieldValueParser.GetValue(dialog, "rosterRulesetMix"));
+        Assert.AreEqual("ws-2", DesktopDialogFieldValueParser.GetValue(dialog, "rosterActiveWorkspace"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "GST · Ghost · unsaved · sr6");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "APX · Apex · saved · sr5");
     }
 
     [TestMethod]
@@ -360,5 +528,89 @@ public class DesktopDialogFactoryTests
             AI: false,
             MainMugshotIndex: 0,
             MugshotCount: 0);
+    }
+
+    private static MasterIndexResponse CreateMasterIndexResponse()
+    {
+        return new MasterIndexResponse(
+            Count: 4,
+            GeneratedUtc: DateTimeOffset.UtcNow,
+            Files: [],
+            ReferenceLanePosture: "governed",
+            SourcebookCount: 12,
+            Sourcebooks:
+            [
+                new MasterIndexSourcebookEntry(
+                    Id: "core-rulebook",
+                    Code: "CRB",
+                    Name: "Core Rulebook",
+                    Permanent: true,
+                    ReferencePosture: "governed",
+                    RuleSnippetCount: 16,
+                    RuleSnippets: [],
+                    ReferenceSourcePosture: "governed",
+                    LocalPdfPath: "/books/core-rulebook.pdf",
+                    ReferenceUrl: "https://example.test/core-rulebook"),
+                new MasterIndexSourcebookEntry(
+                    Id: "street-wyrd",
+                    Code: "SW",
+                    Name: "Street Wyrd",
+                    Permanent: false,
+                    ReferencePosture: "stale",
+                    RuleSnippetCount: 6,
+                    RuleSnippets: [],
+                    ReferenceSourcePosture: "stale",
+                    ReferenceSnapshot: "https://example.test/snapshots/street-wyrd")
+            ],
+            ReferenceCoveragePercent: 67,
+            SourcebooksWithSnippets: 8,
+            ReferenceSourceLanePosture: "governed",
+            SourcebooksWithGovernedReferenceSources: 9,
+            SourcebooksWithStaleReferenceSources: 2,
+            SourcebooksMissingReferenceSources: 1,
+            ReferenceSourceLaneReceipt: "all sourcebooks expose governed PDF/URL/site-snapshot references.",
+            SettingsLanePosture: "governed",
+            SettingsProfileCount: 6,
+            SettingsProfilesWithSourceToggles: 5,
+            DistinctSourcebookToggles: 24,
+            SourceToggleLanePosture: "governed",
+            SourceSelectionLaneReceipt: "sourcebook selection is governed by 24 toggles across 12 sourcebooks (67% coverage).",
+            SourcebookToggleCoveragePercent: 67,
+            CustomDataLanePosture: "partial",
+            CustomDataAuthoringLaneReceipt: "custom-data authoring is partial: 2 configured custom-data directories with stale overlay bridge posture.",
+            XmlBridgePosture: "governed",
+            XmlBridgeLaneReceipt: "xml bridge is governed: 2 enabled data overlays expose XML payloads.",
+            TranslatorLanePosture: "governed",
+            TranslatorLaneReceipt: "translator lane is governed: 6 translator corpus files and 3 enabled language overlays.",
+            TranslatorBridgePosture: "governed",
+            TranslatorLanguageCount: 6,
+            EnabledLanguageOverlayCount: 3,
+            OnlineStorageLanePosture: "partial",
+            OnlineStorageReceiptPosture: "stale",
+            OnlineStorageLaneReceipt: "online storage lane is partial: 1/2 continuity receipts are current with stale release proof on one required host lane.",
+            OnlineStorageReceiptsCovered: 1,
+            OnlineStorageReceiptsExpected: 2,
+            OnlineStorageCoveragePercent: 50,
+            ImportOracleLanePosture: "partial",
+            ImportOracleReceiptPosture: "stale",
+            LegacyChummer4FixtureCount: 18,
+            LegacyChummer5FixtureCount: 31,
+            HeroLabFixtureCount: 0,
+            AdjacentSr6OracleReceiptPosture: "partial",
+            AdjacentSr6OracleSourcesCovered: 1,
+            AdjacentSr6OracleSourcesExpected: 2,
+            ImportOracleSourcesCovered: 3,
+            ImportOracleSourcesExpected: 4,
+            ImportOracleCoveragePercent: 75,
+            ImportOracleMissingSources: ["Hero Lab"],
+            ImportOracleLaneReceipt: "import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.",
+            AdjacentSr6OracleLaneReceipt: "adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.",
+            Sr6SupplementLanePosture: "partial",
+            Sr6DesignerToolsPosture: "partial",
+            Sr6DesignerFamiliesAvailable: 4,
+            Sr6DesignerFamiliesExpected: 5,
+            HouseRuleLanePosture: "governed",
+            HouseRuleOverlayCount: 3,
+            Sr6SuccessorLaneReceipt: "sr6 successor lane is partial: supplement/governed designers/house-rule posture remains mixed.");
     }
 }

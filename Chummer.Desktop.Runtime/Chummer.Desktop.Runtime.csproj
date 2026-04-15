@@ -7,12 +7,25 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Chummer.Hub.Registry.Contracts">
-      <HintPath>..\..\chummer-hub-registry\Chummer.Hub.Registry.Contracts\bin\$(Configuration)\net10.0\Chummer.Hub.Registry.Contracts.dll</HintPath>
-    </Reference>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
+    <ProjectReference Include="$(ChummerLocalContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalHubRegistryContractsProject)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
+    <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
+    <PackageReference Include="$(ChummerHubRegistryContractsPackageId)" Version="$(ChummerHubRegistryContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
+    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj"
+                      Condition="Exists('..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Infrastructure\Chummer.Infrastructure.csproj"
+                      Condition="Exists('..\..\chummer-core-engine\Chummer.Infrastructure\Chummer.Infrastructure.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj"
+                      Condition="Exists('..\..\chummer-core-engine\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
   </ItemGroup>
 </Project>

@@ -1,42 +1,63 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Chummer.Contracts.Presentation;
 
 namespace Chummer.Avalonia.Controls;
 
 public partial class SummaryHeaderControl : UserControl
 {
-    public event EventHandler? RuntimeInspectorRequested;
+    private bool _suppressTabSelectionEvent;
+
+    public event EventHandler<string>? NavigationTabSelected;
 
     public SummaryHeaderControl()
     {
         InitializeComponent();
-        RuntimeInspectButton.Click += RuntimeInspectButton_OnClick;
     }
 
     public void SetState(SummaryHeaderState state)
     {
-        SetValues(state.Name, state.Alias, state.Karma, state.Skills, state.RuntimeSummary, state.CanInspectRuntime);
+        SetNavigationTabs(state.NavigationTabsHeading, state.NavigationTabs, state.ActiveTabId, state.RuntimeSummary);
     }
 
-    public void SetValues(string? name, string? alias, string? karma, string? skills, string? runtimeSummary, bool canInspectRuntime)
+    public void SetNavigationTabs(
+        string heading,
+        IReadOnlyList<NavigatorTabItem> navigationTabs,
+        string? activeTabId,
+        string? runtimeSummary = null)
     {
-        NameValueText.Text = string.IsNullOrWhiteSpace(name) ? "-" : name;
-        AliasValueText.Text = string.IsNullOrWhiteSpace(alias) ? "-" : alias;
-        KarmaValueText.Text = string.IsNullOrWhiteSpace(karma) ? "-" : karma;
-        SkillsValueText.Text = string.IsNullOrWhiteSpace(skills) ? "-" : skills;
-        RuntimeValueText.Text = string.IsNullOrWhiteSpace(runtimeSummary) ? "-" : runtimeSummary;
-        RuntimeInspectButton.IsEnabled = canInspectRuntime;
+        LoadedRunnerTabStripHeading.Text = string.IsNullOrWhiteSpace(heading) ? "Runner Tabs" : heading;
+        RuntimeSummaryText.Text = runtimeSummary ?? string.Empty;
+        RuntimeSummaryText.IsVisible = !string.IsNullOrWhiteSpace(runtimeSummary);
+
+        NavigatorTabItem[] visibleTabs = navigationTabs
+            .Where(tab => tab.Enabled)
+            .ToArray();
+        LoadedRunnerTabStripBorder.IsVisible = visibleTabs.Length > 0;
+
+        _suppressTabSelectionEvent = true;
+        LoadedRunnerTabStrip.ItemsSource = visibleTabs;
+        LoadedRunnerTabStrip.SelectedItem = visibleTabs.FirstOrDefault(tab =>
+            string.Equals(tab.Id, activeTabId, StringComparison.Ordinal));
+        _suppressTabSelectionEvent = false;
     }
 
-    private void RuntimeInspectButton_OnClick(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    private void LoadedRunnerTabStrip_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        RuntimeInspectorRequested?.Invoke(this, EventArgs.Empty);
+        if (_suppressTabSelectionEvent)
+        {
+            return;
+        }
+
+        if (sender is TabStrip { SelectedItem: NavigatorTabItem { Enabled: true } tab })
+        {
+            NavigationTabSelected?.Invoke(this, tab.Id);
+        }
     }
 }
 
 public sealed record SummaryHeaderState(
-    string? Name,
-    string? Alias,
-    string? Karma,
-    string? Skills,
-    string? RuntimeSummary,
-    bool CanInspectRuntime);
+    string NavigationTabsHeading,
+    NavigatorTabItem[] NavigationTabs,
+    string? ActiveTabId,
+    string? RuntimeSummary = null);

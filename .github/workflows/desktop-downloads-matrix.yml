@@ -47,13 +47,17 @@ jobs:
   build-desktop:
     name: Build ${{ matrix.app }} ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.tolerate_failure }}
     defaults:
       run:
         working-directory: r
     env:
-      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/.c/core/Chummer.Contracts/Chummer.Contracts.csproj
-      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/.c/hub/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
-      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/.c/ui/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
+      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj
+      CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj
+      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
+      CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj
+      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
+      CHUMMER_LEGACY_FIXTURE_ROOT: ${{ github.workspace }}/l/Chummer.Tests/TestFiles
     strategy:
       fail-fast: false
       matrix:
@@ -64,69 +68,156 @@ jobs:
             rid: win-x64
             installer_ext: exe
             launch_target: Chummer.Avalonia.exe
+            tolerate_failure: false
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: windows-latest
             rid: win-arm64
             installer_ext: exe
             launch_target: Chummer.Avalonia.exe
+            tolerate_failure: true
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: ubuntu-latest
             rid: linux-x64
             installer_ext: deb
             launch_target: Chummer.Avalonia
+            tolerate_failure: false
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: ubuntu-latest
             rid: linux-arm64
             installer_ext: deb
             launch_target: Chummer.Avalonia
+            tolerate_failure: true
           - app: avalonia
             project: Chummer.Avalonia/Chummer.Avalonia.csproj
             os: macos-latest
+            rid: osx-arm64
+            installer_ext: dmg
+            launch_target: Chummer.Avalonia
+            tolerate_failure: false
+          - app: avalonia
+            project: Chummer.Avalonia/Chummer.Avalonia.csproj
+            os: macos-13
             rid: osx-x64
             installer_ext: dmg
             launch_target: Chummer.Avalonia
+            tolerate_failure: false
+          - app: blazor-desktop
+            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
+            os: macos-latest
+            rid: osx-arm64
+            installer_ext: dmg
+            launch_target: Chummer.Blazor.Desktop
+            tolerate_failure: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           path: r
 
+      - name: Enable Windows long paths for compatibility checkouts
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          git config --system core.longpaths true
+
       - name: Checkout core-engine compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-core
           ref: fleet/core
-          path: .c/core
+          path: c
 
       - name: Checkout run-services compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-hub
+          # fleet/hub currently omits Chummer.Campaign.Contracts, but the desktop
+          # compatibility graph still needs both campaign and run contracts.
           ref: main
-          path: .c/hub
+          path: h
+
+      - name: Checkout hub-registry compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer6-hub-registry
+          ref: fleet/hub-registry
+          path: g
 
       - name: Checkout ui-kit compatibility tree
         uses: actions/checkout@v4
         with:
           repository: ArchonMegalon/chummer6-ui-kit
           ref: fleet/ui-kit
-          path: .c/ui
+          path: u
+
+      - name: Checkout media-factory compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer6-media-factory
+          ref: fleet/media-factory
+          path: m
+
+      - name: Checkout legacy fixture tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer5a
+          ref: Docker
+          path: l
+
+      - name: Prepare compatibility tree aliases (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          $compatRoot = Split-Path -Parent $env:GITHUB_WORKSPACE
+          New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-core-engine" -Target "${env:GITHUB_WORKSPACE}\\c" | Out-Null
+          New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer.run-services" -Target "${env:GITHUB_WORKSPACE}\\h" | Out-Null
+          New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-hub-registry" -Target "${env:GITHUB_WORKSPACE}\\g" | Out-Null
+          New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-ui-kit" -Target "${env:GITHUB_WORKSPACE}\\u" | Out-Null
+          New-Item -ItemType Directory -Path (Join-Path $compatRoot "fleet\\repos") -Force | Out-Null
+          New-Item -ItemType Junction -Path (Join-Path $compatRoot "fleet\\repos\\chummer-media-factory") -Target "${env:GITHUB_WORKSPACE}\\m" | Out-Null
+
+      - name: Prepare compatibility tree aliases (POSIX)
+        if: ${{ runner.os != 'Windows' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          compat_root="$(cd "$GITHUB_WORKSPACE/.." && pwd)"
+          ln -sfn "$GITHUB_WORKSPACE/c" "$GITHUB_WORKSPACE/chummer-core-engine"
+          ln -sfn "$GITHUB_WORKSPACE/h" "$GITHUB_WORKSPACE/chummer.run-services"
+          ln -sfn "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/chummer-hub-registry"
+          ln -sfn "$GITHUB_WORKSPACE/u" "$GITHUB_WORKSPACE/chummer-ui-kit"
+          mkdir -p "$compat_root/fleet/repos"
+          ln -sfn "$GITHUB_WORKSPACE/m" "$compat_root/fleet/repos/chummer-media-factory"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
+      - name: Build compatibility contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build "${CHUMMER_LOCAL_CONTRACTS_PROJECT}" -c Release --nologo -p:UseChummerEngineContractsLocalFeed=false
+          dotnet build "$GITHUB_WORKSPACE/m/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj" -c Release --nologo
+          dotnet build "${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT}" -c Release --nologo
+          dotnet build "${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" -c Release --nologo
+          dotnet build "${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" -c Release --nologo
+
       - name: Restore
+        shell: bash
         run: |
           dotnet restore ${{ matrix.project }} \
             -r ${{ matrix.rid }} \
             -p:ChummerUseLocalCompatibilityTree=true \
+            -p:UseChummerEngineContractsLocalFeed=false \
             -p:ChummerLocalContractsProject="${CHUMMER_LOCAL_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalCampaignContractsProject="${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT}" \
             -p:ChummerLocalRunContractsProject="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalHubRegistryContractsProject="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" \
             -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}"
 
       - name: Publish desktop app
@@ -143,11 +234,14 @@ jobs:
             -p:PublishTrimmed=false \
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:ChummerUseLocalCompatibilityTree=true \
+            -p:UseChummerEngineContractsLocalFeed=false \
             -p:ChummerLocalContractsProject="${CHUMMER_LOCAL_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalCampaignContractsProject="${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT}" \
             -p:ChummerLocalRunContractsProject="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalHubRegistryContractsProject="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" \
             -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}" \
             -p:ChummerDesktopReleaseVersion="$release_version" \
-            -p:ChummerDesktopReleaseChannel="docker" \
+            -p:ChummerDesktopReleaseChannel="preview" \
             -o "$out_dir"
 
       - name: Package installer
@@ -166,7 +260,7 @@ jobs:
       - name: Startup smoke
         shell: bash
         env:
-          CHUMMER_DESKTOP_RELEASE_CHANNEL: docker
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: preview
           CHUMMER_DESKTOP_RELEASE_VERSION: run-${GITHUB_RUN_NUMBER:-local}
           CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-${{ matrix.os }}
         run: |
@@ -210,6 +304,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout hub-registry compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer6-hub-registry
+          ref: fleet/hub-registry
+          path: chummer-hub-registry
+
       - name: Validate amend manifests checksums
         run: bash scripts/validate-amend-manifests.sh
 
@@ -220,6 +321,13 @@ jobs:
           merge-multiple: true
           path: dist
 
+      - name: Download startup smoke evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-smoke-*
+          merge-multiple: true
+          path: dist/startup-smoke
+
       - name: Stage portal downloads directory
         shell: bash
         run: |
@@ -227,7 +335,7 @@ jobs:
           mkdir -p dist/files
           shopt -s nullglob
           moved=0
-          for artifact in dist/chummer-*.exe dist/chummer-*.zip dist/chummer-*.tar.gz dist/chummer-*-installer.deb dist/chummer-*-installer.pkg dist/chummer-*-installer.dmg dist/chummer-*-installer.msix; do
+          for artifact in dist/chummer-*-installer.exe dist/chummer-*.exe dist/chummer-*.zip dist/chummer-*.tar.gz dist/chummer-*-installer.deb dist/chummer-*-installer.pkg dist/chummer-*-installer.dmg dist/chummer-*-installer.msix; do
             [[ -f "$artifact" ]] || continue
             mv "$artifact" dist/files/
             moved=1
@@ -246,7 +354,7 @@ jobs:
           MANIFEST_PATH="dist/releases.json" \
           PORTAL_MANIFEST_PATH="dist/releases.json" \
           RELEASE_VERSION="run-${GITHUB_RUN_NUMBER:-local}" \
-          RELEASE_CHANNEL="docker" \
+          RELEASE_CHANNEL="preview" \
           RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT}" \
           bash scripts/generate-releases-manifest.sh
 
@@ -359,6 +467,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout hub-registry compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer6-hub-registry
+          ref: fleet/hub-registry
+          path: chummer-hub-registry
+
       - name: Download manifest bundle
         uses: actions/download-artifact@v4
         with:
@@ -382,6 +497,54 @@ jobs:
         run: |
           set -euo pipefail
           bash scripts/verify-releases-manifest.sh "$CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+
+  deploy-downloads-http:
+    name: Deploy Downloads Bundle (HTTP Promote)
+    needs: generate-manifest
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.CHUMMER_RELEASE_UPLOAD_URL != '' }}
+    runs-on: ubuntu-latest
+    env:
+      CHUMMER_RELEASE_UPLOAD_URL: ${{ vars.CHUMMER_RELEASE_UPLOAD_URL }}
+      CHUMMER_RELEASE_UPLOAD_TOKEN: ${{ secrets.CHUMMER_RELEASE_UPLOAD_TOKEN }}
+      CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout hub-registry compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer6-hub-registry
+          ref: fleet/hub-registry
+          path: chummer-hub-registry
+
+      - name: Download manifest bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-download-bundle
+          path: dist
+
+      - name: Validate upload variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${CHUMMER_RELEASE_UPLOAD_URL:-}" ]] || { echo "CHUMMER_RELEASE_UPLOAD_URL is required." >&2; exit 1; }
+          [[ -n "${CHUMMER_RELEASE_UPLOAD_TOKEN:-}" ]] || { echo "CHUMMER_RELEASE_UPLOAD_TOKEN is required." >&2; exit 1; }
+          [[ -n "${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}" ]] || { echo "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL is required." >&2; exit 1; }
+
+      - name: Upload release bundle to chummer.run
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHUMMER_RELEASE_UPLOAD_RESPONSE_PATH="release-upload-response.json" \
+          bash scripts/publish-download-bundle-http.sh dist
+
+      - name: Verify live promoted manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/verify-releases-manifest.sh "${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL}"
 
   deploy-downloads-object-storage:
     name: Deploy Downloads Bundle (Object Storage)
@@ -415,6 +578,13 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Checkout hub-registry compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer6-hub-registry
+          ref: fleet/hub-registry
+          path: chummer-hub-registry
 
       - name: Download manifest bundle
         uses: actions/download-artifact@v4

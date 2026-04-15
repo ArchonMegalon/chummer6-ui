@@ -173,7 +173,7 @@ public class HubInstallPreviewServiceTests
     }
 
     [TestMethod]
-    public void Hub_install_preview_service_returns_deferred_receipts_for_buildkits_until_apply_preview_exists()
+    public void Hub_install_preview_service_returns_ready_receipts_for_buildkits_with_runtime_receipts()
     {
         DefaultHubInstallPreviewService service = new(
             CreatePluginRegistry(),
@@ -192,9 +192,29 @@ public class HubInstallPreviewServiceTests
                         Title: "Street Sam Starter",
                         Description: "Starter template.",
                         Targets: [RulesetDefaults.Sr5],
-                        RuntimeRequirements: [],
-                        Prompts: [],
-                        Actions: [],
+                        RuntimeRequirements:
+                        [
+                            new BuildKitRuntimeRequirement(
+                                RulesetId: RulesetDefaults.Sr5,
+                                RequiredRuntimeFingerprints: ["sha256:core"],
+                                RequiredRulePacks: [])
+                        ],
+                        Prompts:
+                        [
+                            new BuildKitPromptDescriptor(
+                                PromptId: "combat-focus",
+                                Kind: BuildKitPromptKinds.Choice,
+                                Label: "Combat focus",
+                                Options: [new BuildKitPromptOption("street-sam", "Street Sam")],
+                                Required: true)
+                        ],
+                        Actions:
+                        [
+                            new BuildKitActionDescriptor(
+                                ActionId: "starter-bundle",
+                                Kind: BuildKitActionKinds.AddBundle,
+                                TargetId: "street-sam.bundle")
+                        ],
                         Visibility: ArtifactVisibilityModes.Public,
                         TrustTier: ArtifactTrustTiers.Curated),
                     Owner: new OwnerScope("system"),
@@ -211,9 +231,12 @@ public class HubInstallPreviewServiceTests
             RulesetDefaults.Sr5);
 
         Assert.IsNotNull(preview);
-        Assert.AreEqual(HubProjectInstallPreviewStates.Deferred, preview.State);
-        Assert.AreEqual("hub_buildkit_apply_preview_not_implemented", preview.DeferredReason);
-        Assert.AreEqual(HubProjectInstallPreviewChangeKinds.InstallDeferred, preview.Changes[0].Kind);
+        Assert.AreEqual(HubProjectInstallPreviewStates.Ready, preview.State);
+        Assert.AreEqual("sha256:core", preview.RuntimeFingerprint);
+        Assert.AreEqual(HubProjectInstallPreviewChangeKinds.InstallStateChanged, preview.Changes[0].Kind);
+        Assert.IsTrue(preview.RequiresConfirmation);
+        Assert.IsTrue(preview.Diagnostics.Any(diagnostic => diagnostic.Kind == HubProjectInstallPreviewDiagnosticKinds.Installability));
+        Assert.IsTrue(preview.Changes.Any(change => change.Summary.Contains("prompt", StringComparison.OrdinalIgnoreCase)));
     }
 
     [TestMethod]

@@ -23,7 +23,15 @@ public sealed partial class CharacterOverviewPresenter
         Publish(State with
         {
             IsBusy = true,
-            Error = null
+            Error = null,
+            ActiveTabId = tabId ?? State.ActiveTabId,
+            ActiveActionId = actionId ?? State.ActiveActionId,
+            ActiveSectionId = sectionId,
+            ActiveSectionJson = null,
+            ActiveSectionRows = [],
+            ActiveBuildLab = null,
+            ActiveBrowseWorkspace = null,
+            ActiveNpcPersonaStudio = null
         });
 
         try

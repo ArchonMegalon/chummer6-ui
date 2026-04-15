@@ -1,38 +1,41 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.NavigatorPaneControl">
-  <Grid RowDefinitions="Auto,*,Auto,*,Auto,*,Auto,*" RowSpacing="6">
-    <TextBlock Grid.Row="0" Text="Open Characters" FontWeight="Bold" />
-    <ListBox Grid.Row="1" x:Name="OpenWorkspacesList">
-      <ListBox.ItemsPanel>
-        <ItemsPanelTemplate>
-          <VirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </ListBox.ItemsPanel>
-    </ListBox>
-    <TextBlock Grid.Row="2" Text="Navigation Tabs" FontWeight="Bold" />
-    <ListBox Grid.Row="3" x:Name="NavigationTabsList">
-      <ListBox.ItemsPanel>
-        <ItemsPanelTemplate>
-          <VirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </ListBox.ItemsPanel>
-    </ListBox>
-    <TextBlock Grid.Row="4" Text="Section Actions" FontWeight="Bold" />
-    <ListBox Grid.Row="5" x:Name="SectionActionsList">
-      <ListBox.ItemsPanel>
-        <ItemsPanelTemplate>
-          <VirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </ListBox.ItemsPanel>
-    </ListBox>
-    <TextBlock Grid.Row="6" Text="Workflow Surfaces" FontWeight="Bold" />
-    <ListBox Grid.Row="7" x:Name="WorkflowSurfacesList">
-      <ListBox.ItemsPanel>
-        <ItemsPanelTemplate>
-          <VirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </ListBox.ItemsPanel>
-    </ListBox>
-  </Grid>
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Border Padding="4">
+      <Grid RowDefinitions="Auto,*" RowSpacing="4">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="4">
+          <TextBlock x:Name="CodexKickerText" Classes="shell-kicker" Text="Codex" IsVisible="False" />
+          <TextBlock x:Name="CodexHeadingText" Grid.Column="0" Classes="shell-caption" Text="Codex" />
+          <TextBlock x:Name="CodexCaptionText"
+                     Grid.Column="1"
+                     Classes="shell-caption"
+                     Text="Tree navigator for runners, tabs, actions, and workflow routes."
+                     TextTrimming="CharacterEllipsis" />
+        </Grid>
+
+        <StackPanel IsVisible="False" Spacing="0">
+          <TextBlock x:Name="OpenWorkspacesHeader" />
+          <TextBlock x:Name="NavigationTabsHeader" />
+          <TextBlock x:Name="SectionActionsHeader" />
+          <TextBlock x:Name="WorkflowSurfacesHeader" />
+        </StackPanel>
+
+        <TreeView x:Name="NavigatorTree"
+                  Grid.Row="1"
+                  SelectionChanged="NavigatorTree_OnSelectionChanged">
+          <TreeView.ItemsPanel>
+            <ItemsPanelTemplate>
+              <VirtualizingStackPanel />
+            </ItemsPanelTemplate>
+          </TreeView.ItemsPanel>
+          <TreeView.ItemTemplate>
+            <TreeDataTemplate ItemsSource="{Binding Children}">
+              <TextBlock Classes="shell-tree-label" Text="{Binding Label}" />
+            </TreeDataTemplate>
+          </TreeView.ItemTemplate>
+        </TreeView>
+      </Grid>
+    </Border>
+  </ScrollViewer>
 </UserControl>

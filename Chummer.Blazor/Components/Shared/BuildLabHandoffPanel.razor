@@ -1,10 +1,13 @@
+@namespace Chummer.Blazor.Components.Shared
+
 @using Chummer.Campaign.Contracts
+@using Chummer.Presentation.UiKit
 
 <section class="panel design-panel" data-build-lab-handoff-showcase="@Projection.HandoffId">
     <header class="panel-header">
         <div>
             <h2>@Projection.Title</h2>
-            <p class="note">@Projection.Summary</p>
+            <p class="note">Build Lab handoff · @Projection.Summary</p>
         </div>
         <div class="button-row compact">
             <span>@Projection.VariantLabel</span>
@@ -15,7 +18,8 @@
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Tradeoffs + progression</h3>
-            <span class="badge">@Projection.ExplainEntryId</span>
+            <span class="@(ChummerPatternBoundary.ExplainChipClass(Projection.ExplainEntryId, "Build Lab handoff explain entry", active: true))"
+                  @attributes="@(ChummerPatternBoundary.ExplainChipAttributes(Projection.ExplainEntryId, "Build Lab handoff explain entry", active: true))">@Projection.ExplainEntryId</span>
         </div>
         <ul class="browse-detail-lines">
             @foreach (string line in Projection.TradeoffLines)
@@ -26,6 +30,30 @@
         <p class="note">@string.Join(" | ", Projection.ProgressionOutcomes)</p>
     </section>
 
+    @if (!string.IsNullOrWhiteSpace(Projection.PlannerCoverageSummary)
+        || Projection.PlannerCoverageLines is { Count: > 0 })
+    {
+        <section class="coach-card" data-build-lab-handoff-planner-coverage>
+            <div class="coach-card-header">
+                <h3>Planner coverage</h3>
+                <span class="badge">Follow-through</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Projection.PlannerCoverageSummary))
+            {
+                <p><strong>@Projection.PlannerCoverageSummary</strong></p>
+            }
+            @if (Projection.PlannerCoverageLines is { Count: > 0 })
+            {
+                <ul class="browse-detail-lines">
+                    @foreach (string line in Projection.PlannerCoverageLines)
+                    {
+                        <li>@line</li>
+                    }
+                </ul>
+            }
+        </section>
+    }
+
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Dossier + campaign outputs</h3>
@@ -33,7 +61,9 @@
         </div>
         @foreach (PublicationSafeProjection output in Projection.Outputs)
         {
-            <article data-build-lab-output="@output.ProjectionId">
+            <article class="@(ChummerPatternBoundary.ArtifactStatusCardClass(output.Label, output.Kind, string.IsNullOrWhiteSpace(output.ArtifactId) ? "pending" : "available", available: !string.IsNullOrWhiteSpace(output.ArtifactId)))"
+                     @attributes="@(ChummerPatternBoundary.ArtifactStatusCardAttributes(output.Label, output.Kind, string.IsNullOrWhiteSpace(output.ArtifactId) ? "pending" : "available", available: !string.IsNullOrWhiteSpace(output.ArtifactId)))"
+                     data-build-lab-output="@output.ProjectionId">
                 <p><strong>@output.Label</strong> · @output.Kind</p>
                 <p class="note">@output.Summary</p>
                 @if (!string.IsNullOrWhiteSpace(output.ArtifactId))
@@ -43,6 +73,47 @@
             </article>
         }
     </section>
+
+    @if (!string.IsNullOrWhiteSpace(Projection.NextSafeAction)
+        || !string.IsNullOrWhiteSpace(Projection.RuntimeCompatibilitySummary)
+        || !string.IsNullOrWhiteSpace(Projection.CampaignReturnSummary)
+        || !string.IsNullOrWhiteSpace(Projection.SupportClosureSummary)
+        || Projection.Watchouts is { Count: > 0 })
+    {
+        <section class="coach-card" data-build-lab-handoff-rail>
+            <div class="coach-card-header">
+                <h3>Campaign-safe handoff</h3>
+                <span class="badge">Closure rail</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Projection.NextSafeAction))
+            {
+                <p><strong>@Projection.NextSafeAction</strong></p>
+            }
+            <dl class="facts compact">
+                @if (!string.IsNullOrWhiteSpace(Projection.RuntimeCompatibilitySummary))
+                {
+                    <div><dt>Runtime</dt><dd>@Projection.RuntimeCompatibilitySummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Projection.CampaignReturnSummary))
+                {
+                    <div><dt>Return</dt><dd>@Projection.CampaignReturnSummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Projection.SupportClosureSummary))
+                {
+                    <div><dt>Support</dt><dd>@Projection.SupportClosureSummary</dd></div>
+                }
+            </dl>
+            @if (Projection.Watchouts is { Count: > 0 })
+            {
+                <ul class="browse-detail-lines">
+                    @foreach (string watchout in Projection.Watchouts)
+                    {
+                        <li>@watchout</li>
+                    }
+                </ul>
+            }
+        </section>
+    }
 </section>
 
 @code {
@@ -51,16 +122,24 @@
         HandoffId: "handoff-demo",
         DossierId: "dossier-demo",
         CampaignId: "campaign-demo",
-        Title: "Build Lab handoff",
-        Summary: "Carry the chosen build lane into living dossier and campaign return truth.",
+        Title: "Build path",
+        Summary: "Carry the chosen build path into living dossier and campaign return truth.",
         VariantLabel: "Ops-first dossier carry-forward",
         ProgressionLabel: "25 / 50 / 100 Karma path attached",
         ExplainEntryId: "buildlab.handoff.demo",
-        TradeoffLines: ["Role overlap stays explicit before the handoff leaves Build Lab."],
+        TradeoffLines: ["Role overlap stays explicit before the handoff leaves build comparison."],
         ProgressionOutcomes: ["Chosen variant stays attached to dossier-safe and campaign-safe outputs."],
         Outputs:
         [
             new PublicationSafeProjection("projection-demo", "dossier_card", "Living dossier", "Stable runner identity.")
         ],
-        UpdatedAtUtc: DateTimeOffset.UtcNow);
+        UpdatedAtUtc: DateTimeOffset.UtcNow,
+        PlannerCoverageSummary: "2 of 4 build follow-through checkpoints are already grounded.",
+        PlannerCoverageLines:
+        [
+            "Campaign continuity: no governed campaign workspace is attached yet, so the handoff still lands on the living dossier first.",
+            "Outputs: 1 dossier or campaign-safe output is already attached to the handoff.",
+            "Restore posture: no restore conflicts are currently blocking replay-safe handoff follow-through.",
+            "Claimed install: no linked device is attached yet for install-aware follow-through."
+        ]);
 }

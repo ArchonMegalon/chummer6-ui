@@ -41,11 +41,21 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
         CancellationToken ct)
     {
         WorkspaceImportResult imported = await _client.ImportAsync(document, ct);
-        return await LoadWorkspaceAsync(
+        WorkspaceOverviewLifecycleResult loaded = await LoadWorkspaceAsync(
             currentState,
             imported.Id,
             ct,
             rulesetId: imported.RulesetId);
+        return loaded with
+        {
+            State = loaded.State with
+            {
+                LatestPortabilityActivity = imported.Portability is null
+                    ? null
+                    : new WorkspacePortabilityActivity("Last portable import", imported.Portability),
+                Notice = BuildImportNotice(imported)
+            }
+        };
     }
 
     public Task<WorkspaceOverviewLifecycleResult> LoadAsync(
@@ -219,5 +229,18 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
                 restoredView,
                 hasSavedWorkspace),
             CurrentWorkspaceId);
+    }
+
+    private static string BuildImportNotice(WorkspaceImportResult imported)
+    {
+        if (imported.Portability is { } portability)
+        {
+            return $"Portable import ready: {portability.ReceiptSummary}";
+        }
+
+        string displayName = string.IsNullOrWhiteSpace(imported.Summary.Name)
+            ? imported.Id.Value
+            : imported.Summary.Name;
+        return $"Imported '{displayName}' on {imported.RulesetId}.";
     }
 }

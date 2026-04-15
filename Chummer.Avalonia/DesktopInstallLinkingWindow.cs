@@ -3,12 +3,14 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Desktop.Runtime;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
 
 internal sealed class DesktopInstallLinkingWindow : Window
 {
     private DesktopInstallLinkingState _state;
+    private readonly string _language;
     private readonly TextBlock _summaryText;
     private readonly TextBlock _statusText;
     private readonly TextBox _claimCodeBox;
@@ -19,7 +21,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
         ArgumentNullException.ThrowIfNull(context);
 
         _state = context.State;
-        Title = "Link this copy";
+        _language = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId).Language;
+        Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language);
         Width = 760;
         Height = 520;
         MinWidth = 620;
@@ -28,13 +31,13 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         _summaryText = new TextBlock
         {
-            Text = BuildSummary(_state),
+            Text = BuildSummary(_state, _language),
             TextWrapping = TextWrapping.Wrap
         };
 
         _claimCodeBox = new TextBox
         {
-            Watermark = "Paste the claim code from your Hub account",
+            Watermark = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_watermark", _language),
             Text = context.StartupClaimCode ?? string.Empty
         };
 
@@ -55,20 +58,25 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 {
                     new TextBlock
                     {
-                        Text = "Link this desktop copy to your account",
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.heading", _language),
                         FontSize = 22,
                         FontWeight = FontWeight.SemiBold,
                         TextWrapping = TextWrapping.Wrap
                     },
                     new TextBlock
                     {
-                        Text = "Chummer keeps the binary canonical. Linking happens through an install claim code and a Hub-issued installation grant instead of mutating the installer per user.",
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary", _language),
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    new TextBlock
+                    {
+                        Text = DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.shipping_locales", _language, DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
                         TextWrapping = TextWrapping.Wrap
                     },
                     _summaryText,
                     new TextBlock
                     {
-                        Text = "Install claim code",
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label", _language),
                         FontWeight = FontWeight.SemiBold
                     },
                     _claimCodeBox,
@@ -80,10 +88,17 @@ internal sealed class DesktopInstallLinkingWindow : Window
                         Spacing = 10,
                         Children =
                         {
-                            CreateButton("Copy Install ID", CopyInstallIdAsync),
-                            CreateButton("Open Account", OpenAccountAsync),
-                            CreateButton("Link This Copy", LinkAsync, isDefault: true),
-                            CreateButton("Continue as Guest", ContinueAsGuestAsync)
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_report_issue", _language), OpenReportIssueAsync),
+                            CreateButton(
+                                DesktopInstallLinkingRuntime.IsClaimed(_state)
+                                    ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
+                                    : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language),
+                                OpenFollowThroughAsync),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _language), LinkAsync, isDefault: true),
+                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_guest", _language), ContinueAsGuestAsync)
                         }
                     }
                 }
@@ -100,9 +115,26 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
             else if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
-                SetStatus("If you downloaded while signed in, copy the pending claim code from your Hub account and paste it here.");
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.prompt_guest_claim", _language));
             }
         };
+    }
+
+    public static async Task ShowAsync(Window owner, string headId)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopInstallLinkingState state = DesktopInstallLinkingRuntime.LoadOrCreateState(headId);
+        DesktopInstallLinkingStartupContext context = new(
+            State: state,
+            ClaimResult: null,
+            StartupClaimCode: null,
+            ShouldPrompt: true,
+            PromptReason: "desktop_shell");
+
+        DesktopInstallLinkingWindow dialog = new(context);
+        await dialog.ShowDialog(owner);
     }
 
     public static async Task ShowIfNeededAsync(Window owner, DesktopInstallLinkingStartupContext context)
@@ -136,26 +168,62 @@ internal sealed class DesktopInstallLinkingWindow : Window
     {
         if (Clipboard is null)
         {
-            SetStatus("Clipboard access is unavailable in this host.");
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.clipboard_unavailable", _language));
             return;
         }
 
         await Clipboard.SetTextAsync(_state.InstallationId);
-        SetStatus("Copied the installation id to the clipboard.");
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.install_id_copied", _language));
     }
 
-    private Task OpenAccountAsync()
+    private Task OpenFollowThroughAsync()
     {
-        if (DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+        if (DesktopInstallLinkingRuntime.IsClaimed(_state))
         {
-            SetStatus("Opened your Hub account so you can review or copy the install claim code.");
+            Window? ownerWindow = Owner as Window;
+            if (ownerWindow is not null)
+            {
+                Close();
+                return DesktopCampaignWorkspaceWindow.ShowAsync(ownerWindow, _state.HeadId);
+            }
+
+            return DesktopCampaignWorkspaceWindow.ShowAsync(this, _state.HeadId);
+        }
+
+        if (DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state))
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
         }
         else
         {
-            SetStatus("Unable to open the Hub account page from this host.");
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
         }
 
         return Task.CompletedTask;
+    }
+
+    private Task OpenDownloadsAsync()
+    {
+        if (DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_downloads", _language));
+        }
+        else
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_downloads", _language));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OpenSupportAsync()
+    {
+        return DesktopSupportWindow.ShowAsync(this, _state.HeadId);
+    }
+
+    private Task OpenReportIssueAsync()
+    {
+        return DesktopReportIssueWindow.ShowAsync(this, _state.HeadId);
     }
 
     private async Task LinkAsync()
@@ -167,14 +235,14 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         if (string.IsNullOrWhiteSpace(_claimCodeBox.Text))
         {
-            SetStatus("Paste the claim code from your Hub account first.");
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.claim_code_required", _language));
             return;
         }
 
         _isSubmitting = true;
         try
         {
-            SetStatus("Linking this installation with Hub...");
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language));
             DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
                 _state.HeadId,
                 _claimCodeBox.Text,
@@ -206,7 +274,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private void RefreshSummary()
     {
-        _summaryText.Text = BuildSummary(_state);
+        _summaryText.Text = BuildSummary(_state, _language);
     }
 
     private void SetStatus(string message)
@@ -215,11 +283,48 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _statusText.IsVisible = !string.IsNullOrWhiteSpace(message);
     }
 
-    private static string BuildSummary(DesktopInstallLinkingState state)
+    private static string BuildSummary(DesktopInstallLinkingState state, string language)
     {
         string claimStatus = DesktopInstallLinkingRuntime.IsClaimed(state)
-            ? $"Linked. Grant expires {state.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")} UTC."
-            : "Not linked yet. You can keep using this copy as a guest.";
-        return $"Installation ID: {state.InstallationId}\nHead: {state.HeadId}\nVersion: {state.ApplicationVersion}\nChannel: {state.ChannelId}\nPlatform: {state.Platform}/{state.Arch}\nStatus: {claimStatus}";
+            ? DesktopLocalizationCatalog.GetRequiredFormattedString(
+                "desktop.install_link.summary.linked_status",
+                language,
+                state.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? "Unknown")
+            : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.guest_status", language);
+
+        List<string> lines =
+        [
+            DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.installation_id", language, state.InstallationId),
+            DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.head", language, state.HeadId),
+            DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.version", language, state.ApplicationVersion),
+            DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.channel", language, state.ChannelId),
+            DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.platform", language, state.Platform, state.Arch),
+            DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.status", language, claimStatus)
+        ];
+
+        if (state.LastClaimAttemptUtc is not null)
+        {
+            lines.Add(DesktopLocalizationCatalog.GetRequiredFormattedString(
+                "desktop.install_link.summary.last_claim_attempt",
+                language,
+                state.LastClaimAttemptUtc.Value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.LastClaimMessage))
+        {
+            lines.Add(DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.hub_message", language, state.LastClaimMessage));
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.LastClaimError))
+        {
+            lines.Add(DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.claim_error", language, state.LastClaimError));
+        }
+
+        lines.Add(
+            DesktopInstallLinkingRuntime.IsClaimed(state)
+                ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.next_safe_action_claimed", language)
+                : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.next_safe_action_guest", language));
+
+        return string.Join("\n", lines);
     }
 }

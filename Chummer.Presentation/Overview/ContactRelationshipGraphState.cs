@@ -48,13 +48,14 @@ public static class ContactRelationshipGraphProjector
 {
     public static ContactRelationshipGraphState? FromContacts(CharacterContactsSection? contacts)
     {
-        if (contacts is null || contacts.Contacts.Count == 0)
+        IReadOnlyList<CharacterContactSummary> contactRows = contacts?.Contacts ?? Array.Empty<CharacterContactSummary>();
+        if (contactRows.Count == 0)
         {
             return null;
         }
 
-        IReadOnlyList<ContactRelationshipNodeState> nodes = contacts.Contacts
-            .Select((contact, index) => BuildNode(contact, contacts.Contacts, index))
+        IReadOnlyList<ContactRelationshipNodeState> nodes = contactRows
+            .Select((contact, index) => BuildNode(contact, contactRows, index))
             .ToArray();
 
         IReadOnlyList<ContactRelationshipFactionState> factions = nodes
@@ -105,18 +106,21 @@ public static class ContactRelationshipGraphProjector
         int heat = Math.Clamp(contact.Connection + (5 - contact.Loyalty), 1, 6);
         string faction = ResolveFaction(contact);
         string factionStatus = ResolveFactionStatus(heat);
+        string contactName = contact.Name ?? string.Empty;
+        string contactRole = contact.Role ?? string.Empty;
+        string contactLocation = contact.Location ?? string.Empty;
 
         string[] linkedContactNames = contacts
             .Where((candidate, candidateIndex) => candidateIndex != index)
             .OrderByDescending(candidate => candidate.Connection + candidate.Loyalty)
             .Take(2)
-            .Select(candidate => candidate.Name)
+            .Select(candidate => candidate.Name ?? string.Empty)
             .ToArray();
 
         return new ContactRelationshipNodeState(
-            Name: contact.Name,
-            Role: contact.Role,
-            Location: contact.Location,
+            Name: contactName,
+            Role: contactRole,
+            Location: contactLocation,
             Connection: contact.Connection,
             Loyalty: contact.Loyalty,
             Faction: faction,
@@ -127,17 +131,18 @@ public static class ContactRelationshipGraphProjector
 
     private static string ResolveFaction(CharacterContactSummary contact)
     {
-        if (contact.Role.Contains("fixer", StringComparison.OrdinalIgnoreCase))
+        string role = contact.Role ?? string.Empty;
+        if (role.Contains("fixer", StringComparison.OrdinalIgnoreCase))
         {
             return "Broker Network";
         }
 
-        if (contact.Role.Contains("matrix", StringComparison.OrdinalIgnoreCase))
+        if (role.Contains("matrix", StringComparison.OrdinalIgnoreCase))
         {
             return "Matrix Exchange";
         }
 
-        if (contact.Role.Contains("doc", StringComparison.OrdinalIgnoreCase))
+        if (role.Contains("doc", StringComparison.OrdinalIgnoreCase))
         {
             return "Street Medicine";
         }

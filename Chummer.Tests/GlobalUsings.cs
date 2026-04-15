@@ -1,4 +1,6 @@
+global using AngleSharp.Dom;
 global using Chummer;
+global using Chummer.Contracts.Content;
 global using Chummer.Rulesets.Hosting;
 global using Chummer.Rulesets.Hosting.Presentation;
 global using BuildLabActionDescriptor = Chummer.Contracts.Presentation.BuildLabActionDescriptor;

@@ -1,3 +1,5 @@
+@namespace Chummer.Blazor.Components.Shared
+
 @using Chummer.Campaign.Contracts
 
 <section class="panel design-panel" data-creator-publication-showcase="@Publication.PublicationId">
@@ -7,15 +9,15 @@
             <p class="note">@Publication.Summary</p>
         </div>
         <div class="button-row compact">
-            <span>@Publication.Visibility</span>
-            <span>@Publication.PublicationStatus</span>
+            <span>@HumanizeValue(Publication.Visibility, "Shared")</span>
+            <span>@HumanizeValue(Publication.PublicationStatus, "Preview Ready")</span>
         </div>
     </header>
 
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Trusted publication posture</h3>
-            <span class="badge">@Publication.Kind</span>
+            <span class="badge">@HumanizePublicationKind(Publication.Kind)</span>
         </div>
         <dl class="facts compact">
             <div><dt>Artifact</dt><dd>@Publication.ArtifactId</dd></div>
@@ -25,6 +27,42 @@
             <div><dt>Discovery</dt><dd>@Publication.DiscoverySummary</dd></div>
         </dl>
     </section>
+
+    @if (!string.IsNullOrWhiteSpace(Publication.TrustSummary)
+        || !string.IsNullOrWhiteSpace(Publication.ComparisonSummary)
+        || !string.IsNullOrWhiteSpace(Publication.LineageSummary)
+        || !string.IsNullOrWhiteSpace(Publication.ModerationSummary)
+        || !string.IsNullOrWhiteSpace(Publication.NextSafeAction))
+    {
+        <section class="coach-card">
+            <div class="coach-card-header">
+                <h3>Governance depth</h3>
+                <span class="badge">@HumanizeValue(Publication.TrustBand, "Draft")</span>
+            </div>
+            <dl class="facts compact">
+                @if (!string.IsNullOrWhiteSpace(Publication.TrustSummary))
+                {
+                    <div><dt>Trust posture</dt><dd>@Publication.TrustSummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Publication.ComparisonSummary))
+                {
+                    <div><dt>Compare by</dt><dd>@Publication.ComparisonSummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Publication.LineageSummary))
+                {
+                    <div><dt>Lineage</dt><dd>@Publication.LineageSummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Publication.ModerationSummary))
+                {
+                    <div><dt>Moderation</dt><dd>@Publication.ModerationSummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Publication.NextSafeAction))
+                {
+                    <div><dt>Next safe action</dt><dd>@Publication.NextSafeAction</dd></div>
+                }
+            </dl>
+        </section>
+    }
 </section>
 
 @code {
@@ -41,5 +79,21 @@
         DiscoverySummary: "Preview-ready visibility with one truthful next action.",
         Visibility: "group",
         PublicationStatus: "preview_ready",
+        TrustBand: "review-pending",
+        Discoverable: false,
+        TrustSummary: "Trust ranking stays anchored to governed provenance, campaign fit, and the current moderation lane.",
+        ComparisonSummary: "Compare by provenance, campaign-return fit, trust ranking, and lineage instead of popularity fog.",
+        LineageSummary: "This packet remains the current lineage anchor until a governed successor replaces it.",
+        ModerationSummary: "Moderation is still waiting on review, so discovery stays bounded.",
+        NextSafeAction: "Review the governed publication lane before widening discovery.",
         UpdatedAtUtc: DateTimeOffset.UtcNow);
+
+    private static string HumanizePublicationKind(string? value)
+        => HumanizeValue(value, "Publication");
+
+    private static string HumanizeValue(string? value, string fallback)
+        => string.IsNullOrWhiteSpace(value)
+            ? fallback
+            : System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(
+                value.Replace('_', ' ').Replace('-', ' '));
 }

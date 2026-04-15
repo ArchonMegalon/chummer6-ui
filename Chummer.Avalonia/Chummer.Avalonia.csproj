@@ -9,13 +9,18 @@
     <ChummerDesktopHeadId>avalonia</ChummerDesktopHeadId>
     <ChummerDesktopReleaseVersion Condition="'$(ChummerDesktopReleaseVersion)' == ''">$(Version)</ChummerDesktopReleaseVersion>
     <ChummerDesktopReleaseChannel Condition="'$(ChummerDesktopReleaseChannel)' == ''">local</ChummerDesktopReleaseChannel>
+    <ApplicationIcon>..\Chummer\chummer.ico</ApplicationIcon>
+    <Win32Icon>..\Chummer\chummer.ico</Win32Icon>
   </PropertyGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalCampaignContractsProject)" />
     <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
+    <PackageReference Include="$(ChummerCampaignContractsPackageId)" Version="$(ChummerCampaignContractsPackageVersion)" />
+    <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.7" />
@@ -23,10 +28,30 @@
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.7" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.7" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj"
+                      Condition="Exists('..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="..\Chummer\chummer.ico"
+                      Link="Assets/chummer.ico" />
+    <Content Include="..\Chummer\chummer.ico"
+             Link="chummer.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Chummer.Tests\TestFiles\Soma (Career).chum5"
+          Link="Samples/Legacy/Soma-Career.chum5">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">

@@ -1,37 +1,42 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:primitives="clr-namespace:Avalonia.Controls.Primitives;assembly=Avalonia.Controls"
              x:Class="Chummer.Avalonia.Controls.SummaryHeaderControl">
-  <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
-    <Border Grid.Column="0" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
-      <StackPanel>
-        <TextBlock Text="Name" FontWeight="Bold" />
-        <TextBlock x:Name="NameValueText" Text="-" />
+  <Border x:Name="LoadedRunnerTabStripBorder"
+          Padding="0"
+          IsVisible="False">
+    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
+      <StackPanel Grid.Column="0"
+                  Margin="6,0,0,0"
+                  VerticalAlignment="Center"
+                  Spacing="0">
+        <TextBlock x:Name="LoadedRunnerTabStripHeading"
+                   Classes="shell-kicker"
+                   Text="Runner Summary" />
       </StackPanel>
-    </Border>
-    <Border Grid.Column="1" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
-      <StackPanel>
-        <TextBlock Text="Alias" FontWeight="Bold" />
-        <TextBlock x:Name="AliasValueText" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="2" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
-      <StackPanel>
-        <TextBlock Text="Karma" FontWeight="Bold" />
-        <TextBlock x:Name="KarmaValueText" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="3" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
-      <StackPanel>
-        <TextBlock Text="Skills" FontWeight="Bold" />
-        <TextBlock x:Name="SkillsValueText" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="4" Padding="8" BorderThickness="1" BorderBrush="#4B5563">
-      <StackPanel>
-        <TextBlock Text="Runtime" FontWeight="Bold" />
-        <TextBlock x:Name="RuntimeValueText" Text="-" TextWrapping="Wrap" />
-        <Button x:Name="RuntimeInspectButton" Content="Inspect Runtime" HorizontalAlignment="Left" />
-      </StackPanel>
-    </Border>
-  </Grid>
+      <Border x:Name="LoadedRunnerTabStripPanel"
+              Grid.Column="1"
+              Background="Transparent">
+        <primitives:TabStrip x:Name="LoadedRunnerTabStrip"
+                             Classes="classic-tabs"
+                             SelectionChanged="LoadedRunnerTabStrip_OnSelectionChanged">
+          <primitives:TabStrip.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Classes="shell-tab-label"
+                         Text="{Binding Label}" />
+            </DataTemplate>
+          </primitives:TabStrip.ItemTemplate>
+        </primitives:TabStrip>
+      </Border>
+      <TextBlock x:Name="RuntimeSummaryText"
+                 Grid.Column="2"
+                 Classes="shell-caption"
+                 Margin="0,0,6,0"
+                 MaxWidth="320"
+                 VerticalAlignment="Center"
+                 Text="No active runtime profile"
+                 TextTrimming="CharacterEllipsis"
+                 IsVisible="False" />
+    </Grid>
+  </Border>
 </UserControl>

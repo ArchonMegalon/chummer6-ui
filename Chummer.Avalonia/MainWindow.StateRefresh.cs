@@ -8,7 +8,7 @@ public partial class MainWindow
 {
     private void RefreshState()
     {
-        CharacterOverviewState state = _adapter.State;
+        CharacterOverviewState state = PrepareStateForRefresh(_adapter.State);
         ShellSurfaceState shellSurface = _shellSurfaceResolver.Resolve(state, _shellPresenter.State);
         MainWindowShellFrame shellFrame = MainWindowShellFrameProjector.Project(
             state,

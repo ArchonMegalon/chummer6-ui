@@ -14,6 +14,7 @@ The canonical promoted release record is `RELEASE_CHANNEL.generated.json`, mater
 3. Use preapproved runbook/script paths from repository root (`/docker/chummer5a`).
 4. Optional unattended overrides:
 `RUNBOOK_LOG_DIR` pins runbook log files to a known writable directory and `RUNBOOK_STATE_DIR` pins writable state (for example `DOTNET_CLI_HOME`) to a known writable directory.
+5. Startup-smoke receipts copied during publish must be fresh and not future-skewed (default max age: `86400` seconds, default max future skew: `300` seconds). Override with `CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_AGE_SECONDS` / `CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS` (or shared `CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS` / `CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS`) only when the release lane explicitly approves adjusted evidence windows.
 
 ## Recommended Production Topology
 

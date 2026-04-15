@@ -11,6 +11,18 @@ LAUNCH_TARGET="${4:?launch target name is required}"
 DIST_DIR="${5:-$REPO_ROOT/dist}"
 VERSION="${6:-local}"
 
+abspath() {
+  python3 - "$1" <<'PY'
+from pathlib import Path
+import sys
+
+print(Path(sys.argv[1]).resolve())
+PY
+}
+
+PUBLISH_DIR="$(abspath "$PUBLISH_DIR")"
+DIST_DIR="$(abspath "$DIST_DIR")"
+
 case "$APP_KEY" in
   avalonia)
     APP_DISPLAY="Chummer6 Avalonia Desktop"
@@ -29,6 +41,52 @@ case "$APP_KEY" in
 esac
 
 mkdir -p "$DIST_DIR"
+
+resolve_demo_character_source() {
+  local configured="${CHUMMER_RELEASE_SAMPLE_SOURCE:-}"
+  local fixture_root="${CHUMMER_LEGACY_FIXTURE_ROOT:-}"
+  local candidates=()
+
+  if [[ -n "$configured" ]]; then
+    candidates+=("$configured")
+  fi
+  if [[ -n "$fixture_root" ]]; then
+    candidates+=("$fixture_root/Soma (Career).chum5")
+  fi
+
+  candidates+=(
+    "$REPO_ROOT/../../chummer5a/Chummer.Tests/TestFiles/Soma (Career).chum5"
+    "/docker/chummer5a/Chummer.Tests/TestFiles/Soma (Career).chum5"
+  )
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [[ -f "$candidate" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+bundle_demo_character_fixture() {
+  local source_path
+  if ! source_path="$(resolve_demo_character_source)"; then
+    echo "warning: bundled demo character fixture not found; release will not include the legacy sample." >&2
+    return 0
+  fi
+
+  local samples_dir="$PUBLISH_DIR/Samples/Legacy"
+  mkdir -p "$samples_dir"
+  cp "$source_path" "$samples_dir/Soma-Career.chum5"
+  cat > "$samples_dir/README.txt" <<'EOF'
+Bundled legacy sample fixture:
+- source repo: chummer5a
+- source path: Chummer.Tests/TestFiles/Soma (Career).chum5
+- purpose: load a completed SR5 runner in the desktop shell after install
+EOF
+}
 
 build_payload_zip() {
   local target="$1"
@@ -257,13 +315,14 @@ build_windows_installer() {
   ensure_self_contained_publish
 
   local payload_zip="$DIST_DIR/chummer-$APP_KEY-$RID-payload.zip"
+  local payload_resource_name="ChummerInstaller.Payload.zip"
   local installer_name="chummer-$APP_KEY-$RID-installer.exe"
   local installer_out_dir="$DIST_DIR/installer-$APP_KEY-$RID"
 
   build_payload_zip "$payload_zip"
 
   rm -rf "$installer_out_dir"
-  dotnet publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
+  "$REPO_ROOT/scripts/ai/with-package-plane.sh" publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
     -c Release \
     -r "$RID" \
     --self-contained true \
@@ -271,9 +330,13 @@ build_windows_installer() {
     -p:PublishTrimmed=false \
     -p:EnableCompressionInSingleFile=true \
     -p:IncludeNativeLibrariesForSelfExtract=true \
+    -p:IncludeAllContentForSelfExtract=true \
+    -p:ChummerInstallerEmbedPayload=true \
     -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
     -p:InstallerPayloadZip="$payload_zip" \
+    -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
     -p:ChummerInstallerAppId="$APP_KEY-$RID" \
+    -p:ChummerInstallerHeadId="$APP_KEY" \
     -p:ChummerInstallerDisplayName="$APP_DISPLAY" \
     -p:ChummerInstallerInstallDirName="$INSTALL_DIR_NAME-$RID" \
     -p:ChummerInstallerLaunchExecutable="$LAUNCH_TARGET" \
@@ -364,14 +427,17 @@ EOF
 
 case "$RID" in
   win-*)
+    bundle_demo_character_fixture
     build_portable_artifacts
     build_windows_installer
     ;;
   linux-*)
+    bundle_demo_character_fixture
     build_portable_artifacts
     build_linux_installer
     ;;
   osx-*)
+    bundle_demo_character_fixture
     build_portable_artifacts
     build_macos_installer
     ;;

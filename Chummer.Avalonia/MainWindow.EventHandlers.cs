@@ -2,6 +2,7 @@ using System.Text;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Chummer.Contracts.Workspaces;
+using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Shell;
 
 namespace Chummer.Avalonia;
@@ -43,6 +44,21 @@ public partial class MainWindow
             "import character file");
     }
 
+    private async void ToolStrip_OnLoadDemoRunnerRequested(object? sender, EventArgs e)
+    {
+        DesktopImportFileResult importFile = await MainWindowDesktopFileCoordinator.OpenBundledDemoRunnerAsync(CancellationToken.None);
+        if (importFile.Outcome == DesktopFileOperationOutcome.Unavailable || importFile.Payload is null)
+        {
+            MainWindowFeedbackCoordinator.ShowBundledDemoRunnerUnavailable(_controls.ToolStrip);
+            return;
+        }
+
+        MainWindowFeedbackCoordinator.ShowBundledDemoRunnerLoading(_controls.ToolStrip, importFile.SourceLabel);
+        await RunUiActionAsync(
+            () => _adapter.ImportAsync(importFile.Payload, CancellationToken.None),
+            "load bundled demo runner");
+    }
+
     private async void OnOpened(object? sender, EventArgs e)
     {
         await RunUiActionAsync(
@@ -59,6 +75,93 @@ public partial class MainWindow
         await RunUiActionAsync(
             () => _interactionCoordinator.SaveAsync(CancellationToken.None),
             "save workspace");
+    }
+
+    private async void ToolStrip_OnPrintRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.ExecuteCommandAsync("print_character", CancellationToken.None),
+            "print character");
+    }
+
+    private async void ToolStrip_OnCopyRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.ExecuteCommandAsync("copy", CancellationToken.None),
+            "copy character data");
+    }
+
+    private async void ToolStrip_OnDesktopHomeRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.ExecuteCommandAsync("new_character", CancellationToken.None),
+            "create new character");
+    }
+
+    private async void ToolStrip_OnCampaignWorkspaceRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
+            },
+            "open campaign workspace");
+    }
+
+    private async void ToolStrip_OnUpdateStatusRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopUpdateWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowUpdateReviewed(_controls.ToolStrip);
+            },
+            "open update status");
+    }
+
+    private async void ToolStrip_OnInstallLinkingRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopInstallLinkingWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowInstallLinkingReviewed(_controls.ToolStrip);
+            },
+            "open install linking");
+    }
+
+    private async void ToolStrip_OnSupportRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopSupportWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowSupportReviewed(_controls.ToolStrip);
+            },
+            "open support");
+    }
+
+    private async void ToolStrip_OnReportIssueRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopReportIssueWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowReportIssueReviewed(_controls.ToolStrip);
+            },
+            "open report issue");
+    }
+
+    private async void ToolStrip_OnSettingsRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await _interactionCoordinator.ExecuteCommandAsync("global_settings", CancellationToken.None);
+                MainWindowFeedbackCoordinator.ShowSettingsReviewed(_controls.ToolStrip);
+            },
+            "open global settings");
     }
 
     private async void ToolStrip_OnCloseWorkspaceRequested(object? sender, EventArgs e)

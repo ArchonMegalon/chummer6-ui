@@ -12,6 +12,7 @@ import pathlib
 import re
 import sys
 import json
+import os
 from typing import Sequence
 
 
@@ -19,30 +20,111 @@ repo_root = pathlib.Path(sys.argv[1])
 output_path = pathlib.Path(sys.argv[2])
 
 parity_oracle_path = repo_root / "docs" / "PARITY_ORACLE.json"
-navigation_catalog_path = repo_root / "Chummer.Rulesets.Hosting" / "Presentation" / "NavigationTabCatalog.cs"
-action_catalog_path = repo_root / "Chummer.Rulesets.Hosting" / "Presentation" / "WorkspaceSurfaceActionCatalog.cs"
+default_core_engine_root = repo_root.parent / "chummer-core-engine"
+core_engine_root = pathlib.Path(os.environ.get("CHUMMER_CORE_ENGINE_ROOT", str(default_core_engine_root)))
+default_presentation_root = repo_root.parent / "chummer-presentation"
+presentation_root = pathlib.Path(os.environ.get("CHUMMER_PRESENTATION_ROOT", str(default_presentation_root)))
+navigation_catalog_path = pathlib.Path(
+    os.environ.get(
+        "CHUMMER_PARITY_NAVIGATION_TAB_CATALOG_PATH",
+        str(core_engine_root / "Chummer.Rulesets.Hosting" / "Presentation" / "NavigationTabCatalog.cs"),
+    )
+)
+action_catalog_path = pathlib.Path(
+    os.environ.get(
+        "CHUMMER_PARITY_WORKSPACE_ACTION_CATALOG_PATH",
+        str(core_engine_root / "Chummer.Rulesets.Hosting" / "Presentation" / "WorkspaceSurfaceActionCatalog.cs"),
+    )
+)
+desktop_dialog_factory_path = pathlib.Path(
+    os.environ.get(
+        "CHUMMER_PARITY_DESKTOP_DIALOG_FACTORY_PATH",
+        str(presentation_root / "Chummer.Presentation" / "Overview" / "DesktopDialogFactory.cs"),
+    )
+)
 
 
 def read_text(path: pathlib.Path) -> str:
+    if not path.is_file():
+        raise FileNotFoundError(f"required source file is missing: {path}")
     return path.read_text(encoding="utf-8")
 
+def display_path(path: pathlib.Path) -> str:
+    try:
+        return os.path.relpath(path, repo_root)
+    except ValueError:
+        return str(path)
 
-def parse_oracle_ids(oracle: dict[str, list[str]], key: str) -> list[str]:
-    return sorted(set(oracle[key]))
+
+def normalize_required_token(raw_value: object, *, source: str) -> str:
+    if not isinstance(raw_value, str):
+        raise ValueError(f"{source} must contain only string token values")
+    token = raw_value.strip()
+    if not token:
+        raise ValueError(f"{source} must not contain blank token values")
+    if token != raw_value:
+        raise ValueError(f"{source} contains whitespace-padded token '{raw_value}'")
+    return token
+
+
+def parse_required_token_list(oracle: dict[str, object], key: str, *, source: str) -> list[str]:
+    raw_values = oracle.get(key)
+    if not isinstance(raw_values, list):
+        raise ValueError(f"{source}.{key} must be a JSON array")
+
+    normalized_tokens: dict[str, str] = {}
+    tokens: list[str] = []
+    for index, raw_value in enumerate(raw_values):
+        token = normalize_required_token(raw_value, source=f"{source}.{key}[{index}]")
+        normalized_key = token.casefold()
+        if normalized_key in normalized_tokens:
+            raise ValueError(
+                f"{source}.{key} contains duplicate normalized token '{token}' "
+                f"(existing '{normalized_tokens[normalized_key]}')"
+            )
+        normalized_tokens[normalized_key] = token
+        tokens.append(token)
+    return sorted(tokens)
+
+
+def parse_catalog_token_matches(matches: Sequence[str], *, source: str) -> list[str]:
+    normalized_tokens: dict[str, str] = {}
+    for index, raw_value in enumerate(matches):
+        token = normalize_required_token(raw_value, source=f"{source}[{index}]")
+        normalized_key = token.casefold()
+        if normalized_key in normalized_tokens:
+            existing_token = normalized_tokens[normalized_key]
+            if existing_token != token:
+                raise ValueError(
+                    f"{source} contains non-canonical alias for normalized catalog token '{token}' "
+                    f"(existing '{existing_token}')"
+                )
+            continue
+        normalized_tokens[normalized_key] = token
+    return sorted(normalized_tokens.values())
 
 
 def parse_catalog_ids(text: str) -> list[str]:
-    return sorted(set(re.findall(r'\b[A-Za-z_][A-Za-z0-9_]*\(\s*"([^"]+)"\s*,', text)))
+    return parse_catalog_token_matches(
+        re.findall(r'\b[A-Za-z_][A-Za-z0-9_]*\(\s*"([^"]+)"\s*,', text),
+        source=f"{display_path(navigation_catalog_path)} tab IDs",
+    )
 
 
 def parse_workspace_action_target_ids(text: str) -> list[str]:
-    return sorted(
-        set(
-            re.findall(
-                r'\b[A-Za-z_][A-Za-z0-9_]*\(\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*[^,]+,\s*"([^"]+)"',
-                text,
-            )
-        )
+    return parse_catalog_token_matches(
+        re.findall(
+            r'\b[A-Za-z_][A-Za-z0-9_]*\(\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*[^,]+,\s*"([^"]+)"',
+            text,
+        ),
+        source=f"{display_path(action_catalog_path)} workspace action target IDs",
+    )
+
+
+def parse_desktop_dialog_control_ids(text: str) -> list[str]:
+    return parse_catalog_token_matches(
+        re.findall(r'"([A-Za-z0-9_]+)"\s*=>\s*new\s+DesktopDialogState\(', text),
+        source=f"{display_path(desktop_dialog_factory_path)} desktop dialog control IDs",
     )
 
 
@@ -55,18 +137,61 @@ def partition_coverage(legacy_ids: Sequence[str], catalog_ids: Sequence[str]) ->
     return covered, missing, catalog_only
 
 
+def fail_on_unacknowledged_catalog_only(
+    *,
+    surface_label: str,
+    catalog_only_ids: Sequence[str],
+    acknowledged_ids: Sequence[str],
+    source: str,
+) -> None:
+    catalog_only_set = set(catalog_only_ids)
+    acknowledged_set = set(acknowledged_ids)
+    unacknowledged = sorted(catalog_only_set - acknowledged_set)
+    stale = sorted(acknowledged_set - catalog_only_set)
+    if unacknowledged:
+        raise ValueError(
+            f"{source} is missing required acknowledged catalog-only {surface_label} ids "
+            f"({', '.join(unacknowledged)})"
+        )
+    if stale:
+        raise ValueError(
+            f"{source} acknowledged catalog-only {surface_label} ids that are no longer catalog-only "
+            f"({', '.join(stale)})"
+        )
+
+
+def fail_on_missing_required_legacy_ids(
+    *,
+    surface_label: str,
+    missing_ids: Sequence[str],
+    source: str,
+) -> None:
+    if missing_ids:
+        raise ValueError(
+            f"{source} is missing required legacy {surface_label} ids "
+            f"({', '.join(missing_ids)})"
+        )
+
+
 def write_summary_row(kind: str, legacy_ids: Sequence[str], covered: Sequence[str], missing: Sequence[str], catalog_only: Sequence[str]) -> str:
     return f"| {kind} | {len(legacy_ids)} | {len(covered)} | {len(missing)} | {len(catalog_only)} |"
 
 
-def write_coverage_table(title: str, covered: Sequence[str], missing: Sequence[str], catalog_only: Sequence[str]) -> list[str]:
+def write_coverage_table(
+    title: str,
+    covered: Sequence[str],
+    missing: Sequence[str],
+    catalog_only: Sequence[str],
+    *,
+    catalog_only_status: str = "catalog_only",
+) -> list[str]:
     lines: list[str] = [f"## {title}", "", "| ID | Status |", "| --- | --- |"]
     for value in covered:
         lines.append(f"| `{value}` | covered |")
     for value in missing:
         lines.append(f"| `{value}` | missing_in_catalog |")
     for value in catalog_only:
-        lines.append(f"| `{value}` | catalog_only |")
+        lines.append(f"| `{value}` | {catalog_only_status} |")
     if not (covered or missing or catalog_only):
         lines.append("| _(none)_ | _(none)_ |")
     lines.append("")
@@ -74,16 +199,77 @@ def write_coverage_table(title: str, covered: Sequence[str], missing: Sequence[s
 
 
 parity_oracle = json.loads(read_text(parity_oracle_path))
+if not isinstance(parity_oracle, dict):
+    raise ValueError(f"{display_path(parity_oracle_path)} must be a JSON object")
 navigation_catalog_text = read_text(navigation_catalog_path)
 action_catalog_text = read_text(action_catalog_path)
+desktop_dialog_factory_text = read_text(desktop_dialog_factory_path)
 
-legacy_tabs = parse_oracle_ids(parity_oracle, "tabs")
-legacy_actions = parse_oracle_ids(parity_oracle, "workspaceActions")
+legacy_tabs = parse_required_token_list(parity_oracle, "tabs", source=display_path(parity_oracle_path))
+legacy_actions = parse_required_token_list(parity_oracle, "workspaceActions", source=display_path(parity_oracle_path))
+acknowledged_catalog_only_tabs = parse_required_token_list(
+    parity_oracle,
+    "acknowledgedCatalogOnlyTabs",
+    source=display_path(parity_oracle_path),
+)
+acknowledged_catalog_only_actions = parse_required_token_list(
+    parity_oracle,
+    "acknowledgedCatalogOnlyWorkspaceActions",
+    source=display_path(parity_oracle_path),
+)
+acknowledged_dialog_factory_only_desktop_controls = parse_required_token_list(
+    parity_oracle,
+    "acknowledgedDialogFactoryOnlyDesktopControls",
+    source=display_path(parity_oracle_path),
+)
+legacy_desktop_controls = parse_required_token_list(
+    parity_oracle,
+    "desktopControls",
+    source=display_path(parity_oracle_path),
+)
 catalog_tabs = parse_catalog_ids(navigation_catalog_text)
 catalog_actions = parse_workspace_action_target_ids(action_catalog_text)
+catalog_desktop_controls = parse_desktop_dialog_control_ids(desktop_dialog_factory_text)
 
 covered_tabs, missing_tabs, catalog_only_tabs = partition_coverage(legacy_tabs, catalog_tabs)
 covered_actions, missing_actions, catalog_only_actions = partition_coverage(legacy_actions, catalog_actions)
+covered_desktop_controls, missing_desktop_controls, catalog_only_desktop_controls = partition_coverage(
+    legacy_desktop_controls,
+    catalog_desktop_controls,
+)
+fail_on_unacknowledged_catalog_only(
+    surface_label="tab",
+    catalog_only_ids=catalog_only_tabs,
+    acknowledged_ids=acknowledged_catalog_only_tabs,
+    source=display_path(parity_oracle_path),
+)
+fail_on_unacknowledged_catalog_only(
+    surface_label="workspace action",
+    catalog_only_ids=catalog_only_actions,
+    acknowledged_ids=acknowledged_catalog_only_actions,
+    source=display_path(parity_oracle_path),
+)
+fail_on_unacknowledged_catalog_only(
+    surface_label="dialog-factory-only desktop control",
+    catalog_only_ids=catalog_only_desktop_controls,
+    acknowledged_ids=acknowledged_dialog_factory_only_desktop_controls,
+    source=display_path(parity_oracle_path),
+)
+fail_on_missing_required_legacy_ids(
+    surface_label="tab",
+    missing_ids=missing_tabs,
+    source=display_path(parity_oracle_path),
+)
+fail_on_missing_required_legacy_ids(
+    surface_label="workspace action",
+    missing_ids=missing_actions,
+    source=display_path(parity_oracle_path),
+)
+if missing_desktop_controls:
+    raise ValueError(
+        f"{display_path(parity_oracle_path)} is missing required legacy desktop control ids in "
+        f"{display_path(desktop_dialog_factory_path)} ({', '.join(missing_desktop_controls)})"
+    )
 
 output_lines: list[str] = [
     "# UI Parity Checklist",
@@ -91,11 +277,14 @@ output_lines: list[str] = [
     "Generated automatically from the parity oracle and current contracts catalogs.",
     "",
     "- Regenerate command: `RUNBOOK_MODE=parity-checklist bash scripts/runbook.sh`",
-    f"- Parity oracle source: `{parity_oracle_path.relative_to(repo_root)}`",
-    f"- Tab catalog source: `{navigation_catalog_path.relative_to(repo_root)}`",
-    f"- Action catalog source: `{action_catalog_path.relative_to(repo_root)}`",
+    f"- Parity oracle source: `{display_path(parity_oracle_path)}`",
+    f"- Tab catalog source: `{display_path(navigation_catalog_path)}`",
+    f"- Action catalog source: `{display_path(action_catalog_path)}`",
+    f"- Desktop dialog source: `{display_path(desktop_dialog_factory_path)}`",
     "- Workspace Actions coverage compares parity-oracle action IDs to action `TargetId` values.",
-    "- Legacy desktop control parity is enforced by dialog-template compliance tests, not by a shared control catalog.",
+    "- Catalog-only IDs must be acknowledged explicitly in `docs/PARITY_ORACLE.json`.",
+    "- Desktop Controls coverage compares parity-oracle control IDs to dialog control IDs in `DesktopDialogFactory`.",
+    "- Dialog-factory-only desktop controls must be acknowledged explicitly in `docs/PARITY_ORACLE.json`.",
     "",
     "## Summary",
     "",
@@ -103,11 +292,27 @@ output_lines: list[str] = [
     "| --- | ---: | ---: | ---: | ---: |",
     write_summary_row("Tabs", legacy_tabs, covered_tabs, missing_tabs, catalog_only_tabs),
     write_summary_row("Workspace Actions", legacy_actions, covered_actions, missing_actions, catalog_only_actions),
+    write_summary_row(
+        "Desktop Controls",
+        legacy_desktop_controls,
+        covered_desktop_controls,
+        missing_desktop_controls,
+        catalog_only_desktop_controls,
+    ),
     "",
 ]
 
 output_lines.extend(write_coverage_table("Tabs Coverage", covered_tabs, missing_tabs, catalog_only_tabs))
 output_lines.extend(write_coverage_table("Workspace Actions Coverage", covered_actions, missing_actions, catalog_only_actions))
+output_lines.extend(
+    write_coverage_table(
+        "Desktop Controls Coverage",
+        covered_desktop_controls,
+        missing_desktop_controls,
+        catalog_only_desktop_controls,
+        catalog_only_status="present_in_dialog_factory_acknowledged",
+    )
+)
 
 output_path.parent.mkdir(parents=True, exist_ok=True)
 output_path.write_text("\n".join(output_lines).rstrip() + "\n", encoding="utf-8")
@@ -116,6 +321,7 @@ print(f"Wrote parity checklist to {output_path}")
 print(
     "Summary: "
     f"tabs covered={len(covered_tabs)}/{len(legacy_tabs)}, "
-    f"actions covered={len(covered_actions)}/{len(legacy_actions)}"
+    f"actions covered={len(covered_actions)}/{len(legacy_actions)}, "
+    f"desktop-controls covered={len(covered_desktop_controls)}/{len(legacy_desktop_controls)}"
 )
 PY

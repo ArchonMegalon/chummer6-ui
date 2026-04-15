@@ -1,6 +1,9 @@
+@namespace Chummer.Blazor.Components.Shared
+
 @using Chummer.Contracts.Content
 @using Chummer.Contracts.Rulesets
 @using Chummer.Presentation.Overview
+@using Chummer.Presentation.UiKit
 
 <section class="panel design-panel">
     <header class="panel-header">
@@ -80,9 +83,30 @@
                 <div><dt>Ruleset</dt><dd>@Projection.RuntimeLock.RulesetId</dd></div>
                 <div><dt>Engine API</dt><dd>@Projection.RuntimeLock.EngineApiVersion</dd></div>
                 <div><dt>Profile Source</dt><dd>@Projection.ProfileSourceKind</dd></div>
+                @if (Projection.Promotion is not null)
+                {
+                    <div><dt>Publication</dt><dd>@Projection.Promotion.PublicationStatus</dd></div>
+                    <div><dt>Visibility</dt><dd>@Projection.Promotion.Visibility</dd></div>
+                    <div><dt>Update Channel</dt><dd>@Projection.Promotion.UpdateChannel</dd></div>
+                    <div><dt>Current Stage</dt><dd>@FormatPromotionStage(Projection.Promotion.CurrentStage)</dd></div>
+                    <div><dt>Promote To</dt><dd>@FormatPromotionStage(Projection.Promotion.PromotionTargetStage)</dd></div>
+                    <div><dt>Published</dt><dd>@(Projection.Promotion.PublishedAtUtc?.ToLocalTime().ToString("u") ?? "not published yet")</dd></div>
+                    <div><dt>Promotion</dt><dd>@Projection.Promotion.PromotionSummary</dd></div>
+                    <div><dt>Rollback</dt><dd>@Projection.Promotion.RollbackSummary</dd></div>
+                    <div><dt>Lineage</dt><dd>@Projection.Promotion.LineageSummary</dd></div>
+                }
                 <div><dt>Provider Coverage</dt><dd>@Projection.ProviderBindings.Count bindings across @(Projection.CapabilityDescriptors?.Count ?? 0) capability descriptors</dd></div>
                 <div><dt>Summary</dt><dd>@RuntimeInspectorDiagnostics.BuildProfileDiagnosticsSummary(Projection)</dd></div>
             </dl>
+            @if (Projection.Promotion is not null)
+            {
+                <ul class="browse-detail-lines">
+                    @foreach (var stage in BuildPromotionFlow(Projection.Promotion))
+                    {
+                        <li><strong>@stage.Label</strong><span> @stage.Status:</span><span> @stage.Summary</span></li>
+                    }
+                </ul>
+            }
         </article>
 
         <article class="panel trace-card" data-runtime-hub-diagnostics>
@@ -115,16 +139,16 @@
                 <table class="section-table">
                     <thead>
                         <tr>
-                            <th>Bundle</th>
-                            <th>Ruleset</th>
-                            <th>Version</th>
-                            <th>Assets</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("bundle", "Bundle"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("bundle", "Bundle"))">Bundle</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("ruleset", "Ruleset"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("ruleset", "Ruleset"))">Ruleset</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("version", "Version"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("version", "Version"))">Version</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("assets", "Assets"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("assets", "Assets"))">Assets</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (ContentBundleDescriptor bundle in Projection.RuntimeLock.ContentBundles)
                         {
-                            <tr>
+                            <tr class="@(ChummerPatternBoundary.DenseRowClass($"bundle-{bundle.BundleId}"))" @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"bundle-{bundle.BundleId}"))">
                                 <td>@bundle.Title</td>
                                 <td>@bundle.RulesetId</td>
                                 <td>@bundle.Version</td>
@@ -179,18 +203,20 @@
                 <table class="section-table">
                     <thead>
                         <tr>
-                            <th>RulePack</th>
-                            <th>Trust</th>
-                            <th>Bindings</th>
-                            <th>Warnings</th>
-                            <th>Migration</th>
-                            <th>Capabilities</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("rulepack", "RulePack"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("rulepack", "RulePack"))">RulePack</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("trust", "Trust"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("trust", "Trust"))">Trust</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("bindings", "Bindings"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("bindings", "Bindings"))">Bindings</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("warnings", "Warnings"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("warnings", "Warnings"))">Warnings</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("migration", "Migration"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("migration", "Migration"))">Migration</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("capabilities", "Capabilities"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("capabilities", "Capabilities"))">Capabilities</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (RuntimeInspectorRulePackEntry rulePack in Projection.ResolvedRulePacks)
                         {
-                            <tr data-runtime-rulepack-row="@rulePack.RulePack.Id">
+                            <tr class="@(ChummerPatternBoundary.DenseRowClass($"rulepack-{rulePack.RulePack.Id}"))"
+                                @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"rulepack-{rulePack.RulePack.Id}"))"
+                                data-runtime-rulepack-row="@rulePack.RulePack.Id">
                                 <td>
                                     <strong>@rulePack.Title</strong>
                                     <div class="meta">@rulePack.RulePack.Id@("@")@rulePack.RulePack.Version · @rulePack.SourceKind</div>
@@ -221,16 +247,17 @@
                 <table class="section-table">
                     <thead>
                         <tr>
-                            <th>Capability</th>
-                            <th>Provider</th>
-                            <th>Pack</th>
-                            <th>Session Safe</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("capability", "Capability"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("capability", "Capability"))">Capability</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("provider", "Provider"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("provider", "Provider"))">Provider</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("pack", "Pack"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("pack", "Pack"))">Pack</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("session-safe", "Session Safe"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("session-safe", "Session Safe"))">Session Safe</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (RuntimeInspectorProviderBinding binding in Projection.ProviderBindings)
                         {
-                            <tr>
+                            <tr class="@(ChummerPatternBoundary.DenseRowClass($"binding-{binding.CapabilityId}", explainAffinity: binding.SessionSafe, muted: !binding.SessionSafe))"
+                                @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"binding-{binding.CapabilityId}", explainAffinity: binding.SessionSafe, muted: !binding.SessionSafe))">
                                 <td>@binding.CapabilityId</td>
                                 <td>@binding.ProviderId</td>
                                 <td>@(binding.PackId ?? "(none)")</td>
@@ -329,6 +356,23 @@
             }
         </article>
 
+        @if (HasDiagnosticsEnvironmentDiff(Projection))
+        {
+            <article class="panel trace-card" data-diagnostics-environment-diff>
+                <header>
+                    <h3>Diagnostics environment diff</h3>
+                    <span class="badge">@BuildDiagnosticsDiffBadge(Projection)</span>
+                </header>
+                <dl class="facts compact">
+                    <div><dt>Rule environment</dt><dd>@Projection.RuntimeLock.RulesetId · @Projection.RuntimeLock.RuntimeFingerprint</dd></div>
+                    <div><dt>Before</dt><dd>@BuildDiagnosticsDiffBefore(Projection)</dd></div>
+                    <div><dt>After</dt><dd>@BuildDiagnosticsDiffAfter(Projection)</dd></div>
+                    <div><dt>Explain receipt</dt><dd>@BuildDiagnosticsExplainReceipt(Projection)</dd></div>
+                    <div><dt>Support reuse</dt><dd>@RuntimeInspectorDiagnostics.BuildHubClientDiagnosticsSummary(Projection)</dd></div>
+                </dl>
+            </article>
+        }
+
         <article class="panel trace-card">
             <header>
                 <h3>Capability Descriptors</h3>
@@ -343,17 +387,18 @@
                 <table class="section-table">
                     <thead>
                         <tr>
-                            <th>Capability</th>
-                            <th>Invocation</th>
-                            <th>Provider</th>
-                            <th>Flags</th>
-                            <th>Gas</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("descriptor-capability", "Capability"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("descriptor-capability", "Capability"))">Capability</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("invocation", "Invocation"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("invocation", "Invocation"))">Invocation</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("descriptor-provider", "Provider"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("descriptor-provider", "Provider"))">Provider</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("flags", "Flags"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("flags", "Flags"))">Flags</th>
+                            <th class="@(ChummerPatternBoundary.DenseHeaderClass("gas", "Gas"))" @attributes="@(ChummerPatternBoundary.DenseHeaderAttributes("gas", "Gas"))">Gas</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (RuntimeInspectorCapabilityDescriptorProjection descriptor in Projection.CapabilityDescriptors)
                         {
-                            <tr>
+                            <tr class="@(ChummerPatternBoundary.DenseRowClass($"descriptor-{descriptor.CapabilityId}", explainAffinity: descriptor.Explainable, muted: !descriptor.SessionSafe))"
+                                @attributes="@(ChummerPatternBoundary.DenseRowAttributes($"descriptor-{descriptor.CapabilityId}", explainAffinity: descriptor.Explainable, muted: !descriptor.SessionSafe))">
                                 <td>@descriptor.Title</td>
                                 <td>@descriptor.InvocationKind</td>
                                 <td>@(descriptor.ProviderId ?? "(none)")</td>
@@ -433,4 +478,140 @@
             RuntimeInspectorWarningSeverityLevels.Warning => "coach-badge warn",
             _ => "coach-badge error"
         };
+
+    private static bool HasDiagnosticsEnvironmentDiff(RuntimeInspectorProjection projection)
+        => projection.MigrationPreview.Count > 0
+            || projection.CompatibilityDiagnostics.Count > 0
+            || projection.Warnings.Count > 0
+            || projection.ProviderBindings.Any(static binding => !binding.SessionSafe);
+
+    private static string BuildDiagnosticsDiffBadge(RuntimeInspectorProjection projection)
+    {
+        int diffCount = projection.MigrationPreview.Count
+            + projection.CompatibilityDiagnostics.Count
+            + projection.Warnings.Count;
+        return diffCount == 0 ? "stable" : $"{diffCount} diff signal(s)";
+    }
+
+    private static string BuildDiagnosticsDiffBefore(RuntimeInspectorProjection projection)
+    {
+        RuntimeMigrationPreviewItem? migration = projection.MigrationPreview
+            .FirstOrDefault(static item => !string.IsNullOrWhiteSpace(item.BeforeValue));
+        if (migration is not null)
+        {
+            return $"{migration.SubjectId ?? migration.Kind}: {migration.BeforeValue}";
+        }
+
+        RuntimeLockCompatibilityDiagnostic? diagnostic = projection.CompatibilityDiagnostics.FirstOrDefault();
+        if (diagnostic is not null)
+        {
+            return $"{projection.RuntimeLock.RulesetId} / {projection.RuntimeLock.RuntimeFingerprint}: {diagnostic.Message}";
+        }
+
+        RuntimeInspectorWarning? warning = projection.Warnings.FirstOrDefault();
+        return warning is null
+            ? "Current rule environment has no emitted before-state drift."
+            : $"{warning.SubjectId ?? warning.Kind}: {warning.Message}";
+    }
+
+    private static string BuildDiagnosticsDiffAfter(RuntimeInspectorProjection projection)
+    {
+        RuntimeMigrationPreviewItem? migration = projection.MigrationPreview
+            .FirstOrDefault(static item => !string.IsNullOrWhiteSpace(item.AfterValue));
+        RuntimeLockCompatibilityDiagnostic? diagnostic = projection.CompatibilityDiagnostics.FirstOrDefault();
+        if (migration is not null)
+        {
+            string migrationAfter = $"{migration.SubjectId ?? migration.Kind}: {migration.AfterValue}";
+            return diagnostic is null
+                ? migrationAfter
+                : $"{migrationAfter}; {BuildCompatibilityAfter(diagnostic, projection)}";
+        }
+
+        if (diagnostic is not null)
+        {
+            return BuildCompatibilityAfter(diagnostic, projection);
+        }
+
+        return RuntimeInspectorDiagnostics.HasStaleOrInvalidatedState(projection)
+            ? "Refresh the runtime projection and keep the support packet open until the receipt is current."
+            : "No environment change is required before support closure.";
+    }
+
+    private static string BuildCompatibilityAfter(RuntimeLockCompatibilityDiagnostic diagnostic, RuntimeInspectorProjection projection)
+        => string.IsNullOrWhiteSpace(diagnostic.RequiredRuntimeFingerprint)
+            ? $"Recheck required ruleset {diagnostic.RequiredRulesetId ?? projection.RuntimeLock.RulesetId} before support closure."
+            : $"Rebind to {diagnostic.RequiredRuntimeFingerprint} before support closure.";
+
+    private static string BuildDiagnosticsExplainReceipt(RuntimeInspectorProjection projection)
+    {
+        RuntimeInspectorCapabilityDescriptorProjection? descriptor = projection.CapabilityDescriptors?
+            .FirstOrDefault(static candidate => candidate.Explainable);
+        if (descriptor is not null)
+        {
+            return $"{descriptor.CapabilityId} via {descriptor.ProviderId ?? "(provider pending)"}";
+        }
+
+        RuntimeInspectorProviderBinding? binding = projection.ProviderBindings.FirstOrDefault();
+        return binding is null ? "No explainable provider binding is active." : $"{binding.CapabilityId} via {binding.ProviderId}";
+    }
+}
+
+@code {
+    private static IReadOnlyList<(string Label, string Status, string Summary)> BuildPromotionFlow(RuntimeInspectorPromotionProjection promotion)
+    {
+        string currentStage = promotion.CurrentStage ?? string.Empty;
+        string targetStage = promotion.PromotionTargetStage ?? string.Empty;
+
+        return
+        [
+            BuildPromotionFlowStage(RuntimeInspectorPromotionStages.Sandbox, "Sandbox", currentStage, targetStage, "Keep the rule environment bounded while preview work, local validation, and compatibility proof settle."),
+            BuildPromotionFlowStage(RuntimeInspectorPromotionStages.CampaignApproved, "Campaign-approved", currentStage, targetStage, "Bind the same fingerprint to governed campaign truth so build, play, and support stop drifting."),
+            BuildPromotionFlowStage(RuntimeInspectorPromotionStages.Published, "Published", currentStage, targetStage, "Promote the governed fingerprint for broader reuse only after the rollback and lineage posture are already explicit.")
+        ];
+    }
+
+    private static (string Label, string Status, string Summary) BuildPromotionFlowStage(
+        string stageId,
+        string label,
+        string currentStage,
+        string targetStage,
+        string summary)
+    {
+        string status = string.Equals(stageId, currentStage, StringComparison.Ordinal)
+            ? "current"
+            : string.Equals(stageId, targetStage, StringComparison.Ordinal)
+                ? "next"
+                : IsCompletedPromotionStage(stageId, currentStage)
+                    ? "completed"
+                    : "pending";
+
+        return (label, status, summary);
+    }
+
+    private static string FormatPromotionStage(string? stage)
+    {
+        return stage switch
+        {
+            RuntimeInspectorPromotionStages.Sandbox => "Sandbox",
+            RuntimeInspectorPromotionStages.CampaignApproved => "Campaign-approved",
+            RuntimeInspectorPromotionStages.Published => "Published",
+            _ => string.IsNullOrWhiteSpace(stage) ? "Not staged" : stage
+        };
+    }
+
+    private static bool IsCompletedPromotionStage(string stageId, string currentStage)
+    {
+        return GetPromotionStageOrder(stageId) < GetPromotionStageOrder(currentStage);
+    }
+
+    private static int GetPromotionStageOrder(string? stageId)
+    {
+        return stageId switch
+        {
+            RuntimeInspectorPromotionStages.Sandbox => 0,
+            RuntimeInspectorPromotionStages.CampaignApproved => 1,
+            RuntimeInspectorPromotionStages.Published => 2,
+            _ => -1
+        };
+    }
 }

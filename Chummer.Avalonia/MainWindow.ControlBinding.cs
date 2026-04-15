@@ -9,7 +9,6 @@ internal static class MainWindowControlBinder
 
     public static MainWindowControls Bind(
         ToolStripControl toolStrip,
-        WorkspaceStripControl workspaceStrip,
         SummaryHeaderControl summaryHeader,
         ShellMenuBarControl menuBar,
         NavigatorPaneControl navigatorPane,
@@ -20,34 +19,58 @@ internal static class MainWindowControlBinder
         EventHandler onImportFileRequested,
         EventHandler onImportRawRequested,
         EventHandler onSaveRequested,
+        EventHandler onPrintRequested,
+        EventHandler onCopyRequested,
         EventHandler onCloseWorkspaceRequested,
-        EventHandler onRuntimeInspectorRequested,
+        EventHandler onDesktopHomeRequested,
+        EventHandler onCampaignWorkspaceRequested,
+        EventHandler onUpdateStatusRequested,
+        EventHandler onInstallLinkingRequested,
+        EventHandler onSupportRequested,
+        EventHandler onReportIssueRequested,
+        EventHandler onSettingsRequested,
+        EventHandler onLoadDemoRunnerRequested,
         EventHandler<string> onMenuSelected,
         EventHandler<string> onWorkspaceSelected,
         EventHandler<string> onNavigationTabSelected,
         EventHandler<string> onSectionActionSelected,
         EventHandler<string> onWorkflowSurfaceSelected,
+        EventHandler<string> onSectionQuickActionRequested,
         EventHandler onCoachLaunchCopyRequested,
         EventHandler<string> onCommandSelected,
-        EventHandler<string> onDialogActionSelected)
+        EventHandler<string> onDialogActionSelected,
+        EventHandler<DialogFieldValueChangedEventArgs> onDialogFieldValueChanged,
+        EventHandler<string> onMenuCommandSelected)
     {
         toolStrip.ImportFileRequested += onImportFileRequested;
         toolStrip.ImportRawRequested += onImportRawRequested;
         toolStrip.SaveRequested += onSaveRequested;
+        toolStrip.PrintRequested += onPrintRequested;
+        toolStrip.CopyRequested += onCopyRequested;
         toolStrip.CloseWorkspaceRequested += onCloseWorkspaceRequested;
-        summaryHeader.RuntimeInspectorRequested += onRuntimeInspectorRequested;
+        toolStrip.DesktopHomeRequested += onDesktopHomeRequested;
+        toolStrip.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
+        toolStrip.UpdateStatusRequested += onUpdateStatusRequested;
+        toolStrip.InstallLinkingRequested += onInstallLinkingRequested;
+        toolStrip.SupportRequested += onSupportRequested;
+        toolStrip.ReportIssueRequested += onReportIssueRequested;
+        toolStrip.SettingsRequested += onSettingsRequested;
+        toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
+        summaryHeader.NavigationTabSelected += onNavigationTabSelected;
         menuBar.MenuSelected += onMenuSelected;
         navigatorPane.WorkspaceSelected += onWorkspaceSelected;
         navigatorPane.NavigationTabSelected += onNavigationTabSelected;
         navigatorPane.SectionActionSelected += onSectionActionSelected;
         navigatorPane.WorkflowSurfaceSelected += onWorkflowSurfaceSelected;
+        sectionHost.QuickActionRequested += onSectionQuickActionRequested;
         coachSidecar.CopyLaunchRequested += onCoachLaunchCopyRequested;
         commandDialogPane.CommandSelected += onCommandSelected;
         commandDialogPane.DialogActionSelected += onDialogActionSelected;
+        commandDialogPane.DialogFieldValueChanged += onDialogFieldValueChanged;
+        menuBar.MenuCommandSelected += onMenuCommandSelected;
 
         return new MainWindowControls(
             toolStrip,
-            workspaceStrip,
             summaryHeader,
             menuBar,
             navigatorPane,
@@ -60,7 +83,6 @@ internal static class MainWindowControlBinder
 
 internal sealed record MainWindowControls(
     ToolStripControl ToolStrip,
-    WorkspaceStripControl WorkspaceStrip,
     SummaryHeaderControl SummaryHeader,
     ShellMenuBarControl MenuBar,
     NavigatorPaneControl NavigatorPane,
@@ -75,7 +97,6 @@ internal sealed record MainWindowControls(
     {
         ToolStrip.SetState(shellFrame.HeaderState.ToolStrip);
         MenuBar.SetState(shellFrame.HeaderState.MenuBar);
-        WorkspaceStrip.SetState(shellFrame.ChromeState.WorkspaceStrip);
         SummaryHeader.SetState(shellFrame.ChromeState.SummaryHeader);
         StatusStrip.SetState(shellFrame.ChromeState.StatusStrip);
         CommandDialogPane.SetState(shellFrame.CommandDialogPaneState);

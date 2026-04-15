@@ -174,12 +174,12 @@ public static class RulesetExplainRenderer
                     ResolveProvenance(ReadProperty(provider, "Provider") ?? provider.ProviderId, resolver),
                     ResolveProvenance(ReadProperty(provider, "Capability") ?? provider.CapabilityId, resolver),
                     ResolveProvenance(ReadProperty(provider, "Pack") ?? provider.PackId, resolver),
-                    ResolveExplainText(provider.Steps.FirstOrDefault()?.ExplanationKey, provider.Steps.FirstOrDefault()?.ExplanationParameters, resolver),
+                    ResolveProviderMessage(provider, resolver),
                     provider.Steps
                         .Select(step => new LocalizedExplainFragment(
-                            ResolveExplainText(step.ExplanationKey, step.ExplanationParameters, resolver),
+                            ResolveStepLabel(step, resolver),
                             ResolveStepValue(step),
-                            ResolveExplainText(step.ExplanationKey, step.ExplanationParameters, resolver),
+                            ResolveStepReason(step, resolver),
                             ResolveProvenance(step.PackId, resolver),
                             ResolveProvenance(step.ProviderId, resolver)))
                         .ToArray(),
@@ -307,6 +307,7 @@ public static class RulesetExplainRenderer
             {
                 LocalizedExplainText title = ResolveExplainText(step.ExplanationKey, step.ExplanationParameters, localization)
                     ?? ResolveToken("explain.chrome.value_label", localization);
+                title = ResolveStepLabel(step, localization) ?? title;
                 LocalizedExplainText value = ResolveStepValue(step)
                     ?? ResolveToken("explain.chrome.missing_value", localization);
 
@@ -316,7 +317,7 @@ public static class RulesetExplainRenderer
                 {
                     facts.Add(new LocalizedExplainFact(
                         ResolveToken("explain.chrome.reason_label", localization),
-                        ResolveExplainText(step.ExplanationKey, step.ExplanationParameters, localization)
+                        ResolveStepReason(step, localization)
                             ?? ResolveToken("explain.chrome.missing_value", localization)));
                 }
 
@@ -366,11 +367,81 @@ public static class RulesetExplainRenderer
         return
         [
             new LocalizedExplainDiff(
-                Label: ResolveExplainText(before.ExplanationKey, before.ExplanationParameters, localization)
+                Label: ResolveStepLabel(before, localization)
+                    ?? ResolveExplainText(before.ExplanationKey, before.ExplanationParameters, localization)
                     ?? ResolveToken("explain.chrome.value_label", localization),
                 Before: ResolveStepValue(before) ?? ResolveToken("explain.chrome.missing_value", localization),
                 After: ResolveStepValue(after) ?? ResolveToken("explain.chrome.missing_value", localization))
         ];
+    }
+
+    private static LocalizedExplainText? ResolveProviderMessage(
+        RulesetProviderTrace provider,
+        IExplainTextLocalization localization)
+    {
+        RulesetTraceStep? firstStep = provider.Steps.FirstOrDefault();
+        string? providerMessageKey = ReadParameterValue(firstStep?.ExplanationParameters, "providerMessageKey");
+        string? providerMessageText = ReadParameterValue(firstStep?.ExplanationParameters, "providerMessageText");
+
+        if (!string.IsNullOrWhiteSpace(providerMessageKey))
+        {
+            return ResolveExplainText(providerMessageKey, null, localization);
+        }
+
+        if (!string.IsNullOrWhiteSpace(providerMessageText))
+        {
+            return new LocalizedExplainText(null, providerMessageText);
+        }
+
+        return ResolveStepReason(firstStep, localization);
+    }
+
+    private static LocalizedExplainText? ResolveStepLabel(
+        RulesetTraceStep? step,
+        IExplainTextLocalization localization)
+    {
+        if (step is null)
+        {
+            return null;
+        }
+
+        string? labelKey = ReadParameterValue(step.ExplanationParameters, "labelKey");
+        if (!string.IsNullOrWhiteSpace(labelKey))
+        {
+            return ResolveScopedExplainText(labelKey, ReadScopedParameters(step.ExplanationParameters, "label:"), localization);
+        }
+
+        string? labelText = ReadParameterValue(step.ExplanationParameters, "labelText");
+        if (!string.IsNullOrWhiteSpace(labelText))
+        {
+            return new LocalizedExplainText(null, labelText);
+        }
+
+        return ResolveExplainText(step.ExplanationKey, step.ExplanationParameters, localization);
+    }
+
+    private static LocalizedExplainText? ResolveStepReason(
+        RulesetTraceStep? step,
+        IExplainTextLocalization localization)
+    {
+        if (step is null)
+        {
+            return null;
+        }
+
+        string? reasonKey = ReadParameterValue(step.ExplanationParameters, "reasonKey");
+        if (!string.IsNullOrWhiteSpace(reasonKey))
+        {
+            return ResolveScopedExplainText(reasonKey, ReadScopedParameters(step.ExplanationParameters, "reason:"), localization);
+        }
+
+        string? reasonText = ReadParameterValue(step.ExplanationParameters, "reasonText");
+        if (!string.IsNullOrWhiteSpace(reasonText))
+        {
+            return new LocalizedExplainText(null, reasonText);
+        }
+
+        return ResolveExplainText(step.ExplanationKey, step.ExplanationParameters, localization);
     }
 
     private static LocalizedExplainText? ResolveExplainText(
@@ -398,6 +469,22 @@ public static class RulesetExplainRenderer
             Parameters: mapped);
     }
 
+    private static LocalizedExplainText? ResolveScopedExplainText(
+        string? key,
+        IReadOnlyDictionary<string, string>? parameters,
+        IExplainTextLocalization localization)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return null;
+        }
+
+        return new LocalizedExplainText(
+            Key: key,
+            Text: localization.Resolve(key, parameters),
+            Parameters: parameters);
+    }
+
     private static LocalizedExplainText? ResolveStepValue(RulesetTraceStep step)
     {
         if (step.Modifier.HasValue)
@@ -418,8 +505,39 @@ public static class RulesetExplainRenderer
         {
             null => null,
             string value => value,
+            RulesetCapabilityValue capabilityValue => ReadCapabilityValue(capabilityValue),
             _ => ReadStringProperty(source, "Text", "Value", "FallbackText", "DefaultText", "Id", "Key", "LocalizationKey")
         };
+
+    private static string? ReadCapabilityValue(RulesetCapabilityValue value)
+    {
+        if (!string.IsNullOrWhiteSpace(value.StringValue))
+        {
+            return value.StringValue;
+        }
+
+        if (value.DecimalValue.HasValue)
+        {
+            return value.DecimalValue.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        if (value.IntegerValue.HasValue)
+        {
+            return value.IntegerValue.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        if (value.NumberValue.HasValue)
+        {
+            return value.NumberValue.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        if (value.BooleanValue.HasValue)
+        {
+            return value.BooleanValue.Value ? "true" : "false";
+        }
+
+        return null;
+    }
 
     private static string? ReadStringProperty(object source, params string[] propertyNames)
         => ReadProperty(source, propertyNames) switch
@@ -495,5 +613,49 @@ public static class RulesetExplainRenderer
         }
 
         return null;
+    }
+
+    private static string? ReadParameterValue(IReadOnlyList<RulesetExplainParameter>? parameters, string name)
+    {
+        if (parameters is null)
+        {
+            return null;
+        }
+
+        return parameters
+            .FirstOrDefault(parameter => string.Equals(parameter.Name, name, StringComparison.Ordinal))
+            is { } parameter
+            ? ReadString(parameter.Value)
+            : null;
+    }
+
+    private static IReadOnlyDictionary<string, string>? ReadScopedParameters(
+        IReadOnlyList<RulesetExplainParameter>? parameters,
+        string prefix)
+    {
+        if (parameters is null || parameters.Count == 0)
+        {
+            return null;
+        }
+
+        Dictionary<string, string> mapped = new(StringComparer.Ordinal);
+        foreach (RulesetExplainParameter parameter in parameters)
+        {
+            if (!parameter.Name.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string key = parameter.Name[prefix.Length..];
+            string? value = ReadString(parameter.Value);
+            if (string.IsNullOrWhiteSpace(key) || value is null)
+            {
+                continue;
+            }
+
+            mapped[key] = value;
+        }
+
+        return mapped.Count == 0 ? null : mapped;
     }
 }
