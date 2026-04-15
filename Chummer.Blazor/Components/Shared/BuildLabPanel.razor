@@ -103,6 +103,23 @@
         </section>
     }
 
+    @if (HasBuildBlockerReceipt(Projection))
+    {
+        <section class="coach-card" data-build-blocker-explain-receipt>
+            <div class="coach-card-header">
+                <h3>Build blocker receipt</h3>
+                <span class="badge">@BuildBuildBlockerBadge(Projection)</span>
+            </div>
+            <dl class="facts compact">
+                <div><dt>Explain</dt><dd>@(Projection.ExplainEntryId ?? "pending")</dd></div>
+                <div><dt>Rule environment</dt><dd>@BuildBuildBlockerEnvironment(Projection)</dd></div>
+                <div><dt>Before</dt><dd>@BuildBuildBlockerBefore(Projection)</dd></div>
+                <div><dt>After</dt><dd>@BuildBuildBlockerAfter(Projection)</dd></div>
+                <div><dt>Support reuse</dt><dd>@BuildBuildBlockerSupport(Projection)</dd></div>
+            </dl>
+        </section>
+    }
+
     @if (Projection.Variants.Count > 0)
     {
         <section class="coach-card">
@@ -436,6 +453,55 @@
             ? roleTag
             : System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
     }
+
+    private static bool HasBuildBlockerReceipt(BuildLabConceptIntakeProjection projection)
+    {
+        return !projection.CanContinue
+            || !string.IsNullOrWhiteSpace(projection.RuntimeCompatibilitySummary)
+            || !string.IsNullOrWhiteSpace(projection.SupportClosureSummary)
+            || projection.Watchouts is { Count: > 0 }
+            || projection.Variants.Any(variant => variant.Warnings.Count > 0);
+    }
+
+    private static string BuildBuildBlockerBadge(BuildLabConceptIntakeProjection projection)
+    {
+        int warningCount = projection.Variants.Sum(static variant => variant.Warnings.Count)
+            + (projection.Watchouts?.Count ?? 0);
+        return warningCount == 0 && projection.CanContinue ? "receipt" : $"{warningCount} blocker signal(s)";
+    }
+
+    private static string BuildBuildBlockerEnvironment(BuildLabConceptIntakeProjection projection)
+        => $"{projection.RulesetId} / {projection.BuildMethod}";
+
+    private static string BuildBuildBlockerBefore(BuildLabConceptIntakeProjection projection)
+    {
+        string summary = FirstNonBlank(
+            projection.RuntimeCompatibilitySummary,
+            projection.CampaignFitSummary,
+            projection.Variants
+                .SelectMany(static variant => variant.Warnings)
+                .Select(static warning => warning.Detail)
+                .FirstOrDefault(),
+            projection.Watchouts?.FirstOrDefault());
+
+        return string.IsNullOrWhiteSpace(summary) ? "No blocker was emitted before this build decision." : summary;
+    }
+
+    private static string BuildBuildBlockerAfter(BuildLabConceptIntakeProjection projection)
+        => FirstNonBlank(
+            projection.NextSafeAction,
+            projection.SupportClosureSummary,
+            projection.CanContinue ? "Build can continue with the current receipt." : "Resolve the blocker before handoff.");
+
+    private static string BuildBuildBlockerSupport(BuildLabConceptIntakeProjection projection)
+        => FirstNonBlank(
+            projection.SupportClosureSummary,
+            string.IsNullOrWhiteSpace(projection.ExplainEntryId)
+                ? "Support can cite the visible blocker receipt."
+                : $"Support can cite explain receipt {projection.ExplainEntryId}.");
+
+    private static string FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
 
     private static bool IsCoverageMetric(BuildLabVariantMetric metric)
     {
