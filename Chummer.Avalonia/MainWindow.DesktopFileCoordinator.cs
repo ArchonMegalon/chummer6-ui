@@ -7,11 +7,13 @@ namespace Chummer.Avalonia;
 
 internal static class MainWindowDesktopFileCoordinator
 {
+    private const string BundledDemoRelativePath = "Samples/Legacy/Soma-Career.chum5";
+
     public static async Task<DesktopImportFileResult> OpenImportFileAsync(IStorageProvider storageProvider, CancellationToken ct)
     {
         if (!storageProvider.CanOpen)
         {
-            return new DesktopImportFileResult(DesktopFileOperationOutcome.Unavailable, Payload: null);
+            return new DesktopImportFileResult(DesktopFileOperationOutcome.Unavailable, Payload: null, SourceLabel: null);
         }
 
         IReadOnlyList<IStorageFile> files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
@@ -30,13 +32,45 @@ internal static class MainWindowDesktopFileCoordinator
         IStorageFile? file = files.FirstOrDefault();
         if (file is null)
         {
-            return new DesktopImportFileResult(DesktopFileOperationOutcome.Cancelled, Payload: null);
+            return new DesktopImportFileResult(DesktopFileOperationOutcome.Cancelled, Payload: null, SourceLabel: null);
         }
 
         await using Stream stream = await file.OpenReadAsync();
         using MemoryStream memory = new();
         await stream.CopyToAsync(memory, ct);
-        return new DesktopImportFileResult(DesktopFileOperationOutcome.Completed, memory.ToArray());
+        return new DesktopImportFileResult(DesktopFileOperationOutcome.Completed, memory.ToArray(), file.Name);
+    }
+
+    public static async Task<DesktopImportFileResult> OpenBundledDemoRunnerAsync(CancellationToken ct)
+    {
+        string? samplePath = ResolveBundledDemoRunnerPath();
+        if (samplePath is null)
+        {
+            return new DesktopImportFileResult(DesktopFileOperationOutcome.Unavailable, Payload: null, SourceLabel: BundledDemoRelativePath);
+        }
+
+        byte[] payload = await File.ReadAllBytesAsync(samplePath, ct);
+        return new DesktopImportFileResult(
+            DesktopFileOperationOutcome.Completed,
+            payload,
+            "Samples/Legacy/Soma-Career.chum5");
+    }
+
+    private static string? ResolveBundledDemoRunnerPath()
+    {
+        string[] candidates =
+        [
+            Path.Combine(AppContext.BaseDirectory, BundledDemoRelativePath),
+            Path.Combine(AppContext.BaseDirectory, "..", BundledDemoRelativePath),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", BundledDemoRelativePath),
+            Path.Combine(Directory.GetCurrentDirectory(), BundledDemoRelativePath),
+            Path.Combine(Directory.GetCurrentDirectory(), "Chummer.Avalonia", BundledDemoRelativePath),
+            Path.Combine("/docker/chummercomplete/chummer-presentation/Chummer.Avalonia", BundledDemoRelativePath)
+        ];
+
+        return candidates
+            .Select(path => Path.GetFullPath(path))
+            .FirstOrDefault(File.Exists);
     }
 
     public static async Task<DesktopDownloadSaveResult> SaveDownloadAsync(
@@ -192,7 +226,8 @@ internal enum DesktopFileOperationOutcome
 
 internal sealed record DesktopImportFileResult(
     DesktopFileOperationOutcome Outcome,
-    byte[]? Payload);
+    byte[]? Payload,
+    string? SourceLabel);
 
 internal sealed record DesktopDownloadSaveResult(
     DesktopFileOperationOutcome Outcome,

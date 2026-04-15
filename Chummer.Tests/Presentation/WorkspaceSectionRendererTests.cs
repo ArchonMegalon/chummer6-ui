@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json.Nodes;
+using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
@@ -132,6 +133,11 @@ public class WorkspaceSectionRendererTests
         Assert.AreEqual("next-variants", result.ActiveBuildLab.Actions[0].ActionId);
         Assert.AreEqual("variant.social", result.ActiveBuildLab.Variants[0].VariantId);
         Assert.AreEqual(100, result.ActiveBuildLab.ProgressionTimelines[0].Steps[^1].KarmaTarget);
+        Assert.IsNotNull(result.ActiveBuildLab.TeamCoverage);
+        Assert.AreEqual("buildlab.teamcoverage.ops-first", result.ActiveBuildLab.TeamCoverage!.ExplainEntryId);
+        CollectionAssert.AreEqual(new[] { "face", "legwork" }, result.ActiveBuildLab.TeamCoverage.CoveredRoleTags!.ToArray());
+        CollectionAssert.AreEqual(new[] { "astral" }, result.ActiveBuildLab.TeamCoverage.MissingRoleTags.ToArray());
+        CollectionAssert.AreEqual(new[] { "face" }, result.ActiveBuildLab.TeamCoverage.DuplicateRoleTags!.ToArray());
         Assert.AreEqual("payload.social", result.ActiveBuildLab.ExportPayloads[0].PayloadId);
         Assert.AreEqual("target.build-idea-card", result.ActiveBuildLab.ExportTargets[0].TargetId);
         Assert.IsNull(result.ActiveBrowseWorkspace);
@@ -207,11 +213,30 @@ public class WorkspaceSectionRendererTests
 
         public Task<RuntimeInspectorProjection?> GetRuntimeInspectorProfileAsync(string profileId, string? rulesetId, CancellationToken ct) => throw new NotImplementedException();
 
+        public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct) => throw new NotImplementedException();
+
+        public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct) => throw new NotImplementedException();
+
         public Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct) => throw new NotImplementedException();
 
         public Task<IReadOnlyList<NavigationTabDefinition>> GetNavigationTabsAsync(string? rulesetId, CancellationToken ct) => throw new NotImplementedException();
 
         public Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct) => throw new NotImplementedException();
+
+        public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
+            => Task.FromResult<AccountCampaignSummary?>(null);
+
+        public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<CampaignWorkspaceDigestProjection>>(Array.Empty<CampaignWorkspaceDigestProjection>());
+
+        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<DesktopHomeSupportDigest>>([]);
+
+        public Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct)
+            => Task.FromResult<DesktopSupportCaseDetails?>(null);
+
+        public Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct)
+            => Task.FromResult(DesktopInstallLinkingSummaryProjection.Empty);
 
         public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => throw new NotImplementedException();
 
@@ -664,6 +689,16 @@ public class WorkspaceSectionRendererTests
                             }
                         }
                     }
+                },
+                ["TeamCoverage"] = new JsonObject
+                {
+                    ["Summary"] = "2 of 3 required crew roles are covered before handoff; one deliberate face overlap stays visible while astral support remains missing.",
+                    ["CoverageSummary"] = "Coverage score stays stable with Face and Legwork already covered before the first campaign handoff.",
+                    ["RolePressureSummary"] = "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
+                    ["MissingRoleTags"] = new JsonArray("astral"),
+                    ["CoveredRoleTags"] = new JsonArray("face", "legwork"),
+                    ["DuplicateRoleTags"] = new JsonArray("face"),
+                    ["ExplainEntryId"] = "buildlab.teamcoverage.ops-first"
                 },
                 ["ExportPayloads"] = new JsonArray
                 {

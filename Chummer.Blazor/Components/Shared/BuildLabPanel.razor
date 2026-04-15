@@ -1,3 +1,5 @@
+@namespace Chummer.Blazor.Components.Shared
+
 @using Chummer.Contracts.Presentation
 
 <section class="panel design-panel" data-build-lab-showcase="@Projection.WorkspaceId">
@@ -40,6 +42,16 @@
         }
     </div>
 
+    @if (Projection.ProvenanceBadges.Count > 0)
+    {
+        <div class="build-lab-chip-group">
+            @foreach (BuildLabBadge badge in Projection.ProvenanceBadges)
+            {
+                <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+            }
+        </div>
+    }
+
     <section class="coach-card">
         <div class="coach-card-header">
             <h3>Explain + Source</h3>
@@ -51,6 +63,64 @@
             <div><dt>Next</dt><dd>@(Projection.CanContinue ? "Compare variants" : "Complete intake")</dd></div>
         </dl>
     </section>
+
+    @if (!string.IsNullOrWhiteSpace(Projection.NextSafeAction)
+        || !string.IsNullOrWhiteSpace(Projection.RuntimeCompatibilitySummary)
+        || !string.IsNullOrWhiteSpace(Projection.CampaignFitSummary)
+        || !string.IsNullOrWhiteSpace(Projection.SupportClosureSummary)
+        || Projection.Watchouts is { Count: > 0 })
+    {
+        <section class="coach-card" data-build-lab-decision-rail>
+            <div class="coach-card-header">
+                <h3>Campaign-safe decision rail</h3>
+                <span class="badge">Next safe action</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Projection.NextSafeAction))
+            {
+                <p><strong>@Projection.NextSafeAction</strong></p>
+            }
+            <dl class="facts compact">
+                @if (!string.IsNullOrWhiteSpace(Projection.RuntimeCompatibilitySummary))
+                {
+                    <div><dt>Runtime</dt><dd>@Projection.RuntimeCompatibilitySummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Projection.CampaignFitSummary))
+                {
+                    <div><dt>Campaign fit</dt><dd>@Projection.CampaignFitSummary</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Projection.SupportClosureSummary))
+                {
+                    <div><dt>Support</dt><dd>@Projection.SupportClosureSummary</dd></div>
+                }
+            </dl>
+            @if (Projection.Watchouts is { Count: > 0 })
+            {
+                <ul class="browse-detail-lines">
+                    @foreach (string watchout in Projection.Watchouts)
+                    {
+                        <li>@watchout</li>
+                    }
+                </ul>
+            }
+        </section>
+    }
+
+    @if (HasBuildBlockerReceipt(Projection))
+    {
+        <section class="coach-card" data-build-blocker-explain-receipt>
+            <div class="coach-card-header">
+                <h3>Build blocker receipt</h3>
+                <span class="badge">@BuildBuildBlockerBadge(Projection)</span>
+            </div>
+            <dl class="facts compact">
+                <div><dt>Explain</dt><dd>@(Projection.ExplainEntryId ?? "pending")</dd></div>
+                <div><dt>Rule environment</dt><dd>@BuildBuildBlockerEnvironment(Projection)</dd></div>
+                <div><dt>Before</dt><dd>@BuildBuildBlockerBefore(Projection)</dd></div>
+                <div><dt>After</dt><dd>@BuildBuildBlockerAfter(Projection)</dd></div>
+                <div><dt>Support reuse</dt><dd>@BuildBuildBlockerSupport(Projection)</dd></div>
+            </dl>
+        </section>
+    }
 
     @if (Projection.Variants.Count > 0)
     {
@@ -94,10 +164,27 @@
                         @foreach (BuildLabProgressionStep step in timeline.Steps)
                         {
                             <li>
-                                @step.KarmaTarget Karma · @step.Label · @step.Summary
+                                <strong>@step.KarmaTarget Karma</strong> · @step.Label · @step.Summary
                                 @if (step.Outcomes.Count > 0)
                                 {
                                     <span> · @string.Join(" | ", step.Outcomes.Select(metric => $"{metric.Label}: {metric.Value}"))</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(step.ExplainEntryId))
+                                {
+                                    <span> · Explain: @step.ExplainEntryId</span>
+                                }
+                                @if (step.MilestoneBadges.Count > 0 || step.RiskBadges.Count > 0)
+                                {
+                                    <div class="build-lab-chip-group" data-build-lab-timeline-step-badges="@step.StepId">
+                                        @foreach (BuildLabBadge badge in step.MilestoneBadges)
+                                        {
+                                            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                                        }
+                                        @foreach (BuildLabBadge badge in step.RiskBadges)
+                                        {
+                                            <span class="browse-chip @(badge.Emphasized ? "active" : null)">@badge.Label</span>
+                                        }
+                                    </div>
                                 }
                             </li>
                         }
@@ -108,6 +195,23 @@
                     }
                 </article>
             }
+        </section>
+    }
+
+    @if (HasPlannerCoverageSignals(Projection))
+    {
+        <section class="coach-card" data-build-lab-optimizer-rail>
+            <div class="coach-card-header">
+                <h3>Planner + team coverage</h3>
+                <span class="badge">@BuildPlannerCoverageBadge(Projection)</span>
+            </div>
+            <p><strong>@BuildPlannerCoverageSummary(Projection)</strong></p>
+            <ul class="browse-detail-lines">
+                @foreach (string line in BuildPlannerCoverageLines(Projection))
+                {
+                    <li>@line</li>
+                }
+            </ul>
         </section>
     }
 
@@ -170,4 +274,240 @@
         ExportPayloads: [],
         ExportTargets: [],
         Actions: []);
+
+    private static bool HasPlannerCoverageSignals(BuildLabConceptIntakeProjection projection)
+    {
+        if (projection.TeamCoverage is not null)
+        {
+            return true;
+        }
+
+        if (projection.ProgressionTimelines.Count > 0)
+        {
+            return true;
+        }
+
+        foreach (BuildLabVariantProjection variant in projection.Variants)
+        {
+            if (HasCoverageSignals(variant))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string BuildPlannerCoverageBadge(BuildLabConceptIntakeProjection projection)
+    {
+        if (projection.TeamCoverage is { } teamCoverage)
+        {
+            return $"{teamCoverage.CoveredRoleTags?.Count ?? 0} covered · {teamCoverage.MissingRoleTags.Count} missing · {teamCoverage.DuplicateRoleTags?.Count ?? 0} duplicate";
+        }
+
+        int optimizerReadyVariants = 0;
+        foreach (BuildLabVariantProjection variant in projection.Variants)
+        {
+            if (HasCoverageSignals(variant))
+            {
+                optimizerReadyVariants++;
+            }
+        }
+
+        int checkpoints = 0;
+        foreach (BuildLabProgressionTimeline timeline in projection.ProgressionTimelines)
+        {
+            checkpoints += timeline.Steps.Count;
+        }
+
+        return $"{optimizerReadyVariants} variant(s) · {checkpoints} checkpoint(s)";
+    }
+
+    private static string BuildPlannerCoverageSummary(BuildLabConceptIntakeProjection projection)
+    {
+        if (projection.TeamCoverage is { } teamCoverage)
+        {
+            return teamCoverage.Summary;
+        }
+
+        int optimizerReadyVariants = 0;
+        foreach (BuildLabVariantProjection variant in projection.Variants)
+        {
+            if (HasCoverageSignals(variant))
+            {
+                optimizerReadyVariants++;
+            }
+        }
+
+        return $"{optimizerReadyVariants} optimizer-ready variant(s) across {projection.ProgressionTimelines.Count} progression timeline(s).";
+    }
+
+    private static IReadOnlyList<string> BuildPlannerCoverageLines(BuildLabConceptIntakeProjection projection)
+    {
+        List<string> lines = [];
+        lines.AddRange(BuildTeamCoverageLines(projection.TeamCoverage));
+
+        foreach (BuildLabVariantProjection variant in projection.Variants)
+        {
+            List<string> signals = [];
+            string coverageMetrics = string.Join(
+                " | ",
+                variant.Metrics
+                    .Where(IsCoverageMetric)
+                    .Select(metric => $"{metric.Label}: {metric.Value}{(string.IsNullOrWhiteSpace(metric.Delta) ? string.Empty : $" ({metric.Delta})")}"));
+            if (!string.IsNullOrWhiteSpace(coverageMetrics))
+            {
+                signals.Add(coverageMetrics);
+            }
+
+            if (variant.OverlapBadges.Count > 0)
+            {
+                signals.Add($"Overlap: {string.Join(" | ", variant.OverlapBadges.Select(badge => badge.Label))}");
+            }
+
+            if (signals.Count > 0)
+            {
+                lines.Add($"{variant.Label}: {string.Join(" · ", signals)}");
+            }
+        }
+
+        foreach (BuildLabProgressionTimeline timeline in projection.ProgressionTimelines)
+        {
+            BuildLabProgressionStep? strongestCoverageStep = null;
+            foreach (BuildLabProgressionStep step in timeline.Steps)
+            {
+                if (step.Outcomes.Any(IsCoverageMetric))
+                {
+                    strongestCoverageStep = step;
+                }
+            }
+
+            if (strongestCoverageStep is null)
+            {
+                lines.Add($"{timeline.Title}: {timeline.Steps.Count} checkpoint(s) keep the plan ready for handoff.");
+                continue;
+            }
+
+            string coverageOutcomes = string.Join(
+                " | ",
+                strongestCoverageStep.Outcomes
+                    .Where(IsCoverageMetric)
+                    .Select(metric => $"{metric.Label}: {metric.Value}"));
+            lines.Add($"{timeline.Title}: strongest coverage checkpoint at {strongestCoverageStep.KarmaTarget} Karma · {coverageOutcomes}");
+        }
+
+        return lines;
+    }
+
+    private static bool HasCoverageSignals(BuildLabVariantProjection variant)
+    {
+        return variant.OverlapBadges.Count > 0 || variant.Metrics.Any(IsCoverageMetric);
+    }
+
+    private static IReadOnlyList<string> BuildTeamCoverageLines(BuildLabTeamCoverageProjection? teamCoverage)
+    {
+        if (teamCoverage is null)
+        {
+            return [];
+        }
+
+        List<string> lines = [];
+        if (!string.IsNullOrWhiteSpace(teamCoverage.CoverageSummary))
+        {
+            lines.Add($"Coverage: {teamCoverage.CoverageSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.RolePressureSummary))
+        {
+            lines.Add($"Role pressure: {teamCoverage.RolePressureSummary}");
+        }
+
+        if (teamCoverage.CoveredRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Covered roles: {FormatRoleTags(teamCoverage.CoveredRoleTags)}");
+        }
+
+        if (teamCoverage.MissingRoleTags.Count > 0)
+        {
+            lines.Add($"Missing roles: {FormatRoleTags(teamCoverage.MissingRoleTags)}");
+        }
+
+        if (teamCoverage.DuplicateRoleTags is { Count: > 0 })
+        {
+            lines.Add($"Duplicate roles: {FormatRoleTags(teamCoverage.DuplicateRoleTags)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(teamCoverage.ExplainEntryId))
+        {
+            lines.Add($"Explain: {teamCoverage.ExplainEntryId}");
+        }
+
+        return lines;
+    }
+
+    private static string FormatRoleTags(IEnumerable<string> roleTags)
+        => string.Join(" | ", roleTags.Select(FormatRoleTag));
+
+    private static string FormatRoleTag(string roleTag)
+    {
+        string normalized = roleTag.Replace('-', ' ').Replace('_', ' ').Trim();
+        return string.IsNullOrWhiteSpace(normalized)
+            ? roleTag
+            : System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
+    }
+
+    private static bool HasBuildBlockerReceipt(BuildLabConceptIntakeProjection projection)
+    {
+        return !projection.CanContinue
+            || !string.IsNullOrWhiteSpace(projection.RuntimeCompatibilitySummary)
+            || !string.IsNullOrWhiteSpace(projection.SupportClosureSummary)
+            || projection.Watchouts is { Count: > 0 }
+            || projection.Variants.Any(variant => variant.Warnings.Count > 0);
+    }
+
+    private static string BuildBuildBlockerBadge(BuildLabConceptIntakeProjection projection)
+    {
+        int warningCount = projection.Variants.Sum(static variant => variant.Warnings.Count)
+            + (projection.Watchouts?.Count ?? 0);
+        return warningCount == 0 && projection.CanContinue ? "receipt" : $"{warningCount} blocker signal(s)";
+    }
+
+    private static string BuildBuildBlockerEnvironment(BuildLabConceptIntakeProjection projection)
+        => $"{projection.RulesetId} / {projection.BuildMethod}";
+
+    private static string BuildBuildBlockerBefore(BuildLabConceptIntakeProjection projection)
+    {
+        string summary = FirstNonBlank(
+            projection.RuntimeCompatibilitySummary,
+            projection.CampaignFitSummary,
+            projection.Variants
+                .SelectMany(static variant => variant.Warnings)
+                .Select(static warning => warning.Detail)
+                .FirstOrDefault(),
+            projection.Watchouts?.FirstOrDefault());
+
+        return string.IsNullOrWhiteSpace(summary) ? "No blocker was emitted before this build decision." : summary;
+    }
+
+    private static string BuildBuildBlockerAfter(BuildLabConceptIntakeProjection projection)
+        => FirstNonBlank(
+            projection.NextSafeAction,
+            projection.SupportClosureSummary,
+            projection.CanContinue ? "Build can continue with the current receipt." : "Resolve the blocker before handoff.");
+
+    private static string BuildBuildBlockerSupport(BuildLabConceptIntakeProjection projection)
+        => FirstNonBlank(
+            projection.SupportClosureSummary,
+            string.IsNullOrWhiteSpace(projection.ExplainEntryId)
+                ? "Support can cite the visible blocker receipt."
+                : $"Support can cite explain receipt {projection.ExplainEntryId}.");
+
+    private static string FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
+    private static bool IsCoverageMetric(BuildLabVariantMetric metric)
+    {
+        return metric.Label.Contains("coverage", StringComparison.OrdinalIgnoreCase)
+            || metric.Label.Contains("role", StringComparison.OrdinalIgnoreCase);
+    }
 }

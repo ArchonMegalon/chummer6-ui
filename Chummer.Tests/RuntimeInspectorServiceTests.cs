@@ -83,6 +83,12 @@ public class RuntimeInspectorServiceTests
             string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.SessionQuickActions, StringComparison.Ordinal)
             && descriptor.SessionSafe
             && string.IsNullOrWhiteSpace(descriptor.ProviderId)));
+        Assert.IsNotNull(projection.Promotion);
+        Assert.AreEqual(RuleProfilePublicationStatuses.Published, projection.Promotion!.PublicationStatus);
+        StringAssert.Contains(projection.Promotion.PromotionSummary, "Stable rule environment");
+        StringAssert.Contains(projection.Promotion.RollbackSummary, "No install target is pinned yet");
+        Assert.AreEqual(RuntimeInspectorPromotionStages.Published, projection.Promotion.CurrentStage);
+        Assert.AreEqual(RuntimeInspectorPromotionStages.Published, projection.Promotion.PromotionTargetStage);
         Assert.IsTrue(projection.Warnings.Any(warning => string.Equals(warning.Kind, RuntimeInspectorWarningKinds.Trust, StringComparison.Ordinal)));
         Assert.IsTrue(projection.CompatibilityDiagnostics.Any(diagnostic => string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.Compatible, StringComparison.Ordinal)));
     }

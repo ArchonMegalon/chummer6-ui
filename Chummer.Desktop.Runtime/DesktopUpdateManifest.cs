@@ -38,7 +38,9 @@ public sealed record DesktopUpdateArtifact(
     string Kind,
     string FileName,
     string DownloadUrl,
-    string? UpdateFeedUrl)
+    string? UpdateFeedUrl,
+    string? Sha256,
+    long? SizeBytes)
 {
     public string Extension
     {
@@ -77,6 +79,14 @@ public sealed record DesktopUpdateChannelManifest(
     string Status,
     DateTimeOffset? PublishedAt,
     IReadOnlyList<DesktopUpdateArtifact> Artifacts,
+    string? RolloutState,
+    string? RolloutReason,
+    string? SupportabilityState,
+    string? SupportabilitySummary,
+    string? KnownIssueSummary,
+    string? FixAvailabilitySummary,
+    string? ProofStatus,
+    DateTimeOffset? ProofGeneratedAt,
     Uri SourceUri);
 
 public static class DesktopUpdateManifestParser
@@ -148,6 +158,8 @@ public static class DesktopUpdateManifestParser
             string fileName = GetOptionalString(element, "fileName") ?? Path.GetFileName(GetOptionalString(element, "downloadUrl") ?? string.Empty);
             string downloadUrl = GetOptionalString(element, "downloadUrl") ?? string.Empty;
             string? updateFeedUrl = GetOptionalString(element, "updateFeedUrl");
+            string? sha256 = NormalizeSha256(GetOptionalString(element, "sha256"));
+            long? sizeBytes = GetOptionalLong(element, "sizeBytes");
             if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(downloadUrl))
             {
                 continue;
@@ -161,7 +173,9 @@ public static class DesktopUpdateManifestParser
                 Kind: kind,
                 FileName: fileName,
                 DownloadUrl: downloadUrl,
-                UpdateFeedUrl: updateFeedUrl));
+                UpdateFeedUrl: updateFeedUrl,
+                Sha256: sha256,
+                SizeBytes: sizeBytes));
         }
 
         return new DesktopUpdateChannelManifest(
@@ -170,6 +184,14 @@ public static class DesktopUpdateManifestParser
             Status: GetOptionalString(root, "status") ?? "published",
             PublishedAt: GetOptionalDateTimeOffset(root, "publishedAt"),
             Artifacts: artifacts,
+            RolloutState: GetOptionalString(root, "rolloutState"),
+            RolloutReason: GetOptionalString(root, "rolloutReason"),
+            SupportabilityState: GetOptionalString(root, "supportabilityState"),
+            SupportabilitySummary: GetOptionalString(root, "supportabilitySummary"),
+            KnownIssueSummary: GetOptionalString(root, "knownIssueSummary"),
+            FixAvailabilitySummary: GetOptionalString(root, "fixAvailabilitySummary"),
+            ProofStatus: GetOptionalString(root, "releaseProof", "status"),
+            ProofGeneratedAt: GetOptionalDateTimeOffset(root, "releaseProof", "generatedAt"),
             SourceUri: sourceUri);
     }
 
@@ -209,7 +231,9 @@ public static class DesktopUpdateManifestParser
                 Kind: kind,
                 FileName: fileName,
                 DownloadUrl: rawUrl,
-                UpdateFeedUrl: null));
+                UpdateFeedUrl: null,
+                Sha256: NormalizeSha256(GetOptionalString(element, "sha256")),
+                SizeBytes: GetOptionalLong(element, "sizeBytes")));
         }
 
         return new DesktopUpdateChannelManifest(
@@ -218,6 +242,14 @@ public static class DesktopUpdateManifestParser
             Status: GetOptionalString(root, "status") ?? "published",
             PublishedAt: GetOptionalDateTimeOffset(root, "publishedAt"),
             Artifacts: artifacts,
+            RolloutState: GetOptionalString(root, "rolloutState"),
+            RolloutReason: GetOptionalString(root, "rolloutReason"),
+            SupportabilityState: GetOptionalString(root, "supportabilityState"),
+            SupportabilitySummary: GetOptionalString(root, "supportabilitySummary"),
+            KnownIssueSummary: GetOptionalString(root, "knownIssueSummary"),
+            FixAvailabilitySummary: GetOptionalString(root, "fixAvailabilitySummary"),
+            ProofStatus: GetOptionalString(root, "releaseProof", "status"),
+            ProofGeneratedAt: GetOptionalDateTimeOffset(root, "releaseProof", "generatedAt"),
             SourceUri: sourceUri);
     }
 
@@ -285,6 +317,16 @@ public static class DesktopUpdateManifestParser
         };
     }
 
+    private static string? GetOptionalString(JsonElement element, string propertyName, string nestedPropertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out JsonElement property) || property.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return GetOptionalString(property, nestedPropertyName);
+    }
+
     private static DateTimeOffset? GetOptionalDateTimeOffset(JsonElement element, string propertyName)
     {
         string? raw = GetOptionalString(element, propertyName);
@@ -296,5 +338,47 @@ public static class DesktopUpdateManifestParser
         return DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out DateTimeOffset parsed)
             ? parsed
             : null;
+    }
+
+    private static DateTimeOffset? GetOptionalDateTimeOffset(JsonElement element, string propertyName, string nestedPropertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out JsonElement property) || property.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return GetOptionalDateTimeOffset(property, nestedPropertyName);
+    }
+
+    private static long? GetOptionalLong(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out JsonElement property))
+        {
+            return null;
+        }
+
+        return property.ValueKind switch
+        {
+            JsonValueKind.Number when property.TryGetInt64(out long value) => value,
+            JsonValueKind.String
+                when !string.IsNullOrWhiteSpace(property.GetString()) && long.TryParse(property.GetString(), out long parsed) => parsed,
+            _ => null
+        };
+    }
+
+    private static string? NormalizeSha256(string? rawSha256)
+    {
+        if (string.IsNullOrWhiteSpace(rawSha256))
+        {
+            return null;
+        }
+
+        string normalized = rawSha256.Trim();
+        if (normalized.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = normalized["sha256:".Length..];
+        }
+
+        return normalized;
     }
 }

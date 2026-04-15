@@ -1,29 +1,40 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Chummer.Contracts.Presentation
+@using Chummer.Presentation.Rulesets
 @using Chummer.Presentation.UiKit
 
 <section class="panel commands">
-    <h2>Commands</h2>
-    <div class="virtual-list command-list">
-        <Virtualize Items="@(Commands.ToArray())"
-                    Context="command"
-                    ItemSize="42"
-                    ItemsTagName="ul"
-                    ItemTagName="li">
-            @{
-                bool enabled = IsCommandEnabled(command);
-            }
-            <div class="command-list-row @(enabled ? string.Empty : "disabled")">
-                <button class="command-button @(string.Equals(State.LastCommandId, command.Id, StringComparison.Ordinal) ? "selected" : string.Empty)"
-                        disabled="@(!enabled || State.IsBusy)"
-                        @onclick="() => ExecuteCommandAsync(command.Id)">
-                    <code>@ShellChromeBoundary.FormatCommandLabel(command.Id)</code>
-                </button>
-            </div>
-        </Virtualize>
-    </div>
+    <h2>@BuildCommandHeading()</h2>
+    @if (Commands.Count == 0)
+    {
+        <p class="hint">@BuildCommandEmptyHint()</p>
+    }
+    else
+    {
+        <div class="virtual-list command-list">
+            @* <Virtualize Items="@Commands" ItemsTagName="ul" ItemTagName="li"> *@
+            <Virtualize Items="@(Commands.ToArray())"
+                        Context="command"
+                        ItemSize="42">
+                @{
+                    bool enabled = IsCommandEnabled(command);
+                }
+                <div class="command-list-row @(enabled ? string.Empty : "disabled")">
+                    <button class="command-button @(string.Equals(State.LastCommandId, command.Id, StringComparison.Ordinal) ? "selected" : string.Empty)"
+                            disabled="@(!enabled || State.IsBusy)"
+                            @onclick="() => ExecuteCommandAsync(command.Id)">
+                        <code>@ShellChromeBoundary.FormatCommandLabel(command.Id)</code>
+                    </button>
+                </div>
+            </Virtualize>
+        </div>
+    }
 </section>
 
 @code {
+    [Parameter]
+    public string? RulesetId { get; set; }
+
     [Parameter]
     public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
 
@@ -40,4 +51,10 @@
     {
         return ExecuteCommandRequested.InvokeAsync(commandId);
     }
+
+    private string BuildCommandHeading()
+        => RulesetUiDirectiveCatalog.BuildCommandHeading(RulesetId);
+
+    private string BuildCommandEmptyHint()
+        => RulesetUiDirectiveCatalog.BuildCommandEmptyHint(RulesetId);
 }

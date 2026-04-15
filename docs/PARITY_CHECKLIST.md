@@ -4,17 +4,21 @@ Generated automatically from the parity oracle and current contracts catalogs.
 
 - Regenerate command: `RUNBOOK_MODE=parity-checklist bash scripts/runbook.sh`
 - Parity oracle source: `docs/PARITY_ORACLE.json`
-- Tab catalog source: `Chummer.Rulesets.Hosting/Presentation/NavigationTabCatalog.cs`
-- Action catalog source: `Chummer.Rulesets.Hosting/Presentation/WorkspaceSurfaceActionCatalog.cs`
+- Tab catalog source: `../chummer-core-engine/Chummer.Rulesets.Hosting/Presentation/NavigationTabCatalog.cs`
+- Action catalog source: `../chummer-core-engine/Chummer.Rulesets.Hosting/Presentation/WorkspaceSurfaceActionCatalog.cs`
+- Desktop dialog source: `../chummer-presentation/Chummer.Presentation/Overview/DesktopDialogFactory.cs`
 - Workspace Actions coverage compares parity-oracle action IDs to action `TargetId` values.
-- Legacy desktop control parity is enforced by dialog-template compliance tests, not by a shared control catalog.
+- Catalog-only IDs must be acknowledged explicitly in `docs/PARITY_ORACLE.json`.
+- Desktop Controls coverage compares parity-oracle control IDs to dialog control IDs in `DesktopDialogFactory`.
+- Dialog-factory-only desktop controls must be acknowledged explicitly in `docs/PARITY_ORACLE.json`.
 
 ## Summary
 
 | Surface | Legacy IDs | Covered | Missing In Catalog | Catalog Only |
 | --- | ---: | ---: | ---: | ---: |
-| Tabs | 17 | 17 | 0 | 1 |
-| Workspace Actions | 47 | 47 | 0 | 1 |
+| Tabs | 17 | 17 | 0 | 2 |
+| Workspace Actions | 47 | 47 | 0 | 2 |
+| Desktop Controls | 29 | 29 | 0 | 41 |
 
 ## Tabs Coverage
 
@@ -37,6 +41,7 @@ Generated automatically from the parity oracle and current contracts catalogs.
 | `tab-skills` | covered |
 | `tab-technomancer` | covered |
 | `tab-vehicles` | covered |
+| `tab-create` | catalog_only |
 | `tab-rules` | catalog_only |
 
 ## Workspace Actions Coverage
@@ -90,4 +95,80 @@ Generated automatically from the parity oracle and current contracts catalogs.
 | `weaponaccessories` | covered |
 | `weaponlocations` | covered |
 | `weapons` | covered |
+| `build-lab` | catalog_only |
 | `data_exporter` | catalog_only |
+
+## Desktop Controls Coverage
+
+| ID | Status |
+| --- | --- |
+| `combat_add_armor` | covered |
+| `combat_add_weapon` | covered |
+| `combat_damage_track` | covered |
+| `combat_reload` | covered |
+| `contact_add` | covered |
+| `contact_connection` | covered |
+| `contact_edit` | covered |
+| `contact_remove` | covered |
+| `create_entry` | covered |
+| `delete_entry` | covered |
+| `edit_entry` | covered |
+| `gear_add` | covered |
+| `gear_delete` | covered |
+| `gear_edit` | covered |
+| `gear_mount` | covered |
+| `gear_source` | covered |
+| `magic_add` | covered |
+| `magic_bind` | covered |
+| `magic_delete` | covered |
+| `magic_source` | covered |
+| `move_down` | covered |
+| `move_up` | covered |
+| `open_notes` | covered |
+| `show_source` | covered |
+| `skill_add` | covered |
+| `skill_group` | covered |
+| `skill_remove` | covered |
+| `skill_specialize` | covered |
+| `toggle_free_paid` | covered |
+| `about` | present_in_dialog_factory_acknowledged |
+| `adept_power_add` | present_in_dialog_factory_acknowledged |
+| `character_roster` | present_in_dialog_factory_acknowledged |
+| `character_settings` | present_in_dialog_factory_acknowledged |
+| `close_window` | present_in_dialog_factory_acknowledged |
+| `complex_form_add` | present_in_dialog_factory_acknowledged |
+| `critter_power_add` | present_in_dialog_factory_acknowledged |
+| `cyberware_add` | present_in_dialog_factory_acknowledged |
+| `cyberware_delete` | present_in_dialog_factory_acknowledged |
+| `cyberware_edit` | present_in_dialog_factory_acknowledged |
+| `data_exporter` | present_in_dialog_factory_acknowledged |
+| `dice_roller` | present_in_dialog_factory_acknowledged |
+| `discord` | present_in_dialog_factory_acknowledged |
+| `drug_add` | present_in_dialog_factory_acknowledged |
+| `drug_delete` | present_in_dialog_factory_acknowledged |
+| `dumpshock` | present_in_dialog_factory_acknowledged |
+| `export_character` | present_in_dialog_factory_acknowledged |
+| `global_settings` | present_in_dialog_factory_acknowledged |
+| `hero_lab_importer` | present_in_dialog_factory_acknowledged |
+| `initiation_add` | present_in_dialog_factory_acknowledged |
+| `master_index` | present_in_dialog_factory_acknowledged |
+| `matrix_program_add` | present_in_dialog_factory_acknowledged |
+| `new_window` | present_in_dialog_factory_acknowledged |
+| `print_character` | present_in_dialog_factory_acknowledged |
+| `print_multiple` | present_in_dialog_factory_acknowledged |
+| `print_setup` | present_in_dialog_factory_acknowledged |
+| `quality_add` | present_in_dialog_factory_acknowledged |
+| `quality_delete` | present_in_dialog_factory_acknowledged |
+| `report_bug` | present_in_dialog_factory_acknowledged |
+| `revision_history` | present_in_dialog_factory_acknowledged |
+| `spell_add` | present_in_dialog_factory_acknowledged |
+| `spirit_add` | present_in_dialog_factory_acknowledged |
+| `switch_ruleset` | present_in_dialog_factory_acknowledged |
+| `translator` | present_in_dialog_factory_acknowledged |
+| `update` | present_in_dialog_factory_acknowledged |
+| `vehicle_add` | present_in_dialog_factory_acknowledged |
+| `vehicle_delete` | present_in_dialog_factory_acknowledged |
+| `vehicle_edit` | present_in_dialog_factory_acknowledged |
+| `vehicle_mod_add` | present_in_dialog_factory_acknowledged |
+| `wiki` | present_in_dialog_factory_acknowledged |
+| `xml_editor` | present_in_dialog_factory_acknowledged |

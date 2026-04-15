@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
@@ -13,6 +14,7 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
+using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -525,6 +527,21 @@ public class ShellPresenterTests
 
         public Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct) => Task.FromResult(Workspaces);
 
+        public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
+            => Task.FromResult<AccountCampaignSummary?>(null);
+
+        public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<CampaignWorkspaceDigestProjection>>(Array.Empty<CampaignWorkspaceDigestProjection>());
+
+        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<DesktopHomeSupportDigest>>([]);
+
+        public Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct)
+            => Task.FromResult<DesktopSupportCaseDetails?>(null);
+
+        public Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct)
+            => Task.FromResult(DesktopInstallLinkingSummaryProjection.Empty);
+
         public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct)
             => Task.FromResult(Preferences);
 
@@ -583,6 +600,16 @@ public class ShellPresenterTests
         public Task<RuntimeInspectorProjection?> GetRuntimeInspectorProfileAsync(string profileId, string? rulesetId, CancellationToken ct)
         {
             return Task.FromResult<RuntimeInspectorProjection?>(null);
+        }
+
+        public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct)
+        {
+            return Task.FromResult<IReadOnlyList<DesktopBuildPathSuggestion>>([]);
+        }
+
+        public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct)
+        {
+            return Task.FromResult<DesktopBuildPathPreview?>(null);
         }
 
         public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => throw new NotImplementedException();

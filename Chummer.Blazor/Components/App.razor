@@ -81,10 +81,12 @@
         if (!Uri.TryCreate(Navigation.BaseUri, UriKind.Absolute, out Uri? uri))
             return "/";
 
-        string path = uri.AbsolutePath;
-        if (string.IsNullOrWhiteSpace(path) || string.Equals(path, "/", StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(uri.AbsolutePath) || string.Equals(uri.AbsolutePath, "/", StringComparison.Ordinal))
             return "/";
 
-        return path.EndsWith("/", StringComparison.Ordinal) ? path : $"{path}/";
+        if (uri.AbsolutePath.EndsWith("/", StringComparison.Ordinal))
+            return uri.AbsolutePath;
+
+        return $"{uri.AbsolutePath}/";
     }
 }

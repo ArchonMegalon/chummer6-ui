@@ -8,6 +8,7 @@ using System;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
@@ -39,10 +40,22 @@ public class CharacterOverviewPresenterTests
         "gear_delete",
         "gear_mount",
         "gear_source",
+        "cyberware_add",
+        "cyberware_edit",
+        "cyberware_delete",
+        "drug_add",
+        "drug_delete",
         "magic_add",
         "magic_delete",
         "magic_bind",
         "magic_source",
+        "spell_add",
+        "adept_power_add",
+        "complex_form_add",
+        "initiation_add",
+        "spirit_add",
+        "critter_power_add",
+        "matrix_program_add",
         "skill_add",
         "skill_specialize",
         "skill_remove",
@@ -51,10 +64,16 @@ public class CharacterOverviewPresenterTests
         "combat_add_armor",
         "combat_reload",
         "combat_damage_track",
+        "vehicle_add",
+        "vehicle_edit",
+        "vehicle_delete",
+        "vehicle_mod_add",
         "contact_add",
         "contact_edit",
         "contact_remove",
-        "contact_connection"
+        "contact_connection",
+        "quality_add",
+        "quality_delete"
     ];
 
     [TestMethod]
@@ -141,6 +160,10 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.Build);
         Assert.IsNotNull(presenter.State.Movement);
         Assert.IsNotNull(presenter.State.Awakening);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import ready:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import completed");
+        Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
+        Assert.AreEqual("Last portable import", presenter.State.LatestPortabilityActivity?.Title);
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
         Assert.AreEqual("BLUE", presenter.State.Profile.Alias);
     }
@@ -165,6 +188,40 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.Build);
         Assert.IsNotNull(presenter.State.Movement);
         Assert.IsNotNull(presenter.State.Awakening);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import ready:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import completed");
+        Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
+        Assert.AreEqual("Last portable import", presenter.State.LatestPortabilityActivity?.Title);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_selects_default_surface_when_workspace_has_no_restored_view()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
+
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_selects_default_surface_when_workspace_has_no_restored_view()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ImportAsync(
+            new WorkspaceImportDocument("<character><name>Imported</name></character>", RulesetDefaults.Sr5, WorkspaceDocumentFormat.NativeXml),
+            CancellationToken.None);
+
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
     }
 
     [TestMethod]
@@ -197,6 +254,24 @@ public class CharacterOverviewPresenterTests
 
         Assert.IsNotNull(client.LastImportedDocument);
         Assert.AreEqual("sr6", client.LastImportedDocument!.RulesetId);
+        Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_resolves_sr4_alias_from_document_gameedition_when_document_seed_is_blank()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ImportAsync(
+            new WorkspaceImportDocument(
+                "<character><gameedition>Shadowrun 4</gameedition><name>Imported</name></character>",
+                string.Empty,
+                WorkspaceDocumentFormat.NativeXml),
+            CancellationToken.None);
+
+        Assert.IsNotNull(client.LastImportedDocument);
+        Assert.AreEqual(RulesetDefaults.Sr4, client.LastImportedDocument!.RulesetId);
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
     }
 
@@ -443,7 +518,10 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.PendingExport);
         Assert.AreEqual(WorkspaceDocumentFormat.Json, presenter.State.PendingExport?.Format);
         StringAssert.EndsWith(presenter.State.PendingExport?.FileName ?? string.Empty, "-export.json");
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Export prepared:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable export prepared:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable export is ready");
+        Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
+        Assert.AreEqual("Last portable export", presenter.State.LatestPortabilityActivity?.Title);
         string payload = Encoding.UTF8.GetString(Convert.FromBase64String(presenter.State.PendingExport!.ContentBase64));
         StringAssert.Contains(payload, "\"Summary\"");
         StringAssert.Contains(payload, "\"Profile\"");
@@ -520,6 +598,146 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("global_settings", presenter.State.LastCommandId);
         Assert.IsNotNull(presenter.State.ActiveDialog);
         Assert.AreEqual("dialog.global_settings", presenter.State.ActiveDialog?.Id);
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_master_index_opens_dialog_with_catalog_parity_fields()
+    {
+        var client = new FakeChummerClient();
+        client.SeedToolCatalog(
+            new MasterIndexResponse(
+                Count: 4,
+                GeneratedUtc: DateTimeOffset.UtcNow,
+                Files: [],
+                ReferenceLanePosture: "governed",
+                SourcebookCount: 11,
+                Sourcebooks:
+                [
+                    new MasterIndexSourcebookEntry(
+                        Id: "core-rulebook",
+                        Code: "CRB",
+                        Name: "Core Rulebook",
+                        Permanent: true,
+                        ReferencePosture: "governed",
+                        RuleSnippetCount: 12,
+                        RuleSnippets: [],
+                        ReferenceSourcePosture: "governed",
+                        LocalPdfPath: "/books/core-rulebook.pdf"),
+                    new MasterIndexSourcebookEntry(
+                        Id: "firing-squad",
+                        Code: "FS",
+                        Name: "Firing Squad",
+                        Permanent: false,
+                        ReferencePosture: "partial",
+                        RuleSnippetCount: 5,
+                        RuleSnippets: [],
+                        ReferenceSourcePosture: "stale",
+                        ReferenceUrl: "https://example.test/firing-squad")
+                ],
+                ReferenceCoveragePercent: 73,
+                SourcebooksWithSnippets: 8,
+                SourcebooksWithGovernedReferenceSources: 7,
+                SourcebooksWithStaleReferenceSources: 3,
+                SourcebooksMissingReferenceSources: 1,
+                ReferenceSourceLaneReceipt: "mixed reference-source posture",
+                SettingsLanePosture: "governed",
+                SourceToggleLanePosture: "governed",
+                DistinctSourcebookToggles: 18,
+                SourceSelectionLaneReceipt: "source selection governed",
+                SourcebookToggleCoveragePercent: 64,
+                CustomDataLanePosture: "partial",
+                CustomDataAuthoringLaneReceipt: "custom-data authoring partial",
+                XmlBridgePosture: "governed",
+                XmlBridgeLaneReceipt: "xml bridge governed",
+                TranslatorLanePosture: "governed",
+                TranslatorLaneReceipt: "translator governed",
+                TranslatorBridgePosture: "governed",
+                TranslatorLanguageCount: 6,
+                EnabledLanguageOverlayCount: 3,
+                OnlineStorageLanePosture: "partial",
+                OnlineStorageReceiptPosture: "stale",
+                OnlineStorageLaneReceipt: "online storage partial",
+                OnlineStorageReceiptsCovered: 1,
+                OnlineStorageReceiptsExpected: 2,
+                OnlineStorageCoveragePercent: 50,
+                ImportOracleLanePosture: "partial",
+                ImportOracleReceiptPosture: "stale",
+                LegacyChummer4FixtureCount: 18,
+                LegacyChummer5FixtureCount: 31,
+                HeroLabFixtureCount: 0,
+                AdjacentSr6OracleReceiptPosture: "partial",
+                AdjacentSr6OracleSourcesCovered: 1,
+                AdjacentSr6OracleSourcesExpected: 2,
+                ImportOracleSourcesCovered: 3,
+                ImportOracleSourcesExpected: 4,
+                ImportOracleCoveragePercent: 75,
+                ImportOracleMissingSources: ["Hero Lab"],
+                ImportOracleLaneReceipt: "import oracle partial",
+                AdjacentSr6OracleLaneReceipt: "adjacent oracle partial",
+                Sr6SupplementLanePosture: "partial",
+                Sr6DesignerToolsPosture: "partial",
+                Sr6DesignerFamiliesAvailable: 4,
+                Sr6DesignerFamiliesExpected: 5,
+                HouseRuleLanePosture: "governed",
+                HouseRuleOverlayCount: 3,
+                Sr6SuccessorLaneReceipt: "sr6 successor partial"));
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ExecuteCommandAsync("master_index", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("dialog.master_index", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("11", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourcebooks"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSettingsLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionSummary"), "2 sourcebooks");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourcebook1"), "Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleLane"), "75%");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleMatrix"), "Chummer4 fixtures 18");
+        Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleMissingSources"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageLane"), "50%");
+        Assert.AreEqual("50% (1/2)", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageCoverage"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6SupplementLane"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6DesignerToolsLane"));
+        Assert.AreEqual("4/5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6DesignerCoverage"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexHouseRuleLane"));
+        Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexHouseRuleOverlayCount"));
+        Assert.AreEqual("source selection governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionReceipt"));
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture()
+    {
+        var client = new FakeChummerClient();
+        client.SeedToolCatalog(
+            new MasterIndexResponse(
+                Count: 1,
+                GeneratedUtc: DateTimeOffset.UtcNow,
+                Files: [],
+                ReferenceLanePosture: "governed",
+                SourcebookCount: 1,
+                Sourcebooks: [],
+                TranslatorLanePosture: "governed",
+                TranslatorLaneReceipt: "translator governed",
+                TranslatorBridgePosture: "governed",
+                TranslatorLanguageCount: 6,
+                EnabledLanguageOverlayCount: 3),
+            new TranslatorLanguagesResponse(
+                EnabledLanguageOverlayCount: 1,
+                Languages:
+                [
+                    new TranslatorLanguageEntry("en-us", "English", true),
+                    new TranslatorLanguageEntry("de-de", "Deutsch", true)
+                ],
+                TranslatorBridgePosture: "partial"));
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ExecuteCommandAsync("translator", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("dialog.translator", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorLanePosture"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorBridgePosture"));
+        Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorOverlayCount"));
     }
 
     [TestMethod]
@@ -752,6 +970,40 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task ExecuteCommandAsync_dice_roller_opens_utility_lane_with_roster_context()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-legacy-1", "Legacy One", "L1", DateTimeOffset.UtcNow.AddMinutes(-10), RulesetDefaults.Sr5);
+        client.SeedWorkspace("ws-legacy-2", "Legacy Two", "L2", DateTimeOffset.UtcNow.AddMinutes(-1), RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync("dice_roller", CancellationToken.None);
+
+        Assert.AreEqual("dialog.dice_roller", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("ruleset-backed roll + initiative preview", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceUtilityLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "2 open runners");
+        Assert.AreEqual("10 + 1d6 · pass 1 · range 11-16 · avg 13.5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "initiativePreview"));
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_character_roster_opens_dialog_with_workspace_summary()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-legacy-1", "Legacy One", "L1", DateTimeOffset.UtcNow.AddMinutes(-10), RulesetDefaults.Sr5);
+        client.SeedWorkspace("ws-legacy-2", "Legacy Two", "L2", DateTimeOffset.UtcNow.AddMinutes(-1), RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync("character_roster", CancellationToken.None);
+
+        Assert.AreEqual("dialog.character_roster", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterOpenCount"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterRulesetMix"), "sr5");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterRulesetMix"), "sr6");
+    }
+
+    [TestMethod]
     public async Task ExecuteWorkspaceActionAsync_summary_sets_active_summary_payload()
     {
         var client = new FakeChummerClient();
@@ -889,6 +1141,8 @@ public class CharacterOverviewPresenterTests
         private int _clock;
         private ShellPreferences _preferences = new(RulesetDefaults.Sr5);
         private ShellSessionState _session = ShellSessionState.Default;
+        private MasterIndexResponse _masterIndex = new(0, DateTimeOffset.UtcNow, [], "missing", 0, []);
+        private TranslatorLanguagesResponse _translatorLanguages = new(0, []);
         public bool DisableActiveRuntime { get; set; }
         public bool ThrowOnCloseWorkspace { get; set; }
         public int DownloadCalls { get; private set; }
@@ -970,6 +1224,48 @@ public class CharacterOverviewPresenterTests
             return Task.FromResult(projection);
         }
 
+        public Task<MasterIndexResponse> GetMasterIndexAsync(CancellationToken ct)
+        {
+            return Task.FromResult(_masterIndex);
+        }
+
+        public Task<TranslatorLanguagesResponse> GetTranslatorLanguagesAsync(CancellationToken ct)
+        {
+            return Task.FromResult(_translatorLanguages);
+        }
+
+        public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct)
+        {
+            string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+            IReadOnlyList<DesktopBuildPathSuggestion> suggestions =
+            [
+                new DesktopBuildPathSuggestion(
+                    BuildKitId: string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal) ? "edge-runner-starter" : "street-sam-starter",
+                    Title: string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal) ? "Edge Runner Starter" : "Street Sam Starter",
+                    Targets: [normalizedRulesetId],
+                    TrustTier: ArtifactTrustTiers.Curated,
+                    Visibility: ArtifactVisibilityModes.Public)
+            ];
+            return Task.FromResult(suggestions);
+        }
+
+        public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct)
+        {
+            DesktopBuildPathPreview preview = new(
+                State: "ready",
+                RuntimeFingerprint: "sha256:core",
+                ChangeSummaries:
+                [
+                    "Validate a compatible runtime before you apply this BuildKit: runtime sha256:core with no extra rule packs."
+                ],
+                DiagnosticMessages:
+                [
+                    "This BuildKit is ready to flow through the workbench and into a compatible runtime receipt."
+                ],
+                RequiresConfirmation: true);
+            return Task.FromResult<DesktopBuildPathPreview?>(preview);
+        }
+
         public void SeedWorkspace(
             string workspaceId,
             string name,
@@ -998,13 +1294,22 @@ public class CharacterOverviewPresenterTests
                 resolvedRulesetId);
         }
 
+        public void SeedToolCatalog(
+            MasterIndexResponse masterIndex,
+            TranslatorLanguagesResponse? translatorLanguages = null)
+        {
+            _masterIndex = masterIndex;
+            _translatorLanguages = translatorLanguages ?? new TranslatorLanguagesResponse(0, []);
+        }
+
         public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct)
         {
             LastImportedDocument = document;
             SeedWorkspace("ws-1", "Imported", _alias);
+            DateTimeOffset importedAtUtc = DateTimeOffset.Parse("2026-03-30T12:00:00+00:00");
             WorkspaceImportResult result = new(
-                new CharacterWorkspaceId("ws-1"),
-                new CharacterFileSummary(
+                Id: new CharacterWorkspaceId("ws-1"),
+                Summary: new CharacterFileSummary(
                     Name: "Imported",
                     Alias: _alias,
                     Metatype: "Ork",
@@ -1014,7 +1319,32 @@ public class CharacterOverviewPresenterTests
                     Karma: 0m,
                     Nuyen: 0m,
                     Created: true),
-                RulesetDefaults.NormalizeOptional(document.RulesetId) ?? string.Empty);
+                RulesetId: RulesetDefaults.NormalizeOptional(document.RulesetId) ?? string.Empty,
+                ImportReceiptId: "import-ws-1-abc123",
+                ImportedAtUtc: importedAtUtc,
+                Portability: new WorkspacePortabilityReceipt(
+                    FormatId: document.Format == WorkspaceDocumentFormat.Json
+                        ? WorkspacePortabilityFormatIds.PortableDossierV1
+                        : WorkspacePortabilityFormatIds.NativeWorkspaceXmlV1,
+                    CompatibilityState: WorkspacePortabilityCompatibilityStates.Compatible,
+                    ContextSummary: "Imported runner is now governed dossier truth.",
+                    ReceiptSummary: "Portable import completed as governed dossier truth and is ready for normal use or portable export.",
+                    ProvenanceSummary: $"Import receipt import-ws-1-abc123 captured payload hash abc123 at {importedAtUtc:O}.",
+                    PayloadSha256: "abc123",
+                    NextSafeAction: "Use the workspace normally or export it when you need a governed handoff.",
+                    SupportedExchangeModes:
+                    [
+                        WorkspacePortabilityExchangeModes.InspectOnly,
+                        WorkspacePortabilityExchangeModes.Merge,
+                        WorkspacePortabilityExchangeModes.Replace
+                    ],
+                    Notes:
+                    [
+                        new WorkspacePortabilityNote(
+                            Code: "format-identity",
+                            Severity: WorkspacePortabilityNoteSeverities.Info,
+                            Summary: "Imported native workspace XML on the governed dossier rail.")
+                    ]));
 
             return Task.FromResult(result);
         }
@@ -1027,6 +1357,21 @@ public class CharacterOverviewPresenterTests
                 .ToArray();
             return Task.FromResult(workspaces);
         }
+
+        public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
+            => Task.FromResult<AccountCampaignSummary?>(null);
+
+        public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<CampaignWorkspaceDigestProjection>>(Array.Empty<CampaignWorkspaceDigestProjection>());
+
+        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<DesktopHomeSupportDigest>>([]);
+
+        public Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct)
+            => Task.FromResult<DesktopSupportCaseDetails?>(null);
+
+        public Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct)
+            => Task.FromResult(DesktopInstallLinkingSummaryProjection.Empty);
 
         public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
         {
@@ -1504,6 +1849,7 @@ public class CharacterOverviewPresenterTests
 
             string json = JsonSerializer.Serialize(bundle);
             byte[] payloadBytes = Encoding.UTF8.GetBytes(json);
+            DateTimeOffset exportedAtUtc = DateTimeOffset.Parse("2026-03-30T12:05:00+00:00");
             return Task.FromResult(new CommandResult<WorkspaceExportReceipt>(
                 Success: true,
                 Value: new WorkspaceExportReceipt(
@@ -1512,7 +1858,30 @@ public class CharacterOverviewPresenterTests
                     ContentBase64: Convert.ToBase64String(payloadBytes),
                     FileName: $"{id.Value}-export.json",
                     DocumentLength: payloadBytes.Length,
-                    RulesetId: RulesetDefaults.Sr5),
+                    RulesetId: RulesetDefaults.Sr5,
+                    PackageId: "portable-ws-export-abc123",
+                    ExportedAtUtc: exportedAtUtc,
+                    Portability: new WorkspacePortabilityReceipt(
+                        FormatId: WorkspacePortabilityFormatIds.PortableDossierV1,
+                        CompatibilityState: WorkspacePortabilityCompatibilityStates.Compatible,
+                        ContextSummary: "Runner export is packaged as a portable dossier.",
+                        ReceiptSummary: "Portable export is ready for inspect-only, merge, or governed replace on a receiving surface.",
+                        ProvenanceSummary: $"Portable package portable-ws-export-abc123 captured payload hash abc123 at {exportedAtUtc:O}.",
+                        PayloadSha256: "abc123",
+                        NextSafeAction: "Share the package or inspect it first on the receiving surface.",
+                        SupportedExchangeModes:
+                        [
+                            WorkspacePortabilityExchangeModes.InspectOnly,
+                            WorkspacePortabilityExchangeModes.Merge,
+                            WorkspacePortabilityExchangeModes.Replace
+                        ],
+                        Notes:
+                        [
+                            new WorkspacePortabilityNote(
+                                Code: "format-identity",
+                                Severity: WorkspacePortabilityNoteSeverities.Info,
+                                Summary: "Package format chummer.portable-dossier.v1 stays attached to governed dossier truth.")
+                        ])),
                 Error: null));
         }
 

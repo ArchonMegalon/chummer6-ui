@@ -1,10 +1,27 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.StatusStripControl">
-  <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
-    <TextBlock Grid.Column="0" x:Name="CharacterStateText" Text="Character: none" />
-    <TextBlock Grid.Column="1" x:Name="ServiceStateText" Text="Service: online" />
-    <TextBlock Grid.Column="2" x:Name="TimeStateText" Text="Time: -" />
-    <TextBlock Grid.Column="3" x:Name="ComplianceStateText" Text="Compliance: shared presenter path" />
+  <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*,Auto" ColumnSpacing="10" VerticalAlignment="Center">
+    <TextBlock Grid.Column="0" Classes="shell-kicker" Text="Character" VerticalAlignment="Center" />
+    <TextBlock x:Name="CharacterStateText" Grid.Column="1" Classes="shell-section-title" Text="Character: none" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+    <TextBlock Grid.Column="2" Classes="shell-kicker" Text="Services" VerticalAlignment="Center" />
+    <TextBlock x:Name="ServiceStateText" Grid.Column="3" Classes="shell-section-title" Text="Service: online" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+    <TextBlock Grid.Column="4" Classes="shell-kicker" Text="Runtime Clock" VerticalAlignment="Center" />
+    <TextBlock x:Name="TimeStateText" Grid.Column="5" Classes="shell-section-title" Text="Time: -" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+    <TextBlock Grid.Column="6" Classes="shell-kicker" Text="Compliance" VerticalAlignment="Center" />
+    <TextBlock x:Name="ComplianceStateText" Grid.Column="7" Classes="shell-section-title" Text="Compliance: shared presenter path" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+    <StackPanel Grid.Column="8"
+                Orientation="Horizontal"
+                Spacing="8"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center">
+      <TextBlock Classes="shell-kicker" Text="Readiness" VerticalAlignment="Center" />
+      <ProgressBar x:Name="WorkbenchProgressBar"
+                   Width="112"
+                   Height="10"
+                   Minimum="0"
+                   Maximum="100"
+                   Value="100" />
+    </StackPanel>
   </Grid>
 </UserControl>

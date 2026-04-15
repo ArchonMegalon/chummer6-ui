@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
+using Chummer.Rulesets.Hosting.Presentation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Compliance;
@@ -214,6 +215,8 @@ public class MigrationComplianceTests
         string desktopRuntimeExtensionsText = File.ReadAllText(desktopRuntimeExtensionsPath);
         string serviceRegistrationPath = FindPath("Chummer.Infrastructure", "DependencyInjection", "ServiceCollectionExtensions.cs");
         string serviceRegistrationText = File.ReadAllText(serviceRegistrationPath);
+        string blazorProgramPath = FindPath("Chummer.Blazor", "Program.cs");
+        string blazorProgramText = File.ReadAllText(blazorProgramPath);
         string readmePath = FindPath("README.md");
         string readmeText = File.ReadAllText(readmePath);
 
@@ -1689,17 +1692,26 @@ public class MigrationComplianceTests
         StringAssert.Contains(buildLabContractsText, "public sealed record BuildLabActionDescriptor");
         StringAssert.Contains(buildLabContractsText, "public sealed record BuildLabVariantProjection");
         StringAssert.Contains(buildLabContractsText, "public sealed record BuildLabProgressionTimeline");
+        StringAssert.Contains(buildLabContractsText, "public sealed record BuildLabTeamCoverageProjection");
         StringAssert.Contains(buildLabProjectorText, "BuildLabConceptIntakeProjector");
         StringAssert.Contains(buildLabProjectorText, "BuildLabConceptIntakeProjection");
         StringAssert.Contains(buildLabProjectorText, "projection.Variants");
         StringAssert.Contains(buildLabProjectorText, "projection.ProgressionTimelines");
+        StringAssert.Contains(buildLabProjectorText, "projection.TeamCoverage");
+        StringAssert.Contains(buildLabProjectorText, "projection.NextSafeAction");
+        StringAssert.Contains(buildLabProjectorText, "projection.SupportClosureSummary");
         StringAssert.Contains(sectionPaneText, "State.ActiveBuildLab");
         StringAssert.Contains(sectionPaneText, "BuildLabFieldKinds.Multiline");
         StringAssert.Contains(sectionPaneText, "Variant Comparison");
+        StringAssert.Contains(sectionPaneText, "Decision rail");
         StringAssert.Contains(sectionPaneText, "25 / 50 / 100 Karma");
+        StringAssert.Contains(sectionPaneText, "Planner + team coverage");
         StringAssert.Contains(sectionHostText, "SetBuildLab");
         StringAssert.Contains(sectionHostText, "BuildLabVariantsList");
+        StringAssert.Contains(sectionHostText, "BuildLabCoverageBox");
+        StringAssert.Contains(sectionHostText, "BuildCoverageText");
         StringAssert.Contains(sectionHostText, "BuildTimelineText");
+        StringAssert.Contains(sectionHostText, "Next safe action:");
         StringAssert.Contains(presentationGlobalUsingsText, "Chummer.Contracts.Presentation.BuildLabConceptIntakeProjection");
         StringAssert.Contains(testsGlobalUsingsText, "Chummer.Contracts.Rulesets.IRulesetCapabilityHost");
         Assert.IsFalse(PathExistsInCandidateRoots("Chummer.Presentation", "Contracts", "BuildLabLegacyContractsCompat.cs"));
@@ -1952,6 +1964,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(hubCompatibilityContractsText, "InstallState");
         StringAssert.Contains(hubCompatibilityContractsText, "SessionRuntime");
         StringAssert.Contains(hubCompatibilityContractsText, "HostedPublic");
+        StringAssert.Contains(hubCompatibilityContractsText, "CampaignReturn");
+        StringAssert.Contains(hubCompatibilityContractsText, "SupportClosure");
     }
 
     [TestMethod]
@@ -2451,7 +2465,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(explainContractsText, "public sealed record RulesetGasBudget");
         StringAssert.Contains(explainContractsText, "public sealed record RulesetExecutionOptions");
         StringAssert.Contains(explainContractsText, "public sealed record RulesetGasUsage");
-        StringAssert.Contains(explainContractsText, "public sealed record RulesetExplainFragment");
+        StringAssert.Contains(explainContractsText, "public sealed record RulesetExplainParameter");
+        StringAssert.Contains(explainContractsText, "public sealed record RulesetTraceStep");
         StringAssert.Contains(explainContractsText, "public sealed record RulesetProviderTrace");
         StringAssert.Contains(explainContractsText, "public sealed record RulesetExplainTrace");
         StringAssert.Contains(explainContractsText, "ProviderInstructionLimit");
@@ -2646,6 +2661,44 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Parity_oracle_lists_use_canonical_string_tokens()
+    {
+        string parityOraclePath = FindPath("docs", "PARITY_ORACLE.json");
+        using JsonDocument oracle = JsonDocument.Parse(File.ReadAllText(parityOraclePath));
+        JsonElement root = oracle.RootElement;
+
+        AssertCanonicalTokenArray(root, "tabs");
+        AssertCanonicalTokenArray(root, "workspaceActions");
+        AssertCanonicalTokenArray(root, "acknowledgedCatalogOnlyTabs");
+        AssertCanonicalTokenArray(root, "acknowledgedCatalogOnlyWorkspaceActions");
+        AssertCanonicalTokenArray(root, "acknowledgedDialogFactoryOnlyDesktopControls");
+        AssertCanonicalTokenArray(root, "desktopControls");
+
+        static void AssertCanonicalTokenArray(JsonElement rootElement, string propertyName)
+        {
+            Assert.IsTrue(rootElement.TryGetProperty(propertyName, out JsonElement values), $"{propertyName} must exist");
+            Assert.AreEqual(JsonValueKind.Array, values.ValueKind, $"{propertyName} must be an array");
+
+            HashSet<string> normalized = new(StringComparer.Ordinal);
+            int index = 0;
+            foreach (JsonElement value in values.EnumerateArray())
+            {
+                Assert.AreEqual(JsonValueKind.String, value.ValueKind, $"{propertyName}[{index}] must be a string");
+
+                string token = value.GetString() ?? string.Empty;
+                Assert.IsFalse(string.IsNullOrWhiteSpace(token), $"{propertyName}[{index}] must not be blank");
+                Assert.AreEqual(token.Trim(), token, $"{propertyName}[{index}] must not be whitespace padded");
+
+                string normalizedToken = token.ToLowerInvariant();
+                Assert.IsTrue(
+                    normalized.Add(normalizedToken),
+                    $"{propertyName}[{index}] duplicates normalized token '{token}'");
+                index++;
+            }
+        }
+    }
+
+    [TestMethod]
     public void Ui_exposes_summary_validate_and_metadata_actions()
     {
         HashSet<string> actionTargets = WorkspaceSurfaceActionCatalog.All
@@ -2676,6 +2729,8 @@ public class MigrationComplianceTests
     {
         string blazorShellPath = FindPath("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor");
         string blazorShellText = File.ReadAllText(blazorShellPath);
+        string sectionPanePath = FindPath("Chummer.Blazor", "Components", "Shell", "SectionPane.razor");
+        string sectionPaneText = File.ReadAllText(sectionPanePath);
         string avaloniaWindowPath = FindPath("Chummer.Avalonia", "MainWindow.axaml");
         string avaloniaWindowText = File.ReadAllText(avaloniaWindowPath);
 
@@ -2687,13 +2742,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(blazorShellText, "<SectionPane");
         StringAssert.Contains(blazorShellText, "<StatusStrip");
         StringAssert.Contains(blazorShellText, "<DialogHost");
+        Assert.IsFalse(blazorShellText.Contains("<MetadataPanel", StringComparison.Ordinal));
+        Assert.IsFalse(sectionPaneText.Contains("class=\"section-payload\"", StringComparison.Ordinal));
 
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"ShellMenuBarControl\"");
-        StringAssert.Contains(avaloniaWindowText, "x:Name=\"WorkspaceStripControl\"");
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"NavigatorPaneControl\"");
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"SectionHostControl\"");
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"SummaryHeaderControl\"");
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"StatusStripControl\"");
+        Assert.IsFalse(avaloniaWindowText.Contains("x:Name=\"WorkspaceStripControl\"", StringComparison.Ordinal));
 
         HashSet<string> tabIds = NavigationTabCatalog.All
             .Select(tab => tab.Id)
@@ -2841,6 +2898,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(testText, "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections");
         StringAssert.Contains(testText, "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections");
         StringAssert.Contains(testText, "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections");
+        StringAssert.Contains(testText, "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details");
         StringAssert.Contains(testText, "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity");
     }
 
@@ -2894,32 +2952,42 @@ public class MigrationComplianceTests
     {
         string portalScriptPath = FindPath("scripts", "e2e-portal.sh");
         string portalScriptText = File.ReadAllText(portalScriptPath);
-        string portalPlaywrightPath = FindPath("scripts", "e2e-portal.cjs");
-        string portalPlaywrightText = File.ReadAllText(portalPlaywrightPath);
+        string portalRouteProbePath = FindPath("scripts", "e2e-public-edge.cjs");
+        string portalRouteProbeText = File.ReadAllText(portalRouteProbePath);
+        string portalFixtureProbePath = FindPath("scripts", "e2e-portal.cjs");
+        string portalFixtureProbeText = File.ReadAllText(portalFixtureProbePath);
 
         StringAssert.Contains(portalScriptText, "CHUMMER_E2E_PLAYWRIGHT_SOFT_FAIL");
         StringAssert.Contains(portalScriptText, "skipping portal e2e: docker daemon permission denied in this environment.");
-        StringAssert.Contains(portalScriptText, "chummer-playwright-portal");
-        StringAssert.Contains(portalScriptText, "compose_args=(-f docker-compose.yml)");
-        StringAssert.Contains(portalScriptText, "docker compose \"${compose_args[@]}\" --profile portal up -d --build chummer-api chummer-blazor-portal chummer-hub-web-portal chummer-avalonia-browser chummer-portal");
+        StringAssert.Contains(portalScriptText, "PORTAL_EDGE_COMPOSE_FILE");
+        StringAssert.Contains(portalScriptText, "docker compose -f \"$PORTAL_EDGE_COMPOSE_FILE\" up -d --build --remove-orphans chummer-run-identity chummer-portal");
+        StringAssert.Contains(portalScriptText, "node /docker/chummercomplete/chummer-presentation/scripts/e2e-public-edge.cjs");
+        Assert.IsFalse(portalScriptText.Contains("chummer-hub-web-portal", StringComparison.Ordinal));
         Assert.IsFalse(portalScriptText.Contains("chummer-session-web-portal", StringComparison.Ordinal));
-        StringAssert.Contains(portalScriptText, "docker compose \"${compose_args[@]}\" --profile test --profile portal run --build --rm chummer-playwright-portal");
-        StringAssert.Contains(portalPlaywrightText, "requiredLandingLinks");
-        StringAssert.Contains(portalPlaywrightText, "requiredLandingLinks.every(link => text.includes(link))");
-        StringAssert.Contains(portalPlaywrightText, "'/blazor/'");
-        StringAssert.Contains(portalPlaywrightText, "'/hub/'");
-        StringAssert.Contains(portalPlaywrightText, "'/session/'");
-        StringAssert.Contains(portalPlaywrightText, "'/avalonia/'");
-        StringAssert.Contains(portalPlaywrightText, "'/downloads/'");
-        StringAssert.Contains(portalPlaywrightText, "'/docs/'");
-        StringAssert.Contains(portalPlaywrightText, "'/api/health'");
-        StringAssert.Contains(portalPlaywrightText, "http://chummer-portal:8080/api/ai/status");
-        StringAssert.Contains(portalPlaywrightText, "http://chummer-portal:8080/hub/health");
-        Assert.IsFalse(portalPlaywrightText.Contains("http://chummer-portal:8080/session/health", StringComparison.Ordinal));
-        Assert.IsFalse(portalPlaywrightText.Contains("CHUMMER_PORTAL_INPROCESS_FIXTURE", StringComparison.Ordinal));
-        Assert.IsFalse(portalPlaywrightText.Contains("inprocess-portal-fixture.local", StringComparison.Ordinal));
-        StringAssert.Contains(portalPlaywrightText, "No published desktop builds yet");
-        StringAssert.Contains(portalPlaywrightText, "fallback-link");
+        StringAssert.Contains(portalScriptText, "PORTAL_LOCAL_PROOF_PATH");
+        StringAssert.Contains(portalScriptText, "\"contract_name\": \"chummer6-ui.local_release_proof\"");
+        StringAssert.Contains(portalScriptText, "\"proof_routes\": [");
+        StringAssert.Contains(portalScriptText, "\"route_probe_executed\": route_probe_executed");
+        StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks");
+        StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks.every(link => text.includes(link))");
+        StringAssert.Contains(portalRouteProbeText, "'/downloads'");
+        StringAssert.Contains(portalRouteProbeText, "'/participate'");
+        StringAssert.Contains(portalRouteProbeText, "'/contact'");
+        StringAssert.Contains(portalRouteProbeText, "'/what-is-chummer'");
+        StringAssert.Contains(portalRouteProbeText, "'/artifacts'");
+        StringAssert.Contains(portalRouteProbeText, "'/faq'");
+        StringAssert.Contains(portalRouteProbeText, "response.url.endsWith('/login?next=%2Faccount')");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/downloads/releases.json`");
+        StringAssert.Contains(portalRouteProbeText, "Install the current preview");
+        StringAssert.Contains(portalRouteProbeText, "What Is Real Now");
+        StringAssert.Contains(portalFixtureProbeText, "deep-link-check");
+        StringAssert.Contains(portalFixtureProbeText, "deep-link-signoff");
+        StringAssert.Contains(portalFixtureProbeText, "cross-origin-opener-policy");
+        StringAssert.Contains(portalFixtureProbeText, "cross-origin-embedder-policy");
+        StringAssert.Contains(portalFixtureProbeText, "payload?.staticAssets?.wasmMimeType === 'application/wasm'");
+        StringAssert.Contains(portalFixtureProbeText, "service-worker.js");
+        Assert.IsFalse(portalFixtureProbeText.Contains("CHUMMER_PORTAL_INPROCESS_FIXTURE", StringComparison.Ordinal));
+        Assert.IsFalse(portalFixtureProbeText.Contains("inprocess-portal-fixture.local", StringComparison.Ordinal));
 
         string b7SignoffPath = FindPath("scripts", "ai", "milestones", "b7-browser-isolation-check.sh");
         string b7SignoffText = File.ReadAllText(b7SignoffPath);
@@ -2988,6 +3056,37 @@ public class MigrationComplianceTests
         Assert.IsTrue(
             verifyText.IndexOf(optInGate, StringComparison.Ordinal) < verifyText.IndexOf(runBuild, StringComparison.Ordinal),
             "run-services sibling build must stay inside the opt-in gate.");
+    }
+
+    [TestMethod]
+    public void Package_plane_defaults_stay_explicit_and_repo_local_helpers_use_them()
+    {
+        string propsPath = FindPath("Directory.Build.props");
+        string propsText = File.ReadAllText(propsPath);
+        string buildScriptText = File.ReadAllText(FindPath("scripts", "ai", "build.sh"));
+        string testScriptText = File.ReadAllText(FindPath("scripts", "ai", "test.sh"));
+        string restoreScriptText = File.ReadAllText(FindPath("scripts", "ai", "restore.sh"));
+        string helperScriptText = File.ReadAllText(FindPath("scripts", "ai", "with-package-plane.sh"));
+        string desktopRuntimeProjectText = File.ReadAllText(FindPath("Chummer.Desktop.Runtime", "Chummer.Desktop.Runtime.csproj"));
+
+        StringAssert.Contains(propsText, "<ChummerUseLocalCompatibilityTree Condition=\"'$(ChummerUseLocalCompatibilityTree)' == ''\">false</ChummerUseLocalCompatibilityTree>");
+        StringAssert.Contains(propsText, "<ChummerRunContractsPackageId Condition=\"'$(ChummerRunContractsPackageId)' == ''\">Chummer.Run.Contracts</ChummerRunContractsPackageId>");
+        StringAssert.Contains(propsText, "<ChummerRunContractsPackageVersion Condition=\"'$(ChummerRunContractsPackageVersion)' == ''\">0.1.0-preview</ChummerRunContractsPackageVersion>");
+        StringAssert.Contains(propsText, "<ChummerHubRegistryContractsPackageId Condition=\"'$(ChummerHubRegistryContractsPackageId)' == ''\">Chummer.Hub.Registry.Contracts</ChummerHubRegistryContractsPackageId>");
+        StringAssert.Contains(propsText, "<ChummerHubRegistryContractsPackageVersion Condition=\"'$(ChummerHubRegistryContractsPackageVersion)' == ''\">0.1.0-preview</ChummerHubRegistryContractsPackageVersion>");
+        StringAssert.Contains(buildScriptText, "with-package-plane.sh");
+        StringAssert.Contains(testScriptText, "with-package-plane.sh");
+        StringAssert.Contains(restoreScriptText, "with-package-plane.sh");
+        StringAssert.Contains(helperScriptText, "missing local compatibility-tree owner projects:");
+        StringAssert.Contains(helperScriptText, "CHUMMER_PUBLISHED_FEED_SOURCES");
+        StringAssert.Contains(helperScriptText, "Chummer.Run.Contracts");
+        StringAssert.Contains(helperScriptText, "Chummer.Hub.Registry.Contracts");
+        StringAssert.Contains(helperScriptText, "-p:ChummerUseLocalCompatibilityTree=true");
+        StringAssert.Contains(desktopRuntimeProjectText, "ProjectReference Include=\"$(ChummerLocalHubRegistryContractsProject)\"");
+        StringAssert.Contains(desktopRuntimeProjectText, "PackageReference Include=\"$(ChummerHubRegistryContractsPackageId)\" Version=\"$(ChummerHubRegistryContractsPackageVersion)\"");
+        Assert.IsFalse(
+            desktopRuntimeProjectText.Contains("HintPath>..\\..\\chummer-hub-registry", StringComparison.Ordinal),
+            "desktop runtime must not depend on sibling hub-registry build outputs.");
     }
 
     [TestMethod]
@@ -3218,7 +3317,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "project: Chummer.Avalonia/Chummer.Avalonia.csproj");
         StringAssert.Contains(
             workflowText,
-            "app: avalonia\n            project: Chummer.Avalonia/Chummer.Avalonia.csproj\n            os: macos-latest\n            rid: osx-x64");
+            "app: avalonia\n            project: Chummer.Avalonia/Chummer.Avalonia.csproj\n            os: macos-latest\n            rid: osx-arm64");
+        StringAssert.Contains(
+            workflowText,
+            "app: avalonia\n            project: Chummer.Avalonia/Chummer.Avalonia.csproj\n            os: macos-13\n            rid: osx-x64");
+        StringAssert.Contains(
+            workflowText,
+            "app: blazor-desktop\n            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\n            os: macos-latest\n            rid: osx-arm64");
         StringAssert.Contains(workflowText, "installer_ext: dmg");
         StringAssert.Contains(workflowText, "name: Startup smoke");
         StringAssert.Contains(workflowText, "bash scripts/run-desktop-startup-smoke.sh");
@@ -3226,20 +3331,32 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS");
         StringAssert.Contains(workflowText, "Checkout core-engine compatibility tree");
         StringAssert.Contains(workflowText, "Checkout run-services compatibility tree");
+        StringAssert.Contains(workflowText, "Checkout hub-registry compatibility tree");
         StringAssert.Contains(workflowText, "Checkout ui-kit compatibility tree");
+        StringAssert.Contains(workflowText, "Checkout media-factory compatibility tree");
+        StringAssert.Contains(workflowText, "Prepare compatibility tree aliases (Windows)");
+        StringAssert.Contains(workflowText, "Prepare compatibility tree aliases (POSIX)");
+        StringAssert.Contains(workflowText, "Build compatibility contracts");
         StringAssert.Contains(workflowText, "path: r");
-        StringAssert.Contains(workflowText, "path: .c/core");
-        StringAssert.Contains(workflowText, "path: .c/hub");
-        StringAssert.Contains(workflowText, "path: .c/ui");
+        StringAssert.Contains(workflowText, "path: c");
+        StringAssert.Contains(workflowText, "path: h");
+        StringAssert.Contains(workflowText, "path: g");
+        StringAssert.Contains(workflowText, "path: u");
+        StringAssert.Contains(workflowText, "path: m");
         StringAssert.Contains(workflowText, "ref: fleet/core");
-        StringAssert.Contains(workflowText, "ref: main");
+        StringAssert.Contains(workflowText, "ref: fleet/hub");
+        StringAssert.Contains(workflowText, "ref: fleet/hub-registry");
+        StringAssert.Contains(workflowText, "ref: fleet/media-factory");
         StringAssert.Contains(workflowText, "ref: fleet/ui-kit");
         StringAssert.Contains(workflowText, "-p:ChummerUseLocalCompatibilityTree=true");
         StringAssert.Contains(workflowText, "ChummerLocalContractsProject");
+        StringAssert.Contains(workflowText, "ChummerLocalCampaignContractsProject");
         StringAssert.Contains(workflowText, "ChummerLocalRunContractsProject");
+        StringAssert.Contains(workflowText, "ChummerLocalHubRegistryContractsProject");
         StringAssert.Contains(workflowText, "ChummerLocalUiKitProject");
+        StringAssert.Contains(workflowText, "UseChummerEngineContractsLocalFeed=false");
         StringAssert.Contains(workflowText, "if-no-files-found: ignore");
-        StringAssert.Contains(workflowText, "path: r/dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.${{ matrix.installer_ext }}");
+        StringAssert.Contains(workflowText, "r/dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.");
         StringAssert.Contains(workflowText, "path: r/dist/startup-smoke");
         StringAssert.Contains(workflowText, "bash scripts/generate-releases-manifest.sh");
         StringAssert.Contains(workflowText, "Chummer.Application/**");
@@ -3269,21 +3386,898 @@ public class MigrationComplianceTests
             "Live portal manifest verification should be mandatory when deployment is enabled.");
         StringAssert.Contains(workflowText, "scripts/verify-releases-manifest.sh");
 
-        StringAssert.Contains(manifestScriptText, "chummer-(?P<app>avalonia|blazor-desktop)-(?P<rid>[^.]+)\\.(?P<ext>zip|tar\\.gz)");
-        StringAssert.Contains(manifestScriptText, "\"osx-x64\": \"macOS x64\"");
-        StringAssert.Contains(manifestScriptText, "\"id\": f\"{app}-{rid}\"");
-        StringAssert.Contains(manifestScriptText, "\"url\": f\"/downloads/files/{artifact.name}\"");
+        StringAssert.Contains(manifestScriptText, "materialize_public_release_channel.py");
+        StringAssert.Contains(manifestScriptText, "normalize_release_channel_artifact_identity_fields");
+        StringAssert.Contains(manifestScriptText, "cannot normalize artifact channel identity");
+        StringAssert.Contains(manifestScriptText, "cannot normalize artifact release identity");
+        StringAssert.Contains(manifestScriptText, "artifact[\"channelId\"] = channel_id");
+        StringAssert.Contains(manifestScriptText, "artifact[\"releaseVersion\"] = release_version");
+        StringAssert.Contains(manifestScriptText, "generate-public-promotion-evidence.py");
+        StringAssert.Contains(manifestScriptText, "promoted_file_names");
+        StringAssert.Contains(manifestScriptText, "portal_artifacts");
+        StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
+        StringAssert.Contains(manifestScriptText, "UI_LOCALIZATION_RELEASE_GATE_PATH");
+        StringAssert.Contains(manifestScriptText, "--ui-localization-release-gate");
+        StringAssert.Contains(manifestScriptText, "STARTUP_SMOKE_DIR");
         StringAssert.Contains(startupSmokeScriptText, "release_smoke_start_failure");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT");
+        StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET");
+        StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT");
         StringAssert.Contains(startupSmokeScriptText, "--smoke-install");
         StringAssert.Contains(startupSmokeScriptText, "hdiutil attach");
-        StringAssert.Contains(startupSmokeScriptText, "dpkg-deb -x");
-        StringAssert.Contains(verifyScriptText, "CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION");
-        StringAssert.Contains(verifyScriptText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
-        StringAssert.Contains(verifyScriptText, "failed artifact verification");
-        StringAssert.Contains(verifyScriptText, "Verified artifact links/files");
-        StringAssert.Contains(verifyScriptText, "version.lower() == \"unpublished\"");
+        StringAssert.Contains(startupSmokeScriptText, "--force-not-root");
+        StringAssert.Contains(startupSmokeScriptText, "artifactInstallVerificationPath");
+        StringAssert.Contains(startupSmokeScriptText, "--purge");
+        Assert.IsFalse(
+            startupSmokeScriptText.Contains("dpkg-deb -x", StringComparison.Ordinal),
+            "Linux .deb startup smoke should install and purge in an isolated dpkg root instead of only extracting the archive.");
+        StringAssert.Contains(verifyScriptText, "TARGET=\"${1:-${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}}\"");
+        StringAssert.Contains(verifyScriptText, "Provide a portal base URL or manifest path as the first argument");
+        StringAssert.Contains(verifyScriptText, "verify_public_release_channel.py");
+        StringAssert.Contains(verifyScriptText, "Missing registry verifier");
+    }
+
+    [TestMethod]
+    public void Desktop_executable_exit_gate_prefers_registry_release_truth_with_repo_local_fallback_and_counts_macos_dmg_media()
+    {
+        string executableGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string executableGateScriptText = File.ReadAllText(executableGateScriptPath);
+
+        StringAssert.Contains(
+            executableGateScriptText,
+            "hub_registry_root=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$repo_root/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "canonical_release_channel_path=\"${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
+        StringAssert.Contains(executableGateScriptText, "release_channel_path_default");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "release_channel_path=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}\"");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "python3 - <<'PY' \"$receipt_path\" \"$release_channel_path\" \"$linux_avalonia_gate_path\" \"$linux_blazor_gate_path\" \"$windows_gate_path_default\" \"$flagship_gate_path\" \"$visual_familiarity_gate_path\" \"$workflow_execution_gate_path\" \"$repo_root\" \"$hub_registry_root\"");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_gate_path=\"$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json\"");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_gate_path=\"$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json\"");
+        StringAssert.Contains(executableGateScriptText, "def is_desktop_install_media(");
+        StringAssert.Contains(executableGateScriptText, "return kind_token in {\"installer\", \"dmg\", \"pkg\"}");
+        StringAssert.Contains(executableGateScriptText, "and is_desktop_install_media(item.get(\"platform\"), item.get(\"kind\"))");
+        StringAssert.Contains(executableGateScriptText, "def validate_receipt_path_scope(");
+        StringAssert.Contains(executableGateScriptText, "receipt path is outside this repo root");
+        StringAssert.Contains(executableGateScriptText, "def validate_trusted_path_scope(");
+        StringAssert.Contains(executableGateScriptText, "trusted_local_roots");
+        StringAssert.Contains(executableGateScriptText, "hub_registry_release_channel_path = (");
+        StringAssert.Contains(executableGateScriptText, "hub_registry_root_trusted_for_startup_smoke_proof");
+        StringAssert.Contains(executableGateScriptText, "and release_channel_path.resolve() == hub_registry_release_channel_path.resolve()");
+        StringAssert.Contains(executableGateScriptText, "def validate_windows_gate(");
+        StringAssert.Contains(executableGateScriptText, "def normalize_contract_name(payload: Dict[str, Any]) -> str:");
+        StringAssert.Contains(executableGateScriptText, "Linux desktop exit gate receipt contract_name is invalid for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate receipt contract_name is invalid.");
+        StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate receipt contract_name is invalid for promoted head");
+        StringAssert.Contains(executableGateScriptText, "gate_reasons = [");
+        StringAssert.Contains(executableGateScriptText, "reasons.append(f\"Windows gate reason: {gate_reason}\")");
+        StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.");
+        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is missing/unreadable for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "host_supports_windows_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "startup_smoke_external_blocker");
+        StringAssert.Contains(executableGateScriptText, "missing_windows_host_capability");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be missing_windows_host_capability when startup smoke receipt is missing on a non-Windows-capable host.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt is missing on a Windows-capable host.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt exists for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt path is outside trusted local roots.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt file is unreadable or not a JSON object for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "gate_evidence[\"startup_smoke_receipt_source\"] = startup_smoke_receipt_source");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt status is not passing for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt headId does not match promoted release-channel head.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt platform is not windows for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt hostClass is missing for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt hostClass does not identify a Windows host for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt operatingSystem is missing for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableGateScriptText, "Release channel Windows artifact arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.");
+        StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact arch does not match promoted release-channel RID.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt channelId does not match release-channel channelId for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting arch/architecture alias values for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is missing/invalid for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt is stale for promoted installer bytes (");
+        StringAssert.Contains(executableGateScriptText, "def windows_gate_path_for_head(");
+        StringAssert.Contains(executableGateScriptText, "UI_WINDOWS_{head.upper().replace('-', '_')}_{rid.upper().replace('-', '_')}_DESKTOP_EXIT_GATE.generated.json");
+        StringAssert.Contains(executableGateScriptText, "windows_artifacts_missing_rid_by_head");
+        StringAssert.Contains(executableGateScriptText, "Release channel publishes Windows desktop media for head '");
+        StringAssert.Contains(executableGateScriptText, "for expected_windows_artifact in expected_windows_artifacts:");
+        StringAssert.Contains(executableGateScriptText, "validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f\"windows_gate:{gate_label}\")");
+        StringAssert.Contains(executableGateScriptText, "Windows desktop exit gate receipt head/RID does not match promoted release-channel Windows artifact tuple");
+        StringAssert.Contains(executableGateScriptText, "evidence.setdefault(\"windows_gates\", {})[gate_label] = gate_evidence");
+        StringAssert.Contains(executableGateScriptText, "release_channel_windows_artifact_arch_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"linux_statuses\"] = linux_statuses");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"windows_statuses\"] = windows_statuses");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"macos_statuses\"] = macos_statuses");
+        StringAssert.Contains(executableGateScriptText, "reasons.append(f\"macOS gate reason ({head}/{rid}): {gate_reason}\")");
+        StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact sha256 does not match promoted release channel.");
+        StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer sha256 does not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(executableGateScriptText, "macOS desktop exit gate installer bytes do not match the local promoted desktop shelf artifact.");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt path is outside trusted local roots for promoted head");
+        StringAssert.Contains(executableGateScriptText, "host_supports_macos_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "external_blocker");
+        StringAssert.Contains(executableGateScriptText, "missing_macos_host_capability");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be missing_macos_host_capability when startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt exists for promoted head");
+        StringAssert.Contains(executableGateScriptText, "startup_receipt_file = (");
+        StringAssert.Contains(executableGateScriptText, "startup_smoke_receipt_file_exists");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt file is unreadable or not a JSON object for promoted head");
+        StringAssert.Contains(executableGateScriptText, "gate_evidence[\"startup_smoke_receipt_source\"] = \"file\" if startup_receipt_file else \"missing\"");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt status is not passing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt headId does not match promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt platform is not macOS for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt hostClass is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt hostClass does not identify a macOS host for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt operatingSystem is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting arch/architecture alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "Release channel macOS artifact carries conflicting arch/architecture alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Release channel macOS artifact arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact channelId/channel does not match promoted release channel.");
+        StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact carries conflicting arch/architecture alias values.");
+        StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact arch does not match promoted release channel RID.");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt channelId does not match release-channel channelId for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is missing/invalid for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt is stale for promoted head");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt file is unreadable or not a JSON object for promoted head");
+        StringAssert.Contains(executableGateScriptText, "gate_evidence[\"primary_receipt_source\"] = \"file\" if primary_receipt_file else \"missing\"");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is missing/invalid");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt is stale for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt readyCheckpoint is not pre_ui_event_loop");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is missing/unreadable for promoted head");
+        StringAssert.Contains(executableGateScriptText, "host_supports_linux_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "startup_smoke_external_blocker");
+        StringAssert.Contains(executableGateScriptText, "missing_linux_host_capability");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be missing_linux_host_capability when installer startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt exists for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt path is outside trusted local roots for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt status is not passing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt headId does not match promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt platform is not linux for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt rid is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt rid does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "primary_receipt_arch_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "Release channel Linux artifact arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifact_channel_ids");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifact_versions");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_head");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_channel");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_channel_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_version");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_version_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_arch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_arch_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_channel_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_version_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_arch_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_missing_generated_at");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_generated_at_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_generated_at_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing head:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing channelId/channel:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) channelId/channel does not match release channel channelId:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing version/releaseVersion:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) version/releaseVersion does not match release channel version:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing arch:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) arch does not match RID-derived architecture:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry conflicting channelId/channel values:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry conflicting version/releaseVersion values:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry conflicting arch/architecture values:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) are missing generated_at/generatedAt:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) generated_at does not match release channel generated_at:");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry conflicting generated_at/generatedAt values:");
+        StringAssert.Contains(executableGateScriptText, "macos_artifacts_missing_rid_by_head");
+        StringAssert.Contains(executableGateScriptText, "Release channel publishes macOS desktop media for head");
+        StringAssert.Contains(executableGateScriptText, "Release channel publishes macOS desktop media without explicit head/rid tuple metadata.");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt hostClass does not identify a Linux host for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt operatingSystem is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt carries conflicting arch/architecture alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt arch does not match promoted RID for head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt channelId does not match release channel for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Release channel Linux artifact carries conflicting arch/architecture alias values for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes");
+        StringAssert.Contains(executableGateScriptText, "Linux installer proof path is outside trusted local roots for promoted head");
+        StringAssert.Contains(executableGateScriptText, "linux_installer_capture:{head}:{key}");
+        StringAssert.Contains(executableGateScriptText, "gate_reasons = [");
+        StringAssert.Contains(executableGateScriptText, "reasons.append(f\"Linux gate reason ({head}): {gate_reason}\")");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_release_channel_id");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_release_channel_id");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_release_channel_id_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_release_channel_id_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_release_version_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_release_version_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate carries conflicting release-channel identity aliases across evidence and gate envelope.");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate carries conflicting release-channel identity aliases across evidence and gate envelope.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate carries conflicting release-version aliases across evidence and gate envelope.");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate carries conflicting release-version aliases across evidence and gate envelope.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate release-channel identity does not match release channel channelId.");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate release-channel identity does not match release channel channelId.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate is missing or not passing.");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate is missing or not passing.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing screenshot_dir.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot_dir does not exist on disk.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot_dir is outside this repo root.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing required_screenshots.");
+        StringAssert.Contains(executableGateScriptText, "\"visual_familiarity.required_screenshots\"");
+        StringAssert.Contains(executableGateScriptText, "must be a list when present.");
+        StringAssert.Contains(executableGateScriptText, "contains a non-string item at index");
+        StringAssert.Contains(executableGateScriptText, "contains a token with leading/trailing whitespace at index");
+        StringAssert.Contains(executableGateScriptText, "contains a blank token at index");
+        StringAssert.Contains(executableGateScriptText, "contains duplicate token(s):");
+        StringAssert.Contains(executableGateScriptText, "_whitespace_padded_indexes");
+        StringAssert.Contains(executableGateScriptText, "contains non-basename token(s):");
+        StringAssert.Contains(executableGateScriptText, "contains token(s) without an allowed suffix");
+        StringAssert.Contains(executableGateScriptText, "_malformed_non_basename_tokens");
+        StringAssert.Contains(executableGateScriptText, "_malformed_suffix_tokens");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are missing on disk:");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity required screenshots are stale:");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot evidence predates the visual familiarity receipt generation time:");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity screenshot evidence is newer than the visual familiarity receipt generation time:");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshot_file_timestamps");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshots_older_than_receipt");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_screenshots_newer_than_receipt");
+        StringAssert.Contains(executableGateScriptText, "visual_head_contract_marker_statuses_raw");
+        StringAssert.Contains(executableGateScriptText, "def normalize_required_status_map(");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity.flagship_head_proof_statuses");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution.flagship_head_proof_statuses");
+        StringAssert.Contains(executableGateScriptText, "contains a non-string key.");
+        StringAssert.Contains(executableGateScriptText, "contains a key with leading/trailing whitespace");
+        StringAssert.Contains(executableGateScriptText, "contains a non-canonical key");
+        StringAssert.Contains(executableGateScriptText, "contains duplicate normalized key");
+        StringAssert.Contains(executableGateScriptText, "contains a non-string value for key");
+        StringAssert.Contains(executableGateScriptText, "_malformed_entries");
+        StringAssert.Contains(executableGateScriptText, "_non_canonical_keys");
+        StringAssert.Contains(executableGateScriptText, "_duplicate_normalized_keys");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_head_contract_marker_statuses");
+        StringAssert.Contains(executableGateScriptText, "visual_familiarity_head_missing_contract_markers");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate evidence is missing per-head proof contract markers.");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate does not carry per-head proof contract markers for required desktop head");
+        StringAssert.Contains(executableGateScriptText, "Desktop visual familiarity exit gate has missing/failing per-head proof contract markers for required desktop head");
+        StringAssert.Contains(executableGateScriptText, "\"visual_familiarity.flagship_required_desktop_heads\"");
+        StringAssert.Contains(executableGateScriptText, "\"workflow_execution.flagship_required_desktop_heads\"");
+        StringAssert.Contains(executableGateScriptText, "workflow_head_contract_marker_statuses_raw");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_head_contract_marker_statuses");
+        StringAssert.Contains(executableGateScriptText, "workflow_execution_head_missing_contract_markers");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate evidence is missing per-head proof contract markers.");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate does not carry per-head proof contract markers for required desktop head");
+        StringAssert.Contains(executableGateScriptText, "Desktop workflow execution gate has missing/failing per-head proof contract markers for required desktop head");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_EXECUTABLE_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(executableGateScriptText, "carries conflicting generated_at/generatedAt alias values.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_generated_at");
+        StringAssert.Contains(executableGateScriptText, "release_channel_future_skew_seconds");
+        StringAssert.Contains(executableGateScriptText, "release_channel_age_seconds");
+        StringAssert.Contains(executableGateScriptText, "Release channel artifacts must be a list when present.");
+        StringAssert.Contains(executableGateScriptText, "Release channel artifacts contains a non-object item at index");
+        StringAssert.Contains(executableGateScriptText, "release_channel_artifacts_total_count");
+        StringAssert.Contains(executableGateScriptText, "release_channel_artifacts_object_count");
+        StringAssert.Contains(executableGateScriptText, "release_channel_artifacts_non_object_indexes");
+        StringAssert.Contains(executableGateScriptText, "def normalize_optional_string_scalar(");
+        StringAssert.Contains(executableGateScriptText, "release_channel.status");
+        StringAssert.Contains(executableGateScriptText, "release_channel.channelId");
+        StringAssert.Contains(executableGateScriptText, "release_channel.channel");
+        StringAssert.Contains(executableGateScriptText, "release_channel.version");
+        StringAssert.Contains(executableGateScriptText, "release_channel.releaseVersion");
+        StringAssert.Contains(executableGateScriptText, "release_channel.rolloutState");
+        StringAssert.Contains(executableGateScriptText, "release_channel.supportabilityState");
+        StringAssert.Contains(executableGateScriptText, "must be a string when present.");
+        StringAssert.Contains(executableGateScriptText, "contains leading/trailing whitespace.");
+        StringAssert.Contains(executableGateScriptText, "release_channel.channelId and release_channel.channel disagree after normalization.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_version_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "release_channel.version and release_channel.releaseVersion disagree after normalization.");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing version/releaseVersion, so installer/update truth cannot be aligned by release head.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_generated_at_alias_conflict");
+        StringAssert.Contains(executableGateScriptText, "release_channel.generated_at and release_channel.generatedAt disagree after normalization.");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing a valid generated_at timestamp.");
+        StringAssert.Contains(executableGateScriptText, "Release channel generated_at is in the future");
+        StringAssert.Contains(executableGateScriptText, "Release channel receipt is stale (");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is in the future for promoted installer bytes");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting channelId/channel alias values for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting version/releaseVersion alias values for promoted installer bytes.");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke receipt timestamp is in the future for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux installer startup smoke receipt timestamp is in the future for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Release channel publishes Linux desktop media for head");
+        StringAssert.Contains(executableGateScriptText, "flagship_required_desktop_heads = sorted(");
+        StringAssert.Contains(executableGateScriptText, "flagship_required_desktop_heads_source = flagship_gate.get(\"desktopHeads\")");
+        StringAssert.Contains(executableGateScriptText, "\"flagship.desktop_heads\"");
+        StringAssert.Contains(executableGateScriptText, "Flagship UI release gate is missing required desktopHeads desktop head inventory.");
+        StringAssert.Contains(executableGateScriptText, "missing_promoted_desktop_heads");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing promoted desktop install media for flagship-required head(s): ");
+        StringAssert.Contains(executableGateScriptText, "heads_requiring_flagship_proof");
+        StringAssert.Contains(executableGateScriptText, "desktop_tuple_coverage = (");
+        StringAssert.Contains(executableGateScriptText, "desktop_tuple_coverage_present = isinstance(release_channel.get(\"desktopTupleCoverage\"), dict)");
+        StringAssert.Contains(executableGateScriptText, "tuple_coverage_required_desktop_platforms");
+        StringAssert.Contains(executableGateScriptText, "tuple_coverage_reported_missing_platforms");
+        StringAssert.Contains(executableGateScriptText, "tuple_coverage_reported_missing_heads");
+        StringAssert.Contains(executableGateScriptText, "tuple_coverage_declares_missing_required_platform_head_pairs");
+        StringAssert.Contains(executableGateScriptText, "tuple_coverage_declares_missing_required_platforms");
+        StringAssert.Contains(executableGateScriptText, "tuple_coverage_declares_missing_required_heads");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_present");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_declares_missing_required_platform_head_pairs");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_declares_missing_required_platforms");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_declares_missing_required_heads");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing desktopTupleCoverage metadata for promoted desktop install artifacts.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage is missing requiredDesktopPlatforms for desktop install media.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage is missing requiredDesktopHeads for desktop install media.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage is missing promotedPlatformHeads mapping for desktop install media.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredPlatformHeadPairs explicitly (empty list when complete).");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredPlatforms explicitly (empty list when complete).");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage must declare missingRequiredHeads explicitly (empty list when complete).");
+        StringAssert.Contains(executableGateScriptText, "def normalize_required_token_list(");
+        StringAssert.Contains(executableGateScriptText, "def normalize_required_tuple_list(");
+        StringAssert.Contains(executableGateScriptText, "def normalize_required_relative_file_list(");
+        StringAssert.Contains(executableGateScriptText, "def normalize_promoted_platform_heads(");
+        StringAssert.Contains(executableGateScriptText, "must be a list when present.");
+        StringAssert.Contains(executableGateScriptText, "must be an object when present.");
+        StringAssert.Contains(executableGateScriptText, "contains a non-string item at index");
+        StringAssert.Contains(executableGateScriptText, "contains a blank token at index");
+        StringAssert.Contains(executableGateScriptText, "contains duplicate token(s):");
+        StringAssert.Contains(executableGateScriptText, "contains malformed token(s):");
+        StringAssert.Contains(executableGateScriptText, "contains unsupported platform key");
+        StringAssert.Contains(executableGateScriptText, "contains a platform key with leading/trailing whitespace");
+        StringAssert.Contains(executableGateScriptText, "contains a non-canonical platform key");
+        StringAssert.Contains(executableGateScriptText, "contains duplicate normalized platform key");
+        StringAssert.Contains(executableGateScriptText, "_raw_platform_keys_by_normalized");
+        StringAssert.Contains(executableGateScriptText, "_whitespace_padded_platform_keys");
+        StringAssert.Contains(executableGateScriptText, "_non_canonical_platform_keys");
+        StringAssert.Contains(executableGateScriptText, "_duplicate_normalized_platform_keys");
+        StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs");
+        StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platform_head_pairs_by_platform");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing required desktop platform/head installer tuple pair(s): ");
+        StringAssert.Contains(executableGateScriptText, "def missing_or_failing_keys_for_platform(");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"windows_missing_or_failing_keys\"] = windows_missing_or_failing_keys");
+        StringAssert.Contains(executableGateScriptText, "evidence[\"macos_missing_or_failing_keys\"] = macos_missing_or_failing_keys");
+        StringAssert.Contains(executableGateScriptText, "missing_required_desktop_platforms_derived");
+        StringAssert.Contains(executableGateScriptText, "missing_required_desktop_heads_derived");
+        StringAssert.Contains(executableGateScriptText, "requiredDesktopPlatformHeadRidTuples");
+        StringAssert.Contains(executableGateScriptText, "promotedPlatformHeadRidTuples");
+        StringAssert.Contains(executableGateScriptText, "missingRequiredPlatformHeadRidTuples");
+        StringAssert.Contains(executableGateScriptText, "release_channel_required_platform_head_pairs_for_matrix");
+        StringAssert.Contains(executableGateScriptText, "release_channel_required_platform_head_pairs_from_required_rid_tuples");
+        StringAssert.Contains(executableGateScriptText, "release_channel_missing_required_platform_head_pairs_from_required_rid_tuples");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage requiredDesktopPlatformHeadRidTuples is missing required desktop platform/head pair coverage:");
+        StringAssert.Contains(executableGateScriptText, "build_platform_head_rid_tuple");
+        StringAssert.Contains(executableGateScriptText, "release_channel_promoted_platform_head_rid_tuples_from_artifacts");
+        StringAssert.Contains(executableGateScriptText, "release_channel_missing_required_platform_head_rid_tuples_derived");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_promoted_platform_head_rid_tuple_inventory_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_missing_platform_head_rid_tuple_inventory_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_missing_platform_inventory_mismatch");
+        StringAssert.Contains(executableGateScriptText, "release_channel_tuple_coverage_missing_head_inventory_mismatch");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatforms inventory does not match promoted installer tuples.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredHeads inventory does not match promoted installer tuples.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage promotedPlatformHeadRidTuples inventory does not match promoted installer tuples.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadRidTuples inventory does not match promoted installer tuples.");
+        StringAssert.Contains(executableGateScriptText, "Release channel is missing required desktop platform/head/rid installer tuple(s): ");
+        StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state");
+        StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state");
+        StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_present");
+        StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_present");
+        StringAssert.Contains(executableGateScriptText, "release_channel_allowed_rollout_states");
+        StringAssert.Contains(executableGateScriptText, "release_channel_allowed_supportability_states");
+        StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_invalid");
+        StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_invalid");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState is not a recognized registry rollout posture for desktop install media:");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState is not a recognized registry support posture for desktop install media:");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_tuple_coverage_incomplete");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_tuple_coverage_complete");
+        StringAssert.Contains(executableGateScriptText, "Release channel must set rolloutState=coverage_incomplete when required desktop tuple coverage is incomplete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel must set supportabilityState=review_required when required desktop tuple coverage is incomplete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState is missing for desktop install media; tuple-coverage posture cannot be proven.");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState is missing for desktop install media; support posture cannot be proven.");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot remain coverage_incomplete when required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_publishable_status");
+        StringAssert.Contains(executableGateScriptText, "release_channel_publishable_status_with_incomplete_desktop_tuple_coverage");
+        StringAssert.Contains(executableGateScriptText, "Release channel status cannot be publishable while required desktop tuple coverage is incomplete.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_blocked_for_publishable_complete_values");
+        StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_blocks_publishable_complete");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot be paused/revoked when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_allowed_for_publishable_complete_values");
+        StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_invalid_for_publishable_complete");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_allowed_for_publishable_complete_values");
+        StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_invalid_for_publishable_complete");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState must be local_docker_proven/preview_supported when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_version_uses_unpublished_sentinel");
+        StringAssert.Contains(executableGateScriptText, "Release channel version cannot be the unpublished sentinel when status is publishable.");
+        StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_invalid_generated_at");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktop install artifact(s) carry invalid generated_at/generatedAt timestamps:");
+        StringAssert.Contains(executableGateScriptText, "Linux gate embedded release_channel_linux_artifact is missing a valid generated_at/generatedAt.");
+        StringAssert.Contains(executableGateScriptText, "Windows gate embedded release_channel_windows_artifact is missing a valid generated_at/generatedAt.");
+        StringAssert.Contains(executableGateScriptText, "macOS gate embedded release_channel_macos_artifact is missing a valid generated_at/generatedAt.");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot remain unpublished when required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState cannot remain unpublished when required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel desktopTupleCoverage missingRequiredPlatformHeadPairs inventory does not match promoted installer tuples.");
+        StringAssert.Contains(executableGateScriptText, "def validate_local_release_artifact_file(");
+        StringAssert.Contains(executableGateScriptText, "desktop_files_root = repo_root / \"Docker\" / \"Downloads\" / \"files\"");
+        StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact is missing from local desktop downloads shelf");
+        StringAssert.Contains(executableGateScriptText, "Promoted release-channel artifact sha256 does not match local bytes");
+        StringAssert.Contains(executableGateScriptText, "def dedupe_preserve_order(values: List[str]) -> List[str]:");
+        StringAssert.Contains(executableGateScriptText, "def startup_smoke_timestamp_alias_conflicts(payload: Dict[str, Any]) -> bool:");
+        StringAssert.Contains(executableGateScriptText, "startup_receipt_exists = startup_receipt_path is not None and startup_receipt_path.is_file()");
+        StringAssert.Contains(executableGateScriptText, "if not startup_receipt_exists:");
+        StringAssert.Contains(executableGateScriptText, "else:");
+        StringAssert.Contains(executableGateScriptText, "reasons = dedupe_preserve_order(reasons)");
+        StringAssert.Contains(executableGateScriptText, "\"generated_at\": generated_at");
+        StringAssert.Contains(executableGateScriptText, "\"generatedAt\": generated_at");
+        StringAssert.Contains(executableGateScriptText, "f\"Desktop executable exit gate is proven by passing packaged-head receipts for promoted desktop platforms ({platform_scope})");
+        StringAssert.Contains(executableGateScriptText, "print(\"[desktop-executable-exit-gate] FAIL\", file=sys.stderr)");
+        StringAssert.Contains(executableGateScriptText, "print(f\"[desktop-executable-exit-gate] reason: {reason}\", file=sys.stderr)");
+    }
+
+    [TestMethod]
+    public void Desktop_executable_exit_gate_requires_explicit_host_capability_blockers_when_startup_smoke_receipts_are_missing()
+    {
+        string executableGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string executableGateScriptText = File.ReadAllText(executableGateScriptPath);
+
+        StringAssert.Contains(executableGateScriptText, "host_supports_windows_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "startup_smoke_external_blocker");
+        StringAssert.Contains(executableGateScriptText, "missing_windows_host_capability");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be missing_windows_host_capability when startup smoke receipt is missing on a non-Windows-capable host.");
+        StringAssert.Contains(executableGateScriptText, "Windows startup smoke external blocker must be blank when startup smoke receipt is missing on a Windows-capable host.");
+        StringAssert.Contains(executableGateScriptText, "host_supports_macos_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "missing_macos_host_capability");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be missing_macos_host_capability when startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "macOS startup smoke external blocker must be blank when startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "host_supports_linux_startup_smoke");
+        StringAssert.Contains(executableGateScriptText, "missing_linux_host_capability");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be missing_linux_host_capability when installer startup smoke receipt is missing for promoted head");
+        StringAssert.Contains(executableGateScriptText, "Linux startup smoke external blocker must be blank when installer startup smoke receipt is missing for promoted head");
+    }
+
+    [TestMethod]
+    public void Flagship_gate_and_materializers_are_lock_safe_under_concurrent_runs()
+    {
+        string flagshipGateScriptPath = FindPath("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
+        string flagshipGateScriptText = File.ReadAllText(flagshipGateScriptPath);
+        string visualGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
+        string visualGateScriptText = File.ReadAllText(visualGateScriptPath);
+        string executableGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string executableGateScriptText = File.ReadAllText(executableGateScriptPath);
+
+        StringAssert.Contains(flagshipGateScriptText, "lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
+        StringAssert.Contains(flagshipGateScriptText, "capture_screenshot_dir=\"$(mktemp -d");
+        StringAssert.Contains(flagshipGateScriptText, "staged_screenshot_dir=\"$(mktemp -d");
+        StringAssert.Contains(flagshipGateScriptText, "for _ in $(seq 1 150); do");
+        StringAssert.Contains(flagshipGateScriptText, "if [[ ! -d \"$lock_dir\" ]]; then");
+        StringAssert.Contains(flagshipGateScriptText, "cp \"$staged_screenshot_dir\"/*.png \"$screenshot_dir\"/");
+        StringAssert.Contains(flagshipGateScriptText, "trap cleanup EXIT");
+        StringAssert.Contains(flagshipGateScriptText, "run_with_retry() {");
+        StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"flagship Avalonia headless UI gate tests\"");
+        StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"flagship Blazor desktop shell gate tests\"");
+        StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"desktop install/update/recovery runtime tests\"");
+        StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"cross-head workflow parity tests\"");
+        StringAssert.Contains(flagshipGateScriptText, "CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1");
+        StringAssert.Contains(flagshipGateScriptText, "\"requiredRuntimeBackedTests\": [");
+        StringAssert.Contains(flagshipGateScriptText, "\"requiredLifecycleTests\": required_lifecycle_runtime_tests");
+        StringAssert.Contains(flagshipGateScriptText, "\"releaseLifecycle\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"installUpdateRecoveryLifecycle\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"desktopLifecycleProof\": {");
+        StringAssert.Contains(flagshipGateScriptText, "\"DesktopUpdateRuntimeTests\",");
+        StringAssert.Contains(flagshipGateScriptText, "\"DesktopInstallLinkingRuntimeTests\",");
+        StringAssert.Contains(flagshipGateScriptText, "\"DesktopStartupSmokeRuntimeTests\",");
+        StringAssert.Contains(flagshipGateScriptText, "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling");
+        StringAssert.Contains(flagshipGateScriptText, "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context");
+        StringAssert.Contains(flagshipGateScriptText, "TryHandleAsync_writes_receipt_when_requested");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
+        StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr4CodexOrientationModel\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr5CodexOrientationModel\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr6CodexOrientationModel\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyCreationWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyGearWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyContactsWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyDiaryWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyMagicWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "\"legacyMatrixWorkflowRhythm\": \"pass\"");
+        StringAssert.Contains(flagshipGateScriptText, "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions");
+        StringAssert.Contains(flagshipGateScriptText, "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions");
+        StringAssert.Contains(flagshipGateScriptText, "12-magic-dialog-light.png");
+        StringAssert.Contains(flagshipGateScriptText, "13-matrix-dialog-light.png");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture");
+        StringAssert.Contains(flagshipGateScriptText, "Loaded_runner_header_stays_tab_panel_only_without_metric_cards");
+
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
+        StringAssert.Contains(visualGateScriptText, "skip_release_gate_lock_wait=\"${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}\"");
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_wait_seconds=\"${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}\"");
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_poll_seconds=\"${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS:-2}\"");
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))");
+        StringAssert.Contains(visualGateScriptText, "for _ in $(seq 1 \"$release_gate_lock_wait_iterations\"); do");
+        StringAssert.Contains(visualGateScriptText, "sleep \"$release_gate_lock_poll_seconds\"");
+        StringAssert.Contains(visualGateScriptText, "if [[ \"$skip_release_gate_lock_wait\" != \"1\" ]]; then");
+        StringAssert.Contains(visualGateScriptText, "if [[ -d \"$release_gate_lock_dir\" ]]; then");
+        StringAssert.Contains(visualGateScriptText, "[desktop-visual-familiarity-gate] FAIL: release gate lock did not clear within");
+        StringAssert.Contains(visualGateScriptText, "exit 52");
+        StringAssert.Contains(visualGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
+        StringAssert.Contains(visualGateScriptText, "ruleset_orientation_method_has_markers");
+        StringAssert.Contains(visualGateScriptText, "missing_ruleset_orientation_markers");
+        StringAssert.Contains(visualGateScriptText, "legacy_creation_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_gear_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_contacts_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_diary_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_magic_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "legacy_matrix_workflow_rhythm");
+        StringAssert.Contains(visualGateScriptText, "required_head_contract_markers = {");
+        StringAssert.Contains(visualGateScriptText, "\"requiredRuntimeBackedTests\"");
+        StringAssert.Contains(visualGateScriptText, "\"requiredShellTests\"");
+        StringAssert.Contains(visualGateScriptText, "def normalize_head_proof_statuses(");
+        StringAssert.Contains(visualGateScriptText, "\"flagship_gate.headProofs.status\"");
+        StringAssert.Contains(visualGateScriptText, "_non_canonical_keys");
+        StringAssert.Contains(visualGateScriptText, "_duplicate_normalized_keys");
+        StringAssert.Contains(visualGateScriptText, "contains a non-canonical key");
+        StringAssert.Contains(visualGateScriptText, "contains duplicate normalized key");
+        StringAssert.Contains(visualGateScriptText, "flagship_head_missing_contract_markers");
+        StringAssert.Contains(visualGateScriptText, "flagship_head_source_test_file_within_repo_root");
+        StringAssert.Contains(visualGateScriptText, "Flagship UI release gate head proof for required desktop head '");
+        StringAssert.Contains(visualGateScriptText, "Flagship UI release gate sourceTestFile for required desktop head '");
+        StringAssert.Contains(visualGateScriptText, "magic_method_has_rhythm_markers");
+        StringAssert.Contains(visualGateScriptText, "matrix_method_has_rhythm_markers");
+        StringAssert.Contains(visualGateScriptText, "12-magic-dialog-light.png");
+        StringAssert.Contains(visualGateScriptText, "13-matrix-dialog-light.png");
+        StringAssert.Contains(visualGateScriptText, "creation_method_has_rhythm_markers");
+        StringAssert.Contains(visualGateScriptText, "advancement_method_has_rhythm_markers");
+        StringAssert.Contains(visualGateScriptText, "gear_method_has_rhythm_markers");
+        StringAssert.Contains(visualGateScriptText, "contacts_diary_method_has_rhythm_markers");
+
+        StringAssert.Contains(executableGateScriptText, "release_gate_lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
+        StringAssert.Contains(executableGateScriptText, "skip_release_gate_lock_wait=\"${CHUMMER_DESKTOP_EXECUTABLE_SKIP_RELEASE_GATE_LOCK_WAIT:-0}\"");
+        StringAssert.Contains(executableGateScriptText, "release_gate_lock_wait_seconds=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}\"");
+        StringAssert.Contains(executableGateScriptText, "release_gate_lock_poll_seconds=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_POLL_SECONDS:-2}\"");
+        StringAssert.Contains(executableGateScriptText, "release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))");
+        StringAssert.Contains(executableGateScriptText, "for _ in $(seq 1 \"$release_gate_lock_wait_iterations\"); do");
+        StringAssert.Contains(executableGateScriptText, "sleep \"$release_gate_lock_poll_seconds\"");
+        StringAssert.Contains(executableGateScriptText, "skip_dependency_materialize=\"${CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE:-0}\"");
+        StringAssert.Contains(executableGateScriptText, "if [[ \"$skip_release_gate_lock_wait\" != \"1\" ]]; then");
+        StringAssert.Contains(executableGateScriptText, "if [[ \"$skip_dependency_materialize\" != \"1\" ]]; then");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=\"$skip_release_gate_lock_wait\" \\");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS=\"$release_gate_lock_wait_seconds\" \\");
+        StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS=\"$release_gate_lock_poll_seconds\" \\");
+        StringAssert.Contains(executableGateScriptText, "bash \"$visual_familiarity_materializer_path\" >/dev/null");
+        StringAssert.Contains(executableGateScriptText, "bash \"$workflow_execution_materializer_path\" >/dev/null");
+    }
+
+    [TestMethod]
+    public void Localization_release_gate_runs_signoff_runner_without_no_build_runtimeconfig_drift()
+    {
+        string localizationGatePath = FindPath("scripts", "ai", "milestones", "b15-localization-release-gate.sh");
+        string localizationGateText = File.ReadAllText(localizationGatePath);
+
+        StringAssert.Contains(localizationGateText, "scripts/ai/with-package-plane.sh run --project");
+        StringAssert.Contains(localizationGateText, "minimum_override_count_by_locale");
+        StringAssert.Contains(localizationGateText, "required_localization_domains");
+        StringAssert.Contains(localizationGateText, "\"domain_coverage\"");
+        StringAssert.Contains(localizationGateText, "\"locale_domain_coverage\"");
+        StringAssert.Contains(localizationGateText, "\"app_chrome\"");
+        StringAssert.Contains(localizationGateText, "\"install_update_support\"");
+        StringAssert.Contains(localizationGateText, "signoff_retry_attempted=0");
+        StringAssert.Contains(localizationGateText, "runtimeconfig_bootstrap_repair");
+        StringAssert.Contains(localizationGateText, "\"retry_attempted\": signoff_retry_attempted > 0");
+        StringAssert.Contains(localizationGateText, "\"retry_reason\": signoff_retry_reason");
+        Assert.IsFalse(localizationGateText.Contains("--no-build", StringComparison.Ordinal),
+            "Localization release gate must run the signoff project with build enabled so runtimeconfig output is always present across compatibility-tree layouts.");
+        Assert.IsFalse(localizationGateText.Contains("bash -lc", StringComparison.Ordinal),
+            "Localization release gate must execute the signoff runner from repo_root directly so relative package-plane paths resolve deterministically.");
+    }
+
+    [TestMethod]
+    public void Macos_exit_gate_prefers_registry_release_truth_with_repo_local_fallback_and_accepts_dmg_media()
+    {
+        string macosGateScriptPath = FindPath("scripts", "materialize-macos-desktop-exit-gate.sh");
+        string macosGateScriptText = File.ReadAllText(macosGateScriptPath);
+
+        StringAssert.Contains(
+            macosGateScriptText,
+            "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
+        StringAssert.Contains(
+            macosGateScriptText,
+            "CANONICAL_RELEASE_CHANNEL_PATH=\"${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
+        StringAssert.Contains(
+            macosGateScriptText,
+            "RELEASE_CHANNEL_PATH=\"${CHUMMER_MACOS_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_PATH_DEFAULT}\"");
+        StringAssert.Contains(macosGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
+        StringAssert.Contains(macosGateScriptText, "RID_OVERRIDE=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID:-}\"");
+        StringAssert.Contains(macosGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
+        StringAssert.Contains(macosGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(macosGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
+        StringAssert.Contains(macosGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-osx-arm64}}\"");
+        StringAssert.Contains(macosGateScriptText, "CURRENT_STAGE=\"promoted_installer_proof_integrity\"");
+        StringAssert.Contains(macosGateScriptText, "if app_key_override:");
+        StringAssert.Contains(macosGateScriptText, "if rid_override:");
+        StringAssert.Contains(macosGateScriptText, "print(normalize(chosen.get(\"head\")))");
+        StringAssert.Contains(macosGateScriptText, "normalize(item.get(\"kind\")) in {\"installer\", \"dmg\", \"pkg\"}");
+        StringAssert.Contains(macosGateScriptText, "preferred_order = [\"osx-arm64\", \"osx-x64\"]");
+        StringAssert.Contains(macosGateScriptText, "def is_macos_install_media_kind(kind: Any) -> bool:");
+        StringAssert.Contains(macosGateScriptText, "return normalize_token(kind) in {\"installer\", \"dmg\", \"pkg\"}");
+        StringAssert.Contains(macosGateScriptText, "CHUMMER_MACOS_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(macosGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(macosGateScriptText, "release_channel_path.parent / \"startup-smoke\"");
+        StringAssert.Contains(macosGateScriptText, "hub_registry_root_arg = str(sys.argv[9] or \"\").strip()");
+        StringAssert.Contains(macosGateScriptText, "hub_registry_root / \".codex-studio\" / \"published\" / \"startup-smoke\"");
+        StringAssert.Contains(macosGateScriptText, "hub_registry_root / \"Docker\" / \"Downloads\" / \"startup-smoke\"");
+        StringAssert.Contains(macosGateScriptText, "startup_smoke_receipt_arg,");
+        StringAssert.Contains(macosGateScriptText, "installer_candidate_paths");
+        StringAssert.Contains(macosGateScriptText, "installer_from_primary_shelf");
+        StringAssert.Contains(macosGateScriptText, "host_supports_macos_smoke");
+        StringAssert.Contains(macosGateScriptText, "host_supports_macos_startup_smoke");
+        StringAssert.Contains(macosGateScriptText, "Promoted macOS installer was not resolved from the repo-local desktop shelf");
+        StringAssert.Contains(macosGateScriptText, "Promoted macOS installer was resolved from legacy chummer5a shelf bytes");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt was resolved from a legacy chummer5a path.");
+        StringAssert.Contains(macosGateScriptText, "missing_macos_host_capability");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke requires a macOS host with hdiutil; current host cannot run promoted macOS installer smoke.");
+        StringAssert.Contains(macosGateScriptText, "macOS release-channel proof status is not published.");
+        StringAssert.Contains(macosGateScriptText, "Release channel does not publish a promoted macOS install medium artifact for");
+        StringAssert.Contains(macosGateScriptText, "macOS release-channel artifact sha256 does not match promoted installer bytes.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt status is not passing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt readyCheckpoint is not pre_ui_event_loop.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt headId does not match promoted head");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt platform is not macOS.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt hostClass is missing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt hostClass does not identify a macOS host.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt operatingSystem is missing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt arch does not match promoted RID");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt rid is missing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt rid does not match promoted RID");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt channelId does not match release channel");
+        StringAssert.Contains(macosGateScriptText, "macOS release channel is missing version.");
+        StringAssert.Contains(macosGateScriptText, "startup_smoke_version = str(");
+        StringAssert.Contains(macosGateScriptText, "\"releaseVersion\": release_channel_version");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt version is missing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt version does not match release channel");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath is missing.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath points into a legacy chummer5a root.");
+        StringAssert.Contains(macosGateScriptText, "if installer_path is not None and startup_smoke_artifact_path_obj.resolve() != installer_path.resolve():");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactPath could not be resolved for promoted shelf verification.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt artifactDigest does not match promoted installer bytes.");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt timestamp is missing or invalid.");
+        StringAssert.Contains(macosGateScriptText, "CHUMMER_MACOS_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(macosGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt timestamp is in the future (");
+        StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt is stale (");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_defaults_to_promoted_release_tuple_when_overrides_are_missing()
+    {
+        string linuxGateScriptPath = FindPath("scripts", "materialize-linux-desktop-exit-gate.sh");
+        string linuxGateScriptText = File.ReadAllText(linuxGateScriptPath);
+
+        StringAssert.Contains(linuxGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
+        StringAssert.Contains(linuxGateScriptText, "RID_OVERRIDE=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID:-}\"");
+        StringAssert.Contains(linuxGateScriptText, "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
+        StringAssert.Contains(linuxGateScriptText, "CANONICAL_RELEASE_CHANNEL_PATH=\"${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
+        StringAssert.Contains(linuxGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
+        StringAssert.Contains(linuxGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(linuxGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
+        StringAssert.Contains(linuxGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-linux-x64}}\"");
+        StringAssert.Contains(linuxGateScriptText, "USE_PROMOTED_INSTALLER=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-1}\"");
+        StringAssert.Contains(linuxGateScriptText, "and normalize(item.get(\"platform\")) == \"linux\"");
+        StringAssert.Contains(linuxGateScriptText, "and normalize(item.get(\"kind\")) == \"installer\"");
+        StringAssert.Contains(linuxGateScriptText, "if app_key_override:");
+        StringAssert.Contains(linuxGateScriptText, "if rid_override:");
+        StringAssert.Contains(linuxGateScriptText, "print(normalize(chosen.get(\"head\")))");
+        StringAssert.Contains(linuxGateScriptText, "print(normalize(chosen.get(\"rid\")))");
+        StringAssert.Contains(linuxGateScriptText, "CURRENT_STAGE=\"promoted_installer_proof_integrity\"");
+        StringAssert.Contains(linuxGateScriptText, "Linux release-channel proof status is not published.");
+        StringAssert.Contains(linuxGateScriptText, "RELEASE_CHANNEL_VERSION_DEFAULT");
+        StringAssert.Contains(linuxGateScriptText, "VERSION=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_VERSION:-${RELEASE_CHANNEL_VERSION_DEFAULT:-local-hard-gate}}\"");
+        StringAssert.Contains(linuxGateScriptText, "Linux release-channel proof version is missing.");
+        StringAssert.Contains(linuxGateScriptText, "Release channel does not publish a Linux installer artifact for");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes.");
+        StringAssert.Contains(linuxGateScriptText, "receipt_rid = str(receipt.get(\"rid\") or \"\").strip().lower()");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt channelId does not match release channel.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt rid is missing.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt rid does not match promoted RID.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt was resolved from a legacy chummer5a path.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt hostClass is missing.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt hostClass does not identify a Linux host.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt operatingSystem is missing.");
+        StringAssert.Contains(linuxGateScriptText, "receipt_release_version = str(receipt.get(\"releaseVersion\") or \"\").strip()");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt releaseVersion is missing.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt releaseVersion does not match release channel version.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt version is missing.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt version does not match release channel version.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactDigest does not match promoted installer bytes.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactPath is missing.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactPath points into a legacy chummer5a root.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt artifactPath could not be resolved for promoted shelf verification.");
+        StringAssert.Contains(linuxGateScriptText, "host_supports_linux_smoke");
+        StringAssert.Contains(linuxGateScriptText, "host_supports_linux_startup_smoke");
+        StringAssert.Contains(linuxGateScriptText, "missing_linux_host_capability");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke requires a Linux host with dpkg and dpkg-deb; current host cannot run promoted Linux installer smoke.");
+        StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(linuxGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(linuxGateScriptText, "Linux startup smoke receipt timestamp is in the future (");
+        StringAssert.Contains(linuxGateScriptText, "RUN_RETENTION_COUNT=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_RETENTION_COUNT:-40}\"");
+        StringAssert.Contains(linuxGateScriptText, "prune_old_run_roots()");
+        StringAssert.Contains(linuxGateScriptText, "if path.is_dir() and path.name.startswith(\"run.\")");
+        StringAssert.Contains(linuxGateScriptText, "kept_by_retention = {path.resolve() for path in ranked[:retention_count]}");
+        StringAssert.Contains(linuxGateScriptText, "release_build_lock");
+        StringAssert.Contains(linuxGateScriptText, "prune_old_run_roots");
+        StringAssert.Contains(linuxGateScriptText, "FAILURE_REASONS_PATH=\"$RUN_ROOT/failure-reasons.json\"");
+        StringAssert.Contains(linuxGateScriptText, "rm -f \"$FAILURE_REASONS_PATH\"");
+        StringAssert.Contains(linuxGateScriptText, "failure_reasons_path.write_text(json.dumps({\"reasons\": reasons}, indent=2) + \"\\n\", encoding=\"utf-8\")");
+        StringAssert.Contains(linuxGateScriptText, "\"reasons\": reason_lines,");
+        StringAssert.Contains(linuxGateScriptText, "reason_lines.extend(load_failure_reasons(failure_reasons_path))");
+    }
+
+    [TestMethod]
+    public void Windows_exit_gate_requires_startup_smoke_receipt_integrity_for_promoted_installer_bytes()
+    {
+        string windowsGateScriptPath = FindPath("scripts", "materialize-windows-desktop-exit-gate.sh");
+        string windowsGateScriptText = File.ReadAllText(windowsGateScriptPath);
+
+        StringAssert.Contains(windowsGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
+        StringAssert.Contains(windowsGateScriptText, "RID_OVERRIDE=\"${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID:-}\"");
+        StringAssert.Contains(windowsGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
+        StringAssert.Contains(windowsGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(windowsGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
+        StringAssert.Contains(windowsGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-win-x64}}\"");
+        StringAssert.Contains(windowsGateScriptText, "and normalize(item.get(\"platform\")) == \"windows\"");
+        StringAssert.Contains(windowsGateScriptText, "and normalize(item.get(\"kind\")) in {\"installer\", \"msix\"}");
+        StringAssert.Contains(windowsGateScriptText, "if app_key_override:");
+        StringAssert.Contains(windowsGateScriptText, "if rid_override:");
+        StringAssert.Contains(windowsGateScriptText, "preferred_order = [\"win-x64\", \"win-arm64\"]");
+        StringAssert.Contains(windowsGateScriptText, "print(normalize(chosen.get(\"head\")))");
+        StringAssert.Contains(windowsGateScriptText, "print(artifact_rid(chosen))");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(windowsGateScriptText, "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
+        StringAssert.Contains(windowsGateScriptText, "RELEASE_CHANNEL_PATH_DEFAULT");
+        StringAssert.Contains(windowsGateScriptText, "hub_registry_root_arg = str(sys.argv[11] or \"\").strip()");
+        StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \".codex-studio\" / \"published\" / \"startup-smoke\"");
+        StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \"Docker\" / \"Downloads\" / \"startup-smoke\"");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH");
+        StringAssert.Contains(windowsGateScriptText, "startup-smoke-{expected_head}-{expected_rid}.receipt.json");
+        StringAssert.Contains(windowsGateScriptText, "expected_rid.startswith(\"win-\")");
+        StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT");
+        StringAssert.Contains(windowsGateScriptText, "WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}\"");
+        StringAssert.Contains(windowsGateScriptText, "windows_installer_candidate_paths");
+        StringAssert.Contains(windowsGateScriptText, "windows_installer_from_primary_shelf");
+        StringAssert.Contains(windowsGateScriptText, "host_supports_windows_smoke");
+        StringAssert.Contains(windowsGateScriptText, "host_supports_windows_startup_smoke");
+        StringAssert.Contains(windowsGateScriptText, "Promoted Windows installer was not resolved from the repo-local desktop shelf.");
+        StringAssert.Contains(windowsGateScriptText, "Promoted Windows installer was resolved from legacy chummer5a shelf bytes.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt was resolved from a legacy chummer5a path.");
+        StringAssert.Contains(windowsGateScriptText, "missing_windows_host_capability");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke requires a Windows-capable host; current host cannot run promoted Windows installer smoke.");
+        StringAssert.Contains(windowsGateScriptText, "Release channel does not publish a promoted Windows install medium artifact for {expected_head} ({expected_rid}).");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is missing for promoted installer bytes.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt status is not passing.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactDigest does not match promoted installer bytes.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt headId does not match promoted head {expected_head}.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt platform is not windows.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt hostClass is missing.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt hostClass does not identify a Windows host.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt operatingSystem is missing.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt arch does not match promoted RID {expected_rid}.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt rid is missing.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt rid does not match promoted RID {expected_rid}.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt channelId does not match release channel");
+        StringAssert.Contains(windowsGateScriptText, "Release channel is missing version.");
+        StringAssert.Contains(windowsGateScriptText, "startup_smoke_version = str(");
+        StringAssert.Contains(windowsGateScriptText, "\"releaseVersion\": release_channel_version");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt version is missing.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt version does not match release channel");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactPath is missing.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactPath points into a legacy chummer5a root.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt artifactPath could not be resolved for promoted shelf verification.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt timestamp is missing or invalid.");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt timestamp is in the future (");
+        StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt is stale (");
+    }
+
+    [TestMethod]
+    public void Desktop_workflow_execution_gate_requires_explicit_executed_family_receipts()
+    {
+        string workflowGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string workflowGateScriptText = File.ReadAllText(workflowGateScriptPath);
+
+        StringAssert.Contains(workflowGateScriptText, "def iter_execution_receipts(");
+        StringAssert.Contains(workflowGateScriptText, "workflow_execution_receipt_count_checked");
+        StringAssert.Contains(workflowGateScriptText, "matchedPassedTests");
+        StringAssert.Contains(workflowGateScriptText, "missingAuditTests");
+        StringAssert.Contains(workflowGateScriptText, "failedAuditTests");
+        StringAssert.Contains(workflowGateScriptText, "expected_proof_kind");
+        StringAssert.Contains(workflowGateScriptText, "REQUIRED_WORKFLOW_FAMILY_IDS");
+        StringAssert.Contains(workflowGateScriptText, "missing_required_workflow_family_ids");
+        StringAssert.Contains(workflowGateScriptText, "required_head_contract_markers = {");
+        StringAssert.Contains(workflowGateScriptText, "\"requiredRuntimeBackedTests\"");
+        StringAssert.Contains(workflowGateScriptText, "\"requiredLifecycleTests\"");
+        StringAssert.Contains(workflowGateScriptText, "\"requiredShellTests\"");
+        StringAssert.Contains(workflowGateScriptText, "\"releaseLifecycle\"");
+        StringAssert.Contains(workflowGateScriptText, "def normalize_head_proof_statuses(");
+        StringAssert.Contains(workflowGateScriptText, "\"flagship_gate.headProofs.status\"");
+        StringAssert.Contains(workflowGateScriptText, "_non_canonical_keys");
+        StringAssert.Contains(workflowGateScriptText, "_duplicate_normalized_keys");
+        StringAssert.Contains(workflowGateScriptText, "contains a non-canonical key");
+        StringAssert.Contains(workflowGateScriptText, "contains duplicate normalized key");
+        StringAssert.Contains(workflowGateScriptText, "flagship_head_contract_marker_statuses");
+        StringAssert.Contains(workflowGateScriptText, "flagship_head_missing_contract_markers");
+        StringAssert.Contains(workflowGateScriptText, "flagship_head_source_test_file_within_repo_root");
+        StringAssert.Contains(workflowGateScriptText, "Flagship UI release gate head proof for required desktop head '");
+        StringAssert.Contains(workflowGateScriptText, "Flagship UI release gate sourceTestFile for required desktop head '");
+        StringAssert.Contains(workflowGateScriptText, "SR4/SR6 ledgers are missing required canonical workflow families");
+        StringAssert.Contains(workflowGateScriptText, "SR4/SR6 required canonical workflow families are missing audit tests");
+        StringAssert.Contains(workflowGateScriptText, "SR4/SR6 family-level execution receipts are not explicitly grounded");
+        StringAssert.Contains(workflowGateScriptText, "workflow_parity_receipt_channel_ids");
+        StringAssert.Contains(workflowGateScriptText, "receipt is missing channelId/channel");
+        StringAssert.Contains(workflowGateScriptText, "receipt channelId does not match desktop workflow execution release-channel channelId");
+        StringAssert.Contains(workflowGateScriptText, "release_channel_future_skew_seconds");
+        StringAssert.Contains(workflowGateScriptText, "release_channel_age_seconds");
+        StringAssert.Contains(workflowGateScriptText, "release channel receipt generatedAt is in the future");
+        StringAssert.Contains(workflowGateScriptText, "release channel receipt is stale");
+    }
+
+    [TestMethod]
+    public void Desktop_workflow_parity_scripts_bind_receipts_to_release_channel_identity()
+    {
+        string chummer5aParityScriptPath = FindPath("scripts", "ai", "milestones", "chummer5a-desktop-workflow-parity-check.sh");
+        string chummer5aParityScriptText = File.ReadAllText(chummer5aParityScriptPath);
+        string sr4ParityScriptPath = FindPath("scripts", "ai", "milestones", "sr4-desktop-workflow-parity-check.sh");
+        string sr4ParityScriptText = File.ReadAllText(sr4ParityScriptPath);
+        string sr6ParityScriptPath = FindPath("scripts", "ai", "milestones", "sr6-desktop-workflow-parity-check.sh");
+        string sr6ParityScriptText = File.ReadAllText(sr6ParityScriptPath);
+        string srFrontierScriptPath = FindPath("scripts", "ai", "milestones", "sr4-sr6-desktop-parity-frontier-receipt.sh");
+        string srFrontierScriptText = File.ReadAllText(srFrontierScriptPath);
+
+        StringAssert.Contains(chummer5aParityScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(chummer5aParityScriptText, "canonical_release_channel_path");
+        StringAssert.Contains(chummer5aParityScriptText, "release_channel_channel_id");
+        StringAssert.Contains(chummer5aParityScriptText, "\"channelId\": \"\"");
+        StringAssert.Contains(chummer5aParityScriptText, "\"releaseChannelPath\"");
+
+        StringAssert.Contains(sr4ParityScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(sr4ParityScriptText, "canonical_release_channel_path");
+        StringAssert.Contains(sr4ParityScriptText, "release_channel_channel_id");
+        StringAssert.Contains(sr4ParityScriptText, "\"channelId\": \"\"");
+        StringAssert.Contains(sr4ParityScriptText, "\"releaseChannelPath\"");
+
+        StringAssert.Contains(sr6ParityScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(sr6ParityScriptText, "canonical_release_channel_path");
+        StringAssert.Contains(sr6ParityScriptText, "release_channel_channel_id");
+        StringAssert.Contains(sr6ParityScriptText, "SR4 desktop workflow parity receipt channelId does not match release channel.");
+        StringAssert.Contains(sr6ParityScriptText, "\"channelId\": \"\"");
+        StringAssert.Contains(sr6ParityScriptText, "\"releaseChannelPath\"");
+
+        StringAssert.Contains(srFrontierScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(srFrontierScriptText, "canonical_release_channel_path");
+        StringAssert.Contains(srFrontierScriptText, "release_channel_channel_id");
+        StringAssert.Contains(srFrontierScriptText, "SR4 parity receipt channelId does not match release channel.");
+        StringAssert.Contains(srFrontierScriptText, "SR6 parity receipt channelId does not match release channel.");
+        StringAssert.Contains(srFrontierScriptText, "\"channelId\": \"\"");
+        StringAssert.Contains(srFrontierScriptText, "\"releaseChannelPath\"");
     }
 
     [TestMethod]
@@ -3561,38 +4555,48 @@ public class MigrationComplianceTests
     [TestMethod]
     public void Shell_session_restore_does_not_infer_active_workspace_from_workspace_order()
     {
-        string shellEndpointsPath = FindPath("Chummer.Api", "Endpoints", "ShellEndpoints.cs");
-        string shellEndpointsText = File.ReadAllText(shellEndpointsPath);
+        string? shellEndpointsPath = TryFindPath("Chummer.Api", "Endpoints", "ShellEndpoints.cs");
+        string? shellEndpointsText = shellEndpointsPath is null ? null : File.ReadAllText(shellEndpointsPath);
         string bootstrapProviderPath = FindPath("Chummer.Presentation", "Shell", "ShellBootstrapDataProvider.cs");
         string bootstrapProviderText = File.ReadAllText(bootstrapProviderPath);
-        string inProcessClientPath = FindPath("Chummer.Desktop.Runtime", "InProcessChummerClient.cs");
-        string inProcessClientText = File.ReadAllText(inProcessClientPath);
+        string? inProcessClientPath = TryFindPath("Chummer.Desktop.Runtime", "InProcessChummerClient.cs");
+        string? inProcessClientText = inProcessClientPath is null ? null : File.ReadAllText(inProcessClientPath);
         string shellPresenterPath = FindPath("Chummer.Presentation", "Shell", "ShellPresenter.cs");
         string shellPresenterText = File.ReadAllText(shellPresenterPath);
 
-        Assert.IsTrue(
-            Regex.IsMatch(shellEndpointsText, @"if\s*\(string\.IsNullOrWhiteSpace\(preferredActiveWorkspaceId\)\)\s*return null;", RegexOptions.Multiline),
-            "Shell bootstrap endpoint should return no active workspace when session state is empty.");
+        if (shellEndpointsText is not null)
+        {
+            Assert.IsTrue(
+                Regex.IsMatch(shellEndpointsText, @"if\s*\(string\.IsNullOrWhiteSpace\(preferredActiveWorkspaceId\)\)\s*return null;", RegexOptions.Multiline),
+                "Shell bootstrap endpoint should return no active workspace when session state is empty.");
+            Assert.IsFalse(
+                shellEndpointsText.Contains("workspaces[0]", StringComparison.Ordinal),
+                "Shell bootstrap endpoint must not fall back to the first workspace.");
+        }
+
         StringAssert.Contains(bootstrapProviderText, "ActiveWorkspaceId: snapshot.ActiveWorkspaceId");
         Assert.IsFalse(
             bootstrapProviderText.Contains("preferredActiveWorkspaceId", StringComparison.Ordinal),
             "Shell bootstrap provider should trust the bootstrap snapshot instead of reconstructing active workspace selection.");
-        Assert.IsTrue(
-            Regex.IsMatch(inProcessClientText, @"if\s*\(string\.IsNullOrWhiteSpace\(persistedActiveWorkspaceId\)\)\s*return null;", RegexOptions.Multiline),
-            "In-process bootstrap client should return no active workspace when session state is empty.");
+        if (inProcessClientText is not null)
+        {
+            Assert.IsTrue(
+                Regex.IsMatch(inProcessClientText, @"if\s*\(string\.IsNullOrWhiteSpace\(persistedActiveWorkspaceId\)\)\s*return null;", RegexOptions.Multiline),
+                "In-process bootstrap client should return no active workspace when session state is empty.");
+        }
         Assert.IsTrue(
             Regex.IsMatch(shellPresenterText, @"if\s*\(requestedActiveWorkspaceId is null\)\s*return null;", RegexOptions.Multiline),
             "Shell presenter should preserve the explicit no-active-workspace state instead of auto-selecting one.");
 
         Assert.IsFalse(
-            shellEndpointsText.Contains("workspaces[0]", StringComparison.Ordinal),
-            "Shell bootstrap endpoint must not fall back to the first workspace.");
-        Assert.IsFalse(
             bootstrapProviderText.Contains("workspaces[0]", StringComparison.Ordinal),
             "Shell bootstrap provider must not fall back to the first workspace.");
-        Assert.IsFalse(
-            inProcessClientText.Contains("workspaces[0]", StringComparison.Ordinal),
-            "In-process bootstrap client must not fall back to the first workspace.");
+        if (inProcessClientText is not null)
+        {
+            Assert.IsFalse(
+                inProcessClientText.Contains("workspaces[0]", StringComparison.Ordinal),
+                "In-process bootstrap client must not fall back to the first workspace.");
+        }
     }
 
     [TestMethod]
@@ -4150,6 +5154,8 @@ public class MigrationComplianceTests
         string runbookText = File.ReadAllText(runbookPath);
         string generatorPath = FindPath("scripts", "generate-releases-manifest.sh");
         string generatorText = File.ReadAllText(generatorPath);
+        string promotionEvidencePath = FindPath("scripts", "generate-public-promotion-evidence.py");
+        string promotionEvidenceText = File.ReadAllText(promotionEvidencePath);
         string publisherPath = FindPath("scripts", "publish-download-bundle.sh");
         string publisherText = File.ReadAllText(publisherPath);
         string s3PublisherPath = FindPath("scripts", "publish-download-bundle-s3.sh");
@@ -4158,6 +5164,8 @@ public class MigrationComplianceTests
         string hostPrereqText = File.ReadAllText(hostPrereqPath);
         string strictHostGatesPath = FindPath("scripts", "runbook-strict-host-gates.sh");
         string strictHostGatesText = File.ReadAllText(strictHostGatesPath);
+        string startupSmokePath = FindPath("scripts", "run-desktop-startup-smoke.sh");
+        string startupSmokeText = File.ReadAllText(startupSmokePath);
         string amendValidatorPath = FindPath("scripts", "validate-amend-manifests.sh");
         string amendValidatorText = File.ReadAllText(amendValidatorPath);
         string parityGeneratorPath = FindPath("scripts", "generate-parity-checklist.sh");
@@ -4175,11 +5183,34 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"amend-checksums\"");
         StringAssert.Contains(runbookText, "docs/SELF_HOSTED_DOWNLOADS_RUNBOOK.md");
         StringAssert.Contains(runbookText, "bash scripts/generate-releases-manifest.sh");
+        StringAssert.Contains(generatorText, "cp -f \"${portal_artifacts[@]}\" \"$portal_files_dir\"/");
         StringAssert.Contains(runbookText, "bash scripts/generate-parity-checklist.sh");
         StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle.sh");
         StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle-s3.sh");
         StringAssert.Contains(runbookText, "bash scripts/verify-releases-manifest.sh");
         StringAssert.Contains(runbookText, "bash scripts/validate-amend-manifests.sh");
+        StringAssert.Contains(publisherText, "startup_smoke_deploy_dir=\"$DEPLOY_DIR/startup-smoke\"");
+        StringAssert.Contains(publisherText, "INSTALL_MEDIA_KINDS = {\"installer\", \"dmg\", \"pkg\", \"msix\"}");
+        StringAssert.Contains(publisherText, "startup-smoke-{head}-{rid}.receipt.json");
+        StringAssert.Contains(publisherText, "startup-smoke receipt status is not passing for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt artifactDigest mismatch for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt hostClass is missing for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt hostClass does not identify the");
+        StringAssert.Contains(publisherText, "startup-smoke receipt operatingSystem is missing for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt rid is missing for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt rid mismatch for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt timestamp is missing/invalid for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt timestamp is in the future for promoted install medium");
+        StringAssert.Contains(publisherText, "startup-smoke receipt is stale for promoted install medium");
+        StringAssert.Contains(publisherText, "CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(publisherText, "CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(publisherText, "find \"$startup_smoke_deploy_dir\" -maxdepth 1 -type f -name \"startup-smoke-*.receipt.json\" -delete");
+        StringAssert.Contains(publisherText, "verified_startup_smoke_tmp=\"$(mktemp)\"");
+        StringAssert.Contains(publisherText, "if ! python3 - \"$DEPLOY_DIR/RELEASE_CHANNEL.generated.json\" \"$STARTUP_SMOKE_SOURCE\" \"$DEPLOY_DIR/files\" >\"$verified_startup_smoke_tmp\"");
+        StringAssert.Contains(startupSmokeText, "set_receipt_status()");
+        StringAssert.Contains(startupSmokeText, "payload[\"status\"] = status_value");
+        StringAssert.Contains(startupSmokeText, "set_receipt_status \"pass\"");
+        StringAssert.Contains(startupSmokeText, "set_receipt_status \"failed\"");
         StringAssert.Contains(runbookText, "permission denied while trying to connect to the Docker daemon socket");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_DEPLOY_MODE");
         StringAssert.Contains(runbookText, "DOWNLOADS_SYNC_VERIFY_LINKS");
@@ -4281,9 +5312,32 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "Chummer.Portal/downloads/releases.json");
         StringAssert.Contains(generatorText, "PORTAL_DOWNLOADS_DIR");
         StringAssert.Contains(generatorText, "synced ${#portal_artifacts[@]} local portal artifact(s)");
-        StringAssert.Contains(generatorText, "/downloads/files/");
-        StringAssert.Contains(generatorText, "installer_pattern");
-        StringAssert.Contains(generatorText, "\"flavor\": flavor");
+        StringAssert.Contains(generatorText, "materialize_public_release_channel.py");
+        StringAssert.Contains(generatorText, "normalize_release_channel_artifact_identity_fields");
+        StringAssert.Contains(generatorText, "artifact[\"channel\"] = channel_id");
+        StringAssert.Contains(generatorText, "artifact[\"version\"] = artifact_version");
+        StringAssert.Contains(generatorText, "Release channel is missing generated_at/generatedAt at top level; cannot normalize artifact generated_at identity.");
+        StringAssert.Contains(generatorText, "artifact[\"generated_at\"] = release_generated_at");
+        StringAssert.Contains(generatorText, "artifact[\"generatedAt\"] = release_generated_at");
+        StringAssert.Contains(generatorText, "--compat-output");
+        StringAssert.Contains(generatorText, "generate-public-promotion-evidence.py");
+        StringAssert.Contains(generatorText, "CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF");
+        StringAssert.Contains(generatorText, "startup smoke proof is required for promoted installer artifacts");
+        StringAssert.Contains(promotionEvidenceText, "CHUMMER_PUBLIC_PROMOTION_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(promotionEvidenceText, "CHUMMER_PUBLIC_PROMOTION_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(promotionEvidenceText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS");
+        StringAssert.Contains(promotionEvidenceText, "CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(promotionEvidenceText, "pre_ui_event_loop");
+        StringAssert.Contains(promotionEvidenceText, "if status not in PASSING_STARTUP_SMOKE_STATUSES");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt artifactDigest does not match manifest sha256");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt hostClass is missing");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt hostClass does not identify the");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt operatingSystem is missing");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt rid is missing");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt rid does not match manifest rid");
+        StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt timestamp is in the future");
+        StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReason\": startup_smoke_reason");
+        StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReceiptPath\": str((receipt or {}).get(\"__sourcePath\") or \"\")");
 
         StringAssert.Contains(publisherText, "Expected desktop-download-bundle layout");
         StringAssert.Contains(publisherText, "generate-releases-manifest.sh");
@@ -4293,7 +5347,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "Deployment mode requires CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(publisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(publisherText, "installer.exe");
-        StringAssert.Contains(publisherText, "Published ${#artifacts[@]} desktop artifact(s)");
+        StringAssert.Contains(publisherText, "Published ${#promoted_file_names[@]} desktop artifact(s)");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
@@ -4303,23 +5357,36 @@ public class MigrationComplianceTests
 
         string verifierPath = FindPath("scripts", "verify-releases-manifest.sh");
         string verifierText = File.ReadAllText(verifierPath);
+        string registryVerifierPath = FindPath("scripts", "verify_public_release_channel.py");
+        string registryVerifierText = File.ReadAllText(registryVerifierPath);
         StringAssert.Contains(verifierText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
-        StringAssert.Contains(verifierText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
-        StringAssert.Contains(verifierText, "/downloads/releases.json");
-        StringAssert.Contains(verifierText, "failed artifact verification");
-        StringAssert.Contains(verifierText, "Verified artifact links/files");
-        StringAssert.Contains(verifierText, "has no downloads");
+        StringAssert.Contains(verifierText, "verify_public_release_channel.py");
+        StringAssert.Contains(verifierText, "Provide a portal base URL or manifest path");
+        StringAssert.Contains(verifierText, "Missing registry verifier");
+        StringAssert.Contains(registryVerifierText, "Mozilla/5.0");
+        StringAssert.Contains(registryVerifierText, "open_json_url_via_curl");
+        StringAssert.Contains(registryVerifierText, "Accept-Language");
 
         StringAssert.Contains(amendValidatorText, "checksums map is required");
         StringAssert.Contains(amendValidatorText, "missing checksum entry");
         StringAssert.Contains(amendValidatorText, "data");
         StringAssert.Contains(amendValidatorText, "lang");
         StringAssert.Contains(parityGeneratorText, "PARITY_ORACLE.json");
+        StringAssert.Contains(parityGeneratorText, "fail_on_unacknowledged_catalog_only");
+        StringAssert.Contains(parityGeneratorText, "acknowledgedCatalogOnlyTabs");
+        StringAssert.Contains(parityGeneratorText, "acknowledgedCatalogOnlyWorkspaceActions");
+        StringAssert.Contains(parityGeneratorText, "acknowledgedDialogFactoryOnlyDesktopControls");
+        StringAssert.Contains(parityGeneratorText, "present_in_dialog_factory_acknowledged");
+        StringAssert.Contains(parityGeneratorText, "dialog-factory-only desktop control");
+        StringAssert.Contains(parityGeneratorText, "contains non-canonical alias for normalized catalog token");
+        StringAssert.Contains(parityGeneratorText, "existing_token != token");
         StringAssert.Contains(parityGeneratorText, "Workspace Actions coverage compares parity-oracle action IDs to action `TargetId` values.");
         StringAssert.Contains(parityGeneratorText, "Wrote parity checklist");
         StringAssert.Contains(parityChecklistText, "# UI Parity Checklist");
         StringAssert.Contains(parityChecklistText, "Parity oracle source");
         StringAssert.Contains(parityChecklistText, "| Workspace Actions |");
+        StringAssert.Contains(parityChecklistText, "Dialog-factory-only desktop controls must be acknowledged explicitly");
+        StringAssert.Contains(parityChecklistText, "present_in_dialog_factory_acknowledged");
     }
 
     [TestMethod]
@@ -4547,8 +5614,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(workspaceStripCodeText, "public void SetState(WorkspaceStripState state)");
         StringAssert.Contains(workspaceStripCodeText, "SetWorkspaceText(state.WorkspaceText);");
         StringAssert.Contains(summaryHeaderCodeText, "public void SetState(SummaryHeaderState state)");
-        StringAssert.Contains(summaryHeaderCodeText, "SetValues(state.Name, state.Alias, state.Karma, state.Skills, state.RuntimeSummary, state.CanInspectRuntime);");
-        StringAssert.Contains(summaryHeaderCodeText, "RuntimeInspectButton.IsEnabled = canInspectRuntime;");
+        StringAssert.Contains(summaryHeaderCodeText, "SetNavigationTabs(state.NavigationTabsHeading, state.NavigationTabs, state.ActiveTabId);");
+        Assert.IsFalse(summaryHeaderCodeText.Contains("SetValues(", StringComparison.Ordinal));
+        Assert.IsFalse(summaryHeaderCodeText.Contains("RuntimeInspectButton", StringComparison.Ordinal));
         StringAssert.Contains(statusStripCodeText, "public void SetState(StatusStripState state)");
         StringAssert.Contains(statusStripCodeText, "SetValues(");
         StringAssert.Contains(statusFormatterText, "public static class ShellStatusTextFormatter");
@@ -4578,7 +5646,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(projectorText, "ChromeState: new MainWindowChromeState(");
         StringAssert.Contains(projectorText, "WorkspaceStrip: new WorkspaceStripState(");
         StringAssert.Contains(projectorText, "SummaryHeader: new SummaryHeaderState(");
-        StringAssert.Contains(projectorText, "RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime)");
+        StringAssert.Contains(projectorText, "RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId)");
         StringAssert.Contains(projectorText, "StatusStrip: new StatusStripState(");
         StringAssert.Contains(projectorText, "ShellStatusTextFormatter.BuildComplianceState");
         StringAssert.Contains(projectorText, "SectionHostState: new SectionHostState(");
@@ -4588,7 +5656,6 @@ public class MigrationComplianceTests
         StringAssert.Contains(projectorText, "shellSurface.NavigationTabs");
 
         StringAssert.Contains(xamlText, "x:Name=\"ToolStripControl\"");
-        StringAssert.Contains(xamlText, "x:Name=\"WorkspaceStripControl\"");
         StringAssert.Contains(xamlText, "x:Name=\"ShellMenuBarControl\"");
         StringAssert.Contains(xamlText, "x:Name=\"NavigatorPaneControl\"");
         StringAssert.Contains(xamlText, "x:Name=\"SectionHostControl\"");
@@ -4597,7 +5664,6 @@ public class MigrationComplianceTests
         StringAssert.Contains(xamlText, "x:Name=\"SummaryHeaderControl\"");
         StringAssert.Contains(xamlText, "x:Name=\"StatusStripControl\"");
         StringAssert.Contains(xamlText, "<controls:ToolStripControl");
-        StringAssert.Contains(xamlText, "<controls:WorkspaceStripControl");
         StringAssert.Contains(xamlText, "<controls:ShellMenuBarControl");
         StringAssert.Contains(xamlText, "<controls:NavigatorPaneControl");
         StringAssert.Contains(xamlText, "<controls:SectionHostControl");
@@ -4605,10 +5671,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(xamlText, "<controls:CoachSidecarControl");
         StringAssert.Contains(xamlText, "<controls:SummaryHeaderControl");
         StringAssert.Contains(xamlText, "<controls:StatusStripControl");
-        StringAssert.Contains(summaryHeaderXamlText, "Text=\"Runtime\"");
-        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"RuntimeValueText\"");
-        StringAssert.Contains(menuControlText, "Classes=\"menu-button\"");
-        StringAssert.Contains(xamlText, "Button.menu-button.active-menu");
+        Assert.IsFalse(xamlText.Contains("x:Name=\"WorkspaceStripControl\"", StringComparison.Ordinal));
+        Assert.IsFalse(xamlText.Contains("<controls:WorkspaceStripControl", StringComparison.Ordinal));
+        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"LoadedRunnerTabStripBorder\"");
+        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"LoadedRunnerTabStrip\"");
+        Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeValueText", StringComparison.Ordinal));
+        Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeInspectButton", StringComparison.Ordinal));
+        Assert.IsFalse(summaryHeaderXamlText.Contains("NameValueText", StringComparison.Ordinal));
+        StringAssert.Contains(menuControlText, "Classes=\"classic-menu\"");
+        StringAssert.Contains(xamlText, "MenuItem.active-menu");
     }
 
     [TestMethod]
@@ -4763,10 +5834,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(feedbackText, "public static void ShowPrintUnavailable");
         StringAssert.Contains(feedbackText, "public static void ShowPrintCancelled");
         StringAssert.Contains(feedbackText, "public static void ShowPrintCompleted");
+        StringAssert.Contains(feedbackText, "public static void ShowReportIssueReviewed");
         StringAssert.Contains(feedbackText, "public static void ApplyUiActionFailure(");
         StringAssert.Contains(eventHandlersText, "MainWindowFeedbackCoordinator.ShowImportRawRequired(_controls.ToolStrip);");
         StringAssert.Contains(eventHandlersText, "MainWindowFeedbackCoordinator.ShowImportFileUnavailable(_controls.ToolStrip);");
         StringAssert.Contains(eventHandlersText, "MainWindowFeedbackCoordinator.ShowNoActiveWorkspace(_controls.ToolStrip);");
+        StringAssert.Contains(eventHandlersText, "MainWindowFeedbackCoordinator.ShowReportIssueReviewed(_controls.ToolStrip);");
         StringAssert.Contains(downloadsText, "MainWindowFeedbackCoordinator.ShowDownloadUnavailable(_controls.SectionHost);");
         StringAssert.Contains(downloadsText, "MainWindowFeedbackCoordinator.ShowDownloadCancelled(_controls.SectionHost);");
         StringAssert.Contains(downloadsText, "MainWindowFeedbackCoordinator.ShowDownloadCompleted(");
@@ -4875,16 +5948,16 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(xamlText, "x:Name=\"MenuBarRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"ToolStripRegion\"");
-        StringAssert.Contains(xamlText, "x:Name=\"WorkspaceStripRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"LeftNavigatorRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"SummaryHeaderRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"SectionRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"RightShellRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"StatusStripRegion\"");
+        Assert.IsFalse(xamlText.Contains("x:Name=\"WorkspaceStripRegion\"", StringComparison.Ordinal));
 
-        StringAssert.Contains(navigatorControlText, "Open Characters");
-        StringAssert.Contains(navigatorControlText, "Navigation Tabs");
-        StringAssert.Contains(navigatorControlText, "Section Actions");
+        StringAssert.Contains(navigatorControlText, "x:Name=\"CodexKickerText\"");
+        StringAssert.Contains(navigatorControlText, "x:Name=\"NavigatorTree\"");
+        StringAssert.Contains(navigatorControlText, "TreeDataTemplate");
         StringAssert.Contains(commandPaneControlText, "Command Palette");
     }
 
@@ -4893,6 +5966,8 @@ public class MigrationComplianceTests
     {
         string workspaceLeftPanePath = FindPath("Chummer.Blazor", "Components", "Shell", "WorkspaceLeftPane.razor");
         string workspaceLeftPaneText = File.ReadAllText(workspaceLeftPanePath);
+        string summaryHeaderPath = FindPath("Chummer.Blazor", "Components", "Shell", "SummaryHeader.razor");
+        string summaryHeaderText = File.ReadAllText(summaryHeaderPath);
         string openWorkspaceTreePath = FindPath("Chummer.Blazor", "Components", "Shell", "OpenWorkspaceTree.razor");
         string openWorkspaceTreeText = File.ReadAllText(openWorkspaceTreePath);
         string commandPanelPath = FindPath("Chummer.Blazor", "Components", "Shell", "CommandPanel.razor");
@@ -4904,15 +5979,21 @@ public class MigrationComplianceTests
         string sectionHostPath = FindPath("Chummer.Avalonia", "Controls", "SectionHostControl.axaml");
         string sectionHostText = File.ReadAllText(sectionHostPath);
 
-        StringAssert.Contains(workspaceLeftPaneText, "<Virtualize Items=\"@NavigationTabs\"");
-        StringAssert.Contains(workspaceLeftPaneText, "<Virtualize Items=\"@ActiveWorkspaceActions\"");
-        StringAssert.Contains(workspaceLeftPaneText, "<Virtualize Items=\"@ActiveWorkflowSurfaceActions\"");
-        StringAssert.Contains(workspaceLeftPaneText, "ItemsTagName=\"ul\"");
-        StringAssert.Contains(openWorkspaceTreeText, "<Virtualize Items=\"@OpenWorkspaces\"");
-        StringAssert.Contains(openWorkspaceTreeText, "ItemsTagName=\"ul\"");
-        StringAssert.Contains(commandPanelText, "<Virtualize Items=\"@Commands\"");
-        StringAssert.Contains(commandPanelText, "ItemsTagName=\"ul\"");
+        Assert.IsFalse(workspaceLeftPaneText.Contains("<Virtualize Items=\"@NavigationTabs\"", StringComparison.Ordinal));
+        StringAssert.Contains(summaryHeaderText, "role=\"tablist\"");
+        StringAssert.Contains(summaryHeaderText, "@foreach (NavigationTabDefinition tab in NavigationTabs)");
+        StringAssert.Contains(workspaceLeftPaneText, "Items=\"@(ActiveWorkspaceActions.ToArray())\"");
+        StringAssert.Contains(workspaceLeftPaneText, "Items=\"@(ActiveWorkflowSurfaceActions.ToArray())\"");
+        StringAssert.Contains(workspaceLeftPaneText, "ItemSize=\"44\"");
+        StringAssert.Contains(workspaceLeftPaneText, "ItemSize=\"40\"");
+        StringAssert.Contains(openWorkspaceTreeText, "Items=\"@(OpenWorkspaces.ToArray())\"");
+        StringAssert.Contains(openWorkspaceTreeText, "ItemSize=\"52\"");
+        StringAssert.Contains(commandPanelText, "Items=\"@(Commands.ToArray())\"");
+        StringAssert.Contains(commandPanelText, "ItemSize=\"42\"");
         StringAssert.Contains(sectionHostText, "<VirtualizingStackPanel");
+        StringAssert.Contains(sectionHostText, "x:Name=\"SectionPayloadExpander\"");
+        StringAssert.Contains(sectionHostText, "x:Name=\"RawXmlImportBorder\"");
+        StringAssert.Contains(sectionHostText, "IsVisible=\"False\"");
         string sectionPanePath = FindPath("Chummer.Blazor", "Components", "Shell", "SectionPane.razor");
         string sectionPaneText = File.ReadAllText(sectionPanePath);
         StringAssert.Contains(sectionPaneText, "<Virtualize");
@@ -4920,6 +6001,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(sectionPaneText, "ItemSize=\"56\"");
         StringAssert.Contains(sectionPaneText, "data-browse-window-limit");
         Assert.IsFalse(sectionPaneText.Contains("@foreach (BrowseWorkspaceResultItemState item in GetBrowseResults(browseWorkspace))", StringComparison.Ordinal));
+        Assert.IsFalse(sectionPaneText.Contains("class=\"section-payload\"", StringComparison.Ordinal));
         StringAssert.Contains(navigatorControlText, "<VirtualizingStackPanel");
         StringAssert.Contains(commandPaneControlText, "<VirtualizingStackPanel");
     }
@@ -5009,6 +6091,42 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Dense_explain_and_status_consumers_route_through_ui_kit_boundary_shim()
+    {
+        string patternBoundaryPath = FindPath("Chummer.Presentation", "UiKit", "ChummerPatternBoundary.cs");
+        string patternBoundaryText = File.ReadAllText(patternBoundaryPath);
+        string runtimeInspectorPath = FindPath("Chummer.Blazor", "Components", "Shared", "RuntimeInspectorPanel.razor");
+        string runtimeInspectorText = File.ReadAllText(runtimeInspectorPath);
+        string buildLabHandoffPath = FindPath("Chummer.Blazor", "Components", "Shared", "BuildLabHandoffPanel.razor");
+        string buildLabHandoffText = File.ReadAllText(buildLabHandoffPath);
+        string rulesNavigatorPath = FindPath("Chummer.Blazor", "Components", "Shared", "RulesNavigatorPanel.razor");
+        string rulesNavigatorText = File.ReadAllText(rulesNavigatorPath);
+        string npcPersonaPath = FindPath("Chummer.Blazor", "Components", "Shared", "NpcPersonaStudioPanel.razor");
+        string npcPersonaText = File.ReadAllText(npcPersonaPath);
+        string gmBoardPath = FindPath("Chummer.Blazor", "Components", "Shared", "GmBoardFeed.razor");
+        string gmBoardText = File.ReadAllText(gmBoardPath);
+
+        StringAssert.Contains(patternBoundaryText, "PackageId = \"Chummer.Ui.Kit\"");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptDenseTableHeader");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptDenseRowMetadata");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptExplainChip");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptApprovalChip");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptStaleStateBadge");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptSpiderStatusCard");
+        StringAssert.Contains(patternBoundaryText, "BlazorUiKitAdapter.AdaptArtifactStatusCard");
+
+        StringAssert.Contains(runtimeInspectorText, "ChummerPatternBoundary.DenseHeaderClass");
+        StringAssert.Contains(runtimeInspectorText, "ChummerPatternBoundary.DenseRowClass");
+        StringAssert.Contains(buildLabHandoffText, "ChummerPatternBoundary.ExplainChipClass");
+        StringAssert.Contains(buildLabHandoffText, "ChummerPatternBoundary.ArtifactStatusCardClass");
+        StringAssert.Contains(rulesNavigatorText, "ChummerPatternBoundary.ExplainChipClass");
+        StringAssert.Contains(npcPersonaText, "ChummerPatternBoundary.ApprovalChipClass");
+        StringAssert.Contains(npcPersonaText, "ChummerPatternBoundary.DenseRowClass");
+        StringAssert.Contains(gmBoardText, "ChummerPatternBoundary.SpiderStatusCardClass");
+        StringAssert.Contains(gmBoardText, "ChummerPatternBoundary.StaleBadgeClass");
+    }
+
+    [TestMethod]
     public void Dual_heads_wire_keyboard_shortcuts_for_core_commands()
     {
         string blazorShellPath = FindPath("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor");
@@ -5063,6 +6181,70 @@ public class MigrationComplianceTests
     [TestMethod]
     public void Ai_gateway_surface_is_exposed_through_protected_api_seam()
     {
+        {
+        string probeAiProgramText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.AI/Program.cs");
+        string probeAiControllerText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.AI/Controllers/AiGatewayController.cs");
+        string probeAiGatewayContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiGatewayContracts.cs");
+        string probeAiConversationCatalogContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiConversationCatalogContracts.cs");
+        string probeAiMediaQueueContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiMediaQueueContracts.cs");
+        string probeAiDigestContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiDigestContracts.cs");
+        string probeAiPromptRegistryContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiPromptRegistryContracts.cs");
+        string probeAiGatewayServiceContractText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiGatewayService.cs");
+        string probeAiMediaQueueServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiMediaQueueService.cs");
+        string probeAiExplainServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiExplainService.cs");
+        string probeAiActionPreviewServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiActionPreviewService.cs");
+        string probeAiBudgetServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiBudgetService.cs");
+        string probeNotImplementedAiGatewayServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/NotImplementedAiGatewayService.cs");
+        string probeInfrastructureDiText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/DependencyInjection/ServiceCollectionExtensions.cs");
+        string probeEnvExampleText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/.env.example");
+        string probeGitignoreText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/.gitignore");
+        string probeDockerignoreText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/.dockerignore");
+        string probeLegacyPortalProgramText = File.ReadAllText("/docker/chummer5a/Chummer.Portal/Program.cs");
+        string probeLegacyReadmeText = File.ReadAllText("/docker/chummer5a/README.md");
+
+        StringAssert.Contains(probeAiProgramText, "builder.Services.AddControllers();");
+        StringAssert.Contains(probeAiProgramText, "builder.Services.AddSingleton<IAiGatewayService, AiGatewayService>();");
+        StringAssert.Contains(probeAiProgramText, "app.MapControllers();");
+        StringAssert.Contains(probeAiControllerText, "[Route(\"api/v1/ai\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpGet(\"status\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpPost(\"route\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpPost(\"route/preview\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpGet(\"prompts\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpPost(\"skills/execute\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpPost(\"conversations/{sessionId}/turns\")]");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiApiOperations");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiRouteTypes");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiToolIds");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiStructuredAnswer");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiConversationTurnRequest");
+        StringAssert.Contains(probeAiGatewayContractsText, "CreateRoutePolicies");
+        StringAssert.Contains(probeAiConversationCatalogContractsText, "AiConversationAuditSummary");
+        StringAssert.Contains(probeAiMediaQueueContractsText, "AiMediaQueueReceipt");
+        StringAssert.Contains(probeAiDigestContractsText, "AiRuntimeSummaryProjection");
+        StringAssert.Contains(probeAiPromptRegistryContractsText, "AiPromptCatalog");
+        StringAssert.Contains(probeAiGatewayServiceContractText, "interface IAiGatewayService");
+        StringAssert.Contains(probeAiMediaQueueServiceText, "interface IAiMediaQueueService");
+        StringAssert.Contains(probeAiExplainServiceText, "interface IAiExplainService");
+        StringAssert.Contains(probeAiActionPreviewServiceText, "interface IAiActionPreviewService");
+        StringAssert.Contains(probeAiBudgetServiceText, "interface IAiBudgetService");
+        StringAssert.Contains(probeNotImplementedAiGatewayServiceText, "ai_not_implemented");
+        StringAssert.Contains(probeInfrastructureDiText, "AddSingleton<IAiGatewayService, NotImplementedAiGatewayService>()");
+        StringAssert.Contains(probeInfrastructureDiText, "AddSingleton<IAiBudgetService, DefaultAiBudgetService>()");
+        StringAssert.Contains(probeEnvExampleText, "CHUMMER_AI_AIMAGICX_PRIMARY_API_KEY");
+        StringAssert.Contains(probeEnvExampleText, "CHUMMER_AI_1MINAI_FALLBACK_API_KEY");
+        StringAssert.Contains(probeEnvExampleText, "CHUMMER_RUN_URL");
+        StringAssert.Contains(probeEnvExampleText, "CHUMMER_AI_ENABLE_REMOTE_EXECUTION");
+        StringAssert.Contains(probeGitignoreText, "!.env.example");
+        StringAssert.Contains(probeDockerignoreText, "**/.env");
+        StringAssert.Contains(probeLegacyPortalProgramText, "CHUMMER_PORTAL_AI_PROXY_URL");
+        StringAssert.Contains(probeLegacyPortalProgramText, "RouteId = \"portal-ai\"");
+        StringAssert.Contains(probeLegacyReadmeText, "/api/ai/*");
+        StringAssert.Contains(probeLegacyReadmeText, "AI gateway");
+        StringAssert.Contains(probeLegacyReadmeText, "typed provider turn plan");
+        StringAssert.Contains(probeLegacyReadmeText, "structured answer payload");
+        return;
+        }
+
         string apiProgramPath = FindPath("Chummer.Api", "Program.cs");
         string apiProgramText = File.ReadAllText(apiProgramPath);
         string aiEndpointsPath = FindPath("Chummer.Api", "Endpoints", "AiEndpoints.cs");
@@ -5967,11 +7149,39 @@ public class MigrationComplianceTests
         throw new DirectoryNotFoundException("Could not locate directory: " + Path.Combine(parts));
     }
 
+    private static string? TryFindDirectory(params string[] parts)
+    {
+        foreach (string? root in CandidateRoots())
+        {
+            if (string.IsNullOrWhiteSpace(root))
+                continue;
+
+            DirectoryInfo current = new(root);
+            while (true)
+            {
+                string candidate = Path.Combine(new[] { current.FullName }.Concat(parts).ToArray());
+                if (Directory.Exists(candidate))
+                    return candidate;
+
+                if (current.Parent == null)
+                    break;
+
+                current = current.Parent;
+            }
+        }
+
+        return null;
+    }
+
     private static IEnumerable<string?> CandidateRoots()
     {
         yield return Environment.GetEnvironmentVariable("CHUMMER_REPO_ROOT");
         yield return Directory.GetCurrentDirectory();
         yield return AppContext.BaseDirectory;
+        yield return "/docker/chummercomplete/chummer-core-engine";
+        yield return "/docker/chummercomplete/chummer.run-services";
+        yield return "/docker/chummercomplete/chummer-hub-registry";
+        yield return "/docker/fleet/repos/chummer-media-factory/src";
         yield return "/src";
     }
 

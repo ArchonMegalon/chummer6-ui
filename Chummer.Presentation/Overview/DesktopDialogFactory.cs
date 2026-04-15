@@ -1,4 +1,5 @@
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Api;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
@@ -62,8 +63,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string? activeSectionJson,
         CharacterWorkspaceId? currentWorkspace,
         string? rulesetId,
-        RuntimeInspectorProjection? runtimeInspector = null)
+        RuntimeInspectorProjection? runtimeInspector = null,
+        MasterIndexResponse? masterIndex = null,
+        TranslatorLanguagesResponse? translatorLanguages = null,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces = null)
     {
+        string language = DesktopLocalizationCatalog.NormalizeOrDefault(preferences.Language);
+        string S(string key) => DesktopLocalizationCatalog.GetRequiredString(key, language);
+        string F(string key, params object[] values) => DesktopLocalizationCatalog.GetRequiredFormattedString(key, language, values);
         string name = profile?.Name ?? "(none)";
         string alias = profile?.Alias ?? string.Empty;
         string workspace = currentWorkspace?.Value ?? "(none)";
@@ -101,25 +108,26 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dice_roller" => new DesktopDialogState(
                 "dialog.dice_roller",
                 "Dice Roller",
-                "Enter an expression and execute roll from this dialog.",
-                [new DesktopDialogField("diceExpression", "Expression", "12d6", "12d6")],
+                "Ruleset-backed dice utility with initiative planning and current roster context.",
+                BuildDiceToolFields(currentWorkspace, openWorkspaces),
                 [
                     new DesktopDialogAction("roll", "Roll", true),
+                    new DesktopDialogAction("derive_initiative", "Preview Initiative"),
                     new DesktopDialogAction("close", "Close")
                 ]),
             "global_settings" => new DesktopDialogState(
                 "dialog.global_settings",
-                "Global Settings",
-                null,
+                S("desktop.dialog.global_settings.title"),
+                F("desktop.dialog.global_settings.message", DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
                 [
-                    new DesktopDialogField("globalUiScale", "UI Scale (%)", preferences.UiScalePercent.ToString(), "100", InputType: "number"),
-                    new DesktopDialogField("globalTheme", "Theme", preferences.Theme, "classic"),
-                    new DesktopDialogField("globalLanguage", "Language", preferences.Language, "en-us"),
-                    new DesktopDialogField("globalCompactMode", "Compact Mode", preferences.CompactMode ? "true" : "false", "false", InputType: "checkbox")
+                    new DesktopDialogField("globalUiScale", S("desktop.dialog.global_settings.field.ui_scale"), preferences.UiScalePercent.ToString(), "100", InputType: "number"),
+                    new DesktopDialogField("globalTheme", S("desktop.dialog.global_settings.field.theme"), preferences.Theme, "classic"),
+                    new DesktopDialogField("globalLanguage", S("desktop.dialog.global_settings.field.language"), DesktopLocalizationCatalog.NormalizeOrDefault(preferences.Language), DesktopLocalizationCatalog.DefaultLanguage),
+                    new DesktopDialogField("globalCompactMode", S("desktop.dialog.global_settings.field.compact_mode"), preferences.CompactMode ? "true" : "false", "false", InputType: "checkbox")
                 ],
                 [
-                    new DesktopDialogAction("save", "Save", true),
-                    new DesktopDialogAction("cancel", "Cancel")
+                    new DesktopDialogAction("save", S("desktop.dialog.action.save"), true),
+                    new DesktopDialogAction("cancel", S("desktop.dialog.action.cancel"))
                 ]),
             "switch_ruleset" => new DesktopDialogState(
                 "dialog.switch_ruleset",
@@ -135,12 +143,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "character_settings" => new DesktopDialogState(
                 "dialog.character_settings",
                 "Character Settings",
-                null,
+                "Rules environment posture for source toggles, custom data, and XML bridge is surfaced here so the modern desktop does not hide legacy-era configuration truth.",
                 [
                     new DesktopDialogField("characterPriority", "Priority System", preferences.CharacterPriority, "SumToTen"),
                     new DesktopDialogField("characterKarmaNuyen", "Karma/Nuyen Ratio", preferences.KarmaNuyenRatio.ToString(), "2", InputType: "number"),
                     new DesktopDialogField("characterHouseRulesEnabled", "Enable House Rules", preferences.HouseRulesEnabled ? "true" : "false", "false", InputType: "checkbox"),
-                    new DesktopDialogField("characterNotes", "Character Notes", preferences.CharacterNotes, "notes", true)
+                    new DesktopDialogField("characterNotes", "Character Notes", preferences.CharacterNotes, "notes", true),
+                    new DesktopDialogField("characterSettingsLanePosture", "Settings Lane", masterIndex?.SettingsLanePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("characterSourceToggleLanePosture", "Source Toggle Lane", masterIndex?.SourceToggleLanePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("characterSourceToggleCoverage", "Source Toggle Coverage", masterIndex is null ? "0%" : $"{masterIndex.SourcebookToggleCoveragePercent}% ({masterIndex.DistinctSourcebookToggles} toggles)", "0%", IsReadOnly: true),
+                    new DesktopDialogField("characterCustomDataLanePosture", "Custom Data Lane", masterIndex?.CustomDataLanePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("characterXmlBridgePosture", "XML Bridge", masterIndex?.XmlBridgePosture ?? "missing", "missing", IsReadOnly: true)
                 ],
                 [
                     new DesktopDialogAction("save", "Save", true),
@@ -148,15 +161,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "translator" => new DesktopDialogState(
                 "dialog.translator",
-                "Translator",
-                "Language catalog preview.",
-                [
-                    new DesktopDialogField("translatorSearch", "Language Search", string.Empty, "filter languages"),
-                    new DesktopDialogField("lang1", "English", "en-us", "en-us", IsReadOnly: true),
-                    new DesktopDialogField("lang2", "Deutsch", "de-de", "de-de", IsReadOnly: true),
-                    new DesktopDialogField("lang3", "Francais", "fr-fr", "fr-fr", IsReadOnly: true)
-                ],
-                [new DesktopDialogAction("close", "Close", true)]),
+                S("desktop.dialog.translator.title"),
+                F("desktop.dialog.translator.message", DesktopLocalizationCatalog.BuildSupportedLanguageCodeSummary()),
+                BuildTranslatorFields(language, masterIndex, translatorLanguages),
+                [new DesktopDialogAction("close", S("desktop.dialog.action.close"), true)]),
             "xml_editor" => new DesktopDialogState(
                 "dialog.xml_editor",
                 "XML Editor",
@@ -169,18 +177,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "master_index" => new DesktopDialogState(
                 "dialog.master_index",
                 "Master Index",
-                "Catalog data is served by the API and surfaced here in desktop parity mode.",
-                [new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true)],
+                masterIndex is null
+                    ? "Catalog data is served by the API and surfaced here in desktop parity mode."
+                    : $"Catalog parity: {masterIndex.SourcebookCount} sourcebooks, {masterIndex.ReferenceCoveragePercent}% snippet coverage, settings={masterIndex.SettingsLanePosture}, import={masterIndex.ImportOracleLanePosture}.",
+                BuildMasterIndexFields(masterIndex),
                 [new DesktopDialogAction("close", "Close", true)]),
             "character_roster" => new DesktopDialogState(
                 "dialog.character_roster",
                 "Character Roster",
-                "Roster persistence is managed by the shared API store.",
-                [
-                    new DesktopDialogField("name", "Name", name, name),
-                    new DesktopDialogField("alias", "Alias", alias, alias),
-                    new DesktopDialogField("workspace", "Workspace", workspace, workspace, IsReadOnly: true)
-                ],
+                "Desktop roster/operator lane over the currently open runners. Watch-folder and deeper GM dashboard closure remain in milestone 15.",
+                BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces),
                 [new DesktopDialogAction("close", "Close", true)]),
             "data_exporter" => new DesktopDialogState(
                 "dialog.data_exporter",
@@ -202,9 +208,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "report_bug" => new DesktopDialogState(
                 "dialog.report_bug",
-                "Report Bug",
-                "Open the issue form in your browser: https://github.com/chummer5a/chummer5a/issues/new/choose",
-                [],
+                "Support and bug reporting",
+                "Use the signed-in Hub support surface for tracked install-aware cases. GitHub is still available for public issue reporting, but the flagship desktop flow is claim-aware support closure.",
+                [
+                    new DesktopDialogField("supportHub", "Tracked support", "/account/support", "/account/support", IsReadOnly: true),
+                    new DesktopDialogField("supportPublic", "Guest support", "/contact", "/contact", IsReadOnly: true),
+                    new DesktopDialogField("supportGithub", "Public GitHub issue form", "https://github.com/chummer5a/chummer5a/issues/new/choose", "https://github.com/chummer5a/chummer5a/issues/new/choose", IsReadOnly: true)
+                ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "about" => new DesktopDialogState(
                 "dialog.about",
@@ -284,8 +294,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "update" => new DesktopDialogState(
                 "dialog.update",
                 "Check for Updates",
-                "Desktop heads check the configured registry manifest (`CHUMMER_DESKTOP_UPDATE_MANIFEST`) at startup and hand off either an in-place payload or a platform installer through the local runtime.",
-                [],
+                "Desktop heads check the configured registry manifest (`CHUMMER_DESKTOP_UPDATE_MANIFEST`) at startup, stage either an in-place payload or a platform installer, and keep install linking plus support continuity intact across the relaunch boundary.",
+                [
+                    new DesktopDialogField("updateManifest", "Manifest", Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MANIFEST") ?? string.Empty, "unset", IsReadOnly: true),
+                    new DesktopDialogField("updateAutoApply", "Auto apply", Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_AUTO_APPLY") ?? "true", "true", IsReadOnly: true),
+                    new DesktopDialogField("updateSupportPath", "Support after update", "/account/support", "/account/support", IsReadOnly: true)
+                ],
                 [new DesktopDialogAction("close", "Close", true)]),
             _ => new DesktopDialogState(
                 "dialog.generic",
@@ -400,6 +414,86 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             Placeholder: value);
     }
 
+    private static IReadOnlyList<DesktopDialogField> BuildDiceToolFields(
+        CharacterWorkspaceId? currentWorkspace,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+    {
+        IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
+        int savedCount = roster.Count(workspace => workspace.HasSavedWorkspace);
+        string rosterContext = roster.Count switch
+        {
+            0 => "No open runners. The utility still works as a standalone dice and initiative pad.",
+            _ => $"{roster.Count} open runner{(roster.Count == 1 ? string.Empty : "s")} · {savedCount} saved · active {(currentWorkspace?.Value ?? roster[0].Id.Value)}"
+        };
+
+        return
+        [
+            new DesktopDialogField("diceExpression", "Expression", "12d6", "12d6"),
+            new DesktopDialogField("diceThreshold", "Threshold", "0", "0", InputType: "number"),
+            new DesktopDialogField("diceLimit", "Limit", "0", "0", InputType: "number"),
+            new DesktopDialogField("diceWoundModifier", "Wound Modifier", "0", "0", InputType: "number"),
+            new DesktopDialogField("diceInitiativeBase", "Initiative Base", "10", "10", InputType: "number"),
+            new DesktopDialogField("diceInitiativeDice", "Initiative Dice", "1", "1", InputType: "number"),
+            new DesktopDialogField("diceCurrentPass", "Current Pass", "1", "1", InputType: "number"),
+            new DesktopDialogField("diceUtilityLane", "Utility Lane", "ruleset-backed roll + initiative preview", "ruleset-backed roll + initiative preview", IsReadOnly: true),
+            new DesktopDialogField("diceRosterContext", "Roster Context", rosterContext, rosterContext, IsReadOnly: true),
+            new DesktopDialogField("initiativePreview", "Initiative Preview", BuildInitiativePreview(10, 1, 0, 1), BuildInitiativePreview(10, 1, 0, 1), IsReadOnly: true)
+        ];
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildRosterFields(
+        string name,
+        string alias,
+        string workspace,
+        CharacterWorkspaceId? currentWorkspace,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+    {
+        IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
+        OpenWorkspaceState[] ordered = roster
+            .OrderByDescending(candidate => candidate.LastOpenedUtc)
+            .ThenBy(candidate => candidate.Alias, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
+            .ThenBy(candidate => RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Id.Value, StringComparer.Ordinal)
+            .ToArray();
+        int savedCount = ordered.Count(candidate => candidate.HasSavedWorkspace);
+        string rulesetMix = ordered.Length == 0
+            ? "(none)"
+            : string.Join(", ", ordered
+                .Select(candidate => RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)
+                .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
+                .Distinct(StringComparer.Ordinal));
+        string rosterEntries = ordered.Length == 0
+            ? $"{alias} · {name} · {(string.IsNullOrWhiteSpace(workspace) ? "(no workspace)" : workspace)}"
+            : string.Join(
+                Environment.NewLine,
+                ordered.Select(candidate =>
+                    $"{candidate.Alias} · {candidate.Name} · {(candidate.HasSavedWorkspace ? "saved" : "unsaved")} · {(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}"));
+
+        return
+        [
+            new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true),
+            new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true),
+            new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true),
+            new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true),
+            new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true),
+            new DesktopDialogField("rosterEntries", "Roster Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true)
+        ];
+    }
+
+    private static string BuildInitiativePreview(int baseValue, int diceCount, int woundModifier, int pass)
+    {
+        int sanitizedDiceCount = Math.Max(0, diceCount);
+        int sanitizedPass = Math.Max(1, pass);
+        int modifiedBase = baseValue + woundModifier;
+        int min = modifiedBase + sanitizedDiceCount;
+        int max = modifiedBase + (sanitizedDiceCount * 6);
+        decimal average = modifiedBase + (sanitizedDiceCount * 3.5m);
+        return sanitizedDiceCount == 0
+            ? $"{modifiedBase} flat · pass {sanitizedPass}"
+            : $"{modifiedBase} + {sanitizedDiceCount}d6 · pass {sanitizedPass} · range {min}-{max} · avg {average:0.0}";
+    }
+
     public DesktopDialogState CreateUiControlDialog(
         string controlId,
         DesktopPreferenceState preferences)
@@ -505,6 +599,60 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Gear source references are displayed here.",
                 [],
                 [new DesktopDialogAction("close", "Close", true)]),
+            "cyberware_add" => new DesktopDialogState(
+                "dialog.ui.cyberware_add",
+                "Add Cyberware",
+                null,
+                [
+                    new DesktopDialogField("uiCyberwareName", "Cyberware", string.Empty, "Wired Reflexes 2"),
+                    new DesktopDialogField("uiCyberwareSlot", "Location", "Body", "Body")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "cyberware_edit" => new DesktopDialogState(
+                "dialog.ui.cyberware_edit",
+                "Edit Cyberware",
+                null,
+                [
+                    new DesktopDialogField("uiCyberwareEditName", "Cyberware", "Selected Cyberware", "Selected Cyberware"),
+                    new DesktopDialogField("uiCyberwareRating", "Rating", "2", "2", InputType: "number")
+                ],
+                [
+                    new DesktopDialogAction("apply", "Apply", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "cyberware_delete" => new DesktopDialogState(
+                "dialog.ui.cyberware_delete",
+                "Remove Cyberware",
+                "Removed selected cyberware item.",
+                [],
+                [
+                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "drug_add" => new DesktopDialogState(
+                "dialog.ui.drug_add",
+                "Add Drug",
+                null,
+                [
+                    new DesktopDialogField("uiDrugName", "Drug", string.Empty, "Jazz"),
+                    new DesktopDialogField("uiDrugQuantity", "Quantity", "1", "1", InputType: "number")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "drug_delete" => new DesktopDialogState(
+                "dialog.ui.drug_delete",
+                "Remove Drug",
+                "Removed selected drug item.",
+                [],
+                [
+                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "magic_add" => new DesktopDialogState(
                 "dialog.ui.magic_add",
                 "Add Spell/Power",
@@ -535,6 +683,90 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Magical source references are displayed here.",
                 [],
                 [new DesktopDialogAction("close", "Close", true)]),
+            "spell_add" => new DesktopDialogState(
+                "dialog.ui.spell_add",
+                "Add Spell",
+                null,
+                [
+                    new DesktopDialogField("uiSpellName", "Spell", string.Empty, "Stunbolt"),
+                    new DesktopDialogField("uiSpellCategory", "Category", "Combat", "Combat")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "adept_power_add" => new DesktopDialogState(
+                "dialog.ui.adept_power_add",
+                "Add Adept Power",
+                null,
+                [
+                    new DesktopDialogField("uiAdeptPowerName", "Power", string.Empty, "Improved Reflexes"),
+                    new DesktopDialogField("uiAdeptPowerLevel", "Level", "1", "1", InputType: "number")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "complex_form_add" => new DesktopDialogState(
+                "dialog.ui.complex_form_add",
+                "Add Complex Form",
+                null,
+                [
+                    new DesktopDialogField("uiComplexFormName", "Complex Form", string.Empty, "Cleaner"),
+                    new DesktopDialogField("uiComplexFormLevel", "Level", "1", "1", InputType: "number")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "initiation_add" => new DesktopDialogState(
+                "dialog.ui.initiation_add",
+                "Add Initiation / Submersion",
+                null,
+                [
+                    new DesktopDialogField("uiInitiationGrade", "Grade", "1", "1", InputType: "number"),
+                    new DesktopDialogField("uiInitiationReward", "Reward", string.Empty, "Metamagic")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "spirit_add" => new DesktopDialogState(
+                "dialog.ui.spirit_add",
+                "Add Spirit / Ally / Familiar",
+                null,
+                [
+                    new DesktopDialogField("uiSpiritName", "Name", string.Empty, "Watcher"),
+                    new DesktopDialogField("uiSpiritType", "Type", "Spirit", "Spirit")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "critter_power_add" => new DesktopDialogState(
+                "dialog.ui.critter_power_add",
+                "Add Critter Power",
+                null,
+                [
+                    new DesktopDialogField("uiCritterPowerName", "Power", string.Empty, "Natural Weapon"),
+                    new DesktopDialogField("uiCritterPowerRating", "Rating", "1", "1", InputType: "number")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "matrix_program_add" => new DesktopDialogState(
+                "dialog.ui.matrix_program_add",
+                "Add Program / Cyberdeck Item",
+                null,
+                [
+                    new DesktopDialogField("uiMatrixProgramName", "Program", string.Empty, "Armor"),
+                    new DesktopDialogField("uiMatrixProgramSlot", "Slot", "Common", "Common")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "skill_add" => new DesktopDialogState(
                 "dialog.ui.skill_add",
                 "Add Skill",
@@ -598,6 +830,51 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Applied one damage track step.",
                 [],
                 [new DesktopDialogAction("close", "Close", true)]),
+            "vehicle_add" => new DesktopDialogState(
+                "dialog.ui.vehicle_add",
+                "Add Vehicle / Drone",
+                null,
+                [
+                    new DesktopDialogField("uiVehicleName", "Vehicle", string.Empty, "Hyundai Shin-Hyung"),
+                    new DesktopDialogField("uiVehicleRole", "Role", "Vehicle", "Vehicle")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "vehicle_edit" => new DesktopDialogState(
+                "dialog.ui.vehicle_edit",
+                "Edit Vehicle / Drone",
+                null,
+                [
+                    new DesktopDialogField("uiVehicleEditName", "Vehicle", "Selected Vehicle", "Selected Vehicle"),
+                    new DesktopDialogField("uiVehicleHandling", "Handling", "4", "4", InputType: "number")
+                ],
+                [
+                    new DesktopDialogAction("apply", "Apply", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "vehicle_delete" => new DesktopDialogState(
+                "dialog.ui.vehicle_delete",
+                "Remove Vehicle / Drone",
+                "Removed selected vehicle or drone.",
+                [],
+                [
+                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "vehicle_mod_add" => new DesktopDialogState(
+                "dialog.ui.vehicle_mod_add",
+                "Add Vehicle Mod",
+                null,
+                [
+                    new DesktopDialogField("uiVehicleModName", "Modification", string.Empty, "Spoof Chips"),
+                    new DesktopDialogField("uiVehicleModSlot", "Slot", "Body", "Body")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "contact_add" => new DesktopDialogState(
                 "dialog.ui.contact_add",
                 "Add Contact",
@@ -637,6 +914,27 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
+            "quality_add" => new DesktopDialogState(
+                "dialog.ui.quality_add",
+                "Add Quality",
+                null,
+                [
+                    new DesktopDialogField("uiQualityName", "Quality", string.Empty, "First Impression"),
+                    new DesktopDialogField("uiQualityType", "Type", "Positive", "Positive")
+                ],
+                [
+                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "quality_delete" => new DesktopDialogState(
+                "dialog.ui.quality_delete",
+                "Remove Quality",
+                "Removed selected quality.",
+                [],
+                [
+                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             _ => new DesktopDialogState(
                 "dialog.ui.generic",
                 "Desktop Control",
@@ -644,5 +942,172 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 [],
                 [new DesktopDialogAction("close", "Close", true)])
         };
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildTranslatorFields(
+        string language,
+        MasterIndexResponse? masterIndex,
+        TranslatorLanguagesResponse? translatorLanguages)
+    {
+        List<DesktopDialogField> fields =
+        [
+            new DesktopDialogField(
+                "translatorSearch",
+                DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.translator.field.search", language),
+                string.Empty,
+                DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.translator.field.search_placeholder", language)),
+            new DesktopDialogField(
+                "translatorLanePosture",
+                "Translator Lane",
+                masterIndex?.TranslatorLanePosture ?? "missing",
+                "missing",
+                IsReadOnly: true),
+            new DesktopDialogField(
+                "translatorBridgePosture",
+                "Translator Bridge",
+                masterIndex?.TranslatorBridgePosture ?? translatorLanguages?.TranslatorBridgePosture ?? "missing",
+                "missing",
+                IsReadOnly: true),
+            new DesktopDialogField(
+                "translatorOverlayCount",
+                "Enabled Language Overlays",
+                (masterIndex?.EnabledLanguageOverlayCount ?? translatorLanguages?.EnabledLanguageOverlayCount ?? 0).ToString(),
+                "0",
+                IsReadOnly: true)
+        ];
+
+        IReadOnlyList<TranslatorLanguageEntry> languages = translatorLanguages?.Languages is { Count: > 0 }
+            ? translatorLanguages.Languages
+            : DesktopLocalizationCatalog.ShippingLanguages
+                .Select(shippingLanguage => new TranslatorLanguageEntry(shippingLanguage.Code, shippingLanguage.Label))
+                .ToArray();
+        int index = 1;
+        foreach (TranslatorLanguageEntry availableLanguage in languages)
+        {
+            fields.Add(new DesktopDialogField(
+                $"lang{index}",
+                availableLanguage.Name,
+                availableLanguage.Code,
+                availableLanguage.Code,
+                IsReadOnly: true));
+            index++;
+        }
+
+        return fields;
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildMasterIndexFields(MasterIndexResponse? masterIndex)
+    {
+        if (masterIndex is null)
+        {
+            return
+            [
+                new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true)
+            ];
+        }
+
+        string referenceSources = $"{masterIndex.SourcebooksWithGovernedReferenceSources} governed / {masterIndex.SourcebooksWithStaleReferenceSources} stale / {masterIndex.SourcebooksMissingReferenceSources} missing";
+        string importCoverage = $"{masterIndex.ImportOracleCoveragePercent}% ({masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected})";
+        string adjacentOracleCoverage = $"{masterIndex.AdjacentSr6OracleSourcesCovered}/{masterIndex.AdjacentSr6OracleSourcesExpected}";
+        string onlineStorageCoverage = $"{masterIndex.OnlineStorageCoveragePercent}% ({masterIndex.OnlineStorageReceiptsCovered}/{masterIndex.OnlineStorageReceiptsExpected})";
+        string sr6DesignerCoverage = $"{masterIndex.Sr6DesignerFamiliesAvailable}/{masterIndex.Sr6DesignerFamiliesExpected}";
+        string sr6Successor = $"{masterIndex.Sr6SupplementLanePosture}, designers {masterIndex.Sr6DesignerFamiliesAvailable}/{masterIndex.Sr6DesignerFamiliesExpected}, house rules {masterIndex.HouseRuleLanePosture}";
+        string sourcebookSelectionSummary = BuildSourcebookSelectionSummary(masterIndex.Sourcebooks);
+        string importOracleMatrix = BuildImportOracleMatrix(masterIndex);
+        string missingImportSources = masterIndex.ImportOracleMissingSources is { Count: > 0 }
+            ? string.Join(", ", masterIndex.ImportOracleMissingSources)
+            : "none";
+
+        List<DesktopDialogField> fields =
+        [
+            new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true),
+            new DesktopDialogField("masterIndexSourcebooks", "Sourcebooks", masterIndex.SourcebookCount.ToString(), "0", IsReadOnly: true),
+            new DesktopDialogField("masterIndexReferenceCoverage", "Snippet Coverage", $"{masterIndex.ReferenceCoveragePercent}% ({masterIndex.SourcebooksWithSnippets}/{masterIndex.SourcebookCount})", "0%", IsReadOnly: true),
+            new DesktopDialogField("masterIndexReferenceSources", "Reference Sources", referenceSources, referenceSources, IsReadOnly: true),
+            new DesktopDialogField("masterIndexReferenceSourceReceipt", "Reference Source Receipt", masterIndex.ReferenceSourceLaneReceipt, masterIndex.ReferenceSourceLaneReceipt, IsReadOnly: true),
+            new DesktopDialogField("masterIndexSettingsLane", "Settings Lane", masterIndex.SettingsLanePosture, masterIndex.SettingsLanePosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexSourceToggleLane", "Source Toggle Lane", masterIndex.SourceToggleLanePosture, masterIndex.SourceToggleLanePosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexSourceSelectionReceipt", "Source Selection Receipt", masterIndex.SourceSelectionLaneReceipt, masterIndex.SourceSelectionLaneReceipt, IsReadOnly: true),
+            new DesktopDialogField("masterIndexSourceSelectionSummary", "Source Selection Summary", sourcebookSelectionSummary, sourcebookSelectionSummary, IsReadOnly: true),
+            new DesktopDialogField("masterIndexCustomDataLane", "Custom Data Lane", masterIndex.CustomDataLanePosture, masterIndex.CustomDataLanePosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring Receipt", masterIndex.CustomDataAuthoringLaneReceipt, masterIndex.CustomDataAuthoringLaneReceipt, IsReadOnly: true),
+            new DesktopDialogField("masterIndexXmlBridgeReceipt", "XML Bridge Receipt", masterIndex.XmlBridgeLaneReceipt, masterIndex.XmlBridgeLaneReceipt, IsReadOnly: true),
+            new DesktopDialogField("masterIndexTranslatorLane", "Translator Lane", masterIndex.TranslatorLanePosture, masterIndex.TranslatorLanePosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexTranslatorReceipt", "Translator Receipt", masterIndex.TranslatorLaneReceipt, masterIndex.TranslatorLaneReceipt, IsReadOnly: true),
+            new DesktopDialogField("masterIndexImportOracleLane", "Import Oracle Lane", $"{masterIndex.ImportOracleLanePosture} ({importCoverage})", masterIndex.ImportOracleLanePosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexImportOracleReceipt", "Import Oracle Receipt", masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleLaneReceipt, IsReadOnly: true),
+            new DesktopDialogField("masterIndexImportOracleMatrix", "Import Oracle Matrix", importOracleMatrix, importOracleMatrix, IsReadOnly: true),
+            new DesktopDialogField("masterIndexImportOracleMissingSources", "Import Oracle Missing Sources", missingImportSources, missingImportSources, IsReadOnly: true),
+            new DesktopDialogField("masterIndexAdjacentSr6OracleLane", "Adjacent SR6 Oracle Lane", $"{masterIndex.AdjacentSr6OracleReceiptPosture} ({adjacentOracleCoverage})", masterIndex.AdjacentSr6OracleReceiptPosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexAdjacentSr6OracleReceipt", "Adjacent SR6 Oracle Receipt", masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleLaneReceipt, IsReadOnly: true),
+            new DesktopDialogField("masterIndexOnlineStorageLane", "Online Storage Lane", $"{masterIndex.OnlineStorageLanePosture}/{masterIndex.OnlineStorageReceiptPosture} ({onlineStorageCoverage})", masterIndex.OnlineStorageLanePosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexOnlineStorageCoverage", "Online Storage Coverage", onlineStorageCoverage, onlineStorageCoverage, IsReadOnly: true),
+            new DesktopDialogField("masterIndexOnlineStorageReceipt", "Online Storage Receipt", masterIndex.OnlineStorageLaneReceipt, masterIndex.OnlineStorageLaneReceipt, IsReadOnly: true),
+            new DesktopDialogField("masterIndexSr6SuccessorLane", "SR6 Successor Lane", sr6Successor, sr6Successor, IsReadOnly: true),
+            new DesktopDialogField("masterIndexSr6SupplementLane", "SR6 Supplement Lane", masterIndex.Sr6SupplementLanePosture, masterIndex.Sr6SupplementLanePosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexSr6DesignerToolsLane", "SR6 Designer Tools Lane", masterIndex.Sr6DesignerToolsPosture, masterIndex.Sr6DesignerToolsPosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", sr6DesignerCoverage, sr6DesignerCoverage, IsReadOnly: true),
+            new DesktopDialogField("masterIndexHouseRuleLane", "House-Rule Lane", masterIndex.HouseRuleLanePosture, masterIndex.HouseRuleLanePosture, IsReadOnly: true),
+            new DesktopDialogField("masterIndexHouseRuleOverlayCount", "House-Rule Overlay Count", masterIndex.HouseRuleOverlayCount.ToString(), "0", IsReadOnly: true),
+            new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", masterIndex.Sr6SuccessorLaneReceipt, masterIndex.Sr6SuccessorLaneReceipt, IsReadOnly: true)
+        ];
+
+        fields.AddRange(BuildSourcebookSelectionFields(masterIndex.Sourcebooks));
+        return fields;
+    }
+
+    private static string BuildSourcebookSelectionSummary(IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
+    {
+        if (sourcebooks.Count == 0)
+            return "No sourcebooks discovered.";
+
+        int permanentCount = sourcebooks.Count(sourcebook => sourcebook.Permanent);
+        int selectableCount = sourcebooks.Count - permanentCount;
+        int governedReferenceCount = sourcebooks.Count(sourcebook => string.Equals(sourcebook.ReferencePosture, "governed", StringComparison.Ordinal));
+        int governedReferenceSourceCount = sourcebooks.Count(sourcebook => string.Equals(sourcebook.ReferenceSourcePosture, "governed", StringComparison.Ordinal));
+
+        return $"{sourcebooks.Count} sourcebooks ({selectableCount} selectable, {permanentCount} permanent); reference posture governed on {governedReferenceCount}/{sourcebooks.Count}, source provenance governed on {governedReferenceSourceCount}/{sourcebooks.Count}.";
+    }
+
+    private static string BuildImportOracleMatrix(MasterIndexResponse masterIndex)
+    {
+        return $"Chummer4 fixtures {masterIndex.LegacyChummer4FixtureCount}, Chummer5a fixtures {masterIndex.LegacyChummer5FixtureCount}, Hero Lab fixtures {masterIndex.HeroLabFixtureCount}, adjacent SR6 sources {masterIndex.AdjacentSr6OracleSourcesCovered}/{masterIndex.AdjacentSr6OracleSourcesExpected}.";
+    }
+
+    private static IEnumerable<DesktopDialogField> BuildSourcebookSelectionFields(IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
+    {
+        int index = 1;
+        foreach (MasterIndexSourcebookEntry sourcebook in sourcebooks
+                     .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+                     .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            string label = $"Sourcebook {sourcebook.Code}";
+            string snippetCoverage = sourcebook.RuleSnippetCount <= 0 ? "no snippets" : $"{sourcebook.RuleSnippetCount} snippets";
+            string selectionKind = sourcebook.Permanent ? "permanent" : "selectable";
+            string targetKinds = BuildReferenceTargetKinds(sourcebook);
+            string value =
+                $"{sourcebook.Name} [{selectionKind}] | ref {sourcebook.ReferencePosture} | source {sourcebook.ReferenceSourcePosture} | {snippetCoverage} | targets {targetKinds}";
+
+            yield return new DesktopDialogField(
+                $"masterIndexSourcebook{index}",
+                label,
+                value,
+                value,
+                IsReadOnly: true);
+            index++;
+        }
+    }
+
+    private static string BuildReferenceTargetKinds(MasterIndexSourcebookEntry sourcebook)
+    {
+        List<string> kinds = [];
+        if (!string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath))
+            kinds.Add("pdf");
+        if (!string.IsNullOrWhiteSpace(sourcebook.ReferenceUrl))
+            kinds.Add("url");
+        if (!string.IsNullOrWhiteSpace(sourcebook.ReferenceSnapshot))
+            kinds.Add("snapshot");
+
+        return kinds.Count == 0 ? "none" : string.Join("+", kinds);
     }
 }

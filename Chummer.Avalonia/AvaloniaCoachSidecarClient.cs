@@ -1,6 +1,8 @@
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using Chummer.Application.AI;
+using Chummer.Application.Owners;
 using Chummer.Contracts.AI;
 
 namespace Chummer.Avalonia;
@@ -173,6 +175,82 @@ public sealed class HttpAvaloniaCoachSidecarClient : IAvaloniaCoachSidecarClient
 
         return responseText;
     }
+}
+
+public sealed class InProcessAvaloniaCoachSidecarClient : IAvaloniaCoachSidecarClient
+{
+    private readonly IAiGatewayService _aiGatewayService;
+    private readonly IOwnerContextAccessor _ownerContextAccessor;
+
+    public InProcessAvaloniaCoachSidecarClient(
+        IAiGatewayService aiGatewayService,
+        IOwnerContextAccessor ownerContextAccessor)
+    {
+        _aiGatewayService = aiGatewayService;
+        _ownerContextAccessor = ownerContextAccessor;
+    }
+
+    public Task<AvaloniaCoachSidecarCallResult<AiGatewayStatusProjection>> GetStatusAsync(CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(ConvertResult(_aiGatewayService.GetStatus(_ownerContextAccessor.Current)));
+    }
+
+    public Task<AvaloniaCoachSidecarCallResult<AiProviderHealthProjection[]>> ListProviderHealthAsync(string? routeType = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        AvaloniaCoachSidecarCallResult<IReadOnlyList<AiProviderHealthProjection>> result =
+            ConvertResult(_aiGatewayService.ListProviderHealth(_ownerContextAccessor.Current));
+        return Task.FromResult(result.Payload is null
+            ? AvaloniaCoachSidecarCallResult<AiProviderHealthProjection[]>.Failure(result.StatusCode, result.ErrorMessage ?? "Coach provider health is unavailable.")
+            : MapListResult(result, result.Payload
+                .Where(provider => string.IsNullOrWhiteSpace(routeType) || string.Equals(provider.LastRouteType, routeType, StringComparison.OrdinalIgnoreCase))
+                .ToArray()));
+    }
+
+    public Task<AvaloniaCoachSidecarCallResult<AiConversationAuditCatalogPage>> ListConversationAuditsAsync(
+        string routeType,
+        string? runtimeFingerprint = null,
+        int maxCount = 3,
+        CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(ConvertResult(_aiGatewayService.ListConversationAudits(
+            _ownerContextAccessor.Current,
+            new AiConversationCatalogQuery(
+                RouteType: routeType,
+                RuntimeFingerprint: runtimeFingerprint,
+                MaxCount: maxCount))));
+    }
+
+    private static AvaloniaCoachSidecarCallResult<T> ConvertResult<T>(AiApiResult<T> result)
+    {
+        if (result.QuotaExceeded is not null)
+        {
+            return AvaloniaCoachSidecarCallResult<T>.FromQuotaExceeded(429, result.QuotaExceeded);
+        }
+
+        if (!result.IsImplemented && result.NotImplemented is not null)
+        {
+            return AvaloniaCoachSidecarCallResult<T>.FromNotImplemented(501, result.NotImplemented);
+        }
+
+        if (result.Payload is null)
+        {
+            return AvaloniaCoachSidecarCallResult<T>.Failure(500, "Coach sidecar request completed without a payload.");
+        }
+
+        return AvaloniaCoachSidecarCallResult<T>.Success(200, result.Payload);
+    }
+
+    private static AvaloniaCoachSidecarCallResult<T> MapListResult<T>(
+        AvaloniaCoachSidecarCallResult<IReadOnlyList<AiProviderHealthProjection>> result,
+        T payload)
+        => result.QuotaExceeded is not null
+            ? AvaloniaCoachSidecarCallResult<T>.FromQuotaExceeded(result.StatusCode, result.QuotaExceeded)
+            : !result.IsImplemented && result.NotImplemented is not null
+                ? AvaloniaCoachSidecarCallResult<T>.FromNotImplemented(result.StatusCode, result.NotImplemented)
+                : AvaloniaCoachSidecarCallResult<T>.Success(result.StatusCode, payload);
 }
 
 public sealed record AvaloniaCoachSidecarCallResult<T>(

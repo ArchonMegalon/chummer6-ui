@@ -1,8 +1,11 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Chummer.Contracts.Workspaces
+@using Chummer.Contracts.Rulesets
 @using Chummer.Presentation.Overview
+@using Chummer.Presentation.Rulesets
 
 <section class="panel navigator">
-    <h2>Open Characters</h2>
+    <h2>@BuildOpenWorkspacesHeading()</h2>
     @if (OpenWorkspaces.Count == 0)
     {
         <p class="hint">No open workspaces.</p>
@@ -10,16 +13,17 @@
     else
     {
         <div class="virtual-list navigator-list" data-testid="open-workspace-tree">
+            @* <Virtualize Items="@OpenWorkspaces" ItemsTagName="ul" ItemTagName="li"> *@
             <Virtualize Items="@(OpenWorkspaces.ToArray())"
                         Context="workspace"
-                        ItemSize="52"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+                        ItemSize="52">
                 @{
                     bool isActive = string.Equals(ActiveWorkspaceId?.Value, workspace.Id.Value, StringComparison.Ordinal);
-                    string workspaceLabel = string.IsNullOrWhiteSpace(workspace.Alias)
-                        ? workspace.Name
-                        : $"{workspace.Name} ({workspace.Alias})";
+                    string workspaceLabel = RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel(
+                        workspace.RulesetId,
+                        workspace.Name,
+                        workspace.Alias,
+                        workspace.HasSavedWorkspace);
                 }
                 <div class="navigator-row">
                     <button class="command-button @(isActive ? "selected" : string.Empty)"
@@ -64,5 +68,15 @@
     private Task CloseWorkspaceAsync(string workspaceId)
     {
         return CloseWorkspaceRequested.InvokeAsync(workspaceId);
+    }
+
+    private string BuildOpenWorkspacesHeading()
+    {
+        string? activeRulesetId = OpenWorkspaces
+            .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, ActiveWorkspaceId?.Value, StringComparison.Ordinal))
+            ?.RulesetId;
+        return RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(
+            RulesetDefaults.NormalizeOptional(activeRulesetId)
+            ?? RulesetDefaults.NormalizeOptional(OpenWorkspaces.FirstOrDefault()?.RulesetId));
     }
 }

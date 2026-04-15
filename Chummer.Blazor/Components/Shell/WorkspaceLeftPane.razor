@@ -1,5 +1,8 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Chummer.Contracts.Presentation
+@using Chummer.Contracts.Rulesets
 @using Chummer.Contracts.Workspaces
+@using Chummer.Presentation.Rulesets
 @using Chummer.Presentation.Shell
 
 <aside class="left-pane">
@@ -9,57 +12,34 @@
                        OpenWorkspaceRequested="OpenWorkspaceRequested"
                        CloseWorkspaceRequested="CloseWorkspaceRequested" />
 
-    <section class="panel tabs">
-        <h2>Workspace Tabs</h2>
-        <div class="virtual-list tab-grid">
-            <Virtualize Items="@(NavigationTabs.ToArray())"
-                        Context="tab"
-                        ItemSize="42"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
-                @{
-                    bool enabled = IsNavigationTabEnabled(tab);
-                }
-                <button class="tab-btn @(ActiveTabId == tab.Id ? "active" : string.Empty)"
-                        id="@tab.Id"
-                        disabled="@(!enabled || State.IsBusy)"
-                        @onclick="() => SelectTabRequested.InvokeAsync(tab.Id)">
-                    @tab.Label
-                </button>
-            </Virtualize>
-        </div>
-    </section>
-
     <section class="panel section-actions">
-        <h2>Section Actions</h2>
+        <h2>@BuildSectionActionsHeading()</h2>
         <div class="virtual-list action-grid">
+            @* <Virtualize Items="@ActiveWorkspaceActions" ItemsTagName="ul" ItemTagName="li"> *@
             <Virtualize Items="@(ActiveWorkspaceActions.ToArray())"
                         Context="action"
-                        ItemSize="44"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+                        ItemSize="44">
                 <button class="action-button @(State.ActiveActionId == action.Id ? "selected" : string.Empty)"
                         disabled="@State.IsBusy"
                         @onclick="() => ExecuteWorkspaceActionRequested.InvokeAsync(action)">
-                    @action.Label
+                    @FormatWorkspaceActionLabel(action)
                 </button>
             </Virtualize>
         </div>
     </section>
 
     <section class="panel controls">
-        <h2>Workflow Surfaces</h2>
+        <h2>@BuildWorkflowSurfacesHeading()</h2>
         <div class="virtual-list mini-grid">
+            @* <Virtualize Items="@ActiveWorkflowSurfaceActions" ItemsTagName="ul" ItemTagName="li"> *@
             <Virtualize Items="@(ActiveWorkflowSurfaceActions.ToArray())"
                         Context="surface"
-                        ItemSize="40"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+                        ItemSize="40">
                 <button class="mini-btn"
                         data-workflow-surface="@surface.SurfaceId"
                         disabled="@State.IsBusy"
                         @onclick="() => ExecuteWorkflowSurfaceRequested.InvokeAsync(surface.ActionId)">
-                    @surface.Label
+                    @FormatWorkflowSurfaceLabel(surface)
                 </button>
             </Virtualize>
         </div>
@@ -105,4 +85,33 @@
 
     [Parameter]
     public EventCallback<string> ExecuteWorkflowSurfaceRequested { get; set; }
+
+    private string BuildNavigationTabsHeading()
+        => RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(ResolveActiveRulesetId());
+
+    private string BuildSectionActionsHeading()
+        => RulesetUiDirectiveCatalog.BuildSectionActionsHeading(ResolveActiveRulesetId());
+
+    private string BuildWorkflowSurfacesHeading()
+        => RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(ResolveActiveRulesetId());
+
+    private string FormatNavigationTabLabel(NavigationTabDefinition tab)
+        => RulesetUiDirectiveCatalog.FormatNavigationTabLabel(tab.RulesetId, tab.Id, tab.Label);
+
+    private string FormatWorkspaceActionLabel(WorkspaceSurfaceActionDefinition action)
+        => RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(action.RulesetId, action.Id, action.TargetId, action.Label);
+
+    private string FormatWorkflowSurfaceLabel(WorkflowSurfaceActionBinding surface)
+        => RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(ResolveActiveRulesetId(), surface.ActionId, surface.Label);
+
+    private string? ResolveActiveRulesetId()
+    {
+        string? workspaceRulesetId = OpenWorkspaces
+            .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, ActiveWorkspaceId?.Value, StringComparison.Ordinal))
+            ?.RulesetId;
+        return RulesetDefaults.NormalizeOptional(NavigationTabs.FirstOrDefault()?.RulesetId)
+            ?? RulesetDefaults.NormalizeOptional(ActiveWorkspaceActions.FirstOrDefault()?.RulesetId)
+            ?? RulesetDefaults.NormalizeOptional(workspaceRulesetId)
+            ?? RulesetDefaults.NormalizeOptional(OpenWorkspaces.FirstOrDefault()?.RulesetId);
+    }
 }

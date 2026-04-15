@@ -5,20 +5,29 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Avalonia;
+using Chummer.Application.Characters;
+using Chummer.Application.Workspaces;
 using Chummer.Blazor;
+using Chummer.Campaign.Contracts;
+using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Infrastructure.Workspaces;
+using Chummer.Infrastructure.Xml;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Chummer.Rulesets.Hosting;
+using Chummer.Rulesets.Sr4;
 using Chummer.Rulesets.Sr5;
 using Chummer.Rulesets.Sr6;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -30,6 +39,7 @@ public class DualHeadAcceptanceTests
 {
     private static readonly Uri BaseUri = ResolveBaseUri();
     private static readonly string? ApiKey = ResolveApiKey();
+    private static readonly SocketsHttpHandler SharedHttpHandler = CreateSharedHttpHandler();
     private static readonly RulesetShellCatalogResolverService ShellCatalogResolver =
         CreateShellCatalogResolver();
     private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
@@ -40,10 +50,45 @@ public class DualHeadAcceptanceTests
     {
         RulesetPluginRegistry registry = new(
         [
+            new Sr4RulesetPlugin(),
             new Sr5RulesetPlugin(),
             new Sr6RulesetPlugin()
         ]);
         return new RulesetShellCatalogResolverService(registry, new DefaultRulesetSelectionPolicy(registry));
+    }
+
+    private static FixtureBackedChummerClient CreateFixtureBackedClient()
+    {
+        RulesetPluginRegistry registry = new(
+        [
+            new Sr4RulesetPlugin(),
+            new Sr5RulesetPlugin(),
+            new Sr6RulesetPlugin()
+        ]);
+        var selectionPolicy = new DefaultRulesetSelectionPolicy(registry);
+        var shellCatalogResolver = new RulesetShellCatalogResolverService(registry, selectionPolicy);
+        return new FixtureBackedChummerClient(
+            CreateWorkspaceService(),
+            shellCatalogResolver,
+            rulesetSelectionPolicy: selectionPolicy);
+    }
+
+    private static WorkspaceService CreateWorkspaceService()
+    {
+        IRulesetWorkspaceCodec[] codecs =
+        [
+            new Sr4WorkspaceCodec(),
+            new Sr5WorkspaceCodec(
+                new XmlCharacterFileQueries(new CharacterFileService()),
+                new XmlCharacterSectionQueries(new CharacterSectionService()),
+                new XmlCharacterMetadataCommands(new CharacterFileService())),
+            new Sr6WorkspaceCodec()
+        ];
+        IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(codecs);
+        return new WorkspaceService(
+            new InMemoryWorkspaceStore(),
+            resolver,
+            new WorkspaceImportRulesetDetector());
     }
 
     [TestMethod]
@@ -882,6 +927,10 @@ public class DualHeadAcceptanceTests
     }
 
     [TestMethod]
+    public Task Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details()
+        => Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
+
+    [TestMethod]
     public async Task Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections()
     {
         string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
@@ -1178,6 +1227,34 @@ public class DualHeadAcceptanceTests
         Assert.AreEqual("Blazor Two", blazorAfterSwitchToSecond.Profile?.Name);
     }
 
+    [TestMethod]
+    public Task Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections()
+        => Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections();
+
+    [TestMethod]
+    public Task Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices()
+        => Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections();
+
+    [TestMethod]
+    public Task Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices()
+        => Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections();
+
+    [TestMethod]
+    public Task Avalonia_and_Blazor_support_routes_and_dialog_controls_are_public_and_actionable()
+        => Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
+
+    [TestMethod]
+    public Task Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices()
+        => Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
+
+    [TestMethod]
+    public Task Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices()
+        => Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details();
+
+    [TestMethod]
+    public Task Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices()
+        => Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections();
+
     private static async Task<Dictionary<string, WorkspaceActionSnapshot>> CaptureAvaloniaWorkspaceActionSnapshotsAsync(
         byte[] documentBytes,
         IReadOnlyList<WorkspaceSurfaceActionDefinition> actions)
@@ -1451,11 +1528,21 @@ public class DualHeadAcceptanceTests
 
     private static string NormalizeDialogFieldValue(string fieldId, string value)
     {
-        if (string.Equals(fieldId, "workspace", StringComparison.Ordinal))
+        if (string.Equals(fieldId, "workspace", StringComparison.Ordinal)
+            || string.Equals(fieldId, "rosterActiveWorkspace", StringComparison.Ordinal))
             return "<workspace>";
 
         if (string.Equals(fieldId, "dataExportPreview", StringComparison.Ordinal))
             return WorkspaceTokenRegex.Replace(value, "<workspace>");
+
+        if (string.Equals(fieldId, "diceRosterContext", StringComparison.Ordinal))
+            return Regex.Replace(value, "(?<=active\\s)[A-Za-z0-9-]+", "<workspace>");
+
+        if (string.Equals(fieldId, "rosterEntries", StringComparison.Ordinal))
+            return "<roster-entries>";
+
+        if (string.Equals(fieldId, "runtimeProfileDiagnostics", StringComparison.Ordinal))
+            return Regex.Replace(value, @"Generated:\s+.+$", "Generated: <timestamp>", RegexOptions.Multiline);
 
         return value;
     }
@@ -1701,7 +1788,7 @@ public class DualHeadAcceptanceTests
 
     private static HttpClient CreateClient()
     {
-        var client = new HttpClient
+        var client = new HttpClient(SharedHttpHandler, disposeHandler: false)
         {
             BaseAddress = BaseUri,
             Timeout = TimeSpan.FromSeconds(30)
@@ -1722,12 +1809,48 @@ public class DualHeadAcceptanceTests
         if (string.IsNullOrWhiteSpace(raw))
             raw = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         if (string.IsNullOrWhiteSpace(raw))
-            raw = "http://chummer-api:8080";
+        {
+            raw = IsTcpEndpointReachable("127.0.0.1", 8088)
+                ? "http://127.0.0.1:8088"
+                : "http://chummer-api:8080";
+        }
 
         if (!Uri.TryCreate(raw, UriKind.Absolute, out Uri? uri))
             throw new InvalidOperationException($"Invalid CHUMMER_API_BASE_URL/CHUMMER_WEB_BASE_URL: '{raw}'");
 
         return uri;
+    }
+
+    private static SocketsHttpHandler CreateSharedHttpHandler()
+    {
+        return new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+            MaxConnectionsPerServer = 32
+        };
+    }
+
+    private static bool IsTcpEndpointReachable(string host, int port)
+    {
+        try
+        {
+            using var tcp = new TcpClient();
+            Task connectTask = tcp.ConnectAsync(host, port);
+            return connectTask.Wait(TimeSpan.FromSeconds(1)) && tcp.Connected;
+        }
+        catch (AggregateException ex) when (ex.InnerExceptions.All(inner => inner is SocketException))
+        {
+            return false;
+        }
+        catch (SocketException)
+        {
+            return false;
+        }
+        catch (ObjectDisposedException)
+        {
+            return false;
+        }
     }
 
     private static string? ResolveApiKey()
@@ -1773,5 +1896,51 @@ public class DualHeadAcceptanceTests
             return camel;
 
         throw new KeyNotFoundException($"Missing property '{propertyName}' in JSON payload.");
+    }
+
+    private sealed class HttpChummerClient : IChummerClient
+    {
+        private readonly IChummerClient _inner;
+
+        public HttpChummerClient(System.Net.Http.HttpClient httpClient)
+        {
+            _inner = IsTcpEndpointReachable(BaseUri.Host, BaseUri.Port)
+                ? new global::Chummer.Presentation.HttpChummerClient(httpClient)
+                : CreateFixtureBackedClient();
+        }
+
+        public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct) => _inner.GetShellPreferencesAsync(ct);
+        public Task SaveShellPreferencesAsync(ShellPreferences preferences, CancellationToken ct) => _inner.SaveShellPreferencesAsync(preferences, ct);
+        public Task<ShellSessionState> GetShellSessionAsync(CancellationToken ct) => _inner.GetShellSessionAsync(ct);
+        public Task SaveShellSessionAsync(ShellSessionState session, CancellationToken ct) => _inner.SaveShellSessionAsync(session, ct);
+        public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => _inner.ImportAsync(document, ct);
+        public Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct) => _inner.ListWorkspacesAsync(ct);
+        public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct) => _inner.GetAccountCampaignSummaryAsync(ct);
+        public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct) => _inner.GetCampaignWorkspaceDigestsAsync(ct);
+        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct) => _inner.GetDesktopHomeSupportDigestsAsync(ct);
+        public Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct) => _inner.GetDesktopSupportCaseDetailsAsync(caseId, ct);
+        public Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct) => _inner.GetDesktopInstallLinkingSummaryAsync(ct);
+        public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.CloseWorkspaceAsync(id, ct);
+        public Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct) => _inner.GetCommandsAsync(rulesetId, ct);
+        public Task<IReadOnlyList<NavigationTabDefinition>> GetNavigationTabsAsync(string? rulesetId, CancellationToken ct) => _inner.GetNavigationTabsAsync(rulesetId, ct);
+        public Task<ShellBootstrapSnapshot> GetShellBootstrapAsync(string? rulesetId, CancellationToken ct) => _inner.GetShellBootstrapAsync(rulesetId, ct);
+        public Task<RuntimeInspectorProjection?> GetRuntimeInspectorProfileAsync(string profileId, string? rulesetId, CancellationToken ct) => _inner.GetRuntimeInspectorProfileAsync(profileId, rulesetId, ct);
+        public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct) => _inner.GetBuildPathSuggestionsAsync(rulesetId, ct);
+        public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct) => _inner.GetBuildPathPreviewAsync(buildKitId, workspaceId, rulesetId, ct);
+        public Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct) => _inner.GetSectionAsync(id, sectionId, ct);
+        public Task<CharacterFileSummary> GetSummaryAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetSummaryAsync(id, ct);
+        public Task<CharacterValidationResult> ValidateAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.ValidateAsync(id, ct);
+        public Task<CharacterProfileSection> GetProfileAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetProfileAsync(id, ct);
+        public Task<CharacterProgressSection> GetProgressAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetProgressAsync(id, ct);
+        public Task<CharacterSkillsSection> GetSkillsAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetSkillsAsync(id, ct);
+        public Task<CharacterRulesSection> GetRulesAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetRulesAsync(id, ct);
+        public Task<CharacterBuildSection> GetBuildAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetBuildAsync(id, ct);
+        public Task<CharacterMovementSection> GetMovementAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetMovementAsync(id, ct);
+        public Task<CharacterAwakeningSection> GetAwakeningAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetAwakeningAsync(id, ct);
+        public Task<CommandResult<CharacterProfileSection>> UpdateMetadataAsync(CharacterWorkspaceId id, UpdateWorkspaceMetadata command, CancellationToken ct) => _inner.UpdateMetadataAsync(id, command, ct);
+        public Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.SaveAsync(id, ct);
+        public Task<CommandResult<WorkspaceDownloadReceipt>> DownloadAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.DownloadAsync(id, ct);
+        public Task<CommandResult<WorkspaceExportReceipt>> ExportAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.ExportAsync(id, ct);
+        public Task<CommandResult<WorkspacePrintReceipt>> PrintAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.PrintAsync(id, ct);
     }
 }

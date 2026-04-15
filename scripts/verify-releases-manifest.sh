@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REGISTRY_ROOT="${CHUMMER_HUB_REGISTRY_ROOT:-/docker/chummercomplete/chummer-hub-registry}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REGISTRY_ROOT="$("$SCRIPT_DIR/resolve-hub-registry-root.sh")"
 TARGET="${1:-${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}}"
 
 if [[ -z "${TARGET}" ]]; then
@@ -14,4 +15,9 @@ if [[ ! -f "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" ]]; then
   exit 1
 fi
 
-python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "$TARGET"
+VERIFY_ARGS=()
+if [[ "${CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" != "0" ]]; then
+  VERIFY_ARGS+=(--require-complete-desktop-coverage)
+fi
+
+python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "${VERIFY_ARGS[@]}" "$TARGET"

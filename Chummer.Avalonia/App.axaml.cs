@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Chummer.Desktop.Runtime;
+using Chummer.Application.AI;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Presentation;
@@ -57,11 +58,19 @@ public partial class App : global::Avalonia.Application
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
-        services.AddSingleton(CreateApiHttpClient());
-        services.AddSingleton<IAvaloniaCoachSidecarClient>(serviceProvider =>
-            new HttpAvaloniaCoachSidecarClient(serviceProvider.GetRequiredService<HttpClient>()));
+        if (UseHttpCoachSidecar())
+        {
+            services.AddSingleton(CreateApiHttpClient());
+            services.AddSingleton<IAvaloniaCoachSidecarClient>(serviceProvider =>
+                new HttpAvaloniaCoachSidecarClient(serviceProvider.GetRequiredService<HttpClient>()));
+        }
+        else
+        {
+            services.AddSingleton<IAvaloniaCoachSidecarClient, InProcessAvaloniaCoachSidecarClient>();
+        }
+
         services.AddSingleton<IShellBootstrapDataProvider, ShellBootstrapDataProvider>();
-        services.AddSingleton<IRulesetShellCatalogResolver, DesktopFallbackRulesetShellCatalogResolver>();
+        services.AddSingleton<IRulesetShellCatalogResolver, CatalogOnlyRulesetShellCatalogResolver>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
         services.AddSingleton<IShellPresenter, ShellPresenter>();
         services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
@@ -95,6 +104,14 @@ public partial class App : global::Avalonia.Application
         return client;
     }
 
+    private static bool UseHttpCoachSidecar()
+    {
+        string? mode = Environment.GetEnvironmentVariable("CHUMMER_CLIENT_MODE");
+        string? legacyMode = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_CLIENT_MODE");
+        return string.Equals(mode?.Trim(), "http", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(legacyMode?.Trim(), "http", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static async void MainWindow_OnOpened(object? sender, EventArgs e)
     {
         if (sender is not MainWindow owner)
@@ -104,9 +121,10 @@ public partial class App : global::Avalonia.Application
 
         owner.Opened -= MainWindow_OnOpened;
 
+        bool crashRecoveryShown = false;
         try
         {
-            await DesktopCrashRecoveryWindow.ShowPendingAsync(owner);
+            crashRecoveryShown = await DesktopCrashRecoveryWindow.TryShowPendingAsync(owner);
         }
         catch (Exception ex)
         {
@@ -115,18 +133,109 @@ public partial class App : global::Avalonia.Application
 
         DesktopInstallLinkingStartupContext? installLinkingContext = InstallLinkingStartupContext;
         InstallLinkingStartupContext = null;
-        if (installLinkingContext is null)
+        if (installLinkingContext is not null)
         {
-            return;
+            try
+            {
+                await DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop install linking window: {ex}");
+            }
         }
 
-        try
+        string? startupSurface = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SURFACE");
+        if (string.Equals(startupSurface, "campaign_workspace", StringComparison.OrdinalIgnoreCase))
         {
-            await DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);
+            try
+            {
+                await DesktopCampaignWorkspaceWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop campaign workspace window: {ex}");
+            }
         }
-        catch (Exception ex)
+        else if (string.Equals(startupSurface, "update", StringComparison.OrdinalIgnoreCase))
         {
-            Console.Error.WriteLine($"Failed to display the desktop install linking window: {ex}");
+            try
+            {
+                await DesktopUpdateWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop update window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "support", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await DesktopSupportWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop support window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "support_case", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await DesktopSupportCaseWindow.ShowPreviewAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop tracked support case window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "devices_access", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await DesktopDevicesAccessWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop devices window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "report_issue", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await DesktopReportIssueWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop report window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "crash_recovery", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                if (!crashRecoveryShown)
+                {
+                    await DesktopCrashRecoveryWindow.ShowPreviewAsync(owner, "avalonia");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop crash recovery window: {ex}");
+            }
+        }
+        else if (string.Equals(startupSurface, "settings", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await owner.OpenDesktopCommandFromSurfaceAsync("global_settings", "open global settings");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop settings command surface: {ex}");
+            }
         }
     }
 }

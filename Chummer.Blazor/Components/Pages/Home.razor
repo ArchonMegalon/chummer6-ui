@@ -1,3 +1,4 @@
+@namespace Chummer.Blazor.Components.Pages
 @page "/"
 @using Chummer.Contracts.Characters
 @using Chummer.Campaign.Contracts
@@ -19,16 +20,34 @@
         <ContactNetworkPanel Graph="_contactGraph" />
         <NpcPersonaStudioPanel Projection="_npcPersonaStudio" />
         <CreatorPublicationPanel Publication="_creatorPublication" />
+        <section class="panel flagship-media-showcase" aria-label="Flagship artifact samples">
+            <header class="flagship-media-showcase-header">
+                <h2>Flagship artifact samples</h2>
+                <p>Local Chummer-owned media samples keep the public and desktop surfaces grounded in inspectable release art instead of provider placeholders.</p>
+            </header>
+            <div class="flagship-media-showcase-grid">
+                @foreach (ArtifactMediaSample sample in ArtifactMediaSamples)
+                {
+                    <figure class="flagship-media-card" data-flagship-media="@sample.Id">
+                        <img src="@sample.ImageUri" alt="@sample.Title" loading="lazy" />
+                        <figcaption>
+                            <strong>@sample.Title</strong>
+                            <span>@sample.Summary</span>
+                        </figcaption>
+                    </figure>
+                }
+            </div>
+        </section>
 
         <GmBoardFeed InterruptionBudget="_interruptionBudget"
-                     CurrentSessionContext="_currentSessionContext"
+                     CurrentSessionContext="@_currentSessionContext"
                      SessionContexts="SessionContexts"
                      SessionContextChanged="OnSessionContextChanged"
-                     AutonomyLevel="_autonomyLevel"
+                     AutonomyLevel="@_autonomyLevel"
                      AutonomyLevelChanged="OnAutonomyLevelChanged"
                      InterruptionBudgetChanged="OnBudgetChanged"
                      MuteRequested="OnMuteRequested"
-                     MutedUntilLabel="_mutedUntilLabel"
+                     MutedUntilLabel="@_mutedUntilLabel"
                      Cards="VisibleGmCards"
                      QuickActionRequested="OnCardQuickAction"
                      PinRequested="OnCardPinned"
@@ -36,7 +55,7 @@
                      SnoozeRequested="OnCardSnoozed" />
 
         <GeneratedAssetReviewPanel Assets="_assets"
-                                   SelectedAssetId="_selectedAssetId"
+                                   SelectedAssetId="@_selectedAssetId"
                                    SelectedAssetChanged="OnSelectedAssetChanged"
                                    ActionRequested="OnAssetActionRequested" />
     </section>
@@ -49,6 +68,24 @@
     private const string GeneratedAssetActionKindRefreshDispatch = "refresh_dispatch";
     private const string GeneratedAssetActionKindMarkCanonical = "mark_canonical";
     private static readonly IReadOnlyList<string> SessionContexts = ["Pass 1", "Pass 2", "Scene break"];
+    private static readonly IReadOnlyList<ArtifactMediaSample> ArtifactMediaSamples =
+    [
+        new(
+            "flagship_poster",
+            "/media/chummer6/chummer6-hero.png",
+            "Flagship poster",
+            "Primary release art pinned to the local media rail for trusted shell and landing surfaces."),
+        new(
+            "medscan_diagnostic",
+            "/media/chummer6/horizons-index.png",
+            "Medscan diagnostic",
+            "Dense route and horizon scan sample used to keep future-facing explain surfaces readable."),
+        new(
+            "forge_review_ar",
+            "/media/chummer6/karma-forge.png",
+            "Forge review AR",
+            "Review-oriented artifact sample that keeps the build-and-publish lane grounded in first-party media.")
+    ];
 
     private BuildLabConceptIntakeProjection _buildLabProjection = new(
         WorkspaceId: "showcase.build-lab",
@@ -295,6 +332,15 @@
                 ],
                 SourceDocumentId: "designer-feedback.ops-first")
         ],
+        TeamCoverage:
+        new BuildLabTeamCoverageProjection(
+            Summary: "2 of 3 required crew roles are covered before handoff; one deliberate face overlap stays visible while astral support remains missing.",
+            CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign handoff.",
+            RolePressureSummary: "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
+            MissingRoleTags: ["astral"],
+            CoveredRoleTags: ["face", "legwork"],
+            DuplicateRoleTags: ["face"],
+            ExplainEntryId: "buildlab.teamcoverage.ops-first"),
         ExportPayloads:
         [
             new BuildLabExportPayload(
@@ -378,13 +424,22 @@
         ],
         ExplainEntryId: "buildlab.showcase.concept",
         SourceDocumentId: "designer-feedback.ops-first",
-        CanContinue: true);
+        CanContinue: true,
+        NextSafeAction: "Choose the social operator lane, then verify runtime drift before the dossier handoff leaves the workbench.",
+        RuntimeCompatibilitySummary: "One session-action binding still needs a runtime rebind before campaign-safe export.",
+        CampaignFitSummary: "Best fit is a sparse-ops crew that wants legwork coverage without duplicating a dedicated decker.",
+        SupportClosureSummary: "The same runtime fingerprint will anchor support closure and release-truth language after handoff.",
+        Watchouts:
+        [
+            "Matrix specialist lane stays visible so the table can reject extra bookkeeping before it leaks into campaign continuity.",
+            "Private-only overlay packs must clear publish review before the chosen path becomes publication-safe."
+        ]);
     private BuildLabHandoffProjection _buildLabHandoff = new(
         HandoffId: "handoff.showcase.social-operator",
         DossierId: "dossier.kestrel",
         CampaignId: "campaign.downtown-burn",
-        Title: "Social Operator handoff",
-        Summary: "The chosen Build Lab lane now lands in living dossier, campaign workspace, and creator-safe recap truth.",
+        Title: "Social Operator build path",
+        Summary: "The chosen build path now lands in living dossier, campaign workspace, and creator-safe recap truth.",
         VariantLabel: "Ops-first dossier carry-forward",
         ProgressionLabel: "25 / 50 / 100 Karma path stays attached",
         ExplainEntryId: "buildlab.handoff.dossier.kestrel",
@@ -413,38 +468,93 @@
                 Summary: "Campaign recap artifact ready for return flow and publication review.",
                 ArtifactId: "artifact.recap-brief")
         ],
-        UpdatedAtUtc: new DateTimeOffset(2026, 03, 25, 19, 45, 00, TimeSpan.Zero));
+        UpdatedAtUtc: new DateTimeOffset(2026, 03, 25, 19, 45, 00, TimeSpan.Zero),
+        NextSafeAction: "Rebind the active runtime before dossier export so the chosen build path lands in campaign truth without drift.",
+        RuntimeCompatibilitySummary: "The approved runtime fingerprint is almost ready, but one quick-action binding still needs a safe rebind.",
+        CampaignReturnSummary: "Return flow lands on Downtown Burn with the same dossier identity, progression rail, and recap-safe artifact shelf.",
+        SupportClosureSummary: "If this handoff triggers a support case, closure can cite the same runtime fingerprint and dossier-safe outputs.",
+        PlannerCoverageSummary: "4 of 4 build follow-through checkpoints are already grounded.",
+        PlannerCoverageLines:
+        [
+            "Campaign continuity: Downtown Burn is already attached as the governed return lane for this handoff.",
+            "Outputs: 2 dossier or campaign-safe outputs are already attached to the handoff.",
+            "Restore posture: no restore conflicts are currently blocking replay-safe handoff follow-through.",
+            "Claimed install: 2 linked devices are already attached for install-aware follow-through."
+        ],
+        Watchouts:
+        [
+            "Do not publish the recap-safe brief until the private-only overlay pack clears review.",
+            "Campaign continuity stays review-required until the runtime rebind receipt is recorded."
+        ]);
     private RulesNavigatorAnswerProjection _rulesNavigator = new(
         EntryId: "rules.navigator.showcase",
         Question: "Why did the campaign return stay pinned to the current rule environment?",
-        ShortAnswer: "Because the approved compatibility fingerprint is the grounded answer path for build, play, support, and publication.",
-        BeforeSummary: "Before approval, return posture is review-heavy and support has to caveat the answer path.",
-        AfterSummary: "After approval, sr6.preview.v1 becomes the one truth for Build Lab handoff, campaign continuity, and support closure.",
+        ShortAnswer: "Because the campaign-approved compatibility fingerprint is the grounded answer path for build, play, support, and publication.",
+        BeforeSummary: "Before campaign approval, return posture is review-heavy and support has to caveat the answer path.",
+        AfterSummary: "After campaign approval, sr6.preview.v1 becomes the one truth for build-path handoff, campaign continuity, and support closure.",
         ExplainEntryId: "rules.navigator.showcase.entry",
         ProvenanceLabel: "campaign scope · sr6.preview.v1",
         EvidenceLines:
         [
             "sr6.preview.v1 is the active compatibility fingerprint for the campaign workspace.",
-            "GM readiness cues, dossier continuity, and support closure all cite the same approved rule environment.",
+            "GM readiness cues, dossier continuity, and support closure all cite the same campaign-approved rule environment.",
             "Campaign visibility remains subordinate to the same operator and rule-environment posture."
         ],
         SupportReuseHints:
         [
             "Support can reuse this answer when a case asks which rules posture is live on the current channel.",
             "Operator review can link the same evidence when deciding whether to freeze or reroute a campaign change."
-        ]);
+        ],
+        Diffs:
+        [
+            new RulesetEnvironmentDiffProjection(
+                DiffId: "rules.navigator.showcase:return",
+                Label: "Campaign return",
+                BeforeSummary: "Before campaign approval, return posture is review-heavy and support has to caveat the answer path.",
+                AfterSummary: "After campaign approval, sr6.preview.v1 becomes the one truth for build-path handoff, campaign continuity, and support closure.",
+                ReasonSummary: "Campaign continuity and support closure both reuse the same campaign-approved compatibility fingerprint.",
+                ExplainEntryId: "rules.navigator.showcase.entry:return"),
+            new RulesetEnvironmentDiffProjection(
+                DiffId: "rules.navigator.showcase:readiness",
+                Label: "Campaign readiness",
+                BeforeSummary: "Before the rule environment is explicit, readiness cues can drift away from the live return path.",
+                AfterSummary: "After campaign approval, readiness cues stay tied to sr6.preview.v1 instead of a side calculation.",
+                ReasonSummary: "GM readiness cues, dossier continuity, and support closure all cite the same campaign-approved rule environment.",
+                ExplainEntryId: "rules.navigator.showcase.entry:readiness")
+        ],
+        Studio: new RuleEnvironmentStudioProjection(
+            CurrentStage: RuleEnvironmentLifecycleStages.CampaignApproved,
+            CurrentStageLabel: "Campaign-approved",
+            PromotionTargetStage: RuleEnvironmentLifecycleStages.Published,
+            PromotionTargetLabel: "Published",
+            PromotionSummary: "Promote sr6.preview.v1 to the published rail only after broader reuse is intentional and governed.",
+            RollbackSummary: "Rollback can re-pin sr6.preview.v1 on the current workspace while the next promotion stays under review.",
+            LineageSummary: "The current campaign fingerprint stays the lineage anchor until a governed published successor replaces it.",
+            Stages:
+            [
+                new RuleEnvironmentLifecycleStepProjection(RuleEnvironmentLifecycleStages.Sandbox, "Sandbox", RuleEnvironmentLifecycleStepStatuses.Completed, "Preview work stayed bounded while validation and compatibility proof settled."),
+                new RuleEnvironmentLifecycleStepProjection(RuleEnvironmentLifecycleStages.CampaignApproved, "Campaign-approved", RuleEnvironmentLifecycleStepStatuses.Current, "Build, play, support, and return now cite the same governed campaign truth."),
+                new RuleEnvironmentLifecycleStepProjection(RuleEnvironmentLifecycleStages.Published, "Published", RuleEnvironmentLifecycleStepStatuses.Next, "Broader reuse waits for explicit governed promotion and rollback posture.")
+            ]));
     private CreatorPublicationProjection _creatorPublication = new(
-        PublicationId: "publication.showcase.creator-packet",
-        Title: "Downtown Burn creator packet",
-        Kind: "campaign_packet",
-        Summary: "Recap, dossier-safe briefings, and creator outputs now sit on one governed publication shelf.",
+        PublicationId: "publication.showcase.run-module",
+        Title: "Downtown Burn run module packet",
+        Kind: "run_module",
+        Summary: "GM-ready module truth, dossier continuity, and shared publication follow-through now sit on one governed publication shelf.",
         CampaignId: "campaign.downtown-burn",
         DossierId: "dossier.kestrel",
-        ArtifactId: "artifact.creator-packet",
-        ProvenanceSummary: "sr6.preview.v1 + recap-safe output shelf + dossier continuity receipt",
-        DiscoverySummary: "Group visibility with grounded provenance and one truthful next action for publication review.",
+        ArtifactId: "artifact.run-module",
+        ProvenanceSummary: "sr6.preview.v1 + runboard continuity + dossier continuity receipt",
+        DiscoverySummary: "Group visibility with grounded provenance and one truthful next action for run-module publication review.",
         Visibility: "group",
         PublicationStatus: "preview_ready",
+        TrustBand: "review-pending",
+        Discoverable: false,
+        TrustSummary: "Trust ranking stays anchored to governed provenance, runboard continuity, and table-start fit while review is still pending.",
+        ComparisonSummary: "Compare by provenance, GM-ready reuse fit, lineage, and campaign-return posture instead of popularity fog.",
+        LineageSummary: "This run module remains the current lineage anchor until a governed successor module replaces it.",
+        ModerationSummary: "Moderation is still waiting on run-module review, so discovery stays bounded to publication and operator surfaces.",
+        NextSafeAction: "Review the governed run module lane before widening discovery.",
         UpdatedAtUtc: new DateTimeOffset(2026, 03, 25, 20, 05, 00, TimeSpan.Zero));
     private int _interruptionBudget = 50;
     private string _currentSessionContext = "Pass 2";
@@ -588,6 +698,16 @@
         ],
         GeneratedAtUtc: DateTimeOffset.UtcNow.AddMinutes(-9),
         ProfileSourceKind: RegistryEntrySourceKinds.OverlayDerivedProfile,
+        Promotion: new RuntimeInspectorPromotionProjection(
+            PublicationStatus: RuleProfilePublicationStatuses.Published,
+            Visibility: ArtifactVisibilityModes.CampaignShared,
+            UpdateChannel: RuleProfileUpdateChannels.CampaignPinned,
+            PromotionSummary: "Campaign-pinned rule environment is published with campaign-shared visibility and stays on the campaign-approved rail until broader promotion is chosen.",
+            RollbackSummary: "Rollback can re-pin runtime-sr6-2026-03-08 on workspace:workspace.shadow-ops while the next promotion is reviewed.",
+            LineageSummary: "Overlay-derived profile compiles on top of the governed runtime lock instead of forking a local shadow rule environment.",
+            PublishedAtUtc: DateTimeOffset.UtcNow.AddDays(-1),
+            CurrentStage: RuntimeInspectorPromotionStages.CampaignApproved,
+            PromotionTargetStage: RuntimeInspectorPromotionStages.Published),
         CapabilityDescriptors:
         [
             new RuntimeInspectorCapabilityDescriptorProjection(
@@ -1434,4 +1554,10 @@
 
         return current;
     }
+
+    private sealed record ArtifactMediaSample(
+        string Id,
+        string ImageUri,
+        string Title,
+        string Summary);
 }

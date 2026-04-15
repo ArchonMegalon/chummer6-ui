@@ -21,7 +21,7 @@ done
 
 if [[ "$is_solution_build" -eq 1 ]] && [[ "$has_parallelism_override" -eq 0 ]]; then
   # The presentation solution intermittently fails under the default parallel scheduler in sandboxed runs.
-  exec dotnet build "${args[@]}" --nologo -m:1
+  exec "$SCRIPT_DIR/with-package-plane.sh" build "${args[@]}" --nologo -m:1
 fi
 
-exec dotnet build "${args[@]}" --nologo
+exec "$SCRIPT_DIR/with-package-plane.sh" build "${args[@]}" --nologo

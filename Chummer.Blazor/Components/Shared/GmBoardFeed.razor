@@ -1,3 +1,7 @@
+@namespace Chummer.Blazor.Components.Shared
+
+@using Chummer.Presentation.UiKit
+
 <section class="panel design-panel gm-board-panel" data-gm-board-showcase>
     <header class="panel-header gm-board-header">
         <div>
@@ -72,11 +76,18 @@
         </div>
     </section>
 
-    @if (GetInvalidatedCardCount() > 0)
+    @if (GetContextInvalidatedCardCount() > 0)
     {
         <section class="gm-board-stale-banner" data-gm-board-stale-banner role="status" aria-live="polite">
             <strong>Session context shifted.</strong>
-            <span>@GetInvalidatedCardCount() Spider @(GetInvalidatedCardCount() == 1 ? "card is" : "cards are") stale in @CurrentSessionContext and need refresh before action.</span>
+            <span>@GetContextInvalidatedCardCount() Spider @(GetContextInvalidatedCardCount() == 1 ? "card is" : "cards are") stale in @CurrentSessionContext and need refresh before action.</span>
+        </section>
+    }
+    else if (GetPinnedAutonomyMismatchCount() > 0)
+    {
+        <section class="gm-board-stale-banner" data-gm-board-stale-banner role="status" aria-live="polite">
+            <strong>Autonomy posture changed.</strong>
+            <span>@GetPinnedAutonomyMismatchCount() pinned Spider @(GetPinnedAutonomyMismatchCount() == 1 ? "card stays" : "cards stay") visible outside the current autonomy band and should be refreshed or unpinned before action.</span>
         </section>
     }
 
@@ -106,7 +117,10 @@
         <div class="stack gm-board-card-stack">
             @foreach (GmBoardCard card in Cards)
             {
-                <article class="panel gm-board-card @GetSeverityClass(card.Severity)" data-gm-board-card="@card.Id" data-card-source="@card.Source">
+                <article class="@($"panel gm-board-card {GetSeverityClass(card.Severity)} {ChummerPatternBoundary.SpiderStatusCardClass(card.Title, card.Kind, card.Summary, stale: IsContextInvalidated(card))}")"
+                         @attributes="@(ChummerPatternBoundary.SpiderStatusCardAttributes(card.Title, card.Kind, card.Summary, stale: IsContextInvalidated(card)))"
+                         data-gm-board-card="@card.Id"
+                         data-card-source="@card.Source">
                     <header class="coach-card-header">
                         <div class="gm-board-card-title">
                             <div class="button-row compact gm-board-card-badges">
@@ -123,7 +137,9 @@
                                 }
                                 @if (IsContextInvalidated(card))
                                 {
-                                    <span class="badge warn" data-gm-board-stale-badge="@card.Id">Stale</span>
+                                    <span class="@(ChummerPatternBoundary.StaleBadgeClass($"Generated for {card.ContextSnapshot}"))"
+                                          @attributes="@(ChummerPatternBoundary.StaleBadgeAttributes($"Generated for {card.ContextSnapshot}"))"
+                                          data-gm-board-stale-badge="@card.Id">Stale</span>
                                 }
                             </div>
                             <h3>@card.Title</h3>
@@ -302,6 +318,11 @@
             return $"Snoozed until {card.SnoozedUntilLabel}";
         }
 
+        if (IsPinnedAutonomyMismatch(card))
+        {
+            return "Pinned outside current autonomy band";
+        }
+
         if (card.IsPinned)
         {
             return "Pinned across context shifts";
@@ -312,12 +333,33 @@
             : "Live";
     }
 
-    private int GetInvalidatedCardCount() => Cards.Count(IsContextInvalidated);
+    private int GetContextInvalidatedCardCount() => Cards.Count(IsContextInvalidated);
+
+    private int GetPinnedAutonomyMismatchCount() => Cards.Count(IsPinnedAutonomyMismatch);
 
     private bool IsContextInvalidated(GmBoardCard card)
         => card.InvalidatesOnContextShift
            && !string.IsNullOrWhiteSpace(card.ContextSnapshot)
            && !string.Equals(card.ContextSnapshot, CurrentSessionContext, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsPinnedAutonomyMismatch(GmBoardCard card)
+        => card.IsPinned && !IsAutonomyLevelVisible(card.MinimumAutonomy, AutonomyLevel);
+
+    private static bool IsAutonomyLevelVisible(string minimumLevel, string currentLevel)
+        => GetAutonomyRank(currentLevel) >= GetAutonomyRank(minimumLevel);
+
+    private static int GetAutonomyRank(string level)
+    {
+        return level.ToLowerInvariant() switch
+        {
+            "off" => 0,
+            "low" => 1,
+            "tactical" => 2,
+            "narrative" => 3,
+            "high" => 4,
+            _ => 2
+        };
+    }
 
     public sealed record GmBoardCard(
         string Id,

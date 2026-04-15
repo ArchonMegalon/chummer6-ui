@@ -14,6 +14,7 @@ public sealed class WorkspaceShellStateFactory : IWorkspaceShellStateFactory
             Commands = currentState.Commands,
             NavigationTabs = currentState.NavigationTabs,
             LastCommandId = lastCommandId ?? currentState.LastCommandId,
+            LatestPortabilityActivity = null,
             Notice = notice,
             Preferences = currentState.Preferences,
             OpenWorkspaces = session.OpenWorkspaces
