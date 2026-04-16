@@ -7,6 +7,9 @@ cd "$repo_root"
 test -f docs/COMPATIBILITY_CARGO.md
 test -f docs/WORKBENCH_RELEASE_SIGNOFF.md
 
+echo "[verify] checking codex-studio tracked artifact guard..."
+bash scripts/ai/milestones/codex-studio-tracking-check.sh
+
 if [ "${CHUMMER_VERIFY_CROSS_REPO_BUILDS:-0}" = "1" ]; then
   echo "[verify] running opt-in cross-repo contract builds..."
 
