@@ -5,15 +5,24 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
-    <ProjectReference Include="$(ChummerLocalContractsProject)" />
-    <ProjectReference Include="$(ChummerLocalCampaignContractsProject)" />
-    <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
-    <ProjectReference Include="$(ChummerLocalUiKitProject)" />
+    <ProjectReference Include="$(ChummerLocalContractsProject)"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
+    <ProjectReference Include="$(ChummerLocalCampaignContractsProject)"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
+    <ProjectReference Include="$(ChummerLocalRunContractsProject)"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
+    <ProjectReference Include="$(ChummerLocalUiKitProject)"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
     <PackageReference Include="$(ChummerCampaignContractsPackageId)" Version="$(ChummerCampaignContractsPackageVersion)" />
     <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
     <PackageReference Include="$(ChummerUiKitPackageId)" Version="$(ChummerUiKitPackageVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj"
+                      Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Rulesets.Hosting\\Chummer.Rulesets.Hosting.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
   </ItemGroup>
 </Project>

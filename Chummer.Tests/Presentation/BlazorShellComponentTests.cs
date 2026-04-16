@@ -167,7 +167,6 @@ public sealed class BlazorShellComponentTests
 
         string? openedWorkspaceId = null;
         string? closedWorkspaceId = null;
-        string? selectedTabId = null;
         WorkspaceSurfaceActionDefinition? executedAction = null;
         string? executedWorkflowSurfaceActionId = null;
 
@@ -211,38 +210,62 @@ public sealed class BlazorShellComponentTests
                 tab => string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
             .Add(component => component.OpenWorkspaceRequested, (Action<string>)(workspace => openedWorkspaceId = workspace))
             .Add(component => component.CloseWorkspaceRequested, (Action<string>)(workspace => closedWorkspaceId = workspace))
-            .Add(component => component.SelectTabRequested, (Action<string>)(tabId => selectedTabId = tabId))
             .Add(component => component.ExecuteWorkspaceActionRequested,
                 (Action<WorkspaceSurfaceActionDefinition>)(action => executedAction = action))
             .Add(component => component.ExecuteWorkflowSurfaceRequested, (Action<string>)(actionId => executedWorkflowSurfaceActionId = actionId)));
 
-        AngleSharp.Dom.IElement enabledTab = cut.Find(".tabs #tab-info");
-        AngleSharp.Dom.IElement createTab = cut.Find(".tabs #tab-create");
-        AngleSharp.Dom.IElement disabledTab = cut.Find(".tabs #tab-skills");
-        Assert.IsFalse(enabledTab.HasAttribute("disabled"));
-        Assert.IsTrue(disabledTab.HasAttribute("disabled"));
-        StringAssert.Contains(enabledTab.ClassName, "active");
-        StringAssert.Contains(cut.Markup, "SR5 Workbench Tabs");
         StringAssert.Contains(cut.Markup, "SR5 Workbench Actions");
         StringAssert.Contains(cut.Markup, "SR5 Workbench Flows");
         StringAssert.Contains(cut.Markup, "SR5 Workbench Dossiers");
         StringAssert.Contains(cut.Markup, "Ares Runner (AR) · Shadowrun 5 · primary/workbench");
         StringAssert.Contains(cut.Markup, "Workbench Summary Flow");
-        Assert.AreEqual("Runner", enabledTab.TextContent.Trim());
-        Assert.AreEqual("Workbench", createTab.TextContent.Trim());
         Assert.AreEqual("Validate & Rebind", cut.Find(".section-actions .action-button").TextContent.Trim());
 
         cut.Find(".navigator .command-button").Click();
         cut.Find(".navigator .mini-btn").Click();
-        enabledTab.Click();
         cut.Find(".section-actions .action-button").Click();
         cut.Find("button[data-workflow-surface='surface.summary']").Click();
 
         Assert.AreEqual("ws-1", openedWorkspaceId);
         Assert.AreEqual("ws-1", closedWorkspaceId);
-        Assert.AreEqual("tab-info", selectedTabId);
         Assert.AreEqual("tab-info.validate", executedAction?.Id);
         Assert.AreEqual("summary", executedWorkflowSurfaceActionId);
+    }
+
+    [TestMethod]
+    public void SummaryHeader_renders_classic_workbench_tabs_and_invokes_selection()
+    {
+        string? selectedTabId = null;
+        IReadOnlyList<NavigationTabDefinition> navigationTabs =
+        [
+            new NavigationTabDefinition("tab-create", "Create", "build-lab", "character", true, true, RulesetDefaults.Sr5),
+            new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5),
+            new NavigationTabDefinition("tab-skills", "Skills", "skills", "character", true, true, RulesetDefaults.Sr5)
+        ];
+
+        using var context = new BunitContext();
+        IRenderedComponent<SummaryHeader> cut = context.Render<SummaryHeader>(parameters => parameters
+            .Add(component => component.State, CharacterOverviewState.Empty)
+            .Add(component => component.ShellSurface, ShellSurfaceState.Empty with { ActiveRulesetId = RulesetDefaults.Sr5 })
+            .Add(component => component.ActiveTabId, "tab-info")
+            .Add(component => component.NavigationTabs, navigationTabs)
+            .Add(component => component.IsNavigationTabEnabled,
+                tab => string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
+            .Add(component => component.SelectTabRequested, (Action<string>)(tabId => selectedTabId = tabId)));
+
+        AngleSharp.Dom.IElement enabledTab = cut.Find(".workbench-tab-strip #tab-info");
+        AngleSharp.Dom.IElement createTab = cut.Find(".workbench-tab-strip #tab-create");
+        AngleSharp.Dom.IElement disabledTab = cut.Find(".workbench-tab-strip #tab-skills");
+        Assert.IsFalse(enabledTab.HasAttribute("disabled"));
+        Assert.IsTrue(disabledTab.HasAttribute("disabled"));
+        StringAssert.Contains(enabledTab.ClassName, "active");
+        StringAssert.Contains(cut.Markup, "SR5 Workbench Tabs");
+        Assert.AreEqual("Runner", enabledTab.TextContent.Trim());
+        Assert.AreEqual("Workbench", createTab.TextContent.Trim());
+
+        enabledTab.Click();
+
+        Assert.AreEqual("tab-info", selectedTabId);
     }
 
     [TestMethod]
@@ -279,12 +302,40 @@ public sealed class BlazorShellComponentTests
         IRenderedComponent<ImportPanel> cut = context.Render<ImportPanel>(parameters => parameters
             .Add(component => component.RulesetId, RulesetDefaults.Sr4)
             .Add(component => component.IsBusy, false)
-            .Add(component => component.RawImportXml, string.Empty));
+            .Add(component => component.RawImportXml, string.Empty)
+            .Add(component => component.LatestPortabilityActivity, new WorkspacePortabilityActivity(
+                "Last portable import",
+                new WorkspacePortabilityReceipt(
+                    FormatId: WorkspacePortabilityFormatIds.PortableDossierV1,
+                    CompatibilityState: WorkspacePortabilityCompatibilityStates.CompatibleWithWarnings,
+                    ContextSummary: "Imported Runner Blue into sr4 with a bounded source toggle change.",
+                    ReceiptSummary: "Import landed with a governed receipt.",
+                    ProvenanceSummary: "Payload hash abcdef123456 entered workspace ws-import.",
+                    PayloadSha256: "abcdef1234567890",
+                    NextSafeAction: "Review the before-after environment diff before campaign handoff.",
+                    SupportedExchangeModes: [WorkspacePortabilityExchangeModes.InspectOnly],
+                    Notes:
+                    [
+                        new WorkspacePortabilityNote(
+                            Code: "source-toggle",
+                            Severity: WorkspacePortabilityNoteSeverities.Warning,
+                            Summary: "Street Magic source toggle changed during import.")
+                    ]))));
 
         StringAssert.Contains(cut.Markup, "Import SR4 Oracle File");
         StringAssert.Contains(cut.Markup, "Primary lane: .chum4 oracle preview");
         StringAssert.Contains(cut.Markup, "(no SR4 preview file selected)");
         StringAssert.Contains(cut.Markup, "SR4 Oracle Debug Import");
+        StringAssert.Contains(cut.Markup, "Import receipt");
+        StringAssert.Contains(cut.Markup, "Import landed with a governed receipt.");
+        StringAssert.Contains(cut.Markup, "Imported Runner Blue into sr4 with a bounded source toggle change.");
+        StringAssert.Contains(cut.Markup, "Before");
+        StringAssert.Contains(cut.Markup, "After");
+        StringAssert.Contains(cut.Markup, "Support reuse");
+        StringAssert.Contains(cut.Markup, "Review the before-after environment diff before campaign handoff.");
+        StringAssert.Contains(cut.Markup, "Support can cite payload abcdef1234567890 with compatible-with-warnings compatibility.");
+        StringAssert.Contains(cut.Markup, "Street Magic source toggle changed during import.");
+        Assert.IsNotNull(cut.Find("[data-import-explain-receipt]"));
         Assert.AreEqual(".chum4,.chum5,.chum6,.xml,text/xml,application/xml", cut.Find("input[type='file']").GetAttribute("accept"));
         Assert.AreEqual("Import SR4 Raw XML", cut.Find("details button").TextContent.Trim());
     }
@@ -373,8 +424,8 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.State, sectionState));
 
         Assert.HasCount(1, sectionCut.FindAll(".section-table tbody tr"));
-        StringAssert.Contains(sectionCut.Markup, "skills[0].name");
-        StringAssert.Contains(sectionCut.Markup, "{\"skills\":1}");
+        StringAssert.Contains(sectionCut.Markup, "Pistols");
+        Assert.IsFalse(sectionCut.Markup.Contains("{\"skills\":1}", StringComparison.Ordinal), "The default section pane must not dump raw JSON payloads into the visible workbench.");
     }
 
     [TestMethod]
@@ -711,6 +762,10 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Decision rail");
         StringAssert.Contains(cut.Markup, "Rebind the active runtime before export.");
         StringAssert.Contains(cut.Markup, "Support can cite the same runtime fingerprint after handoff.");
+        StringAssert.Contains(cut.Markup, "Build blocker receipt");
+        StringAssert.Contains(cut.Markup, "Rule environment");
+        StringAssert.Contains(cut.Markup, "One quick-action binding still needs review.");
+        Assert.IsNotNull(cut.Find("[data-build-blocker-explain-receipt]"));
         StringAssert.Contains(cut.Markup, "data-build-lab-export-target");
         StringAssert.Contains(cut.Markup, "data-build-lab-optimizer-rail");
     }
@@ -1313,8 +1368,13 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Promote To");
         StringAssert.Contains(cut.Markup, "Published");
         StringAssert.Contains(cut.Markup, "Rollback can re-pin sha256:sr5-runtime-fingerprint");
+        StringAssert.Contains(cut.Markup, "Diagnostics environment diff");
+        StringAssert.Contains(cut.Markup, "Rebind to sha256:next before support closure.");
+        StringAssert.Contains(cut.Markup, "Quick actions will move to v2.");
+        StringAssert.Contains(cut.Markup, "derive.stat via official.sr5.core/derive.stat");
         StringAssert.Contains(cut.Markup, "attention");
         Assert.IsNotNull(cut.Find("[data-runtime-hub-diagnostics]"));
+        Assert.IsNotNull(cut.Find("[data-diagnostics-environment-diff]"));
         Assert.HasCount(2, cut.FindAll("[data-runtime-rulepack-row]"));
         StringAssert.Contains(cut.Find("[data-runtime-rulepack-row='house.magic']").TextContent, "1");
         StringAssert.Contains(cut.Markup, "chummer-dense-header");

@@ -9,6 +9,17 @@ namespace Chummer.Blazor.Components.Layout;
 
 public partial class DesktopShell : IDisposable
 {
+    private static readonly string[] PreferredToolStripCommandOrder =
+    [
+        "save_character",
+        "print_character",
+        "copy",
+        "new_character",
+        "open_character",
+        "close_window",
+        "global_settings"
+    ];
+
     private CharacterOverviewStateBridge? _bridge;
     private const long MaxImportBytes = 8 * 1024 * 1024;
     private ElementReference _shellRoot;
@@ -49,7 +60,7 @@ public partial class DesktopShell : IDisposable
         _shellSurfaceState.Commands.Where(command => !string.Equals(command.Group, "menu", StringComparison.Ordinal));
 
     private IEnumerable<AppCommandDefinition> ToolStripCommands =>
-        HeadCommands.Where(command => command.Group is "file" or "tools").Take(10);
+        ResolveToolStripCommands();
 
     private IReadOnlyList<AppCommandDefinition> MenuRoots =>
         _shellSurfaceState.MenuRoots;
@@ -160,5 +171,19 @@ public partial class DesktopShell : IDisposable
             return false;
 
         return string.Equals(left.Value.Value, right.Value.Value, StringComparison.Ordinal);
+    }
+
+    private IEnumerable<AppCommandDefinition> ResolveToolStripCommands()
+    {
+        Dictionary<string, AppCommandDefinition> commandsById = HeadCommands
+            .ToDictionary(command => command.Id, StringComparer.Ordinal);
+
+        foreach (string commandId in PreferredToolStripCommandOrder)
+        {
+            if (commandsById.TryGetValue(commandId, out AppCommandDefinition? command))
+            {
+                yield return command;
+            }
+        }
     }
 }

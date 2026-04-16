@@ -1,3 +1,4 @@
+@namespace Chummer.Blazor.Components.Pages
 @page "/"
 @using Chummer.Contracts.Characters
 @using Chummer.Campaign.Contracts
@@ -19,16 +20,34 @@
         <ContactNetworkPanel Graph="_contactGraph" />
         <NpcPersonaStudioPanel Projection="_npcPersonaStudio" />
         <CreatorPublicationPanel Publication="_creatorPublication" />
+        <section class="panel flagship-media-showcase" aria-label="Flagship artifact samples">
+            <header class="flagship-media-showcase-header">
+                <h2>Flagship artifact samples</h2>
+                <p>Local Chummer-owned media samples keep the public and desktop surfaces grounded in inspectable release art instead of provider placeholders.</p>
+            </header>
+            <div class="flagship-media-showcase-grid">
+                @foreach (ArtifactMediaSample sample in ArtifactMediaSamples)
+                {
+                    <figure class="flagship-media-card" data-flagship-media="@sample.Id">
+                        <img src="@sample.ImageUri" alt="@sample.Title" loading="lazy" />
+                        <figcaption>
+                            <strong>@sample.Title</strong>
+                            <span>@sample.Summary</span>
+                        </figcaption>
+                    </figure>
+                }
+            </div>
+        </section>
 
         <GmBoardFeed InterruptionBudget="_interruptionBudget"
-                     CurrentSessionContext="_currentSessionContext"
+                     CurrentSessionContext="@_currentSessionContext"
                      SessionContexts="SessionContexts"
                      SessionContextChanged="OnSessionContextChanged"
-                     AutonomyLevel="_autonomyLevel"
+                     AutonomyLevel="@_autonomyLevel"
                      AutonomyLevelChanged="OnAutonomyLevelChanged"
                      InterruptionBudgetChanged="OnBudgetChanged"
                      MuteRequested="OnMuteRequested"
-                     MutedUntilLabel="_mutedUntilLabel"
+                     MutedUntilLabel="@_mutedUntilLabel"
                      Cards="VisibleGmCards"
                      QuickActionRequested="OnCardQuickAction"
                      PinRequested="OnCardPinned"
@@ -36,7 +55,7 @@
                      SnoozeRequested="OnCardSnoozed" />
 
         <GeneratedAssetReviewPanel Assets="_assets"
-                                   SelectedAssetId="_selectedAssetId"
+                                   SelectedAssetId="@_selectedAssetId"
                                    SelectedAssetChanged="OnSelectedAssetChanged"
                                    ActionRequested="OnAssetActionRequested" />
     </section>
@@ -49,6 +68,24 @@
     private const string GeneratedAssetActionKindRefreshDispatch = "refresh_dispatch";
     private const string GeneratedAssetActionKindMarkCanonical = "mark_canonical";
     private static readonly IReadOnlyList<string> SessionContexts = ["Pass 1", "Pass 2", "Scene break"];
+    private static readonly IReadOnlyList<ArtifactMediaSample> ArtifactMediaSamples =
+    [
+        new(
+            "flagship_poster",
+            "/media/chummer6/chummer6-hero.png",
+            "Flagship poster",
+            "Primary release art pinned to the local media rail for trusted shell and landing surfaces."),
+        new(
+            "medscan_diagnostic",
+            "/media/chummer6/horizons-index.png",
+            "Medscan diagnostic",
+            "Dense route and horizon scan sample used to keep future-facing explain surfaces readable."),
+        new(
+            "forge_review_ar",
+            "/media/chummer6/karma-forge.png",
+            "Forge review AR",
+            "Review-oriented artifact sample that keeps the build-and-publish lane grounded in first-party media.")
+    ];
 
     private BuildLabConceptIntakeProjection _buildLabProjection = new(
         WorkspaceId: "showcase.build-lab",
@@ -1574,4 +1611,10 @@
 
         return current;
     }
+
+    private sealed record ArtifactMediaSample(
+        string Id,
+        string ImageUri,
+        string Title,
+        string Summary);
 }

@@ -336,6 +336,7 @@ build_windows_installer() {
     -p:InstallerPayloadZip="$payload_zip" \
     -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
     -p:ChummerInstallerAppId="$APP_KEY-$RID" \
+    -p:ChummerInstallerHeadId="$APP_KEY" \
     -p:ChummerInstallerDisplayName="$APP_DISPLAY" \
     -p:ChummerInstallerInstallDirName="$INSTALL_DIR_NAME-$RID" \
     -p:ChummerInstallerLaunchExecutable="$LAUNCH_TARGET" \

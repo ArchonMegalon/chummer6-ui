@@ -12,6 +12,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <InstallerPayloadZip Condition="'$(InstallerPayloadZip)' == ''">$(MSBuildProjectDirectory)/payload.zip</InstallerPayloadZip>
     <ChummerInstallerAppId Condition="'$(ChummerInstallerAppId)' == ''">avalonia</ChummerInstallerAppId>
+    <ChummerInstallerHeadId Condition="'$(ChummerInstallerHeadId)' == ''">$(ChummerInstallerAppId)</ChummerInstallerHeadId>
     <ChummerInstallerDisplayName Condition="'$(ChummerInstallerDisplayName)' == ''">Chummer6</ChummerInstallerDisplayName>
     <ChummerInstallerInstallDirName Condition="'$(ChummerInstallerInstallDirName)' == ''">Chummer6</ChummerInstallerInstallDirName>
     <ChummerInstallerLaunchExecutable Condition="'$(ChummerInstallerLaunchExecutable)' == ''">Chummer.Avalonia.exe</ChummerInstallerLaunchExecutable>
@@ -22,6 +23,8 @@
     <ChummerInstallerPayloadResourceName Condition="'$(ChummerInstallerPayloadResourceName)' == ''">ChummerInstaller.Payload.zip</ChummerInstallerPayloadResourceName>
     <ChummerInstallerPayloadRequired Condition="'$(ChummerInstallerPayloadRequired)' == ''">true</ChummerInstallerPayloadRequired>
     <ChummerInstallerEmbedPayload Condition="'$(ChummerInstallerEmbedPayload)' == ''">true</ChummerInstallerEmbedPayload>
+    <ApplicationIcon>..\Chummer\chummer.ico</ApplicationIcon>
+    <Win32Icon>..\Chummer\chummer.ico</Win32Icon>
   </PropertyGroup>
 
   <ItemGroup Condition="Exists('$(InstallerPayloadZip)') and '$(ChummerInstallerEmbedPayload)' == 'true'">
@@ -40,6 +43,10 @@
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>ChummerAppId</_Parameter1>
       <_Parameter2>$(ChummerInstallerAppId)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerHeadId</_Parameter1>
+      <_Parameter2>$(ChummerInstallerHeadId)</_Parameter2>
     </AssemblyAttribute>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>ChummerDisplayName</_Parameter1>

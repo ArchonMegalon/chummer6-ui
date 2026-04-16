@@ -56,8 +56,12 @@ public static class DesktopInstallLinkingRuntime
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
     private const string WebBaseUrlEnvironmentVariable = "CHUMMER_WEB_BASE_URL";
     private const string ClaimCodeEnvironmentVariable = "CHUMMER_INSTALL_CLAIM_CODE";
+    private const string InstallLinkCallbackEnvironmentVariable = "CHUMMER_INSTALL_LINK_CALLBACK_URI";
     private const string ClaimCodeSwitch = "--install-claim-code";
+    private const string InstallLinkCallbackSwitch = "--install-link-callback";
     private const string StateRootDirectoryName = "install-linking";
+    private const string PendingClaimCodeFileName = "pending-claim-code.txt";
+    private const string PendingInstallLinkCallbackFileName = "pending-install-link-callback.txt";
     private const string GuestStatus = "guest";
     private const string ClaimedStatus = "claimed";
 
@@ -86,21 +90,46 @@ public static class DesktopInstallLinkingRuntime
         };
         SaveState(state);
 
-        string? startupClaimCode = ExtractStartupClaimCode(args);
+        DesktopInstallLinkingState preClaimState = state;
+        string? startupBrowserCallbackCode = ExtractStartupBrowserCallbackCode(args, state);
+        string? startupClaimCode = ExtractStartupClaimCode(args, state);
         DesktopInstallClaimResult? claimResult = null;
-        if (!string.IsNullOrWhiteSpace(startupClaimCode))
+        if (!string.IsNullOrWhiteSpace(startupBrowserCallbackCode))
+        {
+            claimResult = await ExchangeBrowserCallbackCodeAsync(headId, startupBrowserCallbackCode, state, cancellationToken).ConfigureAwait(false);
+            state = claimResult.State;
+            if (claimResult.Succeeded)
+            {
+                TryDeletePendingClaimCode(preClaimState);
+                TryDeletePendingClaimCode(state);
+                TryDeletePendingInstallLinkCallback(preClaimState);
+                TryDeletePendingInstallLinkCallback(state);
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(startupClaimCode))
         {
             claimResult = await RedeemClaimCodeAsync(headId, startupClaimCode, state, cancellationToken).ConfigureAwait(false);
             state = claimResult.State;
+            if (claimResult.Succeeded)
+            {
+                TryDeletePendingClaimCode(preClaimState);
+                TryDeletePendingClaimCode(state);
+                TryDeletePendingInstallLinkCallback(preClaimState);
+                TryDeletePendingInstallLinkCallback(state);
+            }
         }
 
-        bool shouldPrompt = !IsClaimed(state) && (state.LaunchCount == 1 || !string.IsNullOrWhiteSpace(startupClaimCode));
+        bool shouldPrompt = !IsClaimed(state) && (state.LaunchCount == 1
+            || !string.IsNullOrWhiteSpace(startupBrowserCallbackCode)
+            || !string.IsNullOrWhiteSpace(startupClaimCode));
         if (claimResult?.Succeeded == true)
         {
             shouldPrompt = false;
         }
 
-        string promptReason = !string.IsNullOrWhiteSpace(startupClaimCode)
+        string promptReason = !string.IsNullOrWhiteSpace(startupBrowserCallbackCode)
+            ? claimResult?.Succeeded == true ? "browser_callback_applied" : "browser_callback_present"
+            : !string.IsNullOrWhiteSpace(startupClaimCode)
             ? claimResult?.Succeeded == true ? "claim_applied" : "claim_code_present"
             : state.LaunchCount == 1 ? "first_launch" : "none";
 
@@ -161,6 +190,12 @@ public static class DesktopInstallLinkingRuntime
     public static bool TryOpenAccountPortal()
     {
         return TryOpenPublicPortal("/account#desktop");
+    }
+
+    public static bool TryOpenAccountPortalForInstall(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return TryOpenPublicPortal(BuildAccountPortalRelativePathForInstall(state));
     }
 
     public static bool TryOpenRelativePortal(string relativePath)
@@ -273,6 +308,30 @@ public static class DesktopInstallLinkingRuntime
                 HeadId: state.HeadId,
                 Platform: state.Platform,
                 Arch: state.Arch));
+    }
+
+    public static string BuildAccountPortalRelativePathForInstall(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (IsClaimed(state))
+        {
+            return "/account/access#desktop";
+        }
+
+        List<string> query = [];
+        AppendQueryParameter(query, "installationId", state.InstallationId);
+        AppendQueryParameter(query, "headId", state.HeadId);
+        AppendQueryParameter(query, "applicationVersion", state.ApplicationVersion);
+        AppendQueryParameter(query, "releaseChannel", state.ChannelId);
+        AppendQueryParameter(query, "platform", state.Platform);
+        AppendQueryParameter(query, "arch", state.Arch);
+        AppendQueryParameter(query, "installLinkMode", "browser_callback");
+        AppendQueryParameter(query, "installLinkTransport", "grant_callback");
+        AppendQueryParameter(query, "installLinkCallbackUri", BuildInstallLinkCallbackUri());
+
+        return query.Count == 0
+            ? "/account/access/install-link"
+            : $"/account/access/install-link?{string.Join("&", query)}";
     }
 
     public static string BuildSupportPortalRelativePathForUpdate(DesktopInstallLinkingState state, DesktopUpdateClientStatus updateStatus)
@@ -541,6 +600,125 @@ public static class DesktopInstallLinkingRuntime
         }
     }
 
+    private static async Task<DesktopInstallClaimResult> ExchangeBrowserCallbackCodeAsync(
+        string headId,
+        string callbackCode,
+        DesktopInstallLinkingState state,
+        CancellationToken cancellationToken)
+    {
+        string? normalizedCallbackCode = NormalizeBrowserCallbackCode(callbackCode);
+        if (normalizedCallbackCode is null)
+        {
+            DesktopInstallLinkingState invalidState = state with
+            {
+                LastClaimAttemptUtc = DateTimeOffset.UtcNow,
+                LastClaimCode = null,
+                LastClaimError = "Browser callback code is required.",
+                LastClaimMessage = null,
+                UpdatedAtUtc = DateTimeOffset.UtcNow
+            };
+            SaveState(invalidState);
+            return new DesktopInstallClaimResult(false, false, "Browser callback code is required.", invalidState);
+        }
+
+        DesktopInstallLinkingState currentState = RefreshRuntimeMetadata(state, DateTimeOffset.UtcNow);
+        DateTimeOffset attemptAtUtc = DateTimeOffset.UtcNow;
+        try
+        {
+            ExchangeInstallBrowserCallbackRequestDto request = new(
+                CallbackCode: normalizedCallbackCode,
+                InstallationId: currentState.InstallationId,
+                HeadId: currentState.HeadId,
+                ApplicationVersion: currentState.ApplicationVersion,
+                ChannelId: currentState.ChannelId,
+                Platform: currentState.Platform,
+                Arch: currentState.Arch,
+                PublicKey: currentState.PublicKey,
+                HostLabel: null);
+
+            using HttpClient client = CreateApiHttpClient(TimeSpan.FromSeconds(20));
+            using StringContent content = new(
+                JsonSerializer.Serialize(request, JsonOptions),
+                Encoding.UTF8,
+                MediaTypeNames.Application.Json);
+            using HttpResponseMessage response = await client.PostAsync("api/v1/install-linking/callbacks/exchange", content, cancellationToken).ConfigureAwait(false);
+            string responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                string error = BuildErrorMessage(response, responseText);
+                DesktopInstallLinkingState failedState = currentState with
+                {
+                    LastClaimAttemptUtc = attemptAtUtc,
+                    LastClaimCode = null,
+                    LastClaimError = error,
+                    LastClaimMessage = null,
+                    UpdatedAtUtc = attemptAtUtc
+                };
+                SaveState(failedState);
+                return new DesktopInstallClaimResult(false, false, error, failedState);
+            }
+
+            ExchangeInstallBrowserCallbackResponseDto? accepted = JsonSerializer.Deserialize<ExchangeInstallBrowserCallbackResponseDto>(responseText, JsonOptions);
+            if (accepted?.Installation is null || accepted.Grant is null || accepted.Callback is null)
+            {
+                string error = "Hub accepted the browser install callback but returned an unreadable payload.";
+                DesktopInstallLinkingState invalidState = currentState with
+                {
+                    LastClaimAttemptUtc = attemptAtUtc,
+                    LastClaimCode = null,
+                    LastClaimError = error,
+                    LastClaimMessage = null,
+                    UpdatedAtUtc = attemptAtUtc
+                };
+                SaveState(invalidState);
+                return new DesktopInstallClaimResult(false, false, error, invalidState);
+            }
+
+            DesktopInstallLinkingState claimedState = currentState with
+            {
+                Status = ClaimedStatus,
+                ClaimedAtUtc = currentState.ClaimedAtUtc ?? attemptAtUtc,
+                LastClaimAttemptUtc = attemptAtUtc,
+                LastClaimCode = null,
+                LastClaimError = null,
+                LastClaimMessage = accepted.AlreadyClaimed
+                    ? "This copy was already linked. Hub refreshed the installation grant from the browser callback."
+                    : "This copy is now linked to your Hub account.",
+                UpdatedAtUtc = attemptAtUtc,
+                HeadId = accepted.Installation.HeadId ?? currentState.HeadId,
+                ApplicationVersion = accepted.Installation.Version,
+                ChannelId = accepted.Installation.Channel,
+                Platform = accepted.Installation.Platform ?? currentState.Platform,
+                Arch = accepted.Installation.Arch ?? currentState.Arch,
+                GrantId = accepted.Grant.GrantId,
+                GrantToken = accepted.Grant.AccessToken,
+                GrantIssuedAtUtc = accepted.Grant.IssuedAtUtc,
+                GrantExpiresAtUtc = accepted.Grant.ExpiresAtUtc,
+                UserId = accepted.Installation.UserId,
+                SubjectId = accepted.Installation.SubjectId
+            };
+            SaveState(claimedState);
+            return new DesktopInstallClaimResult(
+                true,
+                accepted.AlreadyClaimed,
+                claimedState.LastClaimMessage ?? "This copy is linked.",
+                claimedState);
+        }
+        catch (Exception ex)
+        {
+            DesktopInstallLinkingState failedState = currentState with
+            {
+                LastClaimAttemptUtc = attemptAtUtc,
+                LastClaimCode = null,
+                LastClaimError = ex.Message,
+                LastClaimMessage = null,
+                UpdatedAtUtc = attemptAtUtc
+            };
+            SaveState(failedState);
+            return new DesktopInstallClaimResult(false, false, $"Install linking failed: {ex.Message}", failedState);
+        }
+    }
+
     private static DesktopInstallLinkingState CreateInitialState(
         DesktopRuntimeReleaseMetadata release,
         DesktopRuntimePlatformIdentity identity,
@@ -588,7 +766,48 @@ public static class DesktopInstallLinkingRuntime
         DesktopInstallLinkingStateStore.Save(paths.StateFilePath, state);
     }
 
-    private static string? ExtractStartupClaimCode(IReadOnlyList<string> args)
+    private static string? ExtractStartupBrowserCallbackCode(IReadOnlyList<string> args, DesktopInstallLinkingState state)
+    {
+        if (TryExtractBrowserCallbackCodeFromCallbackUri(Environment.GetEnvironmentVariable(InstallLinkCallbackEnvironmentVariable), out string? callbackCode))
+        {
+            return callbackCode;
+        }
+
+        for (int i = 0; i < args.Count; i++)
+        {
+            if (TryReadBrowserCallbackCodeFromCallbackArgument(args, i, out string? callbackArgumentCode))
+            {
+                return callbackArgumentCode;
+            }
+        }
+
+        foreach (string pendingPath in GetPendingInstallLinkCallbackPaths(state))
+        {
+            if (!File.Exists(pendingPath))
+            {
+                continue;
+            }
+
+            try
+            {
+                string pendingValue = File.ReadAllText(pendingPath, Encoding.UTF8);
+                if (TryExtractBrowserCallbackCodeFromCallbackUri(pendingValue, out string? pendingCallbackCode))
+                {
+                    return pendingCallbackCode;
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ExtractStartupClaimCode(IReadOnlyList<string> args, DesktopInstallLinkingState state)
     {
         string? fromEnvironment = NormalizeClaimCode(Environment.GetEnvironmentVariable(ClaimCodeEnvironmentVariable));
         if (fromEnvironment is not null)
@@ -596,22 +815,409 @@ public static class DesktopInstallLinkingRuntime
             return fromEnvironment;
         }
 
+        if (TryExtractClaimCodeFromCallbackUri(Environment.GetEnvironmentVariable(InstallLinkCallbackEnvironmentVariable), out string? callbackClaimCode))
+        {
+            return callbackClaimCode;
+        }
+
         for (int i = 0; i < args.Count; i++)
         {
-            string arg = args[i];
-            if (string.Equals(arg, ClaimCodeSwitch, StringComparison.OrdinalIgnoreCase) && i + 1 < args.Count)
+            if (TryReadValueAfterSwitch(args, i, out string? claimCode))
             {
-                return NormalizeClaimCode(args[i + 1]);
+                return claimCode;
             }
 
-            string prefix = $"{ClaimCodeSwitch}=";
-            if (arg.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            if (TryReadClaimCodeFromCallbackArgument(args, i, out string? callbackArgumentClaimCode))
             {
-                return NormalizeClaimCode(arg[prefix.Length..]);
+                return callbackArgumentClaimCode;
+            }
+        }
+
+        foreach (string pendingPath in GetPendingClaimCodePaths(state))
+        {
+            if (!File.Exists(pendingPath))
+            {
+                continue;
+            }
+
+            try
+            {
+                string pendingValue = File.ReadAllText(pendingPath, Encoding.UTF8);
+                string? normalizedPendingValue = NormalizeClaimCode(pendingValue);
+                if (normalizedPendingValue is not null)
+                {
+                    return normalizedPendingValue;
+                }
+            }
+            catch (IOException)
+            {
+                // Fall back to other candidate claim paths.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Fall back to other candidate claim paths.
+            }
+        }
+
+        foreach (string pendingPath in GetPendingInstallLinkCallbackPaths(state))
+        {
+            if (!File.Exists(pendingPath))
+            {
+                continue;
+            }
+
+            try
+            {
+                string pendingValue = File.ReadAllText(pendingPath, Encoding.UTF8);
+                if (TryExtractClaimCodeFromCallbackUri(pendingValue, out string? pendingCallbackClaimCode))
+                {
+                    return pendingCallbackClaimCode;
+                }
+            }
+            catch (IOException)
+            {
+                // Fall back to other candidate callback paths.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Fall back to other candidate callback paths.
             }
         }
 
         return null;
+    }
+
+    private static bool TryReadValueAfterSwitch(IReadOnlyList<string> args, int index, out string? claimCode)
+    {
+        claimCode = null;
+        string arg = args[index];
+        ReadOnlySpan<char> argSpan = arg.AsSpan().Trim();
+        if (argSpan.Length == 0)
+        {
+            return false;
+        }
+
+        if (string.Equals(argSpan.ToString(), ClaimCodeSwitch, StringComparison.OrdinalIgnoreCase))
+        {
+            if (index + 1 < args.Count)
+            {
+                claimCode = NormalizeClaimCode(args[index + 1]);
+                return claimCode is not null;
+            }
+
+            return false;
+        }
+
+        if (argSpan[0] == '/')
+        {
+            argSpan = argSpan[1..];
+        }
+        else if (argSpan[0] == '-')
+        {
+            argSpan = argSpan[1..];
+            if (argSpan.Length > 0 && argSpan[0] == '-')
+            {
+                argSpan = argSpan[1..];
+            }
+        }
+
+        string normalizedSwitch = ClaimCodeSwitch.AsSpan(2).ToString();
+        string normalizedArg = argSpan.ToString();
+        if (string.Equals(normalizedArg, normalizedSwitch, StringComparison.OrdinalIgnoreCase)
+            && index + 1 < args.Count)
+        {
+            claimCode = NormalizeClaimCode(args[index + 1]);
+            return claimCode is not null;
+        }
+
+        string legacyEqualsPrefix = $"{normalizedSwitch}=";
+        if (normalizedArg.StartsWith(legacyEqualsPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            claimCode = NormalizeClaimCode(normalizedArg[legacyEqualsPrefix.Length..]);
+            return claimCode is not null;
+        }
+
+        string legacyColonPrefix = $"{normalizedSwitch}:";
+        if (normalizedArg.StartsWith(legacyColonPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            claimCode = NormalizeClaimCode(normalizedArg[legacyColonPrefix.Length..]);
+            return claimCode is not null;
+        }
+
+        return false;
+    }
+
+    private static bool TryReadClaimCodeFromCallbackArgument(IReadOnlyList<string> args, int index, out string? claimCode)
+    {
+        claimCode = null;
+
+        if (index < 0 || index >= args.Count)
+        {
+            return false;
+        }
+
+        string arg = args[index];
+        if (TryExtractClaimCodeFromCallbackUri(arg, out claimCode))
+        {
+            return true;
+        }
+
+        ReadOnlySpan<char> argSpan = arg.AsSpan().Trim();
+        if (argSpan.Length == 0)
+        {
+            return false;
+        }
+
+        if (string.Equals(argSpan.ToString(), InstallLinkCallbackSwitch, StringComparison.OrdinalIgnoreCase))
+        {
+            return index + 1 < args.Count && TryExtractClaimCodeFromCallbackUri(args[index + 1], out claimCode);
+        }
+
+        if (argSpan[0] == '/')
+        {
+            argSpan = argSpan[1..];
+        }
+        else if (argSpan[0] == '-')
+        {
+            argSpan = argSpan[1..];
+            if (argSpan.Length > 0 && argSpan[0] == '-')
+            {
+                argSpan = argSpan[1..];
+            }
+        }
+
+        string normalizedSwitch = InstallLinkCallbackSwitch.AsSpan(2).ToString();
+        string normalizedArg = argSpan.ToString();
+        if (string.Equals(normalizedArg, normalizedSwitch, StringComparison.OrdinalIgnoreCase))
+        {
+            return index + 1 < args.Count && TryExtractClaimCodeFromCallbackUri(args[index + 1], out claimCode);
+        }
+
+        string equalsPrefix = $"{normalizedSwitch}=";
+        if (normalizedArg.StartsWith(equalsPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return TryExtractClaimCodeFromCallbackUri(normalizedArg[equalsPrefix.Length..], out claimCode);
+        }
+
+        string colonPrefix = $"{normalizedSwitch}:";
+        if (normalizedArg.StartsWith(colonPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return TryExtractClaimCodeFromCallbackUri(normalizedArg[colonPrefix.Length..], out claimCode);
+        }
+
+        return false;
+    }
+
+    private static bool TryReadBrowserCallbackCodeFromCallbackArgument(IReadOnlyList<string> args, int index, out string? callbackCode)
+    {
+        callbackCode = null;
+
+        if (index < 0 || index >= args.Count)
+        {
+            return false;
+        }
+
+        string arg = args[index];
+        if (TryExtractBrowserCallbackCodeFromCallbackUri(arg, out callbackCode))
+        {
+            return true;
+        }
+
+        ReadOnlySpan<char> argSpan = arg.AsSpan().Trim();
+        if (argSpan.Length == 0)
+        {
+            return false;
+        }
+
+        if (string.Equals(argSpan.ToString(), InstallLinkCallbackSwitch, StringComparison.OrdinalIgnoreCase))
+        {
+            return index + 1 < args.Count && TryExtractBrowserCallbackCodeFromCallbackUri(args[index + 1], out callbackCode);
+        }
+
+        if (argSpan[0] == '/')
+        {
+            argSpan = argSpan[1..];
+        }
+        else if (argSpan[0] == '-')
+        {
+            argSpan = argSpan[1..];
+            if (argSpan.Length > 0 && argSpan[0] == '-')
+            {
+                argSpan = argSpan[1..];
+            }
+        }
+
+        string normalizedSwitch = InstallLinkCallbackSwitch.AsSpan(2).ToString();
+        string normalizedArg = argSpan.ToString();
+        if (string.Equals(normalizedArg, normalizedSwitch, StringComparison.OrdinalIgnoreCase))
+        {
+            return index + 1 < args.Count && TryExtractBrowserCallbackCodeFromCallbackUri(args[index + 1], out callbackCode);
+        }
+
+        string equalsPrefix = $"{normalizedSwitch}=";
+        if (normalizedArg.StartsWith(equalsPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return TryExtractBrowserCallbackCodeFromCallbackUri(normalizedArg[equalsPrefix.Length..], out callbackCode);
+        }
+
+        string colonPrefix = $"{normalizedSwitch}:";
+        if (normalizedArg.StartsWith(colonPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return TryExtractBrowserCallbackCodeFromCallbackUri(normalizedArg[colonPrefix.Length..], out callbackCode);
+        }
+
+        return false;
+    }
+
+    private static IReadOnlyList<string> GetPendingClaimCodePaths(DesktopInstallLinkingState state)
+    {
+        HashSet<string> pendingPaths = [];
+        string stateRoot = GetStateRoot();
+        foreach (string platform in NormalizePlatformAliases(state.Platform))
+        {
+            foreach (string architecture in NormalizeArchitectureAliases(state.Arch))
+            {
+                pendingPaths.Add(Path.Combine(stateRoot, StateRootDirectoryName, state.HeadId, platform, architecture, PendingClaimCodeFileName));
+                if (!string.IsNullOrWhiteSpace(platform) && !string.IsNullOrWhiteSpace(architecture))
+                {
+                    pendingPaths.Add(Path.Combine(stateRoot, StateRootDirectoryName, state.HeadId, $"{platform}-{architecture}", PendingClaimCodeFileName));
+                }
+            }
+        }
+
+        pendingPaths.Add(Path.Combine(GetStateDirectory(stateRoot, state), PendingClaimCodeFileName));
+        return pendingPaths.Where(static path => !string.IsNullOrWhiteSpace(path)).ToList();
+    }
+
+    private static IReadOnlyList<string> GetPendingInstallLinkCallbackPaths(DesktopInstallLinkingState state)
+    {
+        HashSet<string> pendingPaths = [];
+        string stateRoot = GetStateRoot();
+        foreach (string platform in NormalizePlatformAliases(state.Platform))
+        {
+            foreach (string architecture in NormalizeArchitectureAliases(state.Arch))
+            {
+                pendingPaths.Add(Path.Combine(stateRoot, StateRootDirectoryName, state.HeadId, platform, architecture, PendingInstallLinkCallbackFileName));
+                if (!string.IsNullOrWhiteSpace(platform) && !string.IsNullOrWhiteSpace(architecture))
+                {
+                    pendingPaths.Add(Path.Combine(stateRoot, StateRootDirectoryName, state.HeadId, $"{platform}-{architecture}", PendingInstallLinkCallbackFileName));
+                }
+            }
+        }
+
+        pendingPaths.Add(Path.Combine(GetStateDirectory(stateRoot, state), PendingInstallLinkCallbackFileName));
+        return pendingPaths.Where(static path => !string.IsNullOrWhiteSpace(path)).ToList();
+    }
+
+    private static string GetStateDirectory(DesktopInstallLinkingState state)
+    {
+        DesktopInstallLinkingPaths paths = DesktopInstallLinkingPaths.Create(
+            state.HeadId,
+            new DesktopRuntimePlatformIdentity(state.Platform, state.Arch));
+        string stateDirectory = Path.GetDirectoryName(paths.StateFilePath)
+            ?? throw new InvalidOperationException("Desktop install-linking state path is invalid.");
+        return stateDirectory;
+    }
+
+    private static string GetStateDirectory(string stateRoot, DesktopInstallLinkingState state)
+    {
+        return Path.Combine(stateRoot, StateRootDirectoryName, state.HeadId, state.Platform, state.Arch);
+    }
+
+    private static IEnumerable<string> NormalizeArchitectureAliases(string? architecture)
+    {
+        string normalized = string.IsNullOrWhiteSpace(architecture)
+            ? string.Empty
+            : architecture.Trim().ToLowerInvariant();
+
+        yield return string.IsNullOrWhiteSpace(normalized) ? string.Empty : normalized;
+
+        if (string.Equals(normalized, "x64", StringComparison.OrdinalIgnoreCase))
+        {
+            yield return "amd64";
+        }
+
+        if (string.Equals(normalized, "amd64", StringComparison.OrdinalIgnoreCase))
+        {
+            yield return "x64";
+        }
+
+        if (string.Equals(normalized, "x86", StringComparison.OrdinalIgnoreCase))
+        {
+            yield return "i386";
+        }
+    }
+
+    private static IEnumerable<string> NormalizePlatformAliases(string? platform)
+    {
+        string normalized = string.IsNullOrWhiteSpace(platform)
+            ? string.Empty
+            : platform.Trim().ToLowerInvariant();
+
+        HashSet<string> aliases =
+        [
+            normalized
+        ];
+
+        if (string.Equals(normalized, "win", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "windows", StringComparison.OrdinalIgnoreCase))
+        {
+            aliases.Add("windows");
+            aliases.Add("win");
+        }
+
+        foreach (string alias in aliases)
+        {
+            if (!string.IsNullOrWhiteSpace(alias))
+            {
+                yield return alias;
+            }
+        }
+    }
+
+    private static string GetPendingClaimCodePath(DesktopInstallLinkingState state)
+    {
+        return Path.Combine(GetStateDirectory(state), PendingClaimCodeFileName);
+    }
+
+    private static void TryDeletePendingClaimCode(DesktopInstallLinkingState state)
+    {
+        foreach (string pendingPath in GetPendingClaimCodePaths(state))
+        {
+            try
+            {
+                if (File.Exists(pendingPath))
+                {
+                    File.Delete(pendingPath);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
+    private static void TryDeletePendingInstallLinkCallback(DesktopInstallLinkingState state)
+    {
+        foreach (string pendingPath in GetPendingInstallLinkCallbackPaths(state))
+        {
+            try
+            {
+                if (File.Exists(pendingPath))
+                {
+                    File.Delete(pendingPath);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
     }
 
     private static HttpClient CreateApiHttpClient(TimeSpan timeout)
@@ -686,6 +1292,11 @@ public static class DesktopInstallLinkingRuntime
         }
 
         query.Add($"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value.Trim())}");
+    }
+
+    private static string BuildInstallLinkCallbackUri()
+    {
+        return "chummer://install-link";
     }
 
     private static string BuildErrorMessage(HttpResponseMessage response, string responseText)
@@ -775,6 +1386,159 @@ public static class DesktopInstallLinkingRuntime
             ? "Not provided."
             : value.Trim();
 
+    private static bool TryExtractBrowserCallbackCodeFromCallbackUri(string? rawValue, out string? callbackCode)
+    {
+        callbackCode = null;
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return false;
+        }
+
+        string candidate = rawValue.Trim().Trim('"');
+        if (!Uri.TryCreate(candidate, UriKind.Absolute, out Uri? uri) || !IsInstallLinkCallbackUri(uri))
+        {
+            return false;
+        }
+
+        callbackCode = TryReadBrowserCallbackCodeFromQueryString(uri.Query);
+        if (callbackCode is not null)
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(uri.Fragment))
+        {
+            string fragment = uri.Fragment[0] == '#' ? uri.Fragment[1..] : uri.Fragment;
+            if (fragment.Length > 0 && fragment[0] == '?')
+            {
+                fragment = fragment[1..];
+            }
+
+            callbackCode = TryReadBrowserCallbackCodeFromQueryString(fragment);
+        }
+
+        return callbackCode is not null;
+    }
+
+    private static bool TryExtractClaimCodeFromCallbackUri(string? rawValue, out string? claimCode)
+    {
+        claimCode = null;
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return false;
+        }
+
+        string candidate = rawValue.Trim().Trim('"');
+        if (!Uri.TryCreate(candidate, UriKind.Absolute, out Uri? uri) || !IsInstallLinkCallbackUri(uri))
+        {
+            return false;
+        }
+
+        claimCode = TryReadClaimCodeFromQueryString(uri.Query);
+        if (claimCode is not null)
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(uri.Fragment))
+        {
+            string fragment = uri.Fragment[0] == '#' ? uri.Fragment[1..] : uri.Fragment;
+            if (fragment.Length > 0 && fragment[0] == '?')
+            {
+                fragment = fragment[1..];
+            }
+
+            claimCode = TryReadClaimCodeFromQueryString(fragment);
+        }
+
+        return claimCode is not null;
+    }
+
+    private static bool IsInstallLinkCallbackUri(Uri uri)
+    {
+        if (string.Equals(uri.Scheme, "chummer", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        string absolutePath = uri.AbsolutePath.Trim('/');
+        return absolutePath.Contains("install-link", StringComparison.OrdinalIgnoreCase)
+               || absolutePath.Contains("downloads/install", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? TryReadBrowserCallbackCodeFromQueryString(string? rawQuery)
+    {
+        if (string.IsNullOrWhiteSpace(rawQuery))
+        {
+            return null;
+        }
+
+        ReadOnlySpan<char> querySpan = rawQuery.AsSpan().Trim();
+        if (querySpan.Length > 0 && querySpan[0] == '?')
+        {
+            querySpan = querySpan[1..];
+        }
+
+        foreach (string segment in querySpan.ToString().Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int separatorIndex = segment.IndexOf('=');
+            string key = separatorIndex >= 0 ? segment[..separatorIndex] : segment;
+            string? value = separatorIndex >= 0 ? segment[(separatorIndex + 1)..] : null;
+            if (!string.Equals(key, "code", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(key, "callbackCode", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(key, "installLinkCode", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string decodedValue = Uri.UnescapeDataString((value ?? string.Empty).Replace('+', ' '));
+            string? normalized = NormalizeBrowserCallbackCode(decodedValue);
+            if (normalized is not null)
+            {
+                return normalized;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? TryReadClaimCodeFromQueryString(string? rawQuery)
+    {
+        if (string.IsNullOrWhiteSpace(rawQuery))
+        {
+            return null;
+        }
+
+        ReadOnlySpan<char> querySpan = rawQuery.AsSpan().Trim();
+        if (querySpan.Length > 0 && querySpan[0] == '?')
+        {
+            querySpan = querySpan[1..];
+        }
+
+        foreach (string segment in querySpan.ToString().Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int separatorIndex = segment.IndexOf('=');
+            string key = separatorIndex >= 0 ? segment[..separatorIndex] : segment;
+            string? value = separatorIndex >= 0 ? segment[(separatorIndex + 1)..] : null;
+            if (!string.Equals(key, "claimCode", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(key, "claim", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(key, "installClaimCode", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(key, "claim_code", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string decodedValue = Uri.UnescapeDataString((value ?? string.Empty).Replace('+', ' '));
+            string? normalized = NormalizeClaimCode(decodedValue);
+            if (normalized is not null)
+            {
+                return normalized;
+            }
+        }
+
+        return null;
+    }
+
     private static string? NormalizeClaimCode(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -784,6 +1548,11 @@ public static class DesktopInstallLinkingRuntime
 
         return string.Concat(value.Trim().Where(char.IsLetterOrDigit)).ToUpperInvariant();
     }
+
+    private static string? NormalizeBrowserCallbackCode(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
 
     private static (string PublicKey, string PrivateKey) CreateInstallationKeyPair()
     {

@@ -56,6 +56,12 @@ public sealed partial class CharacterOverviewPresenter
         switch (action.Kind)
         {
             case WorkspaceSurfaceActionKind.Section:
+                Publish(State with
+                {
+                    ActiveTabId = action.TabId,
+                    ActiveActionId = action.Id,
+                    Error = null
+                });
                 await LoadSectionAsync(action.TargetId, action.TabId, action.Id, ct);
                 return;
             case WorkspaceSurfaceActionKind.Summary:

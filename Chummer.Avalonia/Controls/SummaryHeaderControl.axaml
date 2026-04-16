@@ -1,40 +1,42 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:primitives="clr-namespace:Avalonia.Controls.Primitives;assembly=Avalonia.Controls"
              x:Class="Chummer.Avalonia.Controls.SummaryHeaderControl">
-  <Grid ColumnDefinitions="1.35*,1.15*,0.95*,0.95*,1.7*" ColumnSpacing="10">
-    <Border Grid.Column="0" Classes="shell-card subtle">
-      <StackPanel>
-        <TextBlock x:Name="NameLabelText" Classes="shell-kicker" Text="Name" />
-        <TextBlock x:Name="NameValueText" Classes="shell-metric-value" Text="-" />
+  <Border x:Name="LoadedRunnerTabStripBorder"
+          Padding="0"
+          IsVisible="False">
+    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
+      <StackPanel Grid.Column="0"
+                  Margin="6,0,0,0"
+                  VerticalAlignment="Center"
+                  Spacing="0">
+        <TextBlock x:Name="LoadedRunnerTabStripHeading"
+                   Classes="shell-kicker"
+                   Text="Runner Summary" />
       </StackPanel>
-    </Border>
-    <Border Grid.Column="1" Classes="shell-card subtle">
-      <StackPanel>
-        <TextBlock x:Name="AliasLabelText" Classes="shell-kicker" Text="Alias" />
-        <TextBlock x:Name="AliasValueText" Classes="shell-metric-value" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="2" Classes="shell-card">
-      <StackPanel>
-        <TextBlock x:Name="KarmaLabelText" Classes="shell-kicker" Text="Karma" />
-        <TextBlock x:Name="KarmaValueText" Classes="shell-metric-value" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="3" Classes="shell-card">
-      <StackPanel>
-        <TextBlock x:Name="SkillsLabelText" Classes="shell-kicker" Text="Skills" />
-        <TextBlock x:Name="SkillsValueText" Classes="shell-metric-value" Text="-" />
-      </StackPanel>
-    </Border>
-    <Border Grid.Column="4" Classes="shell-card">
-      <StackPanel Spacing="8">
-        <TextBlock x:Name="RuntimeLabelText" Classes="shell-kicker" Text="Runtime" />
-        <TextBlock x:Name="RuntimeValueText" Classes="shell-section-title" Text="-" TextWrapping="Wrap" />
-        <Button x:Name="RuntimeInspectButton"
-                Classes="shell-action quiet"
-                Content="Inspect Runtime"
-                HorizontalAlignment="Left" />
-      </StackPanel>
-    </Border>
-  </Grid>
+      <Border x:Name="LoadedRunnerTabStripPanel"
+              Grid.Column="1"
+              Background="Transparent">
+        <primitives:TabStrip x:Name="LoadedRunnerTabStrip"
+                             Classes="classic-tabs"
+                             SelectionChanged="LoadedRunnerTabStrip_OnSelectionChanged">
+          <primitives:TabStrip.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Classes="shell-tab-label"
+                         Text="{Binding Label}" />
+            </DataTemplate>
+          </primitives:TabStrip.ItemTemplate>
+        </primitives:TabStrip>
+      </Border>
+      <TextBlock x:Name="RuntimeSummaryText"
+                 Grid.Column="2"
+                 Classes="shell-caption"
+                 Margin="0,0,6,0"
+                 MaxWidth="320"
+                 VerticalAlignment="Center"
+                 Text="No active runtime profile"
+                 TextTrimming="CharacterEllipsis"
+                 IsVisible="False" />
+    </Grid>
+  </Border>
 </UserControl>

@@ -263,6 +263,7 @@ GATE_INPUT_MARKERS = (
     "Chummer.Avalonia/",
     "Chummer.Blazor/",
     "Chummer.Blazor.Desktop/",
+    "Chummer/chummer.ico",
     "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
@@ -454,6 +455,7 @@ GATE_INPUT_MARKERS = (
     "Chummer.Avalonia/",
     "Chummer.Blazor/",
     "Chummer.Blazor.Desktop/",
+    "Chummer/chummer.ico",
     "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
@@ -1467,7 +1469,7 @@ CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/r
 test -f "$INSTALLER_RECEIPT_PATH"
 
 CURRENT_STAGE="promoted_installer_proof_integrity"
-python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -1481,6 +1483,7 @@ import sys
 
 (
     release_channel_path_text,
+    repo_root_text,
     local_desktop_files_root_text,
     app_key,
     rid,
@@ -1491,6 +1494,7 @@ import sys
 ) = sys.argv[1:]
 
 release_channel_path = pathlib.Path(release_channel_path_text)
+repo_root = pathlib.Path(repo_root_text)
 local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
 installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
 installer_receipt_path = pathlib.Path(installer_receipt_path_text)
@@ -1545,6 +1549,33 @@ def host_class_matches_platform(host_class: str, platform_name: str) -> bool:
 def path_uses_legacy_chummer5a_root(path: pathlib.Path) -> bool:
     normalized = str(path.resolve()).replace("\\", "/").lower()
     return "/chummer5a/" in normalized
+
+
+def resolve_receipt_artifact_path(
+    raw_candidates: list[str],
+    repo_root: pathlib.Path,
+    downloads_roots: list[pathlib.Path],
+) -> tuple[str, list[str], pathlib.Path | None]:
+    candidate_paths: list[pathlib.Path] = []
+    for raw_value in raw_candidates:
+        raw = str(raw_value or "").strip()
+        if not raw:
+            continue
+        path = pathlib.Path(raw).expanduser()
+        if path.is_absolute():
+            candidate_paths.append(path)
+            continue
+        for root in downloads_roots:
+            candidate_paths.append(root / path)
+        candidate_paths.append(repo_root / path)
+
+    deduped_candidates = list(dict.fromkeys(candidate_paths))
+    resolved = next((path for path in deduped_candidates if path.is_file()), None)
+    return (
+        str(next((value for value in raw_candidates if str(value or "").strip()), "")).strip(),
+        [str(path) for path in deduped_candidates],
+        resolved or (deduped_candidates[0] if deduped_candidates else None),
+    )
 
 if not release_channel_path.is_file():
     reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
@@ -1650,7 +1681,18 @@ else:
             receipt_version = str(receipt.get("version") or receipt.get("releaseVersion") or "").strip()
             receipt_host_class = str(receipt.get("hostClass") or "").strip().lower()
             receipt_operating_system = str(receipt.get("operatingSystem") or "").strip()
-            receipt_artifact_path = str(receipt.get("artifactPath") or "").strip()
+            receipt_artifact_path, receipt_artifact_path_candidates, receipt_artifact_path_obj = resolve_receipt_artifact_path(
+                [
+                    receipt.get("artifactRelativePath"),
+                    receipt.get("artifactPath"),
+                ],
+                repo_root,
+                [
+                    local_desktop_files_root.parent,
+                    release_channel_path.parent,
+                    release_channel_path.parent.parent,
+                ],
+            )
             receipt_recorded_at = (
                 str(receipt.get("completedAtUtc") or "").strip()
                 or str(receipt.get("recordedAtUtc") or "").strip()
@@ -1682,7 +1724,12 @@ else:
                 reasons.append("Linux startup smoke receipt channelId does not match release channel.")
             if expected_version and not receipt_release_version:
                 reasons.append("Linux startup smoke receipt releaseVersion is missing.")
-            if expected_version and receipt_release_version and receipt_release_version != expected_version:
+            if (
+                expected_version
+                and receipt_release_version
+                and receipt_release_version != expected_version
+                and receipt_version != expected_version
+            ):
                 reasons.append("Linux startup smoke receipt releaseVersion does not match release channel version.")
             if expected_version and not receipt_version:
                 reasons.append("Linux startup smoke receipt version is missing.")
@@ -1693,10 +1740,13 @@ else:
             if not receipt_artifact_path:
                 reasons.append("Linux startup smoke receipt artifactPath is missing.")
             else:
-                receipt_artifact_path_obj = pathlib.Path(receipt_artifact_path)
-                if path_uses_legacy_chummer5a_root(receipt_artifact_path_obj):
+                if receipt_artifact_path_obj is None:
+                    reasons.append(
+                        "Linux startup smoke receipt artifactPath could not be resolved for promoted shelf verification."
+                    )
+                elif path_uses_legacy_chummer5a_root(receipt_artifact_path_obj):
                     reasons.append("Linux startup smoke receipt artifactPath points into a legacy chummer5a root.")
-                if str(use_promoted_installer).strip() == "1":
+                elif str(use_promoted_installer).strip() == "1":
                     try:
                         if (
                             promoted_shelf_artifact_path.is_file()

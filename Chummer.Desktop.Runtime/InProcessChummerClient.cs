@@ -388,10 +388,7 @@ public sealed class InProcessChummerClient : IChummerClient
         IReadOnlyList<WorkspaceListItem> workspaces,
         string? persistedActiveWorkspaceId)
     {
-        if (string.IsNullOrWhiteSpace(persistedActiveWorkspaceId))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(persistedActiveWorkspaceId)) return null;
 
         WorkspaceListItem? matchingWorkspace = workspaces.FirstOrDefault(workspace =>
             string.Equals(workspace.Id.Value, persistedActiveWorkspaceId, StringComparison.Ordinal));

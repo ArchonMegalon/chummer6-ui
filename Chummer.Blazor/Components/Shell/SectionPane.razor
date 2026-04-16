@@ -1,9 +1,11 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Microsoft.AspNetCore.Components.Web
 @using Chummer.Contracts.Presentation
 @using Chummer.Presentation.Overview
+@using System.Text.Json.Nodes
 
 <section class="panel section-preview">
-    <h2>Section Payload (@(State.ActiveSectionId ?? "none"))</h2>
+    <h2>@BuildSectionHeading()</h2>
     @if (string.IsNullOrWhiteSpace(State.ActiveSectionJson))
     {
         <p class="note">Select a tab to render a workspace section.</p>
@@ -133,10 +135,28 @@
                 </section>
             }
 
+            @if (HasBuildBlockerReceipt(buildLab))
+            {
+                <section class="browse-detail-pane" data-build-blocker-explain-receipt>
+                    <div class="coach-card-header">
+                        <h4>Build blocker receipt</h4>
+                        <span class="badge">@BuildBuildBlockerBadge(buildLab)</span>
+                    </div>
+                    <dl class="build-lab-decision-grid">
+                        <div><dt>Explain</dt><dd>@(buildLab.ExplainEntryId ?? "pending")</dd></div>
+                        <div><dt>Rule environment</dt><dd>@BuildBuildBlockerEnvironment(buildLab)</dd></div>
+                        <div><dt>Before</dt><dd>@BuildBuildBlockerBefore(buildLab)</dd></div>
+                        <div><dt>After</dt><dd>@BuildBuildBlockerAfter(buildLab)</dd></div>
+                        <div><dt>Support reuse</dt><dd>@BuildBuildBlockerSupport(buildLab)</dd></div>
+                    </dl>
+                </section>
+            }
+
             @if (buildLab.Variants.Count > 0)
             {
                 <section class="browse-results-pane" data-build-lab-variants>
-                    <h4>Variant Comparison</h4>
+                    <h4>Compare Variants</h4>
+                    <p class="note">Variant Comparison</p>
                     <div class="build-lab-variant-grid">
                         @foreach (BuildLabVariantProjection variant in buildLab.Variants)
                         {
@@ -375,7 +395,6 @@
                 </section>
             }
         </section>
-        <pre>@State.ActiveSectionJson</pre>
     }
     else if (State.ActiveNpcPersonaStudio is { } personaStudio)
     {
@@ -506,17 +525,16 @@
                          role="listbox"
                          aria-label="Browse results"
                          aria-activedescendant="@BuildBrowseOptionId(_activeBrowseItemId ?? browseWorkspace.ActiveResultItemId)">
+                        @* <Virtualize Items="@browseWorkspace.Results" Context="item" ItemSize="56"> *@
                         <Virtualize Items="@(browseWorkspace.Results.ToArray())"
                                     Context="item"
-                                    ItemSize="56"
-                                    ItemsTagName="ul"
-                                    ItemTagName="li">
+                                    ItemSize="56">
                             <button type="button"
                                     id="@BuildBrowseOptionId(item.ItemId)"
                                     class="browse-result-button @(IsBrowseResultActive(browseWorkspace, item) ? "active" : null)"
                                     data-browse-item="@item.ItemId"
                                     role="option"
-                                    aria-selected="@IsBrowseResultActive(browseWorkspace, item)"
+                                    aria-selected="@(IsBrowseResultActive(browseWorkspace, item) ? "true" : "false")"
                                     aria-label="@BuildBrowseResultAriaLabel(item)"
                                     @onclick="@(() => SetActiveBrowseResult(item.ItemId))">
                                 <span class="browse-result-title">@item.Title</span>
@@ -570,24 +588,55 @@
                 </section>
             </div>
         </section>
-        <pre>@State.ActiveSectionJson</pre>
     }
     else
     {
+        IReadOnlyList<ClassicSheetFact> summaryFacts = BuildClassicSummaryFacts();
+        IReadOnlyList<ClassicSheetFact> attributeFacts = BuildClassicAttributeFacts();
+
+        if (summaryFacts.Count > 0 || attributeFacts.Count > 0)
+        {
+            <section class="classic-runner-sheet">
+                <h3>Runner Summary</h3>
+                if (summaryFacts.Count > 0)
+                {
+                    <div class="classic-fact-strip">
+                        @foreach (ClassicSheetFact fact in summaryFacts)
+                        {
+                            <article class="classic-fact-card">
+                                <span class="classic-fact-label">@fact.Label</span>
+                                <strong class="classic-fact-value">@fact.Value</strong>
+                            </article>
+                        }
+                    </div>
+                }
+                if (attributeFacts.Count > 0)
+                {
+                    <div class="classic-fact-strip attributes">
+                        @foreach (ClassicSheetFact fact in attributeFacts)
+                        {
+                            <article class="classic-fact-card compact">
+                                <span class="classic-fact-label">@fact.Label</span>
+                                <strong class="classic-fact-value">@fact.Value</strong>
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
+        }
+
         <table class="section-table">
             <thead>
                 <tr><th>Field</th><th>Value</th></tr>
             </thead>
+            @* <Virtualize Items="@State.ActiveSectionRows" Context="row" ItemSize="40"> *@
             <Virtualize Items="@(State.ActiveSectionRows.ToArray())"
                        Context="row"
-                       ItemSize="40"
-                       ItemsTagName="tbody"
-                       ItemTagName="tr">
-                <td><code>@row.Path</code></td>
-                <td><code>@row.Value</code></td>
+                       ItemSize="40">
+                <td><code>@FormatRowPath(row.Path)</code></td>
+                <td><code>@FormatRowValue(row.Value)</code></td>
             </Virtualize>
         </table>
-        <pre>@State.ActiveSectionJson</pre>
     }
 </section>
 
@@ -881,8 +930,192 @@
             : System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
     }
 
+    private static bool HasBuildBlockerReceipt(BuildLabConceptIntakeState buildLab)
+        => !buildLab.CanContinue
+            || !string.IsNullOrWhiteSpace(buildLab.RuntimeCompatibilitySummary)
+            || !string.IsNullOrWhiteSpace(buildLab.SupportClosureSummary)
+            || buildLab.Watchouts is { Count: > 0 }
+            || buildLab.Variants.Any(variant => variant.Warnings.Count > 0);
+
+    private static string BuildBuildBlockerBadge(BuildLabConceptIntakeState buildLab)
+    {
+        int warningCount = buildLab.Variants.Sum(static variant => variant.Warnings.Count)
+            + (buildLab.Watchouts?.Count ?? 0);
+        return warningCount == 0 && buildLab.CanContinue ? "receipt" : $"{warningCount} blocker signal(s)";
+    }
+
+    private static string BuildBuildBlockerEnvironment(BuildLabConceptIntakeState buildLab)
+        => $"{buildLab.RulesetId} / {buildLab.BuildMethod}";
+
+    private static string BuildBuildBlockerBefore(BuildLabConceptIntakeState buildLab)
+    {
+        string summary = FirstNonBlank(
+            buildLab.RuntimeCompatibilitySummary,
+            buildLab.CampaignFitSummary,
+            buildLab.Variants
+                .SelectMany(static variant => variant.Warnings)
+                .Select(static warning => warning.Detail)
+                .FirstOrDefault(),
+            buildLab.Watchouts?.FirstOrDefault());
+
+        return string.IsNullOrWhiteSpace(summary) ? "No blocker was emitted before this build decision." : summary;
+    }
+
+    private static string BuildBuildBlockerAfter(BuildLabConceptIntakeState buildLab)
+        => FirstNonBlank(buildLab.NextSafeAction, buildLab.SupportClosureSummary, buildLab.CanContinue ? "Build can continue with the current receipt." : "Resolve the blocker before handoff.");
+
+    private static string BuildBuildBlockerSupport(BuildLabConceptIntakeState buildLab)
+        => FirstNonBlank(buildLab.SupportClosureSummary, buildLab.ExplainEntryId is null ? "Support can cite the visible blocker receipt." : $"Support can cite explain receipt {buildLab.ExplainEntryId}.");
+
+    private static string FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
     private static string BuildBuildLabActionLabel(BuildLabActionDescriptor action, BuildLabExportTarget? target)
         => target is null
             ? action.Label
             : $"{action.Label} -> {target.Label}";
+
+    private string BuildSectionHeading()
+    {
+        string sectionId = State.ActiveSectionId ?? "workbench";
+        string normalized = sectionId.Replace('-', ' ').Replace('_', ' ').Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return "Workbench";
+        }
+
+        return System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
+    }
+
+    private IReadOnlyList<ClassicSheetFact> BuildClassicSummaryFacts()
+    {
+        JsonObject? root = TryGetClassicSectionRoot();
+        if (root is null)
+        {
+            return [];
+        }
+
+        List<ClassicSheetFact> facts = [];
+        AddClassicFact(facts, "Name", ReadScalar(root, "name"));
+        AddClassicFact(facts, "Metatype", ReadScalar(root, "metatype"));
+        AddClassicFact(facts, "Role", ReadScalar(root, "role"));
+        AddClassicFact(facts, "Priority", ReadScalar(root, "priority"));
+        AddClassicFact(facts, "Ruleset", ReadScalar(root, "ruleset")?.ToUpperInvariant());
+
+        JsonObject? combat = root["combat"] as JsonObject;
+        if (combat is not null)
+        {
+            AddClassicFact(facts, "Init", ReadScalar(combat, "initiative"));
+            AddClassicFact(facts, "Armor", ReadScalar(combat, "armor"));
+            AddClassicFact(facts, "Essence", ReadScalar(combat, "essence"));
+        }
+
+        return facts;
+    }
+
+    private IReadOnlyList<ClassicSheetFact> BuildClassicAttributeFacts()
+    {
+        JsonObject? root = TryGetClassicSectionRoot();
+        JsonObject? attributes = root?["attributes"] as JsonObject;
+        List<ClassicSheetFact> facts = [];
+
+        if (attributes is not null)
+        {
+            foreach (string key in new[] { "Body", "Agility", "Reaction", "Strength", "Willpower", "Logic", "Intuition", "Charisma", "Edge", "Magic", "Resonance" })
+            {
+                string? value = ReadScalar(attributes, key);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    facts.Add(new ClassicSheetFact(ToAttributeAbbreviation(key), value));
+                }
+            }
+        }
+
+        if (facts.Count > 0)
+        {
+            return facts;
+        }
+
+        foreach (SectionRowState row in State.ActiveSectionRows)
+        {
+            if (!row.Path.StartsWith("attributes.", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            facts.Add(new ClassicSheetFact(ToAttributeAbbreviation(row.Path["attributes.".Length..]), FormatRowValue(row.Value)));
+        }
+
+        return facts;
+    }
+
+    private JsonObject? TryGetClassicSectionRoot()
+    {
+        if (string.IsNullOrWhiteSpace(State.ActiveSectionJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonNode.Parse(State.ActiveSectionJson) as JsonObject;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void AddClassicFact(List<ClassicSheetFact> facts, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            facts.Add(new ClassicSheetFact(label, value));
+        }
+    }
+
+    private static string? ReadScalar(JsonObject source, string propertyName)
+        => source.TryGetPropertyValue(propertyName, out JsonNode? node)
+            ? FormatJsonNode(node)
+            : null;
+
+    private static string FormatJsonNode(JsonNode? node)
+    {
+        if (node is null)
+        {
+            return string.Empty;
+        }
+
+        string raw = node.ToJsonString();
+        return raw.Length >= 2 && raw[0] == '"' && raw[^1] == '"'
+            ? raw[1..^1]
+            : raw;
+    }
+
+    private static string FormatRowPath(string path)
+        => string.IsNullOrWhiteSpace(path) ? "(value)" : path.Replace('.', ' ');
+
+    private static string FormatRowValue(string value)
+        => value.Length >= 2 && value[0] == '"' && value[^1] == '"'
+            ? value[1..^1]
+            : value;
+
+    private static string ToAttributeAbbreviation(string attributeName)
+        => attributeName.Trim().ToLowerInvariant() switch
+        {
+            "body" => "BOD",
+            "agility" => "AGI",
+            "reaction" => "REA",
+            "strength" => "STR",
+            "willpower" => "WIL",
+            "logic" => "LOG",
+            "intuition" => "INT",
+            "charisma" => "CHA",
+            "edge" => "EDG",
+            "magic" => "MAG",
+            "resonance" => "RES",
+            _ => attributeName.Length <= 3 ? attributeName.ToUpperInvariant() : attributeName[..Math.Min(3, attributeName.Length)].ToUpperInvariant()
+        };
+
+    private sealed record ClassicSheetFact(string Label, string Value);
 }

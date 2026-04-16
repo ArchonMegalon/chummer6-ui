@@ -11,10 +11,42 @@ public static class ShellChromeBoundary
         .AdaptShellChrome(new ShellChrome("shell", "shell"))
         .RootClass;
 
+    private static readonly IReadOnlyDictionary<string, string> CommandLabels = new Dictionary<string, string>(System.StringComparer.Ordinal)
+    {
+        ["file"] = "File",
+        ["edit"] = "Edit",
+        ["special"] = "Special",
+        ["tools"] = "Tools",
+        ["windows"] = "Windows",
+        ["help"] = "Help",
+        ["new_character"] = "New Character",
+        ["open_character"] = "Open...",
+        ["save_character"] = "Save",
+        ["save_character_as"] = "Save As...",
+        ["print_character"] = "Print...",
+        ["copy"] = "Copy",
+        ["paste"] = "Paste",
+        ["close_window"] = "Close",
+        ["close_all"] = "Close All",
+        ["export_character"] = "Export...",
+        ["dice_roller"] = "Dice Roller",
+        ["global_settings"] = "Options",
+        ["master_index"] = "Master Index",
+        ["character_roster"] = "Character Roster",
+        ["report_bug"] = "Report Issue",
+        ["about"] = "About",
+        ["update"] = "Update"
+    };
+
     public static string FormatCommandLabel(string commandId)
     {
-        return string.IsNullOrWhiteSpace(commandId)
-            ? string.Empty
+        if (string.IsNullOrWhiteSpace(commandId))
+        {
+            return string.Empty;
+        }
+
+        return CommandLabels.TryGetValue(commandId, out string? label)
+            ? label
             : commandId.Replace('_', ' ');
     }
 }

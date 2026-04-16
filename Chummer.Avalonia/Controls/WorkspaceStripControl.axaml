@@ -1,14 +1,29 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.WorkspaceStripControl">
-  <StackPanel Spacing="3" VerticalAlignment="Center">
-    <TextBlock Classes="shell-kicker" Text="Active Workspace" />
+  <Grid RowDefinitions="Auto,Auto" RowSpacing="2" VerticalAlignment="Center">
     <TextBlock x:Name="WorkspaceText"
-               Classes="shell-section-title"
+               Grid.Row="0"
+               Classes="shell-caption"
                VerticalAlignment="Center"
                Text="Workspace: none"
-               TextWrapping="Wrap" />
-    <TextBlock Classes="shell-caption"
-               Text="Ruleset posture and current tab context stay visible while you move through dense builder sections." />
-  </StackPanel>
+               TextTrimming="CharacterEllipsis" />
+    <StackPanel x:Name="QuickStartContainer"
+                Grid.Row="1"
+                Orientation="Horizontal"
+                Spacing="4"
+                IsVisible="False">
+      <TextBlock x:Name="QuickStartCaptionText"
+                 Classes="shell-caption"
+                 VerticalAlignment="Center"
+                 Text="Start:" />
+      <Button x:Name="LoadDemoRunnerQuickActionButton"
+              Classes="shell-action quiet"
+              Content="Demo"
+              Click="LoadDemoRunnerQuickActionButton_OnClick" />
+    </StackPanel>
+    <TextBlock x:Name="WorkspaceCaptionText"
+               IsVisible="False"
+               Text="Ruleset, tabs, and save posture stay visible while you move through dense builder sections." />
+  </Grid>
 </UserControl>

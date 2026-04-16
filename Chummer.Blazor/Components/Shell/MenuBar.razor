@@ -1,30 +1,38 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Chummer.Contracts.Presentation
 @using Chummer.Presentation.UiKit
 
-<div class="menu-bar">
-    @foreach (AppCommandDefinition menu in MenuRoots)
-    {
-        <button class="menu-btn @(string.Equals(OpenMenuId, menu.Id, StringComparison.Ordinal) ? "active" : string.Empty)"
-                @onclick="() => ToggleMenuAsync(menu.Id)">
-            @ShellChromeBoundary.FormatCommandLabel(menu.Id)
-        </button>
-    }
-</div>
-
-@if (!string.IsNullOrWhiteSpace(OpenMenuId))
-{
-    <div class="menu-dropdown">
-        @foreach (AppCommandDefinition command in ResolveMenuCommands(OpenMenuId))
+<div class="menu-shell">
+    <div class="menu-bar" role="menubar">
+        @foreach (AppCommandDefinition menu in MenuRoots)
         {
-            bool enabled = IsCommandEnabled(command);
-            <button class="menu-item"
-                    disabled="@(!enabled || IsBusy)"
-                    @onclick="() => ExecuteCommandAsync(command.Id)">
-                @ShellChromeBoundary.FormatCommandLabel(command.Id)
+            <button class="menu-btn @(string.Equals(OpenMenuId, menu.Id, StringComparison.Ordinal) ? "active" : string.Empty)"
+                    type="button"
+                    role="menuitem"
+                    aria-expanded="@string.Equals(OpenMenuId, menu.Id, StringComparison.Ordinal)"
+                    @onclick="() => ToggleMenuAsync(menu.Id)">
+                @ShellChromeBoundary.FormatCommandLabel(menu.Id)
             </button>
         }
     </div>
-}
+
+    @if (!string.IsNullOrWhiteSpace(OpenMenuId))
+    {
+        <div class="menu-dropdown" role="menu">
+            @foreach (AppCommandDefinition command in ResolveMenuCommands(OpenMenuId))
+            {
+                bool enabled = IsCommandEnabled(command);
+                <button class="menu-item"
+                        type="button"
+                        role="menuitem"
+                        disabled="@(!enabled || IsBusy)"
+                        @onclick="() => ExecuteCommandAsync(command.Id)">
+                    @ShellChromeBoundary.FormatCommandLabel(command.Id)
+                </button>
+            }
+        </div>
+    }
+</div>
 
 @code {
     [Parameter]

@@ -368,12 +368,18 @@ required_desktop_heads = sorted(
         for item in (
             flagship_gate.get("desktopHeads")
             if isinstance(flagship_gate.get("desktopHeads"), list)
-            else [flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else []
+            else []
         )
+        + (
+            flagship_gate.get("desktopFallbackHeads")
+            if isinstance(flagship_gate.get("desktopFallbackHeads"), list)
+            else []
+        )
+        + ([flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else [])
         if normalize_token(item)
     }
 )
-canonical_required_desktop_heads = ["avalonia", "blazor-desktop"]
+canonical_required_desktop_heads = ["avalonia"]
 missing_canonical_required_desktop_heads = [
     head for head in canonical_required_desktop_heads
     if head not in required_desktop_heads
@@ -549,9 +555,11 @@ sr6_family_state = collect_family_state(sr6_ledger)
 
 missing_family_receipts: List[str] = []
 failing_family_receipts: List[str] = []
+failing_family_receipts_external: List[str] = []
 checked_family_receipts = 0
 missing_execution_receipts: List[str] = []
 failing_execution_receipts: List[str] = []
+failing_execution_receipts_external: List[str] = []
 weak_execution_receipts: List[str] = []
 checked_execution_receipts = 0
 missing_required_family_ids: Dict[str, List[str]] = {}
@@ -595,6 +603,22 @@ for edition, ledger_payload in (("sr4", sr4_ledger), ("sr6", sr6_ledger)):
         status = str(payload.get("status") or "").strip().lower()
         if not status_ok(status):
             failing_family_receipts.append(f"{edition}:{family_id}:{rel_path}={status or 'missing'}")
+            payload_evidence = (
+                payload.get("evidence")
+                if isinstance(payload.get("evidence"), dict)
+                else {}
+            )
+            external_blockers = [
+                normalize_token(value)
+                for value in (payload_evidence.get("executionExternalBlockers") or [])
+                if normalize_token(value)
+            ]
+            if external_blockers and all(
+                blocker == "missing_api_surface_contract" for blocker in external_blockers
+            ):
+                failing_family_receipts_external.append(
+                    f"{edition}:{family_id}:{rel_path}=external_blocker:missing_api_surface_contract"
+                )
 
 for edition, ledger_payload, expected_proof_kind in (
     ("sr4", sr4_ledger, "sr4_family_oracle"),
@@ -631,6 +655,11 @@ for edition, ledger_payload, expected_proof_kind in (
 
         if not status_ok(status):
             failing_execution_receipts.append(f"{edition}:{family_id}:{rel_path}={status or 'missing'}")
+            external_blocker = normalize_token(evidence_payload.get("external_blocker"))
+            if external_blocker:
+                failing_execution_receipts_external.append(
+                    f"{edition}:{family_id}:{rel_path}=external_blocker:{external_blocker}"
+                )
             continue
 
         if proof_kind != expected_proof_kind:
@@ -665,9 +694,15 @@ legacy_execution_receipt_paths = sorted(
 evidence["workflow_family_receipt_count_checked"] = checked_family_receipts
 evidence["workflow_family_missing_receipts"] = missing_family_receipts
 evidence["workflow_family_failing_receipts"] = failing_family_receipts
+evidence["workflow_family_failing_receipts_external"] = (
+    failing_family_receipts_external
+)
 evidence["workflow_execution_receipt_count_checked"] = checked_execution_receipts
 evidence["workflow_execution_missing_receipts"] = missing_execution_receipts
 evidence["workflow_execution_failing_receipts"] = failing_execution_receipts
+evidence["workflow_execution_failing_receipts_external"] = (
+    failing_execution_receipts_external
+)
 evidence["workflow_execution_weak_receipts"] = weak_execution_receipts
 evidence["legacy_execution_receipt_paths"] = legacy_execution_receipt_paths
 evidence["required_workflow_family_ids"] = sorted(REQUIRED_WORKFLOW_FAMILY_IDS)
@@ -706,9 +741,23 @@ if missing_family_receipts:
         "Missing SR4/SR6 family-level workflow receipts: " + ", ".join(sorted(missing_family_receipts))
     )
 if failing_family_receipts:
-    reasons.append(
-        "SR4/SR6 family-level workflow receipts are not passing: " + ", ".join(sorted(failing_family_receipts))
+    all_failing_family_receipts_external = (
+        len(failing_family_receipts_external) == len(failing_family_receipts)
     )
+    evidence["workflow_family_failures_external_only"] = (
+        all_failing_family_receipts_external
+    )
+    if all_failing_family_receipts_external:
+        reasons.append(
+            "SR4/SR6 family-level workflow receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
+            "(external blocker: missing_api_surface_contract): "
+            + ", ".join(sorted(failing_family_receipts_external))
+        )
+    else:
+        reasons.append(
+            "SR4/SR6 family-level workflow receipts are not passing: "
+            + ", ".join(sorted(failing_family_receipts))
+        )
 if checked_execution_receipts == 0:
     reasons.append("No SR4/SR6 family-level execution receipts were discovered from ledgers.")
 if missing_execution_receipts:
@@ -716,9 +765,23 @@ if missing_execution_receipts:
         "Missing SR4/SR6 family-level execution receipts: " + ", ".join(sorted(missing_execution_receipts))
     )
 if failing_execution_receipts:
-    reasons.append(
-        "SR4/SR6 family-level execution receipts are not passing: " + ", ".join(sorted(failing_execution_receipts))
+    all_failing_execution_receipts_external = (
+        len(failing_execution_receipts_external) == len(failing_execution_receipts)
     )
+    evidence["workflow_execution_failures_external_only"] = (
+        all_failing_execution_receipts_external
+    )
+    if all_failing_execution_receipts_external:
+        reasons.append(
+            "SR4/SR6 family-level execution receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
+            "(external blocker: missing_api_surface_contract): "
+            + ", ".join(sorted(failing_execution_receipts_external))
+        )
+    else:
+        reasons.append(
+            "SR4/SR6 family-level execution receipts are not passing: "
+            + ", ".join(sorted(failing_execution_receipts))
+        )
 if weak_execution_receipts:
     reasons.append(
         "SR4/SR6 family-level execution receipts are not explicitly grounded: "

@@ -58,13 +58,18 @@
     <Compile Include="Presentation\HttpChummerClientBuildPathTests.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true'">
+    <Compile Include="GlobalUsings.cs" />
     <Compile Include="CharacterSectionServiceTests.cs" />
     <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
     <Compile Include="Compliance\MigrationComplianceTests.cs" />
+    <Compile Include="ExternalHostProofBlockersTests.cs" />
     <Compile Include="ServiceCollectionDesktopRuntimeExtensionsTests.cs" />
     <Compile Include="Presentation\FixtureBackedChummerClient.cs" />
     <Compile Include="Presentation\AvaloniaFlagshipUiGateTests.cs" />
     <Compile Include="Presentation\BlazorShellComponentTests.cs" />
+    <Compile Include="Presentation\DesktopShellRulesetCatalogTests.cs" />
+    <Compile Include="Presentation\FakeWorkbenchCoachApiClient.cs" />
+    <Compile Include="Presentation\DesktopSupportDiagnosticsTextTests.cs" />
     <Compile Include="Presentation\DualHeadAcceptanceTests.cs" />
   </ItemGroup>
   <ItemGroup>

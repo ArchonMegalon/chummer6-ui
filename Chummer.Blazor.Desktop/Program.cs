@@ -54,7 +54,7 @@ internal static class Program
         }
         else if (installLinking.ShouldPrompt)
         {
-            Console.Error.WriteLine("This desktop copy is not linked yet. Copy the install claim code from your Hub account and relaunch with --install-claim-code <CODE> if you want account-aware support continuity.");
+            Console.Error.WriteLine("This desktop copy is not linked yet. Finish the signed-in install handoff in the guided installer or open Devices and access inside Chummer so the desktop can link this copy in-app.");
         }
 
         PhotinoBlazorAppBuilder builder = PhotinoBlazorAppBuilder.CreateDefault(args);
@@ -71,6 +71,12 @@ internal static class Program
         }
 
         PhotinoBlazorApp app = builder.Build();
+        string desktopIconPath = Path.Combine(AppContext.BaseDirectory, "chummer.ico");
+        if (File.Exists(desktopIconPath))
+        {
+            app.MainWindow.IconFile = desktopIconPath;
+        }
+
         app.Run();
         return 0;
     }

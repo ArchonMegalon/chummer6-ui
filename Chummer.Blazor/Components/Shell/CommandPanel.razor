@@ -1,3 +1,4 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Chummer.Contracts.Presentation
 @using Chummer.Presentation.Rulesets
 @using Chummer.Presentation.UiKit
@@ -11,11 +12,10 @@
     else
     {
         <div class="virtual-list command-list">
+            @* <Virtualize Items="@Commands" ItemsTagName="ul" ItemTagName="li"> *@
             <Virtualize Items="@(Commands.ToArray())"
                         Context="command"
-                        ItemSize="42"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+                        ItemSize="42">
                 @{
                     bool enabled = IsCommandEnabled(command);
                 }

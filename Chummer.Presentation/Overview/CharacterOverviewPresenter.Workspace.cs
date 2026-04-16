@@ -25,6 +25,7 @@ public sealed partial class CharacterOverviewPresenter
             WorkspaceImportDocument resolvedDocument = await ResolveImportDocumentAsync(document, ct);
             WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.ImportAsync(State, resolvedDocument, ct);
             Publish(result.State);
+            await EnsureDefaultWorkspaceSurfaceAsync(ct);
         }
         catch (Exception ex)
         {
@@ -106,6 +107,27 @@ public sealed partial class CharacterOverviewPresenter
         return _workspaceOverviewLifecycleCoordinator.CurrentWorkspaceId ?? State.WorkspaceId;
     }
 
+    private async Task EnsureDefaultWorkspaceSurfaceAsync(CancellationToken ct)
+    {
+        if (ResolveCurrentWorkspaceId() is null || !string.IsNullOrWhiteSpace(State.ActiveSectionId))
+        {
+            return;
+        }
+
+        string? defaultTabId = !string.IsNullOrWhiteSpace(State.ActiveTabId)
+            ? State.ActiveTabId
+            : State.NavigationTabs
+                .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
+                ?.Id
+                ?? State.NavigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
+        if (string.IsNullOrWhiteSpace(defaultTabId))
+        {
+            return;
+        }
+
+        await SelectTabAsync(defaultTabId, ct);
+    }
+
     public async Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         Publish(State with
@@ -118,6 +140,7 @@ public sealed partial class CharacterOverviewPresenter
         {
             WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.LoadAsync(State, id, ct);
             Publish(result.State);
+            await EnsureDefaultWorkspaceSurfaceAsync(ct);
         }
         catch (Exception ex)
         {

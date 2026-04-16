@@ -206,6 +206,47 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_derive_initiative_updates_preview_without_closing_dialog()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.dice_roller",
+                Title: "Dice Roller",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("diceInitiativeBase", "Base", "11", "10"),
+                    new DesktopDialogField("diceInitiativeDice", "Dice", "2", "1"),
+                    new DesktopDialogField("diceWoundModifier", "Wound", "-1", "0"),
+                    new DesktopDialogField("diceCurrentPass", "Pass", "2", "1"),
+                    new DesktopDialogField("diceThreshold", "Threshold", "4", "0"),
+                    new DesktopDialogField("initiativePreview", "Initiative Preview", "stale", "stale", IsReadOnly: true)
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("derive_initiative", "Preview Initiative", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("derive_initiative", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("dialog.dice_roller", published.ActiveDialog!.Id);
+        Assert.AreEqual("11 + 2d6 · pass 2 · range 12-22 · avg 17.0",
+            DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "initiativePreview"));
+        StringAssert.Contains(published.Notice ?? string.Empty, "threshold 4");
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_import_imports_workspace_and_closes_dialog_on_success()
     {
         DialogCoordinator coordinator = new();

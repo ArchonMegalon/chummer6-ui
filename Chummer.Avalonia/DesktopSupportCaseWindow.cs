@@ -21,6 +21,7 @@ internal sealed class DesktopSupportCaseWindow : Window
     private readonly TextBlock _statusText;
     private readonly TextBlock _summaryText;
     private readonly TextBlock _timelineText;
+    private readonly TextBlock _diagnosticsText;
     private readonly TextBlock _followThroughText;
     private readonly StackPanel _summaryActionsRow;
     private readonly StackPanel _timelineActionsRow;
@@ -73,6 +74,12 @@ internal sealed class DesktopSupportCaseWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _diagnosticsText = new TextBlock
+        {
+            Text = BuildDiagnosticsBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
         _followThroughText = new TextBlock
         {
             Text = BuildFollowThroughBody(),
@@ -103,6 +110,7 @@ internal sealed class DesktopSupportCaseWindow : Window
                         _statusText,
                         CreateSection(S("desktop.support_case.section.summary"), _summaryText, _summaryActionsRow),
                         CreateSection(S("desktop.support_case.section.timeline"), _timelineText, _timelineActionsRow),
+                        CreateSection("Diagnostics environment diff", _diagnosticsText, null),
                         CreateSection(S("desktop.support_case.section.follow_through"), _followThroughText, _followThroughActionsRow),
                         new StackPanel
                         {
@@ -450,6 +458,9 @@ internal sealed class DesktopSupportCaseWindow : Window
         return string.Join("\n", TrimTrailingBlankLines(lines));
     }
 
+    private string BuildDiagnosticsBody()
+        => DesktopSupportDiagnosticsText.BuildTrackedCaseDiagnostics(_installState, _updateStatus, _supportProjection, _supportCase);
+
     private string BuildFollowThroughBody()
     {
         List<string> lines =
@@ -647,6 +658,7 @@ internal sealed class DesktopSupportCaseWindow : Window
         _statusText.Text = BuildStatus();
         _summaryText.Text = BuildSummaryBody();
         _timelineText.Text = BuildTimelineBody();
+        _diagnosticsText.Text = BuildDiagnosticsBody();
         _followThroughText.Text = BuildFollowThroughBody();
         ResetActionRow(_summaryActionsRow, CreateSummaryActions());
         ResetActionRow(_timelineActionsRow, CreateTimelineActions());

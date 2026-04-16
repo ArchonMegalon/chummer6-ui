@@ -278,7 +278,7 @@ internal sealed class DesktopUpdateWindow : Window
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
                 ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
-            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), () => DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_installState))
         ];
 
         return actions;
@@ -307,7 +307,7 @@ internal sealed class DesktopUpdateWindow : Window
             if (result.ExitRequested)
             {
                 _statusText.Text = S("desktop.update.apply_scheduled");
-                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {
                     desktop.Shutdown();
                 }

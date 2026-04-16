@@ -9,6 +9,17 @@ namespace Chummer.Avalonia.Controls;
 public partial class NavigatorPaneControl : UserControl
 {
     private bool _suppressTreeSelectionEvent;
+    private string _openWorkspacesHeading = string.Empty;
+    private NavigatorWorkspaceItem[] _openWorkspaces = [];
+    private string? _selectedWorkspaceId;
+    private string _navigationTabsHeading = string.Empty;
+    private NavigatorTabItem[] _navigationTabs = [];
+    private string? _activeTabId;
+    private string _sectionActionsHeading = string.Empty;
+    private NavigatorSectionActionItem[] _sectionActions = [];
+    private string? _activeActionId;
+    private string _workflowSurfacesHeading = string.Empty;
+    private NavigatorWorkflowSurfaceItem[] _workflowSurfaces = [];
 
     public NavigatorPaneControl()
     {
@@ -24,7 +35,18 @@ public partial class NavigatorPaneControl : UserControl
     {
         CodexHeadingText.Text = BuildCodexHeading(state);
         CodexCaptionText.Text = BuildCodexCaption(state);
-        SetNavigatorTree(state);
+        _openWorkspacesHeading = state.OpenWorkspacesHeading;
+        _navigationTabsHeading = state.NavigationTabsHeading;
+        _sectionActionsHeading = state.SectionActionsHeading;
+        _workflowSurfacesHeading = state.WorkflowSurfacesHeading;
+        OpenWorkspacesHeader.Text = state.OpenWorkspacesHeading;
+        NavigationTabsHeader.Text = state.NavigationTabsHeading;
+        SectionActionsHeader.Text = state.SectionActionsHeading;
+        WorkflowSurfacesHeader.Text = state.WorkflowSurfacesHeading;
+        SetOpenWorkspaces(state.OpenWorkspaces, state.SelectedWorkspaceId);
+        SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
+        SetSectionActions(state.SectionActions, state.ActiveActionId);
+        SetWorkflowSurfaces(state.WorkflowSurfaces);
     }
 
     public NavigatorTreeItem[] SnapshotTreeItems()
@@ -42,12 +64,39 @@ public partial class NavigatorPaneControl : UserControl
         return [];
     }
 
-    private void SetNavigatorTree(NavigatorPaneState state)
+    private void SetOpenWorkspaces(NavigatorWorkspaceItem[] workspaces, string? selectedWorkspaceId)
     {
-        NavigatorTreeItem[] treeItems = BuildTreeItems(state);
+        _openWorkspaces = workspaces;
+        _selectedWorkspaceId = selectedWorkspaceId;
+        RefreshNavigatorTree();
+    }
+
+    private void SetNavigationTabs(NavigatorTabItem[] navigationTabs, string? activeTabId)
+    {
+        _navigationTabs = navigationTabs;
+        _activeTabId = activeTabId;
+        RefreshNavigatorTree();
+    }
+
+    private void SetSectionActions(NavigatorSectionActionItem[] sectionActions, string? activeActionId)
+    {
+        _sectionActions = sectionActions;
+        _activeActionId = activeActionId;
+        RefreshNavigatorTree();
+    }
+
+    private void SetWorkflowSurfaces(NavigatorWorkflowSurfaceItem[] workflowSurfaces)
+    {
+        _workflowSurfaces = workflowSurfaces;
+        RefreshNavigatorTree();
+    }
+
+    private void RefreshNavigatorTree()
+    {
+        NavigatorTreeItem[] treeItems = BuildTreeItems();
         _suppressTreeSelectionEvent = true;
         NavigatorTree.ItemsSource = treeItems;
-        NavigatorTree.SelectedItem = ResolveSelectedTreeItem(treeItems, state.SelectedWorkspaceId, state.ActiveTabId);
+        NavigatorTree.SelectedItem = ResolveSelectedTreeItem(treeItems, _selectedWorkspaceId, _activeTabId);
         _suppressTreeSelectionEvent = false;
     }
 
@@ -94,12 +143,12 @@ public partial class NavigatorPaneControl : UserControl
     {
         string tabLabel = state.NavigationTabs.FirstOrDefault(item => string.Equals(item.Id, state.ActiveTabId, StringComparison.Ordinal))?.Label
             ?? "Pick a runner to restore the workbench";
-        return $"Legacy tree navigator with runners, tabs, actions, and workflow routes. Active tab: {tabLabel}.";
+        return $"Tree navigator for runners, tabs, actions, and workflow routes. Active tab: {tabLabel}.";
     }
 
-    private static NavigatorTreeItem[] BuildTreeItems(NavigatorPaneState state)
+    private NavigatorTreeItem[] BuildTreeItems()
     {
-        NavigatorTreeItem[] workspaces = state.OpenWorkspaces
+        NavigatorTreeItem[] workspaces = _openWorkspaces
             .Select(workspace => new NavigatorTreeItem(
                 workspace.Id,
                 workspace.Name,
@@ -108,7 +157,7 @@ public partial class NavigatorPaneControl : UserControl
                 NavigatorTreeNodeKind.Workspace,
                 []))
             .ToArray();
-        NavigatorTreeItem[] tabs = state.NavigationTabs
+        NavigatorTreeItem[] tabs = _navigationTabs
             .Select(tab => new NavigatorTreeItem(
                 tab.Id,
                 tab.Label,
@@ -117,7 +166,7 @@ public partial class NavigatorPaneControl : UserControl
                 NavigatorTreeNodeKind.NavigationTab,
                 []))
             .ToArray();
-        NavigatorTreeItem[] sectionActions = state.SectionActions
+        NavigatorTreeItem[] sectionActions = _sectionActions
             .Select(action => new NavigatorTreeItem(
                 action.Id,
                 action.Label,
@@ -126,7 +175,7 @@ public partial class NavigatorPaneControl : UserControl
                 NavigatorTreeNodeKind.SectionAction,
                 []))
             .ToArray();
-        NavigatorTreeItem[] workflowSurfaces = state.WorkflowSurfaces
+        NavigatorTreeItem[] workflowSurfaces = _workflowSurfaces
             .Select(surface => new NavigatorTreeItem(
                 surface.ActionId,
                 surface.Label,
@@ -138,10 +187,10 @@ public partial class NavigatorPaneControl : UserControl
 
         return
         [
-            CreateGroupNode(state.OpenWorkspacesHeading, workspaces),
-            CreateGroupNode(state.NavigationTabsHeading, tabs),
-            CreateGroupNode(state.SectionActionsHeading, sectionActions),
-            CreateGroupNode(state.WorkflowSurfacesHeading, workflowSurfaces),
+            CreateGroupNode(_openWorkspacesHeading, workspaces),
+            CreateGroupNode(_navigationTabsHeading, tabs),
+            CreateGroupNode(_sectionActionsHeading, sectionActions),
+            CreateGroupNode(_workflowSurfacesHeading, workflowSurfaces),
         ];
     }
 

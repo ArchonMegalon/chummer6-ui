@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
 using Avalonia.Input;
@@ -50,30 +51,98 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static bool _headlessInitialized;
 
     [TestMethod]
+    public void Blazor_root_route_ownership_stays_with_modern_home_page()
+    {
+        string homePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Home.razor");
+        string legacyPath = SourcePath("Chummer.Blazor", "Pages", "Index.razor");
+
+        string homeText = File.ReadAllText(homePath);
+        string legacyText = File.ReadAllText(legacyPath);
+
+        StringAssert.Contains(homeText, "@page \"/\"");
+        Assert.IsFalse(legacyText.Contains("@page \"/\"", StringComparison.Ordinal));
+        Assert.IsFalse(legacyText.Contains("@page \"/blazor\"", StringComparison.Ordinal));
+        StringAssert.Contains(legacyText, "@page \"/legacy-console\"");
+    }
+
+    [TestMethod]
+    public void Avalonia_startup_enters_the_workbench_without_reopening_the_desktop_home_cockpit()
+    {
+        string appPath = ResolveSourceFile("Chummer.Avalonia", "App.axaml.cs");
+        string appText = File.ReadAllText(appPath);
+
+        StringAssert.Contains(appText, "DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);");
+        Assert.IsFalse(
+            appText.Contains("DesktopHomeWindow.ShowIfNeededAsync(", StringComparison.Ordinal),
+            "First launch must go straight to the workbench; install linking is the only startup prompt that should remain.");
+    }
+
+    [TestMethod]
+    public void Bundled_demo_runner_fixture_is_published_for_both_desktop_heads()
+    {
+        string avaloniaProjectPath = ResolveSourceFile("Chummer.Avalonia", "Chummer.Avalonia.csproj");
+        string blazorDesktopProjectPath = ResolveSourceFile("Chummer.Blazor.Desktop", "Chummer.Blazor.Desktop.csproj");
+
+        string avaloniaProjectText = File.ReadAllText(avaloniaProjectPath);
+        string blazorDesktopProjectText = File.ReadAllText(blazorDesktopProjectPath);
+
+        StringAssert.Contains(avaloniaProjectText, "Samples/Legacy/Soma-Career.chum5");
+        StringAssert.Contains(avaloniaProjectText, "<CopyToPublishDirectory>Always</CopyToPublishDirectory>");
+        StringAssert.Contains(blazorDesktopProjectText, "Samples/Legacy/Soma-Career.chum5");
+        StringAssert.Contains(blazorDesktopProjectText, "<CopyToPublishDirectory>Always</CopyToPublishDirectory>");
+    }
+
+    [TestMethod]
+    public void Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers()
+    {
+        string releaseGatePath = ResolveSourceFile("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
+        string visualGatePath = ResolveSourceFile("scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
+        string toolStripPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "ToolStripControl.axaml");
+        string blazorShellPath = ResolveSourceFile("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor.cs");
+
+        string releaseGateText = File.ReadAllText(releaseGatePath);
+        string visualGateText = File.ReadAllText(visualGatePath);
+        string toolStripText = File.ReadAllText(toolStripPath);
+        string blazorShellText = File.ReadAllText(blazorShellPath);
+
+        StringAssert.Contains(releaseGateText, "chummer5a-layout-hard-gate.sh");
+        StringAssert.Contains(visualGateText, "chummer5a-layout-hard-gate.sh");
+        StringAssert.Contains(toolStripText, "x:Name=\"SaveButton\"");
+        StringAssert.Contains(toolStripText, "x:Name=\"PrintButton\"");
+        StringAssert.Contains(toolStripText, "x:Name=\"CopyButton\"");
+        Assert.IsTrue(
+            toolStripText.IndexOf("x:Name=\"SaveButton\"", StringComparison.Ordinal) <
+            toolStripText.IndexOf("x:Name=\"PrintButton\"", StringComparison.Ordinal),
+            "Classic toolbar parity requires Save before Print.");
+        Assert.IsTrue(
+            toolStripText.IndexOf("x:Name=\"PrintButton\"", StringComparison.Ordinal) <
+            toolStripText.IndexOf("x:Name=\"CopyButton\"", StringComparison.Ordinal),
+            "Classic toolbar parity requires Print before Copy.");
+        Assert.IsTrue(
+            blazorShellText.IndexOf("\"save_character\"", StringComparison.Ordinal) <
+            blazorShellText.IndexOf("\"print_character\"", StringComparison.Ordinal),
+            "Blazor desktop shell must keep save before print in the preferred toolstrip order.");
+    }
+
+    [TestMethod]
     public void Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters()
     {
         WithRuntimeHarness(harness =>
         {
             harness.WaitForReady();
-            Assert.IsTrue(harness.FindControl<Button>("FileMenuButton").IsEnabled, "File menu must stay enabled after real shell bootstrap.");
-            Assert.IsTrue(harness.FindControl<Button>("HelpMenuButton").IsEnabled, "Help menu must stay enabled after real shell bootstrap.");
+            Assert.IsTrue(harness.FindControl<MenuItem>("FileMenuButton").IsEnabled, "File menu must stay enabled after real shell bootstrap.");
+            Assert.IsTrue(harness.FindControl<MenuItem>("HelpMenuButton").IsEnabled, "Help menu must stay enabled after real shell bootstrap.");
             harness.Click("FileMenuButton");
 
-            harness.WaitUntil(() =>
-            {
-                Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                return host is not null && host.Children.Count > 0;
-            });
+            harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton")).Length > 0);
 
-            Panel menuHost = harness.FindControl<Panel>("MenuCommandsHost");
-            string[] visibleCommands = menuHost.Children
-                .OfType<Button>()
-                .Select(button => button.Content?.ToString() ?? string.Empty)
+            string[] visibleCommands = SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton"))
+                .Select(command => command.Tag?.ToString() ?? string.Empty)
                 .Where(static value => !string.IsNullOrWhiteSpace(value))
                 .ToArray();
 
-            CollectionAssert.Contains(visibleCommands, "open character");
-            CollectionAssert.Contains(visibleCommands, "save character");
+            CollectionAssert.Contains(visibleCommands, "open_character");
+            CollectionAssert.Contains(visibleCommands, "save_character");
         });
     }
 
@@ -84,10 +153,10 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             harness.WaitForReady();
 
-            Panel menuPanel = harness.FindControl<Panel>("MenuBarPanel");
-            Button[] menuButtons = menuPanel.Children.OfType<Button>().ToArray();
-            string[] menuLabels = menuButtons
-                .Select(button => button.Content?.ToString() ?? string.Empty)
+            Menu menuPanel = harness.FindControl<Menu>("MenuBarPanel");
+            MenuItem[] menuItems = SnapshotRootMenuItems(menuPanel);
+            string[] menuLabels = menuItems
+                .Select(menuItem => menuItem.Header?.ToString() ?? string.Empty)
                 .ToArray();
 
             CollectionAssert.AreEqual(
@@ -102,12 +171,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                 },
                 menuLabels);
 
-            foreach (Button button in menuButtons)
+            foreach (MenuItem menuItem in menuItems)
             {
-                Assert.IsTrue(button.IsEnabled, $"Menu button '{button.Name}' must stay enabled after runtime bootstrap.");
+                Assert.IsTrue(menuItem.IsEnabled, $"Menu item '{menuItem.Name}' must stay enabled after runtime bootstrap.");
             }
 
-            (string ButtonName, string MenuId)[] clickableMenus =
+            (string MenuName, string MenuId)[] clickableMenus =
             [
                 ("FileMenuButton", "file"),
                 ("EditMenuButton", "edit"),
@@ -116,18 +185,33 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ("HelpMenuButton", "help"),
             ];
 
-            foreach ((string buttonName, string menuId) in clickableMenus)
+            foreach ((string menuName, string menuId) in clickableMenus)
             {
-                harness.Click(buttonName);
-                harness.WaitUntil(() =>
-                {
-                    Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                    return string.Equals(harness.ShellPresenter.State.OpenMenuId, menuId, StringComparison.Ordinal)
-                        && host is not null
-                        && host.Children.Count > 0
-                        && harness.FindControl<Control>("MenuCommandsRegion").IsVisible;
-                });
+                harness.Click(menuName);
+                harness.WaitUntil(() => string.Equals(harness.ShellPresenter.State.OpenMenuId, menuId, StringComparison.Ordinal));
             }
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_file_menu_preserves_working_open_save_import_routes()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Click("FileMenuButton");
+            harness.WaitUntil(() =>
+            {
+                MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton"));
+                return commands.Any(command => string.Equals(command.Tag?.ToString(), "open_character", StringComparison.Ordinal))
+                    && commands.Any(command => string.Equals(command.Tag?.ToString(), "save_character", StringComparison.Ordinal));
+            });
+
+            harness.ClickMenuCommand("open_character");
+            Assert.IsNotNull(harness.FindControlOrDefault<MenuItem>("FileMenuButton"), "File command dispatch must keep runtime-backed menu routing active.");
+
+            harness.Click("ImportFileButton");
+            Assert.IsTrue(harness.FindControl<Button>("ImportFileButton").IsEnabled, "Import action must stay first-class in the workbench toolstrip.");
         });
     }
 
@@ -138,23 +222,19 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             harness.WaitForReady();
 
-            (string ButtonName, string ExpectedLabel)[] expectedButtons =
+            (string ButtonName, string ExpectedLabel, string ExpectedToolTip)[] expectedButtons =
             [
-                ("DesktopHomeButton", "Desktop Home"),
-                ("CampaignWorkspaceButton", "Campaign Workspace"),
-                ("LoadDemoRunnerButton", "Load Demo Runner"),
-                ("ImportFileButton", "Import Character File"),
-                ("SaveButton", "Save Workspace"),
-                ("SettingsButton", "Settings"),
-                ("ImportRawButton", "Import Raw XML"),
-                ("UpdateStatusButton", "Update Status"),
-                ("InstallLinkingButton", "Link This Copy"),
-                ("SupportButton", "Open Support"),
-                ("ReportIssueButton", "Report Issue"),
-                ("CloseWorkspaceButton", "Close Active Workspace"),
+                ("SaveButton", "Save", "Save Workspace"),
+                ("PrintButton", "Print", "Print Character"),
+                ("CopyButton", "Copy", "Copy"),
+                ("DesktopHomeButton", "New", "New Character"),
+                ("ImportFileButton", "Open", "Import Character File"),
+                ("CloseWorkspaceButton", "Close", "Close Active Workspace"),
+                ("SettingsButton", "Options", "Settings"),
+                ("LoadDemoRunnerButton", "Demo", "Load Demo Runner"),
             ];
 
-            foreach ((string buttonName, string expectedLabel) in expectedButtons)
+            foreach ((string buttonName, string expectedLabel, string expectedToolTip) in expectedButtons)
             {
                 Button button = harness.FindControl<Button>(buttonName);
                 Assert.IsTrue(button.IsVisible, $"Workbench action '{buttonName}' must stay visible.");
@@ -162,7 +242,23 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsInstanceOfType<string>(button.Content, $"Workbench action '{buttonName}' must stay a flat classic toolbar label, not a dashboard tile.");
                 CollectionAssert.Contains(GetButtonTextLines(button), expectedLabel, $"Workbench action '{buttonName}' must keep its classic desktop label.");
                 Assert.AreEqual(1, GetButtonTextLines(button).Length, $"Workbench action '{buttonName}' must not add a secondary caption line.");
+                Assert.AreEqual(expectedToolTip, ToolTip.GetTip(button)?.ToString(), $"Workbench action '{buttonName}' must keep the full command text as hover help.");
                 Assert.IsTrue(button.Bounds.Width > 0d && button.Bounds.Height > 0d, $"Workbench action '{buttonName}' must keep a visible desktop footprint.");
+            }
+
+            foreach (string buttonName in new[]
+                     {
+                         "ImportRawButton",
+                         "CampaignWorkspaceButton",
+                         "UpdateStatusButton",
+                         "InstallLinkingButton",
+                         "SupportButton",
+                         "ReportIssueButton"
+                     })
+            {
+                Assert.IsFalse(
+                    harness.FindControl<Button>(buttonName).IsVisible,
+                    $"Workbench chrome must hide non-primary side workflows from the default toolbar: {buttonName}.");
             }
         });
     }
@@ -190,24 +286,48 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             double[] toolbarButtonHeights =
             [
-                harness.FindControl<Button>("DesktopHomeButton").Bounds.Height,
-                harness.FindControl<Button>("CampaignWorkspaceButton").Bounds.Height,
-                harness.FindControl<Button>("LoadDemoRunnerButton").Bounds.Height,
-                harness.FindControl<Button>("ImportFileButton").Bounds.Height,
                 harness.FindControl<Button>("SaveButton").Bounds.Height,
-                harness.FindControl<Button>("SettingsButton").Bounds.Height,
-                harness.FindControl<Button>("ImportRawButton").Bounds.Height,
-                harness.FindControl<Button>("UpdateStatusButton").Bounds.Height,
-                harness.FindControl<Button>("InstallLinkingButton").Bounds.Height,
-                harness.FindControl<Button>("SupportButton").Bounds.Height,
-                harness.FindControl<Button>("ReportIssueButton").Bounds.Height,
+                harness.FindControl<Button>("PrintButton").Bounds.Height,
+                harness.FindControl<Button>("CopyButton").Bounds.Height,
+                harness.FindControl<Button>("DesktopHomeButton").Bounds.Height,
+                harness.FindControl<Button>("ImportFileButton").Bounds.Height,
                 harness.FindControl<Button>("CloseWorkspaceButton").Bounds.Height,
+                harness.FindControl<Button>("SettingsButton").Bounds.Height,
+                harness.FindControl<Button>("LoadDemoRunnerButton").Bounds.Height,
             ];
             Assert.AreEqual(0, badgeBorders.Length, "Classic toolbar parity forbids dashboard badge tiles in the workbench strip.");
             Assert.AreEqual(0, captionBlocks.Length, "Classic toolbar parity forbids secondary caption lines in the workbench strip.");
             CollectionAssert.DoesNotContain(shellChromeLabels, "Quick Actions");
             CollectionAssert.DoesNotContain(shellChromeLabels, "Workbench State");
             Assert.IsTrue(toolbarButtonHeights.All(height => height <= 40d), "Classic toolbar parity requires compact workbench actions instead of hero-card sized buttons.");
+            Assert.IsFalse(harness.FindControl<Button>("ImportRawButton").IsVisible, "Raw XML import must stay off the primary toolbar by default.");
+            Control rightShellRegion = harness.FindControl<Control>("RightShellRegion");
+            Assert.IsTrue(rightShellRegion.IsVisible, "The collapsed right rail must stay mounted so command palette and dialog surfaces remain routable.");
+            Assert.IsTrue(rightShellRegion.Bounds.Width <= 1d, "Classic workbench parity still requires the default right rail to surrender its space.");
+        });
+    }
+
+    [TestMethod]
+    public void Opening_mainframe_preserves_chummer5a_successor_workbench_posture()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            Assert.IsTrue(harness.FindControl<Control>("MenuBarRegion").IsVisible, "Workbench-first startup must expose a real File menu immediately.");
+            Assert.IsTrue(harness.FindControl<Control>("ToolStripRegion").IsVisible, "Workbench-first startup must expose runtime-backed workbench actions immediately.");
+            Assert.IsNull(harness.FindControlOrDefault<Control>("WorkspaceStripRegion"), "Fresh startup must not mount an extra workspace strip above the editor.");
+            Assert.IsNull(harness.FindControlOrDefault<Control>("QuickStartContainer"), "Fresh startup must not reopen a desktop home cockpit or quick-start filler.");
+
+            string[] visibleTexts = harness.Window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select(text => (text.Text ?? string.Empty).Trim())
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+            Assert.IsTrue(harness.FindControl<TreeView>("NavigatorTree").IsVisible, "Classic orientation must rely on the left tree, not a dashboard title.");
+            CollectionAssert.DoesNotContain(visibleTexts, "mainframe");
+            CollectionAssert.DoesNotContain(visibleTexts, "dashboard");
+            CollectionAssert.DoesNotContain(visibleTexts, "control center");
         });
     }
 
@@ -251,13 +371,13 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Runtime_backed_ruleset_switch_preserves_sr4_and_sr6_codex_landmarks()
+    public void Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks()
     {
         WithRuntimeHarness(harness =>
         {
             harness.WaitForReady();
 
-            foreach (string rulesetId in new[] { RulesetDefaults.Sr4, RulesetDefaults.Sr6 })
+            foreach (string rulesetId in new[] { RulesetDefaults.Sr4, RulesetDefaults.Sr5, RulesetDefaults.Sr6 })
             {
                 harness.ShellPresenter.SetPreferredRulesetAsync(rulesetId, CancellationToken.None).GetAwaiter().GetResult();
                 harness.WaitUntil(() =>
@@ -283,6 +403,34 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Master_index_is_a_first_class_runtime_backed_workbench_route()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            AppCommandDefinition? command = harness.ShellPresenter.State.Commands
+                .FirstOrDefault(item => string.Equals(item.Id, "master_index", StringComparison.Ordinal));
+            Assert.IsNotNull(command, "Master index must remain a first-class runtime-backed shell command.");
+            Assert.IsTrue(string.Equals(command.Group, "tools", StringComparison.Ordinal), "Master index must remain a Tools-lane workbench route.");
+            Assert.IsTrue(command.EnabledByDefault, "Master index command must be enabled by default in the runtime shell.");
+        });
+    }
+
+    [TestMethod]
+    public void Character_roster_is_a_first_class_runtime_backed_workbench_route()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            AppCommandDefinition? command = harness.ShellPresenter.State.Commands
+                .FirstOrDefault(item => string.Equals(item.Id, "character_roster", StringComparison.Ordinal));
+            Assert.IsNotNull(command, "Character roster must remain a first-class runtime-backed shell command.");
+            Assert.IsTrue(string.Equals(command.Group, "tools", StringComparison.Ordinal), "Character roster must remain a Tools-lane workbench route.");
+            Assert.IsTrue(command.EnabledByDefault, "Character roster command must be enabled by default in the runtime shell.");
+        });
+    }
+
+    [TestMethod]
     public void Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation()
     {
         WithRuntimeHarness(harness =>
@@ -300,9 +448,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             CollectionAssert.DoesNotContain(visibleTexts, "Coach Sidecar");
             CollectionAssert.DoesNotContain(visibleTexts, "Coach Launch");
             CollectionAssert.DoesNotContain(visibleTexts, "Recent Coach Guidance");
-            CollectionAssert.Contains(visibleTexts, "Runner Workbench");
-            CollectionAssert.Contains(visibleTexts, "Section Commands");
-            CollectionAssert.Contains(visibleTexts, "Reference & Notes");
+            Assert.IsTrue(harness.FindControl<TreeView>("NavigatorTree").IsVisible, "Classic orientation must keep the left tree visible.");
+            Assert.IsTrue(harness.FindControl<ListBox>("SectionRowsList").IsVisible, "Classic orientation must keep the dense section list visible.");
         });
     }
 
@@ -326,19 +473,25 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             string[] actionButtons =
             [
-                "DesktopHomeButton",
-                "CampaignWorkspaceButton",
-                "LoadDemoRunnerButton",
-                "ImportFileButton",
                 "SaveButton",
+                "PrintButton",
+                "CopyButton",
+                "DesktopHomeButton",
+                "ImportFileButton",
+                "CloseWorkspaceButton",
                 "SettingsButton",
-                "UpdateStatusButton",
-                "InstallLinkingButton",
-                "SupportButton",
-                "ReportIssueButton",
+                "LoadDemoRunnerButton",
             ];
 
-            foreach (string buttonName in menuButtons.Concat(actionButtons))
+            foreach (string menuName in menuButtons)
+            {
+                MenuItem menuItem = harness.FindControl<MenuItem>(menuName);
+                Assert.IsTrue(menuItem.IsVisible, $"Runtime-backed runner load must keep '{menuName}' visible.");
+                Assert.IsTrue(menuItem.IsEnabled, $"Runtime-backed runner load must keep '{menuName}' enabled.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(menuItem.Header?.ToString()), $"Runtime-backed runner load must not blank the label for '{menuName}'.");
+            }
+
+            foreach (string buttonName in actionButtons)
             {
                 Button button = harness.FindControl<Button>(buttonName);
                 Assert.IsTrue(button.IsVisible, $"Runtime-backed runner load must keep '{buttonName}' visible.");
@@ -346,14 +499,20 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsTrue(GetButtonTextLines(button).Length > 0, $"Runtime-backed runner load must not blank the label for '{buttonName}'.");
             }
 
-            harness.Click("FileMenuButton");
-            harness.WaitUntil(() =>
+            foreach (string buttonName in new[]
+                     {
+                         "CampaignWorkspaceButton",
+                         "UpdateStatusButton",
+                         "InstallLinkingButton",
+                         "SupportButton",
+                         "ReportIssueButton"
+                     })
             {
-                Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                return host is not null
-                    && host.Children.Count > 0
-                    && harness.FindControl<Control>("MenuCommandsRegion").IsVisible;
-            });
+                Assert.IsFalse(harness.FindControl<Button>(buttonName).IsVisible, $"Dense workbench parity keeps '{buttonName}' out of the default toolbar.");
+            }
+
+            harness.Click("FileMenuButton");
+            harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton")).Length > 0);
         });
     }
 
@@ -385,11 +544,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 string.Equals(button.Content?.ToString(), "Save", StringComparison.OrdinalIgnoreCase)));
 
             harness.Click("FileMenuButton");
-            harness.WaitUntil(() =>
-            {
-                Panel? menuHost = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                return menuHost is not null && menuHost.Children.Count > 0;
-            });
+            harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton")).Length > 0);
         });
     }
 
@@ -440,14 +595,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             WithRuntimeHarness(harness =>
             {
                 harness.WaitForReady();
-                Assert.IsTrue(harness.FindControl<Control>("QuickStartContainer").IsVisible);
-                Assert.AreEqual(
-                    GetPrimaryButtonLabel(harness.FindControl<Button>("LoadDemoRunnerButton")),
-                    GetPrimaryButtonLabel(harness.FindControl<Button>("LoadDemoRunnerQuickActionButton")),
-                    "First-run CTA wording should stay aligned with the primary toolstrip action.");
-                harness.Click("LoadDemoRunnerQuickActionButton");
+                Assert.IsNull(harness.FindControlOrDefault<Control>("QuickStartContainer"));
+                harness.Click("LoadDemoRunnerButton");
                 harness.WaitUntil(() => harness.State.WorkspaceId is not null && harness.State.Session.OpenWorkspaces.Count > 0);
-                harness.WaitUntil(() => !harness.FindControl<Control>("QuickStartContainer").IsVisible);
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("QuickStartContainer") is null);
                 Assert.IsTrue(harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible);
             });
         }
@@ -469,6 +620,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             control.ImportFileRequested += (_, _) => raisedEvents.Add("import_file");
             control.ImportRawRequested += (_, _) => raisedEvents.Add("import_raw");
             control.SaveRequested += (_, _) => raisedEvents.Add("save");
+            control.PrintRequested += (_, _) => raisedEvents.Add("print");
+            control.CopyRequested += (_, _) => raisedEvents.Add("copy");
             control.CloseWorkspaceRequested += (_, _) => raisedEvents.Add("close_workspace");
             control.DesktopHomeRequested += (_, _) => raisedEvents.Add("desktop_home");
             control.CampaignWorkspaceRequested += (_, _) => raisedEvents.Add("campaign_workspace");
@@ -481,18 +634,14 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             (string ButtonName, string EventId)[] buttonMap =
             [
-                ("DesktopHomeButton", "desktop_home"),
-                ("CampaignWorkspaceButton", "campaign_workspace"),
-                ("LoadDemoRunnerButton", "load_demo_runner"),
-                ("ImportFileButton", "import_file"),
                 ("SaveButton", "save"),
-                ("SettingsButton", "settings"),
-                ("ImportRawButton", "import_raw"),
-                ("UpdateStatusButton", "update_status"),
-                ("InstallLinkingButton", "install_linking"),
-                ("SupportButton", "support"),
-                ("ReportIssueButton", "report_issue"),
+                ("PrintButton", "print"),
+                ("CopyButton", "copy"),
+                ("DesktopHomeButton", "desktop_home"),
+                ("ImportFileButton", "import_file"),
                 ("CloseWorkspaceButton", "close_workspace"),
+                ("SettingsButton", "settings"),
+                ("LoadDemoRunnerButton", "load_demo_runner"),
             ];
 
             foreach ((string buttonName, _) in buttonMap)
@@ -501,6 +650,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             }
 
             CollectionAssert.AreEqual(buttonMap.Select(item => item.EventId).ToArray(), raisedEvents.ToArray());
+            Assert.IsFalse(FindDescendant<Button>(control, "CampaignWorkspaceButton").IsVisible);
+            Assert.IsFalse(FindDescendant<Button>(control, "UpdateStatusButton").IsVisible);
+            Assert.IsFalse(FindDescendant<Button>(control, "InstallLinkingButton").IsVisible);
+            Assert.IsFalse(FindDescendant<Button>(control, "SupportButton").IsVisible);
+            Assert.IsFalse(FindDescendant<Button>(control, "ReportIssueButton").IsVisible);
+            Assert.IsFalse(FindDescendant<Button>(control, "ImportRawButton").IsVisible);
         });
     }
 
@@ -531,7 +686,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                          "HelpMenuButton",
                      })
             {
-                RaiseClick(FindDescendant<Button>(control, buttonName));
+                OpenMenuItem(FindDescendant<MenuItem>(control, buttonName));
             }
 
             CollectionAssert.AreEqual(menuIds, selectedMenus.ToArray());
@@ -546,15 +701,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ],
                 isBusy: false);
 
-            Button[] commandButtons = FindDescendant<Panel>(control, "MenuCommandsHost")
-                .Children
-                .OfType<Button>()
-                .ToArray();
-            Assert.AreEqual(2, commandButtons.Length, "Standalone menu proof must render visible command buttons for the open menu.");
+            MenuItem[] commandItems = SnapshotMenuCommands(FindDescendant<MenuItem>(control, "FileMenuButton"));
+            Assert.AreEqual(2, commandItems.Length, "Standalone menu proof must render visible dropdown command items for the open menu.");
 
-            foreach (Button commandButton in commandButtons)
+            foreach (MenuItem commandItem in commandItems)
             {
-                RaiseClick(commandButton);
+                RaiseMenuItemClick(commandItem);
             }
 
             CollectionAssert.AreEqual(new[] { "open_character", "save_character" }, selectedCommands.ToArray());
@@ -595,17 +747,18 @@ public sealed class AvaloniaFlagshipUiGateTests
             control.Arrange(new Rect(0d, 0d, 1440d, 960d));
             PumpStandaloneUi();
 
-            Button[] tabButtons = control.GetVisualDescendants()
-                .OfType<Button>()
+            TabStrip tabStrip = FindDescendant<TabStrip>(control, "LoadedRunnerTabStrip");
+            NavigatorTabItem[] tabItems = tabStrip.Items
+                .OfType<NavigatorTabItem>()
                 .ToArray();
-            Assert.AreEqual(2, tabButtons.Length, "Standalone summary-header proof must render a button for every visible runner tab.");
+            Assert.AreEqual(2, tabItems.Length, "Standalone summary-header proof must render a tab item for every visible runner tab.");
 
-            foreach (Button tabButton in tabButtons)
-            {
-                RaiseClick(tabButton);
-            }
+            tabStrip.SelectedItem = tabItems[1];
+            PumpStandaloneUi();
+            tabStrip.SelectedItem = tabItems[0];
+            PumpStandaloneUi();
 
-            CollectionAssert.AreEqual(new[] { "tab-profile", "tab-gear" }, selectedTabs.ToArray());
+            CollectionAssert.AreEqual(new[] { "tab-gear", "tab-profile" }, selectedTabs.ToArray());
         });
     }
 
@@ -767,14 +920,14 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         WithLoadedRunnerHarness(harness =>
         {
-            harness.WaitUntil(() => harness.FindControl<Panel>("LoadedRunnerTabStripPanel").Children.Count > 0);
+            TabStrip tabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
+            harness.WaitUntil(() => SnapshotLoadedRunnerTabs(tabStrip).Length > 0);
 
-            Button firstTabButton = harness.FindControl<Panel>("LoadedRunnerTabStripPanel")
-                .Children
-                .OfType<Button>()
-                .First(button => !string.IsNullOrWhiteSpace(button.Tag?.ToString()));
-            string selectedTabId = firstTabButton.Tag?.ToString() ?? throw new AssertFailedException("Loaded-runner tab buttons must carry tab ids.");
-            harness.ClickLoadedRunnerTab(firstTabButton.Content?.ToString() ?? string.Empty);
+            NavigatorTabItem targetTab = SnapshotLoadedRunnerTabs(tabStrip)
+                .First(tab => !string.IsNullOrWhiteSpace(tab.Id)
+                    && !string.Equals(tab.Id, harness.ShellPresenter.State.ActiveTabId, StringComparison.Ordinal));
+            string selectedTabId = targetTab.Id;
+            harness.ClickLoadedRunnerTab(targetTab.Label);
             harness.WaitUntil(() => harness.ShellPresenter.SelectedTabIds.Contains(selectedTabId));
 
             harness.SelectCommand("global_settings");
@@ -838,10 +991,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             harness.WaitForReady();
 
-            Panel menuPanel = harness.FindControl<Panel>("MenuBarPanel");
-            string[] menuLabels = menuPanel.Children
-                .OfType<Button>()
-                .Select(button => button.Content?.ToString() ?? string.Empty)
+            Menu menuPanel = harness.FindControl<Menu>("MenuBarPanel");
+            string[] menuLabels = SnapshotRootMenuItems(menuPanel)
+                .Select(menuItem => menuItem.Header?.ToString() ?? string.Empty)
                 .ToArray();
 
             CollectionAssert.AreEqual(
@@ -882,7 +1034,6 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Control menuBarRegion = harness.FindControl<Control>("MenuBarRegion");
             Control toolStripRegion = harness.FindControl<Control>("ToolStripRegion");
-            Control workspaceStripRegion = harness.FindControl<Control>("WorkspaceStripRegion");
             Control leftNavigatorRegion = harness.FindControl<Control>("LeftNavigatorRegion");
             Control centerShellRegion = harness.FindControl<Control>("CenterShellRegion");
             Control rightShellRegion = harness.FindControl<Control>("RightShellRegion");
@@ -891,11 +1042,11 @@ public sealed class AvaloniaFlagshipUiGateTests
             Control statusStripRegion = harness.FindControl<Control>("StatusStripRegion");
             TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
 
-            Assert.IsTrue(toolStripRegion.Bounds.Width > workspaceStripRegion.Bounds.Width, "The immediate quick-action strip must dominate the row under the menu.");
-            Assert.IsTrue(leftNavigatorRegion.Bounds.Width >= 240d && leftNavigatorRegion.Bounds.Width <= 360d, "Left navigation must stay dense and desktop-scaled.");
-            Assert.IsTrue(rightShellRegion.Bounds.Width >= 240d && rightShellRegion.Bounds.Width <= 360d, "Right inspector/coach area must stay present instead of collapsing into overlays.");
+            Assert.IsNull(harness.FindControlOrDefault<Control>("WorkspaceStripRegion"), "The default workbench must not spend a dedicated row on workspace-strip chrome.");
+            Assert.IsTrue(leftNavigatorRegion.Bounds.Width >= 200d && leftNavigatorRegion.Bounds.Width <= 260d, "Left navigation must stay dense and desktop-scaled instead of consuming editor space.");
+            Assert.IsTrue(rightShellRegion.IsVisible, "The collapsed right rail must stay mounted so command palette and dialog surfaces remain routable.");
+            Assert.IsTrue(rightShellRegion.Bounds.Width <= 1d, "Collapsed right rail must surrender space back to the workbench.");
             Assert.IsTrue(centerShellRegion.Bounds.Width > leftNavigatorRegion.Bounds.Width, "The central editing workbench must remain the dominant pane.");
-            Assert.IsTrue(centerShellRegion.Bounds.Width > rightShellRegion.Bounds.Width, "The central editing workbench must remain the dominant pane.");
             Assert.IsTrue(menuBarRegion.Bounds.Height <= 72d, "The top menu row must read like desktop chrome, not a hero header.");
             Assert.IsTrue(statusStripRegion.Bounds.Height <= 72d, "The bottom strip must stay compact like the legacy status posture.");
             Assert.IsTrue(navigatorTree.Bounds.Width > 0d && navigatorTree.Bounds.Height > 0d, "The left rail must render a visible codex tree.");
@@ -939,11 +1090,10 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
             Control tabStrip = harness.FindControl<Control>("LoadedRunnerTabStripBorder");
-            Panel tabStripPanel = harness.FindControl<Panel>("LoadedRunnerTabStripPanel");
-            Control quickStart = harness.FindControl<Control>("QuickStartContainer");
+            TabStrip tabStripControl = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
 
-            harness.WaitUntil(() => !quickStart.IsVisible);
-            harness.WaitUntil(() => tabStrip.IsVisible && tabStripPanel.Children.Count > 0);
+            harness.WaitUntil(() => harness.FindControlOrDefault<Control>("QuickStartContainer") is null);
+            harness.WaitUntil(() => tabStrip.IsVisible && SnapshotLoadedRunnerTabs(tabStripControl).Length > 0);
             harness.WaitUntil(() =>
             {
                 NavigatorTreeItem[] treeItems = SnapshotTreeItems(navigatorTree);
@@ -959,8 +1109,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(tabStrip.IsVisible);
             Assert.IsTrue(navigatorTree.Bounds.Width > 0d && navigatorTree.Bounds.Height > 0d, "Codex tree should render with a visible desktop footprint.");
             Assert.IsTrue(tabGroup.Children.Length > 0, "Loaded runner posture requires a visible tabs branch in the codex tree.");
-            Assert.IsTrue(tabStripPanel.Children.OfType<Button>().Any(button =>
-                (button.Content?.ToString() ?? string.Empty).Contains("Runner", StringComparison.Ordinal)),
+            Assert.IsTrue(SnapshotLoadedRunnerTabs(tabStripControl).Any(tab =>
+                tab.Label.Contains("Runner", StringComparison.Ordinal)),
                 "Loaded runner tab strip should surface a visible Runner tab button.");
             Assert.IsNotNull(
                 FindTreeItem(tabGroup.Children, NavigatorTreeNodeKind.NavigationTab, static item =>
@@ -975,9 +1125,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         WithLoadedRunnerHarness(harness =>
         {
             Control tabStrip = harness.FindControl<Control>("LoadedRunnerTabStripBorder");
-            Panel tabStripPanel = harness.FindControl<Panel>("LoadedRunnerTabStripPanel");
+            TabStrip tabStripControl = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
 
-            harness.WaitUntil(() => tabStrip.IsVisible && tabStripPanel.Children.Count > 0);
+            harness.WaitUntil(() => tabStrip.IsVisible && SnapshotLoadedRunnerTabs(tabStripControl).Length > 0);
 
             Assert.IsNull(harness.FindControlOrDefault<Control>("NameValueText"));
             Assert.IsNull(harness.FindControlOrDefault<Control>("AliasValueText"));
@@ -1002,10 +1152,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
             ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
-            Control quickStart = harness.FindControl<Control>("QuickStartContainer");
 
             harness.WaitUntil(() =>
-                !quickStart.IsVisible
+                harness.FindControlOrDefault<Control>("QuickStartContainer") is null
                 && sectionRows.ItemCount > 0
                 && !string.IsNullOrWhiteSpace(preview.Text)
                 && SnapshotTreeItems(navigatorTree).Length >= 4);
@@ -1048,10 +1197,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox sectionPreview = harness.FindControl<TextBox>("SectionPreviewBox");
+            Control classicCharacterSheet = harness.FindControl<Control>("ClassicCharacterSheetBorder");
 
             harness.WaitUntil(() => sectionRows.ItemCount >= 8);
             string[] rowText = SnapshotListBoxItems(sectionRows).Select(item => item.ToString() ?? string.Empty).ToArray();
 
+            Assert.IsTrue(classicCharacterSheet.IsVisible, "Dense character-sheet posture must surface a visible runner summary band.");
             CollectionAssert.Contains(rowText, "attributes.body = 5");
             CollectionAssert.Contains(rowText, "attributes.agility = 7");
             CollectionAssert.Contains(rowText, "skills.firearms[0] = Automatics 6");
@@ -1229,9 +1380,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.Click("HelpMenuButton");
             harness.WaitUntil(() =>
             {
-                Panel? menuHost = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                return menuHost is not null
-                    && menuHost.Children.OfType<Button>().Any(button => string.Equals(button.Tag?.ToString(), "report_bug", StringComparison.Ordinal));
+                MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>("HelpMenuButton"));
+                return commands.Any(command => string.Equals(command.Tag?.ToString(), "report_bug", StringComparison.Ordinal));
             });
 
             harness.ClickMenuCommand("report_bug");
@@ -1317,19 +1467,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 captured[expectedFiles[0]] = harness.CaptureScreenshotBytes();
 
                 harness.Click("FileMenuButton");
-                harness.WaitUntil(() =>
-                {
-                    Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                    return host is not null && host.Children.Count > 0;
-                });
+                harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton")).Length > 0);
                 captured[expectedFiles[1]] = harness.CaptureScreenshotBytes();
 
-                harness.Click("FileMenuButton");
-                harness.WaitUntil(() =>
-                {
-                    Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                    return host is not null && host.Children.Count == 0;
-                });
+                harness.CloseMenu("FileMenuButton");
 
                 harness.PressKey(Key.G, RawInputModifiers.Control);
                 harness.WaitUntil(() =>
@@ -1854,7 +1995,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() =>
                     harness.Presenter.ImportCalls > 0
                     && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
-                    && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false);
+                    && harness.FindControlOrDefault<Control>("QuickStartContainer") is null);
                 assertion(harness);
             });
         }
@@ -1970,6 +2111,37 @@ public sealed class AvaloniaFlagshipUiGateTests
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         PumpStandaloneUi();
     }
+
+    private static void OpenMenuItem(MenuItem menuItem)
+    {
+        Assert.IsTrue(menuItem.IsEnabled, $"Menu item '{menuItem.Name}' must be enabled.");
+        menuItem.IsSubMenuOpen = true;
+        menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        PumpStandaloneUi();
+    }
+
+    private static void RaiseMenuItemClick(MenuItem menuItem)
+    {
+        Assert.IsTrue(menuItem.IsEnabled, $"Menu item '{menuItem.Header}' must be enabled.");
+        menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        PumpStandaloneUi();
+    }
+
+    private static MenuItem[] SnapshotRootMenuItems(Menu menu)
+        => menu.Items
+            .OfType<MenuItem>()
+            .ToArray();
+
+    private static MenuItem[] SnapshotMenuCommands(MenuItem rootMenuItem)
+        => rootMenuItem.Items
+            .OfType<MenuItem>()
+            .Where(static item => !string.IsNullOrWhiteSpace(item.Tag?.ToString()))
+            .ToArray();
+
+    private static NavigatorTabItem[] SnapshotLoadedRunnerTabs(TabStrip tabStrip)
+        => tabStrip.Items
+            .OfType<NavigatorTabItem>()
+            .ToArray();
 
     private static void PumpStandaloneUi()
     {
@@ -2092,6 +2264,15 @@ public sealed class AvaloniaFlagshipUiGateTests
                 return;
             }
 
+            if (control is MenuItem menuItem)
+            {
+                Assert.IsTrue(menuItem.IsEnabled, $"Control '{controlName}' must be enabled.");
+                menuItem.IsSubMenuOpen = true;
+                menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                return;
+            }
+
             Point? translated = control.TranslatePoint(
                 new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
                 Window);
@@ -2106,13 +2287,12 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void ClickLoadedRunnerTab(string labelFragment)
         {
-            Button tabButton = FindControl<Panel>("LoadedRunnerTabStripPanel")
-                .Children
-                .OfType<Button>()
-                .FirstOrDefault(button => (button.Content?.ToString() ?? string.Empty).Contains(labelFragment, StringComparison.OrdinalIgnoreCase))
+            TabStrip tabStrip = FindControl<TabStrip>("LoadedRunnerTabStrip");
+            NavigatorTabItem tabItem = SnapshotLoadedRunnerTabs(tabStrip)
+                .FirstOrDefault(tab => tab.Label.Contains(labelFragment, StringComparison.OrdinalIgnoreCase))
                 ?? throw new AssertFailedException($"Loaded-runner tab containing '{labelFragment}' was not found.");
-            Assert.IsTrue(tabButton.IsEnabled, $"Loaded-runner tab '{labelFragment}' must be enabled.");
-            tabButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.IsTrue(tabItem.Enabled, $"Loaded-runner tab '{labelFragment}' must be enabled.");
+            tabStrip.SelectedItem = tabItem;
             Pump();
         }
 
@@ -2155,21 +2335,20 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void ClickMenuCommand(string commandId)
         {
-            Panel menuHost = FindControl<Panel>("MenuCommandsHost");
-            Button button = menuHost.Children
-                .OfType<Button>()
+            MenuItem commandItem = Window.GetVisualDescendants()
+                .OfType<MenuItem>()
+                .SelectMany(SnapshotMenuCommands)
                 .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal))
                 ?? throw new AssertFailedException($"Menu command '{commandId}' was not found.");
 
-            Point? translated = button.TranslatePoint(
-                new Point(button.Bounds.Width / 2d, button.Bounds.Height / 2d),
-                Window);
-            Assert.IsNotNull(translated, $"Unable to translate menu command '{commandId}' to window coordinates.");
+            commandItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            Pump();
+        }
 
-            Point location = translated!.Value;
-            Window.MouseMove(location, RawInputModifiers.None);
-            Window.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
-            Window.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+        public void CloseMenu(string controlName)
+        {
+            MenuItem menuItem = FindControl<MenuItem>(controlName);
+            menuItem.IsSubMenuOpen = false;
             Pump();
         }
 
@@ -2386,6 +2565,23 @@ public sealed class AvaloniaFlagshipUiGateTests
         public void Click(string controlName)
         {
             Control control = FindControl<Control>(controlName);
+            if (control is Button button)
+            {
+                Assert.IsTrue(button.IsEnabled, $"Control '{controlName}' must be enabled.");
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Pump();
+                return;
+            }
+
+            if (control is MenuItem menuItem)
+            {
+                Assert.IsTrue(menuItem.IsEnabled, $"Control '{controlName}' must be enabled.");
+                menuItem.IsSubMenuOpen = true;
+                menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                return;
+            }
+
             Point? translated = control.TranslatePoint(
                 new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
                 Window);
@@ -2991,10 +3187,28 @@ public sealed class AvaloniaFlagshipUiGateTests
             MenuRoots = commands.Where(command => string.Equals(command.Group, "menu", StringComparison.Ordinal)).ToArray(),
             NavigationTabs =
             [
-                new NavigationTabDefinition("tab-info", "Info", "summary", "character", true, true, RulesetDefaults.Sr5)
+                new NavigationTabDefinition("tab-info", "Info", "summary", "character", true, true, RulesetDefaults.Sr5),
+                new NavigationTabDefinition("tab-gear", "Gear", "gear", "character", true, true, RulesetDefaults.Sr5),
+                new NavigationTabDefinition("tab-cyberware", "Cyberware", "cyberware", "character", true, true, RulesetDefaults.Sr5)
             ],
             ActiveTabId = "tab-info",
             Notice = "Ready."
         };
+    }
+
+    private static string SourcePath(params string[] segments)
+    {
+        DirectoryInfo? current = new(AppContext.BaseDirectory);
+        while (current is not null && !Directory.Exists(Path.Combine(current.FullName, "Chummer.Blazor")))
+        {
+            current = current.Parent;
+        }
+
+        if (current is null)
+        {
+            throw new DirectoryNotFoundException("Could not resolve chummer-presentation source root from the test output directory.");
+        }
+
+        return Path.GetFullPath(Path.Combine([current.FullName, .. segments]));
     }
 }

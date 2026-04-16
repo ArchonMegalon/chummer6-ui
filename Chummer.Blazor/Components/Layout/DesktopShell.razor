@@ -1,5 +1,7 @@
 
 
+@namespace Chummer.Blazor.Components.Layout
+
 <div class="desktop-shell"
      @ref="_shellRoot"
      tabindex="0"
@@ -18,12 +20,23 @@
                IsCommandEnabled="@IsCommandEnabled"
                ExecuteCommandRequested="@ExecuteCommandAsync" />
 
-    <MdiStrip OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
-              ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
-              RulesetId="@_shellSurfaceState.ActiveRulesetId"
-              IsBusy="@State.IsBusy"
-              OpenWorkspaceRequested="@OpenWorkspaceAsync"
-              CloseWorkspaceRequested="@CloseWorkspaceAsync" />
+    @if (_shellSurfaceState.OpenWorkspaces.Count > 1)
+    {
+        <MdiStrip OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
+                  ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+                  RulesetId="@_shellSurfaceState.ActiveRulesetId"
+                  IsBusy="@State.IsBusy"
+                  OpenWorkspaceRequested="@OpenWorkspaceAsync"
+                  CloseWorkspaceRequested="@CloseWorkspaceAsync" />
+    }
+
+    <SummaryHeader State="@State"
+                   ShellSurface="@_shellSurfaceState"
+                   NavigationTabs="@NavigationTabs"
+                   ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                   IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                   SelectTabRequested="@SelectTabAsync"
+                   InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
 
     <section class="@DesktopMarqueeCssClass" data-testid="desktop-flagship-marquee">
         <div class="flagship-copy">
@@ -76,19 +89,6 @@
                            ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
 
         <main class="center-pane">
-            <SummaryHeader State="@State"
-                           ShellSurface="@_shellSurfaceState"
-                           InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
-
-            <MetadataPanel State="@State"
-                           @bind-MetadataName="MetadataName"
-                           @bind-MetadataAlias="MetadataAlias"
-                           @bind-MetadataNotes="MetadataNotes"
-                           @bind-LoadWorkspaceId="LoadWorkspaceId"
-                           UpdateMetadataRequested="@UpdateMetadataAsync"
-                           SaveRequested="@SaveAsync"
-                           LoadWorkspaceRequested="@LoadWorkspaceAsync" />
-
             <SectionPane State="@State" />
         </main>
 
@@ -97,6 +97,7 @@
                          RulesetId="@_shellSurfaceState.ActiveRulesetId"
                          ImportedFileName="@ImportedFileName"
                          ImportError="@ImportError"
+                         LatestPortabilityActivity="@State.LatestPortabilityActivity"
                          @bind-RawImportXml="RawImportXml"
                          ImportFileRequested="@ImportFileAsync"
                          ImportRawRequested="@ImportRawAsync" />
