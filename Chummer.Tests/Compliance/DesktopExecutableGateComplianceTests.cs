@@ -111,6 +111,22 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_runs_codex_studio_tracked_artifact_guard()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+        string guardScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "codex-studio-tracking-check.sh");
+        string guardScriptText = File.ReadAllText(guardScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "checking codex-studio tracked artifact guard");
+        StringAssert.Contains(verifyScriptText, "bash scripts/ai/milestones/codex-studio-tracking-check.sh");
+        StringAssert.Contains(guardScriptText, "git ls-files .codex-studio");
+        StringAssert.Contains(guardScriptText, ".codex-studio/published/(QUEUE|WORKPACKAGES)\\.generated\\.yaml");
+        StringAssert.Contains(guardScriptText, "only .codex-studio/published/QUEUE.generated.yaml and WORKPACKAGES.generated.yaml may be tracked.");
+    }
+
+    [TestMethod]
     public void Release_manifest_generation_materializes_external_host_proof_blocker_artifact()
     {
         string repoRoot = FindRepoRoot();
