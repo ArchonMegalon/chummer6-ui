@@ -111,6 +111,47 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_runs_codex_studio_tracked_artifact_guard()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+        string guardScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "codex-studio-tracking-check.sh");
+        string guardScriptText = File.ReadAllText(guardScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "checking codex-studio tracked artifact guard");
+        StringAssert.Contains(verifyScriptText, "bash scripts/ai/milestones/codex-studio-tracking-check.sh");
+        StringAssert.Contains(guardScriptText, "git ls-files .codex-studio");
+        StringAssert.Contains(guardScriptText, ".codex-studio/published/(QUEUE|WORKPACKAGES)\\.generated\\.yaml");
+        StringAssert.Contains(guardScriptText, "only .codex-studio/published/QUEUE.generated.yaml and WORKPACKAGES.generated.yaml may be tracked.");
+    }
+
+    [TestMethod]
+    public void Release_manifest_generation_materializes_external_host_proof_blocker_artifact()
+    {
+        string repoRoot = FindRepoRoot();
+        string releaseManifestScriptPath = Path.Combine(repoRoot, "scripts", "generate-releases-manifest.sh");
+        string releaseManifestScriptText = File.ReadAllText(releaseManifestScriptPath);
+        string blockerMaterializerScriptPath = Path.Combine(repoRoot, "scripts", "materialize-external-host-proof-blockers.py");
+        string blockerMaterializerScriptText = File.ReadAllText(blockerMaterializerScriptPath);
+
+        StringAssert.Contains(releaseManifestScriptText, "materialize-external-host-proof-blockers.py");
+        StringAssert.Contains(releaseManifestScriptText, "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json");
+        StringAssert.Contains(releaseManifestScriptText, "infer_release_version_from_startup_smoke");
+        StringAssert.Contains(releaseManifestScriptText, "if [[ \"$RELEASE_VERSION\" == \"unpublished\" ]]");
+        StringAssert.Contains(releaseManifestScriptText, "artifactDigest");
+        StringAssert.Contains(releaseManifestScriptText, "if sha256_file(artifact_path) != digest:");
+        StringAssert.Contains(releaseManifestScriptText, "CHUMMER_EXTERNAL_PROOF_MAX_RECEIPT_AGE_SECONDS:-86400");
+        StringAssert.Contains(blockerMaterializerScriptText, "chummer6-ui.external_host_proof_blockers");
+        StringAssert.Contains(blockerMaterializerScriptText, "default=86400");
+        StringAssert.Contains(blockerMaterializerScriptText, "receipt_stale");
+        StringAssert.Contains(blockerMaterializerScriptText, "public_route_unhealthy");
+        StringAssert.Contains(blockerMaterializerScriptText, "installAccessClass");
+        StringAssert.Contains(blockerMaterializerScriptText, "account_required");
+        StringAssert.Contains(blockerMaterializerScriptText, "route_probe[\"authChallengeAccepted\"]");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_runs_active_mutation_for_promoted_installer_tuple_row_drift()
     {
         string repoRoot = FindRepoRoot();
@@ -422,7 +463,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Desktop workflow execution gate release-channel identity does not match release channel channelId.");
         StringAssert.Contains(executableScriptText, "Desktop visual familiarity exit gate releaseVersion does not match release channel version.");
         StringAssert.Contains(executableScriptText, "Desktop workflow execution gate releaseVersion does not match release channel version.");
-        StringAssert.Contains(executableScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
+        StringAssert.Contains(executableScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
         StringAssert.Contains(executableScriptText, "missing_canonical_promoted_desktop_heads");
         StringAssert.Contains(executableScriptText, "missing_canonical_flagship_desktop_heads");
         StringAssert.Contains(executableScriptText, "release_channel_tuple_coverage_missing_required_platforms_from_policy");
@@ -633,13 +674,10 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_generated_at");
         StringAssert.Contains(executableScriptText, "release_channel_macos_artifact_generated_at_alias_conflict");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact is missing a valid generated_at/generatedAt.");
-        StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact generated_at does not match promoted release channel generated_at.");
         StringAssert.Contains(executableScriptText, "Windows gate embedded release_channel_windows_artifact carries conflicting generated_at/generatedAt alias values.");
         StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact is missing a valid generated_at/generatedAt.");
-        StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at.");
         StringAssert.Contains(executableScriptText, "Linux gate embedded release_channel_linux_artifact carries conflicting generated_at/generatedAt alias values.");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact is missing a valid generated_at/generatedAt.");
-        StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact generated_at does not match promoted release channel generated_at.");
         StringAssert.Contains(executableScriptText, "macOS gate embedded release_channel_macos_artifact carries conflicting generated_at/generatedAt alias values.");
         StringAssert.Contains(executableScriptText, "macos_artifacts_missing_rid_by_head");
         StringAssert.Contains(executableScriptText, "Release channel publishes macOS desktop media for head");
@@ -667,10 +705,10 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Release channel rolloutState cannot be paused/revoked when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableScriptText, "release_channel_rollout_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableScriptText, "release_channel_rollout_state_invalid_for_publishable_complete");
-        StringAssert.Contains(executableScriptText, "Release channel rolloutState must be promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableScriptText, "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableScriptText, "release_channel_supportability_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableScriptText, "release_channel_supportability_state_invalid_for_publishable_complete");
-        StringAssert.Contains(executableScriptText, "Release channel supportabilityState must be preview_supported when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableScriptText, "Release channel supportabilityState must be local_docker_proven/preview_supported when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableScriptText, "release_channel_version_uses_unpublished_sentinel");
         StringAssert.Contains(executableScriptText, "release_channel.releaseVersion");
         StringAssert.Contains(executableScriptText, "release_channel_version_alias_conflict");
@@ -688,7 +726,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing channelId/channel.");
         StringAssert.Contains(visualScriptText, "Desktop visual familiarity exit gate release channel receipt is missing version.");
         StringAssert.Contains(visualScriptText, "\"releaseVersion\": release_channel_version");
-        StringAssert.Contains(visualScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
+        StringAssert.Contains(visualScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
         StringAssert.Contains(visualScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(visualScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head visual proof:");
 
@@ -698,7 +736,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(workflowScriptText, "Desktop workflow execution gate release channel receipt is missing channelId/channel.");
         StringAssert.Contains(workflowScriptText, "Desktop workflow execution gate release channel receipt is missing version.");
         StringAssert.Contains(workflowScriptText, "\"releaseVersion\": release_channel_version");
-        StringAssert.Contains(workflowScriptText, "canonical_required_desktop_heads = [\"avalonia\", \"blazor-desktop\"]");
+        StringAssert.Contains(workflowScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
         StringAssert.Contains(workflowScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(workflowScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head workflow execution proof:");
     }
@@ -791,6 +829,45 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Avalonia_primary_route_proof_verifier_requires_primary_head_receipts_for_all_platforms()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "verify-avalonia-primary-route-proof.py");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "PRIMARY_HEAD = \"avalonia\"");
+        StringAssert.Contains(scriptText, "FALLBACK_HEADS = {\"blazor-desktop\"}");
+        StringAssert.Contains(scriptText, "REQUIRED_PLATFORMS = (\"linux\", \"macos\", \"windows\")");
+        StringAssert.Contains(scriptText, "receipt_matches_artifact");
+        StringAssert.Contains(scriptText, "normalize(receipt.get(\"headId\")) == PRIMARY_HEAD");
+        StringAssert.Contains(scriptText, "fallbackReceiptsAccepted\": False");
+        StringAssert.Contains(scriptText, "desktopTupleCoverage.requiredDesktopHeads must not require fallback head");
+        StringAssert.Contains(scriptText, "desktopTupleCoverage.desktopRouteTruth is missing");
+        StringAssert.Contains(scriptText, "validate_route_truth_row");
+        StringAssert.Contains(scriptText, "routeRole\")) != \"primary\"");
+        StringAssert.Contains(scriptText, "promotionState\")) != \"promoted\"");
+        StringAssert.Contains(scriptText, "parityPosture\")) != \"flagship_primary\"");
+        StringAssert.Contains(scriptText, "validate_fallback_route_truth_rows");
+        StringAssert.Contains(scriptText, "must not carry flagship_primary parity posture");
+        StringAssert.Contains(scriptText, "\"routeTruthProof\": route_truth_proof");
+        StringAssert.Contains(scriptText, "chummer6-ui.avalonia_primary_route_proof");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_runs_avalonia_primary_route_proof_guard()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "checking next90 Avalonia primary route proof guard");
+        StringAssert.Contains(verifyScriptText, "verify-avalonia-primary-route-proof.py");
+        StringAssert.Contains(verifyScriptText, "NEXT90_M101_AVALONIA_PRIMARY_ROUTE_PROOF.generated.json");
+        StringAssert.Contains(verifyScriptText, "CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1");
+        StringAssert.Contains(verifyScriptText, "CHUMMER_AVALONIA_PRIMARY_ROUTE_PROOF_ALLOW_MISSING_RECEIPTS");
+    }
+
+    [TestMethod]
     public void Windows_and_macos_exit_gate_materializers_do_not_resolve_proof_from_legacy_chummer5a_paths()
     {
         string repoRoot = FindRepoRoot();
@@ -829,6 +906,10 @@ public sealed class DesktopExecutableGateComplianceTests
         Assert.IsFalse(macosScriptText.Contains("/docker/chummer5a/", StringComparison.Ordinal));
         StringAssert.Contains(executableGateScriptText, "startup.get(\"external_blocker\")");
         StringAssert.Contains(executableGateScriptText, "or gate_checks.get(\"startup_smoke_external_blocker\")");
+        StringAssert.Contains(executableGateScriptText, "\"expectedInstallerRelativePath\": row_expected_installer_relative_path");
+        StringAssert.Contains(executableGateScriptText, "\"expectedInstallerSha256\": row_expected_installer_sha256");
+        StringAssert.Contains(executableGateScriptText, "expected_installer_sha256=row_expected_installer_sha256");
+        StringAssert.Contains(executableGateScriptText, "installer-preflight-sha256-mismatch");
     }
 
     private static string FindRepoRoot()
