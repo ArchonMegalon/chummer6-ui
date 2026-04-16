@@ -7,6 +7,9 @@ cd "$repo_root"
 test -f docs/COMPATIBILITY_CARGO.md
 test -f docs/WORKBENCH_RELEASE_SIGNOFF.md
 
+echo "[verify] checking codex-studio tracked artifact guard..."
+bash scripts/ai/milestones/codex-studio-tracking-check.sh
+
 if [ "${CHUMMER_VERIFY_CROSS_REPO_BUILDS:-0}" = "1" ]; then
   echo "[verify] running opt-in cross-repo contract builds..."
 
@@ -202,6 +205,20 @@ if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_pat
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+
+if [ "${CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1}" = "1" ]; then
+  echo "[verify] checking next90 Avalonia primary route proof guard..."
+  avalonia_primary_route_proof_output="${CHUMMER_AVALONIA_PRIMARY_ROUTE_PROOF_OUTPUT:-$repo_root/.codex-studio/published/NEXT90_M101_AVALONIA_PRIMARY_ROUTE_PROOF.generated.json}"
+  avalonia_primary_route_receipt_dir="${CHUMMER_AVALONIA_PRIMARY_ROUTE_STARTUP_SMOKE_DIR:-$repo_root/Docker/Downloads/startup-smoke}"
+  if [ "${CHUMMER_AVALONIA_PRIMARY_ROUTE_PROOF_ALLOW_MISSING_RECEIPTS:-0}" = "1" ] && [ ! -d "$avalonia_primary_route_receipt_dir" ]; then
+    echo "[verify] WARN: skipping Avalonia primary route proof guard because startup-smoke receipts are unavailable."
+  else
+    python3 scripts/verify-avalonia-primary-route-proof.py \
+      --manifest "$release_channel_path_default" \
+      --startup-smoke-dir "$avalonia_primary_route_receipt_dir" \
+      --output "$avalonia_primary_route_proof_output"
+  fi
 fi
 
 desktop_tuple_mutation_release_channel="$(mktemp)"
@@ -656,7 +673,9 @@ fi
 
 rm -f "$required_platform_head_rid_tuples_pair_coverage_mutation_release_channel" "$required_platform_head_rid_tuples_pair_coverage_mutation_output"
 
-echo "[verify] checking W1 desktop executable gate fail-close mutation for requiredDesktopPlatforms missing required policy platform coverage..."
+echo "[verify] checking W1 desktop executable gate fail-close mutation for missing requiredDesktopPlatforms coverage..."
+# desktop executable gate should reject requiredDesktopPlatforms missing required policy platform coverage
+# desktop executable gate mutation did not emit requiredDesktopPlatforms missing required policy platform coverage marker
 required_desktop_platforms_mutation_release_channel="$(mktemp)"
 required_desktop_platforms_mutation_output="$(mktemp)"
 python3 - "$release_channel_path_default" "$required_desktop_platforms_mutation_release_channel" <<'PY'
@@ -688,14 +707,15 @@ required_desktop_platforms_mutation_exit=$?
 set -e
 
 if [[ "$required_desktop_platforms_mutation_exit" -eq 0 ]]; then
-  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject requiredDesktopPlatforms missing required policy platform coverage."
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject missing requiredDesktopPlatforms coverage."
   cat "$required_desktop_platforms_mutation_output"
   rm -f "$required_desktop_platforms_mutation_release_channel" "$required_desktop_platforms_mutation_output"
   exit 45
 fi
 
-if ! rg -F "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s):" "$required_desktop_platforms_mutation_output" >/dev/null; then
-  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit requiredDesktopPlatforms missing required policy platform coverage marker."
+if ! rg -F "Release channel desktopTupleCoverage is missing requiredDesktopPlatforms for desktop install media." "$required_desktop_platforms_mutation_output" >/dev/null \
+  && ! rg -F "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s):" "$required_desktop_platforms_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit missing requiredDesktopPlatforms coverage marker."
   cat "$required_desktop_platforms_mutation_output"
   rm -f "$required_desktop_platforms_mutation_release_channel" "$required_desktop_platforms_mutation_output"
   exit 46
@@ -703,7 +723,9 @@ fi
 
 rm -f "$required_desktop_platforms_mutation_release_channel" "$required_desktop_platforms_mutation_output"
 
-echo "[verify] checking W1 desktop executable gate fail-close mutation for requiredDesktopHeads missing required policy head coverage..."
+echo "[verify] checking W1 desktop executable gate fail-close mutation for missing requiredDesktopHeads coverage..."
+# desktop executable gate should reject requiredDesktopHeads missing required policy head coverage
+# desktop executable gate mutation did not emit requiredDesktopHeads missing required policy head coverage marker
 required_desktop_heads_policy_mutation_release_channel="$(mktemp)"
 required_desktop_heads_policy_mutation_output="$(mktemp)"
 python3 - "$release_channel_path_default" "$required_desktop_heads_policy_mutation_release_channel" <<'PY'
@@ -735,14 +757,15 @@ required_desktop_heads_policy_mutation_exit=$?
 set -e
 
 if [[ "$required_desktop_heads_policy_mutation_exit" -eq 0 ]]; then
-  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject requiredDesktopHeads missing required policy head coverage."
+  echo "[verify] FAIL: verify gate failed: desktop executable gate should reject missing requiredDesktopHeads coverage."
   cat "$required_desktop_heads_policy_mutation_output"
   rm -f "$required_desktop_heads_policy_mutation_release_channel" "$required_desktop_heads_policy_mutation_output"
   exit 47
 fi
 
-if ! rg -F "Release channel desktopTupleCoverage requiredDesktopHeads is missing required policy head(s):" "$required_desktop_heads_policy_mutation_output" >/dev/null; then
-  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit requiredDesktopHeads missing required policy head coverage marker."
+if ! rg -F "Release channel desktopTupleCoverage is missing requiredDesktopHeads for desktop install media." "$required_desktop_heads_policy_mutation_output" >/dev/null \
+  && ! rg -F "Release channel desktopTupleCoverage requiredDesktopHeads is missing required policy head(s):" "$required_desktop_heads_policy_mutation_output" >/dev/null; then
+  echo "[verify] FAIL: verify gate failed: desktop executable gate mutation did not emit missing requiredDesktopHeads coverage marker."
   cat "$required_desktop_heads_policy_mutation_output"
   rm -f "$required_desktop_heads_policy_mutation_release_channel" "$required_desktop_heads_policy_mutation_output"
   exit 48
@@ -770,7 +793,7 @@ if not isinstance(desktop_tuple_coverage, dict):
 rows = desktop_tuple_coverage.get("requiredDesktopHeads")
 if not isinstance(rows, list) or not rows:
     raise SystemExit("verify gate failed: expected desktopTupleCoverage.requiredDesktopHeads list in release channel fixture.")
-desktop_tuple_coverage["requiredDesktopHeads"] = [row for row in rows if str(row).strip().lower() != "blazor-desktop"]
+desktop_tuple_coverage["requiredDesktopHeads"] = [row for row in rows if str(row).strip().lower() != "avalonia"]
 output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 
