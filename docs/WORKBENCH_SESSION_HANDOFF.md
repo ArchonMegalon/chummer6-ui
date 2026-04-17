@@ -21,70 +21,53 @@ Bring Chummer6 desktop UX much closer to Chummer5a layout posture:
   - `origin/safe-push-fix-windows-installer-payload-20260401`
   - `origin/fleet/ui`
   - `origin/main`
-- Last pushed UI commit before this uncommitted slice: `89c4aa91`
-  - message: `Synthesize classic menu roots for sparse rulesets`
+- Last pushed UI commit before this uncommitted slice: `88032e88`
+  - message: `Trim Blazor startup work and refresh desktop icon payload`
 
 ## Uncommitted current slice
 
 Files changed locally:
 
-- `Chummer.Blazor/Components/Layout/DesktopShell.razor.cs`
-- `Chummer/chummer.ico`
+- `Directory.Build.props`
 - `docs/WORKBENCH_SESSION_HANDOFF.md`
 
 What this slice changes:
 
-- `DesktopShell.razor.cs`
-  - removes hidden coach-sidecar API loading from startup and normal shell-refresh paths
-  - keeps coach activity opt-in instead of part of first paint
-- `Chummer/chummer.ico`
-  - replaces the stale UI repo icon with the newer 12-size Windows icon payload already present in `chummer-core-engine`
-  - intended to fix the wrong/missing Windows desktop icon problem without changing packager logic
+- `Directory.Build.props`
+  - introduces one shared compatibility-root property instead of repeating sibling repo probes inline
+  - switches local compatibility-tree paths to cross-platform slash form
+  - derives `ChummerUseLocalCompatibilityTree` from the normalized local project properties instead of duplicating raw path strings
+  - restores local desktop-head builds from this split workspace on Linux/macOS
 
 ## Validation status
 
 What passed:
 
-- `dotnet build Chummer.Presentation/Chummer.Presentation.csproj -v minimal`
-  - passed after the menu-compatibility slice that is already pushed
-- icon drift audit:
-  - `Chummer/chummer.ico` in this repo had SHA `d80d29d4...`
-  - newer icon in `chummer-core-engine/Chummer/chummer.ico` had SHA `0454048d...`
-  - the current local slice now uses the newer payload
+- `dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal`
+- `dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal`
+- `dotnet msbuild Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -getProperty:ChummerCompatibilityRoot -getProperty:ChummerLocalContractsProject -getProperty:ChummerUseLocalCompatibilityTree`
+  - returned `ChummerUseLocalCompatibilityTree=true` with normalized compatibility-root paths
 
 What failed:
 
-- direct desktop-head build from this split checkout:
-  - `dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal`
-
-Failure is workspace-topology related, not caused by the current Blazor startup/icon slice. In this checkout, desktop-head project resolution falls into missing sibling repo paths such as:
-
-- `../../chummer-core-engine/...`
-- `../../chummer.run-services/...`
-- `../../chummer-hub-registry/...`
-- `../../../fleet/repos/chummer-media-factory/...`
-
-The release bootstrap workspace has already proven both desktop heads can build when the integrated repo topology is present.
+- no current blocker in this slice; the local desktop build regression is resolved
 
 ## Next exact commands
 
-Run from repo root in an integrated workspace (the same topology the mac release bootstrap uses):
+Run from repo root:
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-git status --short Chummer.Blazor/Components/Layout/DesktopShell.razor.cs Chummer/chummer.ico docs/WORKBENCH_SESSION_HANDOFF.md
-dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal
-dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal
+git status --short Directory.Build.props docs/WORKBENCH_SESSION_HANDOFF.md
 git status --short
 ```
 
-If the integrated workspace build passes, commit only the three files above:
+Commit only the two files above:
 
 ```bash
-git add Chummer.Blazor/Components/Layout/DesktopShell.razor.cs
-git add Chummer/chummer.ico
+git add Directory.Build.props
 git add docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Trim Blazor startup work and refresh desktop icon payload"
+git commit -m "Normalize local compatibility tree resolution"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
