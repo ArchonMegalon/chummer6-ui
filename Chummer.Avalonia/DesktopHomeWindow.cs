@@ -61,28 +61,28 @@ internal sealed class DesktopHomeWindow : Window
         _buildExplainProjection = buildExplainProjection;
 
         Title = DesktopLocalizationCatalog.GetRequiredString("desktop.home.title", _preferences.Language);
-        Width = 860;
-        Height = 640;
-        MinWidth = 720;
-        MinHeight = 520;
+        Width = 780;
+        Height = 580;
+        MinWidth = 660;
+        MinHeight = 460;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = new SolidColorBrush(Color.Parse("#E5ECF5"));
+        Background = new SolidColorBrush(Color.Parse("#EEF2F6"));
 
         _flagshipEyebrowText = new TextBlock
         {
             Text = BuildFlagshipEyebrow(),
-            FontSize = 12,
+            FontSize = 11,
             FontWeight = FontWeight.Bold,
-            Foreground = new SolidColorBrush(Color.Parse("#D8E8FB")),
+            Foreground = new SolidColorBrush(Color.Parse("#526173")),
             TextWrapping = TextWrapping.Wrap
         };
 
         _flagshipTitleText = new TextBlock
         {
             Text = BuildFlagshipTitle(),
-            FontSize = 30,
+            FontSize = 21,
             FontWeight = FontWeight.SemiBold,
-            Foreground = Brushes.White,
+            Foreground = new SolidColorBrush(Color.Parse("#183049")),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -90,22 +90,22 @@ internal sealed class DesktopHomeWindow : Window
         {
             Text = BuildIntro(),
             TextWrapping = TextWrapping.Wrap,
-            FontSize = 16,
-            Foreground = new SolidColorBrush(Color.Parse("#F8FBFF"))
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.Parse("#30485F"))
         };
 
         _flagshipSpotlightText = new TextBlock
         {
             Text = BuildFlagshipSpotlight(),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.Parse("#D7E7FA"))
+            Foreground = new SolidColorBrush(Color.Parse("#3E556C"))
         };
 
         _flagshipFactsText = new TextBlock
         {
             Text = BuildFlagshipFacts(),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.Parse("#EEF4FF"))
+            Foreground = new SolidColorBrush(Color.Parse("#4D6075"))
         };
 
         _flagshipHeroBorder = CreateFlagshipHero();
@@ -157,10 +157,10 @@ internal sealed class DesktopHomeWindow : Window
         {
             Content = new Border
             {
-                Padding = new Thickness(22),
+                Padding = new Thickness(14),
                 Child = new StackPanel
                 {
-                    Spacing = 16,
+                    Spacing = 10,
                     Children =
                     {
                         _flagshipHeroBorder,
@@ -199,7 +199,7 @@ internal sealed class DesktopHomeWindow : Window
                         {
                             Orientation = Orientation.Horizontal,
                             HorizontalAlignment = HorizontalAlignment.Right,
-                            Spacing = 10,
+                            Spacing = 6,
                             Children =
                             {
                                 CreateButton(S("desktop.home.button.continue"), static () => true, closeWindow: true)
@@ -284,7 +284,7 @@ internal sealed class DesktopHomeWindow : Window
             return true;
         }
 
-        return workspaces.Count == 0;
+        return false;
     }
 
     private static DesktopPreferenceState ReadPreferences(string headId)
@@ -1180,8 +1180,8 @@ internal sealed class DesktopHomeWindow : Window
         _introText.Text = BuildIntro();
         _flagshipSpotlightText.Text = BuildFlagshipSpotlight();
         _flagshipFactsText.Text = BuildFlagshipFacts();
-        _flagshipHeroBorder.Background = BuildFlagshipHeroBackground();
-        _flagshipHeroBorder.BorderBrush = BuildFlagshipHeroBorderBrush();
+        _flagshipHeroBorder.Background = new SolidColorBrush(Color.Parse("#F8FBFF"));
+        _flagshipHeroBorder.BorderBrush = new SolidColorBrush(Color.Parse("#B8C7D9"));
         _installSummaryText.Text = BuildInstallSummary();
         _updateSummaryText.Text = BuildUpdateSummary();
         _campaignText.Text = BuildCampaignBody();
@@ -1210,14 +1210,14 @@ internal sealed class DesktopHomeWindow : Window
     {
         StackPanel content = new()
         {
-            Spacing = 10,
+            Spacing = 6,
             Children =
             {
                 new TextBlock
                 {
                     Text = title,
                     FontWeight = FontWeight.SemiBold,
-                    FontSize = 18
+                    FontSize = 15
                 },
                 body
             }
@@ -1233,8 +1233,8 @@ internal sealed class DesktopHomeWindow : Window
             Background = new SolidColorBrush(Color.Parse("#F8FBFF")),
             BorderBrush = new SolidColorBrush(Color.Parse("#CBD7E6")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(16),
-            Padding = new Thickness(18),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(10),
             Child = content
         };
     }
@@ -1244,7 +1244,7 @@ internal sealed class DesktopHomeWindow : Window
         StackPanel actionRow = new()
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 10
+            Spacing = 6
         };
 
         foreach (Button action in actions)
@@ -1280,9 +1280,9 @@ internal sealed class DesktopHomeWindow : Window
         Button button = new()
         {
             Content = label,
-            MinWidth = 132,
-            MinHeight = 38,
-            Padding = new Thickness(16, 9),
+            MinWidth = 104,
+            MinHeight = 34,
+            Padding = new Thickness(12, 7),
             HorizontalAlignment = HorizontalAlignment.Left,
             Background = new SolidColorBrush(Color.Parse(isPrimary ? "#163A59" : "#FFFFFF")),
             Foreground = new SolidColorBrush(Color.Parse(isPrimary ? "#F8FBFF" : "#17324F")),
@@ -1309,14 +1309,14 @@ internal sealed class DesktopHomeWindow : Window
     {
         return new Border
         {
-            Background = BuildFlagshipHeroBackground(),
-            BorderBrush = BuildFlagshipHeroBorderBrush(),
+            Background = new SolidColorBrush(Color.Parse("#F8FBFF")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#B8C7D9")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(20),
-            Padding = new Thickness(22),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(12),
             Child = new StackPanel
             {
-                Spacing = 10,
+                Spacing = 6,
                 Children =
                 {
                     _flagshipEyebrowText,
@@ -1328,37 +1328,6 @@ internal sealed class DesktopHomeWindow : Window
             }
         };
     }
-
-    private IBrush BuildFlagshipHeroBackground()
-        => ResolveFlagshipRulesetId() switch
-        {
-            RulesetDefaults.Sr4 => CreateGradientBrush("#1D140E", "#5F3312", "#8C5317"),
-            RulesetDefaults.Sr5 => CreateGradientBrush("#0F172A", "#14304A", "#1A5570"),
-            RulesetDefaults.Sr6 => CreateGradientBrush("#0F172A", "#173548", "#1E6757"),
-            _ => CreateGradientBrush("#0F172A", "#1C3650", "#31536D")
-        };
-
-    private IBrush BuildFlagshipHeroBorderBrush()
-        => new SolidColorBrush(ResolveFlagshipRulesetId() switch
-        {
-            RulesetDefaults.Sr4 => Color.Parse("#E6B86A"),
-            RulesetDefaults.Sr5 => Color.Parse("#8FD0F8"),
-            RulesetDefaults.Sr6 => Color.Parse("#7DDDB3"),
-            _ => Color.Parse("#C9D7E8")
-        });
-
-    private static LinearGradientBrush CreateGradientBrush(string start, string middle, string end)
-        => new()
-        {
-            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-            EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
-            GradientStops = new GradientStops
-            {
-                new GradientStop(Color.Parse(start), 0),
-                new GradientStop(Color.Parse(middle), 0.55),
-                new GradientStop(Color.Parse(end), 1)
-            }
-        };
 
     private static string FormatFlagshipWorkspace(WorkspaceListItem workspace)
     {
