@@ -1112,35 +1112,61 @@ textarea:focus-visible {
     margin: 0;
 }
 
-.classic-fact-strip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2rem;
+.classic-summary-grid,
+.classic-attribute-grid {
+    display: grid;
+    gap: 0.16rem;
 }
 
-.classic-fact-card {
+.classic-summary-grid {
+    grid-template-columns: repeat(auto-fit, minmax(6.2rem, 1fr));
+}
+
+.classic-attribute-grid {
+    grid-template-columns: repeat(auto-fit, minmax(2.4rem, 1fr));
+    align-items: stretch;
+}
+
+.classic-summary-cell,
+.classic-attribute-cell {
     display: grid;
     gap: 0.02rem;
-    min-width: 6.6rem;
-    padding: 0.15rem 0.3rem;
-    border: 1px solid var(--ui-kit-shell-border);
-    background: #f7f5ee;
+    border: 1px solid #8d8d8d;
+    background: #f7f4eb;
 }
 
-.classic-fact-card.compact {
-    min-width: 2.6rem;
-    padding: 0.12rem 0.22rem;
+.classic-summary-cell {
+    min-width: 6.2rem;
+    padding: 0.14rem 0.3rem;
+}
+
+.classic-attribute-cell {
+    min-width: 2.4rem;
+    padding: 0.12rem 0.16rem;
+    background: #f2f2f2;
 }
 
 .classic-fact-label {
     font-size: 0.62rem;
     color: #5d5d5d;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
 
 .classic-fact-value {
     font-size: 0.94rem;
     color: #111111;
     font-weight: 700;
+}
+
+.classic-attribute-cell .classic-fact-label,
+.classic-attribute-cell .classic-fact-value {
+    text-align: center;
+}
+
+.classic-attribute-cell .classic-fact-value {
+    font-size: 1rem;
+    line-height: 1.05;
 }
 
 .browse-shell {
