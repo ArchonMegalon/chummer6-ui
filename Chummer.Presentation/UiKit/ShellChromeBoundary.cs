@@ -26,6 +26,8 @@ public static class ShellChromeBoundary
         ["print_character"] = "Print...",
         ["copy"] = "Copy",
         ["paste"] = "Paste",
+        ["switch_ruleset"] = "Switch Ruleset...",
+        ["new_window"] = "New Window",
         ["close_window"] = "Close",
         ["close_all"] = "Close All",
         ["export_character"] = "Export...",

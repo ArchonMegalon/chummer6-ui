@@ -12,6 +12,8 @@ namespace Chummer.Avalonia;
 
 internal static class MainWindowShellFrameProjector
 {
+    private static readonly CatalogOnlyRulesetShellCatalogResolver CompatibilityShellCatalogResolver = new();
+
     public static MainWindowShellFrame Project(
         CharacterOverviewState state,
         ShellSurfaceState shellSurface,
@@ -249,8 +251,7 @@ internal static class MainWindowShellFrameProjector
             return Array.Empty<MenuCommandItem>();
         }
 
-        return shellSurface.Commands
-            .Where(command => string.Equals(command.Group, shellSurface.OpenMenuId, StringComparison.Ordinal))
+        return ResolveMenuCommandsForGroup(shellSurface, shellSurface.OpenMenuId)
             .Select(command => new MenuCommandItem(
                 command.Id,
                 ShellChromeBoundary.FormatCommandLabel(command.Id),
@@ -270,8 +271,7 @@ internal static class MainWindowShellFrameProjector
             .Distinct(StringComparer.Ordinal)
             .ToDictionary(
                 menuId => menuId,
-                menuId => (IReadOnlyList<MenuCommandItem>)shellSurface.Commands
-                    .Where(command => string.Equals(command.Group, menuId, StringComparison.Ordinal))
+                menuId => (IReadOnlyList<MenuCommandItem>)ResolveMenuCommandsForGroup(shellSurface, menuId)
                     .Select(command => new MenuCommandItem(
                         command.Id,
                         ShellChromeBoundary.FormatCommandLabel(command.Id),
@@ -280,6 +280,23 @@ internal static class MainWindowShellFrameProjector
                             || string.Equals(command.Id, "save_character", StringComparison.Ordinal)))
                     .ToArray(),
                 StringComparer.Ordinal);
+    }
+
+    private static IReadOnlyList<AppCommandDefinition> ResolveMenuCommandsForGroup(
+        ShellSurfaceState shellSurface,
+        string menuId)
+    {
+        AppCommandDefinition[] runtimeCommands = shellSurface.Commands
+            .Where(command => string.Equals(command.Group, menuId, StringComparison.Ordinal))
+            .ToArray();
+        if (runtimeCommands.Length > 0)
+        {
+            return runtimeCommands;
+        }
+
+        return CompatibilityShellCatalogResolver.ResolveCommands(shellSurface.ActiveRulesetId)
+            .Where(command => string.Equals(command.Group, menuId, StringComparison.Ordinal))
+            .ToArray();
     }
 
     private static NavigatorWorkspaceItem[] ProjectOpenWorkspaces(CharacterOverviewState state, ShellSurfaceState shellSurface)
