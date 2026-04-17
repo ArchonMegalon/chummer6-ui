@@ -78,16 +78,16 @@ internal sealed class DesktopUpdateWindow : Window
         {
             Content = new Border
             {
-                Padding = new Thickness(22),
+                Padding = new Thickness(16),
                 Child = new StackPanel
                 {
-                    Spacing = 16,
+                    Spacing = 12,
                     Children =
                     {
                         new TextBlock
                         {
                             Text = S("desktop.update.heading"),
-                            FontSize = 24,
+                            FontSize = 20,
                             FontWeight = FontWeight.SemiBold
                         },
                         _introText,
@@ -380,14 +380,14 @@ internal sealed class DesktopUpdateWindow : Window
     {
         StackPanel content = new()
         {
-            Spacing = 10,
+            Spacing = 6,
             Children =
             {
                 new TextBlock
                 {
                     Text = title,
                     FontWeight = FontWeight.SemiBold,
-                    FontSize = 18
+                    FontSize = 15
                 },
                 body
             }
@@ -403,8 +403,8 @@ internal sealed class DesktopUpdateWindow : Window
             Background = new SolidColorBrush(Color.Parse("#F4F6FA")),
             BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(16),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(10),
             Child = content
         };
     }
@@ -414,7 +414,7 @@ internal sealed class DesktopUpdateWindow : Window
         StackPanel actionRow = new()
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 10
+            Spacing = 6
         };
 
         foreach (Button action in actions)
@@ -450,7 +450,7 @@ internal sealed class DesktopUpdateWindow : Window
         Button button = new()
         {
             Content = label,
-            MinWidth = 120
+            MinWidth = 104
         };
 
         if (isPrimary)
