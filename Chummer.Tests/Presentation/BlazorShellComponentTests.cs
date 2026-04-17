@@ -233,6 +233,39 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void WorkspaceLeftPane_hides_secondary_left_rail_sections_until_workspace_context_exists()
+    {
+        WorkspaceSurfaceActionDefinition summaryAction = new(
+            Id: "tab-info.validate",
+            Label: "Validate",
+            TabId: "tab-info",
+            Kind: WorkspaceSurfaceActionKind.Validate,
+            TargetId: "validate",
+            RequiresOpenCharacter: true,
+            EnabledByDefault: true,
+            RulesetId: RulesetDefaults.Sr5);
+
+        WorkflowSurfaceActionBinding summarySurface = new(
+            SurfaceId: "surface.summary",
+            WorkflowId: WorkflowDefinitionIds.CareerWorkbench,
+            Label: "Refresh Summary",
+            ActionId: "summary",
+            RegionId: ShellRegionIds.SectionPane,
+            LayoutToken: WorkflowLayoutTokens.CareerWorkbench);
+
+        using var context = new BunitContext();
+        IRenderedComponent<WorkspaceLeftPane> cut = context.Render<WorkspaceLeftPane>(parameters => parameters
+            .Add(component => component.State, CharacterOverviewState.Empty)
+            .Add(component => component.OpenWorkspaces, Array.Empty<OpenWorkspaceState>())
+            .Add(component => component.ActiveWorkspaceId, null)
+            .Add(component => component.ActiveWorkspaceActions, new[] { summaryAction })
+            .Add(component => component.ActiveWorkflowSurfaceActions, new[] { summarySurface }));
+
+        Assert.AreEqual(0, cut.FindAll(".section-actions").Count, "Classic first paint should not show the secondary action rail before a workspace is active.");
+        Assert.AreEqual(0, cut.FindAll(".controls").Count, "Classic first paint should not show workflow chrome before a workspace is active.");
+    }
+
+    [TestMethod]
     public void SummaryHeader_renders_classic_workbench_tabs_and_invokes_selection()
     {
         string? selectedTabId = null;
@@ -293,6 +326,8 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "SR5 Workbench Dossiers");
         StringAssert.Contains(cut.Markup, "Shadowrun 5");
         StringAssert.Contains(cut.Markup, "primary/workbench");
+        Assert.AreEqual("ws-1", cut.Find(".navigator .command-button").GetAttribute("title"));
+        Assert.AreEqual(0, cut.FindAll(".navigator .command-button .hint").Count, "Classic dossier rows must not print workspace ids into the visible left rail.");
     }
 
     [TestMethod]

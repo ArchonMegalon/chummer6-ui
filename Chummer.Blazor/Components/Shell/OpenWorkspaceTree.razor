@@ -4,8 +4,8 @@
 @using Chummer.Presentation.Overview
 @using Chummer.Presentation.Rulesets
 
-<section class="panel navigator">
-    <h2>@BuildOpenWorkspacesHeading()</h2>
+<section class="panel navigator" aria-label="@BuildOpenWorkspacesHeading()">
+    <h2 class="visually-hidden">@BuildOpenWorkspacesHeading()</h2>
     @if (OpenWorkspaces.Count == 0)
     {
         <p class="hint">No open workspaces.</p>
@@ -16,7 +16,7 @@
             @* <Virtualize Items="@OpenWorkspaces" ItemsTagName="ul" ItemTagName="li"> *@
             <Virtualize Items="@(OpenWorkspaces.ToArray())"
                         Context="workspace"
-                        ItemSize="52">
+                        ItemSize="40">
                 @{
                     bool isActive = string.Equals(ActiveWorkspaceId?.Value, workspace.Id.Value, StringComparison.Ordinal);
                     string workspaceLabel = RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel(
@@ -27,16 +27,17 @@
                 }
                 <div class="navigator-row">
                     <button class="command-button @(isActive ? "selected" : string.Empty)"
+                            title="@workspace.Id.Value"
                             disabled="@IsBusy"
                             @onclick="() => OpenWorkspaceAsync(workspace.Id.Value)">
                         <span>@workspaceLabel</span>
-                        <span class="hint mono">@workspace.Id.Value</span>
                     </button>
-                    <button class="mini-btn"
+                    <button class="mini-btn compact-close"
+                            aria-label="Close workspace"
                             title="Close workspace"
                             disabled="@IsBusy"
                             @onclick="() => CloseWorkspaceAsync(workspace.Id.Value)">
-                        Close
+                        ×
                     </button>
                 </div>
             </Virtualize>
