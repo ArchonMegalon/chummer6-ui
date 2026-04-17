@@ -7,33 +7,33 @@
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#F3F6FB" />
-          <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#0F172A" />
-          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#475569" />
-          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#E2E8F0" />
-          <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#EEF2FF" />
-          <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#E0E7FF" />
-          <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#F1F5F9" />
-          <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#94A3B8" />
-          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#CBD5E1" />
-          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#64748B" />
+          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#D4D0C8" />
+          <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#111111" />
+          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#4B4B4B" />
+          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#D4D0C8" />
+          <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#EAE7DF" />
+          <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#E6E2DA" />
+          <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#F3F3F3" />
+          <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#ECE9D8" />
+          <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#7F7F7F" />
+          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#A3A3A3" />
+          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#7F7F7F" />
           <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#D5E5D8" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#1C4A2D" />
-          <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#E2E8F0" />
-          <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#F7F4EC" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#0A246A" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#0A246A" />
+          <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#D4D0C8" />
+          <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#F7F4EC" />
           <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#0F172A" />
-          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#BFDBFE" />
-          <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#0F172A" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
+          <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#111111" />
+          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#316AC5" />
+          <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#D4D0C8" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#2563EB" />
-          <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#B45309" />
+          <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#0A246A" />
+          <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#9A6700" />
           <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#DC2626" />
-          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#1C4A2D" />
+          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#0A246A" />
           <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#047857" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
@@ -74,7 +74,7 @@
     <Style Selector="Window">
       <Setter Property="Background" Value="{DynamicResource ChummerShellWindowBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
-      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontSize" Value="12" />
     </Style>
     <Style Selector="UserControl">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
@@ -83,7 +83,7 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="TextBlock.shell-kicker">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="10" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
@@ -93,30 +93,30 @@
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-subtitle">
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="11" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-section-title">
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="11" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-caption">
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="11" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-tree-label">
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="11" />
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
     <Style Selector="TextBlock.shell-tab-label">
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="11" />
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
     <Style Selector="StackPanel.shell-toolstrip-band">
-      <Setter Property="Spacing" Value="4" />
+      <Setter Property="Spacing" Value="2" />
     </Style>
     <Style Selector="Border.shell-toolstrip-state">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderStrongBrush}" />
@@ -131,7 +131,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="0" />
-      <Setter Property="Padding" Value="3" />
+      <Setter Property="Padding" Value="2" />
     </Style>
     <Style Selector="Border.shell-panel.chrome">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
@@ -145,11 +145,11 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="Border.shell-card">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelOverlayBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="2" />
-      <Setter Property="Padding" Value="3" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="2" />
     </Style>
     <Style Selector="Border.shell-card.subtle">
       <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
@@ -159,23 +159,23 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="CaretBrush" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
-      <Setter Property="Padding" Value="4,3" />
+      <Setter Property="Padding" Value="3,2" />
     </Style>
     <Style Selector="TextBox:focus">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellFocusRingBrush}" />
     </Style>
     <Style Selector="Button">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelOverlayBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Padding" Value="5,1" />
-      <Setter Property="MinHeight" Value="24" />
-      <Setter Property="CornerRadius" Value="2" />
+      <Setter Property="Padding" Value="5,0" />
+      <Setter Property="MinHeight" Value="22" />
+      <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="Button:pointerover">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
-      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceAltBrush}" />
     </Style>
     <Style Selector="Button:focus">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellFocusRingBrush}" />
@@ -200,21 +200,28 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="Button.shell-action.quiet">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelOverlayBrush}" />
     </Style>
     <Style Selector="Menu.classic-menu">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
       <Setter Property="Padding" Value="0" />
     </Style>
     <Style Selector="MenuItem">
-      <Setter Property="Padding" Value="6,2" />
-      <Setter Property="MinHeight" Value="22" />
+      <Setter Property="Padding" Value="5,1" />
+      <Setter Property="MinHeight" Value="20" />
     </Style>
     <Style Selector="MenuItem.primary-menu-command">
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="primitives|TabStrip.classic-tabs">
-      <Setter Property="MinHeight" Value="24" />
+      <Setter Property="MinHeight" Value="22" />
+    </Style>
+    <Style Selector="TreeView">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="TreeViewItem">
+      <Setter Property="Padding" Value="1,0" />
     </Style>
     <Style Selector="ListBox">
       <Setter Property="Background" Value="Transparent" />
@@ -222,13 +229,13 @@
       <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="ListBoxItem">
-      <Setter Property="Padding" Value="3,1" />
-      <Setter Property="Margin" Value="0,0,0,1" />
+      <Setter Property="Padding" Value="2,1" />
+      <Setter Property="Margin" Value="0" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="2" />
-      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelOverlayBrush}" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
     </Style>
     <Style Selector="ListBoxItem:pointerover">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
