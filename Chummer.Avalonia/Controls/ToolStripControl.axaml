@@ -6,12 +6,13 @@
                Grid.Column="0"
                Classes="shell-toolstrip-band"
                VerticalAlignment="Center">
+      <Button x:Name="DesktopHomeButton" Classes="shell-action" Content="New" MinWidth="48" Margin="0,0,3,0" Click="DesktopHomeButton_OnClick" />
+      <Button x:Name="ImportFileButton" Classes="shell-action" Content="Open" MinWidth="48" Margin="0,0,3,0" Click="ImportFileButton_OnClick" />
+      <Border Width="1" Height="18" Margin="2,0,5,0" Background="#FFB7C2CF" VerticalAlignment="Center" />
       <Button x:Name="SaveButton" Classes="shell-action" Content="Save" MinWidth="48" Margin="0,0,3,0" Click="SaveButton_OnClick" />
       <Button x:Name="PrintButton" Classes="shell-action" Content="Print" MinWidth="48" Margin="0,0,3,0" Click="PrintButton_OnClick" />
       <Button x:Name="CopyButton" Classes="shell-action quiet" Content="Copy" MinWidth="48" Margin="0,0,3,0" Click="CopyButton_OnClick" />
       <Border Width="1" Height="18" Margin="2,0,5,0" Background="#FFB7C2CF" VerticalAlignment="Center" />
-      <Button x:Name="DesktopHomeButton" Classes="shell-action" Content="New" MinWidth="48" Margin="0,0,3,0" Click="DesktopHomeButton_OnClick" />
-      <Button x:Name="ImportFileButton" Classes="shell-action" Content="Open" MinWidth="48" Margin="0,0,3,0" Click="ImportFileButton_OnClick" />
       <Button x:Name="CloseWorkspaceButton" Classes="shell-action quiet" Content="Close" MinWidth="48" Margin="0,0,3,0" Click="CloseWorkspaceButton_OnClick" />
       <Button x:Name="LoadDemoRunnerButton" Classes="shell-action quiet" Content="Demo" MinWidth="48" Margin="0,0,3,0" Click="LoadDemoRunnerButton_OnClick" />
       <Button x:Name="ImportRawButton" IsVisible="False" Classes="shell-action quiet" Content="XML" MinWidth="42" Margin="0,0,3,0" Click="ImportRawButton_OnClick" />

@@ -21,37 +21,40 @@ Bring Chummer6 desktop UX much closer to Chummer5a layout posture:
   - `origin/safe-push-fix-windows-installer-payload-20260401`
   - `origin/fleet/ui`
   - `origin/main`
-- Last pushed UI commit: `6ff9852d`
-  - message: `Lock startup desktop command availability`
+- Last pushed UI commit: `674e4626`
+  - message: `Front-load startup-safe desktop toolstrip actions`
 
 ## Uncommitted current slice
 
 Files changed locally:
 
 - `Chummer.Blazor/Components/Layout/DesktopShell.razor.cs`
+- `Chummer.Avalonia/Controls/ToolStripControl.axaml`
 - `Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
 - `docs/WORKBENCH_SESSION_HANDOFF.md`
 
 What this slice changes:
 
-- `Chummer.Blazor/Components/Layout/DesktopShell.razor.cs`
-  - reorders the preferred toolstrip so first-launch Blazor desktop shows `New` and `Open` before workspace-gated `Save` / `Print` / `Copy`
+- `Chummer.Avalonia/Controls/ToolStripControl.axaml`
+  - reorders the Avalonia toolbar to show `New` and `Open` before `Save` / `Print` / `Copy`, matching the startup-safe classic posture already pushed for Blazor
 - `Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
-  - hard-gates the classic-first command order: `new_character` before `open_character`, and `open_character` before `save_character`, while preserving `save_character` before `print_character`
+  - hard-gates both heads to the startup-safe classic command order: `New` before `Open`, `Open` before `Save`, and `Save` before `Print`
 - `docs/WORKBENCH_SESSION_HANDOFF.md`
-  - records the new pushed baseline and the current first-launch toolstrip parity slice in case the session dies before the next command slice lands
+  - records the new pushed baseline and the current Avalonia toolstrip parity slice in case the session dies before the next command slice lands
 
 ## Validation status
 
 What passed:
 
 - `git diff --check`
-- `dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --filter "FullyQualifiedName~Chummer.Tests.Presentation.CommandAvailabilityEvaluatorTests"`
-- pushed commit `6ff9852d` to `safe-push-fix-windows-installer-payload-20260401`, `fleet/ui`, and `main`
+- `dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers"`
+- `dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false -tl:off`
+- pushed commit `674e4626` to `safe-push-fix-windows-installer-payload-20260401`, `fleet/ui`, and `main`
 
 What still needs direct verification:
 
-- run the targeted flagship UI gate after the toolstrip reorder
+- rerun the targeted flagship UI gate after the Avalonia toolbar reorder
+- build the Avalonia desktop head after the toolbar reorder
 - inspect the live desktop shell command surface after first launch to confirm the enabled commands actually render as expected
 - continue with the next parity jump after this guardrail: menu behavior, icon/signing path, and any remaining non-classic surfaces that still survive first launch
 
@@ -68,16 +71,16 @@ cd /docker/chummercomplete/chummer6-ui
 git status --short Chummer.Tests/Presentation/CommandAvailabilityEvaluatorTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
 git diff --check
 dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers"
-dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false -tl:off
+dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false -tl:off
 ```
 
 Commit only the three files above:
 
 ```bash
-git add Chummer.Blazor/Components/Layout/DesktopShell.razor.cs
+git add Chummer.Avalonia/Controls/ToolStripControl.axaml
 git add Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs
 git add docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Front-load startup-safe desktop toolstrip actions"
+git commit -m "Align Avalonia toolstrip with startup-safe classic order"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
@@ -97,12 +100,12 @@ If this session dies from OOM or process pruning, resume with these exact steps:
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-git status --short Chummer.Blazor/Components/Layout/DesktopShell.razor.cs Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
+git status --short Chummer.Avalonia/Controls/ToolStripControl.axaml Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
 git diff --check
 dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers"
-dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false -tl:off
-git add Chummer.Blazor/Components/Layout/DesktopShell.razor.cs Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Front-load startup-safe desktop toolstrip actions"
+dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false -tl:off
+git add Chummer.Avalonia/Controls/ToolStripControl.axaml Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
+git commit -m "Align Avalonia toolstrip with startup-safe classic order"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main

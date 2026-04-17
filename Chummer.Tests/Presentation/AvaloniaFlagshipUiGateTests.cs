@@ -163,9 +163,19 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         StringAssert.Contains(releaseGateText, "chummer5a-layout-hard-gate.sh");
         StringAssert.Contains(visualGateText, "chummer5a-layout-hard-gate.sh");
+        StringAssert.Contains(toolStripText, "x:Name=\"DesktopHomeButton\"");
+        StringAssert.Contains(toolStripText, "x:Name=\"ImportFileButton\"");
         StringAssert.Contains(toolStripText, "x:Name=\"SaveButton\"");
         StringAssert.Contains(toolStripText, "x:Name=\"PrintButton\"");
         StringAssert.Contains(toolStripText, "x:Name=\"CopyButton\"");
+        Assert.IsTrue(
+            toolStripText.IndexOf("x:Name=\"DesktopHomeButton\"", StringComparison.Ordinal) <
+            toolStripText.IndexOf("x:Name=\"ImportFileButton\"", StringComparison.Ordinal),
+            "Classic toolbar parity requires New before Open.");
+        Assert.IsTrue(
+            toolStripText.IndexOf("x:Name=\"ImportFileButton\"", StringComparison.Ordinal) <
+            toolStripText.IndexOf("x:Name=\"SaveButton\"", StringComparison.Ordinal),
+            "Classic toolbar parity requires Open before Save so startup stays usable.");
         Assert.IsTrue(
             toolStripText.IndexOf("x:Name=\"SaveButton\"", StringComparison.Ordinal) <
             toolStripText.IndexOf("x:Name=\"PrintButton\"", StringComparison.Ordinal),
