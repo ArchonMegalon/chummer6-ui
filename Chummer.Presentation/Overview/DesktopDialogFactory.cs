@@ -451,6 +451,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
         OpenWorkspaceState[] ordered = roster
             .OrderByDescending(candidate => candidate.LastOpenedUtc)
+            .ThenBy(candidate => candidate.Alias, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
+            .ThenBy(candidate => RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Id.Value, StringComparer.Ordinal)
             .ToArray();
         int savedCount = ordered.Count(candidate => candidate.HasSavedWorkspace);
         string rulesetMix = ordered.Length == 0

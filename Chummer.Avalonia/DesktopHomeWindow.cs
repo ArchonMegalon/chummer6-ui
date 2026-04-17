@@ -837,7 +837,7 @@ internal sealed class DesktopHomeWindow : Window
         {
             actions.Add(CreateButton(
                 DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language),
-                static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal()));
+                () => DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_installState)));
         }
 
         if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
@@ -884,7 +884,7 @@ internal sealed class DesktopHomeWindow : Window
         {
             actions.Add(CreateButton(
                 DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language),
-                static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal()));
+                () => DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_installState)));
         }
         if (_recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
         {

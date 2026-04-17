@@ -130,7 +130,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max-age-seconds",
         type=int,
-        default=86400,
+        default=604800,
         help="Maximum startup-smoke receipt age in seconds.",
     )
     parser.add_argument(

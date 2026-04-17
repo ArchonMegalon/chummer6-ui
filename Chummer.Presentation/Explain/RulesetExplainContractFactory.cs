@@ -1,6 +1,4 @@
-using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+using System.Globalization;
 using Chummer.Contracts.Rulesets;
 
 namespace Chummer.Presentation.Explain;
@@ -38,226 +36,122 @@ public sealed record ExplainTraceSeed(
 
 public static class RulesetExplainContractFactory
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
     public static RulesetExplainTrace CreateTrace(ExplainTraceSeed seed)
-        => JsonSerializer.Deserialize<RulesetExplainTrace>(
-            BuildTraceNode(seed).ToJsonString(),
-            SerializerOptions)
-        ?? throw new InvalidOperationException("Failed to materialize RulesetExplainTrace from explain seed.");
-
-    private static JsonObject BuildTraceNode(ExplainTraceSeed seed)
     {
-        PropertyInfo[] properties = typeof(RulesetExplainTrace).GetProperties(BindingFlags.Instance | BindingFlags.Public);
-        JsonObject node = [];
+        ArgumentNullException.ThrowIfNull(seed);
 
-        SetProperty(node, properties, BuildTextNode(seed.Subject, GetPropertyType(properties, "SubjectId", "Subject"), keyedStringFallback: true), "SubjectId", "Subject");
-        SetProperty(node, properties, BuildArrayNode(seed.Providers, GetPropertyType(properties, "Providers"), BuildProviderNode), "Providers");
-        SetProperty(node, properties, BuildArrayNode(seed.Messages, GetPropertyType(properties, "Messages"), (item, itemType) => BuildTextNode(item, itemType, keyedStringFallback: true)), "Messages");
-        SetProperty(node, properties, JsonSerializer.SerializeToNode(seed.AggregateGasUsage, SerializerOptions), "AggregateGasUsage");
+        ExplainTextSeed summarySeed = seed.Messages.FirstOrDefault() ?? seed.Subject;
 
-        return node;
+        return new RulesetExplainTrace(
+            TargetKey: seed.Subject.Key,
+            FinalValue: null,
+            SummaryKey: summarySeed.Key,
+            SummaryParameters: BuildExplainParameters(summarySeed.Parameters),
+            Providers: seed.Providers.Select(BuildProviderTrace).ToArray(),
+            AggregateGasUsage: seed.AggregateGasUsage);
     }
 
-    private static JsonNode? BuildProviderNode(ExplainProviderSeed seed, Type providerType)
+    private static RulesetProviderTrace BuildProviderTrace(ExplainProviderSeed seed)
     {
-        PropertyInfo[] properties = providerType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-        JsonObject node = [];
+        RulesetTraceStep[] steps = seed.Fragments
+            .Select(fragment => BuildTraceStep(seed, fragment))
+            .ToArray();
 
-        SetProperty(node, properties, BuildProvenanceNode(seed.Provider, GetPropertyType(properties, "ProviderId", "Provider"), keyedStringFallback: true), "ProviderId", "Provider");
-        SetProperty(node, properties, BuildProvenanceNode(seed.Capability, GetPropertyType(properties, "CapabilityId", "Capability"), keyedStringFallback: true), "CapabilityId", "Capability");
-        SetProperty(node, properties, BuildProvenanceNode(seed.Pack, GetPropertyType(properties, "PackId", "Pack"), keyedStringFallback: true), "PackId", "Pack");
-        SetProperty(node, properties, JsonValue.Create(seed.Success), "Success");
-        SetProperty(node, properties, BuildArrayNode(seed.Fragments, GetPropertyType(properties, "ExplainFragments"), BuildFragmentNode), "ExplainFragments");
-        SetProperty(node, properties, JsonSerializer.SerializeToNode(seed.GasUsage, SerializerOptions), "GasUsage");
-        SetProperty(node, properties, BuildArrayNode(seed.Messages, GetPropertyType(properties, "Messages"), (item, itemType) => BuildTextNode(item, itemType, keyedStringFallback: true)), "Messages");
-
-        return node;
+        return new RulesetProviderTrace(
+            ProviderId: seed.Provider.Id,
+            CapabilityId: seed.Capability.Id,
+            PackId: seed.Pack?.Id,
+            Success: seed.Success,
+            Steps: steps,
+            GasUsage: seed.GasUsage);
     }
 
-    private static JsonNode? BuildFragmentNode(ExplainFragmentSeed seed, Type fragmentType)
+    private static RulesetTraceStep BuildTraceStep(ExplainProviderSeed providerSeed, ExplainFragmentSeed fragmentSeed)
     {
-        PropertyInfo[] properties = fragmentType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-        JsonObject node = [];
-
-        SetProperty(node, properties, BuildTextNode(seed.Label, GetPropertyType(properties, "Label"), keyedStringFallback: true), "Label");
-        SetProperty(node, properties, BuildLiteralNode(seed.Value, GetPropertyType(properties, "Value")), "Value");
-        SetProperty(node, properties, BuildTextNode(seed.Reason, GetPropertyType(properties, "Reason"), keyedStringFallback: true), "Reason");
-        SetProperty(node, properties, BuildProvenanceNode(seed.Pack, GetPropertyType(properties, "PackId", "Pack"), keyedStringFallback: true), "PackId", "Pack");
-        SetProperty(node, properties, BuildProvenanceNode(seed.Provider, GetPropertyType(properties, "ProviderId", "Provider"), keyedStringFallback: true), "ProviderId", "Provider");
-
-        return node;
+        return new RulesetTraceStep(
+            ProviderId: fragmentSeed.Provider?.Id ?? providerSeed.Provider.Id,
+            CapabilityId: providerSeed.Capability.Id,
+            PackId: fragmentSeed.Pack?.Id ?? providerSeed.Pack?.Id,
+            ExplanationKey: fragmentSeed.Reason?.Key ?? fragmentSeed.Label.Key,
+            ExplanationParameters: BuildStepParameters(providerSeed, fragmentSeed),
+            Category: "explain-fragment",
+            Modifier: ParseModifier(fragmentSeed.Value),
+            Certain: ParseCertain(fragmentSeed.Value));
     }
 
-    private static JsonNode? BuildArrayNode<TItem>(
-        IEnumerable<TItem> items,
-        Type targetCollectionType,
-        Func<TItem, Type, JsonNode?> itemBuilder)
+    private static RulesetExplainParameter[] BuildStepParameters(ExplainProviderSeed providerSeed, ExplainFragmentSeed fragmentSeed)
     {
-        Type itemType = GetCollectionElementType(targetCollectionType);
-        JsonArray array = [];
-        foreach (TItem item in items)
+        List<RulesetExplainParameter> parameters = new();
+
+        AddParameter(parameters, "labelKey", fragmentSeed.Label.Key);
+        AddParameter(parameters, "labelText", fragmentSeed.Label.FallbackText);
+        AddParameter(parameters, "reasonKey", fragmentSeed.Reason?.Key);
+        AddParameter(parameters, "reasonText", fragmentSeed.Reason?.FallbackText);
+        AddParameter(parameters, "providerMessageKey", providerSeed.Messages.FirstOrDefault()?.Key);
+        AddParameter(parameters, "providerMessageText", providerSeed.Messages.FirstOrDefault()?.FallbackText);
+
+        IEnumerable<KeyValuePair<string, string>> labelParameters = fragmentSeed.Label.Parameters is { Count: > 0 }
+            ? fragmentSeed.Label.Parameters
+            : Array.Empty<KeyValuePair<string, string>>();
+        foreach (KeyValuePair<string, string> parameter in labelParameters)
         {
-            array.Add(itemBuilder(item, itemType));
+            AddParameter(parameters, $"label:{parameter.Key}", parameter.Value);
         }
 
-        return array;
+        IEnumerable<KeyValuePair<string, string>> reasonParameters = fragmentSeed.Reason?.Parameters is { Count: > 0 }
+            ? fragmentSeed.Reason.Parameters
+            : Array.Empty<KeyValuePair<string, string>>();
+        foreach (KeyValuePair<string, string> parameter in reasonParameters)
+        {
+            AddParameter(parameters, $"reason:{parameter.Key}", parameter.Value);
+        }
+
+        return parameters.ToArray();
     }
 
-    private static JsonNode? BuildTextNode(ExplainTextSeed? seed, Type targetType, bool keyedStringFallback)
-    {
-        if (seed is null)
-        {
-            return null;
-        }
-
-        if (targetType == typeof(string))
-        {
-            return JsonValue.Create(keyedStringFallback ? seed.Key : seed.FallbackText ?? seed.Key);
-        }
-
-        JsonObject node = [];
-        bool populated = false;
-
-        populated |= TrySetStringProperty(node, targetType, seed.Key, "LocalizationKey", "Key", "Token", "ResourceKey");
-        populated |= TrySetParametersProperty(node, targetType, seed.Parameters, "Parameters", "Arguments", "Tokens");
-        populated |= TrySetStringProperty(node, targetType, seed.FallbackText, "FallbackText", "Text", "Value", "DefaultText");
-
-        return populated ? node : JsonValue.Create(seed.FallbackText ?? seed.Key);
-    }
-
-    private static JsonNode? BuildLiteralNode(string? value, Type targetType)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        if (targetType == typeof(string))
-        {
-            return JsonValue.Create(value);
-        }
-
-        JsonObject node = [];
-        bool populated = false;
-        populated |= TrySetStringProperty(node, targetType, value, "Text", "Value", "FallbackText", "DefaultText");
-        return populated ? node : JsonValue.Create(value);
-    }
-
-    private static JsonNode? BuildProvenanceNode(ExplainProvenanceSeed? seed, Type targetType, bool keyedStringFallback)
-    {
-        if (seed is null)
-        {
-            return null;
-        }
-
-        if (targetType == typeof(string))
-        {
-            return JsonValue.Create(keyedStringFallback ? seed.Id : seed.Label.FallbackText ?? seed.Label.Key);
-        }
-
-        JsonObject node = [];
-        bool populated = false;
-        populated |= TrySetStringProperty(node, targetType, seed.Id, "Id", "ProviderId", "CapabilityId", "PackId", "Value");
-
-        PropertyInfo? labelProperty = FindProperty(targetType, "Label", "DisplayName", "Name", "Title", "Text", "Localization");
-        if (labelProperty is not null)
-        {
-            node[labelProperty.Name] = BuildTextNode(seed.Label, labelProperty.PropertyType, keyedStringFallback);
-            populated = true;
-        }
-        else
-        {
-            populated |= TrySetStringProperty(node, targetType, seed.Label.FallbackText ?? seed.Label.Key, "Text", "Display");
-            populated |= TrySetStringProperty(node, targetType, seed.Label.Key, "LocalizationKey", "Key", "Token");
-        }
-
-        return populated ? node : JsonValue.Create(seed.Id);
-    }
-
-    private static void SetProperty(JsonObject node, IReadOnlyList<PropertyInfo> properties, JsonNode? value, params string[] propertyNames)
-    {
-        PropertyInfo? property = FindProperty(properties, propertyNames);
-        if (property is not null)
-        {
-            node[property.Name] = value;
-        }
-    }
-
-    private static Type GetPropertyType(IReadOnlyList<PropertyInfo> properties, params string[] propertyNames)
-        => FindProperty(properties, propertyNames)?.PropertyType
-        ?? throw new InvalidOperationException($"Explain contract property '{string.Join("' or '", propertyNames)}' was not found.");
-
-    private static PropertyInfo? FindProperty(Type type, params string[] names)
-        => FindProperty(type.GetProperties(BindingFlags.Instance | BindingFlags.Public), names);
-
-    private static PropertyInfo? FindProperty(IReadOnlyList<PropertyInfo> properties, params string[] names)
-        => properties.FirstOrDefault(property => names.Any(name => string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase)));
-
-    private static Type GetCollectionElementType(Type collectionType)
-    {
-        if (collectionType.IsArray)
-        {
-            return collectionType.GetElementType()
-                ?? throw new InvalidOperationException($"Collection type '{collectionType}' does not define an element type.");
-        }
-
-        if (collectionType.IsGenericType)
-        {
-            return collectionType.GetGenericArguments()[0];
-        }
-
-        Type? enumerableInterface = collectionType
-            .GetInterfaces()
-            .FirstOrDefault(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>));
-        if (enumerableInterface is not null)
-        {
-            return enumerableInterface.GetGenericArguments()[0];
-        }
-
-        throw new InvalidOperationException($"Collection type '{collectionType}' does not expose a generic element type.");
-    }
-
-    private static bool TrySetStringProperty(JsonObject node, Type targetType, string? value, params string[] propertyNames)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return false;
-        }
-
-        PropertyInfo? property = FindProperty(targetType, propertyNames);
-        if (property is null)
-        {
-            return false;
-        }
-
-        node[property.Name] = JsonValue.Create(value);
-        return true;
-    }
-
-    private static bool TrySetParametersProperty(JsonObject node, Type targetType, IReadOnlyDictionary<string, string>? parameters, params string[] propertyNames)
+    private static RulesetExplainParameter[] BuildExplainParameters(IReadOnlyDictionary<string, string>? parameters)
     {
         if (parameters is null || parameters.Count == 0)
         {
-            return false;
+            return [];
         }
 
-        PropertyInfo? property = FindProperty(targetType, propertyNames);
-        if (property is null)
+        return parameters
+            .Select(parameter => new RulesetExplainParameter(parameter.Key, RulesetCapabilityBridge.FromObject(parameter.Value)))
+            .ToArray();
+    }
+
+    private static void AddParameter(ICollection<RulesetExplainParameter> parameters, string name, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
         {
-            return false;
+            return;
         }
 
-        JsonObject parameterNode = [];
-        foreach (KeyValuePair<string, string> parameter in parameters)
+        parameters.Add(new RulesetExplainParameter(name, RulesetCapabilityBridge.FromObject(value)));
+    }
+
+    private static decimal? ParseModifier(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
         {
-            parameterNode[parameter.Key] = JsonValue.Create(parameter.Value);
+            return null;
         }
 
-        node[property.Name] = parameterNode;
-        return true;
+        return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal modifier)
+            ? modifier
+            : null;
+    }
+
+    private static bool? ParseCertain(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return bool.TryParse(value, out bool certain)
+            ? certain
+            : null;
     }
 }

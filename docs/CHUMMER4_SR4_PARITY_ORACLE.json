@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "scope": "sr4_desktop_head",
+  "summary": "Local Chummer4 oracle for SR4 desktop workflow parity closure on the promoted Chummer6 desktop head.",
+  "sourceRepo": {
+    "path": "/docker/fleet/repos/chummer4",
+    "head": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
+  },
+  "workflowFamilies": [
+    "create-open-import-save-save-as-print-export",
+    "metatype-priorities-karma-entry",
+    "attributes-skills-skill-groups-specializations-knowledge-languages",
+    "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+    "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+    "cyberware-bioware-modular-hierarchies-nested-plugins",
+    "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+    "improvements-explain-result-parity",
+    "recovery-reload-migration-roundtrips",
+    "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare"
+  ]
+}

@@ -7,10 +7,14 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
+    <ProjectReference Include="$(ChummerLocalCampaignContractsProject)" />
     <ProjectReference Include="$(ChummerLocalContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
+    <PackageReference Include="$(ChummerCampaignContractsPackageId)" Version="$(ChummerCampaignContractsPackageVersion)" />
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
+    <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Chummer.Presentation\Chummer.Presentation.csproj" />

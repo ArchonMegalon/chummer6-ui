@@ -1,19 +1,30 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.SectionHostControl">
-  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
-    <Border Grid.Row="0" Classes="shell-card subtle">
-      <StackPanel Spacing="6">
-        <TextBlock Classes="shell-kicker" Text="Section Briefing" />
-        <TextBlock x:Name="NoticeText" Classes="shell-section-title" Text="Notice: Ready." TextWrapping="Wrap" />
-      </StackPanel>
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="4">
+    <Border Grid.Row="0" Classes="shell-card subtle" Padding="4,2">
+      <TextBlock x:Name="NoticeText"
+                 Classes="shell-caption"
+                 Text="Notice: Ready."
+                 TextTrimming="CharacterEllipsis" />
     </Border>
 
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-      <Border Classes="shell-card">
-      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,*" RowSpacing="6">
-        <TextBlock Grid.Row="0" Text="Active Section Preview" Classes="shell-section-title" />
+      <Border Padding="4">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="6">
+        <TextBlock Grid.Row="0" Text="Section Workbench" Classes="shell-section-title" IsVisible="False" />
         <Border Grid.Row="1"
+                x:Name="SectionQuickActionsBorder"
+                Classes="shell-card subtle"
+                IsVisible="False"
+                Padding="4">
+          <StackPanel Spacing="2">
+            <WrapPanel x:Name="SectionQuickActionsPanel"
+                       Orientation="Horizontal"
+                       ItemHeight="24" />
+          </StackPanel>
+        </Border>
+        <Border Grid.Row="2"
                 x:Name="BuildLabBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -83,7 +94,7 @@
             </ListBox>
           </Grid>
         </Border>
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 x:Name="BrowseWorkspaceBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -133,7 +144,7 @@
             </ListBox>
           </Grid>
         </Border>
-        <Border Grid.Row="3"
+        <Border Grid.Row="4"
                 x:Name="ContactGraphBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -170,7 +181,7 @@
                      IsReadOnly="True" />
           </Grid>
         </Border>
-        <Border Grid.Row="4"
+        <Border Grid.Row="5"
                 x:Name="NpcPersonaStudioBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -209,7 +220,7 @@
                      IsReadOnly="True" />
           </Grid>
         </Border>
-        <Border Grid.Row="5"
+        <Border Grid.Row="6"
                 x:Name="DowntimePlannerBorder"
                 Classes="shell-card"
                 IsVisible="False"
@@ -243,32 +254,74 @@
             </ListBox>
           </Grid>
         </Border>
-        <ListBox Grid.Row="6" x:Name="SectionRowsList" Height="120">
+        <Border Grid.Row="7"
+                x:Name="ClassicCharacterSheetBorder"
+                Classes="shell-card subtle"
+                IsVisible="False"
+                Padding="6">
+          <StackPanel Spacing="6">
+            <TextBlock x:Name="ClassicCharacterSummaryTitle"
+                       Text="Runner Summary"
+                       Classes="shell-section-title" />
+            <WrapPanel x:Name="ClassicCharacterFactsPanel"
+                       Orientation="Horizontal"
+                       ItemHeight="44" />
+            <WrapPanel x:Name="ClassicAttributeFactsPanel"
+                       Orientation="Horizontal"
+                       ItemHeight="44" />
+          </StackPanel>
+        </Border>
+        <ListBox Grid.Row="8" x:Name="SectionRowsList" Height="160">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Grid ColumnDefinitions="220,*" ColumnSpacing="8" Margin="0,1">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding DisplayPath}"
+                           Classes="shell-caption"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding DisplayValue}"
+                           TextWrapping="NoWrap"
+                           TextTrimming="CharacterEllipsis" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
           <ListBox.ItemsPanel>
             <ItemsPanelTemplate>
               <VirtualizingStackPanel />
             </ItemsPanelTemplate>
           </ListBox.ItemsPanel>
         </ListBox>
-        <TextBox Grid.Row="7"
-                 x:Name="SectionPreviewBox"
-                 AcceptsReturn="True"
-                 TextWrapping="Wrap"
-                 IsReadOnly="True" />
+        <Expander Grid.Row="9"
+                  x:Name="SectionPayloadExpander"
+                  Header="Section Payload"
+                  IsExpanded="True"
+                  Height="0"
+                  MinHeight="0"
+                  MaxHeight="0"
+                  Opacity="0"
+                  IsHitTestVisible="False"
+                  ClipToBounds="True">
+          <TextBox x:Name="SectionPreviewBox"
+                   AcceptsReturn="True"
+                   TextWrapping="Wrap"
+                   IsReadOnly="True"
+                   MinHeight="120" />
+        </Expander>
       </Grid>
       </Border>
     </ScrollViewer>
 
-    <Border Grid.Row="2" Classes="shell-card subtle">
-      <StackPanel Spacing="4">
-        <TextBlock Classes="shell-kicker" Text="Developer Utility" />
-        <TextBlock Text="Raw XML Import" Classes="shell-section-title" />
-        <TextBox x:Name="XmlInputBox"
-                 AcceptsReturn="True"
-                 TextWrapping="Wrap"
-                 Height="100"
-                 Watermark="Optional raw XML payload for diagnostics" />
-      </StackPanel>
+    <Border Grid.Row="2" x:Name="RawXmlImportBorder" Classes="shell-card subtle" Padding="4" IsVisible="False">
+      <Expander Header="Raw XML Import" IsExpanded="False">
+        <StackPanel Spacing="2" Margin="0,4,0,0">
+          <TextBox x:Name="XmlInputBox"
+                   AcceptsReturn="True"
+                   TextWrapping="Wrap"
+                   Height="64"
+                   Watermark="Paste raw XML when you need a direct import or diagnostics." />
+        </StackPanel>
+      </Expander>
     </Border>
   </Grid>
 </UserControl>

@@ -26,7 +26,7 @@
       "notes": "SR4 creation semantics are exercised through all-section action coverage plus representative legacy workflow fixtures.",
       "auditTests": [
         "Avalonia_and_Blazor_character_settings_save_updates_shared_state",
-        "Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections",
+        "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
         "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
       ],
       "parityReceipts": [
@@ -45,7 +45,7 @@
       "notes": "SR4 attribute and skill-family editing is executable in dual-head parity tests.",
       "auditTests": [
         "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-        "Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices"
+        "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json"
@@ -62,9 +62,9 @@
       "status": "ready",
       "notes": "Support-family SR4 workflows are explicitly covered by release-gated cross-head tests.",
       "auditTests": [
-        "Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
         "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections",
-        "Avalonia_and_Blazor_support_routes_and_dialog_controls_are_public_and_actionable"
+        "Contacts_diary_and_support_routes_execute_with_public_path_visibility"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json"
@@ -81,7 +81,7 @@
       "status": "ready",
       "notes": "Combat and gear workflow families are covered by executable dual-head acceptance tests.",
       "auditTests": [
-        "Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
         "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
         "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
       ],
@@ -100,7 +100,7 @@
       "status": "ready",
       "notes": "Cyberware modular and nested-plugin SR4 behavior is covered by dedicated fixture-backed parity checks.",
       "auditTests": [
-        "Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
         "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
         "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
         "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
@@ -120,7 +120,7 @@
       "status": "ready",
       "notes": "Magic/resonance SR4 workflow families are release-gated in dual-head parity coverage.",
       "auditTests": [
-        "Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices",
+        "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
         "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
         "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
         "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"

@@ -19,6 +19,7 @@ desktop_update_runtime_tests_path="$repo_root/Chummer.Tests/DesktopUpdateRuntime
 desktop_install_linking_runtime_tests_path="$repo_root/Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
 desktop_startup_smoke_runtime_tests_path="$repo_root/Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs"
 workflow_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+layout_hard_gate_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
 sr4_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr6_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr4_sr6_frontier_receipt_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
@@ -95,6 +96,7 @@ desktop_install_linking_runtime_tests_path = Path(sys.argv[5])
 desktop_startup_smoke_runtime_tests_path = Path(sys.argv[6])
 avalonia_text = avalonia_gate_tests_path.read_text(encoding="utf-8")
 required_avalonia_tests = [
+    "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers",
     "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
@@ -133,15 +135,15 @@ if missing_avalonia:
 text = dual_head_tests_path.read_text(encoding="utf-8")
 required_tests = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
-    "Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections",
+    "Avalonia_and_Blazor_workspace_action_summary_matches",
     "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
     "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts",
     "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
-    "Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices",
-    "Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices",
-    "Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices",
-    "Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices",
-    "Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices",
+    "Avalonia_and_Blazor_info_family_workspace_actions_render_matching_sections",
+    "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections",
+    "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
+    "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
+    "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
     "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
     "Avalonia_and_Blazor_character_settings_save_updates_shared_state",
 ]
@@ -286,13 +288,16 @@ run_with_retry 2 "cross-head workflow parity tests" \
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
 bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
 
+echo "[b14] running explicit Chummer5a layout hard gate..."
+bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+
 echo "[b14] running explicit SR4/SR6 desktop parity frontier gate..."
 bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path"
 import json
 import os
 import sys
@@ -310,12 +315,13 @@ from datetime import datetime, timezone
     desktop_install_linking_runtime_tests_path,
     desktop_startup_smoke_runtime_tests_path,
     workflow_parity_receipt_path,
+    layout_hard_gate_receipt_path,
     sr4_workflow_parity_receipt_path,
     sr6_workflow_parity_receipt_path,
     sr4_sr6_frontier_receipt_path,
     desktop_workflow_execution_receipt_path,
     localization_release_gate_receipt_path,
-) = sys.argv[1:17]
+) = sys.argv[1:18]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -335,15 +341,15 @@ expected_screenshots = [
 ]
 required_full_workflow_tests = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
-    "Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections",
+    "Avalonia_and_Blazor_workspace_action_summary_matches",
     "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
     "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts",
     "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
-    "Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices",
-    "Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices",
-    "Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices",
-    "Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices",
-    "Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices",
+    "Avalonia_and_Blazor_info_family_workspace_actions_render_matching_sections",
+    "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections",
+    "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
+    "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
+    "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
     "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
     "Avalonia_and_Blazor_character_settings_save_updates_shared_state",
 ]
@@ -365,6 +371,13 @@ if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pas
     raise SystemExit(
         "[b14] FAIL: explicit Chummer5a desktop workflow parity proof is not passed: "
         + ", ".join(workflow_parity_receipt.get("reasons") or ["missing reason"])
+    )
+with open(layout_hard_gate_receipt_path, "r", encoding="utf-8") as handle:
+    layout_hard_gate_receipt = json.load(handle)
+if str(layout_hard_gate_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit Chummer5a layout hard gate proof is not passed: "
+        + ", ".join(layout_hard_gate_receipt.get("reasons") or ["missing reason"])
     )
 with open(sr4_workflow_parity_receipt_path, "r", encoding="utf-8") as handle:
     sr4_workflow_parity_receipt = json.load(handle)
@@ -419,7 +432,8 @@ payload = {
     "status": "pass",
     "releaseGate": "b14-flagship-ui-release-gate",
     "desktopHead": "avalonia",
-    "desktopHeads": ["avalonia", "blazor-desktop"],
+    "desktopHeads": ["avalonia"],
+    "desktopFallbackHeads": ["blazor-desktop"],
     "artifactPresence": {
         "bundledDemoRunnerPath": sample_path,
         "bundledDemoRunnerPresent": os.path.isfile(sample_path),
@@ -448,6 +462,7 @@ payload = {
         "runtimeBackedSr5CodexOrientationModel": "pass",
         "runtimeBackedSr6CodexOrientationModel": "pass",
         "runtimeBackedClassicChromeCopy": "pass",
+        "chummer5aLayoutHardGate": "pass",
         "runtimeBackedTabPanelOnlyHeader": "pass",
         "runtimeBackedChromeEnabledAfterRunnerLoad": "pass",
         "runtimeBackedDemoRunnerImport": "pass",
@@ -483,6 +498,7 @@ payload = {
             "visualReview": "pass",
             "themeReadabilityContrast": "pass",
             "bundledDemoRunner": "pass",
+            "layoutParityHardGate": "pass",
             "releaseLifecycle": "pass",
             "requiredRuntimeBackedTests": [
                 "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",

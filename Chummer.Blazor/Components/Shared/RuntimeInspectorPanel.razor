@@ -1,3 +1,5 @@
+@namespace Chummer.Blazor.Components.Shared
+
 @using Chummer.Contracts.Content
 @using Chummer.Contracts.Rulesets
 @using Chummer.Presentation.Overview
@@ -354,6 +356,23 @@
             }
         </article>
 
+        @if (HasDiagnosticsEnvironmentDiff(Projection))
+        {
+            <article class="panel trace-card" data-diagnostics-environment-diff>
+                <header>
+                    <h3>Diagnostics environment diff</h3>
+                    <span class="badge">@BuildDiagnosticsDiffBadge(Projection)</span>
+                </header>
+                <dl class="facts compact">
+                    <div><dt>Rule environment</dt><dd>@Projection.RuntimeLock.RulesetId · @Projection.RuntimeLock.RuntimeFingerprint</dd></div>
+                    <div><dt>Before</dt><dd>@BuildDiagnosticsDiffBefore(Projection)</dd></div>
+                    <div><dt>After</dt><dd>@BuildDiagnosticsDiffAfter(Projection)</dd></div>
+                    <div><dt>Explain receipt</dt><dd>@BuildDiagnosticsExplainReceipt(Projection)</dd></div>
+                    <div><dt>Support reuse</dt><dd>@RuntimeInspectorDiagnostics.BuildHubClientDiagnosticsSummary(Projection)</dd></div>
+                </dl>
+            </article>
+        }
+
         <article class="panel trace-card">
             <header>
                 <h3>Capability Descriptors</h3>
@@ -459,6 +478,82 @@
             RuntimeInspectorWarningSeverityLevels.Warning => "coach-badge warn",
             _ => "coach-badge error"
         };
+
+    private static bool HasDiagnosticsEnvironmentDiff(RuntimeInspectorProjection projection)
+        => projection.MigrationPreview.Count > 0
+            || projection.CompatibilityDiagnostics.Count > 0
+            || projection.Warnings.Count > 0
+            || projection.ProviderBindings.Any(static binding => !binding.SessionSafe);
+
+    private static string BuildDiagnosticsDiffBadge(RuntimeInspectorProjection projection)
+    {
+        int diffCount = projection.MigrationPreview.Count
+            + projection.CompatibilityDiagnostics.Count
+            + projection.Warnings.Count;
+        return diffCount == 0 ? "stable" : $"{diffCount} diff signal(s)";
+    }
+
+    private static string BuildDiagnosticsDiffBefore(RuntimeInspectorProjection projection)
+    {
+        RuntimeMigrationPreviewItem? migration = projection.MigrationPreview
+            .FirstOrDefault(static item => !string.IsNullOrWhiteSpace(item.BeforeValue));
+        if (migration is not null)
+        {
+            return $"{migration.SubjectId ?? migration.Kind}: {migration.BeforeValue}";
+        }
+
+        RuntimeLockCompatibilityDiagnostic? diagnostic = projection.CompatibilityDiagnostics.FirstOrDefault();
+        if (diagnostic is not null)
+        {
+            return $"{projection.RuntimeLock.RulesetId} / {projection.RuntimeLock.RuntimeFingerprint}: {diagnostic.Message}";
+        }
+
+        RuntimeInspectorWarning? warning = projection.Warnings.FirstOrDefault();
+        return warning is null
+            ? "Current rule environment has no emitted before-state drift."
+            : $"{warning.SubjectId ?? warning.Kind}: {warning.Message}";
+    }
+
+    private static string BuildDiagnosticsDiffAfter(RuntimeInspectorProjection projection)
+    {
+        RuntimeMigrationPreviewItem? migration = projection.MigrationPreview
+            .FirstOrDefault(static item => !string.IsNullOrWhiteSpace(item.AfterValue));
+        RuntimeLockCompatibilityDiagnostic? diagnostic = projection.CompatibilityDiagnostics.FirstOrDefault();
+        if (migration is not null)
+        {
+            string migrationAfter = $"{migration.SubjectId ?? migration.Kind}: {migration.AfterValue}";
+            return diagnostic is null
+                ? migrationAfter
+                : $"{migrationAfter}; {BuildCompatibilityAfter(diagnostic, projection)}";
+        }
+
+        if (diagnostic is not null)
+        {
+            return BuildCompatibilityAfter(diagnostic, projection);
+        }
+
+        return RuntimeInspectorDiagnostics.HasStaleOrInvalidatedState(projection)
+            ? "Refresh the runtime projection and keep the support packet open until the receipt is current."
+            : "No environment change is required before support closure.";
+    }
+
+    private static string BuildCompatibilityAfter(RuntimeLockCompatibilityDiagnostic diagnostic, RuntimeInspectorProjection projection)
+        => string.IsNullOrWhiteSpace(diagnostic.RequiredRuntimeFingerprint)
+            ? $"Recheck required ruleset {diagnostic.RequiredRulesetId ?? projection.RuntimeLock.RulesetId} before support closure."
+            : $"Rebind to {diagnostic.RequiredRuntimeFingerprint} before support closure.";
+
+    private static string BuildDiagnosticsExplainReceipt(RuntimeInspectorProjection projection)
+    {
+        RuntimeInspectorCapabilityDescriptorProjection? descriptor = projection.CapabilityDescriptors?
+            .FirstOrDefault(static candidate => candidate.Explainable);
+        if (descriptor is not null)
+        {
+            return $"{descriptor.CapabilityId} via {descriptor.ProviderId ?? "(provider pending)"}";
+        }
+
+        RuntimeInspectorProviderBinding? binding = projection.ProviderBindings.FirstOrDefault();
+        return binding is null ? "No explainable provider binding is active." : $"{binding.CapabilityId} via {binding.ProviderId}";
+    }
 }
 
 @code {

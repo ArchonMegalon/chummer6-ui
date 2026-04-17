@@ -1,46 +1,43 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.ShellMenuBarControl">
-  <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
-    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-      <StackPanel x:Name="MenuBarPanel" Grid.Column="0" Orientation="Horizontal" Spacing="6">
-        <Button x:Name="FileMenuButton" Classes="menu-button" Tag="file" Content="File" Click="MenuButton_OnClick" />
-        <Button x:Name="EditMenuButton" Classes="menu-button" Tag="edit" Content="Edit" Click="MenuButton_OnClick" />
-        <Button x:Name="SpecialMenuButton" Classes="menu-button" Tag="special" Content="Special" Click="MenuButton_OnClick" />
-        <Button x:Name="ToolsMenuButton" Classes="menu-button" Tag="tools" Content="Tools" Click="MenuButton_OnClick" />
-        <Button x:Name="WindowsMenuButton" Classes="menu-button" Tag="windows" Content="Windows" Click="MenuButton_OnClick" />
-        <Button x:Name="HelpMenuButton" Classes="menu-button" Tag="help" Content="Help" Click="MenuButton_OnClick" />
-      </StackPanel>
-      <Border Grid.Column="2"
-              Classes="shell-card subtle"
-              Padding="10,6">
-        <StackPanel
-                  HorizontalAlignment="Right"
-                  VerticalAlignment="Center"
-                  Spacing="2">
-          <TextBlock Classes="shell-kicker" HorizontalAlignment="Right" Text="Classic Desktop Workbench" />
-          <TextBlock x:Name="BannerText"
-                     Classes="shell-section-title"
-                     HorizontalAlignment="Right"
-                     Text="Chummer desktop" />
-        </StackPanel>
-      </Border>
-    </Grid>
-
-    <Border x:Name="MenuCommandsRegion"
-            Grid.Row="1"
-            Classes="shell-card subtle"
-            IsVisible="False"
-            Padding="8">
-      <StackPanel Spacing="8">
-        <TextBlock x:Name="MenuCommandsTitle"
-                   Classes="shell-kicker"
-                   Text="Menu commands" />
-        <WrapPanel x:Name="MenuCommandsHost"
-                   Orientation="Horizontal"
-                   ItemWidth="160"
-                   ItemHeight="36" />
-      </StackPanel>
-    </Border>
-  </Grid>
+  <Menu x:Name="MenuBarPanel"
+        Classes="classic-menu">
+    <MenuItem x:Name="FileMenuButton"
+              Header="File"
+              Tag="file"
+              Click="RootMenuItem_OnClick"
+              PointerPressed="RootMenuItem_OnPointerPressed"
+              SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
+    <MenuItem x:Name="EditMenuButton"
+              Header="Edit"
+              Tag="edit"
+              Click="RootMenuItem_OnClick"
+              PointerPressed="RootMenuItem_OnPointerPressed"
+              SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
+    <MenuItem x:Name="SpecialMenuButton"
+              Header="Special"
+              Tag="special"
+              Click="RootMenuItem_OnClick"
+              PointerPressed="RootMenuItem_OnPointerPressed"
+              SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
+    <MenuItem x:Name="ToolsMenuButton"
+              Header="Tools"
+              Tag="tools"
+              Click="RootMenuItem_OnClick"
+              PointerPressed="RootMenuItem_OnPointerPressed"
+              SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
+    <MenuItem x:Name="WindowsMenuButton"
+              Header="Windows"
+              Tag="windows"
+              Click="RootMenuItem_OnClick"
+              PointerPressed="RootMenuItem_OnPointerPressed"
+              SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
+    <MenuItem x:Name="HelpMenuButton"
+              Header="Help"
+              Tag="help"
+              Click="RootMenuItem_OnClick"
+              PointerPressed="RootMenuItem_OnPointerPressed"
+              SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
+  </Menu>
 </UserControl>

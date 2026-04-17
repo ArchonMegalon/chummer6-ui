@@ -141,9 +141,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(releaseManifestScriptText, "if [[ \"$RELEASE_VERSION\" == \"unpublished\" ]]");
         StringAssert.Contains(releaseManifestScriptText, "artifactDigest");
         StringAssert.Contains(releaseManifestScriptText, "if sha256_file(artifact_path) != digest:");
-        StringAssert.Contains(releaseManifestScriptText, "CHUMMER_EXTERNAL_PROOF_MAX_RECEIPT_AGE_SECONDS:-86400");
+        StringAssert.Contains(releaseManifestScriptText, "CHUMMER_EXTERNAL_PROOF_MAX_RECEIPT_AGE_SECONDS:-604800");
         StringAssert.Contains(blockerMaterializerScriptText, "chummer6-ui.external_host_proof_blockers");
-        StringAssert.Contains(blockerMaterializerScriptText, "default=86400");
+        StringAssert.Contains(blockerMaterializerScriptText, "default=604800");
         StringAssert.Contains(blockerMaterializerScriptText, "receipt_stale");
         StringAssert.Contains(blockerMaterializerScriptText, "public_route_unhealthy");
         StringAssert.Contains(blockerMaterializerScriptText, "installAccessClass");
@@ -429,6 +429,15 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "\"blocking_findings\": blocking_findings");
         StringAssert.Contains(scriptText, "\"blockingFindingsCount\": blocking_findings_count");
         StringAssert.Contains(scriptText, "\"blocking_findings_count\": blocking_findings_count");
+
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+
+        StringAssert.Contains(verifyScriptText, "not isinstance(blocking_findings_count, int)");
+        StringAssert.Contains(verifyScriptText, "blocking_findings_count != len(reasons)");
+        Assert.IsFalse(
+            verifyScriptText.Contains("int(blocking_findings_count or -1)", StringComparison.Ordinal),
+            "The verifier must accept a valid zero blockingFindingsCount on a passing desktop executable gate.");
     }
 
     [TestMethod]
@@ -865,6 +874,21 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(verifyScriptText, "NEXT90_M101_AVALONIA_PRIMARY_ROUTE_PROOF.generated.json");
         StringAssert.Contains(verifyScriptText, "CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1");
         StringAssert.Contains(verifyScriptText, "CHUMMER_AVALONIA_PRIMARY_ROUTE_PROOF_ALLOW_MISSING_RECEIPTS");
+    }
+
+    [TestMethod]
+    public void Linux_desktop_exit_gate_uses_stable_build_lock_descriptor()
+    {
+        string repoRoot = FindRepoRoot();
+        string linuxScriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string linuxScriptText = File.ReadAllText(linuxScriptPath);
+
+        StringAssert.Contains(linuxScriptText, "BUILD_LOCK_FD=\"8\"");
+        StringAssert.Contains(linuxScriptText, "eval \"exec ${BUILD_LOCK_FD}>\\\"\\$BUILD_LOCK_PATH\\\"\"");
+        StringAssert.Contains(linuxScriptText, "flock \"$BUILD_LOCK_FD\"");
+        Assert.IsFalse(
+            linuxScriptText.Contains("exec {BUILD_LOCK_FD}>", StringComparison.Ordinal),
+            "The Linux gate must not use dynamic fd assignment for the build lock; it has produced build_lock failures in worker shells.");
     }
 
     [TestMethod]

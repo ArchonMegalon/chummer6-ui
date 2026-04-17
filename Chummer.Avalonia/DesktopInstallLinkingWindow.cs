@@ -190,7 +190,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             return DesktopCampaignWorkspaceWindow.ShowAsync(this, _state.HeadId);
         }
 
-        if (DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+        if (DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state))
         {
             SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
         }

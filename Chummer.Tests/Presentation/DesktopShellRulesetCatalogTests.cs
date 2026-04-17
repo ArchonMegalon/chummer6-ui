@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,8 +15,8 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
-using Chummer.Presentation.Shell.Routing;
 using Chummer.Rulesets.Sr5;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -25,6 +26,21 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public sealed class DesktopShellRulesetCatalogTests
 {
+    [TestMethod]
+    public void Blazor_shell_root_route_is_owned_only_by_the_modern_home_page()
+    {
+        string homePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Home.razor");
+        string legacyPath = SourcePath("Chummer.Blazor", "Pages", "Index.razor");
+
+        string homeText = File.ReadAllText(homePath);
+        string legacyText = File.ReadAllText(legacyPath);
+
+        StringAssert.Contains(homeText, "@page \"/\"");
+        Assert.IsFalse(legacyText.Contains("@page \"/\"", StringComparison.Ordinal));
+        Assert.IsFalse(legacyText.Contains("@page \"/blazor\"", StringComparison.Ordinal));
+        StringAssert.Contains(legacyText, "@page \"/legacy-console\"");
+    }
+
     [DataTestMethod]
     [DataRow(RulesetDefaults.Sr4, "Oracle intake desk", "Shadowrun 4 preview import cockpit", "Desktop Summary · SR4 Preview", "SR4 Preview Dossiers", "Import SR4 Oracle File", "SR4 Preview Result", "SR4 Preview Commands")]
     [DataRow(RulesetDefaults.Sr5, "Flagship desktop workbench", "Shadowrun 5 flagship workbench", "Desktop Summary · SR5 Workbench", "SR5 Workbench Dossiers", "Import SR5 Workbench File", "SR5 Workbench Result", "SR5 Workbench Commands")]
@@ -75,8 +91,9 @@ public sealed class DesktopShellRulesetCatalogTests
 
         cut.WaitForAssertion(() =>
         {
-            StringAssert.Contains(cut.Markup, expectedEyebrow);
-            StringAssert.Contains(cut.Markup, expectedTitle);
+            Assert.IsFalse(cut.Markup.Contains("data-testid=\"desktop-flagship-marquee\"", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains(expectedEyebrow, StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains(expectedTitle, StringComparison.Ordinal));
             StringAssert.Contains(cut.Markup, expectedSummary);
             StringAssert.Contains(cut.Markup, expectedDossiers);
             StringAssert.Contains(cut.Markup, expectedImportHeading);
@@ -87,7 +104,7 @@ public sealed class DesktopShellRulesetCatalogTests
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Workflows: 1 defs / 1 surfaces");
             Assert.AreEqual(
                 ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellState.ActiveRuntime, rulesetId),
-                cut.Find("#summaryRuntime").GetAttribute("value"));
+                cut.Find(".workbench-runtime-summary").TextContent.Trim());
         });
     }
 
@@ -176,14 +193,16 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.AreEqual("workflow.surface.sr6", workflowButtons[0].GetAttribute("data-workflow-surface"));
             StringAssert.Contains(workflowButtons[0].TextContent, "SR6 Matrix Action");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Runtime: Shadowrun 6 · beta/edge-first · SR6 Core [sr6-runtime-fp-001]");
-            Assert.AreEqual("Shadowrun 6 · beta/edge-first · SR6 Core [sr6-runtime-fp-001] (available)", cut.Find("#summaryRuntime").GetAttribute("value"));
+            Assert.AreEqual(
+                "Shadowrun 6 · beta/edge-first · SR6 Core [sr6-runtime-fp-001] (available)",
+                cut.Find(".workbench-runtime-summary").TextContent.Trim());
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Ruleset: sr6 (beta/edge-first");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, ".chum6");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Workflows: 1 defs / 1 surfaces");
-            StringAssert.Contains(cut.Markup, "data-testid=\"desktop-flagship-marquee\"");
-            StringAssert.Contains(cut.Markup, "Starter and beta desk");
-            StringAssert.Contains(cut.Markup, "Shadowrun 6 guided starter cockpit");
-            StringAssert.Contains(cut.Markup, "SR6 home cockpit foregrounds starter kits");
+            Assert.IsFalse(cut.Markup.Contains("data-testid=\"desktop-flagship-marquee\"", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("Starter and beta desk", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("Shadowrun 6 guided starter cockpit", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("SR6 home cockpit foregrounds starter kits", StringComparison.Ordinal));
             StringAssert.Contains(cut.Markup, "Desktop Summary · SR6 Starter");
             StringAssert.Contains(cut.Markup, "SR6 Starter Dossiers");
             StringAssert.Contains(cut.Markup, "SR6 Starter Tabs");
@@ -191,7 +210,7 @@ public sealed class DesktopShellRulesetCatalogTests
     }
 
     [TestMethod]
-    public void DesktopShell_runtime_header_button_dispatches_runtime_inspector_command()
+    public void DesktopShell_runtime_summary_uses_read_only_shell_chrome_without_inline_inspector_button()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -225,9 +244,78 @@ public sealed class DesktopShellRulesetCatalogTests
 
         IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
 
-        cut.Find("#summaryRuntimeInspect").Click();
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual(0, cut.FindAll("#summaryRuntimeInspect").Count);
+            Assert.AreEqual(
+                "Shadowrun 6 · beta/edge-first · SR6 Core [sr6-runtime-fp-001] (available)",
+                cut.Find(".workbench-runtime-summary").TextContent.Trim());
+        });
 
-        Assert.AreEqual(OverviewCommandPolicy.RuntimeInspectorCommandId, presenter.ExecutedCommandId);
+        Assert.IsNull(presenter.ExecutedCommandId);
+    }
+
+    [TestMethod]
+    public void DesktopShell_keeps_default_center_pane_free_of_metadata_and_payload_debug_chrome()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        CharacterWorkspaceId workspaceId = new("ws-sr5");
+        OpenWorkspaceState openWorkspace = new(
+            Id: workspaceId,
+            Name: "SR5 Runner",
+            Alias: "SR5",
+            LastOpenedUtc: DateTimeOffset.UtcNow,
+            RulesetId: RulesetDefaults.Sr5);
+        CharacterOverviewState overviewState = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(workspaceId, [openWorkspace], [workspaceId]),
+            OpenWorkspaces = [openWorkspace],
+            WorkspaceId = workspaceId,
+            ActiveSectionId = "skills",
+            ActiveSectionJson = "{\"skills\":1}",
+            ActiveSectionRows = [new SectionRowState("skills[0].name", "Pistols")]
+        };
+        ShellState shellState = CreateShellState(
+            workspaceId,
+            openWorkspace,
+            RulesetDefaults.Sr5,
+            runtimeTitle: "SR5 Core",
+            runtimeFingerprint: "sr5-runtime-fp-001");
+
+        RegisterDesktopShellServices(
+            context,
+            overviewState,
+            shellState,
+            FakeWorkbenchCoachApiClient.CreateDefault("sr5-runtime-fp-001"),
+            new CatalogOnlyRulesetPlugin(RulesetDefaults.Sr5));
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() =>
+        {
+            StringAssert.Contains(cut.Markup, "Pistols");
+            Assert.IsFalse(cut.Markup.Contains("panel metadata", StringComparison.Ordinal), "The default desktop shell must not mount the metadata slab above the workbench.");
+            Assert.IsFalse(cut.Markup.Contains("section-payload", StringComparison.Ordinal), "The default desktop shell must not surface raw section payload dumps.");
+            Assert.IsFalse(cut.Markup.Contains("{\"skills\":1}", StringComparison.Ordinal), "The default desktop shell must keep raw section JSON out of the visible workbench.");
+        });
+    }
+
+    private static string SourcePath(params string[] segments)
+    {
+        DirectoryInfo? current = new(AppContext.BaseDirectory);
+        while (current is not null && !Directory.Exists(Path.Combine(current.FullName, "Chummer.Blazor")))
+        {
+            current = current.Parent;
+        }
+
+        if (current is null)
+        {
+            throw new DirectoryNotFoundException("Could not resolve chummer-presentation source root from the test output directory.");
+        }
+
+        return Path.GetFullPath(Path.Combine([current.FullName, .. segments]));
     }
 
     [TestMethod]

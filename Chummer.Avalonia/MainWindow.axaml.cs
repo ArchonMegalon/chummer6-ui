@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Chummer.Contracts.Presentation;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
@@ -50,6 +52,7 @@ public partial class MainWindow : Window
         Title = DesktopLocalizationCatalog.GetRequiredString(
             "desktop.shell.window_title",
             _persistedPreferences.Language);
+        TryApplyWindowIcon();
 
         _shellPresenter = shellPresenter;
         _commandAvailabilityEvaluator = commandAvailabilityEvaluator;
@@ -65,7 +68,6 @@ public partial class MainWindow : Window
 
         _controls = MainWindowControlBinder.Bind(
             toolStrip: ToolStripControl,
-            workspaceStrip: WorkspaceStripControl,
             summaryHeader: SummaryHeaderControl,
             menuBar: ShellMenuBarControl,
             navigatorPane: NavigatorPaneControl,
@@ -76,6 +78,8 @@ public partial class MainWindow : Window
             onImportFileRequested: ToolStrip_OnImportFileRequested,
             onImportRawRequested: ToolStrip_OnImportRawRequested,
             onSaveRequested: ToolStrip_OnSaveRequested,
+            onPrintRequested: ToolStrip_OnPrintRequested,
+            onCopyRequested: ToolStrip_OnCopyRequested,
             onCloseWorkspaceRequested: ToolStrip_OnCloseWorkspaceRequested,
             onDesktopHomeRequested: ToolStrip_OnDesktopHomeRequested,
             onCampaignWorkspaceRequested: ToolStrip_OnCampaignWorkspaceRequested,
@@ -85,12 +89,12 @@ public partial class MainWindow : Window
             onReportIssueRequested: ToolStrip_OnReportIssueRequested,
             onSettingsRequested: ToolStrip_OnSettingsRequested,
             onLoadDemoRunnerRequested: ToolStrip_OnLoadDemoRunnerRequested,
-            onRuntimeInspectorRequested: SummaryHeader_OnRuntimeInspectorRequested,
             onMenuSelected: MenuBar_OnMenuSelected,
             onWorkspaceSelected: NavigatorPane_OnWorkspaceSelected,
             onNavigationTabSelected: NavigatorPane_OnNavigationTabSelected,
             onSectionActionSelected: NavigatorPane_OnSectionActionSelected,
             onWorkflowSurfaceSelected: NavigatorPane_OnWorkflowSurfaceSelected,
+            onSectionQuickActionRequested: SectionHost_OnQuickActionRequested,
             onCoachLaunchCopyRequested: CoachSidecar_OnCopyLaunchRequested,
             onCommandSelected: CommandDialogPane_OnCommandSelected,
             onDialogActionSelected: CommandDialogPane_OnDialogActionSelected,
@@ -113,6 +117,19 @@ public partial class MainWindow : Window
         IServiceProvider services = App.Services
             ?? throw new InvalidOperationException("Avalonia services are not initialized. Use DI startup to construct MainWindow.");
         return services.GetRequiredService<T>();
+    }
+
+    private void TryApplyWindowIcon()
+    {
+        try
+        {
+            using Stream stream = AssetLoader.Open(new Uri("avares://Chummer.Avalonia/Assets/chummer.ico"));
+            Icon = new WindowIcon(stream);
+        }
+        catch
+        {
+            // Keep startup resilient if the icon payload is unavailable in a local dev build.
+        }
     }
 
     protected override void OnClosed(EventArgs e)

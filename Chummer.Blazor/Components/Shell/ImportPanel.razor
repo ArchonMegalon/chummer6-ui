@@ -1,4 +1,6 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Chummer.Presentation.Rulesets
+@using Chummer.Presentation.Overview
 @using Microsoft.AspNetCore.Components.Forms
 
 <section class="panel import">
@@ -11,6 +13,33 @@
     @if (!string.IsNullOrWhiteSpace(ImportError))
     {
         <p class="error">@ImportError</p>
+    }
+    @if (LatestPortabilityActivity is { } activity)
+    {
+        <section class="coach-card" data-import-explain-receipt>
+            <div class="coach-card-header">
+                <h3>Import receipt</h3>
+                <span class="badge">@activity.Receipt.CompatibilityState</span>
+            </div>
+            <dl class="facts compact">
+                <div><dt>Receipt</dt><dd>@activity.Receipt.ReceiptSummary</dd></div>
+                <div><dt>Environment</dt><dd>@activity.Receipt.ContextSummary</dd></div>
+                <div><dt>Before</dt><dd>@BuildImportDiffBefore(activity.Receipt)</dd></div>
+                <div><dt>After</dt><dd>@BuildImportDiffAfter(activity.Receipt)</dd></div>
+                <div><dt>Provenance</dt><dd>@activity.Receipt.ProvenanceSummary</dd></div>
+                <div><dt>Next safe action</dt><dd>@activity.Receipt.NextSafeAction</dd></div>
+                <div><dt>Support reuse</dt><dd>@BuildImportSupportReuse(activity.Receipt)</dd></div>
+            </dl>
+            @if (activity.Receipt.Notes.Count > 0)
+            {
+                <ul class="browse-detail-lines">
+                    @foreach (var note in activity.Receipt.Notes.Take(3))
+                    {
+                        <li><strong>@note.Severity:</strong> @note.Summary</li>
+                    }
+                </ul>
+            }
+        </section>
     }
     <details>
         <summary>@BuildImportDebugHeading()</summary>
@@ -31,6 +60,9 @@
 
     [Parameter]
     public string? ImportError { get; set; }
+
+    [Parameter]
+    public WorkspacePortabilityActivity? LatestPortabilityActivity { get; set; }
 
     [Parameter]
     public string RawImportXml { get; set; } = string.Empty;
@@ -66,4 +98,25 @@
 
     private string BuildImportRawActionLabel()
         => RulesetUiDirectiveCatalog.BuildImportRawActionLabel(RulesetId);
+
+    private static string BuildImportDiffBefore(WorkspacePortabilityReceipt receipt)
+        => string.IsNullOrWhiteSpace(receipt.ContextSummary)
+            ? $"Incoming {receipt.FormatId} payload before workspace merge."
+            : receipt.ContextSummary;
+
+    private static string BuildImportDiffAfter(WorkspacePortabilityReceipt receipt)
+    {
+        string? warning = receipt.Notes
+            .FirstOrDefault(static note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase))
+            ?.Summary;
+
+        return string.IsNullOrWhiteSpace(warning)
+            ? receipt.NextSafeAction
+            : $"{receipt.NextSafeAction} Diff signal: {warning}";
+    }
+
+    private static string BuildImportSupportReuse(WorkspacePortabilityReceipt receipt)
+        => string.IsNullOrWhiteSpace(receipt.PayloadSha256)
+            ? receipt.ProvenanceSummary
+            : $"Support can cite payload {receipt.PayloadSha256} with {receipt.CompatibilityState} compatibility.";
 }

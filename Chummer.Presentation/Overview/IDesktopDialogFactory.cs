@@ -1,3 +1,4 @@
+using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Workspaces;
@@ -17,7 +18,10 @@ public interface IDesktopDialogFactory
         string? activeSectionJson,
         CharacterWorkspaceId? currentWorkspace,
         string? rulesetId,
-        RuntimeInspectorProjection? runtimeInspector = null);
+        RuntimeInspectorProjection? runtimeInspector = null,
+        MasterIndexResponse? masterIndex = null,
+        TranslatorLanguagesResponse? translatorLanguages = null,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces = null);
 
     DesktopDialogState CreateUiControlDialog(
         string controlId,

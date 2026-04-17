@@ -122,6 +122,7 @@ for family in families:
 
     verification_failures = []
     verified_receipts = []
+    verification_external_blockers = []
     for verification_ref in verification_receipts:
         verification_ref = verification_ref.replace("{familyId}", family_id)
         verification_path = Path(verification_ref)
@@ -133,7 +134,26 @@ for family in families:
         verification_data = json.loads(verification_path.read_text(encoding="utf-8"))
         verification_status = str(verification_data.get("status") or "").strip().lower()
         if verification_status not in {"pass", "passed", "ready"}:
-            verification_failures.append(f"{verification_path} ({verification_status or 'missing status'})")
+            verification_evidence = dict(verification_data.get("evidence") or {})
+            execution_external_blockers = sorted(
+                {
+                    str(value).strip().lower()
+                    for value in (verification_evidence.get("executionExternalBlockers") or [])
+                    if str(value).strip()
+                }
+            )
+            verification_external_blockers.extend(execution_external_blockers)
+            if execution_external_blockers:
+                verification_failures.append(
+                    f"{verification_path} ({verification_status or 'missing status'}; "
+                    + ", ".join(
+                        f"external_blocker={blocker}"
+                        for blocker in execution_external_blockers
+                    )
+                    + ")"
+                )
+            else:
+                verification_failures.append(f"{verification_path} ({verification_status or 'missing status'})")
             continue
         verification_evidence = dict(verification_data.get("evidence") or {})
         verification_edition = str(verification_evidence.get("edition") or "").strip().lower()
@@ -189,6 +209,7 @@ for family in families:
             "oracle": oracle_detail,
             "verificationReceipts": verified_receipts,
             "verificationFailures": verification_failures,
+            "verificationExternalBlockers": sorted(set(verification_external_blockers)),
         },
     }
     output_targets = parity_receipts or [str(fallback_out_dir / f"{family_id}.generated.json")]

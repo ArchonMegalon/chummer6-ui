@@ -138,6 +138,7 @@ non_ready_family_ids = [
 missing_test_refs = {}
 missing_parity_receipts = {}
 failing_parity_receipts = {}
+external_only_failing_parity_receipts = {}
 
 for family_id in required_family_ids:
     family = families.get(family_id) or {}
@@ -163,7 +164,27 @@ for family_id in required_family_ids:
         receipt_data = json.loads(receipt_file.read_text(encoding="utf-8"))
         receipt_status = str(receipt_data.get("status") or "").strip().lower()
         if receipt_status not in {"pass", "passed", "ready"}:
-            receipt_failures.append(f"{receipt_file} ({receipt_status or 'missing status'})")
+            receipt_evidence = (
+                receipt_data.get("evidence")
+                if isinstance(receipt_data.get("evidence"), dict)
+                else {}
+            )
+            verification_failures = [
+                str(value).strip().lower()
+                for value in (receipt_evidence.get("verificationFailures") or [])
+                if str(value).strip()
+            ]
+            external_only = bool(verification_failures) and all(
+                "external_blocker=missing_api_surface_contract" in failure
+                for failure in verification_failures
+            )
+            if external_only:
+                external_only_failing_parity_receipts[family_id] = verification_failures
+                receipt_failures.append(
+                    f"{receipt_file} ({receipt_status or 'missing status'}; external_blocker=missing_api_surface_contract)"
+                )
+            else:
+                receipt_failures.append(f"{receipt_file} ({receipt_status or 'missing status'})")
             continue
         evidence = dict(receipt_data.get("evidence") or {})
         receipt_edition = str(evidence.get("edition") or "").strip().lower()
@@ -213,10 +234,26 @@ if missing_parity_receipts:
         + ", ".join(f"{family_id}: {', '.join(names)}" for family_id, names in sorted(missing_parity_receipts.items()))
     )
 if failing_parity_receipts:
-    payload["reasons"].append(
-        "SR6 workflow parity receipts are missing or not passing: "
-        + ", ".join(f"{family_id}: {', '.join(names)}" for family_id, names in sorted(failing_parity_receipts.items()))
+    external_only_fail = (
+        len(external_only_failing_parity_receipts) == len(failing_parity_receipts)
     )
+    if external_only_fail:
+        payload["reasons"].append(
+            "SR6 workflow parity receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
+            "(external blocker: missing_api_surface_contract): "
+            + ", ".join(
+                f"{family_id}: {', '.join(names)}"
+                for family_id, names in sorted(failing_parity_receipts.items())
+            )
+        )
+    else:
+        payload["reasons"].append(
+            "SR6 workflow parity receipts are missing or not passing: "
+            + ", ".join(
+                f"{family_id}: {', '.join(names)}"
+                for family_id, names in sorted(failing_parity_receipts.items())
+            )
+        )
 if materializer_exit not in {0, 43}:
     payload["reasons"].append(f"SR6 family receipt materialization exited unexpectedly: {materializer_exit}")
 if verification_exit not in {0, 43}:
@@ -241,6 +278,11 @@ payload["evidence"] = {
     "missingTestRefs": missing_test_refs,
     "missingParityReceipts": missing_parity_receipts,
     "failingParityReceipts": failing_parity_receipts,
+    "failingParityReceiptsExternalOnly": (
+        len(external_only_failing_parity_receipts) == len(failing_parity_receipts)
+        and bool(failing_parity_receipts)
+    ),
+    "failingParityReceiptsExternal": external_only_failing_parity_receipts,
 }
 
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

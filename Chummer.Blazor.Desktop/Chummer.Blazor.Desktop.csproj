@@ -9,22 +9,45 @@
     <ChummerDesktopHeadId>blazor-desktop</ChummerDesktopHeadId>
     <ChummerDesktopReleaseVersion Condition="'$(ChummerDesktopReleaseVersion)' == ''">$(Version)</ChummerDesktopReleaseVersion>
     <ChummerDesktopReleaseChannel Condition="'$(ChummerDesktopReleaseChannel)' == ''">local</ChummerDesktopReleaseChannel>
+    <ApplicationIcon>..\Chummer\chummer.ico</ApplicationIcon>
+    <Win32Icon>..\Chummer\chummer.ico</Win32Icon>
   </PropertyGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
-    <ProjectReference Include="$(ChummerLocalContractsProject)" />
-    <ProjectReference Include="$(ChummerLocalRunContractsProject)" />
+    <ProjectReference Include="$(ChummerLocalContractsProject)"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
+    <ProjectReference Include="$(ChummerLocalRunContractsProject)"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifier)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' != 'true'">
     <PackageReference Include="$(ChummerContractsPackageId)" Version="$(ChummerContractsPackageVersion)" />
     <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
     <PackageReference Include="Photino.Blazor" Version="4.0.13" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj" />
     <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Chummer\chummer.ico"
+             Link="chummer.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Chummer.Tests\TestFiles\Soma (Career).chum5"
+          Link="Samples/Legacy/Soma-Career.chum5">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="wwwroot/**">

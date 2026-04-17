@@ -1,4 +1,7 @@
+using Chummer.Infrastructure.DependencyInjection;
 using Chummer.Presentation;
+using Chummer.Rulesets.Sr5;
+using Chummer.Rulesets.Sr6;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -6,8 +9,11 @@ namespace Chummer.Desktop.Runtime;
 
 public static class ServiceCollectionDesktopRuntimeExtensions
 {
+    private const string ClientModeEnvironmentVariable = "CHUMMER_CLIENT_MODE";
+    private const string LegacyDesktopClientModeEnvironmentVariable = "CHUMMER_DESKTOP_CLIENT_MODE";
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
+    private const string HttpClientMode = "http";
 
     public static IServiceCollection AddChummerLocalRuntimeClient(
         this IServiceCollection services,
@@ -15,14 +21,24 @@ public static class ServiceCollectionDesktopRuntimeExtensions
         string currentDirectory)
     {
         ArgumentNullException.ThrowIfNull(services);
-        _ = baseDirectory;
-        _ = currentDirectory;
+        services.AddChummerHeadlessCore(baseDirectory, currentDirectory);
+        services.AddSr5Ruleset();
+        services.AddSr6Ruleset();
 
         services.RemoveAll<IChummerClient>();
         services.RemoveAll<ISessionClient>();
-        services.TryAddSingleton(CreateApiHttpClient());
-        services.TryAddSingleton<IChummerClient, HttpChummerClient>();
-        services.TryAddSingleton<ISessionClient, HttpSessionClient>();
+        services.RemoveAll<HttpClient>();
+
+        if (UseHttpClientMode())
+        {
+            services.TryAddSingleton(CreateApiHttpClient());
+            services.TryAddSingleton<IChummerClient, HttpChummerClient>();
+            services.TryAddSingleton<ISessionClient, HttpSessionClient>();
+            return services;
+        }
+
+        services.TryAddSingleton<IChummerClient, InProcessChummerClient>();
+        services.TryAddSingleton<ISessionClient, InProcessSessionClient>();
         return services;
     }
 
@@ -59,12 +75,22 @@ public static class ServiceCollectionDesktopRuntimeExtensions
             return uri;
         }
 
-        const string fallback = "http://chummer-api:8080";
-        if (!Uri.TryCreate(fallback, UriKind.Absolute, out Uri? fallbackUri))
+        throw new InvalidOperationException(
+            $"Set {ApiBaseUrlEnvironmentVariable} when {ClientModeEnvironmentVariable}=http (legacy: {LegacyDesktopClientModeEnvironmentVariable}=http). " +
+            $"HTTP desktop client mode requires {ApiBaseUrlEnvironmentVariable} to be set to an absolute URL.");
+    }
+
+    private static bool UseHttpClientMode()
+        => string.Equals(NormalizeMode(Environment.GetEnvironmentVariable(ClientModeEnvironmentVariable)), HttpClientMode, StringComparison.Ordinal)
+            || string.Equals(NormalizeMode(Environment.GetEnvironmentVariable(LegacyDesktopClientModeEnvironmentVariable)), HttpClientMode, StringComparison.Ordinal);
+
+    private static string? NormalizeMode(string? mode)
+    {
+        if (string.IsNullOrWhiteSpace(mode))
         {
-            throw new InvalidOperationException($"Invalid fallback API base address '{fallback}'.");
+            return null;
         }
 
-        return fallbackUri;
+        return mode.Trim().ToLowerInvariant();
     }
 }

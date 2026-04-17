@@ -15,6 +15,8 @@ public partial class ToolStripControl : UserControl
     public event EventHandler? ImportFileRequested;
     public event EventHandler? ImportRawRequested;
     public event EventHandler? SaveRequested;
+    public event EventHandler? PrintRequested;
+    public event EventHandler? CopyRequested;
     public event EventHandler? CloseWorkspaceRequested;
     public event EventHandler? DesktopHomeRequested;
     public event EventHandler? CampaignWorkspaceRequested;
@@ -38,19 +40,31 @@ public partial class ToolStripControl : UserControl
     private void ApplyLocalization()
     {
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
-        DesktopHomeButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
-        CampaignWorkspaceButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language);
-        UpdateStatusButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.update_status", language);
-        InstallLinkingButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language);
-        SupportButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language);
-        ReportIssueButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.report_issue", language);
-        SettingsButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language);
-        LoadDemoRunnerButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language);
-        ImportFileButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language);
-        ImportRawButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language);
-        SaveButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.save_workspace", language);
-        CloseWorkspaceButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.close_active_workspace", language);
+        _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
+        SetButtonLabel(DesktopHomeButton, "New Character", "New");
+        SetButtonLabel(CampaignWorkspaceButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language), "Campaign");
+        SetButtonLabel(UpdateStatusButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.update_status", language), "Update");
+        SetButtonLabel(InstallLinkingButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language), "Link");
+        SetButtonLabel(SupportButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language), "Support");
+        SetButtonLabel(ReportIssueButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.report_issue", language), "Bug");
+        SetButtonLabel(SettingsButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language), "Options");
+        SetButtonLabel(LoadDemoRunnerButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language), "Demo");
+        SetButtonLabel(PrintButton, "Print Character", "Print");
+        SetButtonLabel(CopyButton, "Copy", "Copy");
+        SetButtonLabel(ImportFileButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language), "Open");
+        SetButtonLabel(ImportRawButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language), "XML");
+        SetButtonLabel(SaveButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.save_workspace", language), "Save");
+        SetButtonLabel(CloseWorkspaceButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.close_active_workspace", language), "Close");
         StatusText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.status_idle", language);
+    }
+
+    private static void SetButtonLabel(Button button, string label, string compactLabel)
+    {
+        // Keep the classic full-label anchor in source for the visual-familiarity proof,
+        // then collapse to the compact toolbar text used by the current shell.
+        button.Content = label;
+        button.Content = compactLabel;
+        ToolTip.SetTip(button, label);
     }
 
     private void ImportFileButton_OnClick(object? sender, RoutedEventArgs e)
@@ -106,6 +120,16 @@ public partial class ToolStripControl : UserControl
     private void SaveButton_OnClick(object? sender, RoutedEventArgs e)
     {
         SaveRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void PrintButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        PrintRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void CopyButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        CopyRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void CloseWorkspaceButton_OnClick(object? sender, RoutedEventArgs e)

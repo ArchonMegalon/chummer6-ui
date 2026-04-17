@@ -77,15 +77,25 @@ public partial class MainWindow
             "save workspace");
     }
 
+    private async void ToolStrip_OnPrintRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.ExecuteCommandAsync("print_character", CancellationToken.None),
+            "print character");
+    }
+
+    private async void ToolStrip_OnCopyRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.ExecuteCommandAsync("copy", CancellationToken.None),
+            "copy character data");
+    }
+
     private async void ToolStrip_OnDesktopHomeRequested(object? sender, EventArgs e)
     {
         await RunUiActionAsync(
-            async () =>
-            {
-                await DesktopHomeWindow.ShowAsync(this, "avalonia");
-                MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip);
-            },
-            "open desktop home");
+            () => _interactionCoordinator.ExecuteCommandAsync("new_character", CancellationToken.None),
+            "create new character");
     }
 
     private async void ToolStrip_OnCampaignWorkspaceRequested(object? sender, EventArgs e)

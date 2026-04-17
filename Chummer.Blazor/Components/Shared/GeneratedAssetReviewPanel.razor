@@ -1,3 +1,5 @@
+@namespace Chummer.Blazor.Components.Shared
+
 @using Chummer.Contracts.Presentation
 
 <section class="panel design-panel" data-generated-asset-viewer>
@@ -36,7 +38,7 @@
                                 data-generated-asset-tab="@asset.AssetId"
                                 role="tab"
                                 id="@($"generated-asset-tab-{asset.AssetId}")"
-                                aria-selected="@isSelected"
+                                aria-selected="@(isSelected ? "true" : "false")"
                                 aria-controls="@($"generated-asset-panel-{asset.AssetId}")"
                                 @onclick="() => SelectAsset(asset.AssetId)">
                             @asset.Title

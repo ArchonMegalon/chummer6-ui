@@ -191,9 +191,9 @@ if blocking_findings != reasons or blocking_findings_alias != reasons:
     raise SystemExit(
         "verify gate failed: desktop executable gate payload carries blocking-findings alias drift between reasons/blockingFindings/blocking_findings."
     )
-if int(blocking_findings_count or -1) != len(reasons):
+if not isinstance(blocking_findings_count, int) or blocking_findings_count != len(reasons):
     raise SystemExit("verify gate failed: desktop executable gate payload blockingFindingsCount does not match reasons count.")
-if int(blocking_findings_count_alias or -1) != len(reasons):
+if not isinstance(blocking_findings_count_alias, int) or blocking_findings_count_alias != len(reasons):
     raise SystemExit("verify gate failed: desktop executable gate payload blocking_findings_count does not match reasons count.")
 PY
 

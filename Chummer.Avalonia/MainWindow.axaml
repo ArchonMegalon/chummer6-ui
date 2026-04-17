@@ -2,50 +2,54 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
         x:Class="Chummer.Avalonia.MainWindow"
-        Width="1360"
-        Height="860"
-        MinWidth="1000"
-        MinHeight="680"
+        Width="1280"
+        Height="800"
+        MinWidth="880"
+        MinHeight="560"
         Title="Chummer Desktop"
+        Icon="/Assets/chummer.ico"
         Background="{DynamicResource ChummerShellWindowBackgroundBrush}"
         KeyDown="Window_OnKeyDown">
   <Window.Styles>
-    <Style Selector="Button.menu-button.active-menu">
+    <Style Selector="MenuItem.active-menu">
       <Setter Property="Background" Value="{DynamicResource ChummerShellActiveMenuBackgroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
   </Window.Styles>
-  <Grid Margin="12" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8">
-    <Border x:Name="MenuBarRegion" Grid.Row="0" Classes="shell-panel chrome" Padding="6">
+  <Grid Margin="0" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+    <Border x:Name="MenuBarRegion" Grid.Row="0" Classes="shell-panel chrome" Padding="0">
       <controls:ShellMenuBarControl x:Name="ShellMenuBarControl" />
     </Border>
 
-    <Grid Grid.Row="1" ColumnDefinitions="2.2*,1*" ColumnSpacing="8">
-      <Border x:Name="ToolStripRegion" Grid.Column="0" Classes="shell-panel chrome" Padding="8">
-        <controls:ToolStripControl x:Name="ToolStripControl" />
-      </Border>
-      <Border x:Name="WorkspaceStripRegion" Grid.Column="1" Classes="shell-panel subtle" Padding="10,8">
-        <controls:WorkspaceStripControl x:Name="WorkspaceStripControl" />
-      </Border>
-    </Grid>
+    <Border x:Name="ToolStripRegion" Grid.Row="1" Classes="shell-panel chrome" Padding="2">
+      <controls:ToolStripControl x:Name="ToolStripControl" />
+    </Border>
 
-    <Grid x:Name="ContentRegion" Grid.Row="2" ColumnDefinitions="300,*,320" ColumnSpacing="8">
+    <Border x:Name="SummaryHeaderRegion" Grid.Row="2" Classes="shell-panel subtle" Padding="0">
+      <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
+    </Border>
+
+    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="228,*,0" ColumnSpacing="4" Margin="2,2,2,0">
       <Border x:Name="LeftNavigatorRegion" Grid.Column="0" Classes="shell-panel">
         <controls:NavigatorPaneControl x:Name="NavigatorPaneControl" />
       </Border>
 
-      <Grid x:Name="CenterShellRegion" Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="8">
-        <Border x:Name="SummaryHeaderRegion" Grid.Row="0" Classes="shell-panel subtle">
-          <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
-        </Border>
-
-        <Border x:Name="SectionRegion" Grid.Row="1" Classes="shell-panel" Padding="0">
+      <Grid x:Name="CenterShellRegion" Grid.Column="1">
+        <Border x:Name="SectionRegion" Classes="shell-panel" Padding="0">
           <controls:SectionHostControl x:Name="SectionHostControl" />
         </Border>
       </Grid>
 
-      <Border x:Name="RightShellRegion" Grid.Column="2" Classes="shell-panel">
-        <Grid RowDefinitions="2*,*" RowSpacing="8">
+      <Border x:Name="RightShellRegion"
+              Grid.Column="2"
+              Classes="shell-panel"
+              Width="0"
+              MinWidth="0"
+              MaxWidth="0"
+              Opacity="0"
+              IsHitTestVisible="False"
+              ClipToBounds="True">
+        <Grid RowDefinitions="2*,*" RowSpacing="4">
           <Border Grid.Row="0" Classes="shell-card">
             <controls:CommandDialogPaneControl x:Name="CommandDialogPaneControl" />
           </Border>
@@ -56,7 +60,7 @@
       </Border>
     </Grid>
 
-    <Border x:Name="StatusStripRegion" Grid.Row="3" Classes="shell-panel chrome" Padding="10,8">
+    <Border x:Name="StatusStripRegion" Grid.Row="4" Classes="shell-panel chrome" Padding="4,2">
       <controls:StatusStripControl x:Name="StatusStripControl" />
     </Border>
   </Grid>

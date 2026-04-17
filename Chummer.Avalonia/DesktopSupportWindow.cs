@@ -18,6 +18,7 @@ internal sealed class DesktopSupportWindow : Window
     private readonly TextBlock _statusText;
     private readonly TextBlock _caseText;
     private readonly TextBlock _releaseText;
+    private readonly TextBlock _diagnosticsText;
     private readonly TextBlock _followThroughText;
     private readonly StackPanel _caseActionsRow;
     private readonly StackPanel _releaseActionsRow;
@@ -66,6 +67,12 @@ internal sealed class DesktopSupportWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _diagnosticsText = new TextBlock
+        {
+            Text = BuildDiagnosticsBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
         _followThroughText = new TextBlock
         {
             Text = BuildFollowThroughBody(),
@@ -96,6 +103,7 @@ internal sealed class DesktopSupportWindow : Window
                         _statusText,
                         CreateSection(S("desktop.support.section.case"), _caseText, _caseActionsRow),
                         CreateSection(S("desktop.support.section.release"), _releaseText, _releaseActionsRow),
+                        CreateSection("Diagnostics environment diff", _diagnosticsText, null),
                         CreateSection(S("desktop.support.section.follow_through"), _followThroughText, _followThroughActionsRow),
                         new StackPanel
                         {
@@ -211,6 +219,9 @@ internal sealed class DesktopSupportWindow : Window
 
         return string.Join("\n", lines);
     }
+
+    private string BuildDiagnosticsBody()
+        => DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection);
 
     private string BuildFollowThroughBody()
     {
@@ -351,6 +362,7 @@ internal sealed class DesktopSupportWindow : Window
         _statusText.Text = S("desktop.support.status.current");
         _caseText.Text = BuildCaseBody();
         _releaseText.Text = BuildReleaseBody();
+        _diagnosticsText.Text = BuildDiagnosticsBody();
         _followThroughText.Text = BuildFollowThroughBody();
         ResetActionRow(_caseActionsRow, CreateCaseActions());
         ResetActionRow(_releaseActionsRow, CreateReleaseActions());

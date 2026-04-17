@@ -259,9 +259,19 @@ build_macos_installer() {
   local plist_path="$contents_dir/Info.plist"
   local bundle_identifier
   bundle_identifier="$(macos_bundle_identifier)"
+  local hdiutil_tmp_root="${CHUMMER_DESKTOP_INSTALLER_TMPDIR:-${TMPDIR:-$DIST_DIR/tmp}}"
+  local hdiutil_tmp_work="$hdiutil_tmp_root/hdiutil-$APP_KEY-$RID"
+
+  cleanup_macos_installer_staging() {
+    trap - RETURN
+    rm -rf "$stage_root" "$hdiutil_tmp_work"
+  }
+  trap cleanup_macos_installer_staging RETURN
 
   rm -rf "$stage_root"
+  rm -rf "$hdiutil_tmp_work"
   mkdir -p "$macos_dir" "$contents_dir/Resources"
+  mkdir -p "$hdiutil_tmp_work"
   cp -a "$PUBLISH_DIR"/. "$macos_dir"/
 
   if [[ ! -f "$macos_dir/$LAUNCH_TARGET" ]]; then
@@ -300,14 +310,17 @@ build_macos_installer() {
 EOF
 
   rm -f "$DIST_DIR/$installer_name"
-  hdiutil create \
+  if ! TMPDIR="$hdiutil_tmp_work" hdiutil create \
     -volname "$APP_DISPLAY" \
     -srcfolder "$stage_root" \
     -ov \
     -format UDZO \
-    "$DIST_DIR/$installer_name" >/dev/null
+    "$DIST_DIR/$installer_name" >/dev/null; then
+    echo "hdiutil create failed for $installer_name (tmpdir=$hdiutil_tmp_work)." >&2
+    echo "Set CHUMMER_DESKTOP_INSTALLER_TMPDIR to a workspace-backed path with sufficient free space and rerun." >&2
+    exit 1
+  fi
 
-  rm -rf "$stage_root"
   echo "built installer $DIST_DIR/$installer_name"
 }
 
@@ -336,6 +349,7 @@ build_windows_installer() {
     -p:InstallerPayloadZip="$payload_zip" \
     -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
     -p:ChummerInstallerAppId="$APP_KEY-$RID" \
+    -p:ChummerInstallerHeadId="$APP_KEY" \
     -p:ChummerInstallerDisplayName="$APP_DISPLAY" \
     -p:ChummerInstallerInstallDirName="$INSTALL_DIR_NAME-$RID" \
     -p:ChummerInstallerLaunchExecutable="$LAUNCH_TARGET" \

@@ -28,8 +28,11 @@ from __future__ import annotations
 
 import json
 import fcntl
+import os
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -72,6 +75,52 @@ for family in families:
 
 run_error = ""
 run_exit = 0
+external_blocker = ""
+api_probe: dict[str, object] = {}
+
+
+def probe_api_surface(base_url: str, path: str) -> tuple[bool, int, str]:
+    target = f"{base_url.rstrip('/')}{path}"
+    request = urllib.request.Request(target, method="GET")
+    try:
+        with urllib.request.urlopen(request, timeout=2) as response:
+            return True, int(response.getcode()), ""
+    except urllib.error.HTTPError as ex:
+        code = int(getattr(ex, "code", 0) or 0)
+        # Auth-gated or method mismatch still proves the route exists.
+        if code in {401, 403, 405}:
+            return True, code, ""
+        return False, code, str(ex)
+    except Exception as ex:  # noqa: BLE001
+        return False, 0, str(ex)
+
+
+api_base_url = (
+    str(
+        os.environ.get("CHUMMER_API_BASE_URL")
+        or os.environ.get("CHUMMER_WEB_BASE_URL")
+        or "http://127.0.0.1:8088"
+    )
+    .strip()
+)
+api_probe_paths = ["/api/workspaces", "/api/shell/bootstrap"]
+api_probe_results = []
+for probe_path in api_probe_paths:
+    ok, status_code, error = probe_api_surface(api_base_url, probe_path)
+    api_probe_results.append(
+        {
+            "path": probe_path,
+            "ok": bool(ok),
+            "statusCode": status_code,
+            "error": error,
+        }
+    )
+api_probe = {
+    "baseUrl": api_base_url,
+    "results": api_probe_results,
+}
+api_surface_ready = all(bool(item.get("ok")) for item in api_probe_results)
+
 if unique_tests:
     filter_clause = "|".join(f"FullyQualifiedName~{name}" for name in unique_tests)
     cmd = [
@@ -115,6 +164,9 @@ if trx_path.is_file():
         outcome = (node.attrib.get("outcome") or "").strip()
         if test_name:
             results_by_name.setdefault(test_name, []).append(outcome)
+
+if not api_surface_ready and not results_by_name:
+    external_blocker = "missing_api_surface_contract"
 
 sr4_oracle_families = {str(value).strip() for value in (oracle.get("workflowFamilies") or []) if str(value).strip()}
 sr6_oracle_map = {
@@ -184,6 +236,11 @@ for family in families:
 
     if run_exit != 0:
         reasons.append(f"dotnet test execution failed (exit {run_exit}): {run_error or 'see TRX/log output'}")
+    if external_blocker:
+        reasons.append(
+            "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
+            "(external blocker: missing_api_surface_contract)."
+        )
 
     missing_tests: list[str] = []
     failed_tests: dict[str, list[str]] = {}
@@ -234,6 +291,8 @@ for family in families:
                 "trxPath": str(trx_path),
                 "exitCode": run_exit,
             },
+            "apiProbe": api_probe,
+            "external_blocker": external_blocker,
             "matchedPassedTests": passed_tests,
             "missingAuditTests": missing_tests,
             "failedAuditTests": failed_tests,

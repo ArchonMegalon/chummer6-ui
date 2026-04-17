@@ -1,14 +1,31 @@
 using System;
+using System.IO;
+using System.Reflection;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#nullable enable
 
 namespace Chummer.Tests;
 
 [TestClass]
 public sealed class DesktopInstallLinkingRuntimeTests
 {
+    private static readonly string[] LongFormSeparate = ["--install-claim-code", "claim-123"];
+    private static readonly string[] SlashSeparate = ["/install-claim-code", "claim-123"];
+    private static readonly string[] LongFormEquals = ["--install-claim-code=claim-123"];
+    private static readonly string[] LongFormColon = ["--install-claim-code:claim-123"];
+    private static readonly string[] SlashEquals = ["/install-claim-code=claim-123"];
+    private static readonly string[] SlashColon = ["/install-claim-code:claim-123"];
+    private static readonly string[] CallbackSwitchSeparate = ["--install-link-callback", "chummer://install-link?claimCode=claim-789"];
+    private static readonly string[] CallbackSwitchEquals = ["--install-link-callback=https://chummer.run/downloads/install/callback?claim=claim-789"];
+    private static readonly string[] CallbackDirectUri = ["chummer://install-link?claim_code=claim-789"];
+    private static readonly string[] GrantCallbackSwitchSeparate = ["--install-link-callback", "chummer://install-link?code=grant-callback-789"];
+    private static readonly string[] GrantCallbackSwitchEquals = ["--install-link-callback=https://chummer.run/downloads/install/callback?callbackCode=grant-callback-789"];
+    private static readonly string[] GrantCallbackDirectUri = ["chummer://install-link?installLinkCode=grant-callback-789"];
+
     [TestMethod]
     public void BuildSupportPortalRelativePathForInstall_includes_install_prefill_context()
     {
@@ -19,6 +36,25 @@ public sealed class DesktopInstallLinkingRuntimeTests
         StringAssert.Contains(path, "installationId=ins-avalonia-1", StringComparison.Ordinal);
         StringAssert.Contains(path, "releaseChannel=preview", StringComparison.Ordinal);
         StringAssert.Contains(path, "headId=avalonia", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void BuildAccountPortalRelativePathForInstall_includes_browser_callback_hints()
+    {
+        string path = DesktopInstallLinkingRuntime.BuildAccountPortalRelativePathForInstall(CreateState() with
+        {
+            Status = "guest",
+            GrantId = null,
+            GrantToken = null,
+            GrantIssuedAtUtc = null,
+            GrantExpiresAtUtc = null
+        });
+
+        StringAssert.Contains(path, "/account/access/install-link?", StringComparison.Ordinal);
+        StringAssert.Contains(path, "installationId=ins-avalonia-1", StringComparison.Ordinal);
+        StringAssert.Contains(path, "installLinkMode=browser_callback", StringComparison.Ordinal);
+        StringAssert.Contains(path, "installLinkTransport=grant_callback", StringComparison.Ordinal);
+        StringAssert.Contains(path, "installLinkCallbackUri=chummer%3A%2F%2Finstall-link", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -121,6 +157,282 @@ public sealed class DesktopInstallLinkingRuntimeTests
         StringAssert.Contains(path, "installationId=ins-avalonia-1", StringComparison.Ordinal);
         StringAssert.Contains(path, "applicationVersion=6.0.1-preview", StringComparison.Ordinal);
         StringAssert.Contains(path, "Recommended%20action%3A%20Review%20the%20promoted%20preview%20and%20route%20support%20before%20retrying.", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void StartupClaimExtraction_reads_pending_installer_claim_code()
+    {
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
+        string tempRoot = Path.Combine(Path.GetTempPath(), "chummer-install-linking-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", null);
+
+            DesktopInstallLinkingState state = CreateState() with
+            {
+                HeadId = "avalonia",
+                Platform = "windows",
+                Arch = "x64"
+            };
+            string pendingPath = Path.Combine(
+                tempRoot,
+                "Chummer6",
+                "install-linking",
+                "avalonia",
+                "windows",
+                "x64",
+                "pending-claim-code.txt");
+            Directory.CreateDirectory(Path.GetDirectoryName(pendingPath)!);
+            File.WriteAllText(pendingPath, "claim-123", System.Text.Encoding.UTF8);
+
+            MethodInfo? method = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                "ExtractStartupClaimCode",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.IsNotNull(method, "The startup claim-code extractor should remain available for installer handoff coverage.");
+            object? result = method.Invoke(null, [Array.Empty<string>(), state]);
+
+            Assert.AreEqual("CLAIM123", result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", previousClaimCode);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void StartupClaimExtraction_reads_pending_installer_claim_code_from_legacy_path()
+    {
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
+        string tempRoot = Path.Combine(Path.GetTempPath(), "chummer-install-linking-legacy-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", null);
+
+            DesktopInstallLinkingState state = CreateState() with
+            {
+                HeadId = "avalonia",
+                Platform = "windows",
+                Arch = "x64"
+            };
+
+            string legacyStateRoot = Path.Combine(
+                tempRoot,
+                "Chummer6",
+                "install-linking",
+                "avalonia",
+                "win",
+                "x64",
+                "pending-claim-code.txt");
+            Directory.CreateDirectory(Path.GetDirectoryName(legacyStateRoot)!);
+            File.WriteAllText(legacyStateRoot, "claim-legacy", System.Text.Encoding.UTF8);
+
+            MethodInfo? method = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                "ExtractStartupClaimCode",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.IsNotNull(method, "The startup claim-code extractor should support legacy pending-claim paths.");
+            object? result = method.Invoke(null, [Array.Empty<string>(), state]);
+
+            Assert.AreEqual("CLAIMLEGACY", result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", previousClaimCode);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void StartupClaimExtraction_reads_installer_switch_variants()
+    {
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", null);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", null);
+
+            DesktopInstallLinkingState state = CreateState() with
+            {
+                HeadId = "avalonia",
+                Platform = "windows",
+                Arch = "x64"
+            };
+
+            MethodInfo? method = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                "ExtractStartupClaimCode",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.IsNotNull(method, "The startup claim-code extractor should remain available for installer handoff coverage.");
+
+            Assert.AreEqual(
+                "CLAIM123",
+                method.Invoke(null, [LongFormSeparate, state]),
+                "The long form with separate value should parse.");
+            Assert.AreEqual(
+                "CLAIM123",
+                method.Invoke(null, [SlashSeparate, state]),
+                "The legacy slash form with separate value should parse.");
+            Assert.AreEqual(
+                "CLAIM123",
+                method.Invoke(null, [LongFormEquals, state]),
+                "The equals form should parse.");
+            Assert.AreEqual(
+                "CLAIM123",
+                method.Invoke(null, [LongFormColon, state]),
+                "The colon form should parse.");
+            Assert.AreEqual(
+                "CLAIM123",
+                method.Invoke(null, [SlashEquals, state]),
+                "The legacy slash-equals form should parse.");
+            Assert.AreEqual(
+                "CLAIM123",
+                method.Invoke(null, [SlashColon, state]),
+                "The legacy slash-colon form should parse.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", previousClaimCode);
+        }
+    }
+
+    [TestMethod]
+    public void StartupClaimExtraction_reads_install_link_callback_variants()
+    {
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
+        string? previousCallbackUri = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", null);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", null);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", "https://chummer.run/downloads/install/callback?installClaimCode=claim-789");
+
+            DesktopInstallLinkingState state = CreateState() with
+            {
+                HeadId = "avalonia",
+                Platform = "windows",
+                Arch = "x64"
+            };
+
+            MethodInfo? method = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                "ExtractStartupClaimCode",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.IsNotNull(method, "The startup claim-code extractor should accept callback-style handoff coverage.");
+            Assert.AreEqual("CLAIM789", method.Invoke(null, [Array.Empty<string>(), state]), "The callback environment variable should parse.");
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", null);
+            Assert.AreEqual("CLAIM789", method.Invoke(null, [CallbackSwitchSeparate, state]), "The callback switch with separate value should parse.");
+            Assert.AreEqual("CLAIM789", method.Invoke(null, [CallbackSwitchEquals, state]), "The callback switch equals form should parse.");
+            Assert.AreEqual("CLAIM789", method.Invoke(null, [CallbackDirectUri, state]), "A direct callback URI argument should parse.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", previousClaimCode);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", previousCallbackUri);
+        }
+    }
+
+    [TestMethod]
+    public void StartupClaimExtraction_reads_pending_install_link_callback_file()
+    {
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
+        string? previousCallbackUri = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI");
+        string tempRoot = Path.Combine(Path.GetTempPath(), "chummer-install-link-callback-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", null);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", null);
+
+            DesktopInstallLinkingState state = CreateState() with
+            {
+                HeadId = "avalonia",
+                Platform = "windows",
+                Arch = "x64"
+            };
+            string pendingPath = Path.Combine(
+                tempRoot,
+                "Chummer6",
+                "install-linking",
+                "avalonia",
+                "windows",
+                "x64",
+                "pending-install-link-callback.txt");
+            Directory.CreateDirectory(Path.GetDirectoryName(pendingPath)!);
+            File.WriteAllText(pendingPath, "chummer://install-link?claimCode=claim-456", System.Text.Encoding.UTF8);
+
+            MethodInfo? method = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                "ExtractStartupClaimCode",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.IsNotNull(method, "The startup claim-code extractor should accept pending callback handoff coverage.");
+            object? result = method.Invoke(null, [Array.Empty<string>(), state]);
+
+            Assert.AreEqual("CLAIM456", result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", previousClaimCode);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", previousCallbackUri);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void StartupBrowserCallbackExtraction_reads_install_link_callback_code_variants()
+    {
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousCallbackUri = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", null);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", "https://chummer.run/downloads/install/callback?code=grant-callback-789");
+
+            DesktopInstallLinkingState state = CreateState() with
+            {
+                HeadId = "avalonia",
+                Platform = "windows",
+                Arch = "x64"
+            };
+
+            MethodInfo? method = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                "ExtractStartupBrowserCallbackCode",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.IsNotNull(method, "The browser callback extractor should remain available for install-link handoff coverage.");
+            Assert.AreEqual("grant-callback-789", method.Invoke(null, [Array.Empty<string>(), state]), "The callback environment variable should parse.");
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", null);
+            Assert.AreEqual("grant-callback-789", method.Invoke(null, [GrantCallbackSwitchSeparate, state]), "The callback switch with separate value should parse.");
+            Assert.AreEqual("grant-callback-789", method.Invoke(null, [GrantCallbackSwitchEquals, state]), "The callback switch equals form should parse.");
+            Assert.AreEqual("grant-callback-789", method.Invoke(null, [GrantCallbackDirectUri, state]), "A direct callback URI argument should parse.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", previousCallbackUri);
+        }
     }
 
     private static DesktopInstallLinkingState CreateState()

@@ -132,6 +132,7 @@ for family in families:
 
     execution_failures = []
     validated_execution_receipts = []
+    execution_external_blockers = []
     for execution_ref in execution_receipts:
         execution_ref = execution_ref.replace("{familyId}", family_id)
         execution_path = Path(execution_ref)
@@ -142,10 +143,17 @@ for family in families:
             continue
         execution_data = json.loads(execution_path.read_text(encoding="utf-8"))
         execution_status = str(execution_data.get("status") or "").strip().lower()
-        if execution_status not in {"pass", "passed", "ready"}:
-            execution_failures.append(f"{execution_path} ({execution_status or 'missing status'})")
-            continue
         execution_evidence = dict(execution_data.get("evidence") or {})
+        execution_external_blocker = str(execution_evidence.get("external_blocker") or "").strip().lower()
+        if execution_status not in {"pass", "passed", "ready"}:
+            if execution_external_blocker:
+                execution_external_blockers.append(execution_external_blocker)
+                execution_failures.append(
+                    f"{execution_path} ({execution_status or 'missing status'}; external_blocker={execution_external_blocker})"
+                )
+            else:
+                execution_failures.append(f"{execution_path} ({execution_status or 'missing status'})")
+            continue
         execution_edition = str(execution_evidence.get("edition") or "").strip().lower()
         execution_family = str(execution_evidence.get("familyId") or "").strip()
         execution_proof_kind = str(execution_evidence.get("proofKind") or "").strip().lower()
@@ -194,6 +202,7 @@ for family in families:
             "oracle": oracle_detail,
             "executionReceipts": validated_execution_receipts,
             "executionFailures": execution_failures,
+            "executionExternalBlockers": sorted(set(execution_external_blockers)),
         },
     }
 

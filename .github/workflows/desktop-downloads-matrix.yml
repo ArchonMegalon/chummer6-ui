@@ -335,7 +335,7 @@ jobs:
           mkdir -p dist/files
           shopt -s nullglob
           moved=0
-          for artifact in dist/chummer-*.exe dist/chummer-*.zip dist/chummer-*.tar.gz dist/chummer-*-installer.deb dist/chummer-*-installer.pkg dist/chummer-*-installer.dmg dist/chummer-*-installer.msix; do
+          for artifact in dist/chummer-*-installer.exe dist/chummer-*.exe dist/chummer-*.zip dist/chummer-*.tar.gz dist/chummer-*-installer.deb dist/chummer-*-installer.pkg dist/chummer-*-installer.dmg dist/chummer-*-installer.msix; do
             [[ -f "$artifact" ]] || continue
             mv "$artifact" dist/files/
             moved=1

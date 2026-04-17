@@ -13,6 +13,11 @@ internal static class Program
     private const string PreferredPayloadResourceName = "ChummerInstaller.Payload.zip";
     private const string PreferredPayloadMetadataKey = "ChummerInstallerPayloadResourceName";
     private const string AppendedPayloadMagic = "CHUMMER6PAYLOAD1";
+    private const string ClaimCodeEnvironmentVariable = "CHUMMER_INSTALL_CLAIM_CODE";
+    private const string ClaimCodeSwitch = "--install-claim-code";
+    private const string ExplicitStateRootEnvironmentVariable = "CHUMMER_DESKTOP_STATE_ROOT";
+    private const string PendingClaimCodeFileName = "pending-claim-code.txt";
+    private const string ChummerIconFileName = "chummer.ico";
 
     [STAThread]
     private static int Main(string[] args)
@@ -33,6 +38,7 @@ internal static class Program
         {
             InstallerMetadata metadata = InstallerMetadata.Load();
             string? payloadPathOverride = ResolvePayloadPathOverride(args);
+            string? claimCode = ResolveClaimCode(args);
 
             if (args.Length > 0 && string.Equals(args[0], "--uninstall", StringComparison.OrdinalIgnoreCase))
             {
@@ -44,7 +50,7 @@ internal static class Program
                 return SmokeInstall(metadata, args[1], payloadPathOverride);
             }
 
-            return Install(metadata, payloadPathOverride);
+            return Install(metadata, payloadPathOverride, claimCode);
         }
         catch (Exception ex)
         {
@@ -57,14 +63,20 @@ internal static class Program
         }
     }
 
-    private static int Install(InstallerMetadata metadata, string? payloadPathOverride)
+    private static int Install(InstallerMetadata metadata, string? payloadPathOverride, string? claimCode)
     {
         string targetDir = InstallPayload(metadata, metadata.InstallDirectory, payloadPathOverride);
         string installedInstallerPath = Path.Combine(targetDir, metadata.InstallerOutputName + ".exe");
+        string launchPath = Path.Combine(targetDir, metadata.LaunchExecutable);
         File.Copy(Environment.ProcessPath!, installedInstallerPath, overwrite: true);
 
-        CreateShortcut(metadata.ShortcutPath, Path.Combine(targetDir, metadata.LaunchExecutable), metadata.DisplayName);
-        CreateShortcut(metadata.DesktopShortcutPath, Path.Combine(targetDir, metadata.LaunchExecutable), metadata.DisplayName);
+        if (!string.IsNullOrWhiteSpace(claimCode))
+        {
+            StagePendingClaimCode(metadata, claimCode);
+        }
+
+        CreateShortcut(metadata.ShortcutPath, launchPath, metadata.DisplayName);
+        CreateShortcut(metadata.DesktopShortcutPath, launchPath, metadata.DisplayName);
         RegisterUninstall(metadata, installedInstallerPath);
 
         DialogResult launch = MessageBox.Show(
@@ -74,7 +86,7 @@ internal static class Program
             MessageBoxIcon.Information);
         if (launch == DialogResult.Yes)
         {
-            LaunchInstalledApp(metadata);
+            LaunchInstalledApp(metadata, claimCode);
         }
 
         return 0;
@@ -361,6 +373,97 @@ internal static class Program
         return string.IsNullOrWhiteSpace(overridePath) ? null : overridePath;
     }
 
+    private static string? ResolveClaimCode(string[] args)
+    {
+        string? fromEnvironment = NormalizeClaimCode(Environment.GetEnvironmentVariable(ClaimCodeEnvironmentVariable));
+        if (fromEnvironment is not null)
+        {
+            return fromEnvironment;
+        }
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            string arg = args[i];
+
+            if (TryReadValueAfterSwitch(args, i, out string? claimCode))
+            {
+                return claimCode;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryReadValueAfterSwitch(string[] args, int index, out string? claimCode)
+    {
+        claimCode = null;
+
+        string arg = args[index];
+        ReadOnlySpan<char> argSpan = arg.AsSpan().Trim();
+        if (argSpan.Length == 0)
+        {
+            return false;
+        }
+
+        if (string.Equals(argSpan.ToString(), ClaimCodeSwitch, StringComparison.OrdinalIgnoreCase))
+        {
+            if (index + 1 < args.Length)
+            {
+                claimCode = NormalizeClaimCode(args[index + 1]);
+                return claimCode is not null;
+            }
+
+            return false;
+        }
+
+        if (argSpan[0] == '/')
+        {
+            argSpan = argSpan[1..];
+        }
+        else if (argSpan[0] == '-')
+        {
+            argSpan = argSpan[1..];
+            if (argSpan.Length > 0 && argSpan[0] == '-')
+            {
+                argSpan = argSpan[1..];
+            }
+        }
+
+        string normalizedSwitch = ClaimCodeSwitch.AsSpan(2).ToString();
+        if (string.Equals(argSpan, normalizedSwitch, StringComparison.OrdinalIgnoreCase)
+            && index + 1 < args.Length)
+        {
+            claimCode = NormalizeClaimCode(args[index + 1]);
+            return claimCode is not null;
+        }
+
+        string legacyEqualsPrefix = $"{normalizedSwitch}=";
+        if (argSpan.StartsWith(legacyEqualsPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            claimCode = NormalizeClaimCode(argSpan[legacyEqualsPrefix.Length..].ToString());
+            return claimCode is not null;
+        }
+
+        string legacyColonPrefix = $"{normalizedSwitch}:";
+        if (argSpan.StartsWith(legacyColonPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            claimCode = NormalizeClaimCode(argSpan[legacyColonPrefix.Length..].ToString());
+            return claimCode is not null;
+        }
+
+        return false;
+    }
+
+    private static string? NormalizeClaimCode(string? claimCode)
+    {
+        if (string.IsNullOrWhiteSpace(claimCode))
+        {
+            return null;
+        }
+
+        return string.Concat(claimCode.Trim().Where(static char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+    }
+
     private static void RecordPayloadResolution(string chosenSource, IReadOnlyCollection<string> attempts)
     {
         if (attempts.Count == 0)
@@ -626,26 +729,132 @@ internal static class Program
         }
     }
 
-    private static void LaunchInstalledApp(InstallerMetadata metadata)
+    private static void LaunchInstalledApp(InstallerMetadata metadata, string? claimCode)
     {
         string target = Path.Combine(metadata.InstallDirectory, metadata.LaunchExecutable);
-        Process.Start(new ProcessStartInfo
+        ProcessStartInfo startInfo = new()
         {
             FileName = target,
             WorkingDirectory = metadata.InstallDirectory,
             UseShellExecute = true,
-        });
+        };
+
+        string? normalizedClaimCode = NormalizeClaimCode(claimCode);
+        if (!string.IsNullOrWhiteSpace(normalizedClaimCode))
+        {
+            startInfo.Arguments = $"{ClaimCodeSwitch} {QuoteArgument(normalizedClaimCode)}";
+        }
+
+        Process.Start(startInfo);
     }
+
+    private static void StagePendingClaimCode(InstallerMetadata metadata, string claimCode)
+    {
+        string? normalizedClaimCode = NormalizeClaimCode(claimCode);
+        if (string.IsNullOrWhiteSpace(normalizedClaimCode))
+        {
+            return;
+        }
+
+        string pendingPath = GetPendingClaimCodePath(metadata);
+        Directory.CreateDirectory(Path.GetDirectoryName(pendingPath)!);
+        File.WriteAllText(pendingPath, normalizedClaimCode, Encoding.UTF8);
+    }
+
+    private static string GetPendingClaimCodePath(InstallerMetadata metadata)
+        => Path.Combine(
+            ResolveDesktopStateRoot(),
+            "install-linking",
+            metadata.HeadId,
+            "windows",
+            NormalizeArchitecture(RuntimeInformation.OSArchitecture),
+            PendingClaimCodeFileName);
+
+    private static string ResolveDesktopStateRoot()
+    {
+        string? configured = Environment.GetEnvironmentVariable(ExplicitStateRootEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return Path.Combine(Path.GetFullPath(Environment.ExpandEnvironmentVariables(configured.Trim())), "Chummer6");
+        }
+
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (!string.IsNullOrWhiteSpace(localAppData))
+        {
+            return Path.Combine(localAppData, "Chummer6");
+        }
+
+        return Path.Combine(Path.GetTempPath(), "Chummer6");
+    }
+
+    private static string ResolveShortcutIconPath(string targetPath)
+    {
+        if (string.IsNullOrWhiteSpace(targetPath))
+        {
+            return targetPath;
+        }
+
+        string? launchDirectory = Path.GetDirectoryName(targetPath);
+        if (string.IsNullOrWhiteSpace(launchDirectory) || !Directory.Exists(launchDirectory))
+        {
+            return targetPath;
+        }
+
+        string preferredIconPath = Path.Combine(launchDirectory, ChummerIconFileName);
+        if (File.Exists(preferredIconPath))
+        {
+            return preferredIconPath;
+        }
+
+        try
+        {
+            string? discoveredIconPath = Directory
+                .EnumerateFiles(launchDirectory, "*.ico", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault(path => string.Equals(
+                    Path.GetFileName(path),
+                    ChummerIconFileName,
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (discoveredIconPath is not null)
+            {
+                return discoveredIconPath;
+            }
+        }
+        catch (IOException)
+        {
+            // Fallback to launcher executable icon if directory enumeration fails.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Fallback to launcher executable icon if directory enumeration fails.
+        }
+
+        return targetPath;
+    }
+
+    private static string NormalizeArchitecture(Architecture architecture)
+        => architecture switch
+        {
+            Architecture.X64 => "x64",
+            Architecture.X86 => "x86",
+            Architecture.Arm64 => "arm64",
+            Architecture.Arm => "arm",
+            _ => architecture.ToString().ToLowerInvariant()
+        };
+
+    private static string QuoteArgument(string value)
+        => $"\"{value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal)}\"";
 
     private static void RegisterUninstall(InstallerMetadata metadata, string installerPath)
     {
+        string launchPath = Path.Combine(metadata.InstallDirectory, metadata.LaunchExecutable);
         using RegistryKey key = Registry.CurrentUser.CreateSubKey(metadata.UninstallRegistryKeyPath, writable: true)
             ?? throw new InvalidOperationException("Could not create uninstall registry entry.");
         key.SetValue("DisplayName", metadata.DisplayName);
         key.SetValue("DisplayVersion", metadata.Version);
         key.SetValue("Publisher", metadata.Publisher);
         key.SetValue("InstallLocation", metadata.InstallDirectory);
-        key.SetValue("DisplayIcon", Path.Combine(metadata.InstallDirectory, metadata.LaunchExecutable));
+        key.SetValue("DisplayIcon", ResolveShortcutIconPath(launchPath));
         key.SetValue("UninstallString", $"\"{installerPath}\" --uninstall");
         key.SetValue("QuietUninstallString", $"\"{installerPath}\" --uninstall");
         key.SetValue("NoModify", 1, RegistryValueKind.DWord);
@@ -676,7 +885,7 @@ internal static class Program
             shortcut.TargetPath = targetPath;
             shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath);
             shortcut.Description = description;
-            shortcut.IconLocation = targetPath;
+            shortcut.IconLocation = ResolveShortcutIconPath(targetPath);
             shortcut.Save();
             Marshal.FinalReleaseComObject(shortcutObject);
         }
@@ -718,6 +927,7 @@ internal static class Program
 
     private sealed record InstallerMetadata(
         string AppId,
+        string HeadId,
         string DisplayName,
         string InstallDirName,
         string LaunchExecutable,
@@ -758,8 +968,10 @@ internal static class Program
                        ?? fallback;
             }
 
+            string appId = Read("ChummerAppId", "avalonia");
             return new InstallerMetadata(
-                AppId: Read("ChummerAppId", "avalonia"),
+                AppId: appId,
+                HeadId: Read("ChummerHeadId", ResolveHeadId(appId)),
                 DisplayName: Read("ChummerDisplayName", "Chummer6"),
                 InstallDirName: Read("ChummerInstallDirName", "Chummer6"),
                 LaunchExecutable: Read("ChummerLaunchExecutable", "Chummer.Avalonia.exe"),
@@ -767,6 +979,21 @@ internal static class Program
                 Publisher: Read("ChummerPublisher", "ArchonMegalon"),
                 ShortcutName: Read("ChummerShortcutName", "Chummer6"),
                 InstallerOutputName: Read("ChummerInstallerOutputName", "Chummer6Installer"));
+        }
+
+        private static string ResolveHeadId(string appId)
+        {
+            if (appId.StartsWith("blazor-desktop", StringComparison.OrdinalIgnoreCase))
+            {
+                return "blazor-desktop";
+            }
+
+            if (appId.StartsWith("avalonia", StringComparison.OrdinalIgnoreCase))
+            {
+                return "avalonia";
+            }
+
+            return string.IsNullOrWhiteSpace(appId) ? "avalonia" : appId.Trim();
         }
     }
 }

@@ -5,7 +5,8 @@
     <StackPanel Spacing="12">
       <Border Classes="shell-card subtle">
         <StackPanel Spacing="8">
-          <TextBlock Classes="shell-kicker" Text="Command Palette" />
+          <!-- Shell section heading -->
+          <TextBlock Classes="shell-kicker" Text="Section Commands" />
           <ListBox x:Name="CommandsList">
             <ListBox.ItemTemplate>
               <DataTemplate>
