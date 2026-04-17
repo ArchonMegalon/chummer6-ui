@@ -40,7 +40,11 @@ public partial class SectionHostControl : UserControl
 
     public void SetNotice(string notice)
     {
-        NoticeText.Text = notice;
+        string normalizedNotice = string.IsNullOrWhiteSpace(notice) ? "Notice: Ready." : notice;
+        NoticeText.Text = normalizedNotice;
+        NoticeBorder.IsVisible =
+            !string.Equals(normalizedNotice, "Notice: Ready.", StringComparison.Ordinal)
+            && !string.Equals(normalizedNotice, "Ready.", StringComparison.Ordinal);
     }
 
     public void SetSectionPreview(string previewJson, IEnumerable<SectionRowDisplayItem> rows)
@@ -77,7 +81,7 @@ public partial class SectionHostControl : UserControl
         SectionContextSummaryText.Text = summary;
         SectionContextSummaryText.IsVisible = !string.IsNullOrWhiteSpace(summary);
         SectionContextBorder.IsVisible = !string.IsNullOrWhiteSpace(title);
-        SectionRowsList.Height = 196d;
+        SectionRowsList.Height = 212d;
     }
 
     public void SetClassicCharacterSheet(string? sectionId, string previewJson, IEnumerable<SectionRowDisplayItem> rows)
@@ -97,7 +101,7 @@ public partial class SectionHostControl : UserControl
             || summaryFacts.Count > 0;
 
         ClassicCharacterSheetBorder.IsVisible = hasFacts && sectionTargetsClassicCharacterSheet;
-        SectionRowsList.Height = ClassicCharacterSheetBorder.IsVisible ? 96d : 160d;
+        SectionRowsList.Height = ClassicCharacterSheetBorder.IsVisible ? 128d : 176d;
         if (!ClassicCharacterSheetBorder.IsVisible)
         {
             ClassicCharacterSummaryTitle.Text = "Runner Summary";
@@ -976,28 +980,31 @@ public partial class SectionHostControl : UserControl
     {
         Border card = new()
         {
-            Margin = new Thickness(0d, 0d, 6d, 6d),
-            Padding = new Thickness(5d, 3d),
-            MinWidth = emphasizeValue ? 48d : 96d,
-            Background = new SolidColorBrush(Color.Parse("#FFFDFDFB")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#FFB7C2CF")),
+            Margin = new Thickness(0d, 0d, 4d, 4d),
+            Padding = emphasizeValue ? new Thickness(4d, 2d) : new Thickness(5d, 3d),
+            MinWidth = emphasizeValue ? 44d : 84d,
+            MinHeight = emphasizeValue ? 28d : 32d,
+            Background = new SolidColorBrush(Color.Parse(emphasizeValue ? "#FFF4F4F4" : "#FFF8F8F8")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#FFA0A0A0")),
             BorderThickness = new Thickness(1d)
         };
 
         StackPanel stack = new()
         {
-            Spacing = 1d
+            Spacing = 0d
         };
         stack.Children.Add(new TextBlock
         {
             Text = fact.Label,
-            FontSize = 10d
+            FontSize = emphasizeValue ? 9d : 10d,
+            TextAlignment = emphasizeValue ? TextAlignment.Center : TextAlignment.Left
         });
         stack.Children.Add(new TextBlock
         {
             Text = fact.Value,
-            FontSize = emphasizeValue ? 16d : 13d,
-            FontWeight = FontWeight.SemiBold
+            FontSize = emphasizeValue ? 14d : 12d,
+            FontWeight = FontWeight.SemiBold,
+            TextAlignment = emphasizeValue ? TextAlignment.Center : TextAlignment.Left
         });
         card.Child = stack;
         return card;

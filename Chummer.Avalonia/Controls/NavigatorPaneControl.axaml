@@ -2,15 +2,26 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.NavigatorPaneControl">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <Border Padding="2">
+    <Border Padding="1">
       <Grid RowDefinitions="Auto,*" RowSpacing="2">
+        <Grid Grid.Row="0" ColumnDefinitions="*" Margin="2,1,2,2">
+          <StackPanel Spacing="0">
+            <TextBlock x:Name="CodexHeadingText" Classes="shell-section-title" Text="Codex" />
+            <TextBlock x:Name="CodexCaptionText"
+                       Classes="shell-caption"
+                       Text="Tree navigator for runners, tabs, actions, and workflow routes."
+                       TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </Grid>
+
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="4" IsVisible="False">
           <TextBlock x:Name="CodexKickerText" Classes="shell-kicker" Text="Codex" IsVisible="False" />
-          <TextBlock x:Name="CodexHeadingText" Grid.Column="0" Classes="shell-caption" Text="Codex" />
-          <TextBlock x:Name="CodexCaptionText"
+          <TextBlock x:Name="CodexHeadingTextShadow" Grid.Column="0" Classes="shell-caption" Text="Codex" IsVisible="False" />
+          <TextBlock x:Name="CodexCaptionTextShadow"
                      Grid.Column="1"
                      Classes="shell-caption"
                      Text="Tree navigator for runners, tabs, actions, and workflow routes."
+                     IsVisible="False"
                      TextTrimming="CharacterEllipsis" />
         </Grid>
 

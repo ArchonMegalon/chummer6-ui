@@ -1,24 +1,47 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.StatusStripControl">
-  <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*,Auto" ColumnSpacing="10" VerticalAlignment="Center">
-    <TextBlock Grid.Column="0" Classes="shell-kicker" Text="Character" VerticalAlignment="Center" />
-    <TextBlock x:Name="CharacterStateText" Grid.Column="1" Classes="shell-section-title" Text="Character: none" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
-    <TextBlock Grid.Column="2" Classes="shell-kicker" Text="Services" VerticalAlignment="Center" />
-    <TextBlock x:Name="ServiceStateText" Grid.Column="3" Classes="shell-section-title" Text="Service: online" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
-    <TextBlock Grid.Column="4" Classes="shell-kicker" Text="Runtime Clock" VerticalAlignment="Center" />
-    <TextBlock x:Name="TimeStateText" Grid.Column="5" Classes="shell-section-title" Text="Time: -" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
-    <TextBlock Grid.Column="6" Classes="shell-kicker" Text="Compliance" VerticalAlignment="Center" />
-    <TextBlock x:Name="ComplianceStateText" Grid.Column="7" Classes="shell-section-title" Text="Compliance: shared presenter path" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
-    <StackPanel Grid.Column="8"
+  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
+    <StackPanel Grid.Column="0"
                 Orientation="Horizontal"
-                Spacing="8"
+                Spacing="6"
+                VerticalAlignment="Center">
+      <TextBlock x:Name="CharacterStateText"
+                 Classes="shell-caption"
+                 Text="Character: none"
+                 VerticalAlignment="Center"
+                 TextWrapping="NoWrap"
+                 TextTrimming="CharacterEllipsis" />
+      <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" />
+      <TextBlock x:Name="ServiceStateText"
+                 Classes="shell-caption"
+                 Text="Service: online"
+                 VerticalAlignment="Center"
+                 TextWrapping="NoWrap"
+                 TextTrimming="CharacterEllipsis" />
+      <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" />
+      <TextBlock x:Name="TimeStateText"
+                 Classes="shell-caption"
+                 Text="Time: -"
+                 VerticalAlignment="Center"
+                 TextWrapping="NoWrap"
+                 TextTrimming="CharacterEllipsis" />
+      <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" />
+      <TextBlock x:Name="ComplianceStateText"
+                 Classes="shell-caption"
+                 Text="Compliance: shared presenter path"
+                 VerticalAlignment="Center"
+                 TextWrapping="NoWrap"
+                 TextTrimming="CharacterEllipsis" />
+    </StackPanel>
+    <StackPanel Grid.Column="1"
+                Orientation="Horizontal"
+                Spacing="4"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center">
-      <TextBlock Classes="shell-kicker" Text="Readiness" VerticalAlignment="Center" />
       <ProgressBar x:Name="WorkbenchProgressBar"
-                   Width="112"
-                   Height="10"
+                   Width="56"
+                   Height="8"
                    Minimum="0"
                    Maximum="100"
                    Value="100" />

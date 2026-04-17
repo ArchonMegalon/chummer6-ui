@@ -2,9 +2,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
         x:Class="Chummer.Avalonia.MainWindow"
-        Width="1280"
-        Height="800"
-        MinWidth="880"
+        Width="1220"
+        Height="760"
+        MinWidth="960"
         MinHeight="560"
         Title="Chummer Desktop"
         Icon="/Assets/chummer.ico"
@@ -21,15 +21,15 @@
       <controls:ShellMenuBarControl x:Name="ShellMenuBarControl" />
     </Border>
 
-    <Border x:Name="ToolStripRegion" Grid.Row="1" Classes="shell-panel chrome" Padding="2">
+    <Border x:Name="ToolStripRegion" Grid.Row="1" Classes="shell-panel chrome" Padding="1">
       <controls:ToolStripControl x:Name="ToolStripControl" />
     </Border>
 
-    <Border x:Name="SummaryHeaderRegion" Grid.Row="2" Classes="shell-panel subtle" Padding="0">
+    <Border x:Name="SummaryHeaderRegion" Grid.Row="2" Classes="shell-panel chrome" Padding="0">
       <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
     </Border>
 
-    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="200,*,0" ColumnSpacing="4" Margin="2,2,2,0">
+    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="184,*,0" ColumnSpacing="2" Margin="1,1,1,0">
       <Border x:Name="LeftNavigatorRegion" Grid.Column="0" Classes="shell-panel">
         <controls:NavigatorPaneControl x:Name="NavigatorPaneControl" />
       </Border>
@@ -60,7 +60,7 @@
       </Border>
     </Grid>
 
-    <Border x:Name="StatusStripRegion" Grid.Row="4" Classes="shell-panel chrome" Padding="4,2">
+    <Border x:Name="StatusStripRegion" Grid.Row="4" Classes="shell-panel chrome" Padding="4,1">
       <controls:StatusStripControl x:Name="StatusStripControl" />
     </Border>
   </Grid>
