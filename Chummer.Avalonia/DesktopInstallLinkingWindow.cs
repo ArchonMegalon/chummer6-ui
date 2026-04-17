@@ -23,10 +23,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _state = context.State;
         _language = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId).Language;
         Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language);
-        Width = 760;
-        Height = 520;
-        MinWidth = 620;
-        MinHeight = 420;
+        Width = 700;
+        Height = 460;
+        MinWidth = 560;
+        MinHeight = 360;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         _summaryText = new TextBlock
@@ -50,16 +50,17 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         Content = new Border
         {
-            Padding = new Thickness(20),
+            Background = new SolidColorBrush(Color.Parse("#EEF2F6")),
+            Padding = new Thickness(16),
             Child = new StackPanel
             {
-                Spacing = 14,
+                Spacing = 10,
                 Children =
                 {
                     new TextBlock
                     {
                         Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.heading", _language),
-                        FontSize = 22,
+                        FontSize = 18,
                         FontWeight = FontWeight.SemiBold,
                         TextWrapping = TextWrapping.Wrap
                     },
@@ -71,6 +72,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     new TextBlock
                     {
                         Text = DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.shipping_locales", _language, DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
+                        FontSize = 11,
+                        Foreground = new SolidColorBrush(Color.Parse("#526173")),
                         TextWrapping = TextWrapping.Wrap
                     },
                     _summaryText,
@@ -83,22 +86,40 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     _statusText,
                     new StackPanel
                     {
-                        Orientation = Orientation.Horizontal,
-                        HorizontalAlignment = HorizontalAlignment.Right,
-                        Spacing = 10,
+                        Orientation = Orientation.Vertical,
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        Spacing = 6,
                         Children =
                         {
-                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
-                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
-                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
-                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_report_issue", _language), OpenReportIssueAsync),
-                            CreateButton(
-                                DesktopInstallLinkingRuntime.IsClaimed(_state)
-                                    ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
-                                    : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language),
-                                OpenFollowThroughAsync),
-                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _language), LinkAsync, isDefault: true),
-                            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_guest", _language), ContinueAsGuestAsync)
+                            new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                HorizontalAlignment = HorizontalAlignment.Right,
+                                Spacing = 6,
+                                Children =
+                                {
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_report_issue", _language), OpenReportIssueAsync)
+                                }
+                            },
+                            new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                HorizontalAlignment = HorizontalAlignment.Right,
+                                Spacing = 6,
+                                Children =
+                                {
+                                    CreateButton(
+                                        DesktopInstallLinkingRuntime.IsClaimed(_state)
+                                            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
+                                            : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language),
+                                        OpenFollowThroughAsync),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _language), LinkAsync, isDefault: true),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_guest", _language), ContinueAsGuestAsync)
+                                }
+                            }
                         }
                     }
                 }
@@ -153,7 +174,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         Button button = new()
         {
             Content = label,
-            MinWidth = 120
+            MinWidth = 104
         };
         if (isDefault)
         {

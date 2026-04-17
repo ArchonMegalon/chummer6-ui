@@ -120,6 +120,20 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Desktop_home_window_no_longer_forces_a_dashboard_detour_for_empty_workspace_state()
+    {
+        string homePath = ResolveSourceFile("Chummer.Avalonia", "DesktopHomeWindow.cs");
+        string homeText = File.ReadAllText(homePath);
+
+        StringAssert.Contains(homeText, "if (installContext?.ShouldPrompt == true)");
+        StringAssert.Contains(homeText, "if (!string.Equals(updateStatus.Status, \"current\", StringComparison.Ordinal))");
+        StringAssert.Contains(homeText, "if (supportProjection.NeedsAttention)");
+        Assert.IsFalse(
+            homeText.Contains("workspaces.Count == 0", StringComparison.Ordinal),
+            "A fresh install with no workspaces must still enter the workbench instead of reopening the desktop home cockpit.");
+    }
+
+    [TestMethod]
     public void Bundled_demo_runner_fixture_is_published_for_both_desktop_heads()
     {
         string avaloniaProjectPath = ResolveSourceFile("Chummer.Avalonia", "Chummer.Avalonia.csproj");
