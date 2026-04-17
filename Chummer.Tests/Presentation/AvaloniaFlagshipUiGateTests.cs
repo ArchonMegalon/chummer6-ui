@@ -1297,6 +1297,26 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Non_classic_sections_surface_a_named_workbench_context_instead_of_an_untitled_row_dump()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SetActiveSectionForTesting("vehicles");
+
+            Border contextBorder = harness.FindControl<Border>("SectionContextBorder");
+            TextBlock contextTitle = harness.FindControl<TextBlock>("SectionContextTitleText");
+            TextBlock contextSummary = harness.FindControl<TextBlock>("SectionContextSummaryText");
+
+            harness.WaitUntil(() => contextBorder.IsVisible && !string.IsNullOrWhiteSpace(contextTitle.Text));
+
+            Assert.IsTrue(contextBorder.IsVisible, "Non-classic sections must expose a named section context header.");
+            Assert.AreEqual("Vehicles", contextTitle.Text);
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "visible");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Roadmaster");
+        });
+    }
+
+    [TestMethod]
     public void Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions()
     {
         WithLoadedRunnerHarness(harness =>
