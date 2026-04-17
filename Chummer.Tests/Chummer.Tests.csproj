@@ -67,6 +67,7 @@
     <Compile Include="Presentation\FixtureBackedChummerClient.cs" />
     <Compile Include="Presentation\AvaloniaFlagshipUiGateTests.cs" />
     <Compile Include="Presentation\BlazorShellComponentTests.cs" />
+    <Compile Include="Presentation\CommandAvailabilityEvaluatorTests.cs" />
     <Compile Include="Presentation\DesktopShellRulesetCatalogTests.cs" />
     <Compile Include="Presentation\FakeWorkbenchCoachApiClient.cs" />
     <Compile Include="Presentation\DesktopSupportDiagnosticsTextTests.cs" />
