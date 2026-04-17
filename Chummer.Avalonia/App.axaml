@@ -74,7 +74,7 @@
     <Style Selector="Window">
       <Setter Property="Background" Value="{DynamicResource ChummerShellWindowBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
-      <Setter Property="FontSize" Value="14" />
+      <Setter Property="FontSize" Value="13" />
     </Style>
     <Style Selector="UserControl">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
@@ -88,17 +88,17 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
     <Style Selector="TextBlock.shell-title">
-      <Setter Property="FontSize" Value="28" />
+      <Setter Property="FontSize" Value="22" />
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-subtitle">
-      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontSize" Value="12" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-section-title">
-      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
@@ -122,7 +122,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderStrongBrush}" />
     </Style>
     <Style Selector="TextBlock.shell-metric-value">
-      <Setter Property="FontSize" Value="18" />
+      <Setter Property="FontSize" Value="15" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
@@ -131,7 +131,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="0" />
-      <Setter Property="Padding" Value="4" />
+      <Setter Property="Padding" Value="3" />
     </Style>
     <Style Selector="Border.shell-panel.chrome">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
@@ -149,7 +149,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="2" />
-      <Setter Property="Padding" Value="4" />
+      <Setter Property="Padding" Value="3" />
     </Style>
     <Style Selector="Border.shell-card.subtle">
       <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
@@ -169,7 +169,7 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Padding" Value="6,2" />
+      <Setter Property="Padding" Value="5,1" />
       <Setter Property="MinHeight" Value="24" />
       <Setter Property="CornerRadius" Value="2" />
     </Style>
@@ -183,8 +183,8 @@
     <Style Selector="Button.menu-button">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="Transparent" />
-      <Setter Property="Padding" Value="10,6" />
-      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="MinHeight" Value="24" />
     </Style>
     <Style Selector="Button.menu-button:pointerover">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
@@ -222,7 +222,7 @@
       <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="ListBoxItem">
-      <Setter Property="Padding" Value="4,2" />
+      <Setter Property="Padding" Value="3,1" />
       <Setter Property="Margin" Value="0,0,0,1" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />

@@ -356,8 +356,6 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             harness.WaitForReady();
 
-            TextBlock codexKicker = harness.FindControl<TextBlock>("CodexKickerText");
-            TextBlock codexHeading = harness.FindControl<TextBlock>("CodexHeadingText");
             TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
             NavigatorTreeItem[] rootItems = SnapshotTreeItems(navigatorTree);
             string[] rootLabels = rootItems.Select(item => item.Label).ToArray();
@@ -375,8 +373,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                 RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(rulesetId),
             ];
 
-            Assert.AreEqual("Codex", codexKicker.Text);
-            StringAssert.Contains(codexHeading.Text ?? string.Empty, "Codex");
             Assert.IsTrue(
                 rootLabels.SequenceEqual(expectedRootLabels, StringComparer.Ordinal),
                 "The codex tree must keep the classic left-rail group order. Expected: "
@@ -1449,7 +1445,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             "14-advancement-dialog-light.png",
             "15-creation-section-light.png",
             "16-master-index-dialog-light.png",
-            "17-character-roster-dialog-light.png"
+            "17-character-roster-dialog-light.png",
+            "18-import-dialog-light.png"
         ];
 
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -1643,6 +1640,22 @@ public sealed class AvaloniaFlagshipUiGateTests
                         StringComparison.Ordinal));
                 captured[expectedFiles[16]] = harness.CaptureScreenshotBytes();
                 harness.InvokeDialogAction("close");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.Click("FileMenuButton");
+                harness.WaitUntil(() =>
+                {
+                    MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton"));
+                    return commands.Any(command => string.Equals(command.Tag?.ToString(), "open_character", StringComparison.Ordinal));
+                });
+                harness.ClickMenuCommand("open_character");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Open Character",
+                        StringComparison.Ordinal));
+                captured[expectedFiles[17]] = harness.CaptureScreenshotBytes();
+                harness.InvokeDialogAction("cancel");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 return captured;

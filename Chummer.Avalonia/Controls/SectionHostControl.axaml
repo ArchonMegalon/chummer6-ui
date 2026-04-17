@@ -1,8 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.SectionHostControl">
-  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="4">
-    <Border Grid.Row="0" Classes="shell-card subtle" Padding="4,2">
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="2">
+    <Border Grid.Row="0" Classes="shell-panel subtle" Padding="3,1">
       <TextBlock x:Name="NoticeText"
                  Classes="shell-caption"
                  Text="Notice: Ready."
@@ -10,14 +10,14 @@
     </Border>
 
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-      <Border Padding="4">
-      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="6">
+      <Border Padding="2">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="4">
         <TextBlock Grid.Row="0" Text="Section Workbench" Classes="shell-section-title" IsVisible="False" />
         <Border Grid.Row="1"
                 x:Name="SectionQuickActionsBorder"
-                Classes="shell-card subtle"
+                Classes="shell-panel subtle"
                 IsVisible="False"
-                Padding="4">
+                Padding="3">
           <StackPanel Spacing="2">
             <WrapPanel x:Name="SectionQuickActionsPanel"
                        Orientation="Horizontal"
@@ -26,13 +26,13 @@
         </Border>
         <Border Grid.Row="2"
                 x:Name="BuildLabBorder"
-                Classes="shell-card"
+                Classes="shell-panel"
                 IsVisible="False"
-                Padding="8"
+                Padding="4"
                 BorderThickness="1"
                 Background="{DynamicResource ChummerShellSurfaceBrush}"
                 BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="4">
             <TextBlock x:Name="BuildLabSummaryText"
                        Text="Build Lab intake"
                        FontWeight="Bold"
@@ -96,13 +96,13 @@
         </Border>
         <Border Grid.Row="3"
                 x:Name="BrowseWorkspaceBorder"
-                Classes="shell-card"
+                Classes="shell-panel"
                 IsVisible="False"
-                Padding="8"
+                Padding="4"
                 BorderThickness="1"
                 Background="{DynamicResource ChummerShellSurfaceBrush}"
                 BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="6">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="4">
             <TextBlock x:Name="BrowseSummaryText"
                        Text="Browse workspace"
                        FontWeight="Bold"
@@ -146,13 +146,13 @@
         </Border>
         <Border Grid.Row="4"
                 x:Name="ContactGraphBorder"
-                Classes="shell-card"
+                Classes="shell-panel"
                 IsVisible="False"
-                Padding="8"
+                Padding="4"
                 BorderThickness="1"
                 Background="{DynamicResource ChummerShellSurfaceBrush}"
                 BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="4">
             <TextBlock x:Name="ContactGraphSummaryText"
                        Text="Contact relationship graph"
                        FontWeight="Bold"
@@ -183,13 +183,13 @@
         </Border>
         <Border Grid.Row="5"
                 x:Name="NpcPersonaStudioBorder"
-                Classes="shell-card"
+                Classes="shell-panel"
                 IsVisible="False"
-                Padding="8"
+                Padding="4"
                 BorderThickness="1"
                 Background="{DynamicResource ChummerShellSurfaceBrush}"
                 BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="4">
             <TextBlock x:Name="NpcPersonaSummaryText"
                        Text="NPC Persona Studio"
                        FontWeight="Bold"
@@ -222,13 +222,13 @@
         </Border>
         <Border Grid.Row="6"
                 x:Name="DowntimePlannerBorder"
-                Classes="shell-card"
+                Classes="shell-panel"
                 IsVisible="False"
-                Padding="8"
+                Padding="4"
                 BorderThickness="1"
                 Background="{DynamicResource ChummerShellSurfaceBrush}"
                 BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="4">
             <TextBlock x:Name="DowntimePlannerSummaryText"
                        Text="Downtime planner"
                        FontWeight="Bold"
@@ -256,10 +256,10 @@
         </Border>
         <Border Grid.Row="7"
                 x:Name="ClassicCharacterSheetBorder"
-                Classes="shell-card subtle"
+                Classes="shell-panel subtle"
                 IsVisible="False"
-                Padding="6">
-          <StackPanel Spacing="6">
+                Padding="4">
+          <StackPanel Spacing="4">
             <TextBlock x:Name="ClassicCharacterSummaryTitle"
                        Text="Runner Summary"
                        Classes="shell-section-title" />
@@ -271,7 +271,7 @@
                        ItemHeight="44" />
           </StackPanel>
         </Border>
-        <ListBox Grid.Row="8" x:Name="SectionRowsList" Height="160">
+        <ListBox Grid.Row="8" x:Name="SectionRowsList" Height="128">
           <ListBox.ItemTemplate>
             <DataTemplate>
               <Grid ColumnDefinitions="220,*" ColumnSpacing="8" Margin="0,1">
@@ -312,7 +312,7 @@
       </Border>
     </ScrollViewer>
 
-    <Border Grid.Row="2" x:Name="RawXmlImportBorder" Classes="shell-card subtle" Padding="4" IsVisible="False">
+    <Border Grid.Row="2" x:Name="RawXmlImportBorder" Classes="shell-panel subtle" Padding="3" IsVisible="False">
       <Expander Header="Raw XML Import" IsExpanded="False">
         <StackPanel Spacing="2" Margin="0,4,0,0">
           <TextBox x:Name="XmlInputBox"

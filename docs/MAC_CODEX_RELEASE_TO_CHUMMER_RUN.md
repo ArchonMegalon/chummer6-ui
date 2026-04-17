@@ -148,6 +148,7 @@ DIST_DIR="dist"
 
 dotnet restore "$PROJECT" \
   -r "$RID" \
+  -p:UseChummerEngineContractsLocalFeed=false \
   -p:ChummerUseLocalCompatibilityTree=true \
   -p:ChummerLocalContractsProject="$CHUMMER_LOCAL_CONTRACTS_PROJECT" \
   -p:ChummerLocalRunContractsProject="$CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT" \
@@ -160,6 +161,7 @@ dotnet publish "$PROJECT" \
   -p:PublishSingleFile=true \
   -p:PublishTrimmed=false \
   -p:IncludeNativeLibrariesForSelfExtract=true \
+  -p:UseChummerEngineContractsLocalFeed=false \
   -p:ChummerUseLocalCompatibilityTree=true \
   -p:ChummerLocalContractsProject="$CHUMMER_LOCAL_CONTRACTS_PROJECT" \
   -p:ChummerLocalRunContractsProject="$CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT" \
