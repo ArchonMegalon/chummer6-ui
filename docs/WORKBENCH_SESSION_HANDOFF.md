@@ -21,48 +21,45 @@ Bring Chummer6 desktop UX much closer to Chummer5a layout posture:
   - `origin/safe-push-fix-windows-installer-payload-20260401`
   - `origin/fleet/ui`
   - `origin/main`
-- Last pushed UI commit: `b3d66d77`
-  - message: `Use component-only Blazor desktop host`
-
-- Additional pushed UI commit after that baseline: `b2a48150`
-  - message: `Tighten Avalonia shell to classic dense posture`
+- Last pushed UI commit: `228d0d0f`
+  - message: `Align Blazor desktop shell with classic density`
 
 ## Uncommitted current slice
 
 Files changed locally:
 
-- `Chummer.Blazor/wwwroot/app.css`
+- `Chummer.Tests/Chummer.Tests.csproj`
+- `Chummer.Tests/Presentation/CommandAvailabilityEvaluatorTests.cs`
 - `docs/WORKBENCH_SESSION_HANDOFF.md`
 
 What this slice changes:
 
-- `Chummer.Blazor/wwwroot/app.css`
-  - replaces the remaining modern/pastel Blazor shell palette with a denser classic desktop palette
-  - narrows the workbench left rail and reduces overall chrome height
-  - flattens menu/tool/tab/button styling back toward a WinForms-like rhythm
-  - compresses the classic runner sheet, stat cards, browse shells, and table chrome so the first glance reads closer to Chummer5a instead of a web dashboard
-  - converts the status strip into a flatter single-line classic bar instead of a rounded card
+- `Chummer.Tests/Chummer.Tests.csproj`
+  - adds `Presentation/CommandAvailabilityEvaluatorTests.cs` to the non-Windows explicit compile list so the guardrail actually enters the Linux/macOS test assembly
+- `Chummer.Tests/Presentation/CommandAvailabilityEvaluatorTests.cs`
+  - locks the startup desktop shell posture: `new_character`, `open_character`, `global_settings`, and `report_bug` must stay enabled with no active workspace, while `save_character` remains correctly gated
 - `docs/WORKBENCH_SESSION_HANDOFF.md`
-  - records the current Blazor parity slice and exact resume commands in case the session dies before commit/push
+  - records the new pushed baseline, the missing-compile-item root cause, and the next menu/toolstrip investigation path in case the session dies before the next command slice lands
 
 ## Validation status
 
 What passed:
 
-- manual inspection of the actual Blazor shell component mount points (`DesktopShell`, `SummaryHeader`, `WorkspaceLeftPane`, `SectionPane`, `StatusStrip`)
-
-What still needs direct verification:
-
 - `git diff --check`
 - `dotnet restore Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal -p:UseChummerEngineContractsLocalFeed=false`
 - `dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false`
-- commit and push this Blazor density slice
-- rebuild on mac from the pushed snapshot and visually compare the shell against Chummer5a screenshots
-- continue with the next parity jump after this slice: menu behavior, icon/signing path, and any remaining non-classic surfaces that still survive first launch
+- pushed commit `228d0d0f` to `safe-push-fix-windows-installer-payload-20260401`, `fleet/ui`, and `main`
+
+What still needs direct verification:
+
+- rerun the targeted command availability test now that the csproj actually compiles it on non-Windows
+- inspect the live desktop shell command surface after first launch to confirm the enabled commands actually render as expected
+- continue with the next parity jump after this guardrail: menu behavior, icon/signing path, and any remaining non-classic surfaces that still survive first launch
 
 What failed:
 
-- nothing in this current Blazor slice yet; validation commands still need to run after the edit
+- `dotnet test ... --filter CommandAvailabilityEvaluatorTests`
+  - the filter returned no matches because `Chummer.Tests.csproj` disables default compile items on non-Windows and the new test file was not in the explicit compile list
 
 ## Next exact commands
 
@@ -70,18 +67,21 @@ Run from repo root:
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-git status --short Chummer.Blazor/wwwroot/app.css docs/WORKBENCH_SESSION_HANDOFF.md
+git status --short Chummer.Tests/Presentation/CommandAvailabilityEvaluatorTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
 git diff --check
-dotnet restore Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal -p:UseChummerEngineContractsLocalFeed=false
-dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false
+dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --filter "FullyQualifiedName~Chummer.Tests.Presentation.CommandAvailabilityEvaluatorTests"
+sed -n '1,220p' Chummer.Blazor/Components/Shell/MenuBar.razor
+sed -n '1,220p' Chummer.Blazor/Components/Shell/ToolStrip.razor
+sed -n '1,220p' Chummer.Presentation/Shell/CommandAvailabilityEvaluator.cs
 ```
 
-Commit only the two files above:
+Commit only the three files above:
 
 ```bash
-git add Chummer.Blazor/wwwroot/app.css
+git add Chummer.Tests/Chummer.Tests.csproj
+git add Chummer.Tests/Presentation/CommandAvailabilityEvaluatorTests.cs
 git add docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Align Blazor desktop shell with classic density"
+git commit -m "Lock startup desktop command availability"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
@@ -89,11 +89,11 @@ git push origin HEAD:main
 
 ## Immediate next design slices after this commit
 
-1. Commit/push this Blazor density slice.
-2. Rebuild Blazor Desktop locally and verify the shell no longer reads as a web dashboard on first paint.
-3. Run the same screenshot-level comparison against Chummer5a that the user asked for and list only remaining intentional diffs.
-4. Cut the next parity jumps that are not just skin: menu behavior, icon correctness, and first-launch/runtime chrome drift.
-5. Push before the next mac build so the published preview stops lagging the actual UI repo state.
+1. Commit/push this command-availability guardrail.
+2. Verify the first-launch menubar/toolstrip on the live desktop head instead of only at component level.
+3. Fix any command surface that still feels dead on first launch even though startup-safe commands should be enabled.
+4. Run the screenshot-level comparison against Chummer5a and list only remaining intentional diffs.
+5. Continue with icon/signing and release-train correctness so mac builds stop lagging or surfacing stale-feeling snapshots.
 
 ## Resume after interruption
 
@@ -101,22 +101,21 @@ If this session dies from OOM or process pruning, resume with these exact steps:
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-git status --short Chummer.Blazor/wwwroot/app.css docs/WORKBENCH_SESSION_HANDOFF.md
+git status --short Chummer.Tests/Chummer.Tests.csproj Chummer.Tests/Presentation/CommandAvailabilityEvaluatorTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
 git diff --check
-dotnet restore Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal -p:UseChummerEngineContractsLocalFeed=false
-dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false
-git add Chummer.Blazor/wwwroot/app.css docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Align Blazor desktop shell with classic density"
+dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --filter "FullyQualifiedName~Chummer.Tests.Presentation.CommandAvailabilityEvaluatorTests"
+git add Chummer.Tests/Chummer.Tests.csproj Chummer.Tests/Presentation/CommandAvailabilityEvaluatorTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
+git commit -m "Lock startup desktop command availability"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
 ```
 
-Then continue immediately with the next parity pass: screenshot audit, menu behavior fixes, icon/signing fixes, and any remaining first-paint drift from Chummer5a.
+Then continue immediately with the next parity pass: live menu/toolstrip behavior, screenshot audit, icon/signing fixes, and any remaining first-paint drift from Chummer5a.
 
 ## Important notes
 
 - Do not commit unrelated dirty/generated files in this repo.
 - The release pipeline can easily pick up an older-feeling snapshot if `fleet/ui` or `main` is not pushed after each UI slice.
 - The user specifically wants Chummer5a to be the layout reference, not just inspiration.
-- The current highest-risk visible regressions after this slice are whatever still differs at first glance from Chummer5a after the denser Blazor shell lands: especially menu behavior, icons, and any leftover dashboard feeling on first paint.
+- The current highest-risk visible regressions after the pushed density slice are whatever still makes first launch feel dead or unfamiliar: especially menu behavior, icon correctness, and any remaining dashboard feel on first paint.

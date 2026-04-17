@@ -39,6 +39,25 @@ public class CommandAvailabilityEvaluatorTests
     }
 
     [TestMethod]
+    public void IsCommandEnabled_keeps_startup_shell_commands_available_without_workspace()
+    {
+        DefaultCommandAvailabilityEvaluator evaluator = new();
+        CharacterOverviewState state = CharacterOverviewState.Empty;
+
+        AppCommandDefinition newCharacter = new("new_character", "New", "file", false, true, RulesetDefaults.Sr5);
+        AppCommandDefinition openCharacter = new("open_character", "Open", "file", false, true, RulesetDefaults.Sr5);
+        AppCommandDefinition globalSettings = new("global_settings", "Options", "tools", false, true, RulesetDefaults.Sr5);
+        AppCommandDefinition reportBug = new("report_bug", "Report Issue", "help", false, true, RulesetDefaults.Sr5);
+        AppCommandDefinition saveCharacter = new("save_character", "Save", "file", true, true, RulesetDefaults.Sr5);
+
+        Assert.IsTrue(evaluator.IsCommandEnabled(newCharacter, state));
+        Assert.IsTrue(evaluator.IsCommandEnabled(openCharacter, state));
+        Assert.IsTrue(evaluator.IsCommandEnabled(globalSettings, state));
+        Assert.IsTrue(evaluator.IsCommandEnabled(reportBug, state));
+        Assert.IsFalse(evaluator.IsCommandEnabled(saveCharacter, state));
+    }
+
+    [TestMethod]
     public void IsWorkspaceActionEnabled_requires_open_workspace_when_flagged()
     {
         DefaultCommandAvailabilityEvaluator evaluator = new();
@@ -60,5 +79,4 @@ public class CommandAvailabilityEvaluatorTests
         Assert.IsFalse(withoutWorkspace);
         Assert.IsTrue(withWorkspace);
     }
-
 }
