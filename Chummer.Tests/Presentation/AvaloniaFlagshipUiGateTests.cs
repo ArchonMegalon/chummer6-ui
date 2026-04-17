@@ -52,6 +52,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly string[] HiddenWorkbenchToolbarButtons =
     [
         "ImportRawButton",
+        "LoadDemoRunnerButton",
         "CampaignWorkspaceButton",
         "UpdateStatusButton",
         "InstallLinkingButton",
@@ -60,6 +61,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     ];
     private static readonly string[] HiddenRuntimeLoadedToolbarButtons =
     [
+        "LoadDemoRunnerButton",
         "CampaignWorkspaceButton",
         "UpdateStatusButton",
         "InstallLinkingButton",
@@ -295,7 +297,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ("ImportFileButton", "Open", "Import Character File"),
                 ("CloseWorkspaceButton", "Close", "Close Active Workspace"),
                 ("SettingsButton", "Options", "Settings"),
-                ("LoadDemoRunnerButton", "Demo", "Load Demo Runner"),
             ];
 
             foreach ((string buttonName, string expectedLabel, string expectedToolTip) in expectedButtons)
@@ -539,7 +540,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "ImportFileButton",
                 "CloseWorkspaceButton",
                 "SettingsButton",
-                "LoadDemoRunnerButton",
             ];
 
             foreach (string menuName in menuButtons)
@@ -693,7 +693,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ("ImportFileButton", "import_file"),
                 ("CloseWorkspaceButton", "close_workspace"),
                 ("SettingsButton", "settings"),
-                ("LoadDemoRunnerButton", "load_demo_runner"),
             ];
 
             foreach ((string buttonName, _) in buttonMap)
@@ -708,6 +707,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsFalse(FindDescendant<Button>(control, "SupportButton").IsVisible);
             Assert.IsFalse(FindDescendant<Button>(control, "ReportIssueButton").IsVisible);
             Assert.IsFalse(FindDescendant<Button>(control, "ImportRawButton").IsVisible);
+            Assert.IsFalse(FindDescendant<Button>(control, "LoadDemoRunnerButton").IsVisible);
         });
     }
 

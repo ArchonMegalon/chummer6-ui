@@ -14,7 +14,7 @@
       <Button x:Name="CopyButton" Classes="shell-action quiet" Content="Copy" MinWidth="48" Margin="0,0,3,0" Click="CopyButton_OnClick" />
       <Border Width="1" Height="18" Margin="2,0,5,0" Background="#FFB7C2CF" VerticalAlignment="Center" />
       <Button x:Name="CloseWorkspaceButton" Classes="shell-action quiet" Content="Close" MinWidth="48" Margin="0,0,3,0" Click="CloseWorkspaceButton_OnClick" />
-      <Button x:Name="LoadDemoRunnerButton" Classes="shell-action quiet" Content="Demo" MinWidth="48" Margin="0,0,3,0" Click="LoadDemoRunnerButton_OnClick" />
+      <Button x:Name="LoadDemoRunnerButton" IsVisible="False" Classes="shell-action quiet" Content="Demo" MinWidth="48" Margin="0,0,3,0" Click="LoadDemoRunnerButton_OnClick" />
       <Button x:Name="ImportRawButton" IsVisible="False" Classes="shell-action quiet" Content="XML" MinWidth="42" Margin="0,0,3,0" Click="ImportRawButton_OnClick" />
       <Button x:Name="SettingsButton" Classes="shell-action quiet" Content="Options" MinWidth="62" Click="SettingsButton_OnClick" />
       <Button x:Name="CampaignWorkspaceButton" IsVisible="False" Content="Campaign" Click="CampaignWorkspaceButton_OnClick" />
