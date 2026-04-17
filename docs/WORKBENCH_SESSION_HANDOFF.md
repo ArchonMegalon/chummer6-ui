@@ -21,36 +21,38 @@ Bring Chummer6 desktop UX much closer to Chummer5a layout posture:
   - `origin/safe-push-fix-windows-installer-payload-20260401`
   - `origin/fleet/ui`
   - `origin/main`
-- Last pushed UI commit before this uncommitted slice: `88032e88`
-  - message: `Trim Blazor startup work and refresh desktop icon payload`
+- Last pushed UI commit: `b8b4fa4d`
+  - message: `Normalize local compatibility tree resolution`
 
 ## Uncommitted current slice
 
 Files changed locally:
 
-- `Directory.Build.props`
+- `Chummer.Blazor.Desktop/Program.cs`
+- `Chummer.Blazor/Components/DesktopAppHost.razor`
 - `docs/WORKBENCH_SESSION_HANDOFF.md`
 
 What this slice changes:
 
-- `Directory.Build.props`
-  - introduces one shared compatibility-root property instead of repeating sibling repo probes inline
-  - switches local compatibility-tree paths to cross-platform slash form
-  - derives `ChummerUseLocalCompatibilityTree` from the normalized local project properties instead of duplicating raw path strings
-  - restores local desktop-head builds from this split workspace on Linux/macOS
+- `Chummer.Blazor.Desktop/Program.cs`
+  - stops mounting the full-document web app root into the Photino desktop host element
+  - mounts a component-only desktop host instead
+- `Chummer.Blazor/Components/DesktopAppHost.razor`
+  - adds a minimal desktop-only root that renders `<Routes />` without a second `<html>` shell
+- Expected user-facing result:
+  - Blazor Desktop should stop hanging on the perpetual loading shell caused by rendering a whole HTML document inside `wwwroot/index.html`'s `<app>` host
 
 ## Validation status
 
 What passed:
 
 - `dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal`
-- `dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal`
-- `dotnet msbuild Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -getProperty:ChummerCompatibilityRoot -getProperty:ChummerLocalContractsProject -getProperty:ChummerUseLocalCompatibilityTree`
-  - returned `ChummerUseLocalCompatibilityTree=true` with normalized compatibility-root paths
+  - passed after switching the Photino root to `DesktopAppHost`
 
-What failed:
+What still needs direct runtime verification:
 
-- no current blocker in this slice; the local desktop build regression is resolved
+- launch Blazor Desktop after this commit and confirm first paint reaches the actual workbench instead of the black/loading shell
+- continue the Avalonia parity pass; the user still reports visible drift from Chummer5a in chrome, density, and attribute presentation
 
 ## Next exact commands
 
@@ -58,16 +60,16 @@ Run from repo root:
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-git status --short Directory.Build.props docs/WORKBENCH_SESSION_HANDOFF.md
-git status --short
+git status --short Chummer.Blazor.Desktop/Program.cs Chummer.Blazor/Components/DesktopAppHost.razor docs/WORKBENCH_SESSION_HANDOFF.md
 ```
 
-Commit only the two files above:
+Commit only the three files above:
 
 ```bash
-git add Directory.Build.props
+git add Chummer.Blazor.Desktop/Program.cs
+git add Chummer.Blazor/Components/DesktopAppHost.razor
 git add docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Normalize local compatibility tree resolution"
+git commit -m "Use component-only Blazor desktop host"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
@@ -75,14 +77,32 @@ git push origin HEAD:main
 
 ## Immediate next design slices after this commit
 
-1. Build and run the next mac preview from the pushed refs so the published artifact is no longer older than the current UI shell commits.
-2. Audit Avalonia shell against a Chummer5a screenshot pass: menu/toolstrip density, tab strip posture, left rail width, and attribute layout.
-3. Cut the remaining “jump” chrome in Blazor and Avalonia where a classic workbench surface should own the first glance.
-4. Re-check Blazor runtime after removing hidden coach startup work; if loading still hangs, instrument the actual first-render exception path.
-5. Run screenshot/audit pass and document only the intentional diffs from Chummer5a.
+1. Launch Blazor Desktop locally to verify that the host-root fix actually removes the stuck loading shell.
+2. Audit Avalonia shell against a Chummer5a screenshot pass: menu/toolstrip density, tab strip posture, left rail width, status strip, and attribute layout.
+3. Cut the remaining “jump” chrome in Avalonia and Blazor where a classic workbench surface should own the first glance.
+4. Push the parity slice before the next mac build so published preview artifacts stop lagging the actual UI repo state.
+5. Run a screenshot/audit pass and document only intentional diffs from Chummer5a.
+
+## Resume after interruption
+
+If this session dies from OOM or process pruning, resume with these exact steps:
+
+```bash
+cd /docker/chummercomplete/chummer6-ui
+git status --short Chummer.Blazor.Desktop/Program.cs Chummer.Blazor/Components/DesktopAppHost.razor docs/WORKBENCH_SESSION_HANDOFF.md
+dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal
+git add Chummer.Blazor.Desktop/Program.cs Chummer.Blazor/Components/DesktopAppHost.razor docs/WORKBENCH_SESSION_HANDOFF.md
+git commit -m "Use component-only Blazor desktop host"
+git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
+git push origin HEAD:fleet/ui
+git push origin HEAD:main
+```
+
+Then continue immediately with the Avalonia parity pass; that is still the largest visible debt.
 
 ## Important notes
 
 - Do not commit unrelated dirty/generated files in this repo.
 - The release pipeline can easily pick up an older-feeling snapshot if `fleet/ui` or `main` is not pushed after each UI slice.
 - The user specifically wants Chummer5a to be the layout reference, not just inspiration.
+- The current highest-risk visible regressions are still Avalonia chrome density, menu fidelity, and attribute/workbench layout parity.
