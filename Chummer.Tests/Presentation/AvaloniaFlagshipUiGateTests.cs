@@ -175,6 +175,14 @@ public sealed class AvaloniaFlagshipUiGateTests
             toolStripText.IndexOf("x:Name=\"CopyButton\"", StringComparison.Ordinal),
             "Classic toolbar parity requires Print before Copy.");
         Assert.IsTrue(
+            blazorShellText.IndexOf("\"new_character\"", StringComparison.Ordinal) <
+            blazorShellText.IndexOf("\"open_character\"", StringComparison.Ordinal),
+            "Blazor desktop shell must keep new before open in the preferred toolstrip order.");
+        Assert.IsTrue(
+            blazorShellText.IndexOf("\"open_character\"", StringComparison.Ordinal) <
+            blazorShellText.IndexOf("\"save_character\"", StringComparison.Ordinal),
+            "Blazor desktop shell must surface open before workspace-gated save so first launch stays usable.");
+        Assert.IsTrue(
             blazorShellText.IndexOf("\"save_character\"", StringComparison.Ordinal) <
             blazorShellText.IndexOf("\"print_character\"", StringComparison.Ordinal),
             "Blazor desktop shell must keep save before print in the preferred toolstrip order.");
