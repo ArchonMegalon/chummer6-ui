@@ -116,6 +116,41 @@ public class ShellPresenterTests
     }
 
     [TestMethod]
+    public async Task InitializeAsync_supplements_missing_classic_menu_roots_when_ruleset_catalog_is_sparse()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var client = new ShellClientStub
+        {
+            Workspaces =
+            [
+                CreateWorkspace("ws-sr6", "SR6 Character", "SR6", now.AddMinutes(-5), RulesetDefaults.Sr6)
+            ],
+            Session = new ShellSessionState("ws-sr6"),
+            Commands =
+            [
+                new AppCommandDefinition("file", "command.file", "menu", false, true, RulesetDefaults.Sr6),
+                new AppCommandDefinition("tools", "command.tools", "menu", false, true, RulesetDefaults.Sr6),
+                new AppCommandDefinition("help", "command.help", "menu", false, true, RulesetDefaults.Sr6),
+                new AppCommandDefinition("open_character", "command.open_character", "file", false, true, RulesetDefaults.Sr6),
+                new AppCommandDefinition("save_character", "command.save_character", "file", true, true, RulesetDefaults.Sr6)
+            ]
+        };
+        var presenter = new ShellPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        string[] menuIds = presenter.State.MenuRoots.Select(command => command.Id).ToArray();
+
+        CollectionAssert.AreEqual(["file", "edit", "special", "tools", "windows", "help"], menuIds);
+        Assert.IsTrue(
+            presenter.State.Commands.Any(command => string.Equals(command.Id, "copy", StringComparison.Ordinal)),
+            "Classic edit commands must be synthesized when the active ruleset catalog omits them.");
+        Assert.IsTrue(
+            presenter.State.Commands.Any(command => string.Equals(command.Id, "report_bug", StringComparison.Ordinal)),
+            "Classic help fallbacks must stay reachable even when the active ruleset only defines a sparse shell.");
+    }
+
+    [TestMethod]
     public async Task SyncWorkspaceContextAsync_switches_ruleset_when_active_workspace_changes()
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;

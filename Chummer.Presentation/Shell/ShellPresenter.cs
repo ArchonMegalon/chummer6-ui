@@ -7,6 +7,7 @@ namespace Chummer.Presentation.Shell;
 public sealed class ShellPresenter : IShellPresenter
 {
     private static readonly string[] MenuOrder = ["file", "edit", "special", "tools", "windows", "help"];
+    private static readonly CatalogOnlyRulesetShellCatalogResolver CompatibilityShellCatalogResolver = new();
     private readonly IChummerClient _runtimeClient;
     private readonly IShellBootstrapDataProvider _bootstrapDataProvider;
     private Dictionary<string, string> _activeTabsByWorkspace = new(StringComparer.Ordinal);
@@ -70,7 +71,7 @@ public sealed class ShellPresenter : IShellPresenter
                 }
             }
 
-            IReadOnlyList<AppCommandDefinition> commands = bootstrap.Commands;
+            IReadOnlyList<AppCommandDefinition> commands = EnsureClassicShellCommands(activeRulesetId, bootstrap.Commands);
             IReadOnlyList<NavigationTabDefinition> tabs = bootstrap.NavigationTabs;
             IReadOnlyList<WorkflowDefinition> workflowDefinitions = bootstrap.WorkflowDefinitions ?? [];
             IReadOnlyList<WorkflowSurfaceDefinition> workflowSurfaces = bootstrap.WorkflowSurfaces ?? [];
@@ -264,7 +265,7 @@ public sealed class ShellPresenter : IShellPresenter
         if (requiresCatalogRefresh)
         {
             ShellBootstrapData bootstrap = await _bootstrapDataProvider.GetAsync(activeRulesetId, ct);
-            commands = bootstrap.Commands;
+            commands = EnsureClassicShellCommands(activeRulesetId, bootstrap.Commands);
             tabs = bootstrap.NavigationTabs;
             workflowDefinitions = bootstrap.WorkflowDefinitions ?? [];
             workflowSurfaces = bootstrap.WorkflowSurfaces ?? [];
@@ -338,7 +339,7 @@ public sealed class ShellPresenter : IShellPresenter
             || workflowSurfaces.Count == 0)
         {
             ShellBootstrapData bootstrap = await _bootstrapDataProvider.GetAsync(activeRulesetId, ct);
-            commands = bootstrap.Commands;
+            commands = EnsureClassicShellCommands(activeRulesetId, bootstrap.Commands);
             tabs = bootstrap.NavigationTabs;
             workflowDefinitions = bootstrap.WorkflowDefinitions ?? [];
             workflowSurfaces = bootstrap.WorkflowSurfaces ?? [];
@@ -435,6 +436,39 @@ public sealed class ShellPresenter : IShellPresenter
             .OrderBy(command => MenuSortIndex(command.Id))
             .ThenBy(command => command.Id, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static IReadOnlyList<AppCommandDefinition> EnsureClassicShellCommands(
+        string? rulesetId,
+        IReadOnlyList<AppCommandDefinition> commands)
+    {
+        string effectiveRulesetId = RulesetDefaults.NormalizeOptional(rulesetId)
+            ?? commands
+                .Select(command => RulesetDefaults.NormalizeOptional(command.RulesetId))
+                .FirstOrDefault(candidate => candidate is not null)
+            ?? RulesetDefaults.Sr5;
+
+        IReadOnlyList<AppCommandDefinition> compatibilityCommands = CompatibilityShellCatalogResolver.ResolveCommands(effectiveRulesetId);
+        Dictionary<string, AppCommandDefinition> commandsById = new(StringComparer.Ordinal);
+        List<AppCommandDefinition> supplemented = new(commands.Count + compatibilityCommands.Count);
+
+        foreach (AppCommandDefinition command in commands)
+        {
+            if (commandsById.TryAdd(command.Id, command))
+            {
+                supplemented.Add(command);
+            }
+        }
+
+        foreach (AppCommandDefinition compatibilityCommand in compatibilityCommands)
+        {
+            if (commandsById.TryAdd(compatibilityCommand.Id, compatibilityCommand))
+            {
+                supplemented.Add(compatibilityCommand);
+            }
+        }
+
+        return supplemented;
     }
 
     private static CharacterWorkspaceId? ResolveActiveWorkspaceId(
