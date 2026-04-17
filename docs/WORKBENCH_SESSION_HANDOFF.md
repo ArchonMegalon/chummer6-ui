@@ -10,6 +10,8 @@ Bring Chummer6 desktop UX much closer to Chummer5a layout posture:
 - dense classic chrome
 - compact secondary windows
 - parity-minded Avalonia and Blazor workbench presentation
+- no hidden startup work that can stall first paint
+- current desktop packaging should ship the current icon payload
 - release pipeline should consume the current pushed UI snapshot
 
 ## Last pushed baseline
@@ -19,69 +21,70 @@ Bring Chummer6 desktop UX much closer to Chummer5a layout posture:
   - `origin/safe-push-fix-windows-installer-payload-20260401`
   - `origin/fleet/ui`
   - `origin/main`
-- Last pushed UI commit before this uncommitted slice: `8b10754e`
-  - message: `Tighten desktop jump window chrome`
+- Last pushed UI commit before this uncommitted slice: `89c4aa91`
+  - message: `Synthesize classic menu roots for sparse rulesets`
 
 ## Uncommitted current slice
 
 Files changed locally:
 
-- `Chummer.Avalonia/DesktopInstallLinkingWindow.cs`
-- `Chummer.Avalonia/DesktopHomeWindow.cs`
-- `Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
+- `Chummer.Blazor/Components/Layout/DesktopShell.razor.cs`
+- `Chummer/chummer.ico`
+- `docs/WORKBENCH_SESSION_HANDOFF.md`
 
 What this slice changes:
 
-- `DesktopInstallLinkingWindow`
-  - smaller shell
-  - reduced padding/spacing/font noise
-  - split giant action row into two tighter rows
-  - lighter classic background
-- `DesktopHomeWindow`
-  - no longer auto-opens just because workspace count is zero
-  - reduced dashboard hero treatment
-  - flatter classic border/padding/corner/button sizing
-  - denser overall content spacing
-- `AvaloniaFlagshipUiGateTests`
-  - adds a source-level hard gate to prevent the empty-workspace home-window detour from returning
+- `DesktopShell.razor.cs`
+  - removes hidden coach-sidecar API loading from startup and normal shell-refresh paths
+  - keeps coach activity opt-in instead of part of first paint
+- `Chummer/chummer.ico`
+  - replaces the stale UI repo icon with the newer 12-size Windows icon payload already present in `chummer-core-engine`
+  - intended to fix the wrong/missing Windows desktop icon problem without changing packager logic
 
 ## Validation status
 
 What passed:
 
-- targeted source-level tests:
-  - `Avalonia_startup_enters_the_workbench_without_reopening_the_desktop_home_cockpit`
-  - `Desktop_home_window_no_longer_forces_a_dashboard_detour_for_empty_workspace_state`
+- `dotnet build Chummer.Presentation/Chummer.Presentation.csproj -v minimal`
+  - passed after the menu-compatibility slice that is already pushed
+- icon drift audit:
+  - `Chummer/chummer.ico` in this repo had SHA `d80d29d4...`
+  - newer icon in `chummer-core-engine/Chummer/chummer.ico` had SHA `0454048d...`
+  - the current local slice now uses the newer payload
 
 What failed:
 
-- `dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj --no-restore -v minimal`
+- direct desktop-head build from this split checkout:
+  - `dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal`
 
-Failure was not from this UI patch. The workspace currently has restore/package state issues:
+Failure is workspace-topology related, not caused by the current Blazor startup/icon slice. In this checkout, desktop-head project resolution falls into missing sibling repo paths such as:
 
-- `NETSDK1064: Package Microsoft.Extensions.DependencyInjection, version 10.0.0 was not found`
-- this cascades into `MSB4181` in dependent projects
+- `../../chummer-core-engine/...`
+- `../../chummer.run-services/...`
+- `../../chummer-hub-registry/...`
+- `../../../fleet/repos/chummer-media-factory/...`
+
+The release bootstrap workspace has already proven both desktop heads can build when the integrated repo topology is present.
 
 ## Next exact commands
 
-Run from repo root:
+Run from repo root in an integrated workspace (the same topology the mac release bootstrap uses):
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-dotnet restore Chummer.Avalonia/Chummer.Avalonia.csproj
+git status --short Chummer.Blazor/Components/Layout/DesktopShell.razor.cs Chummer/chummer.ico docs/WORKBENCH_SESSION_HANDOFF.md
+dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal
 dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal
-dotnet test Chummer.Tests/Chummer.Tests.csproj --no-build --filter "Name~Avalonia_startup_enters_the_workbench_without_reopening_the_desktop_home_cockpit|Name~Desktop_home_window_no_longer_forces_a_dashboard_detour_for_empty_workspace_state|Name~Opening_mainframe_preserves_chummer5a_successor_workbench_posture" -v minimal
 git status --short
 ```
 
-If build passes, commit only the three files above plus this handoff file:
+If the integrated workspace build passes, commit only the three files above:
 
 ```bash
-git add Chummer.Avalonia/DesktopInstallLinkingWindow.cs
-git add Chummer.Avalonia/DesktopHomeWindow.cs
-git add Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs
+git add Chummer.Blazor/Components/Layout/DesktopShell.razor.cs
+git add Chummer/chummer.ico
 git add docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Compact install linking and suppress desktop home detour"
+git commit -m "Trim Blazor startup work and refresh desktop icon payload"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
@@ -89,11 +92,11 @@ git push origin HEAD:main
 
 ## Immediate next design slices after this commit
 
-1. Audit menu enablement in Avalonia shell and fix disabled menus.
-2. Audit desktop app icon wiring in Avalonia/Windows packaging.
-3. Re-check Blazor desktop startup/loading path against the current workbench shell.
-4. Continue replacing remaining oversized “jump” surfaces with denser classic layouts.
-5. Run screenshot/audit pass and document intentional diffs from Chummer5a.
+1. Build and run the next mac preview from the pushed refs so the published artifact is no longer older than the current UI shell commits.
+2. Audit Avalonia shell against a Chummer5a screenshot pass: menu/toolstrip density, tab strip posture, left rail width, and attribute layout.
+3. Cut the remaining “jump” chrome in Blazor and Avalonia where a classic workbench surface should own the first glance.
+4. Re-check Blazor runtime after removing hidden coach startup work; if loading still hangs, instrument the actual first-render exception path.
+5. Run screenshot/audit pass and document only the intentional diffs from Chummer5a.
 
 ## Important notes
 
