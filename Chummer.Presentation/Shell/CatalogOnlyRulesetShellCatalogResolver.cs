@@ -38,13 +38,18 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
         Command("new_character", "command.new_character", "file", false),
         Command("open_character", "command.open_character", "file", false),
         Command("save_character", "command.save_character", "file", true),
+        Command("save_character_as", "command.save_character_as", "file", true),
         Command("print_character", "command.print_character", "file", true),
         Command("copy", "command.copy", "edit", true),
+        Command("paste", "command.paste", "edit", true),
         Command("export_character", "command.export_character", "file", true),
+        Command("switch_ruleset", "command.switch_ruleset", "special", false),
         Command("dice_roller", "command.dice_roller", "tools", false),
         Command("global_settings", "command.global_settings", "tools", false),
         Command("master_index", "command.master_index", "tools", false),
         Command("character_roster", "command.character_roster", "tools", false),
+        Command("new_window", "command.new_window", "windows", false),
+        Command("close_window", "command.close_window", "windows", false),
         Command("report_bug", "command.report_bug", "help", false),
         Command("about", "command.about", "help", false)
     ];

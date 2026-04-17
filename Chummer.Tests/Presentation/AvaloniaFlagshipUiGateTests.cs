@@ -157,6 +157,8 @@ public sealed class AvaloniaFlagshipUiGateTests
         string visualGatePath = ResolveSourceFile("scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
         string toolStripPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "ToolStripControl.axaml");
         string navigatorPanePath = ResolveSourceFile("Chummer.Avalonia", "Controls", "NavigatorPaneControl.axaml");
+        string shellCatalogPath = ResolveSourceFile("Chummer.Presentation", "Shell", "CatalogOnlyRulesetShellCatalogResolver.cs");
+        string shellChromeBoundaryPath = ResolveSourceFile("Chummer.Presentation", "UiKit", "ShellChromeBoundary.cs");
         string blazorShellPath = ResolveSourceFile("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor.cs");
         string sectionPanePath = ResolveSourceFile("Chummer.Blazor", "Components", "Shell", "SectionPane.razor");
         string workspaceLeftPanePath = ResolveSourceFile("Chummer.Blazor", "Components", "Shell", "WorkspaceLeftPane.razor");
@@ -167,6 +169,8 @@ public sealed class AvaloniaFlagshipUiGateTests
         string visualGateText = File.ReadAllText(visualGatePath);
         string toolStripText = File.ReadAllText(toolStripPath);
         string navigatorPaneText = File.ReadAllText(navigatorPanePath);
+        string shellCatalogText = File.ReadAllText(shellCatalogPath);
+        string shellChromeBoundaryText = File.ReadAllText(shellChromeBoundaryPath);
         string blazorShellText = File.ReadAllText(blazorShellPath);
         string sectionPaneText = File.ReadAllText(sectionPanePath);
         string workspaceLeftPaneText = File.ReadAllText(workspaceLeftPanePath);
@@ -208,6 +212,11 @@ public sealed class AvaloniaFlagshipUiGateTests
             blazorShellText.IndexOf("\"save_character\"", StringComparison.Ordinal) <
             blazorShellText.IndexOf("\"print_character\"", StringComparison.Ordinal),
             "Blazor desktop shell must keep save before print in the preferred toolstrip order.");
+        StringAssert.Contains(shellCatalogText, "Command(\"switch_ruleset\", \"command.switch_ruleset\", \"special\", false)");
+        StringAssert.Contains(shellCatalogText, "Command(\"new_window\", \"command.new_window\", \"windows\", false)");
+        StringAssert.Contains(shellCatalogText, "Command(\"close_window\", \"command.close_window\", \"windows\", false)");
+        StringAssert.Contains(shellChromeBoundaryText, "[\"switch_ruleset\"] = \"Switch Ruleset...\"");
+        StringAssert.Contains(shellChromeBoundaryText, "[\"new_window\"] = \"New Window\"");
         StringAssert.Contains(navigatorPaneText, "x:Name=\"CodexHeadingText\"");
         StringAssert.Contains(navigatorPaneText, "IsVisible=\"False\"");
         StringAssert.Contains(sectionPaneText, "classic-summary-grid");
@@ -246,6 +255,34 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_backed_special_and_windows_menus_surface_real_commands()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            harness.Click("SpecialMenuButton");
+            harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("SpecialMenuButton")).Length > 0);
+            string[] specialCommands = SnapshotMenuCommands(harness.FindControl<MenuItem>("SpecialMenuButton"))
+                .Select(command => command.Tag?.ToString() ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+
+            CollectionAssert.Contains(specialCommands, "switch_ruleset");
+
+            harness.Click("WindowsMenuButton");
+            harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("WindowsMenuButton")).Length > 0);
+            string[] windowsCommands = SnapshotMenuCommands(harness.FindControl<MenuItem>("WindowsMenuButton"))
+                .Select(command => command.Tag?.ToString() ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+
+            CollectionAssert.Contains(windowsCommands, "new_window");
+            CollectionAssert.Contains(windowsCommands, "close_window");
+        });
+    }
+
+    [TestMethod]
     public void Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus()
     {
         WithRuntimeHarness(harness =>
@@ -269,6 +306,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             [
                 ("FileMenuButton", "file"),
                 ("EditMenuButton", "edit"),
+                ("SpecialMenuButton", "special"),
                 ("ToolsMenuButton", "tools"),
                 ("WindowsMenuButton", "windows"),
                 ("HelpMenuButton", "help"),

@@ -4,15 +4,13 @@ Last updated: 2026-04-17
 
 ## Scope
 
-Bring Chummer6 desktop UX much closer to Chummer5a layout posture:
+Drive Chummer6 desktop toward hard Chummer5a-style parity:
 
-- no dashboard-style first-launch detour
-- dense classic chrome
-- compact secondary windows
-- parity-minded Avalonia and Blazor workbench presentation
-- no hidden startup work that can stall first paint
-- current desktop packaging should ship the current icon payload
-- release pipeline should consume the current pushed UI snapshot
+- classic menu-first shell, not a dashboard
+- dense left rail and runner sheet posture
+- startup-safe commands visible and usable on first launch
+- Avalonia and Blazor kept in lockstep where the same shell affordance exists
+- release builds must ship the current pushed UI snapshot, not a stale head
 
 ## Last pushed baseline
 
@@ -21,65 +19,53 @@ Bring Chummer6 desktop UX much closer to Chummer5a layout posture:
   - `origin/safe-push-fix-windows-installer-payload-20260401`
   - `origin/fleet/ui`
   - `origin/main`
-- Last pushed UI commit: `e9f4880e`
-  - message: `Densify classic runner sheet presentation`
+- Last pushed UI commit: `c111ea18`
+  - message: `Compact classic left rail chrome`
 
-## Uncommitted current slice
+## Current uncommitted slice
 
 Files changed locally:
 
-- `Chummer.Avalonia/MainWindow.axaml`
-- `Chummer.Avalonia/Controls/NavigatorPaneControl.axaml`
-- `Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor`
-- `Chummer.Blazor/Components/Shell/WorkspaceLeftPane.razor`
-- `Chummer.Blazor/wwwroot/app.css`
+- `Chummer.Avalonia/MainWindow.ShellFrameProjector.cs`
+- `Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs`
+- `Chummer.Presentation/UiKit/ShellChromeBoundary.cs`
 - `Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
-- `Chummer.Tests/Presentation/BlazorShellComponentTests.cs`
 - `docs/WORKBENCH_SESSION_HANDOFF.md`
 
 What this slice changes:
 
-- `Chummer.Avalonia/MainWindow.axaml`
-  - widens the fixed left rail to a Chummer5a-like workbench band instead of the narrower post-modern strip
-- `Chummer.Avalonia/Controls/NavigatorPaneControl.axaml`
-  - removes the visible navigator banner/caption row so the tree starts immediately and stops wasting vertical space
-- `Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor`
-  - hides the heading visually, removes visible workspace-id noise from dossier rows, and compacts the close affordance
-- `Chummer.Blazor/Components/Shell/WorkspaceLeftPane.razor`
-  - suppresses the secondary action/workflow panels until a real workspace is active so first paint stays closer to the classic manager/workbench posture
-- `Chummer.Blazor/wwwroot/app.css`
-  - adds a reusable visually-hidden utility, tightens left-rail spacing, and aligns the Blazor left column width with the Avalonia classic workbench band
+- `Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs`
+  - adds missing classic commands so the runtime shell actually owns first-launch `Special` and `Windows` actions plus `Save As` and `Paste`
+- `Chummer.Presentation/UiKit/ShellChromeBoundary.cs`
+  - adds desktop labels for the newly surfaced classic menu commands
+- `Chummer.Avalonia/MainWindow.ShellFrameProjector.cs`
+  - backfills empty menu groups from the classic compatibility catalog so Avalonia does not render dead `Special` and `Windows` roots when the runtime catalog comes back sparse
 - `Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
-  - hard-gates the hidden navigator banner and the continued classic left-rail posture in the desktop shell gate
-- `Chummer.Tests/Presentation/BlazorShellComponentTests.cs`
-  - hard-gates that the left rail stays compact: no visible workspace ids in dossier rows and no secondary left-rail sections before a workspace exists
+  - hard-gates the catalog/label source wiring and verifies the runtime `Special` and `Windows` menus surface real commands in the headless flagship harness
 - `docs/WORKBENCH_SESSION_HANDOFF.md`
-  - records the new pushed baseline and the current compact-left-rail slice in case the session dies before the next command slice lands
+  - records the exact pushed baseline, the current uncommitted slice, validation state, and resume commands for crash/OOM recovery
 
 ## Validation status
 
 What passed:
 
-- `git diff --check`
-- `dotnet restore Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages`
-- `dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --no-restore -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers|FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Desktop_shell_preserves_classic_dense_three_pane_workbench_posture|FullyQualifiedName~Chummer.Tests.Presentation.BlazorShellComponentTests.WorkspaceLeftPane_renders_shell_controls_and_invokes_callbacks|FullyQualifiedName~Chummer.Tests.Presentation.BlazorShellComponentTests.WorkspaceLeftPane_hides_secondary_left_rail_sections_until_workspace_context_exists|FullyQualifiedName~Chummer.Tests.Presentation.BlazorShellComponentTests.OpenWorkspaceTree_renders_open_and_close_actions"`
+- `git diff --check Chummer.Avalonia/MainWindow.ShellFrameProjector.cs Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs Chummer.Presentation/UiKit/ShellChromeBoundary.cs Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
+- `dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --no-restore -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers|FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Runtime_backed_special_and_windows_menus_surface_real_commands|FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus|FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"`
+  - result: `Passed 4/4`
 - `dotnet restore Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages`
 - `dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal --no-restore -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages`
-- `dotnet restore Chummer.Blazor/Chummer.Blazor.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages`
-- `dotnet build Chummer.Blazor/Chummer.Blazor.csproj -v minimal --no-restore -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages`
-- pushed commit `e9f4880e` to `safe-push-fix-windows-installer-payload-20260401`, `fleet/ui`, and `main`
+  - result: `Build succeeded`
 
-What still needs direct verification:
+What is still flaky in this repo in general:
 
-- commit and push this left-rail compaction slice
-- inspect the live desktop shell command surface after first launch to confirm the enabled commands actually render as expected
-- continue with the next parity jump after this guardrail: menu behavior, icon/signing path, and any remaining non-classic surfaces that still survive first launch
+- a stale restore graph can still fall back into `NETSDK1064` for `Microsoft.Extensions.DependencyInjection 10.0.0`
+- stable recovery is to rerun restore immediately before the build with the shared package cache:
+  - `dotnet restore Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages`
+  - then rerun the same build command
 
-What failed:
+Important note:
 
-- repo-local `.tmp/nuget/packages` validation remained flaky with `NETSDK1064` on `Microsoft.Extensions.DependencyInjection 10.0.0`
-- the stable workaround for this slice is to force `RestorePackagesPath=/home/tibor/.nuget/packages` on restore and build/test invocations
-- `Chummer.Blazor.Desktop` host builds still remain flaky under the same restore graph; this slice was validated against the Blazor surface project plus component/hard-gate coverage instead of the desktop wrapper host
+- Ctrl-C during these builds can emit bogus `MSB3202` project-not-found noise. Ignore those if they appear immediately after a manual cancel.
 
 ## Next exact commands
 
@@ -87,67 +73,52 @@ Run from repo root:
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-git status --short Chummer.Avalonia/MainWindow.axaml Chummer.Avalonia/Controls/NavigatorPaneControl.axaml Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor Chummer.Blazor/Components/Shell/WorkspaceLeftPane.razor Chummer.Blazor/wwwroot/app.css Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs Chummer.Tests/Presentation/BlazorShellComponentTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
-git diff --check
-dotnet restore Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --no-restore -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers|FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Desktop_shell_preserves_classic_dense_three_pane_workbench_posture|FullyQualifiedName~Chummer.Tests.Presentation.BlazorShellComponentTests.WorkspaceLeftPane_renders_shell_controls_and_invokes_callbacks|FullyQualifiedName~Chummer.Tests.Presentation.BlazorShellComponentTests.WorkspaceLeftPane_hides_secondary_left_rail_sections_until_workspace_context_exists|FullyQualifiedName~Chummer.Tests.Presentation.BlazorShellComponentTests.OpenWorkspaceTree_renders_open_and_close_actions"
-dotnet restore Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal --no-restore -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-dotnet restore Chummer.Blazor/Chummer.Blazor.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-dotnet build Chummer.Blazor/Chummer.Blazor.csproj -v minimal --no-restore -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-```
-
-Commit only the eight files above plus the handoff:
-
-```bash
-git add Chummer.Avalonia/MainWindow.axaml
-git add Chummer.Avalonia/Controls/NavigatorPaneControl.axaml
-git add Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor
-git add Chummer.Blazor/Components/Shell/WorkspaceLeftPane.razor
-git add Chummer.Blazor/wwwroot/app.css
+git status --short Chummer.Avalonia/MainWindow.ShellFrameProjector.cs Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs Chummer.Presentation/UiKit/ShellChromeBoundary.cs Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
+git diff --check Chummer.Avalonia/MainWindow.ShellFrameProjector.cs Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs Chummer.Presentation/UiKit/ShellChromeBoundary.cs Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs
+DOTNET_CLI_UI_LANGUAGE=en dotnet restore Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
+DOTNET_CLI_UI_LANGUAGE=en dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal --no-restore -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
+git add Chummer.Avalonia/MainWindow.ShellFrameProjector.cs
+git add Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs
+git add Chummer.Presentation/UiKit/ShellChromeBoundary.cs
 git add Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs
-git add Chummer.Tests/Presentation/BlazorShellComponentTests.cs
 git add docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Compact classic left rail chrome"
+git commit -m "Populate classic menu roots"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
 ```
 
-## Immediate next design slices after this commit
+## Immediate next slices after this commit
 
-1. Commit/push this left-rail compaction slice.
-2. Verify the first-launch menubar/toolstrip on the live desktop head instead of only at component level.
-3. Fix any command surface that still feels dead on first launch even though startup-safe commands should be enabled.
-4. Run the screenshot-level comparison against Chummer5a and list only remaining intentional diffs.
-5. Continue with icon/signing and release-train correctness so mac builds stop lagging or surfacing stale-feeling snapshots.
+1. Rebuild and inspect the live mac desktop preview to confirm the shipped Avalonia head now exposes `Special` and `Windows` commands instead of dead roots.
+2. Continue the Chummer5a parity pass on remaining first-glance drifts:
+   - menu/toolstrip density
+   - icon correctness
+   - startup shell posture
+   - runner sheet spacing
+3. Keep release-train correctness tight so the next mac bootstrap pulls the just-pushed UI head.
 
 ## Resume after interruption
 
-If this session dies from OOM or process pruning, resume with these exact steps:
+If the session dies from OOM, pruning, or host restart, resume exactly here:
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-git status --short Chummer.Avalonia/MainWindow.axaml Chummer.Avalonia/Controls/NavigatorPaneControl.axaml Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor Chummer.Blazor/Components/Shell/WorkspaceLeftPane.razor Chummer.Blazor/wwwroot/app.css Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs Chummer.Tests/Presentation/BlazorShellComponentTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
-git diff --check
-dotnet restore Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-dotnet test Chummer.Tests/Chummer.Tests.csproj -v minimal -tl:off --no-restore -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers|FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests.Desktop_shell_preserves_classic_dense_three_pane_workbench_posture|FullyQualifiedName~Chummer.Tests.Presentation.BlazorShellComponentTests.WorkspaceLeftPane_renders_shell_controls_and_invokes_callbacks|FullyQualifiedName~Chummer.Tests.Presentation.BlazorShellComponentTests.WorkspaceLeftPane_hides_secondary_left_rail_sections_until_workspace_context_exists|FullyQualifiedName~Chummer.Tests.Presentation.BlazorShellComponentTests.OpenWorkspaceTree_renders_open_and_close_actions"
-dotnet restore Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal --no-restore -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-dotnet restore Chummer.Blazor/Chummer.Blazor.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-dotnet build Chummer.Blazor/Chummer.Blazor.csproj -v minimal --no-restore -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
-git add Chummer.Avalonia/MainWindow.axaml Chummer.Avalonia/Controls/NavigatorPaneControl.axaml Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor Chummer.Blazor/Components/Shell/WorkspaceLeftPane.razor Chummer.Blazor/wwwroot/app.css Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs Chummer.Tests/Presentation/BlazorShellComponentTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Compact classic left rail chrome"
+git status --short Chummer.Avalonia/MainWindow.ShellFrameProjector.cs Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs Chummer.Presentation/UiKit/ShellChromeBoundary.cs Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
+sed -n '1,220p' docs/WORKBENCH_SESSION_HANDOFF.md
+DOTNET_CLI_UI_LANGUAGE=en dotnet restore Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
+DOTNET_CLI_UI_LANGUAGE=en dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal --no-restore -tl:off -p:UseChummerEngineContractsLocalFeed=false -p:RestorePackagesPath=/home/tibor/.nuget/packages
+git add Chummer.Avalonia/MainWindow.ShellFrameProjector.cs Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs Chummer.Presentation/UiKit/ShellChromeBoundary.cs Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs docs/WORKBENCH_SESSION_HANDOFF.md
+git commit -m "Populate classic menu roots"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
 ```
 
-Then continue immediately with the next parity pass: live menu/toolstrip behavior, screenshot audit, icon/signing fixes, and any remaining first-paint drift from Chummer5a.
+Then continue immediately with the next parity slice instead of re-auditing older work.
 
-## Important notes
+## Non-negotiables
 
-- Do not commit unrelated dirty/generated files in this repo.
-- The release pipeline can easily pick up an older-feeling snapshot if `fleet/ui` or `main` is not pushed after each UI slice.
-- The user specifically wants Chummer5a to be the layout reference, not just inspiration.
-- The current highest-risk visible regressions after the pushed density and command-availability slices are whatever still makes first launch feel dead or unfamiliar: especially menu behavior, icon correctness, and any remaining dashboard feel on first paint.
+- Do not commit unrelated dirty or generated files.
+- Keep using `RestorePackagesPath=/home/tibor/.nuget/packages` with `UseChummerEngineContractsLocalFeed=false` for restore/build/test work.
+- The user wants Chummer5a as the layout reference. If a visible drift stays, either fix it or document a real user-facing reason.
