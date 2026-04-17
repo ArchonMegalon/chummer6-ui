@@ -593,8 +593,9 @@
     {
         IReadOnlyList<ClassicSheetFact> summaryFacts = BuildClassicSummaryFacts();
         IReadOnlyList<ClassicSheetFact> attributeFacts = BuildClassicAttributeFacts();
+        bool hasClassicFacts = summaryFacts.Count > 0 || attributeFacts.Count > 0;
 
-        if (summaryFacts.Count > 0 || attributeFacts.Count > 0)
+        if (hasClassicFacts)
         {
             <section class="classic-runner-sheet">
                 <h3>Runner Summary</h3>
@@ -624,17 +625,23 @@
                 }
             </section>
         }
+        else if (!string.IsNullOrWhiteSpace(BuildSectionContextSummary()))
+        {
+            <section class="section-context-card">
+                <p class="note section-context-summary">@BuildSectionContextSummary()</p>
+            </section>
+        }
 
         <table class="section-table">
             <thead>
-                <tr><th>Field</th><th>Value</th></tr>
+                <tr><th>Entry</th><th>Detail</th></tr>
             </thead>
             @* <Virtualize Items="@State.ActiveSectionRows" Context="row" ItemSize="40"> *@
             <Virtualize Items="@(State.ActiveSectionRows.ToArray())"
                        Context="row"
                        ItemSize="40">
-                <td><code>@FormatRowPath(row.Path)</code></td>
-                <td><code>@FormatRowValue(row.Value)</code></td>
+                <td class="section-table-label">@FormatRowPath(row.Path)</td>
+                <td class="section-table-value">@FormatRowValue(row.Value)</td>
             </Virtualize>
         </table>
     }
@@ -977,14 +984,22 @@
 
     private string BuildSectionHeading()
     {
-        string sectionId = State.ActiveSectionId ?? "workbench";
-        string normalized = sectionId.Replace('-', ' ').Replace('_', ' ').Trim();
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            return "Workbench";
-        }
+        JsonObject? root = TryGetClassicSectionRoot();
+        string? previewSection = root is not null ? ReadScalar(root, "section") : null;
+        string sectionId = string.IsNullOrWhiteSpace(State.ActiveSectionId)
+            ? previewSection ?? "workbench"
+            : State.ActiveSectionId;
 
-        return System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
+        return sectionId.Trim().ToLowerInvariant() switch
+        {
+            "cyberwares" => "Cyberware",
+            "attributedetails" => "Attributes",
+            "complexforms" => "Complex Forms",
+            "initiationgrades" => "Initiation & Submersion",
+            "mentorspirits" => "Mentor Spirits",
+            "progress" => "Karma Journal",
+            _ => FormatSectionName(sectionId)
+        };
     }
 
     private IReadOnlyList<ClassicSheetFact> BuildClassicSummaryFacts()
@@ -1092,13 +1107,184 @@
             : raw;
     }
 
+    private string BuildSectionContextSummary()
+    {
+        SectionRowState[] rows = State.ActiveSectionRows.ToArray();
+        if (rows.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        List<string> parts = [rows.Length == 1 ? "1 visible entry" : $"{rows.Length} visible entries"];
+        string leadValue = FormatRowValue(rows[0].Value).Trim();
+        if (!string.IsNullOrWhiteSpace(leadValue))
+        {
+            parts.Add(leadValue);
+        }
+
+        return string.Join("  •  ", parts);
+    }
+
+    private static string FormatSectionName(string sectionName)
+    {
+        if (string.IsNullOrWhiteSpace(sectionName))
+        {
+            return "Workbench";
+        }
+
+        string normalized = sectionName.Replace('-', ' ').Replace('_', ' ').Trim();
+        normalized = InsertWordBoundaries(normalized);
+        return System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.ToLowerInvariant());
+    }
+
     private static string FormatRowPath(string path)
-        => string.IsNullOrWhiteSpace(path) ? "(value)" : path.Replace('.', ' ');
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return "(value)";
+        }
+
+        string[] segments = path
+            .Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (segments.Length == 0)
+        {
+            return "(value)";
+        }
+
+        string section = segments[0];
+        string leaf = segments[^1];
+        string bareLeaf = RemoveIndexer(leaf);
+        string bareSection = RemoveIndexer(section);
+
+        if (string.Equals(section, "attributes", StringComparison.OrdinalIgnoreCase))
+        {
+            return ToAttributeAbbreviation(bareLeaf);
+        }
+
+        if (string.Equals(section, "combat", StringComparison.OrdinalIgnoreCase))
+        {
+            return bareLeaf.Trim().ToLowerInvariant() switch
+            {
+                "initiative" => "Init",
+                "armor" => "Armor",
+                "essence" => "Essence",
+                _ => FormatDesktopLabel(leaf)
+            };
+        }
+
+        if (string.Equals(bareLeaf, bareSection, StringComparison.OrdinalIgnoreCase))
+        {
+            return FormatCollectionLabel(bareSection, leaf);
+        }
+
+        return FormatDesktopLabel(leaf);
+    }
 
     private static string FormatRowValue(string value)
         => value.Length >= 2 && value[0] == '"' && value[^1] == '"'
             ? value[1..^1]
             : value;
+
+    private static string FormatDesktopLabel(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return "(value)";
+        }
+
+        string normalized = token.Trim();
+        int? ordinal = null;
+        int bracketIndex = normalized.IndexOf('[');
+        if (bracketIndex >= 0)
+        {
+            int closingBracketIndex = normalized.IndexOf(']', bracketIndex + 1);
+            if (closingBracketIndex > bracketIndex + 1
+                && int.TryParse(normalized[(bracketIndex + 1)..closingBracketIndex], out int parsedIndex))
+            {
+                ordinal = parsedIndex + 1;
+            }
+
+            normalized = normalized[..bracketIndex];
+        }
+
+        normalized = normalized.Replace('_', ' ').Replace('-', ' ').Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return "(value)";
+        }
+
+        normalized = InsertWordBoundaries(normalized);
+        string label = System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.ToLowerInvariant());
+        return ordinal is int index ? $"{label} {index}" : label;
+    }
+
+    private static string FormatCollectionLabel(string section, string token)
+    {
+        string normalizedSection = section.Trim().ToLowerInvariant() switch
+        {
+            "vehicles" => "vehicle",
+            "contacts" => "contact",
+            "spells" => "spell",
+            "powers" => "power",
+            "drugs" => "drug",
+            "complexforms" => "complex form",
+            "initiationgrades" => "initiation grade",
+            "mentorspirits" => "mentor spirit",
+            "progress" => "entry",
+            "calendar" => "entry",
+            _ => RemoveIndexer(token).Replace('_', ' ').Replace('-', ' ')
+        };
+
+        string title = System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalizedSection);
+        int bracketIndex = token.IndexOf('[');
+        if (bracketIndex >= 0)
+        {
+            int closingBracketIndex = token.IndexOf(']', bracketIndex + 1);
+            if (closingBracketIndex > bracketIndex + 1
+                && int.TryParse(token[(bracketIndex + 1)..closingBracketIndex], out int index))
+            {
+                return $"{title} {index + 1}";
+            }
+        }
+
+        return title;
+    }
+
+    private static string RemoveIndexer(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return token;
+        }
+
+        int bracketIndex = token.IndexOf('[');
+        return bracketIndex >= 0 ? token[..bracketIndex] : token;
+    }
+
+    private static string InsertWordBoundaries(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return token;
+        }
+
+        System.Text.StringBuilder builder = new(token.Length + 4);
+        for (int i = 0; i < token.Length; i++)
+        {
+            char current = token[i];
+            if (i > 0
+                && char.IsUpper(current)
+                && !char.IsWhiteSpace(token[i - 1])
+                && !char.IsUpper(token[i - 1]))
+            {
+                builder.Append(' ');
+            }
+
+            builder.Append(current);
+        }
+
+        return builder.ToString();
+    }
 
     private static string ToAttributeAbbreviation(string attributeName)
         => attributeName.Trim().ToLowerInvariant() switch
