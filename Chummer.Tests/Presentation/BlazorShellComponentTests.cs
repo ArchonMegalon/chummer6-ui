@@ -429,6 +429,27 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void SectionPane_formats_named_context_for_collection_sections()
+    {
+        using var context = new BunitContext();
+        CharacterOverviewState sectionState = CharacterOverviewState.Empty with
+        {
+            ActiveSectionId = "vehicles",
+            ActiveSectionJson = "{\"section\":\"vehicles\"}",
+            ActiveSectionRows = [new SectionRowState("vehicles[0]", "Roadmaster · Armor 16 / Handling 3")]
+        };
+
+        IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
+            .Add(component => component.State, sectionState));
+
+        StringAssert.Contains(cut.Markup, "Vehicles");
+        StringAssert.Contains(cut.Markup, "1 visible entry");
+        StringAssert.Contains(cut.Markup, "Roadmaster");
+        StringAssert.Contains(cut.Markup, "Vehicle 1");
+        Assert.IsFalse(cut.Markup.Contains("vehicles[0]", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation()
     {
         using var context = new BunitContext();

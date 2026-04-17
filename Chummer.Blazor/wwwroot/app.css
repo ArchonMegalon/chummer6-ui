@@ -1095,6 +1095,17 @@ textarea:focus-visible {
     font-size: 0.9rem;
 }
 
+.section-context-card {
+    margin: 0 0 0.45rem;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--ui-kit-shell-border);
+    background: #f8fafc;
+}
+
+.section-context-summary {
+    margin: 0;
+}
+
 .classic-fact-strip {
     display: flex;
     flex-wrap: wrap;
@@ -1278,6 +1289,16 @@ textarea:focus-visible {
 .section-table th {
     background: #f1f5f9;
     text-align: left;
+}
+
+.section-table-label {
+    white-space: nowrap;
+    color: #475569;
+    font-size: 0.76rem;
+}
+
+.section-table-value {
+    color: #0f172a;
 }
 
 .command-list {

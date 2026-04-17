@@ -1063,7 +1063,7 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
 
         if (string.Equals(bareLeaf, bareSection, StringComparison.OrdinalIgnoreCase))
         {
-            return FormatCollectionLabel(section, leaf);
+            return FormatCollectionLabel(bareSection, leaf);
         }
 
         return FormatDesktopLabel(leaf);
