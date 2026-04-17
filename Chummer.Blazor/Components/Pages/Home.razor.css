@@ -1,0 +1,48 @@
+.flagship-media-showcase {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.flagship-media-showcase-header {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.flagship-media-showcase-header h2 {
+    margin: 0;
+}
+
+.flagship-media-showcase-header p {
+    margin: 0;
+}
+
+.flagship-media-showcase-grid {
+    display: grid;
+    gap: 0.9rem;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+.flagship-media-card {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+}
+
+.flagship-media-card img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 0.7rem;
+    border: 1px solid rgba(18, 36, 61, 0.16);
+    background: linear-gradient(180deg, #edf4fb 0%, #dbe7f4 100%);
+}
+
+.flagship-media-card figcaption {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.flagship-media-card figcaption strong,
+.flagship-media-card figcaption span {
+    display: block;
+}

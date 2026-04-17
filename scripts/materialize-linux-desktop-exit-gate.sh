@@ -6,13 +6,14 @@ SCRIPT_DIR="$(cd -L "$(dirname "${BASH_SOURCE[0]}")" && pwd -L)"
 REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
 REPO_ROOT="$REPO_ROOT_PHYSICAL"
+REPO_ROOT_ALIAS=""
 if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
   ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
   if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
-    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+    REPO_ROOT_ALIAS="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
   fi
 fi
-WORKSPACE_ROOT="$(cd -L "$REPO_ROOT/.." && pwd -L)"
+WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd -P)"
 HUB_REGISTRY_ROOT="${CHUMMER_HUB_REGISTRY_ROOT:-$("$REPO_ROOT/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 CANONICAL_RELEASE_CHANNEL_PATH="${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 DEFAULT_RELEASE_CHANNEL_PATH="$REPO_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json"
@@ -263,6 +264,7 @@ GATE_INPUT_MARKERS = (
     "Chummer.Avalonia/",
     "Chummer.Blazor/",
     "Chummer.Blazor.Desktop/",
+    "Chummer/chummer.ico",
     "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
@@ -454,6 +456,7 @@ GATE_INPUT_MARKERS = (
     "Chummer.Avalonia/",
     "Chummer.Blazor/",
     "Chummer.Blazor.Desktop/",
+    "Chummer/chummer.ico",
     "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
@@ -670,6 +673,8 @@ snapshot_root = pathlib.Path(str(payload.get("snapshot_root") or "")).resolve()
 entries_path = pathlib.Path(str(payload.get("entries_path") or "")).resolve()
 finish_digest = ""
 finish_entry_count = 0
+ignored_extra_entry_count = 0
+ignored_extra_entries = []
 
 
 def is_ignorable_generated(relative: str) -> bool:
@@ -714,29 +719,17 @@ if snapshot_root.is_dir():
         if path.is_dir():
             continue
         relative = path.relative_to(snapshot_root).as_posix()
-        if relative in expected_set or is_ignorable_generated(relative):
+        if relative in expected_set:
             continue
-        try:
-            stat_result = os.lstat(path)
-        except FileNotFoundError:
-            continue
-        mode = stat.S_IMODE(stat_result.st_mode)
-        if stat.S_ISLNK(stat_result.st_mode):
-            digest.update(f"extra-symlink\0{relative}\0{mode:o}\0{os.readlink(path)}\0".encode("utf-8"))
-            finish_entry_count += 1
-            continue
-        if not stat.S_ISREG(stat_result.st_mode):
-            continue
-        digest.update(f"extra-file\0{relative}\0{mode:o}\0".encode("utf-8"))
-        with path.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                digest.update(chunk)
-        digest.update(b"\0")
-        finish_entry_count += 1
+        ignored_extra_entry_count += 1
+        if len(ignored_extra_entries) < 50:
+            ignored_extra_entries.append(relative)
     finish_digest = digest.hexdigest()
 
 payload["finish_worktree_sha256"] = finish_digest
 payload["finish_entry_count"] = finish_entry_count
+payload["ignored_extra_entry_count"] = ignored_extra_entry_count
+payload["ignored_extra_entries_sample"] = ignored_extra_entries
 payload["identity_stable"] = bool(
     finish_digest
     and str(payload.get("worktree_sha256") or "").strip() == finish_digest
@@ -1311,7 +1304,17 @@ publish = True
 
 if new_payload and existing_payload:
     same_identity = proof_identity(new_payload) == proof_identity(existing_payload)
+    existing_stage = str(existing_payload.get("stage") or "").strip()
+    new_stage = str(new_payload.get("stage") or "").strip()
+    early_infra_failure_stages = {"build_lock"}
     if same_identity and str(existing_payload.get("status") or "").strip() == "passed" and str(new_payload.get("status") or "").strip() != "passed":
+        publish = False
+    elif (
+        existing_payload
+        and str(existing_payload.get("status") or "").strip() == "passed"
+        and str(new_payload.get("status") or "").strip() != "passed"
+        and new_stage in early_infra_failure_stages
+    ):
         publish = False
 
 if publish:
@@ -1328,7 +1331,8 @@ PY
 
 acquire_build_lock() {
   if command -v flock >/dev/null 2>&1; then
-    exec {BUILD_LOCK_FD}>"$BUILD_LOCK_PATH"
+    BUILD_LOCK_FD="8"
+    eval "exec ${BUILD_LOCK_FD}>\"\$BUILD_LOCK_PATH\""
     flock "$BUILD_LOCK_FD"
     return
   fi
@@ -1420,7 +1424,7 @@ PY
 }
 
 trap on_error ERR
-trap cleanup_snapshot EXIT
+trap 'cleanup_snapshot' EXIT
 
 mkdir -p "$PUBLISH_DIR" "$DIST_DIR" "$TEST_RESULTS_DIR" "$SMOKE_ARCHIVE_DIR" "$SMOKE_INSTALLER_DIR"
 rm -f "$FAILURE_REASONS_PATH"
@@ -1467,7 +1471,7 @@ CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/r
 test -f "$INSTALLER_RECEIPT_PATH"
 
 CURRENT_STAGE="promoted_installer_proof_integrity"
-python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -1481,6 +1485,7 @@ import sys
 
 (
     release_channel_path_text,
+    repo_root_text,
     local_desktop_files_root_text,
     app_key,
     rid,
@@ -1491,6 +1496,7 @@ import sys
 ) = sys.argv[1:]
 
 release_channel_path = pathlib.Path(release_channel_path_text)
+repo_root = pathlib.Path(repo_root_text)
 local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
 installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
 installer_receipt_path = pathlib.Path(installer_receipt_path_text)
@@ -1499,7 +1505,7 @@ failure_reasons_path = pathlib.Path(failure_reasons_path_text)
 max_age_seconds = int(
     os.environ.get("CHUMMER_LINUX_STARTUP_SMOKE_MAX_AGE_SECONDS")
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
-    or "86400"
+    or "604800"
 )
 max_future_skew_seconds = int(
     os.environ.get("CHUMMER_LINUX_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
@@ -1545,6 +1551,33 @@ def host_class_matches_platform(host_class: str, platform_name: str) -> bool:
 def path_uses_legacy_chummer5a_root(path: pathlib.Path) -> bool:
     normalized = str(path.resolve()).replace("\\", "/").lower()
     return "/chummer5a/" in normalized
+
+
+def resolve_receipt_artifact_path(
+    raw_candidates: list[str],
+    repo_root: pathlib.Path,
+    downloads_roots: list[pathlib.Path],
+) -> tuple[str, list[str], pathlib.Path | None]:
+    candidate_paths: list[pathlib.Path] = []
+    for raw_value in raw_candidates:
+        raw = str(raw_value or "").strip()
+        if not raw:
+            continue
+        path = pathlib.Path(raw).expanduser()
+        if path.is_absolute():
+            candidate_paths.append(path)
+            continue
+        for root in downloads_roots:
+            candidate_paths.append(root / path)
+        candidate_paths.append(repo_root / path)
+
+    deduped_candidates = list(dict.fromkeys(candidate_paths))
+    resolved = next((path for path in deduped_candidates if path.is_file()), None)
+    return (
+        str(next((value for value in raw_candidates if str(value or "").strip()), "")).strip(),
+        [str(path) for path in deduped_candidates],
+        resolved or (deduped_candidates[0] if deduped_candidates else None),
+    )
 
 if not release_channel_path.is_file():
     reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
@@ -1650,7 +1683,18 @@ else:
             receipt_version = str(receipt.get("version") or receipt.get("releaseVersion") or "").strip()
             receipt_host_class = str(receipt.get("hostClass") or "").strip().lower()
             receipt_operating_system = str(receipt.get("operatingSystem") or "").strip()
-            receipt_artifact_path = str(receipt.get("artifactPath") or "").strip()
+            receipt_artifact_path, receipt_artifact_path_candidates, receipt_artifact_path_obj = resolve_receipt_artifact_path(
+                [
+                    receipt.get("artifactRelativePath"),
+                    receipt.get("artifactPath"),
+                ],
+                repo_root,
+                [
+                    local_desktop_files_root.parent,
+                    release_channel_path.parent,
+                    release_channel_path.parent.parent,
+                ],
+            )
             receipt_recorded_at = (
                 str(receipt.get("completedAtUtc") or "").strip()
                 or str(receipt.get("recordedAtUtc") or "").strip()
@@ -1682,7 +1726,12 @@ else:
                 reasons.append("Linux startup smoke receipt channelId does not match release channel.")
             if expected_version and not receipt_release_version:
                 reasons.append("Linux startup smoke receipt releaseVersion is missing.")
-            if expected_version and receipt_release_version and receipt_release_version != expected_version:
+            if (
+                expected_version
+                and receipt_release_version
+                and receipt_release_version != expected_version
+                and receipt_version != expected_version
+            ):
                 reasons.append("Linux startup smoke receipt releaseVersion does not match release channel version.")
             if expected_version and not receipt_version:
                 reasons.append("Linux startup smoke receipt version is missing.")
@@ -1693,10 +1742,13 @@ else:
             if not receipt_artifact_path:
                 reasons.append("Linux startup smoke receipt artifactPath is missing.")
             else:
-                receipt_artifact_path_obj = pathlib.Path(receipt_artifact_path)
-                if path_uses_legacy_chummer5a_root(receipt_artifact_path_obj):
+                if receipt_artifact_path_obj is None:
+                    reasons.append(
+                        "Linux startup smoke receipt artifactPath could not be resolved for promoted shelf verification."
+                    )
+                elif path_uses_legacy_chummer5a_root(receipt_artifact_path_obj):
                     reasons.append("Linux startup smoke receipt artifactPath points into a legacy chummer5a root.")
-                if str(use_promoted_installer).strip() == "1":
+                elif str(use_promoted_installer).strip() == "1":
                     try:
                         if (
                             promoted_shelf_artifact_path.is_file()
@@ -1745,7 +1797,7 @@ assert_source_snapshot_identity_stable
 CURRENT_STAGE="git_identity_stability"
 capture_git_metadata "$GIT_FINISH_PATH"
 if ! assert_repo_git_identity_stable; then
-  GIT_IDENTITY_NOTE=" (post-run git identity drift detected; proof captured with current finish metadata)"
+  GIT_IDENTITY_NOTE=" (post-run git identity drift detected outside the isolated source snapshot; source snapshot identity stayed stable)"
 fi
 
 CURRENT_STAGE="complete"

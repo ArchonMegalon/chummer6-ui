@@ -378,7 +378,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
         if (LatestPendingClaim is not null || !string.IsNullOrWhiteSpace(_installState.LastClaimCode))
         {
-            actions.Insert(0, CreateButton(S("desktop.devices.button.copy_claim_code"), CopyLatestClaimCodeAsync, isPrimary: true));
+            actions.Insert(0, CreateButton(S("desktop.devices.button.copy_claim_code"), OpenLatestInstallHandoffAsync, isPrimary: true));
         }
         else
         {
@@ -412,23 +412,28 @@ internal sealed class DesktopDevicesAccessWindow : Window
         SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.install_id_copied", _preferences.Language));
     }
 
-    private async Task CopyLatestClaimCodeAsync()
+    private async Task OpenLatestInstallHandoffAsync()
     {
-        string? claimCode = LatestPendingClaim?.ClaimCode ?? _installState.LastClaimCode;
-        if (string.IsNullOrWhiteSpace(claimCode))
+        string? handoffCode = LatestPendingClaim?.ClaimCode;
+        if (string.IsNullOrWhiteSpace(handoffCode))
         {
-            SetStatus(S("desktop.devices.status.no_claim_code"));
+            await OpenInstallLinkingAsync().ConfigureAwait(true);
             return;
         }
 
-        if (Clipboard is null)
-        {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.clipboard_unavailable", _preferences.Language));
-            return;
-        }
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _preferences.Language));
+        DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
+            _installState.HeadId,
+            handoffCode,
+            CancellationToken.None).ConfigureAwait(true);
+        _installState = result.State;
+        await RefreshDevicesAccessStateAsync().ConfigureAwait(true);
+        SetStatus(result.Message);
 
-        await Clipboard.SetTextAsync(claimCode).ConfigureAwait(true);
-        SetStatus(S("desktop.devices.status.claim_code_copied"));
+        if (!result.Succeeded)
+        {
+            await OpenInstallLinkingAsync().ConfigureAwait(true);
+        }
     }
 
     private Task OpenCampaignWorkspaceAsync()
@@ -478,7 +483,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
     private Task OpenAccountAsync()
     {
-        if (DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+        if (DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_installState))
         {
             SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _preferences.Language));
         }

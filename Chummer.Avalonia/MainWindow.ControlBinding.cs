@@ -9,7 +9,6 @@ internal static class MainWindowControlBinder
 
     public static MainWindowControls Bind(
         ToolStripControl toolStrip,
-        WorkspaceStripControl workspaceStrip,
         SummaryHeaderControl summaryHeader,
         ShellMenuBarControl menuBar,
         NavigatorPaneControl navigatorPane,
@@ -20,6 +19,8 @@ internal static class MainWindowControlBinder
         EventHandler onImportFileRequested,
         EventHandler onImportRawRequested,
         EventHandler onSaveRequested,
+        EventHandler onPrintRequested,
+        EventHandler onCopyRequested,
         EventHandler onCloseWorkspaceRequested,
         EventHandler onDesktopHomeRequested,
         EventHandler onCampaignWorkspaceRequested,
@@ -29,12 +30,12 @@ internal static class MainWindowControlBinder
         EventHandler onReportIssueRequested,
         EventHandler onSettingsRequested,
         EventHandler onLoadDemoRunnerRequested,
-        EventHandler onRuntimeInspectorRequested,
         EventHandler<string> onMenuSelected,
         EventHandler<string> onWorkspaceSelected,
         EventHandler<string> onNavigationTabSelected,
         EventHandler<string> onSectionActionSelected,
         EventHandler<string> onWorkflowSurfaceSelected,
+        EventHandler<string> onSectionQuickActionRequested,
         EventHandler onCoachLaunchCopyRequested,
         EventHandler<string> onCommandSelected,
         EventHandler<string> onDialogActionSelected,
@@ -44,6 +45,8 @@ internal static class MainWindowControlBinder
         toolStrip.ImportFileRequested += onImportFileRequested;
         toolStrip.ImportRawRequested += onImportRawRequested;
         toolStrip.SaveRequested += onSaveRequested;
+        toolStrip.PrintRequested += onPrintRequested;
+        toolStrip.CopyRequested += onCopyRequested;
         toolStrip.CloseWorkspaceRequested += onCloseWorkspaceRequested;
         toolStrip.DesktopHomeRequested += onDesktopHomeRequested;
         toolStrip.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
@@ -53,12 +56,13 @@ internal static class MainWindowControlBinder
         toolStrip.ReportIssueRequested += onReportIssueRequested;
         toolStrip.SettingsRequested += onSettingsRequested;
         toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
-        summaryHeader.RuntimeInspectorRequested += onRuntimeInspectorRequested;
+        summaryHeader.NavigationTabSelected += onNavigationTabSelected;
         menuBar.MenuSelected += onMenuSelected;
         navigatorPane.WorkspaceSelected += onWorkspaceSelected;
         navigatorPane.NavigationTabSelected += onNavigationTabSelected;
         navigatorPane.SectionActionSelected += onSectionActionSelected;
         navigatorPane.WorkflowSurfaceSelected += onWorkflowSurfaceSelected;
+        sectionHost.QuickActionRequested += onSectionQuickActionRequested;
         coachSidecar.CopyLaunchRequested += onCoachLaunchCopyRequested;
         commandDialogPane.CommandSelected += onCommandSelected;
         commandDialogPane.DialogActionSelected += onDialogActionSelected;
@@ -67,7 +71,6 @@ internal static class MainWindowControlBinder
 
         return new MainWindowControls(
             toolStrip,
-            workspaceStrip,
             summaryHeader,
             menuBar,
             navigatorPane,
@@ -80,7 +83,6 @@ internal static class MainWindowControlBinder
 
 internal sealed record MainWindowControls(
     ToolStripControl ToolStrip,
-    WorkspaceStripControl WorkspaceStrip,
     SummaryHeaderControl SummaryHeader,
     ShellMenuBarControl MenuBar,
     NavigatorPaneControl NavigatorPane,
@@ -95,7 +97,6 @@ internal sealed record MainWindowControls(
     {
         ToolStrip.SetState(shellFrame.HeaderState.ToolStrip);
         MenuBar.SetState(shellFrame.HeaderState.MenuBar);
-        WorkspaceStrip.SetState(shellFrame.ChromeState.WorkspaceStrip);
         SummaryHeader.SetState(shellFrame.ChromeState.SummaryHeader);
         StatusStrip.SetState(shellFrame.ChromeState.StatusStrip);
         CommandDialogPane.SetState(shellFrame.CommandDialogPaneState);

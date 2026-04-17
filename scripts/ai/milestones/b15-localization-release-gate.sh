@@ -6,7 +6,7 @@ cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
 catalog_path="$repo_root/Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs"
-signoff_project_path="$repo_root/Chummer.Tests/Presentation/Chummer.Presentation.Localization.Signoff.Tests.csproj"
+signoff_project_path="$repo_root/Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 local_release_proof_path="$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json"
 legacy_lang_root="$repo_root/Chummer/lang"
@@ -39,14 +39,22 @@ run_signoff_runner >"$signoff_log" 2>&1
 signoff_status=$?
 set -e
 
-if [[ $signoff_status -ne 0 ]] && rg -q "libhostpolicy\.so|Failed to run as a self-contained app|runtimeconfig\.json' was not found" "$signoff_log"; then
-  signoff_retry_attempted=1
-  signoff_retry_reason="runtimeconfig_bootstrap_repair"
-  set +e
-  scripts/ai/with-package-plane.sh build --project "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false >>"$signoff_log" 2>&1
-  run_signoff_runner >>"$signoff_log" 2>&1
-  signoff_status=$?
-  set -e
+if [[ $signoff_status -ne 0 ]]; then
+  if rg -q "libhostpolicy\.so|Failed to run as a self-contained app|runtimeconfig\.json' was not found" "$signoff_log"; then
+    signoff_retry_attempted=1
+    signoff_retry_reason="runtimeconfig_bootstrap_repair"
+  elif rg -q "error NETSDK1064: Package .* was not found|Package .* version .* was not found" "$signoff_log"; then
+    signoff_retry_attempted=1
+    signoff_retry_reason="package_restore_repair"
+  fi
+
+  if [[ $signoff_retry_attempted -eq 1 ]]; then
+    set +e
+    scripts/ai/with-package-plane.sh build --project "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false >>"$signoff_log" 2>&1
+    run_signoff_runner >>"$signoff_log" 2>&1
+    signoff_status=$?
+    set -e
+  fi
 fi
 
 python3 - "$catalog_path" "$receipt_path" "$legacy_lang_root" "$local_release_proof_path" "$signoff_status" "$signoff_log" "$signoff_retry_attempted" "$signoff_retry_reason" <<'PY'
@@ -102,10 +110,10 @@ release_seed_keys = [
 ]
 required_localization_domains = [
     "app_chrome",
-    "data_rules_names",
-    "explain_receipts",
-    "generated_artifacts",
     "install_update_support",
+    "explain_receipts",
+    "data_rules_names",
+    "generated_artifacts",
 ]
 
 def extract_locale_block(locale: str) -> str:

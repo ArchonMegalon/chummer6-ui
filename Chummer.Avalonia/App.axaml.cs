@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Chummer.Desktop.Runtime;
+using Chummer.Application.AI;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Presentation;
@@ -57,9 +58,17 @@ public partial class App : global::Avalonia.Application
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
-        services.AddSingleton(CreateApiHttpClient());
-        services.AddSingleton<IAvaloniaCoachSidecarClient>(serviceProvider =>
-            new HttpAvaloniaCoachSidecarClient(serviceProvider.GetRequiredService<HttpClient>()));
+        if (UseHttpCoachSidecar())
+        {
+            services.AddSingleton(CreateApiHttpClient());
+            services.AddSingleton<IAvaloniaCoachSidecarClient>(serviceProvider =>
+                new HttpAvaloniaCoachSidecarClient(serviceProvider.GetRequiredService<HttpClient>()));
+        }
+        else
+        {
+            services.AddSingleton<IAvaloniaCoachSidecarClient, InProcessAvaloniaCoachSidecarClient>();
+        }
+
         services.AddSingleton<IShellBootstrapDataProvider, ShellBootstrapDataProvider>();
         services.AddSingleton<IRulesetShellCatalogResolver, CatalogOnlyRulesetShellCatalogResolver>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
@@ -95,6 +104,14 @@ public partial class App : global::Avalonia.Application
         return client;
     }
 
+    private static bool UseHttpCoachSidecar()
+    {
+        string? mode = Environment.GetEnvironmentVariable("CHUMMER_CLIENT_MODE");
+        string? legacyMode = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_CLIENT_MODE");
+        return string.Equals(mode?.Trim(), "http", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(legacyMode?.Trim(), "http", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static async void MainWindow_OnOpened(object? sender, EventArgs e)
     {
         if (sender is not MainWindow owner)
@@ -125,15 +142,6 @@ public partial class App : global::Avalonia.Application
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Failed to display the desktop install linking window: {ex}");
-            }
-
-            try
-            {
-                await DesktopHomeWindow.ShowIfNeededAsync(owner, "avalonia", installLinkingContext);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to display the desktop home window: {ex}");
             }
         }
 

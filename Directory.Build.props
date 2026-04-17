@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
+    <RestorePackagesPath Condition="'$(RestorePackagesPath)' == ''">$(MSBuildThisFileDirectory).tmp/nuget/packages</RestorePackagesPath>
     <BuildInParallel>false</BuildInParallel>
     <RestoreDisableParallel>true</RestoreDisableParallel>
     <MaxCpuCount>1</MaxCpuCount>

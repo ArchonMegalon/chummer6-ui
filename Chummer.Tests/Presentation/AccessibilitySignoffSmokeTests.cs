@@ -28,6 +28,7 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
             FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions();
             DesktopCampaignWorkspace_is_a_real_top_level_surface();
+            DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible();
             DesktopUpdateSurface_is_a_real_top_level_surface();
             DesktopSupportSurface_is_a_real_top_level_surface();
             DesktopSupportCaseSurface_is_a_real_top_level_surface();
@@ -61,7 +62,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "role=\"listbox\"");
         RequireContains(source, "role=\"option\"");
         RequireContains(source, "aria-activedescendant=");
-        RequireContains(source, "aria-selected=\"@IsBrowseResultActive");
+        RequireContains(source, "aria-selected=\"@(IsBrowseResultActive");
     }
 
     private static void GeneratedAssetReviewPanel_renders_preview_and_emits_attach_approve_archive_actions()
@@ -879,6 +880,18 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, \"avalonia\")");
     }
 
+    private static void DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs");
+        RequireContains(source, "BuildRestoreChoiceLines()");
+        RequireContains(source, "Stale/conflict posture:");
+        RequireContains(source, "Conflict choice: keep local work, restore the claimed-device copy, or route support before merging");
+        RequireContains(source, "Restore choice: continue the current local workspace");
+        RequireContains(source, "Stale-state visibility: live server restore is unavailable");
+        RequireContains(source, "_campaignProjection.Watchouts.Take(4)");
+        RequireContains(source, "actions.Add(CreateButton(S(\"desktop.home.button.open_work_support\"), OpenWorkspaceSupport));");
+    }
+
     private static void DesktopUpdateSurface_is_a_real_top_level_surface()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopUpdateWindow.cs");
@@ -1163,9 +1176,13 @@ internal static class AccessibilitySignoffSmokeTests
     private static void ShellNavigator_wires_ruleset_specific_headings_and_labels()
     {
         string summaryHeaderSource = ReadSource("Chummer.Blazor/Components/Shell/SummaryHeader.razor");
+        RequireContains(summaryHeaderSource, "BuildNavigationTabsHeading()");
         RequireContains(summaryHeaderSource, "BuildSummaryHeading()");
         RequireContains(summaryHeaderSource, "RulesetUiDirectiveCatalog.BuildSummaryHeading");
+        RequireContains(summaryHeaderSource, "RulesetUiDirectiveCatalog.BuildNavigationTabsHeading");
         RequireContains(summaryHeaderSource, "BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId())");
+        RequireContains(summaryHeaderSource, "FormatNavigationTabLabel(tab)");
+        RequireContains(summaryHeaderSource, "RulesetUiDirectiveCatalog.FormatNavigationTabLabel");
 
         string openWorkspaceSource = ReadSource("Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor");
         RequireContains(openWorkspaceSource, "BuildOpenWorkspacesHeading()");
@@ -1173,16 +1190,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(openWorkspaceSource, "RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel");
 
         string blazorSource = ReadSource("Chummer.Blazor/Components/Shell/WorkspaceLeftPane.razor");
-        RequireContains(blazorSource, "BuildNavigationTabsHeading()");
         RequireContains(blazorSource, "BuildSectionActionsHeading()");
         RequireContains(blazorSource, "BuildWorkflowSurfacesHeading()");
-        RequireContains(blazorSource, "FormatNavigationTabLabel(tab)");
         RequireContains(blazorSource, "FormatWorkspaceActionLabel(action)");
         RequireContains(blazorSource, "FormatWorkflowSurfaceLabel(surface)");
-        RequireContains(blazorSource, "RulesetUiDirectiveCatalog.BuildNavigationTabsHeading");
         RequireContains(blazorSource, "RulesetUiDirectiveCatalog.BuildSectionActionsHeading");
         RequireContains(blazorSource, "RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading");
-        RequireContains(blazorSource, "RulesetUiDirectiveCatalog.FormatNavigationTabLabel");
         RequireContains(blazorSource, "RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel");
         RequireContains(blazorSource, "RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel");
 
@@ -1230,9 +1243,28 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(importPanelSource, "BuildImportHint()");
         RequireContains(importPanelSource, "BuildImportDebugHeading()");
         RequireContains(importPanelSource, "BuildImportRawActionLabel()");
+        RequireContains(importPanelSource, "BuildImportDiffBefore(activity.Receipt)");
+        RequireContains(importPanelSource, "BuildImportDiffAfter(activity.Receipt)");
+        RequireContains(importPanelSource, "BuildImportSupportReuse(activity.Receipt)");
         RequireContains(importPanelSource, "RulesetUiDirectiveCatalog.BuildImportHeading");
         RequireContains(importPanelSource, "RulesetUiDirectiveCatalog.BuildImportAcceptAttribute");
         RequireContains(importPanelSource, "RulesetUiDirectiveCatalog.BuildImportHint");
+
+        string avaloniaShellProjectorSource = ReadSource("Chummer.Avalonia/MainWindow.ShellFrameProjector.cs");
+        RequireContains(avaloniaShellProjectorSource, "Import environment before:");
+        RequireContains(avaloniaShellProjectorSource, "Import environment after:");
+        RequireContains(avaloniaShellProjectorSource, "Import explain receipt:");
+        RequireContains(avaloniaShellProjectorSource, "Support reuse:");
+
+        string avaloniaSectionHostSource = ReadSource("Chummer.Avalonia/Controls/SectionHostControl.axaml.cs");
+        RequireContains(avaloniaSectionHostSource, "Build blocker receipt:");
+        RequireContains(avaloniaSectionHostSource, "Rule environment:");
+        RequireContains(avaloniaSectionHostSource, "Before:");
+        RequireContains(avaloniaSectionHostSource, "After:");
+        RequireContains(avaloniaSectionHostSource, "Support reuse:");
+        RequireContains(avaloniaSectionHostSource, "BuildBuildBlockerBefore(buildLab)");
+        RequireContains(avaloniaSectionHostSource, "BuildBuildBlockerAfter(buildLab)");
+        RequireContains(avaloniaSectionHostSource, "BuildBuildBlockerSupport(buildLab)");
 
         string commandPanelSource = ReadSource("Chummer.Blazor/Components/Shell/CommandPanel.razor");
         RequireContains(commandPanelSource, "BuildCommandHeading()");
@@ -1306,8 +1338,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireDoesNotContain(menuBarMarkup, "Avalonia Head");
 
         string menuBarSource = ReadSource("Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs");
-        RequireContains(menuBarSource, "GetMenuId(button)");
-        RequireContains(menuBarSource, "button.Tag?.ToString()");
+        RequireContains(menuBarSource, "GetMenuId(menuItem)");
+        RequireContains(menuBarSource, "menuItem.Tag?.ToString()");
         RequireContains(menuBarSource, "desktop.shell.menu.file");
         RequireContains(menuBarSource, "desktop.shell.banner");
 
@@ -1335,7 +1367,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(eventHandlerSource, "ToolStrip_OnSupportRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnReportIssueRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnSettingsRequested");
-        RequireContains(eventHandlerSource, "DesktopHomeWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "_interactionCoordinator.ExecuteCommandAsync(\"new_character\", CancellationToken.None)");
         RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopUpdateWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopSupportWindow.ShowAsync(this, \"avalonia\")");
@@ -1424,7 +1456,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _state.HeadId)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(ownerWindow, _state.HeadId)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _state.HeadId)");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenAccountPortal()");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state)");
     }
 
     private static void BlazorHome_uses_local_chummer6_flagship_media_samples()

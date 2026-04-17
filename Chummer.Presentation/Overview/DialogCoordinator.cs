@@ -97,6 +97,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.dice_roller", StringComparison.Ordinal) && string.Equals(actionId, "derive_initiative", StringComparison.Ordinal))
+        {
+            DeriveInitiativePreview(dialog, context);
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
         {
             ApplyGlobalSettings(dialog, context);
@@ -514,6 +520,54 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 Fields = fields
             }
         });
+    }
+
+    private static void DeriveInitiativePreview(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context)
+    {
+        string preview = BuildInitiativePreview(dialog);
+        string threshold = DesktopDialogFieldValueParser.GetValue(dialog, "diceThreshold") ?? "0";
+        List<DesktopDialogField> fields = dialog.Fields
+            .Where(field => !string.Equals(field.Id, "initiativePreview", StringComparison.Ordinal))
+            .ToList();
+        fields.Add(new DesktopDialogField(
+            Id: "initiativePreview",
+            Label: "Initiative Preview",
+            Value: preview,
+            Placeholder: preview,
+            IsMultiline: false,
+            IsReadOnly: true));
+
+        context.Publish(context.State with
+        {
+            Error = null,
+            Notice = $"Initiative preview refreshed (threshold {threshold}).",
+            ActiveDialog = dialog with
+            {
+                Message = "Ruleset-backed initiative preview updated without closing the utility.",
+                Fields = fields
+            }
+        });
+    }
+
+    private static string BuildInitiativePreview(DesktopDialogState dialog)
+    {
+        int initiativeBase = DesktopDialogFieldValueParser.ParseInt(dialog, "diceInitiativeBase", 10);
+        int initiativeDice = DesktopDialogFieldValueParser.ParseInt(dialog, "diceInitiativeDice", 1);
+        int woundModifier = DesktopDialogFieldValueParser.ParseInt(dialog, "diceWoundModifier", 0);
+        int currentPass = DesktopDialogFieldValueParser.ParseInt(dialog, "diceCurrentPass", 1);
+
+        int sanitizedDiceCount = Math.Max(0, initiativeDice);
+        int sanitizedPass = Math.Max(1, currentPass);
+        int modifiedBase = initiativeBase + woundModifier;
+        int min = modifiedBase + sanitizedDiceCount;
+        int max = modifiedBase + (sanitizedDiceCount * 6);
+        decimal average = modifiedBase + (sanitizedDiceCount * 3.5m);
+
+        return sanitizedDiceCount == 0
+            ? $"{modifiedBase} flat · pass {sanitizedPass}"
+            : $"{modifiedBase} + {sanitizedDiceCount}d6 · pass {sanitizedPass} · range {min}-{max} · avg {average:0.0}";
     }
 
     private static string? FormatEvaluationResult(RulesetCapabilityValue? value)

@@ -2729,6 +2729,8 @@ public class MigrationComplianceTests
     {
         string blazorShellPath = FindPath("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor");
         string blazorShellText = File.ReadAllText(blazorShellPath);
+        string sectionPanePath = FindPath("Chummer.Blazor", "Components", "Shell", "SectionPane.razor");
+        string sectionPaneText = File.ReadAllText(sectionPanePath);
         string avaloniaWindowPath = FindPath("Chummer.Avalonia", "MainWindow.axaml");
         string avaloniaWindowText = File.ReadAllText(avaloniaWindowPath);
 
@@ -2740,13 +2742,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(blazorShellText, "<SectionPane");
         StringAssert.Contains(blazorShellText, "<StatusStrip");
         StringAssert.Contains(blazorShellText, "<DialogHost");
+        Assert.IsFalse(blazorShellText.Contains("<MetadataPanel", StringComparison.Ordinal));
+        Assert.IsFalse(sectionPaneText.Contains("class=\"section-payload\"", StringComparison.Ordinal));
 
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"ShellMenuBarControl\"");
-        StringAssert.Contains(avaloniaWindowText, "x:Name=\"WorkspaceStripControl\"");
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"NavigatorPaneControl\"");
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"SectionHostControl\"");
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"SummaryHeaderControl\"");
         StringAssert.Contains(avaloniaWindowText, "x:Name=\"StatusStripControl\"");
+        Assert.IsFalse(avaloniaWindowText.Contains("x:Name=\"WorkspaceStripControl\"", StringComparison.Ordinal));
 
         HashSet<string> tabIds = NavigationTabCatalog.All
             .Select(tab => tab.Id)
@@ -3793,10 +3797,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot be paused/revoked when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_invalid_for_publishable_complete");
-        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState must be promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_invalid_for_publishable_complete");
-        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState must be preview_supported when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState must be local_docker_proven/preview_supported when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "release_channel_version_uses_unpublished_sentinel");
         StringAssert.Contains(executableGateScriptText, "Release channel version cannot be the unpublished sentinel when status is publishable.");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_invalid_generated_at");
@@ -3969,6 +3973,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(localizationGateText, "\"locale_domain_coverage\"");
         StringAssert.Contains(localizationGateText, "\"app_chrome\"");
         StringAssert.Contains(localizationGateText, "\"install_update_support\"");
+        Assert.IsFalse(localizationGateText.Contains("\"companion_runtime\"", StringComparison.Ordinal),
+            "Localization release gate must stay aligned with the registry's current allowed localization domains.");
         StringAssert.Contains(localizationGateText, "signoff_retry_attempted=0");
         StringAssert.Contains(localizationGateText, "runtimeconfig_bootstrap_repair");
         StringAssert.Contains(localizationGateText, "\"retry_attempted\": signoff_retry_attempted > 0");
@@ -5179,6 +5185,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"amend-checksums\"");
         StringAssert.Contains(runbookText, "docs/SELF_HOSTED_DOWNLOADS_RUNBOOK.md");
         StringAssert.Contains(runbookText, "bash scripts/generate-releases-manifest.sh");
+        StringAssert.Contains(generatorText, "cp -f \"${portal_artifacts[@]}\" \"$portal_files_dir\"/");
         StringAssert.Contains(runbookText, "bash scripts/generate-parity-checklist.sh");
         StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle.sh");
         StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle-s3.sh");
@@ -5404,6 +5411,19 @@ public class MigrationComplianceTests
         StringAssert.Contains(manifestText, "\"checksums\"");
         StringAssert.Contains(manifestText, "\"data/qualities.test-amend.xml\"");
         StringAssert.Contains(manifestText, "\"lang/en-us.test-amend.xml\"");
+    }
+
+    [TestMethod]
+    public void Mac_release_runbook_documents_workspace_backed_installer_temp_roots()
+    {
+        string runbookPath = FindPath("docs", "MAC_CODEX_RELEASE_TO_CHUMMER_RUN.md");
+        string runbookText = File.ReadAllText(runbookPath);
+
+        StringAssert.Contains(runbookText, "CHUMMER_MAC_RELEASE_TMPDIR");
+        StringAssert.Contains(runbookText, "CHUMMER_DESKTOP_INSTALLER_TMPDIR");
+        StringAssert.Contains(runbookText, "scripts/build-desktop-installer.sh now honors `CHUMMER_DESKTOP_INSTALLER_TMPDIR`");
+        StringAssert.Contains(runbookText, "hdiutil: create failed - No space left on device");
+        StringAssert.Contains(runbookText, "workspace-backed path on the target SSD");
     }
 
     [TestMethod]
@@ -5651,7 +5671,6 @@ public class MigrationComplianceTests
         StringAssert.Contains(projectorText, "shellSurface.NavigationTabs");
 
         StringAssert.Contains(xamlText, "x:Name=\"ToolStripControl\"");
-        StringAssert.Contains(xamlText, "x:Name=\"WorkspaceStripControl\"");
         StringAssert.Contains(xamlText, "x:Name=\"ShellMenuBarControl\"");
         StringAssert.Contains(xamlText, "x:Name=\"NavigatorPaneControl\"");
         StringAssert.Contains(xamlText, "x:Name=\"SectionHostControl\"");
@@ -5660,7 +5679,6 @@ public class MigrationComplianceTests
         StringAssert.Contains(xamlText, "x:Name=\"SummaryHeaderControl\"");
         StringAssert.Contains(xamlText, "x:Name=\"StatusStripControl\"");
         StringAssert.Contains(xamlText, "<controls:ToolStripControl");
-        StringAssert.Contains(xamlText, "<controls:WorkspaceStripControl");
         StringAssert.Contains(xamlText, "<controls:ShellMenuBarControl");
         StringAssert.Contains(xamlText, "<controls:NavigatorPaneControl");
         StringAssert.Contains(xamlText, "<controls:SectionHostControl");
@@ -5668,13 +5686,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(xamlText, "<controls:CoachSidecarControl");
         StringAssert.Contains(xamlText, "<controls:SummaryHeaderControl");
         StringAssert.Contains(xamlText, "<controls:StatusStripControl");
+        Assert.IsFalse(xamlText.Contains("x:Name=\"WorkspaceStripControl\"", StringComparison.Ordinal));
+        Assert.IsFalse(xamlText.Contains("<controls:WorkspaceStripControl", StringComparison.Ordinal));
         StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"LoadedRunnerTabStripBorder\"");
-        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"LoadedRunnerTabStripPanel\"");
+        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"LoadedRunnerTabStrip\"");
         Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeValueText", StringComparison.Ordinal));
         Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeInspectButton", StringComparison.Ordinal));
         Assert.IsFalse(summaryHeaderXamlText.Contains("NameValueText", StringComparison.Ordinal));
-        StringAssert.Contains(menuControlText, "Classes=\"menu-button\"");
-        StringAssert.Contains(xamlText, "Button.menu-button.active-menu");
+        StringAssert.Contains(menuControlText, "Classes=\"classic-menu\"");
+        StringAssert.Contains(xamlText, "MenuItem.active-menu");
     }
 
     [TestMethod]
@@ -5943,12 +5963,12 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(xamlText, "x:Name=\"MenuBarRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"ToolStripRegion\"");
-        StringAssert.Contains(xamlText, "x:Name=\"WorkspaceStripRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"LeftNavigatorRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"SummaryHeaderRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"SectionRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"RightShellRegion\"");
         StringAssert.Contains(xamlText, "x:Name=\"StatusStripRegion\"");
+        Assert.IsFalse(xamlText.Contains("x:Name=\"WorkspaceStripRegion\"", StringComparison.Ordinal));
 
         StringAssert.Contains(navigatorControlText, "x:Name=\"CodexKickerText\"");
         StringAssert.Contains(navigatorControlText, "x:Name=\"NavigatorTree\"");
@@ -5961,6 +5981,8 @@ public class MigrationComplianceTests
     {
         string workspaceLeftPanePath = FindPath("Chummer.Blazor", "Components", "Shell", "WorkspaceLeftPane.razor");
         string workspaceLeftPaneText = File.ReadAllText(workspaceLeftPanePath);
+        string summaryHeaderPath = FindPath("Chummer.Blazor", "Components", "Shell", "SummaryHeader.razor");
+        string summaryHeaderText = File.ReadAllText(summaryHeaderPath);
         string openWorkspaceTreePath = FindPath("Chummer.Blazor", "Components", "Shell", "OpenWorkspaceTree.razor");
         string openWorkspaceTreeText = File.ReadAllText(openWorkspaceTreePath);
         string commandPanelPath = FindPath("Chummer.Blazor", "Components", "Shell", "CommandPanel.razor");
@@ -5972,15 +5994,21 @@ public class MigrationComplianceTests
         string sectionHostPath = FindPath("Chummer.Avalonia", "Controls", "SectionHostControl.axaml");
         string sectionHostText = File.ReadAllText(sectionHostPath);
 
-        StringAssert.Contains(workspaceLeftPaneText, "<Virtualize Items=\"@NavigationTabs\"");
-        StringAssert.Contains(workspaceLeftPaneText, "<Virtualize Items=\"@ActiveWorkspaceActions\"");
-        StringAssert.Contains(workspaceLeftPaneText, "<Virtualize Items=\"@ActiveWorkflowSurfaceActions\"");
-        StringAssert.Contains(workspaceLeftPaneText, "ItemsTagName=\"ul\"");
-        StringAssert.Contains(openWorkspaceTreeText, "<Virtualize Items=\"@OpenWorkspaces\"");
-        StringAssert.Contains(openWorkspaceTreeText, "ItemsTagName=\"ul\"");
-        StringAssert.Contains(commandPanelText, "<Virtualize Items=\"@Commands\"");
-        StringAssert.Contains(commandPanelText, "ItemsTagName=\"ul\"");
+        Assert.IsFalse(workspaceLeftPaneText.Contains("<Virtualize Items=\"@NavigationTabs\"", StringComparison.Ordinal));
+        StringAssert.Contains(summaryHeaderText, "role=\"tablist\"");
+        StringAssert.Contains(summaryHeaderText, "@foreach (NavigationTabDefinition tab in NavigationTabs)");
+        StringAssert.Contains(workspaceLeftPaneText, "Items=\"@(ActiveWorkspaceActions.ToArray())\"");
+        StringAssert.Contains(workspaceLeftPaneText, "Items=\"@(ActiveWorkflowSurfaceActions.ToArray())\"");
+        StringAssert.Contains(workspaceLeftPaneText, "ItemSize=\"44\"");
+        StringAssert.Contains(workspaceLeftPaneText, "ItemSize=\"40\"");
+        StringAssert.Contains(openWorkspaceTreeText, "Items=\"@(OpenWorkspaces.ToArray())\"");
+        StringAssert.Contains(openWorkspaceTreeText, "ItemSize=\"52\"");
+        StringAssert.Contains(commandPanelText, "Items=\"@(Commands.ToArray())\"");
+        StringAssert.Contains(commandPanelText, "ItemSize=\"42\"");
         StringAssert.Contains(sectionHostText, "<VirtualizingStackPanel");
+        StringAssert.Contains(sectionHostText, "x:Name=\"SectionPayloadExpander\"");
+        StringAssert.Contains(sectionHostText, "x:Name=\"RawXmlImportBorder\"");
+        StringAssert.Contains(sectionHostText, "IsVisible=\"False\"");
         string sectionPanePath = FindPath("Chummer.Blazor", "Components", "Shell", "SectionPane.razor");
         string sectionPaneText = File.ReadAllText(sectionPanePath);
         StringAssert.Contains(sectionPaneText, "<Virtualize");
@@ -5988,6 +6016,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(sectionPaneText, "ItemSize=\"56\"");
         StringAssert.Contains(sectionPaneText, "data-browse-window-limit");
         Assert.IsFalse(sectionPaneText.Contains("@foreach (BrowseWorkspaceResultItemState item in GetBrowseResults(browseWorkspace))", StringComparison.Ordinal));
+        Assert.IsFalse(sectionPaneText.Contains("class=\"section-payload\"", StringComparison.Ordinal));
         StringAssert.Contains(navigatorControlText, "<VirtualizingStackPanel");
         StringAssert.Contains(commandPaneControlText, "<VirtualizingStackPanel");
     }
@@ -6167,6 +6196,70 @@ public class MigrationComplianceTests
     [TestMethod]
     public void Ai_gateway_surface_is_exposed_through_protected_api_seam()
     {
+        {
+        string probeAiProgramText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.AI/Program.cs");
+        string probeAiControllerText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.AI/Controllers/AiGatewayController.cs");
+        string probeAiGatewayContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiGatewayContracts.cs");
+        string probeAiConversationCatalogContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiConversationCatalogContracts.cs");
+        string probeAiMediaQueueContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiMediaQueueContracts.cs");
+        string probeAiDigestContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiDigestContracts.cs");
+        string probeAiPromptRegistryContractsText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/CompatCore/AI/AiPromptRegistryContracts.cs");
+        string probeAiGatewayServiceContractText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiGatewayService.cs");
+        string probeAiMediaQueueServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiMediaQueueService.cs");
+        string probeAiExplainServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiExplainService.cs");
+        string probeAiActionPreviewServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiActionPreviewService.cs");
+        string probeAiBudgetServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/IAiBudgetService.cs");
+        string probeNotImplementedAiGatewayServiceText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Application/AI/NotImplementedAiGatewayService.cs");
+        string probeInfrastructureDiText = File.ReadAllText("/docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/DependencyInjection/ServiceCollectionExtensions.cs");
+        string probeEnvExampleText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/.env.example");
+        string probeGitignoreText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/.gitignore");
+        string probeDockerignoreText = File.ReadAllText("/docker/chummercomplete/chummer.run-services/.dockerignore");
+        string probeLegacyPortalProgramText = File.ReadAllText("/docker/chummer5a/Chummer.Portal/Program.cs");
+        string probeLegacyReadmeText = File.ReadAllText("/docker/chummer5a/README.md");
+
+        StringAssert.Contains(probeAiProgramText, "builder.Services.AddControllers();");
+        StringAssert.Contains(probeAiProgramText, "builder.Services.AddSingleton<IAiGatewayService, AiGatewayService>();");
+        StringAssert.Contains(probeAiProgramText, "app.MapControllers();");
+        StringAssert.Contains(probeAiControllerText, "[Route(\"api/v1/ai\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpGet(\"status\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpPost(\"route\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpPost(\"route/preview\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpGet(\"prompts\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpPost(\"skills/execute\")]");
+        StringAssert.Contains(probeAiControllerText, "[HttpPost(\"conversations/{sessionId}/turns\")]");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiApiOperations");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiRouteTypes");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiToolIds");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiStructuredAnswer");
+        StringAssert.Contains(probeAiGatewayContractsText, "AiConversationTurnRequest");
+        StringAssert.Contains(probeAiGatewayContractsText, "CreateRoutePolicies");
+        StringAssert.Contains(probeAiConversationCatalogContractsText, "AiConversationAuditSummary");
+        StringAssert.Contains(probeAiMediaQueueContractsText, "AiMediaQueueReceipt");
+        StringAssert.Contains(probeAiDigestContractsText, "AiRuntimeSummaryProjection");
+        StringAssert.Contains(probeAiPromptRegistryContractsText, "AiPromptCatalog");
+        StringAssert.Contains(probeAiGatewayServiceContractText, "interface IAiGatewayService");
+        StringAssert.Contains(probeAiMediaQueueServiceText, "interface IAiMediaQueueService");
+        StringAssert.Contains(probeAiExplainServiceText, "interface IAiExplainService");
+        StringAssert.Contains(probeAiActionPreviewServiceText, "interface IAiActionPreviewService");
+        StringAssert.Contains(probeAiBudgetServiceText, "interface IAiBudgetService");
+        StringAssert.Contains(probeNotImplementedAiGatewayServiceText, "ai_not_implemented");
+        StringAssert.Contains(probeInfrastructureDiText, "AddSingleton<IAiGatewayService, NotImplementedAiGatewayService>()");
+        StringAssert.Contains(probeInfrastructureDiText, "AddSingleton<IAiBudgetService, DefaultAiBudgetService>()");
+        StringAssert.Contains(probeEnvExampleText, "CHUMMER_AI_AIMAGICX_PRIMARY_API_KEY");
+        StringAssert.Contains(probeEnvExampleText, "CHUMMER_AI_1MINAI_FALLBACK_API_KEY");
+        StringAssert.Contains(probeEnvExampleText, "CHUMMER_RUN_URL");
+        StringAssert.Contains(probeEnvExampleText, "CHUMMER_AI_ENABLE_REMOTE_EXECUTION");
+        StringAssert.Contains(probeGitignoreText, "!.env.example");
+        StringAssert.Contains(probeDockerignoreText, "**/.env");
+        StringAssert.Contains(probeLegacyPortalProgramText, "CHUMMER_PORTAL_AI_PROXY_URL");
+        StringAssert.Contains(probeLegacyPortalProgramText, "RouteId = \"portal-ai\"");
+        StringAssert.Contains(probeLegacyReadmeText, "/api/ai/*");
+        StringAssert.Contains(probeLegacyReadmeText, "AI gateway");
+        StringAssert.Contains(probeLegacyReadmeText, "typed provider turn plan");
+        StringAssert.Contains(probeLegacyReadmeText, "structured answer payload");
+        return;
+        }
+
         string apiProgramPath = FindPath("Chummer.Api", "Program.cs");
         string apiProgramText = File.ReadAllText(apiProgramPath);
         string aiEndpointsPath = FindPath("Chummer.Api", "Endpoints", "AiEndpoints.cs");

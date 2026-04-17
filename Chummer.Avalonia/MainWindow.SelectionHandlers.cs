@@ -49,6 +49,13 @@ public partial class MainWindow
             $"execute workflow surface '{actionId}'");
     }
 
+    private async void SectionHost_OnQuickActionRequested(object? sender, string controlId)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.HandleUiControlAsync(controlId, CancellationToken.None),
+            $"execute section quick action '{controlId}'");
+    }
+
     private async void CommandDialogPane_OnDialogActionSelected(object? sender, string actionId)
     {
         await RunUiActionAsync(

@@ -1,5 +1,7 @@
 
 
+@namespace Chummer.Blazor.Components.Layout
+
 <div class="desktop-shell"
      @ref="_shellRoot"
      tabindex="0"
@@ -18,47 +20,23 @@
                IsCommandEnabled="@IsCommandEnabled"
                ExecuteCommandRequested="@ExecuteCommandAsync" />
 
-    <MdiStrip OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
-              ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
-              RulesetId="@_shellSurfaceState.ActiveRulesetId"
-              IsBusy="@State.IsBusy"
-              OpenWorkspaceRequested="@OpenWorkspaceAsync"
-              CloseWorkspaceRequested="@CloseWorkspaceAsync" />
+    @if (_shellSurfaceState.OpenWorkspaces.Count > 1)
+    {
+        <MdiStrip OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
+                  ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+                  RulesetId="@_shellSurfaceState.ActiveRulesetId"
+                  IsBusy="@State.IsBusy"
+                  OpenWorkspaceRequested="@OpenWorkspaceAsync"
+                  CloseWorkspaceRequested="@CloseWorkspaceAsync" />
+    }
 
-    <section class="@DesktopMarqueeCssClass" data-testid="desktop-flagship-marquee">
-        <div class="flagship-copy">
-            <p class="flagship-kicker">@DesktopMarqueeEyebrow</p>
-            <h1 data-testid="desktop-flagship-marquee-title">@DesktopMarqueeTitle</h1>
-            <p class="flagship-spotlight">@DesktopMarqueeSpotlight</p>
-            <p class="flagship-resume">@DesktopMarqueeResumeLane</p>
-        </div>
-
-        <div class="flagship-fact-grid">
-            <article class="flagship-fact">
-                <span class="flagship-label">Posture</span>
-                <strong>@DesktopMarqueePosture</strong>
-            </article>
-            <article class="flagship-fact">
-                <span class="flagship-label">Runtime</span>
-                <strong>@DesktopMarqueeRuntime</strong>
-            </article>
-            <article class="flagship-fact">
-                <span class="flagship-label">Continuity</span>
-                <strong>@DesktopMarqueeContinuity</strong>
-            </article>
-            <article class="flagship-fact">
-                <span class="flagship-label">Surface</span>
-                <strong>@DesktopMarqueeSurfaceSummary</strong>
-            </article>
-        </div>
-
-        <ul class="flagship-watchouts">
-            @foreach (string watchout in DesktopMarqueeWatchouts)
-            {
-                <li>@watchout</li>
-            }
-        </ul>
-    </section>
+    <SummaryHeader State="@State"
+                   ShellSurface="@_shellSurfaceState"
+                   NavigationTabs="@NavigationTabs"
+                   ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                   IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                   SelectTabRequested="@SelectTabAsync"
+                   InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
 
     <div class="workspace-layout">
         <WorkspaceLeftPane State="@State"
@@ -76,19 +54,6 @@
                            ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
 
         <main class="center-pane">
-            <SummaryHeader State="@State"
-                           ShellSurface="@_shellSurfaceState"
-                           InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
-
-            <MetadataPanel State="@State"
-                           @bind-MetadataName="MetadataName"
-                           @bind-MetadataAlias="MetadataAlias"
-                           @bind-MetadataNotes="MetadataNotes"
-                           @bind-LoadWorkspaceId="LoadWorkspaceId"
-                           UpdateMetadataRequested="@UpdateMetadataAsync"
-                           SaveRequested="@SaveAsync"
-                           LoadWorkspaceRequested="@LoadWorkspaceAsync" />
-
             <SectionPane State="@State" />
         </main>
 
@@ -97,6 +62,7 @@
                          RulesetId="@_shellSurfaceState.ActiveRulesetId"
                          ImportedFileName="@ImportedFileName"
                          ImportError="@ImportError"
+                         LatestPortabilityActivity="@State.LatestPortabilityActivity"
                          @bind-RawImportXml="RawImportXml"
                          ImportFileRequested="@ImportFileAsync"
                          ImportRawRequested="@ImportRawAsync" />

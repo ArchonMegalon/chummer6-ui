@@ -17,12 +17,14 @@ REQUIRE_STARTUP_SMOKE_PROOF="${CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF:-1}"
 REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}"
 PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS:-1}"
 UI_LOCALIZATION_RELEASE_GATE_PATH="${CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json}"
+EXTERNAL_HOST_PROOF_BLOCKERS_PATH="${CHUMMER_UI_EXTERNAL_HOST_PROOF_BLOCKERS_PATH:-$REPO_ROOT/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json}"
 CANONICAL_MANIFEST_PATH="${CANONICAL_MANIFEST_PATH:-$(dirname "$MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PORTAL_CANONICAL_MANIFEST_PATH="${PORTAL_CANONICAL_MANIFEST_PATH:-$(dirname "$PORTAL_MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PROMOTION_EVIDENCE_PATH="${PROMOTION_EVIDENCE_PATH:-$(dirname "$MANIFEST_PATH")/release-evidence/public-promotion.json}"
 QUARANTINE_PROMOTION_EVIDENCE_PATH="${QUARANTINE_PROMOTION_EVIDENCE_PATH:-$REPO_ROOT/.codex-studio/published/QUARANTINED_INSTALLER_PROMOTION.generated.json}"
 SOURCE_MANIFEST_PATH="${SOURCE_MANIFEST_PATH:-}"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
+PREVIEW_INSTALL_ACCESS_CLASS="${CHUMMER_PREVIEW_INSTALL_ACCESS_CLASS:-}"
 
 resolve_path_allow_missing() {
   python3 - "$1" <<'PY'
@@ -197,10 +199,187 @@ output_path.write_text(json.dumps(sanitized, indent=2) + "\n", encoding="utf-8")
 PY
 }
 
+infer_release_version_from_startup_smoke() {
+  local downloads_dir="${1:-}"
+  local startup_smoke_dir="${2:-}"
+  python3 - "$downloads_dir" "$startup_smoke_dir" <<'PY'
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+
+def parse_timestamp(payload: dict) -> dt.datetime:
+    for key in ("completedAtUtc", "recordedAtUtc", "generatedAt", "generated_at", "startedAtUtc"):
+        raw = str(payload.get(key) or "").strip()
+        if not raw:
+            continue
+        if raw.endswith("Z"):
+            raw = raw[:-1] + "+00:00"
+        try:
+            parsed = dt.datetime.fromisoformat(raw)
+        except ValueError:
+            continue
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt.timezone.utc)
+        return parsed.astimezone(dt.timezone.utc)
+    return dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+
+
+def sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest().lower()
+
+
+downloads_dir = Path(sys.argv[1]).resolve()
+startup_smoke_dir = Path(sys.argv[2]).resolve()
+if not downloads_dir.is_dir() or not startup_smoke_dir.is_dir():
+    raise SystemExit(0)
+
+downloads_root = downloads_dir.parent
+version_scores: dict[str, dict[str, object]] = {}
+
+for receipt_path in sorted(startup_smoke_dir.glob("startup-smoke-*.receipt.json")):
+    try:
+        payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        continue
+    if not isinstance(payload, dict):
+        continue
+
+    version = str(payload.get("version") or payload.get("releaseVersion") or "").strip()
+    if not version or version == "unpublished":
+        continue
+
+    digest = str(payload.get("artifactSha256") or "").strip().lower()
+    artifact_digest = str(payload.get("artifactDigest") or "").strip().lower()
+    if not digest and artifact_digest.startswith("sha256:"):
+        digest = artifact_digest.split(":", 1)[1]
+    if len(digest) != 64:
+        continue
+
+    candidate_names = []
+    for key in ("artifactFileName", "fileName"):
+        value = str(payload.get(key) or "").strip()
+        if value:
+            candidate_names.append(value)
+
+    for key in ("artifactRelativePath", "artifactPath"):
+        raw = str(payload.get(key) or "").strip()
+        if not raw:
+            continue
+        token = Path(raw).name
+        if token:
+            candidate_names.append(token)
+
+    artifact_path = None
+    for name in dict.fromkeys(candidate_names):
+        candidate = downloads_dir / name
+        if candidate.is_file():
+            artifact_path = candidate
+            break
+        relative_candidate = downloads_root / name
+        if relative_candidate.is_file():
+            artifact_path = relative_candidate
+            break
+
+    if artifact_path is None or not artifact_path.is_file():
+        continue
+    if sha256_file(artifact_path) != digest:
+        continue
+
+    bucket = version_scores.setdefault(
+        version,
+        {
+            "count": 0,
+            "latest_timestamp": dt.datetime.min.replace(tzinfo=dt.timezone.utc),
+        },
+    )
+    bucket["count"] = int(bucket["count"]) + 1
+    timestamp = parse_timestamp(payload)
+    if timestamp > bucket["latest_timestamp"]:
+        bucket["latest_timestamp"] = timestamp
+
+if not version_scores:
+    raise SystemExit(0)
+
+best_version, _ = max(
+    version_scores.items(),
+    key=lambda item: (
+        int(item[1]["count"]),
+        item[1]["latest_timestamp"],
+        item[0],
+    ),
+)
+print(best_version)
+PY
+}
+
 if [[ ! -f "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" ]]; then
   echo "Missing registry materializer: $REGISTRY_ROOT/scripts/materialize_public_release_channel.py" >&2
   exit 1
 fi
+
+if [[ "$RELEASE_VERSION" == "unpublished" ]]; then
+  inferred_release_version="$(infer_release_version_from_startup_smoke "$DOWNLOADS_DIR" "$STARTUP_SMOKE_DIR")"
+  if [[ -n "$inferred_release_version" ]]; then
+    RELEASE_VERSION="$inferred_release_version"
+  fi
+fi
+
+normalize_preview_install_access_classes() {
+  local manifest_path="$1"
+  local release_channel="$2"
+
+  if [[ "${release_channel,,}" != "preview" ]]; then
+    return 0
+  fi
+
+  if [[ -z "$PREVIEW_INSTALL_ACCESS_CLASS" ]]; then
+    PREVIEW_INSTALL_ACCESS_CLASS="open_public"
+  fi
+
+  python3 - "$manifest_path" "$PREVIEW_INSTALL_ACCESS_CLASS" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+access_class = str(sys.argv[2] or "open_public").strip().lower()
+if not access_class:
+    raise SystemExit(0)
+
+payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+if not isinstance(payload, dict):
+    raise SystemExit(0)
+
+changed = False
+for artifact in payload.get("artifacts") or []:
+    if not isinstance(artifact, dict):
+        continue
+
+    kind = str(artifact.get("kind") or "").strip().lower()
+    if kind not in {"installer", "dmg", "pkg", "msix"}:
+        continue
+
+    if str(artifact.get("installAccessClass") or "").strip().lower() == access_class:
+        continue
+
+    artifact["installAccessClass"] = access_class
+    changed = True
+
+if changed:
+    manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
 
 RELEASE_PROOF_PATH="$(resolve_release_proof_path "$RELEASE_PROOF_PATH")"
 SANITIZED_RELEASE_PROOF_PATH=""
@@ -374,6 +553,16 @@ def normalize_release_channel_artifact_identity_fields(manifest_path: Path) -> b
 manifest_path = Path(sys.argv[1]).resolve()
 normalize_release_channel_artifact_identity_fields(manifest_path)
 PY
+normalize_preview_install_access_classes "$CANONICAL_MANIFEST_PATH" "$RELEASE_CHANNEL"
+python3 "$SCRIPT_DIR/materialize-external-host-proof-blockers.py" \
+  --manifest "$CANONICAL_MANIFEST_PATH" \
+  --downloads-dir "$DOWNLOADS_DIR" \
+  --startup-smoke-dir "$STARTUP_SMOKE_DIR" \
+  --output "$EXTERNAL_HOST_PROOF_BLOCKERS_PATH" \
+  --base-url "${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
+  --timeout-seconds "${CHUMMER_EXTERNAL_PROOF_ROUTE_TIMEOUT_SECONDS:-10}" \
+  --max-receipt-age-seconds "${CHUMMER_EXTERNAL_PROOF_MAX_RECEIPT_AGE_SECONDS:-604800}" \
+  >/dev/null
 verify_args=()
 if [[ "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" != "0" ]]; then
   verify_args+=(--require-complete-desktop-coverage)
@@ -466,7 +655,9 @@ else
       "$portal_files_dir"/chummer-*-installer.pkg \
       "$portal_files_dir"/chummer-*-installer.dmg \
       "$portal_files_dir"/chummer-*-installer.msix
-    cp "${portal_artifacts[@]}" "$portal_files_dir"/
+    # Force overwrite so repeated manifest publication stays idempotent even when
+    # the portal mirror already contains a prior copy of the promoted artifact set.
+    cp -f "${portal_artifacts[@]}" "$portal_files_dir"/
     echo "synced ${#portal_artifacts[@]} local portal artifact(s) -> $portal_files_dir"
   else
     echo "no local desktop artifacts found in $DOWNLOADS_DIR for portal file sync"

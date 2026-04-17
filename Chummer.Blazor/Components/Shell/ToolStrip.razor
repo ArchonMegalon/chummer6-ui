@@ -1,3 +1,4 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Chummer.Contracts.Presentation
 @using Chummer.Presentation.UiKit
 
@@ -6,9 +7,10 @@
     {
         bool enabled = IsCommandEnabled(command);
         <button class="tool-btn @(string.Equals(LastCommandId, command.Id, StringComparison.Ordinal) ? "selected" : string.Empty)"
+                title="@ShellChromeBoundary.FormatCommandLabel(command.Id)"
                 disabled="@(!enabled || IsBusy)"
                 @onclick="() => ExecuteCommandAsync(command.Id)">
-            @ShellChromeBoundary.FormatCommandLabel(command.Id)
+            @FormatToolStripLabel(command.Id)
         </button>
     }
 </div>
@@ -33,4 +35,22 @@
     {
         return ExecuteCommandRequested.InvokeAsync(commandId);
     }
+
+    private static string FormatToolStripLabel(string commandId)
+        => commandId switch
+        {
+            "new_character" => "New",
+            "open_character" => "Open",
+            "save_character" => "Save",
+            "save_character_as" => "Save As",
+            "print_character" => "Print",
+            "copy" => "Copy",
+            "paste" => "Paste",
+            "close_window" => "Close",
+            "close_all" => "Close All",
+            "update" => "Update",
+            "global_settings" => "Options",
+            "report_bug" => "Bug",
+            _ => ShellChromeBoundary.FormatCommandLabel(commandId)
+        };
 }

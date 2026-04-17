@@ -1,3 +1,4 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Chummer.Contracts.Workspaces
 @using Chummer.Contracts.Rulesets
 @using Chummer.Presentation.Overview
@@ -12,11 +13,10 @@
     else
     {
         <div class="virtual-list navigator-list" data-testid="open-workspace-tree">
+            @* <Virtualize Items="@OpenWorkspaces" ItemsTagName="ul" ItemTagName="li"> *@
             <Virtualize Items="@(OpenWorkspaces.ToArray())"
                         Context="workspace"
-                        ItemSize="52"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+                        ItemSize="52">
                 @{
                     bool isActive = string.Equals(ActiveWorkspaceId?.Value, workspace.Id.Value, StringComparison.Ordinal);
                     string workspaceLabel = RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel(

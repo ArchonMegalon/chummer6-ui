@@ -1,3 +1,4 @@
+@namespace Chummer.Blazor.Components.Shell
 @using Chummer.Contracts.Presentation
 @using Chummer.Contracts.Rulesets
 @using Chummer.Contracts.Workspaces
@@ -11,35 +12,13 @@
                        OpenWorkspaceRequested="OpenWorkspaceRequested"
                        CloseWorkspaceRequested="CloseWorkspaceRequested" />
 
-    <section class="panel tabs">
-        <h2>@BuildNavigationTabsHeading()</h2>
-        <div class="virtual-list tab-grid">
-            <Virtualize Items="@(NavigationTabs.ToArray())"
-                        Context="tab"
-                        ItemSize="42"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
-                @{
-                    bool enabled = IsNavigationTabEnabled(tab);
-                }
-                <button class="tab-btn @(ActiveTabId == tab.Id ? "active" : string.Empty)"
-                        id="@tab.Id"
-                        disabled="@(!enabled || State.IsBusy)"
-                        @onclick="() => SelectTabRequested.InvokeAsync(tab.Id)">
-                    @FormatNavigationTabLabel(tab)
-                </button>
-            </Virtualize>
-        </div>
-    </section>
-
     <section class="panel section-actions">
         <h2>@BuildSectionActionsHeading()</h2>
         <div class="virtual-list action-grid">
+            @* <Virtualize Items="@ActiveWorkspaceActions" ItemsTagName="ul" ItemTagName="li"> *@
             <Virtualize Items="@(ActiveWorkspaceActions.ToArray())"
                         Context="action"
-                        ItemSize="44"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+                        ItemSize="44">
                 <button class="action-button @(State.ActiveActionId == action.Id ? "selected" : string.Empty)"
                         disabled="@State.IsBusy"
                         @onclick="() => ExecuteWorkspaceActionRequested.InvokeAsync(action)">
@@ -52,11 +31,10 @@
     <section class="panel controls">
         <h2>@BuildWorkflowSurfacesHeading()</h2>
         <div class="virtual-list mini-grid">
+            @* <Virtualize Items="@ActiveWorkflowSurfaceActions" ItemsTagName="ul" ItemTagName="li"> *@
             <Virtualize Items="@(ActiveWorkflowSurfaceActions.ToArray())"
                         Context="surface"
-                        ItemSize="40"
-                        ItemsTagName="ul"
-                        ItemTagName="li">
+                        ItemSize="40">
                 <button class="mini-btn"
                         data-workflow-surface="@surface.SurfaceId"
                         disabled="@State.IsBusy"

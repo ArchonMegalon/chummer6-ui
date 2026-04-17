@@ -92,7 +92,15 @@ export CHUMMER_TEAM_ID="TEAMID"
 export CHUMMER_NOTARY_PROFILE="chummer-notary"
 export CHUMMER_RELEASE_CHANNEL="preview"
 export CHUMMER_RELEASE_VERSION="run-$(date -u +%Y%m%d-%H%M%S)"
+export CHUMMER_MAC_RELEASE_TMPDIR="$HOME/chummer-release-tmp"
+export CHUMMER_DESKTOP_INSTALLER_TMPDIR="$CHUMMER_MAC_RELEASE_TMPDIR/desktop-installer"
 ```
+
+Temp-root note:
+
+1. `scripts/build-desktop-installer.sh` now honors `CHUMMER_DESKTOP_INSTALLER_TMPDIR` and otherwise falls back to `${TMPDIR:-$DIST_DIR/tmp}` for `hdiutil`.
+2. Point `CHUMMER_MAC_RELEASE_TMPDIR` at a workspace-backed path on the target SSD when the default temp volume is not the right disk for DMG creation.
+3. Override `CHUMMER_DESKTOP_INSTALLER_TMPDIR` separately only when installer-image temp files must live on a different volume.
 
 ## Checkout layout
 
@@ -168,6 +176,8 @@ bash scripts/build-desktop-installer.sh \
   "$DIST_DIR" \
   "$CHUMMER_RELEASE_VERSION"
 ```
+
+If this step fails with `hdiutil: create failed - No space left on device`, keep the publish output and rerun with `CHUMMER_MAC_RELEASE_TMPDIR` pointed at a workspace-backed path on the target SSD. Clear unneeded old `run-*` directories under the same parent before retrying.
 
 At this point you will have a DMG like:
 

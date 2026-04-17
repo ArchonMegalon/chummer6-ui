@@ -22,6 +22,11 @@ This repo does not own:
 
 The shipped play/mobile heads now live outside this repo in `chummer6-mobile`, and shared UI-kit primitives belong in `Chummer.Ui.Kit`.
 
+Legacy head policy: `Chummer` and `Chummer.Web` are oracle/parity assets only.
+Net-new user-facing behavior belongs in the shared seam and active heads; legacy changes must be limited to regression-oracle maintenance, parity extraction, or compatibility verification.
+Legacy hub policy: `ChummerHub` and `ChummerHub.Client` are archived compatibility assets only.
+They are not part of the active solution, public runtime, or future ChummerHub product path; all public-edge and hub work belongs behind `Chummer.Portal`.
+
 ## Current mission
 
 The work here is purification:

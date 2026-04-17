@@ -361,6 +361,8 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             lines.Add($"Campaign memory return: {_campaignServerPlane.CampaignMemoryReturnSummary}");
         }
 
+        lines.AddRange(BuildRestoreChoiceLines());
+
         if (_recentWorkspaces.Count > 0)
         {
             lines.Add(F(
@@ -374,6 +376,34 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         }
 
         return string.Join("\n", lines);
+    }
+
+    private IReadOnlyList<string> BuildRestoreChoiceLines()
+    {
+        List<string> lines = [];
+        if (_campaignProjection.Watchouts.Count > 0)
+        {
+            lines.Add("Stale/conflict posture: review the watchouts below before merge, replace, or continuing from another claimed device.");
+            foreach (string watchout in _campaignProjection.Watchouts.Take(4))
+            {
+                lines.Add($"Conflict choice: keep local work, restore the claimed-device copy, or route support before merging - {watchout}");
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId) || _recentWorkspaces.Count > 0)
+        {
+            lines.Add("Restore choice: continue the current local workspace, or open Devices and Access before moving this context to another claimed device.");
+        }
+        else
+        {
+            lines.Add("Restore choice: link this copy or open install support before treating restore as portable truth.");
+        }
+
+        if (_campaignServerPlane is null)
+        {
+            lines.Add("Stale-state visibility: live server restore is unavailable; this route is showing bounded local fallback until refresh succeeds.");
+        }
+
+        return lines;
     }
 
     private string BuildSupportBody()
@@ -477,7 +507,12 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
         if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal()));
+            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), () => DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_installState)));
+        }
+
+        if (_campaignProjection.Watchouts.Count > 0)
+        {
+            actions.Add(CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport));
         }
 
         return actions;

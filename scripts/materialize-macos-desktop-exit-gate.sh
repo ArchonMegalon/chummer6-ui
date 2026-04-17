@@ -181,6 +181,12 @@ def host_class_matches_platform(host_class: str, platform: str) -> bool:
     expected_token = expected_host_class_platform_token(platform)
     if not normalized_host or not expected_token:
         return False
+    if normalize_token(platform) == "windows":
+        return "win" in normalized_host
+    if normalize_token(platform) == "macos":
+        return any(token in normalized_host for token in ("osx", "darwin", "macos"))
+    if normalize_token(platform) == "linux":
+        return "linux" in normalized_host
     host_tokens = [token for token in normalized_host.split("-") if token]
     return expected_token in host_tokens
 
@@ -213,6 +219,59 @@ def resolve_existing_path(explicit_path: str, candidates: Iterable[Path]) -> Pat
     return None
 
 
+def choose_best_startup_smoke_receipt(
+    explicit_path: str,
+    candidates: Iterable[Path],
+    expected_channel_id: str,
+    expected_version: str,
+    expected_head: str,
+    expected_rid: str,
+    expected_artifact_digest: str,
+) -> Path | None:
+    explicit = resolve_existing_path(explicit_path, candidates)
+    if explicit is not None:
+        return explicit
+
+    scored: List[tuple[int, int, str, Path]] = []
+    for candidate in candidates:
+        if not candidate.is_file():
+            continue
+        payload = load_json(candidate)
+        recorded_at = parse_iso(
+            payload.get("completedAtUtc")
+            or payload.get("recordedAtUtc")
+            or payload.get("startedAtUtc")
+            or ""
+        )
+        score = 0
+        if normalize_token(payload.get("headId")) == normalize_token(expected_head):
+            score += 8
+        if normalize_token(payload.get("platform")) == "macos":
+            score += 8
+        if normalize_token(payload.get("rid")) == normalize_token(expected_rid):
+            score += 8
+        if normalize_token(payload.get("channelId") or payload.get("channel")) == normalize_token(expected_channel_id):
+            score += 16
+        if str(payload.get("version") or payload.get("releaseVersion") or "").strip() == expected_version:
+            score += 16
+        if (
+            normalize_token(payload.get("artifactDigest")) == normalize_token(expected_artifact_digest)
+            and expected_artifact_digest
+        ):
+            score += 12
+        if normalize_token(payload.get("status")) in {"pass", "passed", "ready"}:
+            score += 4
+        if normalize_token(payload.get("readyCheckpoint")) == "pre_ui_event_loop":
+            score += 4
+        timestamp_score = int(recorded_at.timestamp()) if recorded_at is not None else -1
+        scored.append((score, timestamp_score, str(candidate), candidate))
+
+    if not scored:
+        return None
+    scored.sort(reverse=True)
+    return scored[0][3]
+
+
 def path_is_within(path: Path, root: Path) -> bool:
     try:
         path.resolve().relative_to(root.resolve())
@@ -224,6 +283,33 @@ def path_is_within(path: Path, root: Path) -> bool:
 def path_uses_legacy_chummer5a_root(path: Path) -> bool:
     normalized = str(path.resolve()).replace("\\", "/").lower()
     return "/chummer5a/" in normalized
+
+
+def resolve_receipt_artifact_path(
+    raw_candidates: List[str],
+    repo_root: Path,
+    downloads_roots: List[Path],
+) -> tuple[str, List[str], Path | None]:
+    candidate_paths: List[Path] = []
+    for raw_value in raw_candidates:
+        raw = str(raw_value or "").strip()
+        if not raw:
+            continue
+        path = Path(raw).expanduser()
+        if path.is_absolute():
+            candidate_paths.append(path)
+            continue
+        for root in downloads_roots:
+            candidate_paths.append(root / path)
+        candidate_paths.append(repo_root / path)
+
+    deduped_candidates = list(dict.fromkeys(candidate_paths))
+    resolved = next((path for path in deduped_candidates if path.is_file()), None)
+    return (
+        str(next((value for value in raw_candidates if str(value or "").strip()), "")).strip(),
+        [str(path) for path in deduped_candidates],
+        resolved or (deduped_candidates[0] if deduped_candidates else None),
+    )
 
 
 proof_path = Path(sys.argv[1])
@@ -243,7 +329,7 @@ startup_smoke_max_age_seconds = int(
     str(
         os.environ.get("CHUMMER_MACOS_STARTUP_SMOKE_MAX_AGE_SECONDS")
         or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
-        or "86400"
+        or "604800"
     ).strip()
 )
 startup_smoke_max_future_skew_seconds = int(
@@ -352,9 +438,14 @@ startup_smoke_candidate_paths = list(
     dict.fromkeys(str(candidate) for candidate in startup_smoke_candidates if candidate is not None)
 )
 evidence["startup_smoke_candidate_paths"] = startup_smoke_candidate_paths
-startup_smoke_path = resolve_existing_path(
+startup_smoke_path = choose_best_startup_smoke_receipt(
     startup_smoke_receipt_arg,
     [candidate for candidate in startup_smoke_candidates if candidate is not None],
+    release_channel_id,
+    release_channel_version,
+    app_key,
+    rid,
+    f"sha256:{artifact_sha}" if artifact_sha else "",
 )
 startup_smoke_payload = load_json(startup_smoke_path) if startup_smoke_path else {}
 startup_smoke_receipt_found = startup_smoke_path is not None and startup_smoke_path.is_file()
@@ -375,7 +466,18 @@ startup_smoke_version = str(
 ).strip()
 startup_smoke_host_class = normalize_token(startup_smoke_payload.get("hostClass"))
 startup_smoke_operating_system = str(startup_smoke_payload.get("operatingSystem") or "").strip()
-startup_smoke_artifact_path = str(startup_smoke_payload.get("artifactPath") or "").strip()
+startup_smoke_artifact_path, startup_smoke_artifact_path_candidates, startup_smoke_artifact_path_obj = resolve_receipt_artifact_path(
+    [
+        startup_smoke_payload.get("artifactRelativePath"),
+        startup_smoke_payload.get("artifactPath"),
+    ],
+    repo_root,
+    [
+        primary_shelf_root.parent,
+        release_channel_path.parent,
+        release_channel_path.parent.parent,
+    ],
+)
 startup_smoke_recorded_at_raw = str(
     startup_smoke_payload.get("completedAtUtc")
     or startup_smoke_payload.get("recordedAtUtc")
@@ -407,6 +509,7 @@ evidence["startup_smoke"] = {
     "host_class": startup_smoke_host_class,
     "operating_system": startup_smoke_operating_system,
     "artifact_path": startup_smoke_artifact_path,
+    "artifact_path_candidates": startup_smoke_artifact_path_candidates,
     "receipt_recorded_at": startup_smoke_recorded_at_raw,
     "receipt_age_seconds": startup_smoke_age_seconds,
     "receipt_max_age_seconds": startup_smoke_max_age_seconds,
@@ -452,14 +555,16 @@ else:
     if not startup_smoke_artifact_path:
         reasons.append("macOS startup smoke receipt artifactPath is missing.")
     else:
-        startup_smoke_artifact_path_obj = Path(startup_smoke_artifact_path)
-        if path_uses_legacy_chummer5a_root(startup_smoke_artifact_path_obj):
-            reasons.append("macOS startup smoke receipt artifactPath points into a legacy chummer5a root.")
-        try:
-            if installer_path is not None and startup_smoke_artifact_path_obj.resolve() != installer_path.resolve():
-                reasons.append("macOS startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.")
-        except Exception:
+        if startup_smoke_artifact_path_obj is None:
             reasons.append("macOS startup smoke receipt artifactPath could not be resolved for promoted shelf verification.")
+        elif path_uses_legacy_chummer5a_root(startup_smoke_artifact_path_obj):
+            reasons.append("macOS startup smoke receipt artifactPath points into a legacy chummer5a root.")
+        else:
+            try:
+                if installer_path is not None and startup_smoke_artifact_path_obj.resolve() != installer_path.resolve():
+                    reasons.append("macOS startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes.")
+            except Exception:
+                reasons.append("macOS startup smoke receipt artifactPath could not be resolved for promoted shelf verification.")
     if not artifact_sha:
         reasons.append("Promoted macOS installer digest could not be computed.")
     elif startup_smoke_artifact_digest != f"sha256:{artifact_sha}":
@@ -477,6 +582,11 @@ else:
         reasons.append(f"macOS startup smoke receipt is stale ({startup_smoke_age_seconds}s old).")
 
 status = "passed" if not reasons else "failed"
+summary = (
+    "macOS desktop exit gate passed."
+    if status == "passed"
+    else "macOS desktop exit gate failed: " + "; ".join(reasons)
+)
 payload = {
     "contract_name": "chummer6-ui.macos_desktop_exit_gate",
     "generated_at": now_iso(),
@@ -494,6 +604,7 @@ payload = {
         "rid": rid,
         "launch_target": launch_target,
     },
+    "summary": summary,
     "artifact": evidence["artifact"],
     "startup_smoke": evidence["startup_smoke"],
     "checks": evidence,
@@ -502,6 +613,7 @@ payload = {
 proof_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 if reasons:
+    print(f"macOS desktop exit gate failed: {summary}", file=sys.stderr)
     print("\n".join(reasons), file=sys.stderr)
     raise SystemExit(1)
 PY

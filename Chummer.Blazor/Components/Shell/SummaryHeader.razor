@@ -1,25 +1,34 @@
+@namespace Chummer.Blazor.Components.Shell
+@using Chummer.Contracts.Presentation
 @using Chummer.Contracts.Rulesets
 @using Chummer.Presentation.Rulesets
+@using Chummer.Presentation.Shell
 
-<section class="desktop-summary panel">
-    <h2>@BuildSummaryHeading()</h2>
-    <div class="summary-grid">
-        <label>Name <input id="summaryName" value="@(State.Profile?.Name ?? string.Empty)" readonly /></label>
-        <label>Alias <input id="summaryAlias" value="@(State.Profile?.Alias ?? string.Empty)" readonly /></label>
-        <label>Metatype <input id="summaryMetatype" value="@(State.Profile?.Metatype ?? string.Empty)" readonly /></label>
-        <label>Build <input id="summaryBuildMethod" value="@(State.Build?.BuildMethod ?? string.Empty)" readonly /></label>
-        <label>Karma <input id="summaryKarma" value="@(State.Progress?.Karma.ToString() ?? "0")" readonly /></label>
-        <label>Street Cred <input id="summaryStreetCred" value="@(State.Progress?.StreetCred.ToString() ?? "0")" readonly /></label>
-        <label class="wide">
-            Runtime
-            <input id="summaryRuntime" value="@RuntimeSummary" readonly />
-            <button id="summaryRuntimeInspect"
+<section class="workbench-tab-strip panel" aria-label="@BuildSummaryHeading()">
+    <div class="workbench-summary-copy">
+        <span class="tab-strip-label">@BuildSummaryHeading()</span>
+        <span class="workbench-runtime-summary"
+              title="@BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId())">
+            @BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId())
+        </span>
+    </div>
+    <div class="tab-strip-buttons"
+         role="tablist"
+         aria-label="@BuildNavigationTabsHeading()">
+        @foreach (NavigationTabDefinition tab in NavigationTabs)
+        {
+            bool enabled = IsNavigationTabEnabled(tab);
+            bool active = string.Equals(ActiveTabId, tab.Id, StringComparison.Ordinal);
+            <button class="workbench-tab @(active ? "active" : string.Empty)"
+                    id="@tab.Id"
                     type="button"
-                    disabled="@(!CanInspectRuntime || State.IsBusy)"
-                    @onclick="OpenRuntimeInspectorAsync">
-                Inspect Runtime
+                    role="tab"
+                    aria-selected="@active"
+                    disabled="@(!enabled || State.IsBusy)"
+                    @onclick="() => SelectTabRequested.InvokeAsync(tab.Id)">
+                @FormatNavigationTabLabel(tab)
             </button>
-        </label>
+        }
     </div>
 </section>
 
@@ -31,23 +40,36 @@
     public Chummer.Presentation.Shell.ShellSurfaceState ShellSurface { get; set; } = Chummer.Presentation.Shell.ShellSurfaceState.Empty;
 
     [Parameter]
+    public IReadOnlyList<NavigationTabDefinition> NavigationTabs { get; set; } = [];
+
+    [Parameter]
+    public string? ActiveTabId { get; set; }
+
+    [Parameter]
+    public Func<NavigationTabDefinition, bool> IsNavigationTabEnabled { get; set; } = _ => false;
+
+    [Parameter]
+    public EventCallback<string> SelectTabRequested { get; set; }
+
+    [Parameter]
     public EventCallback InspectRuntimeRequested { get; set; }
-
-    private string RuntimeSummary =>
-        Chummer.Presentation.Shell.ShellStatusTextFormatter.BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId());
-
-    private bool CanInspectRuntime => ShellSurface.ActiveRuntime is not null;
 
     private string BuildSummaryHeading()
         => RulesetUiDirectiveCatalog.BuildSummaryHeading(ResolveActiveRulesetId());
+
+    private string BuildNavigationTabsHeading()
+        => RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(ResolveActiveRulesetId());
+
+    private static string BuildActiveRuntimeSummary(
+        Chummer.Contracts.Content.ActiveRuntimeStatusProjection? activeRuntime,
+        string? rulesetId)
+        => ShellStatusTextFormatter.BuildActiveRuntimeSummary(activeRuntime, rulesetId);
+
+    private string FormatNavigationTabLabel(NavigationTabDefinition tab)
+        => RulesetUiDirectiveCatalog.FormatNavigationTabLabel(tab.RulesetId, tab.Id, tab.Label);
 
     private string? ResolveActiveRulesetId()
         => RulesetDefaults.NormalizeOptional(ShellSurface.ActiveRulesetId)
             ?? RulesetDefaults.NormalizeOptional(ShellSurface.ActiveRuntime?.RulesetId)
             ?? RulesetDefaults.NormalizeOptional(State.Rules?.GameEdition);
-
-    private Task OpenRuntimeInspectorAsync()
-    {
-        return InspectRuntimeRequested.InvokeAsync();
-    }
 }

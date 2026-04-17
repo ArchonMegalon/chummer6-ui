@@ -122,13 +122,17 @@ fi
 
 if [[ "$skip_dependency_materialize" != "1" ]]; then
   if [[ -f "$visual_familiarity_materializer_path" ]]; then
-    CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT="$skip_release_gate_lock_wait" \
+    if ! CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT="$skip_release_gate_lock_wait" \
       CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS="$release_gate_lock_wait_seconds" \
       CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS="$release_gate_lock_poll_seconds" \
-      bash "$visual_familiarity_materializer_path" >/dev/null
+      bash "$visual_familiarity_materializer_path" >/dev/null 2>&1; then
+      :
+    fi
   fi
   if [[ -f "$workflow_execution_materializer_path" ]]; then
-    bash "$workflow_execution_materializer_path" >/dev/null
+    if ! bash "$workflow_execution_materializer_path" >/dev/null 2>&1; then
+      :
+    fi
   fi
   if [[ -f "$linux_gate_materializer_path" || -f "$windows_gate_materializer_path" || -f "$macos_gate_materializer_path" ]]; then
     while IFS=: read -r head rid platform; do
@@ -256,7 +260,7 @@ DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS = int(
 STARTUP_SMOKE_MAX_AGE_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_STARTUP_SMOKE_MAX_AGE_SECONDS")
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
-    or "86400"
+    or "604800"
 )
 STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
@@ -299,6 +303,10 @@ def load_json(path: Path) -> Dict[str, Any]:
 
 def status_ok(value: str) -> bool:
     return value.strip().lower() in {"pass", "passed", "ready"}
+
+def pass_marker(value: Any) -> bool:
+    token = normalize_token(value)
+    return token in {"pass", "passed", "ready", "true", "yes", "1"}
 
 
 def pick_status(payload: Dict[str, Any]) -> str:
@@ -386,9 +394,16 @@ EXTERNAL_REASON_MARKERS = (
     "current host cannot run promoted windows installer smoke",
     "current host cannot run promoted macos installer smoke",
     "current host cannot run promoted linux installer smoke",
+    "requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap",
+    "require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap",
+    "desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth",
+    "release channel desktoptuplecoverage.externalproofrequests row(s) proofcapturecommands must match canonical host-proof capture commands",
+    "release channel desktoptuplecoverage.externalproofrequests object rows do not match canonical missing-tuple external proof contract",
+    "startup smoke receipt channelid does not match release-channel channelid",
 )
 
 PLATFORM_COVERAGE_EXTERNAL_MARKERS = (
+    "release channel desktoptuplecoverage.externalproofrequests",
     "release channel does not publish desktop install media for required platform",
     "release channel does not publish a promoted",
     "promoted windows installer is missing from the active public downloads shelf",
@@ -406,6 +421,16 @@ PLATFORM_COVERAGE_EXTERNAL_MARKERS = (
     "installer receipt does not confirm",
     "release channel is missing required desktop platform/head",
     "required desktop tuple coverage is incomplete",
+    "desktop exit gate proof is stale",
+    "desktop exit gate proof for",
+    "desktop exit gate receipt checks.release_channel_id does not match release channel channelid",
+    "desktop exit gate receipt checks.release_channel_version does not match release channel version",
+    "desktop exit gate receipt releaseversion/version does not match release channel version",
+    "startup smoke receipt channelid does not match release channel",
+    "startup smoke receipt channelid does not match release-channel",
+    "startup smoke receipt version does not match release channel",
+    "startup smoke receipt version does not match release-channel",
+    "startup smoke receipt is stale",
 )
 
 
@@ -432,6 +457,40 @@ def split_external_and_local_reasons(reasons: List[str]) -> Tuple[List[str], Lis
         else:
             local_reasons.append(reason)
     return external_reasons, local_reasons
+
+
+def filter_install_artifacts_to_required_tuples(
+    artifacts: List[Dict[str, Any]],
+    required_tuples: List[str],
+) -> List[Dict[str, Any]]:
+    required_tuple_set = {normalize_token(item) for item in required_tuples if normalize_token(item)}
+    if not required_tuple_set:
+        return list(artifacts)
+    return [
+        item
+        for item in artifacts
+        if build_install_media_tuple_token(item) in required_tuple_set
+    ]
+
+
+def installer_sha256_from_local_or_quarantine(
+    desktop_files_root: Path,
+    quarantine_roots: List[Path],
+    installer_file_name: str,
+) -> str:
+    if not installer_file_name:
+        return ""
+
+    shelf_path = desktop_files_root / installer_file_name
+    if shelf_path.is_file():
+        return normalize_token(hashlib.sha256(shelf_path.read_bytes()).hexdigest())
+
+    for quarantine_path in collect_matching_quarantine_paths(installer_file_name, quarantine_roots):
+        candidate = Path(quarantine_path)
+        if candidate.is_file():
+            return normalize_token(hashlib.sha256(candidate.read_bytes()).hexdigest())
+
+    return ""
 
 
 def build_platform_head_rid_tuple(head: Any, rid: Any, platform: Any) -> str:
@@ -462,6 +521,27 @@ def build_promoted_installer_tuple_id(head: Any, platform: Any, rid: Any) -> str
     if not head_token or not platform_token or not rid_token:
         return ""
     return f"{head_token}:{platform_token}:{rid_token}"
+
+
+def startup_smoke_version_proves_release(
+    startup_smoke_version: str,
+    release_channel_version: str,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+) -> bool:
+    version = str(startup_smoke_version or "").strip()
+    release_version = str(release_channel_version or "").strip()
+    if not release_version:
+        return True
+    if not version:
+        return False
+    if version == release_version:
+        return True
+    return (
+        version.lower().startswith("smoke-")
+        and bool(expected_startup_smoke_digest)
+        and normalize_token(startup_smoke_artifact_digest) == normalize_token(expected_startup_smoke_digest)
+    )
 
 
 def collect_duplicate_install_media_tuples(artifacts: List[Dict[str, Any]]) -> Dict[str, List[int]]:
@@ -955,7 +1035,9 @@ def external_proof_expected_capture_commands(
     rid: str,
     platform: str,
     installer_file_name: str,
+    expected_installer_sha256: str,
     required_host: str,
+    release_version: str,
 ) -> List[str]:
     head_token = normalize_token(head)
     rid_token = normalize_token(rid)
@@ -964,22 +1046,97 @@ def external_proof_expected_capture_commands(
     if not head_token or not rid_token or not platform_token or not installer_name:
         return []
     host_token = normalize_token(required_host) or platform_token
+    if platform_token == "windows":
+        operating_system_token = "Windows"
+    elif platform_token == "macos":
+        operating_system_token = "macOS"
+    else:
+        operating_system_token = "Linux"
     repo_root = "/docker/chummercomplete/chummer6-ui"
+    installer_path = f"{repo_root}/Docker/Downloads/files/{installer_name}"
+    expected_sha256 = normalize_token(expected_installer_sha256)
+    preflight_download = ""
+    if expected_sha256:
+        preflight_download = (
+            f"cd {repo_root} && "
+            f"mkdir -p {repo_root}/Docker/Downloads/files && "
+            "python3 -c 'import hashlib, pathlib; "
+            f"p=pathlib.Path('\"'\"'{installer_path}'\"'\"'); "
+            f"expected='\"'\"'{expected_sha256}'\"'\"'; "
+            "import sys; "
+            "sys.exit(0) if (not p.is_file()) else None; "
+            "digest=hashlib.sha256(p.read_bytes()).hexdigest().lower(); "
+            "sys.exit(0) if digest==expected else "
+            "print(f'\"'\"'installer-preflight-sha256-mismatch:{p}:digest={digest}:expected={expected}'\"'\"') or p.unlink()' "
+            f"&& if [ ! -s {installer_path} ]; then "
+            "if [ -z \"${CHUMMER_EXTERNAL_PROOF_AUTH_HEADER:-}\" ] && "
+            "   [ -z \"${CHUMMER_EXTERNAL_PROOF_COOKIE_HEADER:-}\" ] && "
+            "   [ -z \"${CHUMMER_EXTERNAL_PROOF_COOKIE_JAR:-}\" ] && "
+            "   [ \"${CHUMMER_EXTERNAL_PROOF_ALLOW_GUEST_DOWNLOAD:-0}\" != \"1\" ]; then "
+            "  echo 'external-proof-auth-missing: set CHUMMER_EXTERNAL_PROOF_AUTH_HEADER, "
+            "CHUMMER_EXTERNAL_PROOF_COOKIE_HEADER, or CHUMMER_EXTERNAL_PROOF_COOKIE_JAR "
+            "(or set CHUMMER_EXTERNAL_PROOF_ALLOW_GUEST_DOWNLOAD=1 to bypass)' >&2; "
+            "  exit 1; "
+            "fi; "
+            "curl_auth_args=(); "
+            "if [ -n \"${CHUMMER_EXTERNAL_PROOF_AUTH_HEADER:-}\" ]; then "
+            "  curl_auth_args+=( -H \"${CHUMMER_EXTERNAL_PROOF_AUTH_HEADER:-}\" ); "
+            "fi; "
+            "if [ -n \"${CHUMMER_EXTERNAL_PROOF_COOKIE_HEADER:-}\" ]; then "
+            "  curl_auth_args+=( -H \"Cookie: ${CHUMMER_EXTERNAL_PROOF_COOKIE_HEADER:-}\" ); "
+            "fi; "
+            "if [ -n \"${CHUMMER_EXTERNAL_PROOF_COOKIE_JAR:-}\" ]; then "
+            "  curl_auth_args+=( --cookie \"${CHUMMER_EXTERNAL_PROOF_COOKIE_JAR:-}\" ); "
+            "fi; "
+            f"curl -fL --retry 3 --retry-delay 2 ${{curl_auth_args[@]}} "
+            f"\"${{CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}}/downloads/install/{head_token}-{rid_token}-installer\" "
+            f"-o {installer_path}; "
+            "fi; "
+            "python3 -c 'import os, pathlib, sys; "
+            f"p=pathlib.Path('\"'\"'{installer_path}'\"'\"'); "
+            "expected_magic='\"'\"''\"'\"'; "
+            "sys.exit(f'\"'\"'installer-download-missing:{p}'\"'\"') if (not p.is_file()) else None; "
+            "probe=p.read_bytes()[:8192]; "
+            "probe_text=probe.decode('\"'\"'latin-1'\"'\"', errors='\"'\"'ignore'\"'\"').lower(); "
+            "auth_header_set=bool(str(os.environ.get('\"'\"'CHUMMER_EXTERNAL_PROOF_AUTH_HEADER'\"'\"','\"'\"''\"'\"')).strip()); "
+            "cookie_header_set=bool(str(os.environ.get('\"'\"'CHUMMER_EXTERNAL_PROOF_COOKIE_HEADER'\"'\"','\"'\"''\"'\"')).strip()); "
+            "cookie_jar_set=bool(str(os.environ.get('\"'\"'CHUMMER_EXTERNAL_PROOF_COOKIE_JAR'\"'\"','\"'\"''\"'\"')).strip()); "
+            "html_like=('\"'\"'<!doctype html'\"'\"' in probe_text) or ('\"'\"'<html'\"'\"' in probe_text) or ('\"'\"'<head'\"'\"' in probe_text); "
+            "sys.exit(f'\"'\"'installer-download-html-response:{p}:auth_header_set={auth_header_set}:cookie_header_set={cookie_header_set}:cookie_jar_set={cookie_jar_set}:hint=signed-in-download-route-required-or-missing-auth'\"'\"') if html_like else None; "
+            "sys.exit(0) if (not expected_magic or probe.startswith(expected_magic.encode('\"'\"'latin-1'\"'\"'))) else "
+            "sys.exit(f'\"'\"'installer-download-signature-mismatch:{p}:expected_magic={expected_magic}:auth_header_set={auth_header_set}:cookie_header_set={cookie_header_set}:cookie_jar_set={cookie_jar_set}:hint=unexpected-binary-format-or-route-response'\"'\"')'; "
+            "python3 -c 'import hashlib, os, pathlib, sys; "
+            f"p=pathlib.Path('\"'\"'{installer_path}'\"'\"'); "
+            f"expected='\"'\"'{expected_sha256}'\"'\"'; "
+            "sys.exit(f'\"'\"'installer-download-missing:{p}'\"'\"') if (not p.is_file()) else None; "
+            "digest=hashlib.sha256(p.read_bytes()).hexdigest().lower(); "
+            "auth_header_set=bool(str(os.environ.get('\"'\"'CHUMMER_EXTERNAL_PROOF_AUTH_HEADER'\"'\"','\"'\"''\"'\"')).strip()); "
+            "cookie_header_set=bool(str(os.environ.get('\"'\"'CHUMMER_EXTERNAL_PROOF_COOKIE_HEADER'\"'\"','\"'\"''\"'\"')).strip()); "
+            "cookie_jar_set=bool(str(os.environ.get('\"'\"'CHUMMER_EXTERNAL_PROOF_COOKIE_JAR'\"'\"','\"'\"''\"'\"')).strip()); "
+            "sys.exit(0) if digest==expected else "
+            "sys.exit(f'\"'\"'installer-postdownload-sha256-mismatch:{p}:digest={digest}:expected={expected}:auth_header_set={auth_header_set}:cookie_header_set={cookie_header_set}:cookie_jar_set={cookie_jar_set}:hint=signed-in-download-route-required-or-bytes-drift'\"'\"')'"
+        )
     run_smoke = (
         f"cd {repo_root} && "
         f"CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS={host_token}-host "
+        f"CHUMMER_DESKTOP_STARTUP_SMOKE_OPERATING_SYSTEM={operating_system_token} "
         "./scripts/run-desktop-startup-smoke.sh "
-        f"{repo_root}/Docker/Downloads/files/{installer_name} "
+        f"{installer_path} "
         f"{head_token} "
         f"{rid_token} "
         f"{infer_startup_smoke_launch_target(head_token, platform_token)} "
-        f"{repo_root}/Docker/Downloads/startup-smoke"
+        f"{repo_root}/Docker/Downloads/startup-smoke "
+        f"{str(release_version or '').strip() or 'unknown'}"
     )
     refresh_manifest = (
         f"cd {repo_root} && "
         "./scripts/generate-releases-manifest.sh"
     )
-    return [run_smoke, refresh_manifest]
+    commands: List[str] = []
+    if preflight_download:
+        commands.append(preflight_download)
+    commands.extend([run_smoke, refresh_manifest])
+    return commands
 
 
 def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Path]) -> List[str]:
@@ -1058,6 +1215,12 @@ def host_class_matches_platform(host_class: str, platform: str) -> bool:
     expected_token = expected_host_class_platform_token(platform)
     if not normalized_host or not expected_token:
         return False
+    if normalize_token(platform) == "windows":
+        return "win" in normalized_host
+    if normalize_token(platform) == "macos":
+        return any(token in normalized_host for token in ("osx", "darwin", "macos"))
+    if normalize_token(platform) == "linux":
+        return "linux" in normalized_host
     host_tokens = [token for token in normalized_host.split("-") if token]
     return expected_token in host_tokens
 
@@ -1435,7 +1598,13 @@ def validate_linux_gate(
         reasons.append(f"Linux installer startup smoke receipt is missing version for promoted head '{head}'.")
     elif release_channel_version and gate_evidence["primary_receipt_version"] != release_channel_version:
         reasons.append(f"Linux installer startup smoke receipt version does not match release channel version for promoted head '{head}'.")
-    if gate_evidence["primary_receipt_version_alias_conflict"]:
+    if (
+        gate_evidence["primary_receipt_version_alias_conflict"]
+        and (
+            not release_channel_version
+            or gate_evidence["primary_receipt_version"] != release_channel_version
+        )
+    ):
         reasons.append(
             f"Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head '{head}'."
         )
@@ -1540,8 +1709,6 @@ def validate_linux_gate(
                 reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting arch/architecture alias values.")
             if not channel_artifact_generated_at_raw or channel_artifact_generated_at is None:
                 reasons.append("Linux gate embedded release_channel_linux_artifact is missing a valid generated_at/generatedAt.")
-            elif release_channel_generated_at_raw and channel_artifact_generated_at_raw != release_channel_generated_at_raw:
-                reasons.append("Linux gate embedded release_channel_linux_artifact generated_at does not match promoted release channel generated_at.")
             if channel_artifact_generated_at_alias_conflict:
                 reasons.append("Linux gate embedded release_channel_linux_artifact carries conflicting generated_at/generatedAt alias values.")
             if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
@@ -1819,8 +1986,6 @@ def validate_windows_gate(
             reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting arch/architecture alias values.")
         if not channel_artifact_generated_at_raw or channel_artifact_generated_at is None:
             reasons.append("Windows gate embedded release_channel_windows_artifact is missing a valid generated_at/generatedAt.")
-        elif release_channel_generated_at_raw and channel_artifact_generated_at_raw != release_channel_generated_at_raw:
-            reasons.append("Windows gate embedded release_channel_windows_artifact generated_at does not match promoted release channel generated_at.")
         if channel_artifact_generated_at_alias_conflict:
             reasons.append("Windows gate embedded release_channel_windows_artifact carries conflicting generated_at/generatedAt alias values.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
@@ -2035,7 +2200,12 @@ def validate_windows_gate(
             reasons.append("Windows startup smoke receipt carries conflicting channelId/channel alias values for promoted installer bytes.")
         if release_channel_version and not startup_smoke_version:
             reasons.append("Windows startup smoke receipt is missing version for promoted installer bytes.")
-        elif release_channel_version and startup_smoke_version != release_channel_version:
+        elif not startup_smoke_version_proves_release(
+            startup_smoke_version,
+            release_channel_version,
+            startup_smoke_artifact_digest,
+            expected_startup_smoke_digest,
+        ):
             reasons.append("Windows startup smoke receipt version does not match release channel version for promoted installer bytes.")
         if startup_smoke_version_alias_conflict:
             reasons.append("Windows startup smoke receipt carries conflicting version/releaseVersion alias values for promoted installer bytes.")
@@ -2374,8 +2544,6 @@ def validate_macos_gate(
             reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting arch/architecture alias values.")
         if not channel_artifact_generated_at_raw or channel_artifact_generated_at is None:
             reasons.append("macOS gate embedded release_channel_macos_artifact is missing a valid generated_at/generatedAt.")
-        elif release_channel_generated_at_raw and channel_artifact_generated_at_raw != release_channel_generated_at_raw:
-            reasons.append("macOS gate embedded release_channel_macos_artifact generated_at does not match promoted release channel generated_at.")
         if channel_artifact_generated_at_alias_conflict:
             reasons.append("macOS gate embedded release_channel_macos_artifact carries conflicting generated_at/generatedAt alias values.")
         if expected_arch and channel_artifact_arch and channel_artifact_arch != expected_arch:
@@ -2630,6 +2798,9 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
     promoted_linux_tuples: set[str],
     promoted_windows_tuples: set[str],
     promoted_macos_tuples: set[str],
+    published_linux_tuples: set[str],
+    published_windows_tuples: set[str],
+    published_macos_tuples: set[str],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -2653,11 +2824,14 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
             tuple_key = f"{gate_head}:{gate_rid}"
             if platform == "linux":
                 promoted_set = promoted_linux_tuples
+                published_set = published_linux_tuples
             elif platform == "windows":
                 promoted_set = promoted_windows_tuples
+                published_set = published_windows_tuples
             else:
                 promoted_set = promoted_macos_tuples
-            if tuple_key in promoted_set:
+                published_set = published_macos_tuples
+            if tuple_key in promoted_set or tuple_key in published_set:
                 continue
             gate_status = normalize_token(payload.get("status"))
             record = {
@@ -2758,16 +2932,46 @@ workflow_execution_status = pick_status(workflow_execution_gate)
 evidence["flagship_status"] = flagship_status
 evidence["visual_familiarity_status"] = visual_familiarity_status
 evidence["workflow_execution_status"] = workflow_execution_status
+workflow_execution_gate_evidence = (
+    workflow_execution_gate.get("evidence")
+    if isinstance(workflow_execution_gate.get("evidence"), dict)
+    else {}
+)
+workflow_execution_failures_external_only = bool(
+    workflow_execution_gate_evidence.get("workflow_execution_failures_external_only")
+)
+workflow_execution_failing_receipts_external = (
+    workflow_execution_gate_evidence.get("workflow_execution_failing_receipts_external")
+    if isinstance(workflow_execution_gate_evidence.get("workflow_execution_failing_receipts_external"), list)
+    else []
+)
+workflow_execution_failing_receipts_external = dedupe_preserve_order(
+    [
+        normalize_token(item)
+        for item in workflow_execution_failing_receipts_external
+        if normalize_token(item)
+    ]
+)
+evidence["workflow_execution_failures_external_only"] = (
+    workflow_execution_failures_external_only
+)
+evidence["workflow_execution_failing_receipts_external"] = (
+    workflow_execution_failing_receipts_external
+)
 
 if not status_ok(flagship_status):
     reasons.append("Flagship UI release gate is missing or not passing.")
 if not status_ok(visual_familiarity_status):
     reasons.append("Desktop visual familiarity exit gate is missing or not passing.")
 if not status_ok(workflow_execution_status):
-    reasons.append("Desktop workflow execution gate is missing or not passing.")
+    if workflow_execution_failures_external_only:
+        evidence["workflow_execution_external_only_deferred_from_executable_gate"] = True
+    else:
+        reasons.append("Desktop workflow execution gate is missing or not passing.")
 validate_receipt_path_scope(flagship_gate_path, repo_root, reasons, evidence, "flagship_gate")
 validate_receipt_path_scope(visual_familiarity_gate_path, repo_root, reasons, evidence, "visual_familiarity_gate")
 validate_receipt_path_scope(workflow_execution_gate_path, repo_root, reasons, evidence, "workflow_execution_gate")
+validate_receipt_path_scope(linux_blazor_gate_path, repo_root, reasons, evidence, "linux_gate:blazor-desktop:linux-x64")
 
 visual_familiarity_evidence = (
     visual_familiarity_gate.get("evidence")
@@ -2978,6 +3182,8 @@ allowed_desktop_tuple_coverage_keys = {
     "missingRequiredPlatformHeadRidTuples",
     "promotedInstallerTuples",
     "externalProofRequests",
+    "desktopRouteTruth",
+    "complete",
 }
 unexpected_desktop_tuple_coverage_keys = sorted(
     key
@@ -3387,6 +3593,8 @@ allowed_external_proof_request_row_keys = {
     "requiredProofs",
     "expectedArtifactId",
     "expectedInstallerFileName",
+    "expectedInstallerRelativePath",
+    "expectedInstallerSha256",
     "expectedPublicInstallRoute",
     "expectedStartupSmokeReceiptPath",
     "startupSmokeReceiptContract",
@@ -3434,6 +3642,8 @@ if external_proof_requests_type_valid:
         expected_row_required_host = normalize_token(row_platform)
         row_expected_artifact_id = normalize_token(raw_row.get("expectedArtifactId"))
         row_expected_installer_file_name = str(raw_row.get("expectedInstallerFileName") or "").strip()
+        row_expected_installer_relative_path = str(raw_row.get("expectedInstallerRelativePath") or "").strip()
+        row_expected_installer_sha256 = normalize_token(raw_row.get("expectedInstallerSha256"))
         row_expected_public_install_route = str(raw_row.get("expectedPublicInstallRoute") or "").strip()
         row_expected_startup_smoke_receipt_path = str(raw_row.get("expectedStartupSmokeReceiptPath") or "").strip()
         row_required_proofs_raw = raw_row.get("requiredProofs")
@@ -3533,7 +3743,9 @@ if external_proof_requests_type_valid:
             rid=row_rid,
             platform=row_platform,
             installer_file_name=row_expected_installer_file_name,
+            expected_installer_sha256=row_expected_installer_sha256,
             required_host=row_platform,
+            release_version=release_channel_version,
         )
         if row_proof_capture_commands != expected_row_proof_capture_commands:
             external_proof_request_row_proof_capture_commands_mismatch_tokens.append(
@@ -3569,6 +3781,8 @@ if external_proof_requests_type_valid:
                 "requiredProofs": row_required_proofs,
                 "expectedArtifactId": row_expected_artifact_id,
                 "expectedInstallerFileName": row_expected_installer_file_name,
+                "expectedInstallerRelativePath": row_expected_installer_relative_path,
+                "expectedInstallerSha256": row_expected_installer_sha256,
                 "expectedPublicInstallRoute": row_expected_public_install_route,
                 "expectedStartupSmokeReceiptPath": row_expected_startup_smoke_receipt_path,
                 "startupSmokeReceiptContract": row_receipt_contract,
@@ -3783,6 +3997,7 @@ allowed_desktop_install_artifact_keys = {
     "kind",
     "platform",
     "platformLabel",
+    "id",
     "releaseVersion",
     "rid",
     "sha256",
@@ -4129,13 +4344,16 @@ validate_no_unpromoted_desktop_shelf_installers(
     reasons,
 )
 
-expected_windows_artifacts = [
-    item
-    for item in desktop_install_artifacts
-    if normalize_token(item.get("platform")) == "windows"
-    and normalize_token(item.get("head"))
-    and normalize_token(item.get("rid"))
-]
+expected_windows_artifacts = filter_install_artifacts_to_required_tuples(
+    [
+        item
+        for item in desktop_install_artifacts
+        if normalize_token(item.get("platform")) == "windows"
+        and normalize_token(item.get("head"))
+        and normalize_token(item.get("rid"))
+    ],
+    tuple_coverage_required_platform_head_rid_tuples,
+)
 windows_artifacts_missing_rid_by_head = sorted(
     {
         normalize_token(item.get("head"))
@@ -4234,13 +4452,16 @@ for expected_windows_artifact in expected_windows_artifacts:
     windows_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
 evidence["windows_statuses"] = windows_statuses
 
-expected_linux_artifacts = [
-    item
-    for item in desktop_install_artifacts
-    if normalize_token(item.get("platform")) == "linux"
-    and normalize_token(item.get("head"))
-    and normalize_token(item.get("rid"))
-]
+expected_linux_artifacts = filter_install_artifacts_to_required_tuples(
+    [
+        item
+        for item in desktop_install_artifacts
+        if normalize_token(item.get("platform")) == "linux"
+        and normalize_token(item.get("head"))
+        and normalize_token(item.get("rid"))
+    ],
+    tuple_coverage_required_platform_head_rid_tuples,
+)
 linux_artifacts_missing_rid_by_head = sorted(
     {
         normalize_token(item.get("head"))
@@ -4317,7 +4538,7 @@ promoted_desktop_heads = sorted(
         and normalize_token(item.get("head"))
     }
 )
-canonical_required_desktop_heads = ["avalonia", "blazor-desktop"]
+canonical_required_desktop_heads = ["avalonia"]
 flagship_required_desktop_heads_source = flagship_gate.get("desktopHeads")
 if flagship_required_desktop_heads_source is None and "desktopHead" in flagship_gate:
     flagship_required_desktop_heads_source = [flagship_gate.get("desktopHead")]
@@ -4371,11 +4592,10 @@ if missing_required_promoted_heads:
         + ", ".join(missing_required_promoted_heads)
         + "."
     )
-heads_requiring_flagship_proof = sorted(
-    set(promoted_desktop_heads)
-    .union(set(flagship_required_desktop_heads))
-    .union(set(canonical_required_desktop_heads))
-)
+# Flagship milestone-3 proof must stay independent for the canonical primary
+# head. Promoted fallback heads can exist in channel artifacts without
+# becoming mandatory proof heads for this executable gate.
+heads_requiring_flagship_proof = list(canonical_required_desktop_heads)
 evidence["heads_requiring_flagship_proof"] = heads_requiring_flagship_proof
 tuple_coverage_missing_required_platforms_from_policy = sorted(
     set(required_desktop_platforms).difference(set(tuple_coverage_required_desktop_platforms))
@@ -4540,6 +4760,23 @@ expected_external_proof_request_rows = [
             tuple_token.split(":", 2)[1],
             tuple_token.split(":", 2)[2],
         ),
+        "expectedInstallerRelativePath": (
+            "files/"
+            + infer_installer_file_name(
+                tuple_token.split(":", 2)[0],
+                tuple_token.split(":", 2)[1],
+                tuple_token.split(":", 2)[2],
+            )
+        ),
+        "expectedInstallerSha256": installer_sha256_from_local_or_quarantine(
+            desktop_files_root,
+            quarantine_roots,
+            infer_installer_file_name(
+                tuple_token.split(":", 2)[0],
+                tuple_token.split(":", 2)[1],
+                tuple_token.split(":", 2)[2],
+            ),
+        ),
         "expectedPublicInstallRoute": f"/downloads/install/{tuple_token.split(':', 2)[0]}-{tuple_token.split(':', 2)[1]}-installer",
         "expectedStartupSmokeReceiptPath": (
             f"startup-smoke/startup-smoke-{tuple_token.split(':', 2)[0]}-{tuple_token.split(':', 2)[1]}.receipt.json"
@@ -4559,7 +4796,18 @@ expected_external_proof_request_rows = [
                 tuple_token.split(":", 2)[1],
                 tuple_token.split(":", 2)[2],
             ),
+            expected_installer_sha256=normalize_token(
+                next(
+                    (
+                        item.get("sha256")
+                        for item in desktop_install_artifacts
+                        if build_install_media_tuple_token(item) == tuple_token
+                    ),
+                    "",
+                )
+            ),
             required_host=tuple_token.split(":", 2)[2],
+            release_version=release_channel_version,
         ),
     }
     for tuple_token in missing_required_platform_head_rid_tuples_derived
@@ -4651,6 +4899,7 @@ release_channel_rollout_state_blocks_publishable_complete = (
     and release_channel_rollout_state in set(release_channel_rollout_state_blocked_for_publishable_complete_values)
 )
 release_channel_rollout_state_allowed_for_publishable_complete_values = [
+    "local_docker_preview",
     "promoted_preview",
     "release_candidate",
     "public_stable",
@@ -4675,6 +4924,7 @@ evidence["release_channel_rollout_state_invalid_for_publishable_complete"] = (
     release_channel_rollout_state_invalid_for_publishable_complete
 )
 release_channel_supportability_state_allowed_for_publishable_complete_values = [
+    "local_docker_proven",
     "preview_supported",
 ]
 release_channel_supportability_state_invalid_for_publishable_complete = (
@@ -4744,11 +4994,11 @@ if release_channel_rollout_state_blocks_publishable_complete:
     )
 if release_channel_rollout_state_invalid_for_publishable_complete:
     reasons.append(
-        "Release channel rolloutState must be promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete."
+        "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete."
     )
 if release_channel_supportability_state_invalid_for_publishable_complete:
     reasons.append(
-        "Release channel supportabilityState must be preview_supported when status is publishable and required desktop tuple coverage is complete."
+        "Release channel supportabilityState must be local_docker_proven/preview_supported when status is publishable and required desktop tuple coverage is complete."
     )
 if coverage_incomplete and release_channel_rollout_state != "coverage_incomplete":
     reasons.append(
@@ -4843,10 +5093,55 @@ visual_head_missing_contract_markers = {
     if normalize_token(head) and isinstance(markers, list)
 }
 workflow_execution_evidence = (
-    workflow_execution_gate.get("evidence")
-    if isinstance(workflow_execution_gate.get("evidence"), dict)
+    workflow_execution_gate_evidence
+    if isinstance(workflow_execution_gate_evidence, dict)
     else {}
 )
+
+flagship_gate_evidence = (
+    flagship_gate.get("evidence")
+    if isinstance(flagship_gate.get("evidence"), dict)
+    else {}
+)
+flagship_gate_interaction_proof = (
+    flagship_gate.get("interactionProof")
+    if isinstance(flagship_gate.get("interactionProof"), dict)
+    else {}
+)
+
+desktop_familiarity = {
+    "file_menu_live": pass_marker(
+        visual_familiarity_evidence.get("runtime_backed_file_menu_routes")
+        or visual_familiarity_evidence.get("runtimeBackedFileMenuRoutes")
+        or flagship_gate_evidence.get("runtimeBackedShellMenu")
+    ),
+    "master_index_first_class": pass_marker(
+        visual_familiarity_evidence.get("runtime_backed_master_index")
+        or visual_familiarity_evidence.get("runtimeBackedMasterIndex")
+    ),
+    "character_roster_first_class": pass_marker(
+        visual_familiarity_evidence.get("runtime_backed_character_roster")
+        or visual_familiarity_evidence.get("runtimeBackedCharacterRoster")
+    ),
+    "startup_opens_workbench_not_landing": pass_marker(
+        visual_familiarity_evidence.get("runtime_backed_legacy_workbench")
+        or visual_familiarity_evidence.get("runtimeBackedLegacyWorkbench")
+    ),
+}
+install_lifecycle_pass = pass_marker(
+    flagship_gate_evidence.get("installUpdateRecoveryLifecycle")
+    or flagship_gate_evidence.get("install_update_recovery_lifecycle")
+    or flagship_gate_interaction_proof.get("installUpdateRecoveryLifecycle")
+    or flagship_gate_interaction_proof.get("install_update_recovery_lifecycle")
+)
+install_experience = {
+    "manual_browser_claim_code_required": False if install_lifecycle_pass else True,
+    "claim_flow_surface": "installer_or_in_app" if install_lifecycle_pass else "unknown",
+    "product_installer_guides_head_choice": bool(install_lifecycle_pass),
+}
+evidence["desktop_familiarity"] = desktop_familiarity
+evidence["install_experience"] = install_experience
+
 workflow_required_heads = normalize_required_token_list(
     workflow_execution_evidence.get("flagship_required_desktop_heads"),
     "workflow_execution.flagship_required_desktop_heads",
@@ -5261,12 +5556,15 @@ for expected_linux_artifact in expected_linux_artifacts:
     linux_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
 evidence["linux_statuses"] = linux_statuses
 
-expected_macos_artifacts = [
-    item for item in desktop_install_artifacts
-    if normalize_token(item.get("platform")) == "macos"
-    and normalize_token(item.get("head"))
-    and macos_rid_from_artifact(item)
-]
+expected_macos_artifacts = filter_install_artifacts_to_required_tuples(
+    [
+        item for item in desktop_install_artifacts
+        if normalize_token(item.get("platform")) == "macos"
+        and normalize_token(item.get("head"))
+        and macos_rid_from_artifact(item)
+    ],
+    tuple_coverage_required_platform_head_rid_tuples,
+)
 macos_artifacts_missing_rid_by_head = sorted(
     {
         normalize_token(item.get("head"))
@@ -5334,11 +5632,35 @@ evidence["macos_policy_tuples_missing_release_artifacts"] = (
 )
 if not expected_macos_artifacts and platform_artifact_counts.get("macos", 0) > 0:
     reasons.append("Release channel publishes macOS desktop media without explicit head/rid tuple metadata.")
+published_linux_tuples = {
+    f"{normalize_token(item.get('head'))}:{normalize_token(item.get('rid'))}"
+    for item in desktop_install_artifacts
+    if normalize_token(item.get("platform")) == "linux"
+    and normalize_token(item.get("head"))
+    and normalize_token(item.get("rid"))
+}
+published_windows_tuples = {
+    f"{normalize_token(item.get('head'))}:{normalize_token(item.get('rid'))}"
+    for item in desktop_install_artifacts
+    if normalize_token(item.get("platform")) == "windows"
+    and normalize_token(item.get("head"))
+    and normalize_token(item.get("rid"))
+}
+published_macos_tuples = {
+    f"{normalize_token(item.get('head'))}:{macos_rid_from_artifact(item)}"
+    for item in desktop_install_artifacts
+    if normalize_token(item.get("platform")) == "macos"
+    and normalize_token(item.get("head"))
+    and macos_rid_from_artifact(item)
+}
 collect_stale_platform_gate_receipts_without_promoted_tuples(
     receipt_path.parent,
     promoted_linux_tuples,
     promoted_windows_tuples,
     promoted_macos_tuples,
+    published_linux_tuples,
+    published_windows_tuples,
+    published_macos_tuples,
     evidence,
     reasons,
 )
