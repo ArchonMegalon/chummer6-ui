@@ -24,58 +24,45 @@ Bring Chummer6 desktop UX much closer to Chummer5a layout posture:
 - Last pushed UI commit: `b3d66d77`
   - message: `Use component-only Blazor desktop host`
 
+- Additional pushed UI commit after that baseline: `b2a48150`
+  - message: `Tighten Avalonia shell to classic dense posture`
+
 ## Uncommitted current slice
 
 Files changed locally:
 
-- `Chummer.Avalonia/App.axaml`
-- `Chummer.Avalonia/MainWindow.axaml`
-- `Chummer.Avalonia/Controls/NavigatorPaneControl.axaml`
-- `Chummer.Avalonia/Controls/SectionHostControl.axaml`
-- `Chummer.Avalonia/Controls/SectionHostControl.axaml.cs`
-- `Chummer.Avalonia/Controls/StatusStripControl.axaml`
+- `Chummer.Blazor/wwwroot/app.css`
 - `docs/WORKBENCH_SESSION_HANDOFF.md`
 
 What this slice changes:
 
-- `Chummer.Avalonia/App.axaml`
-  - replaces the pastel shell palette with a denser classic desktop palette closer to old Chummer/WinForms posture
-  - reduces default padding, spacing, list-row cardiness, and menu/button height so the shell wastes less space
-- `Chummer.Avalonia/MainWindow.axaml`
-  - tightens the overall shell footprint, narrows the left rail, and reduces chrome spacing
-- `Chummer.Avalonia/Controls/NavigatorPaneControl.axaml`
-  - surfaces a visible `Codex` heading/caption at the top of the left tree instead of leaving that landmark hidden
-- `Chummer.Avalonia/Controls/SectionHostControl.axaml`
-  - hides the idle notice band by default
-  - tightens row spacing and padding
-  - switches classic summary/attribute presentation away from the oversized card rhythm
-  - makes the dense row list more table-like
-- `Chummer.Avalonia/Controls/SectionHostControl.axaml.cs`
-  - only shows the notice band when the notice is meaningfully different from the default ready state
-  - increases useful row-list height for classic sections
-  - compacts attribute cards into smaller stat boxes
-- `Chummer.Avalonia/Controls/StatusStripControl.axaml`
-  - keeps the required progress bar but compresses the status strip into a more classic single-line rhythm
+- `Chummer.Blazor/wwwroot/app.css`
+  - replaces the remaining modern/pastel Blazor shell palette with a denser classic desktop palette
+  - narrows the workbench left rail and reduces overall chrome height
+  - flattens menu/tool/tab/button styling back toward a WinForms-like rhythm
+  - compresses the classic runner sheet, stat cards, browse shells, and table chrome so the first glance reads closer to Chummer5a instead of a web dashboard
+  - converts the status strip into a flatter single-line classic bar instead of a rounded card
+- `docs/WORKBENCH_SESSION_HANDOFF.md`
+  - records the current Blazor parity slice and exact resume commands in case the session dies before commit/push
 
 ## Validation status
 
 What passed:
 
-- `dotnet restore Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal -p:UseChummerEngineContractsLocalFeed=false`
-- `git diff --check`
-- manual structural sanity pass on the edited Avalonia XAML/code-behind files
+- manual inspection of the actual Blazor shell component mount points (`DesktopShell`, `SummaryHeader`, `WorkspaceLeftPane`, `SectionPane`, `StatusStrip`)
 
 What still needs direct verification:
 
-- commit and push this Avalonia density slice
-- launch Avalonia locally and compare against Chummer5a screenshots
-- continue with the next parity jump in Blazor: remove right-rail/dashboard leftovers and keep only classic workbench chrome
+- `git diff --check`
+- `dotnet restore Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal -p:UseChummerEngineContractsLocalFeed=false`
+- `dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false`
+- commit and push this Blazor density slice
+- rebuild on mac from the pushed snapshot and visually compare the shell against Chummer5a screenshots
+- continue with the next parity jump after this slice: menu behavior, icon/signing path, and any remaining non-classic surfaces that still survive first launch
 
 What failed:
 
-- `dotnet build Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal`
-  - workspace-level transitive build churn hit unrelated restore/project-reference problems (`NETSDK1064`, `MSB4181`, later interruption noise)
-  - this failure did not point at a concrete syntax error in the edited Avalonia files, but the full project still needs a clean local build pass after the workspace dependency lane is stable
+- nothing in this current Blazor slice yet; validation commands still need to run after the edit
 
 ## Next exact commands
 
@@ -83,20 +70,18 @@ Run from repo root:
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-git status --short Chummer.Avalonia/App.axaml Chummer.Avalonia/MainWindow.axaml Chummer.Avalonia/Controls/NavigatorPaneControl.axaml Chummer.Avalonia/Controls/SectionHostControl.axaml Chummer.Avalonia/Controls/SectionHostControl.axaml.cs Chummer.Avalonia/Controls/StatusStripControl.axaml docs/WORKBENCH_SESSION_HANDOFF.md
+git status --short Chummer.Blazor/wwwroot/app.css docs/WORKBENCH_SESSION_HANDOFF.md
+git diff --check
+dotnet restore Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal -p:UseChummerEngineContractsLocalFeed=false
+dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false
 ```
 
-Commit only the seven files above:
+Commit only the two files above:
 
 ```bash
-git add Chummer.Avalonia/App.axaml
-git add Chummer.Avalonia/MainWindow.axaml
-git add Chummer.Avalonia/Controls/NavigatorPaneControl.axaml
-git add Chummer.Avalonia/Controls/SectionHostControl.axaml
-git add Chummer.Avalonia/Controls/SectionHostControl.axaml.cs
-git add Chummer.Avalonia/Controls/StatusStripControl.axaml
+git add Chummer.Blazor/wwwroot/app.css
 git add docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Tighten Avalonia shell to classic dense posture"
+git commit -m "Align Blazor desktop shell with classic density"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
@@ -104,11 +89,11 @@ git push origin HEAD:main
 
 ## Immediate next design slices after this commit
 
-1. Commit/push this Avalonia density slice.
-2. Launch Avalonia locally and compare against Chummer5a screenshots for menu/toolstrip density, tab strip posture, left rail width, status strip, and attribute layout.
-3. Cut the remaining Blazor desktop jumps: remove the right-rail/dashboard posture and keep classic workbench chrome only.
-4. Push the next parity slice before the next mac build so published preview artifacts stop lagging the actual UI repo state.
-5. Run a screenshot/audit pass and document only intentional diffs from Chummer5a.
+1. Commit/push this Blazor density slice.
+2. Rebuild Blazor Desktop locally and verify the shell no longer reads as a web dashboard on first paint.
+3. Run the same screenshot-level comparison against Chummer5a that the user asked for and list only remaining intentional diffs.
+4. Cut the next parity jumps that are not just skin: menu behavior, icon correctness, and first-launch/runtime chrome drift.
+5. Push before the next mac build so the published preview stops lagging the actual UI repo state.
 
 ## Resume after interruption
 
@@ -116,20 +101,22 @@ If this session dies from OOM or process pruning, resume with these exact steps:
 
 ```bash
 cd /docker/chummercomplete/chummer6-ui
-git status --short Chummer.Avalonia/App.axaml Chummer.Avalonia/MainWindow.axaml Chummer.Avalonia/Controls/NavigatorPaneControl.axaml Chummer.Avalonia/Controls/SectionHostControl.axaml Chummer.Avalonia/Controls/SectionHostControl.axaml.cs Chummer.Avalonia/Controls/StatusStripControl.axaml docs/WORKBENCH_SESSION_HANDOFF.md
-dotnet restore Chummer.Avalonia/Chummer.Avalonia.csproj -v minimal -p:UseChummerEngineContractsLocalFeed=false
-git add Chummer.Avalonia/App.axaml Chummer.Avalonia/MainWindow.axaml Chummer.Avalonia/Controls/NavigatorPaneControl.axaml Chummer.Avalonia/Controls/SectionHostControl.axaml Chummer.Avalonia/Controls/SectionHostControl.axaml.cs Chummer.Avalonia/Controls/StatusStripControl.axaml docs/WORKBENCH_SESSION_HANDOFF.md
-git commit -m "Tighten Avalonia shell to classic dense posture"
+git status --short Chummer.Blazor/wwwroot/app.css docs/WORKBENCH_SESSION_HANDOFF.md
+git diff --check
+dotnet restore Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal -p:UseChummerEngineContractsLocalFeed=false
+dotnet build Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj -v minimal --no-restore -p:UseChummerEngineContractsLocalFeed=false
+git add Chummer.Blazor/wwwroot/app.css docs/WORKBENCH_SESSION_HANDOFF.md
+git commit -m "Align Blazor desktop shell with classic density"
 git push origin HEAD:safe-push-fix-windows-installer-payload-20260401
 git push origin HEAD:fleet/ui
 git push origin HEAD:main
 ```
 
-Then continue immediately with the Blazor parity pass; Avalonia density will be materially improved, but the overall flagship scope is still blocked by the remaining desktop-shell jumps in Blazor.
+Then continue immediately with the next parity pass: screenshot audit, menu behavior fixes, icon/signing fixes, and any remaining first-paint drift from Chummer5a.
 
 ## Important notes
 
 - Do not commit unrelated dirty/generated files in this repo.
 - The release pipeline can easily pick up an older-feeling snapshot if `fleet/ui` or `main` is not pushed after each UI slice.
 - The user specifically wants Chummer5a to be the layout reference, not just inspiration.
-- The current highest-risk visible regressions after this slice are the remaining Blazor desktop right-rail/dashboard jumps and any last screenshot-level Avalonia drift from Chummer5a.
+- The current highest-risk visible regressions after this slice are whatever still differs at first glance from Chummer5a after the denser Blazor shell lands: especially menu behavior, icons, and any leftover dashboard feeling on first paint.
