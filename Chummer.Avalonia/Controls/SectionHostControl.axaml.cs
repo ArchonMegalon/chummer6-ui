@@ -981,11 +981,11 @@ public partial class SectionHostControl : UserControl
         Border card = new()
         {
             Margin = new Thickness(0d, 0d, 4d, 4d),
-            Padding = emphasizeValue ? new Thickness(4d, 2d) : new Thickness(5d, 3d),
-            MinWidth = emphasizeValue ? 44d : 84d,
+            Padding = emphasizeValue ? new Thickness(3d, 2d) : new Thickness(4d, 3d),
+            MinWidth = emphasizeValue ? 38d : 76d,
             MinHeight = emphasizeValue ? 28d : 32d,
-            Background = new SolidColorBrush(Color.Parse(emphasizeValue ? "#FFF4F4F4" : "#FFF8F8F8")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#FFA0A0A0")),
+            Background = new SolidColorBrush(Color.Parse(emphasizeValue ? "#FFF2F2F2" : "#FFF7F4EB")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#FF8D8D8D")),
             BorderThickness = new Thickness(1d)
         };
 
@@ -996,13 +996,14 @@ public partial class SectionHostControl : UserControl
         stack.Children.Add(new TextBlock
         {
             Text = fact.Label,
-            FontSize = emphasizeValue ? 9d : 10d,
+            FontSize = emphasizeValue ? 8d : 9d,
+            FontWeight = FontWeight.Medium,
             TextAlignment = emphasizeValue ? TextAlignment.Center : TextAlignment.Left
         });
         stack.Children.Add(new TextBlock
         {
             Text = fact.Value,
-            FontSize = emphasizeValue ? 14d : 12d,
+            FontSize = emphasizeValue ? 15d : 12d,
             FontWeight = FontWeight.SemiBold,
             TextAlignment = emphasizeValue ? TextAlignment.Center : TextAlignment.Left
         });

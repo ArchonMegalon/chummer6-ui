@@ -601,10 +601,10 @@
                 <h3>Runner Summary</h3>
                 if (summaryFacts.Count > 0)
                 {
-                    <div class="classic-fact-strip">
+                    <div class="classic-summary-grid">
                         @foreach (ClassicSheetFact fact in summaryFacts)
                         {
-                            <article class="classic-fact-card">
+                            <article class="classic-summary-cell">
                                 <span class="classic-fact-label">@fact.Label</span>
                                 <strong class="classic-fact-value">@fact.Value</strong>
                             </article>
@@ -613,10 +613,10 @@
                 }
                 if (attributeFacts.Count > 0)
                 {
-                    <div class="classic-fact-strip attributes">
+                    <div class="classic-attribute-grid">
                         @foreach (ClassicSheetFact fact in attributeFacts)
                         {
-                            <article class="classic-fact-card compact">
+                            <article class="classic-attribute-cell">
                                 <span class="classic-fact-label">@fact.Label</span>
                                 <strong class="classic-fact-value">@fact.Value</strong>
                             </article>

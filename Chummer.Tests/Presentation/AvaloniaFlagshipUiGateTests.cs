@@ -157,11 +157,15 @@ public sealed class AvaloniaFlagshipUiGateTests
         string visualGatePath = ResolveSourceFile("scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
         string toolStripPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "ToolStripControl.axaml");
         string blazorShellPath = ResolveSourceFile("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor.cs");
+        string sectionPanePath = ResolveSourceFile("Chummer.Blazor", "Components", "Shell", "SectionPane.razor");
+        string appCssPath = ResolveSourceFile("Chummer.Blazor", "wwwroot", "app.css");
 
         string releaseGateText = File.ReadAllText(releaseGatePath);
         string visualGateText = File.ReadAllText(visualGatePath);
         string toolStripText = File.ReadAllText(toolStripPath);
         string blazorShellText = File.ReadAllText(blazorShellPath);
+        string sectionPaneText = File.ReadAllText(sectionPanePath);
+        string appCssText = File.ReadAllText(appCssPath);
 
         StringAssert.Contains(releaseGateText, "chummer5a-layout-hard-gate.sh");
         StringAssert.Contains(visualGateText, "chummer5a-layout-hard-gate.sh");
@@ -198,6 +202,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             blazorShellText.IndexOf("\"save_character\"", StringComparison.Ordinal) <
             blazorShellText.IndexOf("\"print_character\"", StringComparison.Ordinal),
             "Blazor desktop shell must keep save before print in the preferred toolstrip order.");
+        StringAssert.Contains(sectionPaneText, "classic-summary-grid");
+        StringAssert.Contains(sectionPaneText, "classic-attribute-grid");
+        StringAssert.Contains(appCssText, ".classic-summary-grid");
+        StringAssert.Contains(appCssText, ".classic-attribute-grid");
     }
 
     [TestMethod]
