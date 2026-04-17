@@ -64,16 +64,16 @@ internal sealed class DesktopReportIssueWindow : Window
         {
             Content = new Border
             {
-                Padding = new Thickness(22),
+                Padding = new Thickness(16),
                 Child = new StackPanel
                 {
-                    Spacing = 16,
+                    Spacing = 12,
                     Children =
                     {
                         new TextBlock
                         {
                             Text = S("desktop.report.heading"),
-                            FontSize = 24,
+                            FontSize = 20,
                             FontWeight = FontWeight.SemiBold
                         },
                         new TextBlock
@@ -143,7 +143,7 @@ internal sealed class DesktopReportIssueWindow : Window
     private Control CreateBugBody()
         => new StackPanel
         {
-            Spacing = 10,
+            Spacing = 6,
             Children =
             {
                 new TextBlock
@@ -340,7 +340,7 @@ internal sealed class DesktopReportIssueWindow : Window
                 {
                     Text = title,
                     FontWeight = FontWeight.SemiBold,
-                    FontSize = 18
+                    FontSize = 15
                 },
                 body
             }
@@ -356,8 +356,8 @@ internal sealed class DesktopReportIssueWindow : Window
             Background = new SolidColorBrush(Color.Parse("#F4F6FA")),
             BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(16),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(10),
             Child = content
         };
     }
@@ -367,7 +367,7 @@ internal sealed class DesktopReportIssueWindow : Window
         StackPanel actionRow = new()
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 10
+            Spacing = 6
         };
 
         foreach (Button action in actions)
