@@ -27,15 +27,19 @@ namespace Chummer.Tests.Presentation;
 public sealed class DesktopShellRulesetCatalogTests
 {
     [TestMethod]
-    public void Blazor_shell_root_route_is_owned_only_by_the_modern_home_page()
+    public void Blazor_shell_root_route_is_owned_only_by_the_shell_anchor_page()
     {
         string homePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Home.razor");
+        string showcasePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Showcase.razor");
         string legacyPath = SourcePath("Chummer.Blazor", "Pages", "Index.razor");
 
         string homeText = File.ReadAllText(homePath);
+        string showcaseText = File.ReadAllText(showcasePath);
         string legacyText = File.ReadAllText(legacyPath);
 
         StringAssert.Contains(homeText, "@page \"/\"");
+        StringAssert.Contains(homeText, "Desktop shell route anchor");
+        StringAssert.Contains(showcaseText, "@page \"/showcase\"");
         Assert.IsFalse(legacyText.Contains("@page \"/\"", StringComparison.Ordinal));
         Assert.IsFalse(legacyText.Contains("@page \"/blazor\"", StringComparison.Ordinal));
         StringAssert.Contains(legacyText, "@page \"/legacy-console\"");
