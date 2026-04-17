@@ -156,15 +156,21 @@ public sealed class AvaloniaFlagshipUiGateTests
         string releaseGatePath = ResolveSourceFile("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
         string visualGatePath = ResolveSourceFile("scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
         string toolStripPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "ToolStripControl.axaml");
+        string navigatorPanePath = ResolveSourceFile("Chummer.Avalonia", "Controls", "NavigatorPaneControl.axaml");
         string blazorShellPath = ResolveSourceFile("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor.cs");
         string sectionPanePath = ResolveSourceFile("Chummer.Blazor", "Components", "Shell", "SectionPane.razor");
+        string workspaceLeftPanePath = ResolveSourceFile("Chummer.Blazor", "Components", "Shell", "WorkspaceLeftPane.razor");
+        string openWorkspaceTreePath = ResolveSourceFile("Chummer.Blazor", "Components", "Shell", "OpenWorkspaceTree.razor");
         string appCssPath = ResolveSourceFile("Chummer.Blazor", "wwwroot", "app.css");
 
         string releaseGateText = File.ReadAllText(releaseGatePath);
         string visualGateText = File.ReadAllText(visualGatePath);
         string toolStripText = File.ReadAllText(toolStripPath);
+        string navigatorPaneText = File.ReadAllText(navigatorPanePath);
         string blazorShellText = File.ReadAllText(blazorShellPath);
         string sectionPaneText = File.ReadAllText(sectionPanePath);
+        string workspaceLeftPaneText = File.ReadAllText(workspaceLeftPanePath);
+        string openWorkspaceTreeText = File.ReadAllText(openWorkspaceTreePath);
         string appCssText = File.ReadAllText(appCssPath);
 
         StringAssert.Contains(releaseGateText, "chummer5a-layout-hard-gate.sh");
@@ -202,10 +208,19 @@ public sealed class AvaloniaFlagshipUiGateTests
             blazorShellText.IndexOf("\"save_character\"", StringComparison.Ordinal) <
             blazorShellText.IndexOf("\"print_character\"", StringComparison.Ordinal),
             "Blazor desktop shell must keep save before print in the preferred toolstrip order.");
+        StringAssert.Contains(navigatorPaneText, "x:Name=\"CodexHeadingText\"");
+        StringAssert.Contains(navigatorPaneText, "IsVisible=\"False\"");
         StringAssert.Contains(sectionPaneText, "classic-summary-grid");
         StringAssert.Contains(sectionPaneText, "classic-attribute-grid");
+        StringAssert.Contains(workspaceLeftPaneText, "@if (ShowSectionActions)");
+        StringAssert.Contains(workspaceLeftPaneText, "@if (ShowWorkflowSurfaces)");
+        StringAssert.Contains(openWorkspaceTreeText, "class=\"visually-hidden\"");
+        Assert.IsFalse(
+            openWorkspaceTreeText.Contains("workspace.Id.Value</span>", StringComparison.Ordinal),
+            "Classic left-rail parity must not print workspace ids inside the visible dossier tree rows.");
         StringAssert.Contains(appCssText, ".classic-summary-grid");
         StringAssert.Contains(appCssText, ".classic-attribute-grid");
+        StringAssert.Contains(appCssText, ".visually-hidden");
     }
 
     [TestMethod]
@@ -1083,6 +1098,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             Control sectionRegion = harness.FindControl<Control>("SectionRegion");
             Control statusStripRegion = harness.FindControl<Control>("StatusStripRegion");
             TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
+            TextBlock codexHeading = harness.FindControl<TextBlock>("CodexHeadingText");
+            TextBlock codexCaption = harness.FindControl<TextBlock>("CodexCaptionText");
 
             Assert.IsNull(harness.FindControlOrDefault<Control>("WorkspaceStripRegion"), "The default workbench must not spend a dedicated row on workspace-strip chrome.");
             Assert.IsTrue(leftNavigatorRegion.Bounds.Width >= 200d && leftNavigatorRegion.Bounds.Width <= 260d, "Left navigation must stay dense and desktop-scaled instead of consuming editor space.");
@@ -1091,6 +1108,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(centerShellRegion.Bounds.Width > leftNavigatorRegion.Bounds.Width, "The central editing workbench must remain the dominant pane.");
             Assert.IsTrue(menuBarRegion.Bounds.Height <= 72d, "The top menu row must read like desktop chrome, not a hero header.");
             Assert.IsTrue(statusStripRegion.Bounds.Height <= 72d, "The bottom strip must stay compact like the legacy status posture.");
+            Assert.IsFalse(codexHeading.IsVisible, "The left rail must not waste a dedicated heading row above the classic navigator tree.");
+            Assert.IsFalse(codexCaption.IsVisible, "The left rail must not spend first-paint space on a navigator caption.");
             Assert.IsTrue(navigatorTree.Bounds.Width > 0d && navigatorTree.Bounds.Height > 0d, "The left rail must render a visible codex tree.");
             Assert.IsNull(harness.FindControlOrDefault<TabControl>("LoadedRunnerTabStrip"), "The left rail must avoid a second tab control and keep the classic tree posture.");
 

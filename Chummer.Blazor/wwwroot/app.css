@@ -196,6 +196,18 @@ button:disabled {
     border-color: #1f4e8c;
 }
 
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .workbench-tab-strip {
     display: grid;
     grid-template-columns: 1fr;
@@ -263,7 +275,7 @@ button:disabled {
 
 .workspace-layout {
     display: grid;
-    grid-template-columns: 184px minmax(0, 1fr);
+    grid-template-columns: 208px minmax(0, 1fr);
     gap: 0.15rem;
     min-height: calc(100vh - 86px);
     padding: 0.15rem 0.15rem 0.2rem;
@@ -1478,15 +1490,23 @@ textarea:focus-visible {
 .tab-grid,
 .action-grid,
 .mini-grid {
-    max-height: 12rem;
+    max-height: 10rem;
 }
 
 .navigator-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.2rem;
-    align-items: start;
-    margin-bottom: 0.2rem;
+    gap: 0.15rem;
+    align-items: center;
+    margin-bottom: 0.15rem;
+}
+
+.navigator .compact-close {
+    min-width: 1.4rem;
+    min-height: 1.4rem;
+    padding: 0.05rem 0.3rem;
+    line-height: 1;
+    font-weight: 700;
 }
 
 @media (max-width: 1200px) {

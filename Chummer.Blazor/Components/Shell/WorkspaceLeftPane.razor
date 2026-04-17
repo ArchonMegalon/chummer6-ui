@@ -12,38 +12,44 @@
                        OpenWorkspaceRequested="OpenWorkspaceRequested"
                        CloseWorkspaceRequested="CloseWorkspaceRequested" />
 
-    <section class="panel section-actions">
-        <h2>@BuildSectionActionsHeading()</h2>
-        <div class="virtual-list action-grid">
-            @* <Virtualize Items="@ActiveWorkspaceActions" ItemsTagName="ul" ItemTagName="li"> *@
-            <Virtualize Items="@(ActiveWorkspaceActions.ToArray())"
-                        Context="action"
-                        ItemSize="44">
-                <button class="action-button @(State.ActiveActionId == action.Id ? "selected" : string.Empty)"
-                        disabled="@State.IsBusy"
-                        @onclick="() => ExecuteWorkspaceActionRequested.InvokeAsync(action)">
-                    @FormatWorkspaceActionLabel(action)
-                </button>
-            </Virtualize>
-        </div>
-    </section>
+    @if (ShowSectionActions)
+    {
+        <section class="panel section-actions" aria-label="@BuildSectionActionsHeading()">
+            <h2 class="visually-hidden">@BuildSectionActionsHeading()</h2>
+            <div class="virtual-list action-grid">
+                @* <Virtualize Items="@ActiveWorkspaceActions" ItemsTagName="ul" ItemTagName="li"> *@
+                <Virtualize Items="@(ActiveWorkspaceActions.ToArray())"
+                            Context="action"
+                            ItemSize="40">
+                    <button class="action-button @(State.ActiveActionId == action.Id ? "selected" : string.Empty)"
+                            disabled="@State.IsBusy"
+                            @onclick="() => ExecuteWorkspaceActionRequested.InvokeAsync(action)">
+                        @FormatWorkspaceActionLabel(action)
+                    </button>
+                </Virtualize>
+            </div>
+        </section>
+    }
 
-    <section class="panel controls">
-        <h2>@BuildWorkflowSurfacesHeading()</h2>
-        <div class="virtual-list mini-grid">
-            @* <Virtualize Items="@ActiveWorkflowSurfaceActions" ItemsTagName="ul" ItemTagName="li"> *@
-            <Virtualize Items="@(ActiveWorkflowSurfaceActions.ToArray())"
-                        Context="surface"
-                        ItemSize="40">
-                <button class="mini-btn"
-                        data-workflow-surface="@surface.SurfaceId"
-                        disabled="@State.IsBusy"
-                        @onclick="() => ExecuteWorkflowSurfaceRequested.InvokeAsync(surface.ActionId)">
-                    @FormatWorkflowSurfaceLabel(surface)
-                </button>
-            </Virtualize>
-        </div>
-    </section>
+    @if (ShowWorkflowSurfaces)
+    {
+        <section class="panel controls" aria-label="@BuildWorkflowSurfacesHeading()">
+            <h2 class="visually-hidden">@BuildWorkflowSurfacesHeading()</h2>
+            <div class="virtual-list mini-grid">
+                @* <Virtualize Items="@ActiveWorkflowSurfaceActions" ItemsTagName="ul" ItemTagName="li"> *@
+                <Virtualize Items="@(ActiveWorkflowSurfaceActions.ToArray())"
+                            Context="surface"
+                            ItemSize="36">
+                    <button class="mini-btn"
+                            data-workflow-surface="@surface.SurfaceId"
+                            disabled="@State.IsBusy"
+                            @onclick="() => ExecuteWorkflowSurfaceRequested.InvokeAsync(surface.ActionId)">
+                        @FormatWorkflowSurfaceLabel(surface)
+                    </button>
+                </Virtualize>
+            </div>
+        </section>
+    }
 </aside>
 
 @code {
@@ -103,6 +109,12 @@
 
     private string FormatWorkflowSurfaceLabel(WorkflowSurfaceActionBinding surface)
         => RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(ResolveActiveRulesetId(), surface.ActionId, surface.Label);
+
+    private bool ShowSectionActions =>
+        ActiveWorkspaceId is not null && ActiveWorkspaceActions.Count > 0;
+
+    private bool ShowWorkflowSurfaces =>
+        ActiveWorkspaceId is not null && ActiveWorkflowSurfaceActions.Count > 0;
 
     private string? ResolveActiveRulesetId()
     {
