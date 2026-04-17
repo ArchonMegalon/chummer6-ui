@@ -35,6 +35,7 @@ public partial class SectionHostControl : UserControl
         SetContactGraph(state.ContactGraph);
         SetDowntimePlanner(state.DowntimePlanner);
         SetNpcPersonaStudio(state.NpcPersonaStudio);
+        SetSectionContext(state.SectionId, state.PreviewJson, state.Rows, state.QuickActions);
     }
 
     public void SetNotice(string notice)
@@ -46,6 +47,37 @@ public partial class SectionHostControl : UserControl
     {
         SectionPreviewBox.Text = previewJson;
         SectionRowsList.ItemsSource = rows.ToArray();
+    }
+
+    public void SetSectionContext(
+        string? sectionId,
+        string previewJson,
+        IEnumerable<SectionRowDisplayItem> rows,
+        IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+    {
+        bool hasDedicatedWorkbenchSurface =
+            BuildLabBorder.IsVisible
+            || BrowseWorkspaceBorder.IsVisible
+            || ContactGraphBorder.IsVisible
+            || DowntimePlannerBorder.IsVisible
+            || NpcPersonaStudioBorder.IsVisible
+            || ClassicCharacterSheetBorder.IsVisible;
+
+        if (hasDedicatedWorkbenchSurface)
+        {
+            SectionContextBorder.IsVisible = false;
+            SectionContextTitleText.Text = string.Empty;
+            SectionContextSummaryText.Text = string.Empty;
+            return;
+        }
+
+        string title = BuildSectionTitle(sectionId, previewJson);
+        string summary = BuildSectionSummary(rows, quickActions);
+        SectionContextTitleText.Text = title;
+        SectionContextSummaryText.Text = summary;
+        SectionContextSummaryText.IsVisible = !string.IsNullOrWhiteSpace(summary);
+        SectionContextBorder.IsVisible = !string.IsNullOrWhiteSpace(title);
+        SectionRowsList.Height = 196d;
     }
 
     public void SetClassicCharacterSheet(string? sectionId, string previewJson, IEnumerable<SectionRowDisplayItem> rows)
@@ -812,6 +844,83 @@ public partial class SectionHostControl : UserControl
         }
     }
 
+    private static string BuildSectionTitle(string? sectionId, string previewJson)
+    {
+        JsonObject? root = TryParseRootObject(previewJson);
+        string? previewSection = root is not null ? ReadString(root, "section") : null;
+        string rawSection = string.IsNullOrWhiteSpace(sectionId) ? previewSection ?? "Section" : sectionId;
+        return rawSection.Trim().ToLowerInvariant() switch
+        {
+            "cyberwares" => "Cyberware",
+            "attributedetails" => "Attributes",
+            "complexforms" => "Complex Forms",
+            "initiationgrades" => "Initiation & Submersion",
+            "mentorspirits" => "Mentor Spirits",
+            "progress" => "Karma Journal",
+            _ => FormatSectionName(rawSection)
+        };
+    }
+
+    private static string BuildSectionSummary(IEnumerable<SectionRowDisplayItem> rows, IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+    {
+        SectionRowDisplayItem[] rowArray = rows.ToArray();
+        List<string> parts = [];
+        if (rowArray.Length > 0)
+        {
+            parts.Add(rowArray.Length == 1 ? "1 visible entry" : $"{rowArray.Length} visible entries");
+
+            string leadValue = rowArray[0].DisplayValue.Trim();
+            if (!string.IsNullOrWhiteSpace(leadValue))
+            {
+                parts.Add(leadValue);
+            }
+        }
+
+        if (quickActions.Count > 0)
+        {
+            parts.Add(quickActions.Count == 1 ? "1 action" : $"{quickActions.Count} actions");
+        }
+
+        return string.Join("  •  ", parts);
+    }
+
+    private static string FormatSectionName(string sectionName)
+    {
+        if (string.IsNullOrWhiteSpace(sectionName))
+        {
+            return "Section";
+        }
+
+        string normalized = sectionName.Replace('_', ' ').Replace('-', ' ').Trim();
+        normalized = InsertWordBoundaries(normalized);
+        return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.ToLowerInvariant());
+    }
+
+    private static string InsertWordBoundaries(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return token;
+        }
+
+        StringBuilder builder = new(token.Length + 4);
+        for (int i = 0; i < token.Length; i++)
+        {
+            char current = token[i];
+            if (i > 0
+                && char.IsUpper(current)
+                && !char.IsWhiteSpace(token[i - 1])
+                && !char.IsUpper(token[i - 1]))
+            {
+                builder.Append(' ');
+            }
+
+            builder.Append(current);
+        }
+
+        return builder.ToString();
+    }
+
     private static void AppendFact(List<ClassicSheetFactDisplayItem> facts, string label, string? value)
     {
         if (!string.IsNullOrWhiteSpace(value))
@@ -933,14 +1042,16 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
 
         string section = segments[0];
         string leaf = segments[^1];
+        string bareLeaf = RemoveIndexer(leaf);
+        string bareSection = RemoveIndexer(section);
         if (string.Equals(section, "attributes", StringComparison.OrdinalIgnoreCase))
         {
-            return FormatAttributeLabel(RemoveIndexer(leaf));
+            return FormatAttributeLabel(bareLeaf);
         }
 
         if (string.Equals(section, "combat", StringComparison.OrdinalIgnoreCase))
         {
-            string combatKey = RemoveIndexer(leaf).Trim().ToLowerInvariant();
+            string combatKey = bareLeaf.Trim().ToLowerInvariant();
             return combatKey switch
             {
                 "initiative" => "Init",
@@ -948,6 +1059,11 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
                 "essence" => "Essence",
                 _ => FormatDesktopLabel(leaf)
             };
+        }
+
+        if (string.Equals(bareLeaf, bareSection, StringComparison.OrdinalIgnoreCase))
+        {
+            return FormatCollectionLabel(section, leaf);
         }
 
         return FormatDesktopLabel(leaf);
@@ -996,6 +1112,38 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
         normalized = InsertWordBoundaries(normalized);
         string label = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.ToLowerInvariant());
         return ordinal is int index ? $"{label} {index}" : label;
+    }
+
+    private static string FormatCollectionLabel(string section, string token)
+    {
+        string normalizedSection = section.Trim().ToLowerInvariant() switch
+        {
+            "vehicles" => "vehicle",
+            "contacts" => "contact",
+            "spells" => "spell",
+            "powers" => "power",
+            "drugs" => "drug",
+            "complexforms" => "complex form",
+            "initiationgrades" => "initiation grade",
+            "mentorspirits" => "mentor spirit",
+            "progress" => "entry",
+            "calendar" => "entry",
+            _ => RemoveIndexer(token).Replace('_', ' ').Replace('-', ' ')
+        };
+
+        string title = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalizedSection);
+        int bracketIndex = token.IndexOf('[');
+        if (bracketIndex >= 0)
+        {
+            int closingBracketIndex = token.IndexOf(']', bracketIndex + 1);
+            if (closingBracketIndex > bracketIndex + 1
+                && int.TryParse(token[(bracketIndex + 1)..closingBracketIndex], NumberStyles.Integer, CultureInfo.InvariantCulture, out int index))
+            {
+                return $"{title} {index + 1}";
+            }
+        }
+
+        return title;
     }
 
     private static string FormatAttributeLabel(string attributeName)
