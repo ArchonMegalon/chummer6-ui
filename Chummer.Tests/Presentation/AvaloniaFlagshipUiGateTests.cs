@@ -87,15 +87,21 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static bool _headlessInitialized;
 
     [TestMethod]
-    public void Blazor_root_route_ownership_stays_with_modern_home_page()
+    public void Blazor_root_route_ownership_stays_with_desktop_shell_anchor_and_moves_showcase_off_root()
     {
         string homePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Home.razor");
+        string showcasePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Showcase.razor");
         string legacyPath = SourcePath("Chummer.Blazor", "Pages", "Index.razor");
 
         string homeText = File.ReadAllText(homePath);
+        string showcaseText = File.ReadAllText(showcasePath);
         string legacyText = File.ReadAllText(legacyPath);
 
         StringAssert.Contains(homeText, "@page \"/\"");
+        StringAssert.Contains(homeText, "Desktop shell route anchor");
+        Assert.IsFalse(homeText.Contains("panel-grid", StringComparison.Ordinal));
+        StringAssert.Contains(showcaseText, "@page \"/showcase\"");
+        StringAssert.Contains(showcaseText, "panel-grid");
         Assert.IsFalse(legacyText.Contains("@page \"/\"", StringComparison.Ordinal));
         Assert.IsFalse(legacyText.Contains("@page \"/blazor\"", StringComparison.Ordinal));
         StringAssert.Contains(legacyText, "@page \"/legacy-console\"");

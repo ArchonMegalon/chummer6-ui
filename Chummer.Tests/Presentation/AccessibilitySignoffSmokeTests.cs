@@ -20,7 +20,7 @@ internal static class AccessibilitySignoffSmokeTests
             SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation();
             GeneratedAssetReviewPanel_renders_preview_and_emits_attach_approve_archive_actions();
             BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them();
-            BlazorHome_uses_local_chummer6_flagship_media_samples();
+            BlazorShowcase_uses_local_chummer6_flagship_media_samples();
             BlazorCampaignSpineShowcase_uses_customer_facing_build_path_copy();
             DesktopHomeCampaignProjector_uses_real_campaign_restore_truth();
             DesktopHomeSupportProjector_uses_real_support_case_truth();
@@ -1459,9 +1459,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state)");
     }
 
-    private static void BlazorHome_uses_local_chummer6_flagship_media_samples()
+    private static void BlazorShowcase_uses_local_chummer6_flagship_media_samples()
     {
-        string source = ReadSource("Chummer.Blazor/Components/Pages/Home.razor");
+        string source = ReadSource("Chummer.Blazor/Components/Pages/Showcase.razor");
         RequireContains(source, "/media/chummer6/chummer6-hero.png");
         RequireContains(source, "/media/chummer6/karma-forge.png");
         RequireContains(source, "/media/chummer6/horizons-index.png");
@@ -1472,9 +1472,9 @@ internal static class AccessibilitySignoffSmokeTests
 
     private static void BlazorCampaignSpineShowcase_uses_customer_facing_build_path_copy()
     {
-        string homeSource = ReadSource("Chummer.Blazor/Components/Pages/Home.razor");
-        RequireContains(homeSource, "Social Operator build path");
-        RequireContains(homeSource, "build-path handoff");
+        string showcaseSource = ReadSource("Chummer.Blazor/Components/Pages/Showcase.razor");
+        RequireContains(showcaseSource, "Social Operator build path");
+        RequireContains(showcaseSource, "build-path handoff");
 
         string panelSource = ReadSource("Chummer.Blazor/Components/Shared/BuildLabHandoffPanel.razor");
         RequireContains(panelSource, "Title: \"Build path\"");

@@ -3132,6 +3132,8 @@ public class MigrationComplianceTests
         string desktopShellText = File.ReadAllText(desktopShellPath);
         string homePath = FindPath("Chummer.Blazor", "Components", "Pages", "Home.razor");
         string homeText = File.ReadAllText(homePath);
+        string showcasePath = FindPath("Chummer.Blazor", "Components", "Pages", "Showcase.razor");
+        string showcaseText = File.ReadAllText(showcasePath);
         string deepLinkPath = FindPath("Chummer.Blazor", "Components", "Pages", "DeepLinkCheck.razor");
         string deepLinkText = File.ReadAllText(deepLinkPath);
 
@@ -3145,8 +3147,11 @@ public class MigrationComplianceTests
         Assert.IsFalse(desktopShellText.Contains("ImportedFileName=\"ImportedFileName\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopShellText.Contains("ImportError=\"ImportError\"", StringComparison.Ordinal));
         StringAssert.Contains(homeText, "@page \"/\"");
+        StringAssert.Contains(homeText, "Desktop shell route anchor");
+        StringAssert.Contains(showcaseText, "@page \"/showcase\"");
         StringAssert.Contains(deepLinkText, "@layout Chummer.Blazor.Components.Layout.NoLayout");
         Assert.IsFalse(homeText.Contains("desktop-shell", StringComparison.Ordinal));
+        Assert.IsFalse(homeText.Contains("panel-grid", StringComparison.Ordinal));
     }
 
     [TestMethod]

@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Overview;
 using System.Globalization;
+using System.Text;
 using System.Text.Json.Nodes;
 
 namespace Chummer.Avalonia.Controls;
@@ -64,6 +65,7 @@ public partial class SectionHostControl : UserControl
             || summaryFacts.Count > 0;
 
         ClassicCharacterSheetBorder.IsVisible = hasFacts && sectionTargetsClassicCharacterSheet;
+        SectionRowsList.Height = ClassicCharacterSheetBorder.IsVisible ? 96d : 160d;
         if (!ClassicCharacterSheetBorder.IsVisible)
         {
             ClassicCharacterSummaryTitle.Text = "Runner Summary";
@@ -866,8 +868,8 @@ public partial class SectionHostControl : UserControl
         Border card = new()
         {
             Margin = new Thickness(0d, 0d, 6d, 6d),
-            Padding = new Thickness(6d, 4d),
-            MinWidth = emphasizeValue ? 54d : 112d,
+            Padding = new Thickness(5d, 3d),
+            MinWidth = emphasizeValue ? 48d : 96d,
             Background = new SolidColorBrush(Color.Parse("#FFFDFDFB")),
             BorderBrush = new SolidColorBrush(Color.Parse("#FFB7C2CF")),
             BorderThickness = new Thickness(1d)
@@ -880,12 +882,12 @@ public partial class SectionHostControl : UserControl
         stack.Children.Add(new TextBlock
         {
             Text = fact.Label,
-            FontSize = 11d
+            FontSize = 10d
         });
         stack.Children.Add(new TextBlock
         {
             Text = fact.Value,
-            FontSize = emphasizeValue ? 18d : 14d,
+            FontSize = emphasizeValue ? 16d : 13d,
             FontWeight = FontWeight.SemiBold
         });
         card.Child = stack;
@@ -922,7 +924,33 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
             return "(value)";
         }
 
-        return path.Replace('.', ' ');
+        string[] segments = path
+            .Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (segments.Length == 0)
+        {
+            return "(value)";
+        }
+
+        string section = segments[0];
+        string leaf = segments[^1];
+        if (string.Equals(section, "attributes", StringComparison.OrdinalIgnoreCase))
+        {
+            return FormatAttributeLabel(RemoveIndexer(leaf));
+        }
+
+        if (string.Equals(section, "combat", StringComparison.OrdinalIgnoreCase))
+        {
+            string combatKey = RemoveIndexer(leaf).Trim().ToLowerInvariant();
+            return combatKey switch
+            {
+                "initiative" => "Init",
+                "armor" => "Armor",
+                "essence" => "Essence",
+                _ => FormatDesktopLabel(leaf)
+            };
+        }
+
+        return FormatDesktopLabel(leaf);
     }
 
     private static string SanitizeValue(string value)
@@ -935,6 +963,92 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
         return value.Length >= 2 && value[0] == '"' && value[^1] == '"'
             ? value[1..^1]
             : value;
+    }
+
+    private static string FormatDesktopLabel(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return "(value)";
+        }
+
+        string normalized = token.Trim();
+        int? ordinal = null;
+        int bracketIndex = normalized.IndexOf('[');
+        if (bracketIndex >= 0)
+        {
+            int closingBracketIndex = normalized.IndexOf(']', bracketIndex + 1);
+            if (closingBracketIndex > bracketIndex + 1
+                && int.TryParse(normalized[(bracketIndex + 1)..closingBracketIndex], NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedIndex))
+            {
+                ordinal = parsedIndex + 1;
+            }
+
+            normalized = normalized[..bracketIndex];
+        }
+
+        normalized = normalized.Replace('_', ' ').Replace('-', ' ').Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return "(value)";
+        }
+
+        normalized = InsertWordBoundaries(normalized);
+        string label = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.ToLowerInvariant());
+        return ordinal is int index ? $"{label} {index}" : label;
+    }
+
+    private static string FormatAttributeLabel(string attributeName)
+        => attributeName.Trim().ToLowerInvariant() switch
+        {
+            "body" => "BOD",
+            "agility" => "AGI",
+            "reaction" => "REA",
+            "strength" => "STR",
+            "willpower" => "WIL",
+            "logic" => "LOG",
+            "intuition" => "INT",
+            "charisma" => "CHA",
+            "edge" => "EDG",
+            "magic" => "MAG",
+            "resonance" => "RES",
+            _ => attributeName.Length <= 3 ? attributeName.ToUpperInvariant() : attributeName[..Math.Min(3, attributeName.Length)].ToUpperInvariant()
+        };
+
+    private static string RemoveIndexer(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return token;
+        }
+
+        int bracketIndex = token.IndexOf('[');
+        return bracketIndex >= 0 ? token[..bracketIndex] : token;
+    }
+
+    private static string InsertWordBoundaries(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return token;
+        }
+
+        StringBuilder builder = new(token.Length + 4);
+        for (int i = 0; i < token.Length; i++)
+        {
+            char current = token[i];
+            if (i > 0
+                && char.IsUpper(current)
+                && !char.IsWhiteSpace(token[i - 1])
+                && !char.IsUpper(token[i - 1]))
+            {
+                builder.Append(' ');
+            }
+
+            builder.Append(current);
+        }
+
+        return builder.ToString();
     }
 }
 

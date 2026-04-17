@@ -28,7 +28,8 @@ public partial class SummaryHeaderControl : UserControl
     {
         LoadedRunnerTabStripHeading.Text = string.IsNullOrWhiteSpace(heading) ? "Runner Tabs" : heading;
         RuntimeSummaryText.Text = runtimeSummary ?? string.Empty;
-        RuntimeSummaryText.IsVisible = !string.IsNullOrWhiteSpace(runtimeSummary);
+        LoadedRunnerTabStripHeading.IsVisible = false;
+        RuntimeSummaryText.IsVisible = false;
 
         NavigatorTabItem[] visibleTabs = navigationTabs
             .Where(tab => tab.Enabled)

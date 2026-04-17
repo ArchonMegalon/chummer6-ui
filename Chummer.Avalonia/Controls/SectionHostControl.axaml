@@ -271,10 +271,10 @@
                        ItemHeight="44" />
           </StackPanel>
         </Border>
-        <ListBox Grid.Row="8" x:Name="SectionRowsList" Height="128">
+        <ListBox Grid.Row="8" x:Name="SectionRowsList" Height="96">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <Grid ColumnDefinitions="220,*" ColumnSpacing="8" Margin="0,1">
+              <Grid ColumnDefinitions="124,*" ColumnSpacing="6" Margin="0,0">
                 <TextBlock Grid.Column="0"
                            Text="{Binding DisplayPath}"
                            Classes="shell-caption"
