@@ -741,6 +741,40 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task ExecuteCommandAsync_xml_editor_opens_dialog_with_xml_bridge_posture()
+    {
+        var client = new FakeChummerClient();
+        client.SeedToolCatalog(
+            new MasterIndexResponse(
+                Count: 1,
+                GeneratedUtc: DateTimeOffset.UtcNow,
+                Files: [],
+                ReferenceLanePosture: "governed",
+                SourcebookCount: 1,
+                Sourcebooks: [],
+                CustomDataLanePosture: "partial",
+                CustomDataLaneReceipt: "custom-data partial",
+                CustomDataAuthoringLaneReceipt: "custom-data authoring partial",
+                DistinctCustomDataDirectoryCount: 2,
+                XmlBridgePosture: "governed",
+                XmlBridgeLaneReceipt: "xml bridge is governed: 2 enabled data overlays expose XML payloads.",
+                EnabledDataOverlayCount: 2),
+            new TranslatorLanguagesResponse(0, []));
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
+        await presenter.ExecuteCommandAsync("xml_editor", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("dialog.xml_editor", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorLanePosture"));
+        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorOverlayCount"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorCustomDataLanePosture"));
+        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorCustomDataDirectoryCount"));
+        Assert.AreEqual("xml bridge is governed: 2 enabled data overlays expose XML payloads.", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorReceipt"));
+    }
+
+    [TestMethod]
     public async Task ExecuteCommandAsync_switch_ruleset_opens_dialog()
     {
         var presenter = new CharacterOverviewPresenter(new FakeChummerClient());

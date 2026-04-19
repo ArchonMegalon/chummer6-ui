@@ -637,6 +637,12 @@ public class ShellPresenterTests
             return Task.FromResult<RuntimeInspectorProjection?>(null);
         }
 
+        public Task<MasterIndexResponse> GetMasterIndexAsync(CancellationToken ct)
+            => Task.FromResult(new MasterIndexResponse(0, DateTimeOffset.UtcNow, [], "missing", 0, []));
+
+        public Task<TranslatorLanguagesResponse> GetTranslatorLanguagesAsync(CancellationToken ct)
+            => Task.FromResult(new TranslatorLanguagesResponse(0, []));
+
         public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct)
         {
             return Task.FromResult<IReadOnlyList<DesktopBuildPathSuggestion>>([]);

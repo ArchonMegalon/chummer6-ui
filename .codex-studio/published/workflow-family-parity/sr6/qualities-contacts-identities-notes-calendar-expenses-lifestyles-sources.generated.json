@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-04-18T18:15:03.592341Z",
+  "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
+  "status": "pass",
+  "summary": "SR6 workflow-family verification evidence is explicitly grounded for qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr6",
+    "familyId": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+    "proofKind": "sr6_family_carry_forward",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections",
+      "Contacts_diary_and_support_routes_execute_with_public_path_visibility"
+    ],
+    "oracle": {
+      "classification": "carry-forward",
+      "rationale": "Support-family flows stay in scope for SR6 desktop parity and must remain release-gated.",
+      "releaseGateTests": [
+        "Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections",
+        "Contacts_diary_and_support_routes_execute_with_public_path_visibility"
+      ]
+    },
+    "executionReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json"
+    ],
+    "executionFailures": [],
+    "executionExternalBlockers": []
+  }
+}

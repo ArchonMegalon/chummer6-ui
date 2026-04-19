@@ -197,6 +197,23 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Prepare local compatibility NuGet feed directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compat_root in \
+            "$GITHUB_WORKSPACE/c" \
+            "$GITHUB_WORKSPACE/h" \
+            "$GITHUB_WORKSPACE/g" \
+            "$GITHUB_WORKSPACE/chummer-core-engine" \
+            "$GITHUB_WORKSPACE/chummer.run-services" \
+            "$GITHUB_WORKSPACE/chummer-hub-registry" \
+            "$GITHUB_WORKSPACE/.c/core" \
+            "$GITHUB_WORKSPACE/.c/h" \
+            "$GITHUB_WORKSPACE/.c/g"; do
+            mkdir -p "$compat_root/.tmp/ai/local-nuget"
+          done
+
       - name: Build compatibility contracts
         shell: bash
         run: |
@@ -230,6 +247,7 @@ jobs:
             -c Release \
             -r "${{ matrix.rid }}" \
             --self-contained true \
+            --no-restore \
             -p:PublishSingleFile=true \
             -p:PublishTrimmed=false \
             -p:IncludeNativeLibrariesForSelfExtract=true \
@@ -243,6 +261,16 @@ jobs:
             -p:ChummerDesktopReleaseVersion="$release_version" \
             -p:ChummerDesktopReleaseChannel="preview" \
             -o "$out_dir"
+
+      - name: Preflight macOS packaging requirements
+        if: ${{ startsWith(matrix.rid, 'osx-') }}
+        shell: bash
+        run: |
+          bash scripts/preflight-macos-packaging.sh \
+            "out/${{ matrix.app }}/${{ matrix.rid }}" \
+            "${{ matrix.rid }}" \
+            "${{ matrix.app }}" \
+            "${{ matrix.launch_target }}"
 
       - name: Package installer
         shell: bash

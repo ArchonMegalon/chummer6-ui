@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="ae16ae56-a3da-47bd-a362-960b40352b84" name="@ubuntu 2026-04-18 20:14:53" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-04-18T20:14:53.4400543+02:00" queuing="2026-04-18T20:14:53.4400544+02:00" start="2026-04-18T20:14:49.8092605+02:00" finish="2026-04-18T20:15:03.2496299+02:00" />
+  <TestSettings name="default" id="2157a865-e17c-4d6f-b7a3-926b49586bfd">
+    <Deployment runDeploymentRoot="_ubuntu_2026-04-18_20_14_53" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="ca9b3212-e7d3-4117-bfad-d57ad961edfc" testId="1e9ca997-759f-82a9-9618-0a3ebf5069de" testName="Avalonia_and_Blazor_workspace_action_summary_matches" computerName="ubuntu" duration="00:00:00.1162203" startTime="2026-04-18T20:14:57.2564458+02:00" endTime="2026-04-18T20:14:57.3728011+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ca9b3212-e7d3-4117-bfad-d57ad961edfc" />
+    <UnitTestResult executionId="97e54b4a-813b-4704-a96b-32c385ba5832" testId="158c0bc3-2713-8f6e-adb4-6aafdbbff179" testName="Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details" computerName="ubuntu" duration="00:00:00.1614700" startTime="2026-04-18T20:14:58.0234069+02:00" endTime="2026-04-18T20:14:58.1850117+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="97e54b4a-813b-4704-a96b-32c385ba5832" />
+    <UnitTestResult executionId="6faa7dc6-31cd-4788-a030-a5d3791451ea" testId="162c7588-541b-8f53-8153-a40c868be542" testName="Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts" computerName="ubuntu" duration="00:00:00.4677192" startTime="2026-04-18T20:15:01.8004675+02:00" endTime="2026-04-18T20:15:02.2683096+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6faa7dc6-31cd-4788-a030-a5d3791451ea" />
+    <UnitTestResult executionId="fe44f8b1-674b-495d-8b85-84223d45dc15" testId="1d938404-67ef-8a80-8988-d4f680fe7f44" testName="Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions" computerName="ubuntu" duration="00:00:01.6310714" startTime="2026-04-18T20:14:53.4558931+02:00" endTime="2026-04-18T20:14:55.0871134+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fe44f8b1-674b-495d-8b85-84223d45dc15" />
+    <UnitTestResult executionId="1fca82d4-a88e-440a-a9a9-406b8048d58d" testId="1d15e50c-1b3e-880c-8e0a-e53a7dd06fde" testName="Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections" computerName="ubuntu" duration="00:00:00.1323855" startTime="2026-04-18T20:14:57.5270830+02:00" endTime="2026-04-18T20:14:57.6595957+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1fca82d4-a88e-440a-a9a9-406b8048d58d" />
+    <UnitTestResult executionId="c500c06e-8588-4bc1-a012-e1613c23ce90" testId="16aacb02-77de-85d1-8507-2fd55306fb34" testName="Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions" computerName="ubuntu" duration="00:00:00.9577275" startTime="2026-04-18T20:14:55.0872321+02:00" endTime="2026-04-18T20:14:56.0450873+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c500c06e-8588-4bc1-a012-e1613c23ce90" />
+    <UnitTestResult executionId="6cd85b9f-7a7b-4499-bd15-54fe568d8fbe" testId="1122ec86-c441-8c76-9051-804e717a9189" testName="Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections" computerName="ubuntu" duration="00:00:01.0040397" startTime="2026-04-18T20:14:58.1850934+02:00" endTime="2026-04-18T20:14:59.1892467+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6cd85b9f-7a7b-4499-bd15-54fe568d8fbe" />
+    <UnitTestResult executionId="b90918ab-fa24-435a-a72e-6b5bce220a44" testId="1171256b-d4ea-884f-961d-58a680f695eb" testName="Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches" computerName="ubuntu" duration="00:00:00.8575557" startTime="2026-04-18T20:15:02.2683982+02:00" endTime="2026-04-18T20:15:03.1269455+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b90918ab-fa24-435a-a72e-6b5bce220a44" />
+    <UnitTestResult executionId="ba585e73-5cd9-4887-a65e-2d817a457a6e" testId="1dce0f3e-f89a-8482-9d6e-350acb0a2671" testName="Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections" computerName="ubuntu" duration="00:00:00.1036230" startTime="2026-04-18T20:14:57.9095196+02:00" endTime="2026-04-18T20:14:58.0132793+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ba585e73-5cd9-4887-a65e-2d817a457a6e" />
+    <UnitTestResult executionId="700f163d-145d-43dc-878d-46bffbfff0aa" testId="15e1a757-8009-805b-b3d3-f8e0f2bf46f9" testName="Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters" computerName="ubuntu" duration="00:00:02.5668052" startTime="2026-04-18T20:14:50.4880003+02:00" endTime="2026-04-18T20:14:53.0694072+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="700f163d-145d-43dc-878d-46bffbfff0aa" />
+    <UnitTestResult executionId="24011621-a4df-472a-8736-1290e253a653" testId="1d602623-ce69-8f22-84ea-28f4db92f100" testName="Avalonia_and_Blazor_metadata_save_roundtrip_match" computerName="ubuntu" duration="00:00:00.2618242" startTime="2026-04-18T20:14:56.7246791+02:00" endTime="2026-04-18T20:14:56.9867774+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="24011621-a4df-472a-8736-1290e253a653" />
+    <UnitTestResult executionId="809b1734-d991-413f-9f09-b10a74a329b2" testId="1e7cf8f5-2b25-8da2-a60a-b451a077c73c" testName="Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity" computerName="ubuntu" duration="00:00:00.1189537" startTime="2026-04-18T20:14:57.1372683+02:00" endTime="2026-04-18T20:14:57.2563567+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="809b1734-d991-413f-9f09-b10a74a329b2" />
+    <UnitTestResult executionId="ef41641c-612a-4a12-8ad3-e433c1c6f9d3" testId="10d1870c-29fe-87c9-b604-3a22d20d1488" testName="Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues" computerName="ubuntu" duration="00:00:00.3810731" startTime="2026-04-18T20:14:53.0737915+02:00" endTime="2026-04-18T20:14:53.4552706+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ef41641c-612a-4a12-8ad3-e433c1c6f9d3" />
+    <UnitTestResult executionId="9df8403a-478d-4a79-9733-3656b0cb9a7d" testId="1f767a92-56a8-8ee5-ad49-5828d14c767c" testName="Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections" computerName="ubuntu" duration="00:00:00.1313886" startTime="2026-04-18T20:14:57.6597002+02:00" endTime="2026-04-18T20:14:57.7912205+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9df8403a-478d-4a79-9733-3656b0cb9a7d" />
+    <UnitTestResult executionId="25c73507-3018-4235-93d4-3df56aad4971" testId="157cfbe7-fb46-8fff-b73a-8f8863f24328" testName="Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections" computerName="ubuntu" duration="00:00:00.1168449" startTime="2026-04-18T20:14:57.7913105+02:00" endTime="2026-04-18T20:14:57.9082859+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="25c73507-3018-4235-93d4-3df56aad4971" />
+    <UnitTestResult executionId="87285c65-c196-4a5a-83f2-29583efcb6b2" testId="14430d8c-93ed-858a-82a1-0f371df0d8bd" testName="Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts" computerName="ubuntu" duration="00:00:02.4961169" startTime="2026-04-18T20:14:59.1893295+02:00" endTime="2026-04-18T20:15:01.6857424+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="87285c65-c196-4a5a-83f2-29583efcb6b2" />
+    <UnitTestResult executionId="edda85d7-d275-468d-91b8-07d0cc270f03" testId="1a82c1a6-b1ee-8d2e-a584-0e910093f48c" testName="Avalonia_and_Blazor_character_settings_save_updates_shared_state" computerName="ubuntu" duration="00:00:00.1136825" startTime="2026-04-18T20:15:01.6865006+02:00" endTime="2026-04-18T20:15:01.8003837+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="edda85d7-d275-468d-91b8-07d0cc270f03" />
+    <UnitTestResult executionId="a3152189-9c60-41f6-a393-bc9584cd0612" testId="10d3f48c-5136-80d2-93de-a3655a7487a5" testName="Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections" computerName="ubuntu" duration="00:00:00.1539757" startTime="2026-04-18T20:14:57.3728874+02:00" endTime="2026-04-18T20:14:57.5269949+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a3152189-9c60-41f6-a393-bc9584cd0612" />
+    <UnitTestResult executionId="31f55823-6d98-4413-a2e7-d72bc755f5e1" testId="1568a262-e95c-8fe8-9027-ef2eaf1a788e" testName="Contacts_diary_and_support_routes_execute_with_public_path_visibility" computerName="ubuntu" duration="00:00:00.6611235" startTime="2026-04-18T20:14:56.0453654+02:00" endTime="2026-04-18T20:14:56.7245716+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="31f55823-6d98-4413-a2e7-d72bc755f5e1" />
+    <UnitTestResult executionId="9e5ce2b6-9a3e-4dcc-9f2e-b91cc4d0de77" testId="16667954-ed81-85bf-a7a7-7264a2c3d587" testName="Avalonia_and_Blazor_tab_selection_loads_same_workspace_section" computerName="ubuntu" duration="00:00:00.1501606" startTime="2026-04-18T20:14:56.9868767+02:00" endTime="2026-04-18T20:14:57.1371788+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9e5ce2b6-9a3e-4dcc-9f2e-b91cc4d0de77" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="162c7588-541b-8f53-8153-a40c868be542">
+      <Execution id="6faa7dc6-31cd-4788-a030-a5d3791451ea" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_tab_selection_loads_same_workspace_section" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="16667954-ed81-85bf-a7a7-7264a2c3d587">
+      <Execution id="9e5ce2b6-9a3e-4dcc-9f2e-b91cc4d0de77" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_tab_selection_loads_same_workspace_section" />
+    </UnitTest>
+    <UnitTest name="Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="10d1870c-29fe-87c9-b604-3a22d20d1488">
+      <Execution id="ef41641c-612a-4a12-8ad3-e433c1c6f9d3" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" name="Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_metadata_save_roundtrip_match" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1d602623-ce69-8f22-84ea-28f4db92f100">
+      <Execution id="24011621-a4df-472a-8736-1290e253a653" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_metadata_save_roundtrip_match" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_character_settings_save_updates_shared_state" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1a82c1a6-b1ee-8d2e-a584-0e910093f48c">
+      <Execution id="edda85d7-d275-468d-91b8-07d0cc270f03" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_character_settings_save_updates_shared_state" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="158c0bc3-2713-8f6e-adb4-6aafdbbff179">
+      <Execution id="97e54b4a-813b-4704-a96b-32c385ba5832" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_workspace_action_summary_matches" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1e9ca997-759f-82a9-9618-0a3ebf5069de">
+      <Execution id="ca9b3212-e7d3-4117-bfad-d57ad961edfc" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_workspace_action_summary_matches" />
+    </UnitTest>
+    <UnitTest name="Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="16aacb02-77de-85d1-8507-2fd55306fb34">
+      <Execution id="c500c06e-8588-4bc1-a012-e1613c23ce90" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" name="Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1171256b-d4ea-884f-961d-58a680f695eb">
+      <Execution id="b90918ab-fa24-435a-a72e-6b5bce220a44" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1e7cf8f5-2b25-8da2-a60a-b451a077c73c">
+      <Execution id="809b1734-d991-413f-9f09-b10a74a329b2" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="10d3f48c-5136-80d2-93de-a3655a7487a5">
+      <Execution id="a3152189-9c60-41f6-a393-bc9584cd0612" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections" />
+    </UnitTest>
+    <UnitTest name="Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="15e1a757-8009-805b-b3d3-f8e0f2bf46f9">
+      <Execution id="700f163d-145d-43dc-878d-46bffbfff0aa" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" name="Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1d15e50c-1b3e-880c-8e0a-e53a7dd06fde">
+      <Execution id="1fca82d4-a88e-440a-a9a9-406b8048d58d" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="14430d8c-93ed-858a-82a1-0f371df0d8bd">
+      <Execution id="87285c65-c196-4a5a-83f2-29583efcb6b2" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts" />
+    </UnitTest>
+    <UnitTest name="Contacts_diary_and_support_routes_execute_with_public_path_visibility" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1568a262-e95c-8fe8-9027-ef2eaf1a788e">
+      <Execution id="31f55823-6d98-4413-a2e7-d72bc755f5e1" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" name="Contacts_diary_and_support_routes_execute_with_public_path_visibility" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1f767a92-56a8-8ee5-ad49-5828d14c767c">
+      <Execution id="9df8403a-478d-4a79-9733-3656b0cb9a7d" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections" />
+    </UnitTest>
+    <UnitTest name="Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1d938404-67ef-8a80-8988-d4f680fe7f44">
+      <Execution id="fe44f8b1-674b-495d-8b85-84223d45dc15" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" name="Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1dce0f3e-f89a-8482-9d6e-350acb0a2671">
+      <Execution id="ba585e73-5cd9-4887-a65e-2d817a457a6e" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="157cfbe7-fb46-8fff-b73a-8f8863f24328">
+      <Execution id="25c73507-3018-4235-93d4-3df56aad4971" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections" />
+    </UnitTest>
+    <UnitTest name="Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections" storage="/docker/chummercomplete/chummer-presentation/chummer.tests/bin/release/chummer.tests.dll" id="1122ec86-c441-8c76-9051-804e717a9189">
+      <Execution id="6cd85b9f-7a7b-4499-bd15-54fe568d8fbe" />
+      <TestMethod codeBase="/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Release/Chummer.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.Presentation.DualHeadAcceptanceTests" name="Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="1e9ca997-759f-82a9-9618-0a3ebf5069de" executionId="ca9b3212-e7d3-4117-bfad-d57ad961edfc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="158c0bc3-2713-8f6e-adb4-6aafdbbff179" executionId="97e54b4a-813b-4704-a96b-32c385ba5832" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="162c7588-541b-8f53-8153-a40c868be542" executionId="6faa7dc6-31cd-4788-a030-a5d3791451ea" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1d938404-67ef-8a80-8988-d4f680fe7f44" executionId="fe44f8b1-674b-495d-8b85-84223d45dc15" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1d15e50c-1b3e-880c-8e0a-e53a7dd06fde" executionId="1fca82d4-a88e-440a-a9a9-406b8048d58d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="16aacb02-77de-85d1-8507-2fd55306fb34" executionId="c500c06e-8588-4bc1-a012-e1613c23ce90" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1122ec86-c441-8c76-9051-804e717a9189" executionId="6cd85b9f-7a7b-4499-bd15-54fe568d8fbe" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1171256b-d4ea-884f-961d-58a680f695eb" executionId="b90918ab-fa24-435a-a72e-6b5bce220a44" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1dce0f3e-f89a-8482-9d6e-350acb0a2671" executionId="ba585e73-5cd9-4887-a65e-2d817a457a6e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15e1a757-8009-805b-b3d3-f8e0f2bf46f9" executionId="700f163d-145d-43dc-878d-46bffbfff0aa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1d602623-ce69-8f22-84ea-28f4db92f100" executionId="24011621-a4df-472a-8736-1290e253a653" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1e7cf8f5-2b25-8da2-a60a-b451a077c73c" executionId="809b1734-d991-413f-9f09-b10a74a329b2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="10d1870c-29fe-87c9-b604-3a22d20d1488" executionId="ef41641c-612a-4a12-8ad3-e433c1c6f9d3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1f767a92-56a8-8ee5-ad49-5828d14c767c" executionId="9df8403a-478d-4a79-9733-3656b0cb9a7d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="157cfbe7-fb46-8fff-b73a-8f8863f24328" executionId="25c73507-3018-4235-93d4-3df56aad4971" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="14430d8c-93ed-858a-82a1-0f371df0d8bd" executionId="87285c65-c196-4a5a-83f2-29583efcb6b2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1a82c1a6-b1ee-8d2e-a584-0e910093f48c" executionId="edda85d7-d275-468d-91b8-07d0cc270f03" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="10d3f48c-5136-80d2-93de-a3655a7487a5" executionId="a3152189-9c60-41f6-a393-bc9584cd0612" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1568a262-e95c-8fe8-9027-ef2eaf1a788e" executionId="31f55823-6d98-4413-a2e7-d72bc755f5e1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="16667954-ed81-85bf-a7a7-7264a2c3d587" executionId="9e5ce2b6-9a3e-4dcc-9f2e-b91cc4d0de77" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="20" executed="20" passed="20" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+</TestRun>

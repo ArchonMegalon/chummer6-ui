@@ -50,7 +50,7 @@ internal sealed class MainWindowLifecycleCoordinator
 
     private void Adapter_OnUpdated(object? sender, EventArgs e)
     {
-        _refreshState();
+        Dispatcher.UIThread.Post(_refreshState);
     }
 
     private void ShellPresenter_OnStateChanged(object? sender, EventArgs e)

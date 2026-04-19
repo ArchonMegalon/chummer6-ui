@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-04-18T18:15:03.438226Z",
+  "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
+  "status": "pass",
+  "summary": "SR6 workflow-family execution evidence is explicitly grounded for recovery-reload-migration-roundtrips.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr6",
+    "familyId": "recovery-reload-migration-roundtrips",
+    "proofKind": "sr6_family_release_gated_execution",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_metadata_save_roundtrip_match",
+      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
+    ],
+    "oracle": {
+      "classification": "carry-forward",
+      "rationale": "Recovery, reload, and migration roundtrip workflows remain explicit SR6 carry-forward obligations.",
+      "releaseGateTests": [
+        "Avalonia_and_Blazor_metadata_save_roundtrip_match",
+        "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
+      ]
+    },
+    "dotnetTest": {
+      "project": "Chummer.Tests/Chummer.Tests.csproj",
+      "configuration": "Release",
+      "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
+      "exitCode": 0
+    },
+    "apiProbe": {
+      "baseUrl": "http://127.0.0.1:8088",
+      "results": [
+        {
+          "path": "/api/workspaces",
+          "ok": false,
+          "statusCode": 0,
+          "error": "<urlopen error [Errno 111] Connection refused>"
+        },
+        {
+          "path": "/api/shell/bootstrap",
+          "ok": false,
+          "statusCode": 0,
+          "error": "<urlopen error [Errno 111] Connection refused>"
+        }
+      ]
+    },
+    "external_blocker": "",
+    "matchedPassedTests": [
+      "Avalonia_and_Blazor_metadata_save_roundtrip_match",
+      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
+    ],
+    "missingAuditTests": [],
+    "failedAuditTests": {}
+  }
+}

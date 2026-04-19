@@ -290,7 +290,7 @@
                 Classes="shell-panel"
                 Padding="1,0">
           <ListBox x:Name="SectionRowsList"
-                   Height="96"
+                   Height="176"
                    BorderThickness="0"
                    Background="Transparent">
             <ListBox.ItemTemplate>

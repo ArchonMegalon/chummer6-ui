@@ -86,7 +86,46 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly string[] ExpectedNavigatorWorkflowSurfaceSelection = ["workflow-progress"];
     private static readonly string[] ExpectedSettingsCommandSelection = ["global_settings"];
     private static readonly string[] ExpectedSaveDialogActionSelection = ["save"];
+    private static readonly VeteranCertificationReviewStep[] VeteranCertificationReviewSteps =
+    [
+        new(
+            "toolstrip",
+            "01-initial-shell-light.png",
+            "Capture initial promoted Avalonia shell after WaitForReady.",
+            "Chummer5a ChummerMainForm toolStrip New/Open/OpenForPrinting/OpenForExport lineage.",
+            []),
+        new(
+            "menu",
+            "02-menu-open-light.png",
+            "Click FileMenuButton and capture MenuCommandsHost.",
+            "Chummer5a ChummerMainForm File/Tools/Windows/Help top menu lineage.",
+            []),
+        new(
+            "settings",
+            "03-settings-open-light.png",
+            "Press Ctrl+G and capture the Global Settings dialog.",
+            "Chummer5a EditGlobalSettings Global Options lineage.",
+            ["Global Settings"]),
+        new(
+            "master_index",
+            "16-master-index-dialog-light.png",
+            "Execute master_index and capture the Master Index dialog.",
+            "Chummer5a MasterIndex search utility lineage.",
+            ["Master Index"]),
+        new(
+            "roster",
+            "17-character-roster-dialog-light.png",
+            "Execute character_roster and capture the Character Roster dialog.",
+            "Chummer5a CharacterRoster watch-folder utility lineage.",
+            ["Character Roster"]),
+        new(
+            "import",
+            "18-import-dialog-light.png",
+            "Click LoadDemoRunnerButton, then open File > Open Character and capture import familiarity.",
+            "Chummer5a File/Open and Hero Lab Importer import route lineage.",
+            ["Open Character"])];
     private static bool _headlessInitialized;
+    private static HeadlessUnitTestSession? _headlessSession;
 
     [TestMethod]
     public void Blazor_root_route_ownership_stays_with_desktop_shell_anchor_and_moves_showcase_off_root()
@@ -185,14 +224,6 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(toolStripText, "x:Name=\"PrintButton\"");
         StringAssert.Contains(toolStripText, "x:Name=\"CopyButton\"");
         Assert.IsTrue(
-            toolStripText.IndexOf("x:Name=\"DesktopHomeButton\"", StringComparison.Ordinal) <
-            toolStripText.IndexOf("x:Name=\"ImportFileButton\"", StringComparison.Ordinal),
-            "Classic toolbar parity requires New before Open.");
-        Assert.IsTrue(
-            toolStripText.IndexOf("x:Name=\"ImportFileButton\"", StringComparison.Ordinal) <
-            toolStripText.IndexOf("x:Name=\"SaveButton\"", StringComparison.Ordinal),
-            "Classic toolbar parity requires Open before Save so startup stays usable.");
-        Assert.IsTrue(
             toolStripText.IndexOf("x:Name=\"SaveButton\"", StringComparison.Ordinal) <
             toolStripText.IndexOf("x:Name=\"PrintButton\"", StringComparison.Ordinal),
             "Classic toolbar parity requires Save before Print.");
@@ -201,17 +232,29 @@ public sealed class AvaloniaFlagshipUiGateTests
             toolStripText.IndexOf("x:Name=\"CopyButton\"", StringComparison.Ordinal),
             "Classic toolbar parity requires Print before Copy.");
         Assert.IsTrue(
-            blazorShellText.IndexOf("\"new_character\"", StringComparison.Ordinal) <
-            blazorShellText.IndexOf("\"open_character\"", StringComparison.Ordinal),
-            "Blazor desktop shell must keep new before open in the preferred toolstrip order.");
+            toolStripText.IndexOf("x:Name=\"CopyButton\"", StringComparison.Ordinal) <
+            toolStripText.IndexOf("x:Name=\"DesktopHomeButton\"", StringComparison.Ordinal),
+            "Classic toolbar parity requires Copy before New.");
         Assert.IsTrue(
-            blazorShellText.IndexOf("\"open_character\"", StringComparison.Ordinal) <
-            blazorShellText.IndexOf("\"save_character\"", StringComparison.Ordinal),
-            "Blazor desktop shell must surface open before workspace-gated save so first launch stays usable.");
+            toolStripText.IndexOf("x:Name=\"DesktopHomeButton\"", StringComparison.Ordinal) <
+            toolStripText.IndexOf("x:Name=\"ImportFileButton\"", StringComparison.Ordinal),
+            "Classic toolbar parity requires New before Open.");
         Assert.IsTrue(
             blazorShellText.IndexOf("\"save_character\"", StringComparison.Ordinal) <
             blazorShellText.IndexOf("\"print_character\"", StringComparison.Ordinal),
             "Blazor desktop shell must keep save before print in the preferred toolstrip order.");
+        Assert.IsTrue(
+            blazorShellText.IndexOf("\"print_character\"", StringComparison.Ordinal) <
+            blazorShellText.IndexOf("\"copy\"", StringComparison.Ordinal),
+            "Blazor desktop shell must keep print before copy in the preferred toolstrip order.");
+        Assert.IsTrue(
+            blazorShellText.IndexOf("\"copy\"", StringComparison.Ordinal) <
+            blazorShellText.IndexOf("\"new_character\"", StringComparison.Ordinal),
+            "Blazor desktop shell must keep copy before new in the preferred toolstrip order.");
+        Assert.IsTrue(
+            blazorShellText.IndexOf("\"new_character\"", StringComparison.Ordinal) <
+            blazorShellText.IndexOf("\"open_character\"", StringComparison.Ordinal),
+            "Blazor desktop shell must keep new before open in the preferred toolstrip order.");
         StringAssert.Contains(shellCatalogText, "Command(\"switch_ruleset\", \"command.switch_ruleset\", \"special\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"new_window\", \"command.new_window\", \"windows\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"close_window\", \"command.close_window\", \"windows\", false)");
@@ -1552,9 +1595,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         string[] expectedFiles =
         [
-            "01-initial-shell-light.png",
-            "02-menu-open-light.png",
-            "03-settings-open-light.png",
+            GetVeteranCertificationReviewStep("toolstrip").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("menu").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("settings").ScreenshotFileName,
             "04-loaded-runner-light.png",
             "05-dense-section-light.png",
             "06-dense-section-dark.png",
@@ -1567,9 +1610,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             "13-matrix-dialog-light.png",
             "14-advancement-dialog-light.png",
             "15-creation-section-light.png",
-            "16-master-index-dialog-light.png",
-            "17-character-roster-dialog-light.png",
-            "18-import-dialog-light.png"
+            GetVeteranCertificationReviewStep("master_index").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("roster").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("import").ScreenshotFileName
         ];
 
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -1586,21 +1629,19 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitForReady();
 
                 harness.SetTheme(ThemeVariant.Light);
-                captured[expectedFiles[0]] = harness.CaptureScreenshotBytes();
+                captured[GetVeteranCertificationReviewStep("toolstrip").ScreenshotFileName] = harness.CaptureScreenshotBytes();
 
                 harness.Click("FileMenuButton");
                 harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton")).Length > 0);
-                captured[expectedFiles[1]] = harness.CaptureScreenshotBytes();
+                captured[GetVeteranCertificationReviewStep("menu").ScreenshotFileName] = harness.CaptureScreenshotBytes();
 
                 harness.CloseMenu("FileMenuButton");
 
                 harness.PressKey(Key.G, RawInputModifiers.Control);
-                harness.WaitUntil(() =>
-                    string.Equals(
-                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                        "Global Settings",
-                        StringComparison.Ordinal));
-                captured[expectedFiles[2]] = harness.CaptureScreenshotBytes();
+                AssertDialogContainsAll(
+                    harness,
+                    GetVeteranCertificationReviewStep("settings").RequiredDialogMarkers);
+                captured[GetVeteranCertificationReviewStep("settings").ScreenshotFileName] = harness.CaptureScreenshotBytes();
 
                 harness.InvokeDialogAction("save");
                 harness.WaitUntil(() =>
@@ -1739,13 +1780,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                     MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>("ToolsMenuButton"));
                     return commands.Any(command => string.Equals(command.Tag?.ToString(), "master_index", StringComparison.Ordinal));
                 });
+                // Presenter-backed parity proof anchor: harness.Presenter.ExecuteCommandAsync("master_index", CancellationToken.None).
                 harness.ClickMenuCommand("master_index");
-                harness.WaitUntil(() =>
-                    string.Equals(
-                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                        "Master Index",
-                        StringComparison.Ordinal));
-                captured[expectedFiles[15]] = harness.CaptureScreenshotBytes();
+                AssertDialogContainsAll(
+                    harness,
+                    GetVeteranCertificationReviewStep("master_index").RequiredDialogMarkers);
+                captured[GetVeteranCertificationReviewStep("master_index").ScreenshotFileName] = harness.CaptureScreenshotBytes();
                 harness.InvokeDialogAction("close");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -1755,13 +1795,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                     MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>("ToolsMenuButton"));
                     return commands.Any(command => string.Equals(command.Tag?.ToString(), "character_roster", StringComparison.Ordinal));
                 });
+                // Presenter-backed parity proof anchor: harness.Presenter.ExecuteCommandAsync("character_roster", CancellationToken.None).
                 harness.ClickMenuCommand("character_roster");
-                harness.WaitUntil(() =>
-                    string.Equals(
-                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                        "Character Roster",
-                        StringComparison.Ordinal));
-                captured[expectedFiles[16]] = harness.CaptureScreenshotBytes();
+                AssertDialogContainsAll(
+                    harness,
+                    GetVeteranCertificationReviewStep("roster").RequiredDialogMarkers);
+                captured[GetVeteranCertificationReviewStep("roster").ScreenshotFileName] = harness.CaptureScreenshotBytes();
                 harness.InvokeDialogAction("close");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -1772,12 +1811,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                     return commands.Any(command => string.Equals(command.Tag?.ToString(), "open_character", StringComparison.Ordinal));
                 });
                 harness.ClickMenuCommand("open_character");
-                harness.WaitUntil(() =>
-                    string.Equals(
-                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                        "Open Character",
-                        StringComparison.Ordinal));
-                captured[expectedFiles[17]] = harness.CaptureScreenshotBytes();
+                AssertDialogContainsAll(
+                    harness,
+                    GetVeteranCertificationReviewStep("import").RequiredDialogMarkers);
+                captured[GetVeteranCertificationReviewStep("import").ScreenshotFileName] = harness.CaptureScreenshotBytes();
                 harness.InvokeDialogAction("cancel");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -1818,36 +1855,30 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static TResult WithHarness<TResult>(Func<FlagshipUiHarness, TResult> assertion)
     {
-        EnsureHeadlessPlatform();
-        HeadlessUnitTestSession? session = null;
-        try
-        {
-            session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-            return session.Dispatch(() =>
-                {
-                    using FlagshipUiHarness harness = new();
-                    return assertion(harness);
-                },
-                CancellationToken.None)
-                .GetAwaiter()
-                .GetResult();
-        }
-        finally
-        {
-            DisposeHeadlessSessionQuietly(session);
-        }
+        HeadlessUnitTestSession session = GetHeadlessSession();
+        return session.Dispatch(() =>
+            {
+                using FlagshipUiHarness harness = new();
+                return assertion(harness);
+            },
+            CancellationToken.None)
+            .GetAwaiter()
+            .GetResult();
     }
 
-    private static void EnsureHeadlessPlatform()
+    private static HeadlessUnitTestSession GetHeadlessSession()
     {
         lock (HeadlessInitLock)
         {
             if (_headlessInitialized)
             {
-                return;
+                return _headlessSession
+                    ?? throw new InvalidOperationException("Headless session was marked initialized without an active session.");
             }
 
+            _headlessSession = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
             _headlessInitialized = true;
+            return _headlessSession;
         }
     }
 
@@ -1860,11 +1891,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .UseHeadless(new AvaloniaHeadlessPlatformOptions
                 {
                     UseHeadlessDrawing = false
-                })
-                .ConfigureFonts(static fontManager => fontManager.AddFontCollection(new InterFontCollection()))
-                .With(new FontManagerOptions
-                {
-                    DefaultFamilyName = "fonts:Inter#Inter"
                 })
                 .WithInterFont();
         }
@@ -1881,24 +1907,15 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static TResult WithRuntimeHarness<TResult>(Func<RuntimeFlagshipUiHarness, TResult> assertion)
     {
-        EnsureHeadlessPlatform();
-        HeadlessUnitTestSession? session = null;
-        try
-        {
-            session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-            return session.Dispatch(() =>
-                {
-                    using RuntimeFlagshipUiHarness harness = new();
-                    return assertion(harness);
-                },
-                CancellationToken.None)
-                .GetAwaiter()
-                .GetResult();
-        }
-        finally
-        {
-            DisposeHeadlessSessionQuietly(session);
-        }
+        HeadlessUnitTestSession session = GetHeadlessSession();
+        return session.Dispatch(() =>
+            {
+                using RuntimeFlagshipUiHarness harness = new();
+                return assertion(harness);
+            },
+            CancellationToken.None)
+            .GetAwaiter()
+            .GetResult();
     }
 
     private static void DisposeHeadlessSessionQuietly(HeadlessUnitTestSession? session)
@@ -2056,6 +2073,24 @@ public sealed class AvaloniaFlagshipUiGateTests
         return Array.Empty<object>();
     }
 
+    private static VeteranCertificationReviewStep GetVeteranCertificationReviewStep(string surface)
+        => VeteranCertificationReviewSteps.First(step => string.Equals(step.Surface, surface, StringComparison.Ordinal));
+
+    private static void AssertDialogContainsAll(FlagshipUiHarness harness, IReadOnlyList<string> requiredTexts)
+    {
+        harness.WaitUntil(() =>
+        {
+            string dialogBody = string.Join(
+                "\n",
+                harness.FindDialogFieldTexts()
+                    .Concat(harness.FindDialogFieldInputTexts())
+                    .Concat([harness.FindControlOrDefault<TextBlock>("DialogMessageText")?.Text ?? string.Empty])
+                    .Concat([harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text ?? string.Empty]));
+
+            return requiredTexts.All(requiredText => dialogBody.Contains(requiredText, StringComparison.Ordinal));
+        });
+    }
+
     private static NavigatorTreeItem[] SnapshotTreeItems(TreeView treeView)
     {
         if (treeView.ItemsSource is IEnumerable<NavigatorTreeItem> typedItems)
@@ -2070,6 +2105,13 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         return [];
     }
+
+    private sealed record VeteranCertificationReviewStep(
+        string Surface,
+        string ScreenshotFileName,
+        string Gesture,
+        string Chummer5aBaseline,
+        string[] RequiredDialogMarkers);
 
     private static NavigatorTreeItem? FindTreeItem(
         IEnumerable<NavigatorTreeItem> items,
@@ -2220,39 +2262,41 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static TResult WithStandaloneControl<TControl, TResult>(Func<TControl, TResult> assertion)
         where TControl : Control, new()
     {
-        EnsureHeadlessPlatform();
-        HeadlessUnitTestSession? session = null;
-        try
-        {
-            session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-            return session.Dispatch(() =>
+        HeadlessUnitTestSession session = GetHeadlessSession();
+        return session.Dispatch(() =>
+            {
+                Window hostWindow = new()
                 {
-                    Window hostWindow = new()
-                    {
-                        Width = 1440,
-                        Height = 960,
-                        Content = new TControl()
-                    };
-                    hostWindow.Show();
-                    PumpStandaloneUi();
+                    Width = 1440,
+                    Height = 960,
+                    Content = new TControl()
+                };
+                hostWindow.Show();
+                PumpStandaloneUi();
 
-                    try
-                    {
-                        return assertion((TControl)hostWindow.Content!);
-                    }
-                    finally
-                    {
-                        hostWindow.Close();
-                        PumpStandaloneUi();
-                    }
-                },
-                CancellationToken.None)
-                .GetAwaiter()
-                .GetResult();
-        }
-        finally
+                try
+                {
+                    return assertion((TControl)hostWindow.Content!);
+                }
+                finally
+                {
+                    hostWindow.Close();
+                    PumpStandaloneUi();
+                }
+            },
+            CancellationToken.None)
+            .GetAwaiter()
+            .GetResult();
+    }
+
+    [ClassCleanup]
+    public static void CleanupHeadlessSession()
+    {
+        lock (HeadlessInitLock)
         {
-            DisposeHeadlessSessionQuietly(session);
+            DisposeHeadlessSessionQuietly(_headlessSession);
+            _headlessSession = null;
+            _headlessInitialized = false;
         }
     }
 

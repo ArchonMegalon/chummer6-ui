@@ -1,9 +1,68 @@
 @namespace Chummer.Blazor.Components.Pages
 @page "/"
 
-<!-- Desktop shell route anchor: the flagship workbench lives in MainLayout/DesktopShell. -->
+<!-- Desktop shell route anchor: the flagship workbench stays home cockpit off the root route. -->
 <!-- The public home surface remains minimal but keeps shipped Build/Explain/Publish evidence discoverable. -->
 <!-- <BuildLabHandoffPanel Projection="BuildLabHandoffProjection" /> -->
 <!-- <RulesNavigatorPanel Projection="RulesNavigatorAnswerProjection" /> -->
 <!-- <CreatorPublicationPanel Publication="CreatorPublicationProjection" /> -->
-<!-- BuildLabHandoffProjection, RulesNavigatorAnswerProjection, CreatorPublicationProjection -->
+<NpcPersonaStudioPanel Projection="@_npcPersonaStudio" />
+
+@code {
+    private readonly NpcPersonaStudioState _npcPersonaStudio = new(
+        DefaultPersonaId: "persona-warden",
+        SelectedPersonaId: "persona-warden",
+        PromptPolicy: "Balanced persona routing with evidence-first defaults.",
+        Personas: [
+            new(
+                "persona-warden",
+                "Warden",
+                true,
+                "Session-ready NPC role tuned for escalation control and scene continuity.",
+                "contract:default-seed",
+                "approved",
+                true),
+            new(
+                "persona-infiltrator",
+                "Infiltrator",
+                false,
+                "Fast-route persona for covert acquisition and opportunistic pressure.",
+                "contract:default-seed",
+                "draft",
+                false)
+        ],
+        Policies: [
+            new(
+                "social",
+                "network-liaison",
+                "persona-warden",
+                "provider.social",
+                true,
+                "approved",
+                ["negotiation", "cover-up"]),
+            new(
+                "covert",
+                "entry-vector",
+                "persona-infiltrator",
+                "provider.mirror",
+                false,
+                "draft",
+                ["lockpick", "spoof"]),
+            new(
+                "support",
+                "ops-latent",
+                "persona-warden",
+                "provider.support",
+                true,
+                "approved",
+                ["evac-brief", "handoff"])
+        ],
+        EvidenceLines: [
+            "Prompt policy: Balanced persona routing with evidence-first defaults.",
+            "Persona summary: Evidence-backed NPC planning rail with route constraints.",
+            "Persona provenance: contract:default-seed",
+            "Routes: social, covert, support"
+        ],
+        HasDraftPolicies: true,
+        HasApprovedPolicies: true);
+}

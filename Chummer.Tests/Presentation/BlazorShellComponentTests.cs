@@ -363,9 +363,13 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "SR4 Oracle Debug Import");
         StringAssert.Contains(cut.Markup, "Import receipt");
         StringAssert.Contains(cut.Markup, "Import landed with a governed receipt.");
+        StringAssert.Contains(cut.Markup, "Rule environment");
+        StringAssert.Contains(cut.Markup, "chummer.portable-dossier.v1; compatible-with-warnings; inspect-only; payload abcdef1234567890.");
         StringAssert.Contains(cut.Markup, "Imported Runner Blue into sr4 with a bounded source toggle change.");
         StringAssert.Contains(cut.Markup, "Before");
         StringAssert.Contains(cut.Markup, "After");
+        StringAssert.Contains(cut.Markup, "Explain receipt");
+        StringAssert.Contains(cut.Markup, "Payload hash abcdef123456 entered workspace ws-import.");
         StringAssert.Contains(cut.Markup, "Support reuse");
         StringAssert.Contains(cut.Markup, "Review the before-after environment diff before campaign handoff.");
         StringAssert.Contains(cut.Markup, "Support can cite payload abcdef1234567890 with compatible-with-warnings compatibility.");
@@ -819,7 +823,10 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Rebind the active runtime before export.");
         StringAssert.Contains(cut.Markup, "Support can cite the same runtime fingerprint after handoff.");
         StringAssert.Contains(cut.Markup, "Build blocker receipt");
+        StringAssert.Contains(cut.Markup, "Explain receipt");
         StringAssert.Contains(cut.Markup, "Rule environment");
+        StringAssert.Contains(cut.Markup, "Environment diff");
+        StringAssert.Contains(cut.Markup, "One quick-action binding still needs review. -&gt; Rebind the active runtime before export.");
         StringAssert.Contains(cut.Markup, "One quick-action binding still needs review.");
         Assert.IsNotNull(cut.Find("[data-build-blocker-explain-receipt]"));
         StringAssert.Contains(cut.Markup, "data-build-lab-export-target");
@@ -991,7 +998,7 @@ public sealed class BlazorShellComponentTests
     public void BlazorHome_updates_gm_ops_surface_for_autonomy_pin_and_snooze_controls()
     {
         using var context = new BunitContext();
-        IRenderedComponent<Home> cut = context.Render<Home>();
+        IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         Assert.IsFalse(cut.Markup.Contains("Narrative reveal window", StringComparison.Ordinal));
 
@@ -1023,7 +1030,7 @@ public sealed class BlazorShellComponentTests
     public void BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them()
     {
         using var context = new BunitContext();
-        IRenderedComponent<Home> cut = context.Render<Home>();
+        IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         cut.Find("[data-gm-board-context='Scene break']").Click();
         cut.WaitForAssertion(() =>
@@ -1301,7 +1308,7 @@ public sealed class BlazorShellComponentTests
     public void BlazorHome_renders_explicit_downtime_planner_calendar_and_schedule_views()
     {
         using var context = new BunitContext();
-        IRenderedComponent<Home> cut = context.Render<Home>();
+        IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         Assert.IsNotNull(cut.Find("[data-journal-downtime-planner]"));
         Assert.IsNotNull(cut.Find("[data-journal-calendar-view]"));
@@ -1469,7 +1476,7 @@ public sealed class BlazorShellComponentTests
     public void BlazorHome_renders_contact_relationship_graph_rails()
     {
         using var context = new BunitContext();
-        IRenderedComponent<Home> cut = context.Render<Home>();
+        IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         Assert.IsNotNull(cut.Find("[data-contact-graph-nodes]"));
         Assert.IsNotNull(cut.Find("[data-contact-faction-rail]"));
@@ -1557,7 +1564,7 @@ public sealed class BlazorShellComponentTests
     public void BlazorHome_updates_generated_asset_workflow_for_attach_approve_and_archive()
     {
         using var context = new BunitContext();
-        IRenderedComponent<Home> cut = context.Render<Home>();
+        IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         Assert.HasCount(2, cut.FindAll("[data-generated-asset-compare-slot]"));
 
@@ -1590,7 +1597,7 @@ public sealed class BlazorShellComponentTests
     public void BlazorHome_invalidates_shadowfeed_dispatch_after_context_shift_and_allows_refresh()
     {
         using var context = new BunitContext();
-        IRenderedComponent<Home> cut = context.Render<Home>();
+        IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         cut.Find("[data-generated-asset-tab='asset-news-01']").Click();
         cut.Find("[data-generated-asset-action='dispatch']").Click();
@@ -1615,7 +1622,7 @@ public sealed class BlazorShellComponentTests
     public void BlazorHome_marks_portrait_candidate_as_canonical_through_shared_action_rail()
     {
         using var context = new BunitContext();
-        IRenderedComponent<Home> cut = context.Render<Home>();
+        IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         cut.Find("[data-generated-asset-tab='asset-portraits-01']").Click();
         cut.WaitForAssertion(() =>

@@ -62,6 +62,10 @@
     <Compile Include="CharacterSectionServiceTests.cs" />
     <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
     <Compile Include="Compliance\MigrationComplianceTests.cs" />
+    <Compile Include="Compliance\Next90M103VeteranCertificationGuardTests.cs" />
+    <Compile Include="Compliance\Next90M104ExplainReceiptsGuardTests.cs" />
+    <Compile Include="Compliance\Next90M105PrimaryRouteDecisionGuardTests.cs" />
+    <Compile Include="Compliance\Next90M105RestoreContinuityGuardTests.cs" />
     <Compile Include="ExternalHostProofBlockersTests.cs" />
     <Compile Include="ServiceCollectionDesktopRuntimeExtensionsTests.cs" />
     <Compile Include="Presentation\FixtureBackedChummerClient.cs" />

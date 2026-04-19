@@ -1,0 +1,1398 @@
+{
+  "allowedPaths": [
+    "Chummer.Avalonia",
+    "Chummer.Blazor",
+    "Chummer.Tests",
+    "scripts"
+  ],
+  "contract_name": "chummer6-ui.next90_m103_ui_veteran_certification",
+  "evidence": {
+    "authorityProofRepoRoot": "/docker/chummercomplete/chummer6-ui-finish",
+    "complianceGuardFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M103VeteranCertificationGuardTests.cs",
+    "complianceGuardMarkers": {
+      "missing": [],
+      "required": [
+        "Next90M103VeteranCertificationGuardTests",
+        "M103_veteran_certification_guard_pins_completed_queue_proof",
+        "M103_veteran_certification_receipt_keeps_surface_distinct_screenshot_proof",
+        "next90-m103-ui-veteran-certification",
+        "EXPECTED_NO_REOPEN_POSTURE",
+        "noReopenPosture",
+        "EXPECTED_PROOF_GUARD",
+        "promotedDesktopHeadBinding",
+        "standardVerifyPath",
+        "designQueueItem",
+        "designQueueTopLevel",
+        "queueHeaderChecks",
+        "designQueueHeaderChecks",
+        "registryProofItemChecks",
+        "queueMirrorAlignmentChecks",
+        "legacyBaselineResults",
+        "legacyImportRouteBaselineResults",
+        "surfaceResults",
+        "sourceFileChecks",
+        "captureMarkerChecks",
+        "eventHandlersSourceFile",
+        "DISALLOWED_ACTIVE_RUN_PROOF_TOKENS",
+        "operatorHelperProofChecks",
+        "proofScopeChecks",
+        "proofScopePathHits",
+        "veteranCertificationMatrix",
+        "certificationMatrixRow",
+        "chummer5aBaselineFile",
+        "screenshotContentNonBlank",
+        "MIN_SCREENSHOT_DISTINCT_SAMPLE_COLORS",
+        "publishedScreenshotDistinctSampleColors",
+        "publishedScreenshotContentNonBlank",
+        "AssertDialogContainsAll",
+        "Open Character",
+        "Click LoadDemoRunnerButton, then open File > Open Character and capture import familiarity.",
+        "18-import-dialog-light.png",
+        "operator helper proof check failed",
+        "M103 scoped proof check failed"
+      ]
+    },
+    "designQueueHeaderChecks": {
+      "mode_matches": true,
+      "program_wave_matches": true,
+      "source_queue_fingerprint_matches": true,
+      "source_registry_path_matches": true,
+      "status_matches": true
+    },
+    "designQueueItem": {
+      "allowed_paths": [
+        "Chummer.Avalonia",
+        "Chummer.Blazor",
+        "Chummer.Tests",
+        "scripts"
+      ],
+      "completion_action": "verify_closed_package_only",
+      "do_not_reopen_reason": "M103 chummer6-ui veteran certification is complete; future shards must verify this receipt, registry row, design queue row, Fleet queue row, and direct proof command instead of recapturing promoted-head Chummer5a screenshot parity.",
+      "frontier_id": 2257965187,
+      "landed_commit": "a8e4f92c",
+      "milestone_id": 103,
+      "owned_surfaces": [
+        "veteran_migration_certification",
+        "screenshot_parity:desktop"
+      ],
+      "package_id": "next90-m103-ui-veteran-certification",
+      "proof": [
+        "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json",
+        "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION_REVIEW.generated.md",
+        "/docker/chummercomplete/chummer6-ui-finish/scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh",
+        "/docker/chummercomplete/chummer6-ui-finish commit fb6eb62e",
+        "/docker/chummercomplete/chummer6-ui-finish commit 3bba8754 tightens the M103 verifier receipt and standard-verify proof alignment.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 6eafef39 tightens the M103 verifier against design-owned queue source drift.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 1e5557f9 pins the M103 design queue source proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 9e8d494b tightens the M103 successor registry guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit e796c016 pins M103 successor proof commits.",
+        "/docker/chummercomplete/chummer6-ui-finish commit cb84c37b tightens the M103 veteran successor proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 809a91d0 pins the M103 veteran successor guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 0d2e357e pins the M103 veteran proof successor commit.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b42416b8 pins the M103 veteran proof hardening commit.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 5d9f1c86 pins M103 queue frontier proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit df06b668 pins M103 frontier proof anchor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 8ea486f6 binds M103 queue proof anchors.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 11a0882e pins M103 veteran proof anchor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 2bfc7338 pins M103 veteran queue proof anchors.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 243062ac pins M103 veteran queue proof commit.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b8de3f95 tightens the M103 active-run proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 258fed08 tightens M103 successor queue header proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 6c3c93e9 pins M103 queue-header proof commit.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 22758a4c pins the latest M103 queue proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit fd93bb8a tightens M103 queue mirror proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit e9f92d0d pins M103 queue mirror proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit a4d93e27 pins M103 current queue mirror proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 15e4d474 pins M103 current queue mirror proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 075b292b tightens the M103 registry proof item guard so canonical successor evidence must match completed queue proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit d9bfcff5 pins M103 current veteran proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 783ac00b pins M103 veteran proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 827d3546 pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 89ab0ec0 pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit bb825994 pins M103 current veteran proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 594aa3cd pins M103 current veteran proof floor guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit eb11fde4 binds the M103 veteran proof guard to the current queue anchor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit fa07f2bb pins M103 queue anchor proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 680deb43 pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 10d65c5f pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit ba914e9a pins the current M103 veteran proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit de5837b9 tightens the M103 veteran proof token guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 762aaedb pins the M103 veteran proof token guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 8ce865c4 tightens M103 no-reopen proof posture.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 55f2efca tightens M103 active-run state-root proof exclusion.",
+        "/docker/chummercomplete/chummer6-ui-finish commit f649825d pins M103 active-run proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 585ccc78 pins M103 active-run proof floor guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 9a6ebd38 pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b0f424aa tightens M103 scoped proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b8c0b19d tightens the M103 completed queue action guard so Fleet and design queue rows must carry verify_closed_package_only plus a package-specific do-not-reopen reason.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 136ff501 tightens the M103 veteran review pack proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b40a6556 tightens the M103 desktop veteran parity proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 653adf49 tightens the M103 veteran review packet proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit a5dff485 tightens the M103 review packet proof binding.",
+        "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Compliance/Next90M103VeteranCertificationGuardTests.cs",
+        "bash scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh"
+      ],
+      "repo": "chummer6-ui",
+      "status": "complete",
+      "task": "Prove menu, toolstrip, roster, master index, settings, and import familiarity against Chummer5a on the promoted head.",
+      "title": "Run screenshot-backed parity review on the promoted desktop head",
+      "wave": "W7"
+    },
+    "designQueuePath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
+    "designQueueTopLevel": {
+      "activation_rule": "Use these items immediately on shards whose current flagship closeout slice is empty; do not let them replace active shards already assigned to the current closeout frontier.",
+      "mode": "append",
+      "program_wave": "next_90_day_product_advance",
+      "source_queue_fingerprint": "next90-staging-20260415-next-big-wins-widening",
+      "source_registry_path": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml",
+      "status": "live_parallel_successor"
+    },
+    "disallowedActiveRunProofTokens": [
+      "TASK_LOCAL_TELEMETRY.generated.json",
+      "ACTIVE_RUN_HANDOFF.generated.md",
+      "/var/lib/codex-fleet",
+      "active-run helper",
+      "active-run helper command",
+      "operator telemetry",
+      "operator/OODA",
+      "run-helper"
+    ],
+    "encodedOperatorHelperTokenHits": {
+      "design_queue_evidence": [],
+      "queue_evidence": [],
+      "registry_evidence": [],
+      "required_proof": []
+    },
+    "eventHandlersSourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.EventHandlers.cs",
+    "expectedProofRepoPrefix": "/docker/chummercomplete/chummer6-ui-finish",
+    "frontierId": 2257965187,
+    "gitLandedCommitProof": {
+      "checkedAgainstRef": "HEAD",
+      "expectedLandedCommit": "a8e4f92c",
+      "landedCommitIsAncestorOfHead": true,
+      "landedCommitSha": "a8e4f92c2832a6138c7f9b1eaf9181cdb807c40e"
+    },
+    "gitProofClosureCommits": [
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "fb6eb62e",
+        "isAncestorOfHead": true,
+        "sha": "fb6eb62ea544f9e81a7c25cfc99f8dddd3e277d6",
+        "title": "Tighten next90 M103 veteran proof guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "3bba8754",
+        "isAncestorOfHead": true,
+        "sha": "3bba87547574cfd590b5d72d497bed6ec5928fad",
+        "title": "Tighten M103 veteran verify proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "6eafef39",
+        "isAncestorOfHead": true,
+        "sha": "6eafef390361225d0a372f64cab96640860d835f",
+        "title": "Tighten M103 veteran queue source proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "1e5557f9",
+        "isAncestorOfHead": true,
+        "sha": "1e5557f9083138844306fc773581b6d442f45203",
+        "title": "Pin M103 design queue source proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "9e8d494b",
+        "isAncestorOfHead": true,
+        "sha": "9e8d494b507eeec98691257adf5d3a5f2b746ebb",
+        "title": "Tighten M103 successor registry guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "e796c016",
+        "isAncestorOfHead": true,
+        "sha": "e796c016831a56dd855d5c1da65e3c560c1a3262",
+        "title": "Pin M103 successor proof commits"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "cb84c37b",
+        "isAncestorOfHead": true,
+        "sha": "cb84c37b190b7a1d57fd75cd640d01d7f19b8769",
+        "title": "Tighten M103 veteran successor proof guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "809a91d0",
+        "isAncestorOfHead": true,
+        "sha": "809a91d00b4b84f05e6117bf27365cc65b14d06b",
+        "title": "Pin M103 veteran successor guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "0d2e357e",
+        "isAncestorOfHead": true,
+        "sha": "0d2e357e2935b5c0a2bde8f27e6510ed21eff243",
+        "title": "Pin M103 veteran proof successor commit"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "b42416b8",
+        "isAncestorOfHead": true,
+        "sha": "b42416b8b418e796405713b4ff4520ac1ccf6a88",
+        "title": "Pin M103 veteran proof hardening commit"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "5d9f1c86",
+        "isAncestorOfHead": true,
+        "sha": "5d9f1c8685584639d368fad318666814be0d3471",
+        "title": "Pin M103 queue frontier proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "df06b668",
+        "isAncestorOfHead": true,
+        "sha": "df06b6689cca7157317043abf2a502b718772a57",
+        "title": "Pin M103 frontier proof anchor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "8ea486f6",
+        "isAncestorOfHead": true,
+        "sha": "8ea486f62cf6e44baf7c596487ec4f991c39bf5f",
+        "title": "Bind M103 queue proof anchors"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "11a0882e",
+        "isAncestorOfHead": true,
+        "sha": "11a0882ea891e4d0dc2f3f86db0f9ff892a8128b",
+        "title": "Pin M103 veteran proof anchor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "2bfc7338",
+        "isAncestorOfHead": true,
+        "sha": "2bfc733883310ef231767926b93701203cb080c5",
+        "title": "Pin M103 veteran queue proof anchors"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "243062ac",
+        "isAncestorOfHead": true,
+        "sha": "243062ac5c35a48add29041e5edaef3deb41bd75",
+        "title": "Pin M103 veteran queue proof commit"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "b8de3f95",
+        "isAncestorOfHead": true,
+        "sha": "b8de3f9500d08531a3c734ccef159ff212c2fee9",
+        "title": "Tighten M103 active-run proof guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "258fed08",
+        "isAncestorOfHead": true,
+        "sha": "258fed08573ceba7954fe8092200db6006e9b1e7",
+        "title": "Tighten M103 successor queue header proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "6c3c93e9",
+        "isAncestorOfHead": true,
+        "sha": "6c3c93e9438631495058e37f7f8533227a526464",
+        "title": "Pin M103 queue header proof commit"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "22758a4c",
+        "isAncestorOfHead": true,
+        "sha": "22758a4c6e7c10a37825aa7f77d9ed7cfbfcf4fa",
+        "title": "Pin latest M103 queue proof guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "fd93bb8a",
+        "isAncestorOfHead": true,
+        "sha": "fd93bb8a1c6fdb6a08e23e47af579df89a23d9c1",
+        "title": "Tighten M103 queue mirror proof guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "e9f92d0d",
+        "isAncestorOfHead": true,
+        "sha": "e9f92d0de896b3ba82ac8641b63b38eb33c083d4",
+        "title": "Pin M103 queue mirror proof guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "a4d93e27",
+        "isAncestorOfHead": true,
+        "sha": "a4d93e27867fa0f50c69ea366266b2d3a8ae1510",
+        "title": "Pin M103 current queue mirror proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "15e4d474",
+        "isAncestorOfHead": true,
+        "sha": "15e4d474e903bccdda851331203fe8684c834541",
+        "title": "Pin M103 current queue mirror proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "075b292b",
+        "isAncestorOfHead": true,
+        "sha": "075b292b34462d7fa9100e68dd74a7a87c9f1d98",
+        "title": "Tighten M103 registry proof guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "d9bfcff5",
+        "isAncestorOfHead": true,
+        "sha": "d9bfcff5b91930787e6ea2f94c65732a3f08a37e",
+        "title": "Pin M103 current veteran proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "783ac00b",
+        "isAncestorOfHead": true,
+        "sha": "783ac00bffeb78a39222038173a649eb14715262",
+        "title": "Pin M103 veteran proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "827d3546",
+        "isAncestorOfHead": true,
+        "sha": "827d3546191ea7192ed8733301e44ada69e42c79",
+        "title": "Pin M103 veteran certification proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "89ab0ec0",
+        "isAncestorOfHead": true,
+        "sha": "89ab0ec0157359dac47e9ec37c11e03950f36015",
+        "title": "Pin M103 veteran certification proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "bb825994",
+        "isAncestorOfHead": true,
+        "sha": "bb825994cc3b44792033d447f698db1bff557b44",
+        "title": "Pin M103 current veteran proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "594aa3cd",
+        "isAncestorOfHead": true,
+        "sha": "594aa3cd148611b930fa7b378c36bd4440ad1b01",
+        "title": "Pin M103 current veteran proof floor guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "eb11fde4",
+        "isAncestorOfHead": true,
+        "sha": "eb11fde4e85d013234b9b45fcb61544b0baf8aa9",
+        "title": "Bind M103 veteran proof guard to queue anchor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "fa07f2bb",
+        "isAncestorOfHead": true,
+        "sha": "fa07f2bb4b25908220d09aff44702ae9aa396a21",
+        "title": "Pin M103 queue anchor proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "680deb43",
+        "isAncestorOfHead": true,
+        "sha": "680deb437f11dbc63e15e0aaca5bda3d4673df53",
+        "title": "Pin M103 veteran certification proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "10d65c5f",
+        "isAncestorOfHead": true,
+        "sha": "10d65c5fc39e4c75260e9974364d248f76a246b6",
+        "title": "Pin M103 veteran certification proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "ba914e9a",
+        "isAncestorOfHead": true,
+        "sha": "ba914e9a03448c8887a609ecf679ff56427250cf",
+        "title": "Pin current M103 veteran proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "de5837b9",
+        "isAncestorOfHead": true,
+        "sha": "de5837b9b5f6d7207036c62dafabc9f77807b6a3",
+        "title": "Tighten M103 veteran proof token guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "762aaedb",
+        "isAncestorOfHead": true,
+        "sha": "762aaedb7a574388a818264fd31a42bd3e3da697",
+        "title": "Pin M103 veteran proof token guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "8ce865c4",
+        "isAncestorOfHead": true,
+        "sha": "8ce865c45422f77fb6afd19ee027818882c0aa81",
+        "title": "Tighten M103 veteran no-reopen proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "55f2efca",
+        "isAncestorOfHead": true,
+        "sha": "55f2efca4e07a624b0e59791eaa1855c219789db",
+        "title": "Tighten M103 active-run proof guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "f649825d",
+        "isAncestorOfHead": true,
+        "sha": "f649825da15a7d64d32a152a0bac8109e44e3304",
+        "title": "Pin M103 active-run proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "585ccc78",
+        "isAncestorOfHead": true,
+        "sha": "585ccc78b903bb84bb20b24a73242fb5c0fafc49",
+        "title": "Pin M103 active-run proof floor guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "9a6ebd38",
+        "isAncestorOfHead": true,
+        "sha": "9a6ebd38572c579cf740b1dfd3c7b6805f9ea8eb",
+        "title": "Pin M103 veteran certification proof floor"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "b0f424aa",
+        "isAncestorOfHead": true,
+        "sha": "b0f424aa29d2e399afd308460a68e066d0f18ca7",
+        "title": "Tighten M103 scoped proof guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "b8c0b19d",
+        "isAncestorOfHead": true,
+        "sha": "b8c0b19df4fe540c3e3d90228494171006e4849e",
+        "title": "Tighten M103 closed queue action guard"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "136ff501",
+        "isAncestorOfHead": true,
+        "sha": "136ff501c28c6e4396f954776bdeda5c983aa380",
+        "title": "test(next90-m103): tighten veteran review pack proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "b40a6556",
+        "isAncestorOfHead": true,
+        "sha": "b40a6556dad1e2f4e23d7a7e6a144e4152a51e2c",
+        "title": "Tighten M103 desktop veteran parity proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "653adf49",
+        "isAncestorOfHead": true,
+        "sha": "653adf4935b418d630716039a3f10ce0af629979",
+        "title": "Tighten M103 veteran review packet proof"
+      },
+      {
+        "checkedAgainstRef": "HEAD",
+        "commit": "a5dff485",
+        "isAncestorOfHead": true,
+        "sha": "a5dff4853c5a7128cc60f1297ba502a28ebe5469",
+        "title": "Tighten M103 review packet proof binding"
+      }
+    ],
+    "gitProofRepoRoot": "/docker/chummercomplete/chummer6-ui-finish",
+    "legacyBaselineResults": {
+      "import": {
+        "markerCount": 4,
+        "missingMarkers": [],
+        "sourceFile": "/docker/chummer5a/Chummer/Forms/Utility Forms/HeroLabImporter.Designer.cs"
+      },
+      "master_index": {
+        "markerCount": 3,
+        "missingMarkers": [],
+        "sourceFile": "/docker/chummer5a/Chummer/Forms/Utility Forms/MasterIndex.Designer.cs"
+      },
+      "menu": {
+        "markerCount": 4,
+        "missingMarkers": [],
+        "sourceFile": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      },
+      "roster": {
+        "markerCount": 4,
+        "missingMarkers": [],
+        "sourceFile": "/docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs"
+      },
+      "settings": {
+        "markerCount": 4,
+        "missingMarkers": [],
+        "sourceFile": "/docker/chummer5a/Chummer/Forms/EditGlobalSettings.Designer.cs"
+      },
+      "toolstrip": {
+        "markerCount": 5,
+        "missingMarkers": [],
+        "sourceFile": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      }
+    },
+    "legacyChummer5aRoot": "/docker/chummer5a",
+    "legacyImportRouteBaselineResults": {
+      "markerCount": 5,
+      "missingMarkers": [],
+      "sourceFile": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+    },
+    "menuSourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+    "milestoneId": 103,
+    "noReopenPosture": {
+      "futureShardAction": "verify_completed_package_proof_floor",
+      "packageAlreadyComplete": true,
+      "reopenOnlyIf": [
+        "canonical_successor_registry_reopens_task_103_2",
+        "fleet_or_design_queue_row_drops_complete_status",
+        "promoted_desktop_head_binding_or_screenshot_evidence_regresses"
+      ]
+    },
+    "operatorHelperProofChecks": {
+      "design_queue_evidence_avoids_active_run_helpers": true,
+      "design_queue_evidence_avoids_encoded_active_run_helpers": true,
+      "queue_evidence_avoids_active_run_helpers": true,
+      "queue_evidence_avoids_encoded_active_run_helpers": true,
+      "registry_evidence_avoids_active_run_helpers": true,
+      "registry_evidence_avoids_encoded_active_run_helpers": true,
+      "required_proof_avoids_active_run_helpers": true,
+      "required_proof_avoids_encoded_active_run_helpers": true
+    },
+    "operatorHelperTokenHits": {
+      "design_queue_evidence": [],
+      "queue_evidence": [],
+      "registry_evidence": [],
+      "required_proof": []
+    },
+    "packageId": "next90-m103-ui-veteran-certification",
+    "promotedDesktopHeadBinding": {
+      "channelId": "docker",
+      "primaryHead": "avalonia",
+      "primaryRouteTruth": {
+        "linux": {
+          "artifactId": "avalonia-linux-x64-installer",
+          "artifactIdPresent": true,
+          "parityPosture": "flagship_primary",
+          "promotionState": "promoted",
+          "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
+          "publicInstallRouteIsDownloadRoute": true,
+          "routeRole": "primary",
+          "tupleId": "avalonia:linux:linux-x64",
+          "tupleIdMatchesPromotedHeadAndPlatform": true
+        },
+        "macos": {
+          "artifactId": "avalonia-osx-arm64-installer",
+          "artifactIdPresent": true,
+          "parityPosture": "flagship_primary",
+          "promotionState": "promoted",
+          "publicInstallRoute": "/downloads/install/avalonia-osx-arm64-installer",
+          "publicInstallRouteIsDownloadRoute": true,
+          "routeRole": "primary",
+          "tupleId": "avalonia:macos:osx-arm64",
+          "tupleIdMatchesPromotedHeadAndPlatform": true
+        },
+        "windows": {
+          "artifactId": "avalonia-win-x64-installer",
+          "artifactIdPresent": true,
+          "parityPosture": "flagship_primary",
+          "promotionState": "promoted",
+          "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
+          "publicInstallRouteIsDownloadRoute": true,
+          "routeRole": "primary",
+          "tupleId": "avalonia:windows:win-x64",
+          "tupleIdMatchesPromotedHeadAndPlatform": true
+        }
+      },
+      "promotedInstallerTuplePlatforms": [
+        "linux",
+        "macos",
+        "windows"
+      ],
+      "promotedPlatformHeads": {
+        "linux": [
+          "avalonia",
+          "blazor-desktop"
+        ],
+        "macos": [
+          "avalonia"
+        ],
+        "windows": [
+          "avalonia"
+        ]
+      },
+      "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+      "requiredDesktopHeads": [
+        "avalonia"
+      ],
+      "requiredPlatforms": [
+        "linux",
+        "windows",
+        "macos"
+      ],
+      "rolloutState": "promoted_preview",
+      "status": "published",
+      "version": "run-20260414-1836"
+    },
+    "proofScopeChecks": {
+      "design_queue_evidence_stays_in_package_repo": true,
+      "queue_evidence_stays_in_package_repo": true,
+      "registry_evidence_stays_in_package_repo": true,
+      "required_proof_stays_in_package_repo": true
+    },
+    "proofScopePathHits": {
+      "design_queue_evidence": [],
+      "queue_evidence": [],
+      "registry_evidence": [],
+      "required_proof": []
+    },
+    "publishedScreenshotDir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "publishedScreenshotReviewMarkdownPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION_REVIEW.generated.md",
+    "queueHeaderChecks": {
+      "mode_matches": true,
+      "program_wave_matches": true,
+      "source_queue_fingerprint_matches": true,
+      "source_registry_path_matches": true,
+      "status_matches": true
+    },
+    "queueItem": {
+      "allowed_paths": [
+        "Chummer.Avalonia",
+        "Chummer.Blazor",
+        "Chummer.Tests",
+        "scripts"
+      ],
+      "completion_action": "verify_closed_package_only",
+      "do_not_reopen_reason": "M103 chummer6-ui veteran certification is complete; future shards must verify this receipt, registry row, design queue row, Fleet queue row, and direct proof command instead of recapturing promoted-head Chummer5a screenshot parity.",
+      "frontier_id": 2257965187,
+      "landed_commit": "a8e4f92c",
+      "milestone_id": 103,
+      "owned_surfaces": [
+        "veteran_migration_certification",
+        "screenshot_parity:desktop"
+      ],
+      "package_id": "next90-m103-ui-veteran-certification",
+      "proof": [
+        "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json",
+        "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION_REVIEW.generated.md",
+        "/docker/chummercomplete/chummer6-ui-finish/scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh",
+        "/docker/chummercomplete/chummer6-ui-finish commit fb6eb62e",
+        "/docker/chummercomplete/chummer6-ui-finish commit 3bba8754 tightens the M103 verifier receipt and standard-verify proof alignment.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 6eafef39 tightens the M103 verifier against design-owned queue source drift.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 1e5557f9 pins the M103 design queue source proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 9e8d494b tightens the M103 successor registry guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit e796c016 pins M103 successor proof commits.",
+        "/docker/chummercomplete/chummer6-ui-finish commit cb84c37b tightens the M103 veteran successor proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 809a91d0 pins the M103 veteran successor guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 0d2e357e pins the M103 veteran proof successor commit.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b42416b8 pins the M103 veteran proof hardening commit.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 5d9f1c86 pins M103 queue frontier proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit df06b668 pins M103 frontier proof anchor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 8ea486f6 binds M103 queue proof anchors.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 11a0882e pins M103 veteran proof anchor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 2bfc7338 pins M103 veteran queue proof anchors.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 243062ac pins M103 veteran queue proof commit.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b8de3f95 tightens the M103 active-run proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 258fed08 tightens M103 successor queue header proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 6c3c93e9 pins M103 queue-header proof commit.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 22758a4c pins the latest M103 queue proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit fd93bb8a tightens M103 queue mirror proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit e9f92d0d pins M103 queue mirror proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit a4d93e27 pins M103 current queue mirror proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 15e4d474 pins M103 current queue mirror proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 075b292b tightens the M103 registry proof item guard so canonical successor evidence must match completed queue proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit d9bfcff5 pins M103 current veteran proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 783ac00b pins M103 veteran proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 827d3546 pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 89ab0ec0 pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit bb825994 pins M103 current veteran proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 594aa3cd pins M103 current veteran proof floor guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit eb11fde4 binds the M103 veteran proof guard to the current queue anchor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit fa07f2bb pins M103 queue anchor proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 680deb43 pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 10d65c5f pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit ba914e9a pins the current M103 veteran proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit de5837b9 tightens the M103 veteran proof token guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 762aaedb pins the M103 veteran proof token guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 8ce865c4 tightens M103 no-reopen proof posture.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 55f2efca tightens M103 active-run state-root proof exclusion.",
+        "/docker/chummercomplete/chummer6-ui-finish commit f649825d pins M103 active-run proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 585ccc78 pins M103 active-run proof floor guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 9a6ebd38 pins M103 veteran certification proof floor.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b0f424aa tightens M103 scoped proof guard.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b8c0b19d tightens the M103 completed queue action guard so Fleet and design queue rows must carry verify_closed_package_only plus a package-specific do-not-reopen reason.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 136ff501 tightens the M103 veteran review pack proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit b40a6556 tightens the M103 desktop veteran parity proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit 653adf49 tightens the M103 veteran review packet proof.",
+        "/docker/chummercomplete/chummer6-ui-finish commit a5dff485 tightens the M103 review packet proof binding.",
+        "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Compliance/Next90M103VeteranCertificationGuardTests.cs",
+        "bash scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh"
+      ],
+      "repo": "chummer6-ui",
+      "status": "complete",
+      "task": "Prove menu, toolstrip, roster, master index, settings, and import familiarity against Chummer5a on the promoted head.",
+      "title": "Run screenshot-backed parity review on the promoted desktop head",
+      "wave": "W7"
+    },
+    "queueMirrorAlignmentChecks": {
+      "allowed_paths_matches_design_queue": true,
+      "completion_action_matches_design_queue": true,
+      "do_not_reopen_reason_matches_design_queue": true,
+      "frontier_id_matches_design_queue": true,
+      "landed_commit_matches_design_queue": true,
+      "milestone_id_matches_design_queue": true,
+      "owned_surfaces_matches_design_queue": true,
+      "package_id_matches_design_queue": true,
+      "proof_matches_design_queue": true,
+      "repo_matches_design_queue": true,
+      "status_matches_design_queue": true,
+      "task_matches_design_queue": true,
+      "title_matches_design_queue": true,
+      "wave_matches_design_queue": true
+    },
+    "queuePath": "/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
+    "queueTopLevel": {
+      "activation_rule": "Use these items immediately on shards whose current flagship closeout slice is empty; do not let them replace active shards already assigned to the current closeout frontier.",
+      "mode": "append",
+      "program_wave": "next_90_day_product_advance",
+      "source_design_queue_path": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
+      "source_queue_fingerprint": "next90-staging-20260415-next-big-wins-widening",
+      "source_registry_path": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml",
+      "status": "live_parallel_successor"
+    },
+    "registryMilestone103": {
+      "depends_101": true,
+      "depends_102": true,
+      "has_milestone": true,
+      "has_task_103_2": true,
+      "status_in_progress": true,
+      "task_103_2_command_proof_bound": true,
+      "task_103_2_landed_commit_bound": true,
+      "task_103_2_receipt_proof_bound": true,
+      "task_103_2_script_proof_bound": true,
+      "task_103_2_status_complete": true,
+      "wave_w7": true
+    },
+    "registryPath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml",
+    "registryProofItemChecks": {
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 075b292b tightens the M103 registry proof item guard so canonical successor evidence must match completed queue proof.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 0d2e357e pins the M103 veteran proof successor commit.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 10d65c5f pins M103 veteran certification proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 11a0882e pins M103 veteran proof anchor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 136ff501 tightens the M103 veteran review pack proof.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 15e4d474 pins M103 current queue mirror proof.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 1e5557f9 pins the M103 design queue source proof.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 22758a4c pins the latest M103 queue proof guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 243062ac pins M103 veteran queue proof commit.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 258fed08 tightens M103 successor queue header proof.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 2bfc7338 pins M103 veteran queue proof anchors.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 3bba8754 tightens the M103 verifier receipt and standard-verify proof alignment.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 55f2efca tightens M103 active-run state-root proof exclusion.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 585ccc78 pins M103 active-run proof floor guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 594aa3cd pins M103 current veteran proof floor guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 5d9f1c86 pins M103 queue frontier proof.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 653adf49 tightens the M103 veteran review packet proof.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 680deb43 pins M103 veteran certification proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 6c3c93e9 pins M103 queue-header proof commit.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 6eafef39 tightens the M103 verifier against design-owned queue source drift.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 762aaedb pins the M103 veteran proof token guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 783ac00b pins M103 veteran proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 809a91d0 pins the M103 veteran successor guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 827d3546 pins M103 veteran certification proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 89ab0ec0 pins M103 veteran certification proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 8ce865c4 tightens M103 no-reopen proof posture.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 8ea486f6 binds M103 queue proof anchors.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 9a6ebd38 pins M103 veteran certification proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit 9e8d494b tightens the M103 successor registry guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit a4d93e27 pins M103 current queue mirror proof.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit a5dff485 tightens the M103 review packet proof binding.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit b0f424aa tightens M103 scoped proof guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit b40a6556 tightens the M103 desktop veteran parity proof.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit b42416b8 pins the M103 veteran proof hardening commit.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit b8c0b19d tightens the M103 completed queue action guard so Fleet and design queue rows must carry verify_closed_package_only plus a package-specific do-not-reopen reason.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit b8de3f95 tightens the M103 active-run proof guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit ba914e9a pins the current M103 veteran proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit bb825994 pins M103 current veteran proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit cb84c37b tightens the M103 veteran successor proof guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit d9bfcff5 pins M103 current veteran proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit de5837b9 tightens the M103 veteran proof token guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit df06b668 pins M103 frontier proof anchor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit e796c016 pins M103 successor proof commits.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit e9f92d0d pins M103 queue mirror proof guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit eb11fde4 binds the M103 veteran proof guard to the current queue anchor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit f649825d pins M103 active-run proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit fa07f2bb pins M103 queue anchor proof floor.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit fb6eb62e": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish commit fd93bb8a tightens M103 queue mirror proof guard.": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json": true,
+      "proof_/docker/chummercomplete/chummer6-ui-finish/scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh": true,
+      "proof_bash scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh": true
+    },
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "reviewMarkdownChecks": {
+      "authority_repo_bound": true,
+      "header_present": true,
+      "receipt_path_bound": true,
+      "screenshot_pack_bound": true,
+      "screenshot_paths_present": true,
+      "source_repo_bound": true,
+      "surface_row_count_matches": true,
+      "surface_rows_present": true,
+      "table_header_present": true
+    },
+    "sourceRepoRoot": "/docker/chummercomplete/chummer-presentation",
+    "sourceTestFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+    "standardVerifyChecks": {
+      "verify_entrypoint_avoids_encoded_active_run_helpers": true
+    },
+    "standardVerifyEncodedBlockedActiveRunHelperHits": [],
+    "standardVerifyPath": {
+      "missingMarkers": [],
+      "requiredMarkers": [
+        "checking next-90 M103 Chummer5a veteran certification guard",
+        "bash scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh"
+      ],
+      "verifyScriptFile": "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh"
+    },
+    "surfaceResults": {
+      "import": {
+        "captureMarkerChecks": {
+          "missingMarkers": [],
+          "requiredMarkers": [
+            "harness.Click(\"LoadDemoRunnerButton\")",
+            "harness.Presenter.ImportCalls > 0",
+            "harness.Click(\"FileMenuButton\")",
+            "harness.ClickMenuCommand(\"open_character\")",
+            "\"Open Character\"",
+            "captured[GetVeteranCertificationReviewStep(\"import\").ScreenshotFileName]"
+          ]
+        },
+        "certificationMatrixRow": {
+          "captureMarkerCount": 6,
+          "chummer5aBaseline": "Existing .chum5-era import still starts from the desktop shell and exposes the familiar open-character route.",
+          "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/Utility Forms/HeroLabImporter.Designer.cs",
+          "chummer5aMarkerCount": 4,
+          "gesture": "Load the bundled legacy runner, then open File > Open Character on the promoted desktop head.",
+          "missingChummer5aMarkers": [],
+          "ownedSurface": "screenshot_parity:desktop",
+          "promotedHead": "avalonia",
+          "screenshot": "18-import-dialog-light.png",
+          "screenshotContentNonBlank": true,
+          "screenshotDistinctSampleColors": 3,
+          "screenshotSha256": "df8b17bfccc9e13e2bb8290048988613e4285fa0f605d6be7cdbf6fe6d8c56e5",
+          "sourceFileProofCount": 3,
+          "surface": "import"
+        },
+        "missingMarkers": [],
+        "publishedScreenshotContentNonBlank": true,
+        "publishedScreenshotContentSampleCount": 25,
+        "publishedScreenshotContentSampled": true,
+        "publishedScreenshotDistinctSampleColors": 3,
+        "publishedScreenshotExists": true,
+        "publishedScreenshotHeight": 800,
+        "publishedScreenshotIsPng": true,
+        "publishedScreenshotNonEmpty": true,
+        "publishedScreenshotSha256": "df8b17bfccc9e13e2bb8290048988613e4285fa0f605d6be7cdbf6fe6d8c56e5",
+        "publishedScreenshotWidth": 1280,
+        "screenshot": "18-import-dialog-light.png",
+        "screenshotGeneratedByTest": true,
+        "sourceFileChecks": [
+          {
+            "markerCount": 3,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+            "sourceKey": "toolstrip"
+          },
+          {
+            "markerCount": 3,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.EventHandlers.cs",
+            "sourceKey": "event_handlers"
+          },
+          {
+            "markerCount": 3,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+            "sourceKey": "test"
+          }
+        ],
+        "workflowMap": {
+          "legacyFamiliarity": "Existing .chum5-era import still starts from the desktop shell and exposes the familiar open-character route.",
+          "parityQuestion": "Can a veteran find the classic import route after landing in the modern workbench?",
+          "promotedHeadTaskProof": "Load the bundled legacy runner, then open File > Open Character on the promoted desktop head.",
+          "screenshotEvidenceRole": "import-dialog"
+        }
+      },
+      "master_index": {
+        "captureMarkerChecks": {
+          "missingMarkers": [],
+          "requiredMarkers": [
+            "harness.Click(\"ToolsMenuButton\")",
+            "harness.ClickMenuCommand(\"master_index\")",
+            "harness.Presenter.ExecuteCommandAsync(\"master_index\"",
+            "\"Master Index\"",
+            "AssertDialogContainsAll(",
+            "GetVeteranCertificationReviewStep(\"master_index\").RequiredDialogMarkers",
+            "captured[GetVeteranCertificationReviewStep(\"master_index\").ScreenshotFileName]"
+          ]
+        },
+        "certificationMatrixRow": {
+          "captureMarkerCount": 7,
+          "chummer5aBaseline": "The Master Index utility remains a named searchable reference surface.",
+          "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/Utility Forms/MasterIndex.Designer.cs",
+          "chummer5aMarkerCount": 3,
+          "gesture": "Open Master Index from the promoted desktop command surface.",
+          "missingChummer5aMarkers": [],
+          "ownedSurface": "screenshot_parity:desktop",
+          "promotedHead": "avalonia",
+          "screenshot": "16-master-index-dialog-light.png",
+          "screenshotContentNonBlank": true,
+          "screenshotDistinctSampleColors": 3,
+          "screenshotSha256": "c3039769eb6597c40bfb71479369cdf00a5ed07fb696a21d30531f9bc4fd08d8",
+          "sourceFileProofCount": 1,
+          "surface": "master_index"
+        },
+        "missingMarkers": [],
+        "publishedScreenshotContentNonBlank": true,
+        "publishedScreenshotContentSampleCount": 25,
+        "publishedScreenshotContentSampled": true,
+        "publishedScreenshotDistinctSampleColors": 3,
+        "publishedScreenshotExists": true,
+        "publishedScreenshotHeight": 800,
+        "publishedScreenshotIsPng": true,
+        "publishedScreenshotNonEmpty": true,
+        "publishedScreenshotSha256": "c3039769eb6597c40bfb71479369cdf00a5ed07fb696a21d30531f9bc4fd08d8",
+        "publishedScreenshotWidth": 1280,
+        "screenshot": "16-master-index-dialog-light.png",
+        "screenshotGeneratedByTest": true,
+        "sourceFileChecks": [
+          {
+            "markerCount": 5,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+            "sourceKey": "test"
+          }
+        ],
+        "workflowMap": {
+          "legacyFamiliarity": "The Master Index utility remains a named searchable reference surface.",
+          "parityQuestion": "Can a veteran reach the familiar index/search utility from desktop chrome?",
+          "promotedHeadTaskProof": "Open Master Index from the promoted desktop command surface.",
+          "screenshotEvidenceRole": "master-index-dialog"
+        }
+      },
+      "menu": {
+        "captureMarkerChecks": {
+          "missingMarkers": [],
+          "requiredMarkers": [
+            "harness.Click(\"FileMenuButton\")",
+            "captured[GetVeteranCertificationReviewStep(\"menu\").ScreenshotFileName] = harness.CaptureScreenshotBytes()"
+          ]
+        },
+        "certificationMatrixRow": {
+          "captureMarkerCount": 2,
+          "chummer5aBaseline": "Chummer5a top menu roots remain visible as File, Edit, Special, Tools, Windows, and Help.",
+          "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs",
+          "chummer5aMarkerCount": 4,
+          "gesture": "Open the promoted Avalonia head and expand a primary menu to reveal command choices.",
+          "missingChummer5aMarkers": [],
+          "ownedSurface": "screenshot_parity:desktop",
+          "promotedHead": "avalonia",
+          "screenshot": "02-menu-open-light.png",
+          "screenshotContentNonBlank": true,
+          "screenshotDistinctSampleColors": 3,
+          "screenshotSha256": "6b33e058f11126728e5be15ad2bbf06da716ef318ccd50ac630a66ae9a4870da",
+          "sourceFileProofCount": 2,
+          "surface": "menu"
+        },
+        "missingMarkers": [],
+        "publishedScreenshotContentNonBlank": true,
+        "publishedScreenshotContentSampleCount": 25,
+        "publishedScreenshotContentSampled": true,
+        "publishedScreenshotDistinctSampleColors": 3,
+        "publishedScreenshotExists": true,
+        "publishedScreenshotHeight": 800,
+        "publishedScreenshotIsPng": true,
+        "publishedScreenshotNonEmpty": true,
+        "publishedScreenshotSha256": "6b33e058f11126728e5be15ad2bbf06da716ef318ccd50ac630a66ae9a4870da",
+        "publishedScreenshotWidth": 1280,
+        "screenshot": "02-menu-open-light.png",
+        "screenshotGeneratedByTest": true,
+        "sourceFileChecks": [
+          {
+            "markerCount": 4,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+            "sourceKey": "menu"
+          },
+          {
+            "markerCount": 4,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+            "sourceKey": "test"
+          }
+        ],
+        "workflowMap": {
+          "legacyFamiliarity": "Chummer5a top menu roots remain visible as File, Edit, Special, Tools, Windows, and Help.",
+          "parityQuestion": "Can a veteran find the same top-level command geography in the first minute?",
+          "promotedHeadTaskProof": "Open the promoted Avalonia head and expand a primary menu to reveal command choices.",
+          "screenshotEvidenceRole": "menu-open"
+        }
+      },
+      "roster": {
+        "captureMarkerChecks": {
+          "missingMarkers": [],
+          "requiredMarkers": [
+            "harness.Click(\"ToolsMenuButton\")",
+            "harness.ClickMenuCommand(\"character_roster\")",
+            "harness.Presenter.ExecuteCommandAsync(\"character_roster\"",
+            "\"Character Roster\"",
+            "AssertDialogContainsAll(",
+            "GetVeteranCertificationReviewStep(\"roster\").RequiredDialogMarkers",
+            "captured[GetVeteranCertificationReviewStep(\"roster\").ScreenshotFileName]"
+          ]
+        },
+        "certificationMatrixRow": {
+          "captureMarkerCount": 7,
+          "chummer5aBaseline": "The Character Roster utility is still a named utility surface, not hidden behind campaign-only navigation.",
+          "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs",
+          "chummer5aMarkerCount": 4,
+          "gesture": "Open Character Roster from the promoted desktop command surface.",
+          "missingChummer5aMarkers": [],
+          "ownedSurface": "screenshot_parity:desktop",
+          "promotedHead": "avalonia",
+          "screenshot": "17-character-roster-dialog-light.png",
+          "screenshotContentNonBlank": true,
+          "screenshotDistinctSampleColors": 3,
+          "screenshotSha256": "3fbebdab8588f8b5972040cf777600e32fb4d8894a62fb7a490dc4f0d9663b75",
+          "sourceFileProofCount": 1,
+          "surface": "roster"
+        },
+        "missingMarkers": [],
+        "publishedScreenshotContentNonBlank": true,
+        "publishedScreenshotContentSampleCount": 25,
+        "publishedScreenshotContentSampled": true,
+        "publishedScreenshotDistinctSampleColors": 3,
+        "publishedScreenshotExists": true,
+        "publishedScreenshotHeight": 800,
+        "publishedScreenshotIsPng": true,
+        "publishedScreenshotNonEmpty": true,
+        "publishedScreenshotSha256": "3fbebdab8588f8b5972040cf777600e32fb4d8894a62fb7a490dc4f0d9663b75",
+        "publishedScreenshotWidth": 1280,
+        "screenshot": "17-character-roster-dialog-light.png",
+        "screenshotGeneratedByTest": true,
+        "sourceFileChecks": [
+          {
+            "markerCount": 5,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+            "sourceKey": "test"
+          }
+        ],
+        "workflowMap": {
+          "legacyFamiliarity": "The Character Roster utility is still a named utility surface, not hidden behind campaign-only navigation.",
+          "parityQuestion": "Can a veteran find the familiar roster utility without support instructions?",
+          "promotedHeadTaskProof": "Open Character Roster from the promoted desktop command surface.",
+          "screenshotEvidenceRole": "character-roster-dialog"
+        }
+      },
+      "settings": {
+        "captureMarkerChecks": {
+          "missingMarkers": [],
+          "requiredMarkers": [
+            "harness.PressKey(Key.G, RawInputModifiers.Control)",
+            "AssertDialogContainsAll(",
+            "GetVeteranCertificationReviewStep(\"settings\").RequiredDialogMarkers",
+            "captured[GetVeteranCertificationReviewStep(\"settings\").ScreenshotFileName]"
+          ]
+        },
+        "certificationMatrixRow": {
+          "captureMarkerCount": 4,
+          "chummer5aBaseline": "Global Settings remains a first-minute settings route with source and roster configuration lineage.",
+          "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/EditGlobalSettings.Designer.cs",
+          "chummer5aMarkerCount": 4,
+          "gesture": "Open Global Settings from the promoted desktop toolstrip/menu surface.",
+          "missingChummer5aMarkers": [],
+          "ownedSurface": "screenshot_parity:desktop",
+          "promotedHead": "avalonia",
+          "screenshot": "03-settings-open-light.png",
+          "screenshotContentNonBlank": true,
+          "screenshotDistinctSampleColors": 3,
+          "screenshotSha256": "3a95d3ed36c8ff27c41d5ada04b6be949b6a0858ff6e9efde52e119ce13337e7",
+          "sourceFileProofCount": 3,
+          "surface": "settings"
+        },
+        "missingMarkers": [],
+        "publishedScreenshotContentNonBlank": true,
+        "publishedScreenshotContentSampleCount": 25,
+        "publishedScreenshotContentSampled": true,
+        "publishedScreenshotDistinctSampleColors": 3,
+        "publishedScreenshotExists": true,
+        "publishedScreenshotHeight": 800,
+        "publishedScreenshotIsPng": true,
+        "publishedScreenshotNonEmpty": true,
+        "publishedScreenshotSha256": "3a95d3ed36c8ff27c41d5ada04b6be949b6a0858ff6e9efde52e119ce13337e7",
+        "publishedScreenshotWidth": 1280,
+        "screenshot": "03-settings-open-light.png",
+        "screenshotGeneratedByTest": true,
+        "sourceFileChecks": [
+          {
+            "markerCount": 2,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+            "sourceKey": "toolstrip"
+          },
+          {
+            "markerCount": 2,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.EventHandlers.cs",
+            "sourceKey": "event_handlers"
+          },
+          {
+            "markerCount": 3,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+            "sourceKey": "test"
+          }
+        ],
+        "workflowMap": {
+          "legacyFamiliarity": "Global Settings remains a first-minute settings route with source and roster configuration lineage.",
+          "parityQuestion": "Can a veteran find global setup before editing a character?",
+          "promotedHeadTaskProof": "Open Global Settings from the promoted desktop toolstrip/menu surface.",
+          "screenshotEvidenceRole": "settings-dialog"
+        }
+      },
+      "toolstrip": {
+        "captureMarkerChecks": {
+          "missingMarkers": [],
+          "requiredMarkers": [
+            "harness.SetTheme(ThemeVariant.Light)",
+            "captured[GetVeteranCertificationReviewStep(\"toolstrip\").ScreenshotFileName] = harness.CaptureScreenshotBytes()"
+          ]
+        },
+        "certificationMatrixRow": {
+          "captureMarkerCount": 2,
+          "chummer5aBaseline": "Classic flat workbench actions remain immediate toolbar buttons instead of dashboard cards.",
+          "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs",
+          "chummer5aMarkerCount": 5,
+          "gesture": "Inspect the initial shell and verify load, import, save, settings, support, and close actions stay in the toolstrip.",
+          "missingChummer5aMarkers": [],
+          "ownedSurface": "screenshot_parity:desktop",
+          "promotedHead": "avalonia",
+          "screenshot": "01-initial-shell-light.png",
+          "screenshotContentNonBlank": true,
+          "screenshotDistinctSampleColors": 3,
+          "screenshotSha256": "e3cce1b17a41834a580a0a53025e646538cabdadccde6d0d68239277f76a468e",
+          "sourceFileProofCount": 2,
+          "surface": "toolstrip"
+        },
+        "missingMarkers": [],
+        "publishedScreenshotContentNonBlank": true,
+        "publishedScreenshotContentSampleCount": 25,
+        "publishedScreenshotContentSampled": true,
+        "publishedScreenshotDistinctSampleColors": 3,
+        "publishedScreenshotExists": true,
+        "publishedScreenshotHeight": 800,
+        "publishedScreenshotIsPng": true,
+        "publishedScreenshotNonEmpty": true,
+        "publishedScreenshotSha256": "e3cce1b17a41834a580a0a53025e646538cabdadccde6d0d68239277f76a468e",
+        "publishedScreenshotWidth": 1280,
+        "screenshot": "01-initial-shell-light.png",
+        "screenshotGeneratedByTest": true,
+        "sourceFileChecks": [
+          {
+            "markerCount": 4,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+            "sourceKey": "toolstrip"
+          },
+          {
+            "markerCount": 4,
+            "missingMarkers": [],
+            "sourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+            "sourceKey": "test"
+          }
+        ],
+        "workflowMap": {
+          "legacyFamiliarity": "Classic flat workbench actions remain immediate toolbar buttons instead of dashboard cards.",
+          "parityQuestion": "Can a veteran start normal character work from the same always-visible toolbar posture?",
+          "promotedHeadTaskProof": "Inspect the initial shell and verify load, import, save, settings, support, and close actions stay in the toolstrip.",
+          "screenshotEvidenceRole": "initial-shell"
+        }
+      }
+    },
+    "toolstripSourceFile": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+    "veteranCertificationMatrix": [
+      {
+        "captureMarkerCount": 2,
+        "chummer5aBaseline": "Chummer5a top menu roots remain visible as File, Edit, Special, Tools, Windows, and Help.",
+        "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs",
+        "chummer5aMarkerCount": 4,
+        "gesture": "Open the promoted Avalonia head and expand a primary menu to reveal command choices.",
+        "missingChummer5aMarkers": [],
+        "ownedSurface": "screenshot_parity:desktop",
+        "promotedHead": "avalonia",
+        "screenshot": "02-menu-open-light.png",
+        "screenshotContentNonBlank": true,
+        "screenshotDistinctSampleColors": 3,
+        "screenshotSha256": "6b33e058f11126728e5be15ad2bbf06da716ef318ccd50ac630a66ae9a4870da",
+        "sourceFileProofCount": 2,
+        "surface": "menu"
+      },
+      {
+        "captureMarkerCount": 2,
+        "chummer5aBaseline": "Classic flat workbench actions remain immediate toolbar buttons instead of dashboard cards.",
+        "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs",
+        "chummer5aMarkerCount": 5,
+        "gesture": "Inspect the initial shell and verify load, import, save, settings, support, and close actions stay in the toolstrip.",
+        "missingChummer5aMarkers": [],
+        "ownedSurface": "screenshot_parity:desktop",
+        "promotedHead": "avalonia",
+        "screenshot": "01-initial-shell-light.png",
+        "screenshotContentNonBlank": true,
+        "screenshotDistinctSampleColors": 3,
+        "screenshotSha256": "e3cce1b17a41834a580a0a53025e646538cabdadccde6d0d68239277f76a468e",
+        "sourceFileProofCount": 2,
+        "surface": "toolstrip"
+      },
+      {
+        "captureMarkerCount": 7,
+        "chummer5aBaseline": "The Character Roster utility is still a named utility surface, not hidden behind campaign-only navigation.",
+        "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs",
+        "chummer5aMarkerCount": 4,
+        "gesture": "Open Character Roster from the promoted desktop command surface.",
+        "missingChummer5aMarkers": [],
+        "ownedSurface": "screenshot_parity:desktop",
+        "promotedHead": "avalonia",
+        "screenshot": "17-character-roster-dialog-light.png",
+        "screenshotContentNonBlank": true,
+        "screenshotDistinctSampleColors": 3,
+        "screenshotSha256": "3fbebdab8588f8b5972040cf777600e32fb4d8894a62fb7a490dc4f0d9663b75",
+        "sourceFileProofCount": 1,
+        "surface": "roster"
+      },
+      {
+        "captureMarkerCount": 7,
+        "chummer5aBaseline": "The Master Index utility remains a named searchable reference surface.",
+        "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/Utility Forms/MasterIndex.Designer.cs",
+        "chummer5aMarkerCount": 3,
+        "gesture": "Open Master Index from the promoted desktop command surface.",
+        "missingChummer5aMarkers": [],
+        "ownedSurface": "screenshot_parity:desktop",
+        "promotedHead": "avalonia",
+        "screenshot": "16-master-index-dialog-light.png",
+        "screenshotContentNonBlank": true,
+        "screenshotDistinctSampleColors": 3,
+        "screenshotSha256": "c3039769eb6597c40bfb71479369cdf00a5ed07fb696a21d30531f9bc4fd08d8",
+        "sourceFileProofCount": 1,
+        "surface": "master_index"
+      },
+      {
+        "captureMarkerCount": 4,
+        "chummer5aBaseline": "Global Settings remains a first-minute settings route with source and roster configuration lineage.",
+        "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/EditGlobalSettings.Designer.cs",
+        "chummer5aMarkerCount": 4,
+        "gesture": "Open Global Settings from the promoted desktop toolstrip/menu surface.",
+        "missingChummer5aMarkers": [],
+        "ownedSurface": "screenshot_parity:desktop",
+        "promotedHead": "avalonia",
+        "screenshot": "03-settings-open-light.png",
+        "screenshotContentNonBlank": true,
+        "screenshotDistinctSampleColors": 3,
+        "screenshotSha256": "3a95d3ed36c8ff27c41d5ada04b6be949b6a0858ff6e9efde52e119ce13337e7",
+        "sourceFileProofCount": 3,
+        "surface": "settings"
+      },
+      {
+        "captureMarkerCount": 6,
+        "chummer5aBaseline": "Existing .chum5-era import still starts from the desktop shell and exposes the familiar open-character route.",
+        "chummer5aBaselineFile": "/docker/chummer5a/Chummer/Forms/Utility Forms/HeroLabImporter.Designer.cs",
+        "chummer5aMarkerCount": 4,
+        "gesture": "Load the bundled legacy runner, then open File > Open Character on the promoted desktop head.",
+        "missingChummer5aMarkers": [],
+        "ownedSurface": "screenshot_parity:desktop",
+        "promotedHead": "avalonia",
+        "screenshot": "18-import-dialog-light.png",
+        "screenshotContentNonBlank": true,
+        "screenshotDistinctSampleColors": 3,
+        "screenshotSha256": "df8b17bfccc9e13e2bb8290048988613e4285fa0f605d6be7cdbf6fe6d8c56e5",
+        "sourceFileProofCount": 3,
+        "surface": "import"
+      }
+    ],
+    "veteranWorkflowMap": {
+      "import": {
+        "legacyFamiliarity": "Existing .chum5-era import still starts from the desktop shell and exposes the familiar open-character route.",
+        "parityQuestion": "Can a veteran find the classic import route after landing in the modern workbench?",
+        "promotedHeadTaskProof": "Load the bundled legacy runner, then open File > Open Character on the promoted desktop head.",
+        "screenshotEvidenceRole": "import-dialog"
+      },
+      "master_index": {
+        "legacyFamiliarity": "The Master Index utility remains a named searchable reference surface.",
+        "parityQuestion": "Can a veteran reach the familiar index/search utility from desktop chrome?",
+        "promotedHeadTaskProof": "Open Master Index from the promoted desktop command surface.",
+        "screenshotEvidenceRole": "master-index-dialog"
+      },
+      "menu": {
+        "legacyFamiliarity": "Chummer5a top menu roots remain visible as File, Edit, Special, Tools, Windows, and Help.",
+        "parityQuestion": "Can a veteran find the same top-level command geography in the first minute?",
+        "promotedHeadTaskProof": "Open the promoted Avalonia head and expand a primary menu to reveal command choices.",
+        "screenshotEvidenceRole": "menu-open"
+      },
+      "roster": {
+        "legacyFamiliarity": "The Character Roster utility is still a named utility surface, not hidden behind campaign-only navigation.",
+        "parityQuestion": "Can a veteran find the familiar roster utility without support instructions?",
+        "promotedHeadTaskProof": "Open Character Roster from the promoted desktop command surface.",
+        "screenshotEvidenceRole": "character-roster-dialog"
+      },
+      "settings": {
+        "legacyFamiliarity": "Global Settings remains a first-minute settings route with source and roster configuration lineage.",
+        "parityQuestion": "Can a veteran find global setup before editing a character?",
+        "promotedHeadTaskProof": "Open Global Settings from the promoted desktop toolstrip/menu surface.",
+        "screenshotEvidenceRole": "settings-dialog"
+      },
+      "toolstrip": {
+        "legacyFamiliarity": "Classic flat workbench actions remain immediate toolbar buttons instead of dashboard cards.",
+        "parityQuestion": "Can a veteran start normal character work from the same always-visible toolbar posture?",
+        "promotedHeadTaskProof": "Inspect the initial shell and verify load, import, save, settings, support, and close actions stay in the toolstrip.",
+        "screenshotEvidenceRole": "initial-shell"
+      }
+    },
+    "wave": "W7"
+  },
+  "frontierId": 2257965187,
+  "generatedAt": "2026-04-19T11:46:41.872645Z",
+  "milestoneId": 103,
+  "ownedSurfaces": [
+    "veteran_migration_certification",
+    "screenshot_parity:desktop"
+  ],
+  "packageId": "next90-m103-ui-veteran-certification",
+  "promotedPrimaryHead": "avalonia",
+  "reasons": [],
+  "requiredPromotedPlatforms": [
+    "linux",
+    "windows",
+    "macos"
+  ],
+  "status": "pass",
+  "summary": "Next-90 milestone 103.2 UI veteran certification is backed by package registry truth, Chummer5a baseline evidence, source-level desktop surface tests, and screenshot-pack coverage.",
+  "wave": "W7"
+}

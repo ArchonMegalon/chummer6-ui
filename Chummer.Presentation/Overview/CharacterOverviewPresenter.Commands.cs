@@ -27,6 +27,8 @@ public sealed partial class CharacterOverviewPresenter
             Publish: Publish,
             GetShellBootstrapAsync: (rulesetId, token) => _client.GetShellBootstrapAsync(rulesetId, token),
             GetRuntimeInspectorProfileAsync: (profileId, rulesetId, token) => _client.GetRuntimeInspectorProfileAsync(profileId, rulesetId, token),
+            GetMasterIndexAsync: _client.GetMasterIndexAsync,
+            GetTranslatorLanguagesAsync: _client.GetTranslatorLanguagesAsync,
             SaveAsync: SaveAsync,
             DownloadAsync: DownloadAsync,
             PrintAsync: PrintAsync,

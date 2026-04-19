@@ -9,6 +9,7 @@ sample_path="$output_dir/Samples/Legacy/Soma-Career.chum5"
 receipt_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
 lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
+lock_owner_pid_path="$lock_dir/owner.pid"
 capture_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-gate-screenshots.XXXXXX")"
 staged_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-published-screenshots.XXXXXX")"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
@@ -25,11 +26,72 @@ sr6_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP
 sr4_sr6_frontier_receipt_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
 desktop_workflow_execution_receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 localization_release_gate_receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+veteran_task_time_receipt_path="$repo_root/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
 nuget_packages="${CHUMMER_NUGET_PACKAGES:-$repo_root/.codex-studio/.nuget/packages}"
+lock_stale_max_age_seconds="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-900}"
+
+if ! [[ "$lock_stale_max_age_seconds" =~ ^[0-9]+$ ]]; then
+  lock_stale_max_age_seconds=900
+fi
 
 mkdir -p "$(dirname "$lock_dir")"
+prune_lock_if_stale() {
+  if [[ ! -d "$lock_dir" ]]; then
+    return 0
+  fi
+  if [[ -f "$lock_owner_pid_path" ]]; then
+    owner_pid="$(tr -dc '0-9' <"$lock_owner_pid_path")"
+    if [[ -n "$owner_pid" ]] && kill -0 "$owner_pid" 2>/dev/null; then
+      return 0
+    fi
+  fi
+
+  lock_stale_probe="$(
+    python3 - <<'PY' "$lock_dir" "$lock_owner_pid_path" "$lock_stale_max_age_seconds"
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
+lock_dir = Path(sys.argv[1])
+owner_pid_path = Path(sys.argv[2])
+max_age = int(sys.argv[3])
+if not lock_dir.is_dir():
+    print("absent")
+    raise SystemExit(0)
+
+entries = list(lock_dir.iterdir())
+entries_without_owner = [entry for entry in entries if entry != owner_pid_path]
+if entries_without_owner:
+    print("nonempty")
+    raise SystemExit(0)
+
+age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
+if age_seconds < max_age:
+    if owner_pid_path.exists():
+        print(f"young_owner_only:{age_seconds}")
+    else:
+        print(f"young:{age_seconds}")
+    raise SystemExit(0)
+
+if owner_pid_path.exists():
+    print(f"stale_owner_only:{age_seconds}")
+else:
+    print(f"stale_empty:{age_seconds}")
+PY
+  )"
+  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* ]]; then
+    rm -rf "$lock_dir"
+  fi
+}
+
 for _ in $(seq 1 150); do
+  prune_lock_if_stale
   if mkdir "$lock_dir" 2>/dev/null; then
+    printf '%s\n' "$$" >"$lock_owner_pid_path"
     break
   fi
   sleep 2
@@ -297,7 +359,7 @@ bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
 import json
 import os
 import sys
@@ -321,7 +383,9 @@ from datetime import datetime, timezone
     sr4_sr6_frontier_receipt_path,
     desktop_workflow_execution_receipt_path,
     localization_release_gate_receipt_path,
-) = sys.argv[1:18]
+    veteran_task_time_receipt_path,
+    chummer5a_screenshot_review_receipt_path,
+) = sys.argv[1:20]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -338,6 +402,9 @@ expected_screenshots = [
     "13-matrix-dialog-light.png",
     "14-advancement-dialog-light.png",
     "15-creation-section-light.png",
+    "16-master-index-dialog-light.png",
+    "17-character-roster-dialog-light.png",
+    "18-import-dialog-light.png",
 ]
 required_full_workflow_tests = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
@@ -603,5 +670,64 @@ bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/
 echo "[b14] materializing desktop visual familiarity exit gate..."
 CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
   bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
+
+echo "[b14] materializing classic dense workbench posture gate..."
+bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh >/dev/null
+
+echo "[b14] materializing veteran task-time evidence gate..."
+bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh >/dev/null
+
+echo "[b14] materializing Chummer5a screenshot review gate..."
+bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
+
+python3 - <<'PY' "$receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path" "$classic_dense_workbench_receipt_path"
+import json
+import sys
+from pathlib import Path
+
+receipt_path = Path(sys.argv[1])
+veteran_task_time_receipt_path = Path(sys.argv[2])
+chummer5a_screenshot_review_receipt_path = Path(sys.argv[3])
+classic_dense_workbench_receipt_path = Path(sys.argv[4])
+receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+veteran_receipt = json.loads(veteran_task_time_receipt_path.read_text(encoding="utf-8"))
+chummer5a_screenshot_review_receipt = json.loads(chummer5a_screenshot_review_receipt_path.read_text(encoding="utf-8"))
+classic_dense_receipt = json.loads(classic_dense_workbench_receipt_path.read_text(encoding="utf-8"))
+if str(veteran_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: veteran task-time evidence proof is not passed: "
+        + ", ".join(veteran_receipt.get("reasons") or ["missing reason"])
+    )
+if str(chummer5a_screenshot_review_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: Chummer5a screenshot review proof is not passed: "
+        + ", ".join(chummer5a_screenshot_review_receipt.get("reasons") or ["missing reason"])
+    )
+if str(classic_dense_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: classic dense workbench posture proof is not passed: "
+        + ", ".join(classic_dense_receipt.get("reasons") or ["missing reason"])
+    )
+receipt["classicDenseWorkbenchPostureProof"] = {
+    "status": "pass",
+    "classicDenseWorkbenchPostureReceiptPath": str(classic_dense_workbench_receipt_path),
+    "frontierIdsClosed": classic_dense_receipt.get("frontierIdsClosed") or [],
+    "evidence": classic_dense_receipt.get("evidence") or {},
+}
+receipt["veteranTaskTimeEvidenceProof"] = {
+    "status": "pass",
+    "veteranTaskTimeEvidenceReceiptPath": str(veteran_task_time_receipt_path),
+    "frontierIdsClosed": veteran_receipt.get("frontierIdsClosed") or [],
+    "taskTimeEvidence": veteran_receipt.get("taskTimeEvidence") or {},
+    "boundedBlazorFallbackEvidence": veteran_receipt.get("boundedBlazorFallbackEvidence") or {},
+}
+receipt["chummer5aScreenshotReviewProof"] = {
+    "status": "pass",
+    "screenshotReviewReceiptPath": str(chummer5a_screenshot_review_receipt_path),
+    "frontierIdsClosed": chummer5a_screenshot_review_receipt.get("frontierIdsClosed") or [],
+    "reviewJobs": chummer5a_screenshot_review_receipt.get("reviewJobs") or {},
+}
+receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+PY
 
 echo "[b14] PASS"

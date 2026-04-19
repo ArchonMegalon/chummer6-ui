@@ -1,0 +1,81 @@
+{
+  "generatedAt": "2026-04-18T18:16:17.857922Z",
+  "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
+  "status": "pass",
+  "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, and settings.",
+  "reasons": [],
+  "frontierIdsClosed": [
+    3782970110,
+    2714856833,
+    1186439541,
+    4871476959
+  ],
+  "feedbackSources": [
+    "/docker/chummercomplete/chummer-presentation/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
+    "/docker/chummercomplete/chummer-presentation/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
+  ],
+  "supportingReceipts": {
+    "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "flagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+  },
+  "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+  "reviewJobs": {
+    "dense_builder": {
+      "frontierId": 3782970110,
+      "status": "pass",
+      "screenshots": [
+        "05-dense-section-light.png",
+        "06-dense-section-dark.png"
+      ],
+      "evidenceKeys": [
+        "legacy_dense_builder_rhythm"
+      ],
+      "testMarkers": [
+        "Character_creation_preserves_familiar_dense_builder_rhythm"
+      ],
+      "reasons": []
+    },
+    "master_index": {
+      "frontierId": 2714856833,
+      "status": "pass",
+      "screenshots": [
+        "16-master-index-dialog-light.png"
+      ],
+      "evidenceKeys": [
+        "runtime_backed_master_index"
+      ],
+      "testMarkers": [
+        "Master_index_is_a_first_class_runtime_backed_workbench_route"
+      ],
+      "reasons": []
+    },
+    "roster": {
+      "frontierId": 1186439541,
+      "status": "pass",
+      "screenshots": [
+        "17-character-roster-dialog-light.png"
+      ],
+      "evidenceKeys": [
+        "runtime_backed_character_roster"
+      ],
+      "testMarkers": [
+        "Character_roster_is_a_first_class_runtime_backed_workbench_route"
+      ],
+      "reasons": []
+    },
+    "settings": {
+      "frontierId": 4871476959,
+      "status": "pass",
+      "screenshots": [
+        "03-settings-open-light.png"
+      ],
+      "evidenceKeys": [
+        "runtime_backed_file_menu_routes"
+      ],
+      "testMarkers": [
+        "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
+      ],
+      "reasons": []
+    }
+  }
+}

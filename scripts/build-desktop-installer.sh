@@ -4,6 +4,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Usage:
+# bash scripts/build-desktop-installer.sh <publish_dir> <app_key> <rid> <launch_target> [dist_dir] [version]
+# Example:
+# bash scripts/build-desktop-installer.sh out/avalonia/osx-arm64 avalonia osx-arm64 Chummer.Avalonia
+#
+# macOS packaging requires a .icns icon source:
+# - set CHUMMER_MACOS_ICON_SOURCE to an explicit .icns file, or
+# - place chummer.icns in the publish directory, or
+# - place Chummer/chummer.icns in the repository.
+#
+# Local preflight (recommended on macOS):
+# bash scripts/preflight-macos-packaging.sh out/avalonia/osx-arm64 osx-arm64 avalonia Chummer.Avalonia
+
 PUBLISH_DIR="${1:?publish directory is required}"
 APP_KEY="${2:?app key is required}"
 RID="${3:?rid is required}"
@@ -68,6 +81,42 @@ resolve_demo_character_source() {
   done
 
   return 1
+}
+
+resolve_macos_icon_source() {
+  local configured="${CHUMMER_MACOS_ICON_SOURCE:-}"
+  local candidates=(
+    "$configured"
+    "$PUBLISH_DIR/chummer.icns"
+    "$REPO_ROOT/Chummer/chummer.icns"
+  )
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [[ -f "$candidate" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+preflight_macos_packaging_requirements() {
+  local icon_source
+  icon_source="$(resolve_macos_icon_source || true)"
+  if [[ -z "$icon_source" ]]; then
+    echo "macOS packaging preflight: chummer.icns not found in publish or Chummer paths." >&2
+    echo "Set CHUMMER_MACOS_ICON_SOURCE or place chummer.icns in $PUBLISH_DIR or $REPO_ROOT/Chummer/." >&2
+    return 1
+  fi
+  if [[ "$icon_source" != *.icns ]]; then
+    echo "macOS packaging preflight: icon source is not .icns: $icon_source" >&2
+    return 1
+  fi
+
+  echo "macOS packaging preflight: publish=$PUBLISH_DIR launch=$LAUNCH_TARGET icon=$icon_source" >&2
+  printf '%s' "$icon_source"
 }
 
 bundle_demo_character_fixture() {
@@ -256,6 +305,9 @@ build_macos_installer() {
   local app_bundle="$stage_root/$APP_DISPLAY.app"
   local contents_dir="$app_bundle/Contents"
   local macos_dir="$contents_dir/MacOS"
+  local macos_icon_source
+  local macos_icon_name
+  local macos_icon_plist_name
   local plist_path="$contents_dir/Info.plist"
   local bundle_identifier
   bundle_identifier="$(macos_bundle_identifier)"
@@ -280,6 +332,17 @@ build_macos_installer() {
   fi
   chmod 0755 "$macos_dir/$LAUNCH_TARGET"
 
+  if ! macos_icon_source="$(preflight_macos_packaging_requirements)"; then
+    echo "macOS packaging preflight failed." >&2
+    exit 1
+  fi
+
+  macos_icon_name="$(basename "$macos_icon_source")"
+  macos_icon_plist_name="${macos_icon_name%.icns}"
+  cp "$macos_icon_source" "$contents_dir/Resources/$macos_icon_name"
+
+  echo "Using macOS icon source: $macos_icon_source" >&2
+
   cat > "$plist_path" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -303,6 +366,8 @@ build_macos_installer() {
   <string>$VERSION</string>
   <key>CFBundleVersion</key>
   <string>$VERSION</string>
+  <key>CFBundleIconFile</key>
+  <string>$macos_icon_plist_name</string>
   <key>LSMinimumSystemVersion</key>
   <string>12.0</string>
 </dict>

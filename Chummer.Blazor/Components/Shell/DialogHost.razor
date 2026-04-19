@@ -1,6 +1,7 @@
 @namespace Chummer.Blazor.Components.Shell
 @using Chummer.Presentation.UiKit
 @using Microsoft.AspNetCore.Components
+@* m104: blazor_dialog_surface *@
 @if (Dialog is { } dialog)
 {
     <div id="dialogBackdrop" class="dialog-backdrop" @onclick="CloseAsync">
@@ -20,6 +21,21 @@
                 @if (!string.IsNullOrWhiteSpace(dialog.Message))
                 {
                     <p class="note">@dialog.Message</p>
+                }
+                @if (DialogTrustReceiptText.HasDialogTrustReceipt(dialog))
+                {
+                    <section class="coach-card" data-dialog-explain-receipt>
+                        <div class="coach-card-header">
+                            <h3>Dialog trust receipt</h3>
+                            <span class="badge">@dialog.Id</span>
+                        </div>
+                        <dl class="facts compact">
+                            <div><dt>Before</dt><dd>@DialogTrustReceiptText.BuildDialogBefore(dialog)</dd></div>
+                            <div><dt>After</dt><dd>@DialogTrustReceiptText.BuildDialogAfter(dialog)</dd></div>
+                            <div><dt>Explain receipt</dt><dd>@DialogTrustReceiptText.BuildDialogExplainReceipt(dialog)</dd></div>
+                            <div><dt>Support reuse</dt><dd>@DialogTrustReceiptText.BuildDialogSupportReuse(dialog)</dd></div>
+                        </dl>
+                    </section>
                 }
                 @foreach (DesktopDialogField field in dialog.Fields)
                 {

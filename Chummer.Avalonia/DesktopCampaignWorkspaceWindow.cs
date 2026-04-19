@@ -338,7 +338,11 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         List<string> lines =
         [
             _campaignProjection.RestoreSummary,
-            _campaignProjection.DeviceRoleSummary
+            _campaignProjection.DeviceRoleSummary,
+            BuildRestoreContinuityChoiceSummary(),
+            BuildRestoreStaleStateVisibilitySummary(),
+            "Review before continuing: keep local work visible until the restore, stale-state, and conflict choices below are resolved.",
+            BuildRestoreConflictChoiceSummary()
         ];
 
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.TravelModeSummary))
@@ -361,8 +365,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             lines.Add($"Campaign memory return: {_campaignServerPlane.CampaignMemoryReturnSummary}");
         }
 
-        lines.AddRange(BuildRestoreChoiceLines());
-
         if (_recentWorkspaces.Count > 0)
         {
             lines.Add(F(
@@ -378,32 +380,45 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         return string.Join("\n", lines);
     }
 
-    private IReadOnlyList<string> BuildRestoreChoiceLines()
+    private string BuildRestoreContinuityChoiceSummary()
     {
-        List<string> lines = [];
-        if (_campaignProjection.Watchouts.Count > 0)
+        if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
         {
-            lines.Add("Stale/conflict posture: review the watchouts below before merge, replace, or continuing from another claimed device.");
-            foreach (string watchout in _campaignProjection.Watchouts.Take(4))
-            {
-                lines.Add($"Conflict choice: keep local work, restore the claimed-device copy, or route support before merging - {watchout}");
-            }
-        }
-        else if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId) || _recentWorkspaces.Count > 0)
-        {
-            lines.Add("Restore choice: continue the current local workspace, or open Devices and Access before moving this context to another claimed device.");
-        }
-        else
-        {
-            lines.Add("Restore choice: link this copy or open install support before treating restore as portable truth.");
+            return "Restore choice: open the current campaign workspace, review devices/access, or use workspace support if the continuation does not match this install.";
         }
 
+        if (_recentWorkspaces.Count > 0)
+        {
+            return "Restore choice: continue the current local workspace, review devices/access, or use workspace support before replacing local work.";
+        }
+
+        return DesktopInstallLinkingRuntime.IsClaimed(_installState)
+            ? "Restore choice: review devices/access to reconnect a workspace, or open install support if entitlement or stale-state posture is wrong."
+            : "Restore choice: link this install before restoring claimed workspace, entitlement, or continuation state.";
+    }
+
+    private string BuildRestoreStaleStateVisibilitySummary()
+    {
         if (_campaignServerPlane is null)
         {
-            lines.Add("Stale-state visibility: live server restore is unavailable; this route is showing bounded local fallback until refresh succeeds.");
+            return "Stale state: server continuity is unavailable, so the desktop is showing the last local workspace list and claimed-install actions.";
         }
 
-        return lines;
+        return "Stale state: server continuity is available, but local workspace choices stay visible before any restore replaces desktop work.";
+    }
+
+    private string BuildRestoreConflictChoiceSummary()
+    {
+        if (_campaignProjection.Watchouts.Count > 0)
+        {
+            return string.Join(
+                "\n",
+                new[] { "Conflict choices: keep local work, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement." }
+                    .Concat(_campaignProjection.Watchouts.Take(4).Select(watchout =>
+                        $"Conflict choice: keep local work, restore the claimed-device copy, or route support before merging - {watchout}")));
+        }
+
+        return "Conflict choices: keep local work, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.";
     }
 
     private string BuildSupportBody()
@@ -435,6 +450,11 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         if (_campaignProjection.Watchouts.Count == 0 && !_supportProjection.NeedsAttention)
         {
             lines.Add(S("desktop.campaign.support.no_watchouts"));
+        }
+
+        if (_supportProjection.NeedsAttention)
+        {
+            lines.Add("Support choice: open the tracked case before replacing local work or accepting a newer server snapshot.");
         }
 
         foreach (string watchout in _campaignProjection.Watchouts)
@@ -598,7 +618,29 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         => DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_installState);
 
     private Task OpenWorkspaceSupport()
-        => DesktopSupportWindow.ShowAsync(this, _installState.HeadId);
+    {
+        if (DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace()))
+        {
+            return Task.CompletedTask;
+        }
+
+        return DesktopSupportWindow.ShowAsync(this, _installState.HeadId);
+    }
+
+    private WorkspaceListItem? ResolveSupportWorkspace()
+    {
+        if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
+        {
+            WorkspaceListItem? leadWorkspace = _recentWorkspaces.FirstOrDefault(workspace =>
+                string.Equals(workspace.Id.Value, _campaignProjection.LeadWorkspaceId, StringComparison.Ordinal));
+            if (leadWorkspace is not null)
+            {
+                return leadWorkspace;
+            }
+        }
+
+        return _recentWorkspaces.FirstOrDefault();
+    }
 
     private Task OpenReportIssueWindowAsync()
         => DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId);

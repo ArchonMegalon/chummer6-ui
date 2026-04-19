@@ -1,6 +1,7 @@
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
+using Chummer.Contracts.Api;
 
 namespace Chummer.Presentation.Overview;
 
@@ -16,6 +17,8 @@ public sealed record OverviewCommandExecutionContext(
     Action<CharacterOverviewState> Publish,
     Func<string?, CancellationToken, Task<ShellBootstrapSnapshot>> GetShellBootstrapAsync,
     Func<string, string?, CancellationToken, Task<RuntimeInspectorProjection?>> GetRuntimeInspectorProfileAsync,
+    Func<CancellationToken, Task<MasterIndexResponse>> GetMasterIndexAsync,
+    Func<CancellationToken, Task<TranslatorLanguagesResponse>> GetTranslatorLanguagesAsync,
     Func<CancellationToken, Task> SaveAsync,
     Func<CancellationToken, Task> DownloadAsync,
     Func<CancellationToken, Task> PrintAsync,

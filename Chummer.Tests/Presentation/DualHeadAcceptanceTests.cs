@@ -14,13 +14,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Avalonia;
 using Chummer.Application.Characters;
+using Chummer.Application.Content;
 using Chummer.Application.Workspaces;
 using Chummer.Blazor;
 using Chummer.Campaign.Contracts;
+using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Infrastructure.Files;
 using Chummer.Infrastructure.Workspaces;
 using Chummer.Infrastructure.Xml;
 using Chummer.Presentation;
@@ -67,10 +70,46 @@ public class DualHeadAcceptanceTests
         ]);
         var selectionPolicy = new DefaultRulesetSelectionPolicy(registry);
         var shellCatalogResolver = new RulesetShellCatalogResolverService(registry, selectionPolicy);
+        string contentRoot = ResolveFixtureContentRoot();
+        string? amendsPath = ResolveFixtureAmendsPath();
+        IContentOverlayCatalogService overlays = new FileSystemContentOverlayCatalogService(
+            contentRoot,
+            Directory.GetCurrentDirectory(),
+            amendsPath);
         return new FixtureBackedChummerClient(
             CreateWorkspaceService(),
             shellCatalogResolver,
+            toolCatalogService: new XmlToolCatalogService(overlays),
             rulesetSelectionPolicy: selectionPolicy);
+    }
+
+    private static string ResolveFixtureContentRoot()
+    {
+        string[] candidates =
+        {
+            "/docker/chummercomplete/chummer-core-engine/Chummer",
+            Path.Combine(Directory.GetCurrentDirectory(), "Chummer"),
+            Directory.GetCurrentDirectory()
+        };
+
+        return candidates.FirstOrDefault(candidate => Directory.Exists(Path.Combine(candidate, "data")))
+            ?? candidates[0];
+    }
+
+    private static string? ResolveFixtureAmendsPath()
+    {
+        string currentDirectory = Directory.GetCurrentDirectory();
+        string[] candidates =
+        {
+            Path.Combine(currentDirectory, "Docker", "Amends"),
+            Path.Combine(currentDirectory, "..", "..", "..", "Docker", "Amends"),
+            "/docker/chummercomplete/chummer6-ui/Docker/Amends",
+            "/docker/chummercomplete/chummer-presentation/Docker/Amends"
+        };
+
+        return candidates
+            .Select(Path.GetFullPath)
+            .FirstOrDefault(path => File.Exists(Path.Combine(path, "manifest.json")));
     }
 
     private static WorkspaceService CreateWorkspaceService()
@@ -977,6 +1016,38 @@ public class DualHeadAcceptanceTests
             Assert.IsTrue(blazorSnapshots.TryGetValue(commandId, out CommandDialogSnapshot? blazor), $"Missing Blazor dialog snapshot for command '{commandId}'.");
             AssertCommandDialogSnapshotEqual(avalonia, blazor, commandId);
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture()
+    {
+        string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
+        byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
+        string[] commandIds = ["translator", "xml_editor"];
+
+        Dictionary<string, CommandDialogSnapshot> avaloniaSnapshots = await CaptureAvaloniaCommandDialogSnapshotsAsync(documentBytes, commandIds);
+        Dictionary<string, CommandDialogSnapshot> blazorSnapshots = await CaptureBlazorCommandDialogSnapshotsAsync(documentBytes, commandIds);
+
+        foreach (string commandId in commandIds)
+        {
+            Assert.IsTrue(avaloniaSnapshots.TryGetValue(commandId, out CommandDialogSnapshot? avalonia), $"Missing Avalonia dialog snapshot for command '{commandId}'.");
+            Assert.IsTrue(blazorSnapshots.TryGetValue(commandId, out CommandDialogSnapshot? blazor), $"Missing Blazor dialog snapshot for command '{commandId}'.");
+            AssertCommandDialogSnapshotEqual(avalonia, blazor, commandId);
+        }
+
+        DialogFieldSnapshot[] translatorFields = avaloniaSnapshots["translator"].Fields;
+        CollectionAssert.IsSubsetOf(
+            new[] { "translatorLanePosture", "translatorBridgePosture", "translatorOverlayCount", "translatorSearch" },
+            translatorFields.Select(field => field.Id).ToArray());
+        Assert.AreEqual("governed", translatorFields.Single(field => string.Equals(field.Id, "translatorLanePosture", StringComparison.Ordinal)).Value);
+        Assert.AreEqual("governed", translatorFields.Single(field => string.Equals(field.Id, "translatorBridgePosture", StringComparison.Ordinal)).Value);
+
+        DialogFieldSnapshot[] xmlEditorFields = avaloniaSnapshots["xml_editor"].Fields;
+        CollectionAssert.IsSubsetOf(
+            new[] { "xmlEditorLanePosture", "xmlEditorOverlayCount", "xmlEditorCustomDataLanePosture", "xmlEditorCustomDataDirectoryCount", "xmlEditorReceipt", "xmlEditorDialog" },
+            xmlEditorFields.Select(field => field.Id).ToArray());
+        Assert.AreEqual("governed", xmlEditorFields.Single(field => string.Equals(field.Id, "xmlEditorLanePosture", StringComparison.Ordinal)).Value);
+        Assert.AreEqual("governed", xmlEditorFields.Single(field => string.Equals(field.Id, "xmlEditorCustomDataLanePosture", StringComparison.Ordinal)).Value);
     }
 
     [TestMethod]
@@ -1925,6 +1996,8 @@ public class DualHeadAcceptanceTests
         public Task<IReadOnlyList<NavigationTabDefinition>> GetNavigationTabsAsync(string? rulesetId, CancellationToken ct) => _inner.GetNavigationTabsAsync(rulesetId, ct);
         public Task<ShellBootstrapSnapshot> GetShellBootstrapAsync(string? rulesetId, CancellationToken ct) => _inner.GetShellBootstrapAsync(rulesetId, ct);
         public Task<RuntimeInspectorProjection?> GetRuntimeInspectorProfileAsync(string profileId, string? rulesetId, CancellationToken ct) => _inner.GetRuntimeInspectorProfileAsync(profileId, rulesetId, ct);
+        public Task<MasterIndexResponse> GetMasterIndexAsync(CancellationToken ct) => _inner.GetMasterIndexAsync(ct);
+        public Task<TranslatorLanguagesResponse> GetTranslatorLanguagesAsync(CancellationToken ct) => _inner.GetTranslatorLanguagesAsync(ct);
         public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct) => _inner.GetBuildPathSuggestionsAsync(rulesetId, ct);
         public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct) => _inner.GetBuildPathPreviewAsync(buildKitId, workspaceId, rulesetId, ct);
         public Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct) => _inner.GetSectionAsync(id, sectionId, ct);

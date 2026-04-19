@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-04-18T18:16:11.298298Z",
+  "contract_name": "chummer6-ui.ruleset_ui_adaptation_frontier",
+  "channelId": "docker",
+  "status": "pass",
+  "summary": "Ruleset/UI adaptation parity is explicit and regression-guarded for Chummer desktop workbench workflows.",
+  "reasons": [],
+  "evidence": {
+    "rulesetAdaptationReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "releaseChannelExists": true,
+    "testBuildExit": 0,
+    "requiredDirectives": [
+      "UI-RS-01",
+      "UI-RS-02",
+      "UI-RS-03",
+      "UI-RS-04",
+      "UI-RS-05",
+      "UI-RS-06",
+      "UI-RS-07",
+      "UI-RS-08"
+    ],
+    "releaseChannelChannelId": "docker",
+    "failureCount": 0,
+    "releaseChannelGeneratedAt": "2026-04-18T17:29:29Z"
+  }
+}

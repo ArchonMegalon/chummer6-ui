@@ -44,7 +44,11 @@ internal static class MainWindowShellFrameProjector
                     NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
                     NavigationTabs: navigationTabs,
                     ActiveTabId: shellSurface.ActiveTabId,
-                    RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId)),
+                    RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId),
+                    RestoreContinuitySummary: BuildRestoreContinuitySummary(workspaceContext, language),
+                    StaleStateSummary: BuildStaleStateSummary(shellSurface, workspaceContext, language),
+                    ConflictChoiceSummary: BuildConflictChoiceSummary(workspaceContext, language),
+                    CanSaveLocalWorkBeforeRestore: CanSaveLocalWorkBeforeRestore(workspaceContext)),
                 StatusStrip: new StatusStripState(
                     CharacterState: BuildCharacterStateText(workspaceContext, language),
                     ServiceState: BuildServiceStateText(shellSurface, language),
@@ -100,12 +104,12 @@ internal static class MainWindowShellFrameProjector
         }
 
         lines.Add($"{portability.Title}: {portability.Receipt.ReceiptSummary}");
-        lines.Add($"Context: {portability.Receipt.ContextSummary}");
-        lines.Add($"Import environment before: {BuildImportDiffBefore(portability.Receipt)}");
-        lines.Add($"Import environment after: {BuildImportDiffAfter(portability.Receipt)}");
-        lines.Add($"Import explain receipt: {portability.Receipt.ProvenanceSummary}");
+        lines.Add($"Import rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(portability.Receipt)}");
+        lines.Add($"Import environment before: {DesktopTrustReceiptText.BuildImportDiffBefore(portability.Receipt)}");
+        lines.Add($"Import environment after: {DesktopTrustReceiptText.BuildImportDiffAfter(portability.Receipt)}");
+        lines.Add($"Import explain receipt: {DesktopTrustReceiptText.BuildImportExplainReceipt(portability.Receipt)}");
         lines.Add($"Next safe action: {portability.Receipt.NextSafeAction}");
-        lines.Add($"Support reuse: {BuildImportSupportReuse(portability.Receipt)}");
+        lines.Add($"Support reuse: {DesktopTrustReceiptText.BuildImportSupportReuse(portability.Receipt)}");
 
         if (portability.Receipt.SupportedExchangeModes.Count > 0)
         {
@@ -122,27 +126,6 @@ internal static class MainWindowShellFrameProjector
 
         return string.Join(Environment.NewLine, lines);
     }
-
-    private static string BuildImportDiffBefore(WorkspacePortabilityReceipt receipt)
-        => string.IsNullOrWhiteSpace(receipt.ContextSummary)
-            ? $"Incoming {receipt.FormatId} payload before workspace merge."
-            : receipt.ContextSummary;
-
-    private static string BuildImportDiffAfter(WorkspacePortabilityReceipt receipt)
-    {
-        string? watchout = receipt.Notes
-            .FirstOrDefault(note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase))
-            ?.Summary;
-
-        return string.IsNullOrWhiteSpace(watchout)
-            ? receipt.NextSafeAction
-            : $"{receipt.NextSafeAction} Diff signal: {watchout}";
-    }
-
-    private static string BuildImportSupportReuse(WorkspacePortabilityReceipt receipt)
-        => string.IsNullOrWhiteSpace(receipt.PayloadSha256)
-            ? receipt.ProvenanceSummary
-            : $"Support can cite payload {receipt.PayloadSha256} with {receipt.CompatibilityState} compatibility.";
 
     private static string BuildToolStripStatusText(
         CharacterOverviewState state,
@@ -177,6 +160,44 @@ internal static class MainWindowShellFrameProjector
             workspaceContext.OpenWorkspaceCount,
             LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language));
 
+    private static string BuildRestoreContinuitySummary(ActiveWorkspaceContext workspaceContext, string language)
+    {
+        string workspaceLabel = workspaceContext.ActiveWorkspaceId?.Value
+            ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language);
+        if (workspaceContext.ActiveWorkspaceId is null)
+        {
+            return $"Restore choice: load a recent workspace or open Campaign Workspace before replacing local work. Active workspace: {workspaceLabel}. {BuildWorkspacePresenceReceipt(workspaceContext)} No server restore is applied automatically.";
+        }
+
+        return $"Restore choice: keep {workspaceLabel} open on the primary desktop route, then review Campaign Workspace before accepting a newer continuity packet. {BuildWorkspacePresenceReceipt(workspaceContext)} No server restore is applied automatically.";
+    }
+
+    private static string BuildStaleStateSummary(
+        ShellSurfaceState shellSurface,
+        ActiveWorkspaceContext workspaceContext,
+        string language)
+    {
+        if (shellSurface.Error is not null)
+        {
+            return $"Stale state: service continuity is unavailable, so local workspace state remains visible for {workspaceContext.ActiveWorkspaceId?.Value ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language)}.";
+        }
+
+        return $"Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or Workspace Support review; {BuildWorkspaceTimestampReceipt(workspaceContext)} local save posture is {LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language)}.";
+    }
+
+    private static string BuildConflictChoiceSummary(ActiveWorkspaceContext workspaceContext, string language)
+    {
+        if (CanSaveLocalWorkBeforeRestore(workspaceContext))
+        {
+            return $"Conflict choices: save local work, review Campaign Workspace, open workspace support, or continue without replacing this unsaved desktop state; {BuildWorkspaceTimestampReceipt(workspaceContext)} no server restore is applied automatically.";
+        }
+
+        return $"Conflict choices: keep local work visible, review Campaign Workspace, or open workspace support before replacing local work; {BuildWorkspaceTimestampReceipt(workspaceContext)} current save posture is {LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language)}; no server restore is applied automatically.";
+    }
+
+    private static bool CanSaveLocalWorkBeforeRestore(ActiveWorkspaceContext workspaceContext)
+        => string.Equals(workspaceContext.ActiveWorkspaceSaveStatus, "unsaved", StringComparison.Ordinal);
+
     private static string BuildCharacterStateText(ActiveWorkspaceContext workspaceContext, string language)
         => DesktopLocalizationCatalog.GetRequiredFormattedString(
             "desktop.shell.status.character",
@@ -209,7 +230,31 @@ internal static class MainWindowShellFrameProjector
         string activeWorkspaceSaveStatus = activeWorkspace is null
             ? "n/a"
             : activeWorkspace.HasSavedWorkspace ? "saved" : "unsaved";
-        return new ActiveWorkspaceContext(activeWorkspaceId, openWorkspaceCount, activeWorkspaceSaveStatus);
+        return new ActiveWorkspaceContext(
+            activeWorkspaceId,
+            openWorkspaceCount,
+            activeWorkspaceSaveStatus,
+            activeWorkspace?.LastOpenedUtc);
+    }
+
+    private static string BuildWorkspacePresenceReceipt(ActiveWorkspaceContext workspaceContext)
+    {
+        if (workspaceContext.ActiveWorkspaceId is null)
+        {
+            return workspaceContext.OpenWorkspaceCount > 0
+                ? $"Primary desktop head still has {workspaceContext.OpenWorkspaceCount} open workspace tab(s) available for review."
+                : "Primary desktop head has no active workspace yet, so restore review stays on the current local shell until you pick one.";
+        }
+
+        return $"{workspaceContext.ActiveWorkspaceId.Value} stays visible on the current desktop head until you choose review or support.";
+    }
+
+    private static string BuildWorkspaceTimestampReceipt(ActiveWorkspaceContext workspaceContext)
+    {
+        string workspaceLabel = workspaceContext.ActiveWorkspaceId?.Value ?? "no active workspace";
+        return workspaceContext.ActiveWorkspaceLastSeenUtc is DateTimeOffset lastSeenUtc
+            ? $"{workspaceLabel} was last touched locally at {lastSeenUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC and stays visible before any replacement;"
+            : $"{workspaceLabel} stays visible on the current desktop head before any replacement;";
     }
 
     private static string LocalizeSaveStatus(string saveStatus, string language)
@@ -468,7 +513,8 @@ internal static class MainWindowShellFrameProjector
     private sealed record ActiveWorkspaceContext(
         CharacterWorkspaceId? ActiveWorkspaceId,
         int OpenWorkspaceCount,
-        string ActiveWorkspaceSaveStatus);
+        string ActiveWorkspaceSaveStatus,
+        DateTimeOffset? ActiveWorkspaceLastSeenUtc);
 }
 
 internal sealed record MainWindowShellFrame(

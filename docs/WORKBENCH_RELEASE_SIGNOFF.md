@@ -15,6 +15,10 @@ Purpose: close `WL-202` and `WL-203` with explicit, verifier-backed evidence ins
 - `scripts/ai/milestones/b4-gm-board-spider-feed-check.sh` for moderation-adjacent Spider and board surfaces.
 - `scripts/ai/milestones/ruleset-ui-adaptation-check.sh` for SR4/SR5/SR6 posture, unsupported-state honesty, and cross-head shell adaptation proof.
 - `scripts/ai/milestones/b14-flagship-ui-release-gate.sh` for flagship desktop interaction, bundled demo-runner presence, and visibly reactive menu/settings proof.
+- `scripts/ai/milestones/veteran-task-time-evidence-gate.sh` for veteran task-time evidence on sourcebooks, roster, print/export, and bounded Blazor fallback proof.
+- `scripts/ai/milestones/chummer5a-screenshot-review-gate.sh` for mandatory Chummer5a screenshot-backed compare review on dense builder, master index, roster, and settings surfaces.
+- `scripts/ai/milestones/dense-workbench-recovery-gate.sh` for compact classic workbench posture, reduced badge density, row-preserving padding, accessibility without oversized chrome, and screenshot-backed menu/toolstrip familiarity proof.
+- `scripts/ai/milestones/classic-dense-workbench-posture-gate.sh` for Avalonia default dense posture, reduced section-header scale, flat form panels, and anti-dashboard workbench chrome proof.
 - `scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh` for release-channel/install-media/startup-smoke truth across promoted desktop heads, including fail-honest blocker receipts when artifacts or platform proof are missing.
 - `scripts/ai/milestones/b15-localization-release-gate.sh` for shipping-locale truth, explicit fallback honesty, explain localization, and support/install/update language coverage.
 

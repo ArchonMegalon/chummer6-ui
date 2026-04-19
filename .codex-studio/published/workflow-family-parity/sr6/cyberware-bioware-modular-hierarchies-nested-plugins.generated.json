@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-04-18T18:15:03.593095Z",
+  "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
+  "status": "pass",
+  "summary": "SR6 workflow-family verification evidence is explicitly grounded for cyberware-bioware-modular-hierarchies-nested-plugins.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr6",
+    "familyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
+    "proofKind": "sr6_family_carry_forward",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
+      "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
+      "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
+    ],
+    "oracle": {
+      "classification": "carry-forward",
+      "rationale": "Modular ware and nested plugin behavior needs explicit SR6 carry-forward parity evidence.",
+      "releaseGateTests": [
+        "Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
+        "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
+      ]
+    },
+    "executionReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json"
+    ],
+    "executionFailures": [],
+    "executionExternalBlockers": []
+  }
+}

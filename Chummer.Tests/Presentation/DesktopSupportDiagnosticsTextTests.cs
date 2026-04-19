@@ -17,10 +17,10 @@ public sealed class DesktopSupportDiagnosticsTextTests
             CreateUpdateStatus(),
             CreateSupportProjection());
 
-        StringAssert.Contains(text, "Diagnostics environment diff: avalonia on linux/x64, channel preview, install install-123.");
-        StringAssert.Contains(text, "Before: Released on install-123 at 6.0.1-preview.");
-        StringAssert.Contains(text, "After: Install the reporter-ready fix and verify the tracked case. Target receipt: 6.0.2-preview.");
-        StringAssert.Contains(text, "Explain receipt: support/case-123 resolves Released against avalonia:preview.");
+        StringAssert.Contains(text, "Diagnostics environment diff: avalonia on linux/x64, channel preview, install install-123. Before 6.0.1-preview -> after 6.0.2-preview.");
+        StringAssert.Contains(text, "Before: Released on install-123 at 6.0.1-preview. Environment: Install is ready for reporter verification..");
+        StringAssert.Contains(text, "After: Install the reporter-ready fix and verify the tracked case. Target receipt: 6.0.2-preview. Outcome: Fix reached preview..");
+        StringAssert.Contains(text, "Explain receipt: support/case-123 resolves Released against avalonia:preview -> 6.0.2-preview.");
         StringAssert.Contains(text, "Support reuse: cite install install-123, case case-123, and Install is ready for reporter verification.");
     }
 
@@ -33,9 +33,10 @@ public sealed class DesktopSupportDiagnosticsTextTests
             CreateSupportProjection(),
             CreateSupportCase());
 
-        StringAssert.Contains(text, "Before: released_to_reporter_channel on install-case-456 at 6.0.0-preview.");
-        StringAssert.Contains(text, "After: Install the reporter-ready fix and verify the tracked case. Target receipt: 6.0.3-preview.");
-        StringAssert.Contains(text, "Explain receipt: support/case-456 resolves Released against avalonia:preview.");
+        StringAssert.Contains(text, "Diagnostics environment diff: avalonia on linux/x64, channel preview, install install-123. Before 6.0.0-preview -> after 6.0.3-preview.");
+        StringAssert.Contains(text, "Before: released_to_reporter_channel on install-case-456 at 6.0.0-preview. Environment: Install is ready for reporter verification..");
+        StringAssert.Contains(text, "After: Install the reporter-ready fix and verify the tracked case. Target receipt: 6.0.3-preview. Outcome: Fix reached preview..");
+        StringAssert.Contains(text, "Explain receipt: support/case-456 resolves Released against avalonia:preview -> 6.0.3-preview.");
         StringAssert.Contains(text, "Support reuse: cite install install-123, case case-456, and Install is ready for reporter verification.");
     }
 

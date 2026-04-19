@@ -17,11 +17,18 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopHomeWindow : Window
 {
+    private const string CampaignConflictChoiceOrder = "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.";
+    private const string PrimaryDesktopRouteDecisionGate = "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement. Decision gate: Chummer will not replace local work automatically; keep local work visible, save local work when available, review Campaign Workspace, or open Workspace Support.";
+    private const string RestoreDecisionOrderSummary = "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.";
+    private const string RestoreLocalAuthoritySummary = "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.";
+    private const string RestoreReplacementGuardSummary = "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.";
+    private const string RestoreSupportHandoffSummary = "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.";
     private DesktopInstallLinkingState _installState;
     private DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;
     private IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
     private DesktopHomeCampaignProjection _campaignProjection;
+    private DesktopHomeCampaignServerPlane? _campaignServerPlane;
     private DesktopHomeSupportProjection _supportProjection;
     private DesktopHomeBuildExplainProjection _buildExplainProjection;
     private readonly Border _flagshipHeroBorder;
@@ -49,6 +56,7 @@ internal sealed class DesktopHomeWindow : Window
         DesktopPreferenceState preferences,
         IReadOnlyList<WorkspaceListItem> recentWorkspaces,
         DesktopHomeCampaignProjection campaignProjection,
+        DesktopHomeCampaignServerPlane? campaignServerPlane,
         DesktopHomeSupportProjection supportProjection,
         DesktopHomeBuildExplainProjection buildExplainProjection)
     {
@@ -57,6 +65,7 @@ internal sealed class DesktopHomeWindow : Window
         _preferences = preferences;
         _recentWorkspaces = recentWorkspaces;
         _campaignProjection = campaignProjection;
+        _campaignServerPlane = campaignServerPlane;
         _supportProjection = supportProjection;
         _buildExplainProjection = buildExplainProjection;
 
@@ -259,6 +268,7 @@ internal sealed class DesktopHomeWindow : Window
             preferences,
             workspaces,
             campaignProjection,
+            campaignServerPlane,
             supportProjection,
             buildExplainProjection);
     }
@@ -290,6 +300,9 @@ internal sealed class DesktopHomeWindow : Window
     private static DesktopPreferenceState ReadPreferences(string headId)
         => DesktopPreferenceRuntime.LoadOrCreateState(headId);
 
+    private static bool HasWorkspaces(IReadOnlyList<WorkspaceListItem>? workspaces)
+        => workspaces is not null && workspaces.Count > 0;
+
     private static async Task<IReadOnlyList<WorkspaceListItem>> ReadWorkspacesAsync(IChummerClient client)
     {
         try
@@ -311,7 +324,7 @@ internal sealed class DesktopHomeWindow : Window
         IReadOnlyList<WorkspaceListItem> workspaces,
         AccountCampaignSummary? campaignSummary)
     {
-        string? rulesetId = workspaces.Count == 0 ? null : workspaces[0].RulesetId;
+        string? rulesetId = !HasWorkspaces(workspaces) ? null : workspaces[0].RulesetId;
         string? effectiveRulesetId = rulesetId;
         ActiveRuntimeStatusProjection? activeRuntime = null;
         RuntimeInspectorProjection? runtimeInspector = null;
@@ -345,7 +358,7 @@ internal sealed class DesktopHomeWindow : Window
             buildPathCandidates = [];
         }
 
-        if (workspaces.Count == 0)
+        if (!HasWorkspaces(workspaces))
         {
             return DesktopHomeBuildExplainProjector.Create(
                 workspaces,
@@ -468,6 +481,22 @@ internal sealed class DesktopHomeWindow : Window
         }
     }
 
+    private static bool IsServerContinuityOlderThanLocalWorkspace(
+        IReadOnlyList<WorkspaceListItem> workspaces,
+        DesktopHomeCampaignServerPlane campaignServerPlane)
+    {
+        if (!workspaces.Any())
+        {
+            return false;
+        }
+
+        DateTimeOffset latestLocalWorkspaceUpdate = workspaces
+            .Select(static workspace => workspace.LastUpdatedUtc.ToUniversalTime())
+            .DefaultIfEmpty(DateTimeOffset.MinValue)
+            .Max();
+        return latestLocalWorkspaceUpdate > campaignServerPlane.GeneratedAtUtc.ToUniversalTime();
+    }
+
     private static async Task<DesktopHomePortableExchangePreview?> ReadPortableExchangePreviewAsync(IChummerClient client, string? campaignId)
     {
         if (string.IsNullOrWhiteSpace(campaignId) || client is not HttpChummerClient httpClient)
@@ -519,7 +548,7 @@ internal sealed class DesktopHomeWindow : Window
             return [];
         }
 
-        if (workspaces.Count == 0)
+        if (!HasWorkspaces(workspaces))
         {
             return selectedSuggestions
                 .Select(static suggestion => new DesktopBuildPathCandidate(suggestion, Preview: null))
@@ -617,7 +646,7 @@ internal sealed class DesktopHomeWindow : Window
         string runtimeSummary = string.IsNullOrWhiteSpace(_buildExplainProjection.RuntimeHealthSummary)
             ? ShellStatusTextFormatter.BuildActiveRuntimeSummary(null, ResolveFlagshipRulesetId())
             : _buildExplainProjection.RuntimeHealthSummary;
-        string continuity = _recentWorkspaces.Count == 0
+        string continuity = !HasWorkspaces(_recentWorkspaces)
             ? "Continuity: no recent dossier is pinned yet."
             : $"Continuity: {_recentWorkspaces.Count} recent dossiers; lead {FormatFlagshipWorkspace(_recentWorkspaces[0])}.";
         string watchout = _buildExplainProjection.Watchouts.FirstOrDefault() ?? "No extra flagship watchout is currently published.";
@@ -737,18 +766,45 @@ internal sealed class DesktopHomeWindow : Window
 
     private string BuildWorkspaceSummary()
     {
-        if (_recentWorkspaces.Count == 0)
+        if (!HasWorkspaces(_recentWorkspaces))
         {
-            return S("desktop.home.workspace_summary.empty");
+            return string.Join(
+                "\n",
+                new[]
+                {
+                    S("desktop.home.workspace_summary.empty"),
+                    BuildCampaignRestoreContinuitySummary(),
+                    BuildCampaignStaleStateVisibilitySummary(),
+                    BuildCampaignRestoreDecisionSummary(),
+                    BuildCampaignRestoreDecisionOrderSummary(),
+                    BuildCampaignConflictChoiceSummary(),
+                    BuildCampaignRestoreLocalAuthoritySummary(),
+                    BuildCampaignRestoreReplacementGuardSummary(),
+                    BuildCampaignRestoreSupportHandoffSummary()
+                });
         }
+
+        List<string> lines =
+        [
+            BuildCampaignRestoreContinuitySummary(),
+            BuildCampaignStaleStateVisibilitySummary(),
+            BuildCampaignRestoreDecisionSummary(),
+            BuildCampaignRestoreDecisionOrderSummary(),
+            BuildCampaignConflictChoiceSummary(),
+            BuildCampaignRestoreLocalAuthoritySummary(),
+            BuildCampaignRestoreReplacementGuardSummary(),
+            BuildCampaignRestoreSupportHandoffSummary()
+        ];
+
+        lines.AddRange(_recentWorkspaces.Select(workspace =>
+            RulesetUiDirectiveCatalog.BuildWorkspaceResumeSummary(
+                workspace.RulesetId,
+                workspace.Summary,
+                workspace.LastUpdatedUtc)));
 
         return string.Join(
             "\n",
-            _recentWorkspaces.Select(workspace =>
-                RulesetUiDirectiveCatalog.BuildWorkspaceResumeSummary(
-                    workspace.RulesetId,
-                    workspace.Summary,
-                    workspace.LastUpdatedUtc)));
+            lines);
     }
 
     private string BuildCampaignBody()
@@ -759,6 +815,14 @@ internal sealed class DesktopHomeWindow : Window
             _campaignProjection.Summary,
             _campaignProjection.RestoreSummary,
             _campaignProjection.DeviceRoleSummary,
+            BuildCampaignRestoreContinuitySummary(),
+            BuildCampaignStaleStateVisibilitySummary(),
+            BuildCampaignRestoreDecisionSummary(),
+            BuildCampaignRestoreDecisionOrderSummary(),
+            BuildCampaignRestoreLocalAuthoritySummary(),
+            BuildCampaignRestoreReplacementGuardSummary(),
+            BuildCampaignConflictChoiceSummary(),
+            BuildCampaignRestoreSupportHandoffSummary(),
             _campaignProjection.SupportClosureSummary
         ];
 
@@ -775,6 +839,71 @@ internal sealed class DesktopHomeWindow : Window
         return string.Join("\n", lines);
     }
 
+    private string BuildCampaignRestoreContinuitySummary()
+    {
+        if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
+        {
+            return "Restore choice: open the current campaign workspace, review devices/access, or use workspace support if the continuation does not match this install.";
+        }
+
+        if (_recentWorkspaces.Count > 0)
+        {
+            return "Restore choice: continue from the newest local workspace, review devices/access, or use workspace support before replacing local work.";
+        }
+
+        return DesktopInstallLinkingRuntime.IsClaimed(_installState)
+            ? "Restore choice: review devices/access to reconnect a workspace, or open install support if entitlement or stale-state posture is wrong."
+            : "Restore choice: link this install before restoring claimed workspace, entitlement, or continuation state.";
+    }
+
+    private string BuildCampaignStaleStateVisibilitySummary()
+    {
+        if (_campaignServerPlane is null)
+        {
+            return "Stale state: server continuity is unavailable, so the desktop home cockpit is showing the last local workspace list and claimed-install actions.";
+        }
+
+        if (IsServerContinuityOlderThanLocalWorkspace(_recentWorkspaces, _campaignServerPlane))
+        {
+            DateTimeOffset latestLocalWorkspaceUpdate = _recentWorkspaces
+                .Select(static workspace => workspace.LastUpdatedUtc.ToUniversalTime())
+                .DefaultIfEmpty(DateTimeOffset.MinValue)
+                .Max();
+            return $"Stale state: local workspace changed at {latestLocalWorkspaceUpdate:yyyy-MM-dd HH:mm} UTC after server continuity {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC; local workspace choices stay visible before any restore replaces desktop work.";
+        }
+
+        return $"Stale state: server continuity is current as of {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC; local workspace choices stay visible before any restore replaces desktop work.";
+    }
+
+    private string BuildCampaignConflictChoiceSummary()
+    {
+        if (_campaignProjection.Watchouts.Count == 0)
+        {
+            return $"{CampaignConflictChoiceOrder} No campaign conflicts are waiting.";
+        }
+
+        IEnumerable<string> watchoutLines = _campaignProjection.Watchouts
+            .Select(watchout => F("desktop.home.watchout", watchout));
+        return string.Join(
+            "\n",
+            new[] { CampaignConflictChoiceOrder }.Concat(watchoutLines));
+    }
+
+    private static string BuildCampaignRestoreDecisionSummary()
+        => PrimaryDesktopRouteDecisionGate;
+
+    private static string BuildCampaignRestoreDecisionOrderSummary()
+        => RestoreDecisionOrderSummary;
+
+    private static string BuildCampaignRestoreLocalAuthoritySummary()
+        => RestoreLocalAuthoritySummary;
+
+    private static string BuildCampaignRestoreReplacementGuardSummary()
+        => RestoreReplacementGuardSummary;
+
+    private static string BuildCampaignRestoreSupportHandoffSummary()
+        => RestoreSupportHandoffSummary;
+
     private string BuildSupportBody()
     {
         List<string> lines =
@@ -787,6 +916,8 @@ internal sealed class DesktopHomeWindow : Window
         {
             lines.Add(highlight);
         }
+
+        lines.Add(DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection));
 
         return string.Join("\n", lines);
     }
@@ -968,26 +1099,33 @@ internal sealed class DesktopHomeWindow : Window
 
     private IReadOnlyList<Button> CreateWorkspaceActions()
     {
-        if (_recentWorkspaces.Count == 0)
+        if (!HasWorkspaces(_recentWorkspaces))
         {
             return
             [
-                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true),
-                CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
+                DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                    ? CreateButton(S("desktop.home.button.open_campaign_followthrough"), OpenWorkspaceFollowThroughAsync, isPrimary: true)
+                    : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true),
+                _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+                    ? CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
+                    : CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
             ];
         }
 
+        WorkspaceListItem primaryWorkspace = ResolvePrimaryWorkspace() ?? _recentWorkspaces[0];
         string openWorkspaceLabel = RulesetUiDirectiveCatalog.BuildOpenWorkspaceActionLabel(
-            _recentWorkspaces[0].RulesetId,
+            primaryWorkspace.RulesetId,
             S("desktop.home.button.open_current_workspace"));
         string workspaceFollowThroughLabel = RulesetUiDirectiveCatalog.BuildWorkspaceFollowThroughActionLabel(
-            _recentWorkspaces[0].RulesetId,
+            primaryWorkspace.RulesetId,
             S("desktop.home.button.open_workspace_followthrough"));
-        string? nextActionPrefix = RulesetUiDirectiveCatalog.BuildNextActionPrefix(_recentWorkspaces[0].RulesetId);
+        string? nextActionPrefix = RulesetUiDirectiveCatalog.BuildNextActionPrefix(primaryWorkspace.RulesetId);
 
         return
         [
-            CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true),
+            !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+                ? CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenCampaignWorkspaceAsync, isPrimary: true)
+                : CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true),
             CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, workspaceFollowThroughLabel, nextActionPrefix), OpenWorkspaceFollowThroughAsync),
             CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
         ];
@@ -1024,8 +1162,8 @@ internal sealed class DesktopHomeWindow : Window
     }
 
     private Task OpenCurrentWorkspace()
-        => _recentWorkspaces.Count > 0
-           ? OpenWorkspaceInDesktopShellAsync(_recentWorkspaces[0].Id.Value)
+        => ResolvePrimaryWorkspace() is { } workspace
+           ? OpenWorkspaceInDesktopShellAsync(workspace.Id.Value)
            : Task.CompletedTask;
 
     private Task OpenCampaignWorkspaceAsync()
@@ -1075,7 +1213,34 @@ internal sealed class DesktopHomeWindow : Window
         => DesktopInstallLinkingRuntime.TryOpenSupportPortalForUpdate(_installState, _updateStatus);
 
     private Task OpenWorkspaceSupport()
-        => DesktopSupportWindow.ShowAsync(this, _installState.HeadId);
+    {
+        if (DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace()))
+        {
+            return Task.CompletedTask;
+        }
+
+        return DesktopSupportWindow.ShowAsync(this, _installState.HeadId);
+    }
+
+    private WorkspaceListItem? ResolveSupportWorkspace()
+    {
+        return ResolvePrimaryWorkspace();
+    }
+
+    private WorkspaceListItem? ResolvePrimaryWorkspace()
+    {
+        if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
+        {
+            WorkspaceListItem? leadWorkspace = _recentWorkspaces.FirstOrDefault(workspace =>
+                string.Equals(workspace.Id.Value, _campaignProjection.LeadWorkspaceId, StringComparison.Ordinal));
+            if (leadWorkspace is not null)
+            {
+                return leadWorkspace;
+            }
+        }
+
+        return _recentWorkspaces.FirstOrDefault();
+    }
 
     private static bool IsDownloadsRoute(string? href)
         => string.Equals(href?.Trim(), "/downloads", StringComparison.OrdinalIgnoreCase);
@@ -1112,9 +1277,16 @@ internal sealed class DesktopHomeWindow : Window
     }
 
     private Task OpenWorkspaceFollowThroughAsync()
-        => _recentWorkspaces.Count > 0
-            ? OpenCurrentWorkspace()
-            : DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId);
+        => ShouldRouteWorkspaceFollowThroughThroughCampaignWorkspace()
+            ? DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)
+            : _recentWorkspaces.Count > 0
+                ? OpenCurrentWorkspace()
+                : DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId);
+
+    private bool ShouldRouteWorkspaceFollowThroughThroughCampaignWorkspace()
+        => !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+           || _campaignServerPlane is not null
+           || _campaignProjection.Watchouts.Count > 0;
 
     private async Task OpenSettingsAsync()
     {
@@ -1166,6 +1338,7 @@ internal sealed class DesktopHomeWindow : Window
             string? leadCampaignId = ResolveLeadCampaignId(campaignSummary, campaignWorkspaceDigests);
             DesktopHomeCampaignServerPlane? campaignServerPlane = await ReadCampaignWorkspaceServerPlaneAsync(client, leadWorkspaceId).ConfigureAwait(true);
             DesktopHomePortableExchangePreview? portableExchange = await ReadPortableExchangePreviewAsync(client, leadCampaignId).ConfigureAwait(true);
+            _campaignServerPlane = campaignServerPlane;
             _campaignProjection = ReadCampaignProjection(campaignSummary, campaignWorkspaceDigests, campaignServerPlane, portableExchange);
             _supportProjection = await ReadSupportProjectionAsync(client, _installState).ConfigureAwait(true);
             _buildExplainProjection = await ReadBuildExplainProjectionAsync(client, _recentWorkspaces, campaignSummary).ConfigureAwait(true);

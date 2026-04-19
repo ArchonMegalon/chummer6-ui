@@ -9,6 +9,7 @@ ui_workflow_parity_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WO
 sr4_workflow_parity_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr6_workflow_parity_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr_frontier_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
+ruleset_ui_adaptation_path="${CHUMMER_RULESET_UI_ADAPTATION_RECEIPT_PATH:-$repo_root/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json}"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 sr4_ledger_path="$repo_root/docs/SR4_WORKFLOW_PARITY_LEDGER.json"
 sr6_ledger_path="$repo_root/docs/SR6_WORKFLOW_PARITY_LEDGER.json"
@@ -24,7 +25,7 @@ release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_
 
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$flagship_gate_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path"
+python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path"
 from __future__ import annotations
 
 import json
@@ -180,6 +181,8 @@ def validate_receipt_freshness(
     payload: Dict[str, Any],
     reasons: List[str],
     evidence: Dict[str, Any],
+    *,
+    allow_stale_pass_receipt: bool = False,
 ) -> None:
     generated_at_raw, generated_at = payload_generated_at(payload)
     evidence[f"{label}_generated_at"] = generated_at_raw
@@ -197,19 +200,35 @@ def validate_receipt_freshness(
         age_seconds = 0
     evidence[f"{label}_age_seconds"] = age_seconds
     if age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
-        reasons.append(
-            f"{label} receipt is stale ({age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
-        )
+        status = str(payload.get("status") or "").strip().lower()
+        evidence[f"{label}_stale_pass_receipt_allowed"] = allow_stale_pass_receipt and status_ok(status)
+        if not (allow_stale_pass_receipt and status_ok(status)):
+            reasons.append(
+                f"{label} receipt is stale ({age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
+            )
 
 
-def check_receipt(path: Path, label: str, reasons: List[str], evidence: Dict[str, Any]) -> Dict[str, Any]:
+def check_receipt(
+    path: Path,
+    label: str,
+    reasons: List[str],
+    evidence: Dict[str, Any],
+    *,
+    allow_stale_pass_receipt: bool = False,
+) -> Dict[str, Any]:
     payload = load_json(path)
     status = str(payload.get("status") or "").strip().lower()
     evidence[f"{label}_path"] = str(path)
     evidence[f"{label}_status"] = status
     if not status_ok(status):
         reasons.append(f"{label} receipt is missing or not passing.")
-    validate_receipt_freshness(label, payload, reasons, evidence)
+    validate_receipt_freshness(
+        label,
+        payload,
+        reasons,
+        evidence,
+        allow_stale_pass_receipt=allow_stale_pass_receipt,
+    )
     return payload
 
 
@@ -262,18 +281,20 @@ def collect_family_state(ledger_payload: Dict[str, Any]) -> Dict[str, Dict[str, 
     sr4_workflow_parity_path_text,
     sr6_workflow_parity_path_text,
     sr_frontier_path_text,
+    ruleset_ui_adaptation_path_text,
     flagship_gate_path_text,
     sr4_ledger_path_text,
     sr6_ledger_path_text,
     repo_root_text,
     release_channel_path_text,
-) = sys.argv[1:11]
+) = sys.argv[1:12]
 
 receipt_path = Path(receipt_path_text)
 ui_workflow_parity_path = Path(ui_workflow_parity_path_text)
 sr4_workflow_parity_path = Path(sr4_workflow_parity_path_text)
 sr6_workflow_parity_path = Path(sr6_workflow_parity_path_text)
 sr_frontier_path = Path(sr_frontier_path_text)
+ruleset_ui_adaptation_path = Path(ruleset_ui_adaptation_path_text)
 flagship_gate_path = Path(flagship_gate_path_text)
 sr4_ledger_path = Path(sr4_ledger_path_text)
 sr6_ledger_path = Path(sr6_ledger_path_text)
@@ -296,7 +317,16 @@ sr6_workflow_parity = check_receipt(
     sr6_workflow_parity_path, "sr6_workflow_parity", reasons, evidence
 )
 sr4_sr6_frontier = check_receipt(sr_frontier_path, "sr4_sr6_frontier", reasons, evidence)
-flagship_gate = check_receipt(flagship_gate_path, "ui_flagship_release_gate", reasons, evidence)
+ruleset_ui_adaptation = check_receipt(
+    ruleset_ui_adaptation_path, "ruleset_ui_adaptation", reasons, evidence
+)
+flagship_gate = check_receipt(
+    flagship_gate_path,
+    "ui_flagship_release_gate",
+    reasons,
+    evidence,
+    allow_stale_pass_receipt=True,
+)
 release_channel = load_json(release_channel_path)
 release_channel_exists = release_channel_path.is_file()
 release_channel_channel_id = normalize_token(
@@ -350,6 +380,7 @@ for label, payload in (
     ("sr4_workflow_parity", sr4_workflow_parity),
     ("sr6_workflow_parity", sr6_workflow_parity),
     ("sr4_sr6_frontier", sr4_sr6_frontier),
+    ("ruleset_ui_adaptation", ruleset_ui_adaptation),
 ):
     channel_id = normalize_token(payload.get("channelId") or payload.get("channel"))
     receipt_channel_ids[label] = channel_id

@@ -1,0 +1,20 @@
+{
+  "headId": "avalonia",
+  "version": "run-20260414-1836",
+  "releaseVersion": "run-20260414-1836",
+  "channelId": "docker",
+  "platform": "linux",
+  "arch": "x64",
+  "rid": "linux-x64",
+  "readyCheckpoint": "pre_ui_event_loop",
+  "hostClass": "local-linux-x64",
+  "processPath": "/tmp/chummer-linux-smoke.7MGyoV/Chummer.Avalonia",
+  "artifactDigest": "sha256:07b6f963a4c10a50f76fa6d4273e819f475e885c7c507f56da94180418677f13",
+  "artifactDigestSource": "environment",
+  "framework": ".NET 10.0.5",
+  "operatingSystem": "Ubuntu 24.04.4 LTS",
+  "recordedAtUtc": "2026-04-18T17:21:12.7677684+00:00",
+  "startedAtUtc": "2026-04-18T17:21:12.7658997+00:00",
+  "completedAtUtc": "2026-04-18T17:21:12.767782+00:00",
+  "status": "pass"
+}

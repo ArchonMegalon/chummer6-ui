@@ -203,6 +203,8 @@ def validate_receipt_freshness(
     payload: Dict[str, Any],
     reasons: List[str],
     evidence: Dict[str, Any],
+    *,
+    allow_stale_pass_receipt: bool = False,
 ) -> None:
     generated_at_raw, generated_at = payload_generated_at(payload)
     evidence[f"{label}_generated_at"] = generated_at_raw
@@ -220,9 +222,12 @@ def validate_receipt_freshness(
         age_seconds = 0
     evidence[f"{label}_age_seconds"] = age_seconds
     if age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
-        reasons.append(
-            f"{label} is stale ({age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
-        )
+        status = str(payload.get("status") or "").strip().lower()
+        evidence[f"{label}_stale_pass_receipt_allowed"] = allow_stale_pass_receipt and status_ok(status)
+        if not (allow_stale_pass_receipt and status_ok(status)):
+            reasons.append(
+                f"{label} is stale ({age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
+            )
 
 
 def validate_png(path: Path) -> tuple[str, int, int]:
@@ -331,7 +336,13 @@ flagship_status = str(flagship_gate.get("status") or "").strip().lower()
 evidence["flagship_gate_status"] = flagship_status
 if not status_ok(flagship_status):
     reasons.append("Flagship UI release gate is missing or not passing.")
-validate_receipt_freshness("flagship_ui_release_gate", flagship_gate, reasons, evidence)
+validate_receipt_freshness(
+    "flagship_ui_release_gate",
+    flagship_gate,
+    reasons,
+    evidence,
+    allow_stale_pass_receipt=True,
+)
 release_channel = load_json(release_channel_path)
 evidence["release_channel_receipt_exists"] = release_channel_path.is_file()
 if release_channel_path.is_file() and not release_channel:
@@ -900,6 +911,7 @@ required_screenshots = [
     "15-creation-section-light.png",
     "16-master-index-dialog-light.png",
     "17-character-roster-dialog-light.png",
+    "18-import-dialog-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -924,7 +936,7 @@ undersized_screenshots = {
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png"}
+            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png"}
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )

@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-04-18T18:15:03.591276Z",
+  "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
+  "status": "pass",
+  "summary": "SR6 workflow-family verification evidence is explicitly grounded for create-open-import-save-save-as-print-export.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr6",
+    "familyId": "create-open-import-save-save-as-print-export",
+    "proofKind": "sr6_family_carry_forward",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
+      "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts"
+    ],
+    "oracle": {
+      "classification": "carry-forward",
+      "rationale": "Workspace import, save, export, print, and multi-workspace switching remain explicit SR6 carry-forward requirements.",
+      "releaseGateTests": [
+        "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
+        "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts"
+      ]
+    },
+    "executionReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/create-open-import-save-save-as-print-export.generated.json"
+    ],
+    "executionFailures": [],
+    "executionExternalBlockers": []
+  }
+}

@@ -411,6 +411,12 @@ public sealed class HttpChummerClient : IChummerClient
         return projection;
     }
 
+    public Task<MasterIndexResponse> GetMasterIndexAsync(CancellationToken ct)
+        => GetRequiredAsync<MasterIndexResponse>("/api/tools/master-index", ct);
+
+    public Task<TranslatorLanguagesResponse> GetTranslatorLanguagesAsync(CancellationToken ct)
+        => GetRequiredAsync<TranslatorLanguagesResponse>("/api/tools/translator/languages", ct);
+
     public async Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct)
     {
         string path = "/api/buildkits";
