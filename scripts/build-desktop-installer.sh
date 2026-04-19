@@ -9,10 +9,10 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Example:
 # bash scripts/build-desktop-installer.sh out/avalonia/osx-arm64 avalonia osx-arm64 Chummer.Avalonia
 #
-# macOS packaging requires a .icns icon source:
-# - set CHUMMER_MACOS_ICON_SOURCE to an explicit .icns file, or
-# - place chummer.icns in the publish directory, or
-# - place Chummer/chummer.icns in the repository.
+# macOS packaging resolves the icon automatically:
+# - use CHUMMER_MACOS_ICON_SOURCE when you want to override it with a .icns or .ico file
+# - otherwise the script uses chummer.icns when present
+# - otherwise it generates chummer.icns from an existing chummer.ico in the publish directory or Chummer root
 #
 # Local preflight (recommended on macOS):
 # bash scripts/preflight-macos-packaging.sh out/avalonia/osx-arm64 osx-arm64 avalonia Chummer.Avalonia
@@ -83,31 +83,11 @@ resolve_demo_character_source() {
   return 1
 }
 
-resolve_macos_icon_source() {
-  local configured="${CHUMMER_MACOS_ICON_SOURCE:-}"
-  local candidates=(
-    "$configured"
-    "$PUBLISH_DIR/chummer.icns"
-    "$REPO_ROOT/Chummer/chummer.icns"
-  )
-
-  local candidate
-  for candidate in "${candidates[@]}"; do
-    if [[ -f "$candidate" ]]; then
-      printf '%s' "$candidate"
-      return 0
-    fi
-  done
-
-  return 1
-}
-
 preflight_macos_packaging_requirements() {
   local icon_source
-  icon_source="$(resolve_macos_icon_source || true)"
+  icon_source="$("$REPO_ROOT/scripts/ensure-macos-icon.sh" "$PUBLISH_DIR" "$REPO_ROOT" || true)"
   if [[ -z "$icon_source" ]]; then
-    echo "macOS packaging preflight: chummer.icns not found in publish or Chummer paths." >&2
-    echo "Set CHUMMER_MACOS_ICON_SOURCE or place chummer.icns in $PUBLISH_DIR or $REPO_ROOT/Chummer/." >&2
+    echo "macOS packaging preflight: unable to resolve chummer.icns from publish or Chummer paths." >&2
     return 1
   fi
   if [[ "$icon_source" != *.icns ]]; then
