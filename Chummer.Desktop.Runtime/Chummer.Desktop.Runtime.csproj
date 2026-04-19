@@ -31,5 +31,11 @@
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj"
                       Condition="Exists('..\..\chummer-core-engine\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Sr5\Chummer.Rulesets.Sr5.csproj"
+                      Condition="Exists('..\..\chummer-core-engine\Chummer.Rulesets.Sr5\Chummer.Rulesets.Sr5.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Sr6\Chummer.Rulesets.Sr6.csproj"
+                      Condition="Exists('..\..\chummer-core-engine\Chummer.Rulesets.Sr6\Chummer.Rulesets.Sr6.csproj')"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
   </ItemGroup>
 </Project>
