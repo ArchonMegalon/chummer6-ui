@@ -1,0 +1,171 @@
+{
+  "contract_name": "chummer6-ui.linux_desktop_exit_gate",
+  "generated_at": "2026-04-16T15:55:17Z",
+  "status": "failed",
+  "reason": "stage build_lock failed",
+  "reasons": [
+    "stage build_lock failed"
+  ],
+  "stage": "build_lock",
+  "exit_code": 127,
+  "run_root": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA",
+  "head": {
+    "app_key": "avalonia",
+    "project_path": "Chummer.Avalonia/Chummer.Avalonia.csproj",
+    "launch_target": "Chummer.Avalonia",
+    "platform": "linux",
+    "rid": "linux-x64",
+    "version": "run-20260414-1836",
+    "channel": "docker",
+    "ready_checkpoint": "pre_ui_event_loop"
+  },
+  "channelId": "docker",
+  "releaseVersion": "run-20260414-1836",
+  "checks": {
+    "release_channel_id": "docker",
+    "release_channel_version": "run-20260414-1836",
+    "release_channel_linux_artifact": {
+      "artifactId": "avalonia-linux-x64-installer",
+      "head": "avalonia",
+      "rid": "linux-x64",
+      "platform": "linux",
+      "arch": "x64",
+      "kind": "installer",
+      "fileName": "chummer-avalonia-linux-x64-installer.deb",
+      "downloadUrl": "/downloads/files/chummer-avalonia-linux-x64-installer.deb",
+      "sha256": "4544ef844262d3381bc424105c4d67e95fa6f3c2541c1c79b00d0b4666a6198c",
+      "sizeBytes": 31796460,
+      "platformLabel": "Avalonia Desktop Linux X64 Installer",
+      "updateFeedUrl": null,
+      "embeddedRuntimeBundleHeadId": null,
+      "compatibilityState": "compatible",
+      "installAccessClass": "open_public",
+      "channelId": "docker",
+      "channel": "docker",
+      "version": "run-20260414-1836",
+      "releaseVersion": "run-20260414-1836",
+      "generated_at": "2026-04-16T15:51:59Z",
+      "generatedAt": "2026-04-16T15:51:59Z",
+      "id": "avalonia-linux-x64-installer"
+    },
+    "startup_smoke_receipt_found": false,
+    "startup_smoke_receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+    "startup_smoke_external_blocker": ""
+  },
+  "build": {
+    "output_base_root": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate",
+    "publish_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/publish/avalonia-linux-x64",
+    "dist_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/dist",
+    "binary_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/publish/avalonia-linux-x64/Chummer.Avalonia",
+    "binary_exists": false,
+    "binary_sha256": "",
+    "binary_bytes": 0,
+    "binary_executable": false,
+    "publish_exists": true,
+    "self_contained": true,
+    "single_file": true,
+    "primary_package_kind": "deb",
+    "fallback_package_kind": "archive",
+    "archive_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/dist/chummer-avalonia-linux-x64.tar.gz",
+    "archive_exists": false,
+    "archive_sha256": "",
+    "archive_bytes": 0,
+    "installer_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/dist/chummer-avalonia-linux-x64-installer.deb",
+    "installer_exists": false,
+    "installer_sha256": "",
+    "installer_bytes": 0
+  },
+  "release_channel": {
+    "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "local_desktop_files_root": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
+    "use_promoted_installer": true,
+    "installer_smoke_artifact_path": "",
+    "promoted_installer_path": "",
+    "host_operating_system": "Linux",
+    "host_operating_system_normalized": "linux",
+    "host_supports_linux_startup_smoke": true,
+    "startup_smoke_external_blocker": ""
+  },
+  "startup_smoke": {
+    "primary": {
+      "package_kind": "deb",
+      "artifact_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/dist/chummer-avalonia-linux-x64-installer.deb",
+      "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+      "status": "not_built",
+      "receipt": null
+    },
+    "fallback": {
+      "package_kind": "archive",
+      "artifact_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/dist/chummer-avalonia-linux-x64.tar.gz",
+      "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/startup-smoke-archive/startup-smoke-avalonia-linux-x64.receipt.json",
+      "status": "not_built",
+      "receipt": null
+    }
+  },
+  "unit_tests": {
+    "project_path": "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
+    "framework": "net10.0",
+    "results_directory": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/test-results",
+    "trx_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/test-results/desktop-runtime-tests.trx",
+    "status": "missing",
+    "summary": {
+      "total": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    "assembly_name": "Chummer.Desktop.Runtime.Tests.dll"
+  },
+  "git": {
+    "repo_root": "/docker/chummercomplete/chummer-presentation",
+    "available": true,
+    "head": "808c9e1e8e58c142cd5165d8cd050c72e8fd98a2",
+    "tracked_diff_sha256": "de148e18452d175d5de693e5a4d565a5d9e179aa8d9c473038ec7081543a7629",
+    "tracked_diff_line_count": 403,
+    "start": {
+      "repo_root": "/docker/chummercomplete/chummer-presentation",
+      "available": true,
+      "head": "808c9e1e8e58c142cd5165d8cd050c72e8fd98a2",
+      "tracked_diff_sha256": "76652fb6e6dfb21b7569b64d1f8b2b3e819cd9168f39057300166f220967e6d2",
+      "tracked_diff_line_count": 466
+    },
+    "finish": {
+      "repo_root": "/docker/chummercomplete/chummer-presentation",
+      "available": true,
+      "head": "808c9e1e8e58c142cd5165d8cd050c72e8fd98a2",
+      "tracked_diff_sha256": "0ad4cfd837c0396cafc317d6e53de5f24cb65532c6a9d5433f9f8e22ba971c78",
+      "tracked_diff_line_count": 466
+    },
+    "identity_stable": false
+  },
+  "source_snapshot": {
+    "mode": "filesystem_copy",
+    "repo_root": "/docker/chummercomplete/chummer-presentation",
+    "snapshot_root": "/docker/chummercomplete/.linux-desktop-exit-gate-source.DAGPyT",
+    "entries_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.7ZXWGA/source-snapshot.entries.txt",
+    "entry_count": 466,
+    "worktree_sha256": "76652fb6e6dfb21b7569b64d1f8b2b3e819cd9168f39057300166f220967e6d2",
+    "finish_worktree_sha256": "76652fb6e6dfb21b7569b64d1f8b2b3e819cd9168f39057300166f220967e6d2",
+    "finish_entry_count": 466,
+    "ignored_extra_entry_count": 0,
+    "ignored_extra_entries_sample": [],
+    "identity_stable": true
+  },
+  "current_git_available": true,
+  "current_git_head": "808c9e1e8e58c142cd5165d8cd050c72e8fd98a2",
+  "current_tracked_diff_sha256": "de148e18452d175d5de693e5a4d565a5d9e179aa8d9c473038ec7081543a7629",
+  "proof_git_available": true,
+  "proof_git_head": "808c9e1e8e58c142cd5165d8cd050c72e8fd98a2",
+  "proof_git_start_head": "808c9e1e8e58c142cd5165d8cd050c72e8fd98a2",
+  "proof_git_finish_head": "808c9e1e8e58c142cd5165d8cd050c72e8fd98a2",
+  "proof_git_start_tracked_diff_sha256": "76652fb6e6dfb21b7569b64d1f8b2b3e819cd9168f39057300166f220967e6d2",
+  "proof_git_finish_tracked_diff_sha256": "0ad4cfd837c0396cafc317d6e53de5f24cb65532c6a9d5433f9f8e22ba971c78",
+  "proof_git_identity_stable": false,
+  "proof_git_head_matches_current": true,
+  "proof_tracked_diff_sha256": "0ad4cfd837c0396cafc317d6e53de5f24cb65532c6a9d5433f9f8e22ba971c78",
+  "source_snapshot_entry_count": 466,
+  "source_snapshot_finish_entry_count": 466,
+  "source_snapshot_worktree_sha256": "76652fb6e6dfb21b7569b64d1f8b2b3e819cd9168f39057300166f220967e6d2",
+  "source_snapshot_finish_worktree_sha256": "76652fb6e6dfb21b7569b64d1f8b2b3e819cd9168f39057300166f220967e6d2",
+  "source_snapshot_identity_stable": true
+}

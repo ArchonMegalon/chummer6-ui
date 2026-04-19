@@ -1,0 +1,95 @@
+{
+  "contractName": "chummer6-ui.avalonia_primary_route_proof",
+  "generatedAt": "2026-04-17T14:12:14Z",
+  "status": "pass",
+  "primaryHead": "avalonia",
+  "requiredPlatforms": [
+    "linux",
+    "macos",
+    "windows"
+  ],
+  "fallbackHeadsExcludedFromPrimaryProof": [
+    "blazor-desktop"
+  ],
+  "fallbackInstallArtifactCount": 1,
+  "fallbackReceiptCount": 1,
+  "platformProof": [
+    {
+      "platform": "linux",
+      "head": "avalonia",
+      "rid": "linux-x64",
+      "artifactId": "avalonia-linux-x64-installer",
+      "artifactSha256": "4544ef844262d3381bc424105c4d67e95fa6f3c2541c1c79b00d0b4666a6198c",
+      "status": "pass",
+      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
+      "fallbackReceiptsAccepted": false,
+      "reason": ""
+    },
+    {
+      "platform": "macos",
+      "head": "avalonia",
+      "rid": "osx-arm64",
+      "artifactId": "avalonia-osx-arm64-installer",
+      "artifactSha256": "424b3216afedf86347494eea985cc1e7ceca7cb8cbf7aff04a475456a15973f4",
+      "status": "pass",
+      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "fallbackReceiptsAccepted": false,
+      "reason": ""
+    },
+    {
+      "platform": "windows",
+      "head": "avalonia",
+      "rid": "win-x64",
+      "artifactId": "avalonia-win-x64-installer",
+      "artifactSha256": "cb3493c1113c23b5e496dfe8a1e6de9afc43c802d7da865adc5255497341e5c4",
+      "status": "pass",
+      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "fallbackReceiptsAccepted": false,
+      "reason": ""
+    }
+  ],
+  "routeTruthProof": [
+    {
+      "platform": "linux",
+      "head": "avalonia",
+      "rid": "linux-x64",
+      "tupleId": "avalonia:linux:linux-x64",
+      "status": "pass",
+      "routeRole": "primary",
+      "promotionState": "promoted",
+      "parityPosture": "flagship_primary",
+      "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
+      "fallbackAcceptedAsPrimary": false,
+      "reason": ""
+    },
+    {
+      "platform": "macos",
+      "head": "avalonia",
+      "rid": "osx-arm64",
+      "tupleId": "avalonia:macos:osx-arm64",
+      "status": "pass",
+      "routeRole": "primary",
+      "promotionState": "promoted",
+      "parityPosture": "flagship_primary",
+      "publicInstallRoute": "/downloads/install/avalonia-osx-arm64-installer",
+      "fallbackAcceptedAsPrimary": false,
+      "reason": ""
+    },
+    {
+      "platform": "windows",
+      "head": "avalonia",
+      "rid": "win-x64",
+      "tupleId": "avalonia:windows:win-x64",
+      "status": "pass",
+      "routeRole": "primary",
+      "promotionState": "promoted",
+      "parityPosture": "flagship_primary",
+      "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
+      "fallbackAcceptedAsPrimary": false,
+      "reason": ""
+    }
+  ],
+  "reasons": [],
+  "blockingFindings": [],
+  "blockingFindingsCount": 0
+}

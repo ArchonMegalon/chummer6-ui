@@ -21,14 +21,14 @@
           <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#F7F4EC" />
           <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#0A246A" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#0A246A" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#1C4A2D" />
           <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#D4D0C8" />
           <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#F7F4EC" />
           <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#111111" />
           <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#316AC5" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#D4D0C8" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#0A246A" />
           <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#9A6700" />
@@ -169,7 +169,7 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Padding" Value="5,0" />
+      <Setter Property="Padding" Value="5,1" />
       <Setter Property="MinHeight" Value="22" />
       <Setter Property="CornerRadius" Value="0" />
     </Style>
@@ -229,7 +229,7 @@
       <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="ListBoxItem">
-      <Setter Property="Padding" Value="2,1" />
+      <Setter Property="Padding" Value="3,1" />
       <Setter Property="Margin" Value="0" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />

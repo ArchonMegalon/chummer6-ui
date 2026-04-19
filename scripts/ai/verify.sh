@@ -14,13 +14,13 @@ if [ "${CHUMMER_VERIFY_CROSS_REPO_BUILDS:-0}" = "1" ]; then
   echo "[verify] running opt-in cross-repo contract builds..."
 
   if [ -f "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" ]; then
-    dotnet build "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" --nologo -m:1 >/dev/null
+    bash "$repo_root/scripts/ai/with-package-plane.sh" build "$repo_root/../chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj" --nologo -m:1 >/dev/null
   else
     echo "[verify] WARN: skipping hub-registry contracts build (sibling repo not present)."
   fi
 
   if [ -f "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" ]; then
-    dotnet build "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" --nologo -m:1 >/dev/null
+    bash "$repo_root/scripts/ai/with-package-plane.sh" build "$repo_root/../chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj" --nologo -m:1 >/dev/null
   else
     echo "[verify] WARN: skipping run-services contracts build (sibling repo not present)."
   fi
@@ -144,7 +144,7 @@ if ! rg -n '^# Compatibility Cargo$|`Chummer/`|`ChummerDataViewer/`|`TextblockCo
   exit 12
 fi
 
-if ! rg -n 'b3-build-lab-check\.sh|b10-contact-network-check\.sh|b9-campaign-journal-check\.sh|b8-runtime-inspector-check\.sh|b12-generated-asset-dispatch-check\.sh|b11-npc-persona-studio-check\.sh|b4-gm-board-spider-feed-check\.sh|b13-accessibility-signoff-check\.sh|b14-flagship-ui-release-gate\.sh|materialize-desktop-executable-exit-gate\.sh|b7-browser-isolation-check\.sh|b2-browse-virtualization-check\.sh|RulesetExplainRenderer\.cs' \
+if ! rg -n 'b3-build-lab-check\.sh|b10-contact-network-check\.sh|b9-campaign-journal-check\.sh|b8-runtime-inspector-check\.sh|b12-generated-asset-dispatch-check\.sh|b11-npc-persona-studio-check\.sh|b4-gm-board-spider-feed-check\.sh|b13-accessibility-signoff-check\.sh|b14-flagship-ui-release-gate\.sh|chummer5a-screenshot-review-gate\.sh|classic-dense-workbench-posture-gate\.sh|materialize-desktop-executable-exit-gate\.sh|b7-browser-isolation-check\.sh|b2-browse-virtualization-check\.sh|RulesetExplainRenderer\.cs' \
   docs/WORKBENCH_RELEASE_SIGNOFF.md >/dev/null; then
   echo "[verify] FAIL: workbench release signoff must keep E0/F0 evidence explicit." >&2
   exit 13
@@ -156,10 +156,24 @@ if ! rg -n 'b15-localization-release-gate\.sh' docs/WORKBENCH_RELEASE_SIGNOFF.md
 fi
 
 echo "[verify] checking B13 accessibility signoff guard..."
-CHUMMER_B13_TESTS_REQUIRED=1 bash scripts/ai/milestones/b13-accessibility-signoff-check.sh
+export CHUMMER_B13_TESTS_REQUIRED=1
+bash scripts/ai/milestones/b13-accessibility-signoff-check.sh
+unset CHUMMER_B13_TESTS_REQUIRED
 
 echo "[verify] checking B14 flagship UI release gate..."
 bash scripts/ai/milestones/b14-flagship-ui-release-gate.sh
+
+echo "[verify] checking classic dense workbench posture gate..."
+bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh
+
+echo "[verify] checking veteran task-time evidence gate..."
+bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh
+
+echo "[verify] checking Chummer5a screenshot review gate..."
+bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh
+
+echo "[verify] checking dense workbench recovery gate..."
+bash scripts/ai/milestones/dense-workbench-recovery-gate.sh
 
 echo "[verify] checking W1 desktop executable exit gate..."
 bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh
@@ -196,6 +210,12 @@ if not isinstance(blocking_findings_count, int) or blocking_findings_count != le
 if not isinstance(blocking_findings_count_alias, int) or blocking_findings_count_alias != len(reasons):
     raise SystemExit("verify gate failed: desktop executable gate payload blocking_findings_count does not match reasons count.")
 PY
+
+restore_desktop_executable_exit_gate_receipt() {
+  CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+    bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh >/dev/null 2>&1 || true
+}
+trap restore_desktop_executable_exit_gate_receipt EXIT
 
 echo "[verify] checking W1 desktop executable gate fail-close mutation for unexpected desktopTupleCoverage keys..."
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
@@ -904,6 +924,21 @@ if ! rg -F "Release channel desktopTupleCoverage is missing promotedPlatformHead
 fi
 
 rm -f "$missing_promoted_platform_heads_mutation_release_channel" "$missing_promoted_platform_heads_mutation_output"
+
+restore_desktop_executable_exit_gate_receipt
+trap - EXIT
+
+echo "[verify] checking next-90 M101 independent Avalonia release-train guard..."
+bash scripts/ai/milestones/next90-m101-ui-release-train-check.sh
+
+echo "[verify] checking next-90 M103 Chummer5a veteran certification guard..."
+bash scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh
+
+echo "[verify] checking next-90 M104 desktop explain receipt guard..."
+bash scripts/ai/milestones/next90-m104-ui-explain-receipts-check.sh
+
+echo "[verify] checking next-90 M105 restore-continuity and conflict-safe desktop UX guard..."
+bash scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh
 
 echo "[verify] checking B15 localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh

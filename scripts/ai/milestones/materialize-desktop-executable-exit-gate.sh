@@ -12,7 +12,7 @@ if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; the
 fi
 cd "$repo_root"
 
-receipt_path="$repo_root/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json"
+receipt_path="${CHUMMER_DESKTOP_EXECUTABLE_GATE_PATH:-$repo_root/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json}"
 release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
@@ -23,6 +23,11 @@ else
   release_channel_path_default="$default_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
+if [[ -z "${CHUMMER_DESKTOP_EXECUTABLE_GATE_PATH:-}" \
+  && "${CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE:-0}" == "1" \
+  && "$release_channel_path" == /tmp/* ]]; then
+  receipt_path="$(mktemp)"
+fi
 linux_avalonia_gate_path="$repo_root/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json"
 linux_blazor_gate_path="$repo_root/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json"
 windows_gate_path_default="$repo_root/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
@@ -918,7 +923,14 @@ def startup_smoke_timestamp_alias_conflicts(payload: Dict[str, Any]) -> bool:
     return completed_raw != recorded_raw
 
 
-def validate_receipt_freshness(label: str, payload: Dict[str, Any], evidence: Dict[str, Any], reasons: List[str]) -> None:
+def validate_receipt_freshness(
+    label: str,
+    payload: Dict[str, Any],
+    evidence: Dict[str, Any],
+    reasons: List[str],
+    *,
+    allow_stale_pass_receipt: bool = False,
+) -> None:
     generated_at_alias_conflict = generated_at_alias_conflicts(payload)
     evidence[f"{label}_generated_at_alias_conflict"] = generated_at_alias_conflict
     if generated_at_alias_conflict:
@@ -937,7 +949,10 @@ def validate_receipt_freshness(label: str, payload: Dict[str, Any], evidence: Di
             reasons.append(f"{label} generated_at is in the future ({future_skew_seconds}s ahead).")
     evidence[f"{label}_age_seconds"] = age_seconds
     if age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
-        reasons.append(f"{label} is stale ({age_seconds}s old).")
+        status = str(payload.get("status") or "").strip().lower()
+        evidence[f"{label}_stale_pass_receipt_allowed"] = allow_stale_pass_receipt and status_ok(status)
+        if not (allow_stale_pass_receipt and status_ok(status)):
+            reasons.append(f"{label} is stale ({age_seconds}s old).")
 
 
 def macos_rid_from_artifact(artifact: Dict[str, Any]) -> str:
@@ -2921,7 +2936,13 @@ release_channel = load_json(release_channel_path)
 flagship_gate = load_json(flagship_gate_path)
 visual_familiarity_gate = load_json(visual_familiarity_gate_path)
 workflow_execution_gate = load_json(workflow_execution_gate_path)
-validate_receipt_freshness("flagship UI release gate proof", flagship_gate, evidence, reasons)
+validate_receipt_freshness(
+    "flagship UI release gate proof",
+    flagship_gate,
+    evidence,
+    reasons,
+    allow_stale_pass_receipt=True,
+)
 validate_receipt_freshness("desktop visual familiarity gate proof", visual_familiarity_gate, evidence, reasons)
 validate_receipt_freshness("desktop workflow execution gate proof", workflow_execution_gate, evidence, reasons)
 

@@ -1,0 +1,161 @@
+{
+  "generatedAt": "2026-04-18T18:16:17.600831Z",
+  "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
+  "channelId": "docker",
+  "releaseVersion": "run-20260414-1836",
+  "status": "pass",
+  "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts.",
+  "reasons": [],
+  "evidence": {
+    "proof_freshness_max_age_seconds": 86400,
+    "proof_freshness_max_future_skew_seconds": 300,
+    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "chummer5a_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "chummer5a_workflow_parity_status": "pass",
+    "chummer5a_workflow_parity_generated_at": "2026-04-18T18:15:03.801567Z",
+    "chummer5a_workflow_parity_age_seconds": 73,
+    "sr4_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr4_workflow_parity_status": "pass",
+    "sr4_workflow_parity_generated_at": "2026-04-18T18:14:34.397867Z",
+    "sr4_workflow_parity_age_seconds": 103,
+    "sr6_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr6_workflow_parity_status": "pass",
+    "sr6_workflow_parity_generated_at": "2026-04-18T18:15:03.686438Z",
+    "sr6_workflow_parity_age_seconds": 73,
+    "sr4_sr6_frontier_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
+    "sr4_sr6_frontier_status": "pass",
+    "sr4_sr6_frontier_generated_at": "2026-04-18T18:16:11.332168Z",
+    "sr4_sr6_frontier_age_seconds": 6,
+    "ruleset_ui_adaptation_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
+    "ruleset_ui_adaptation_status": "pass",
+    "ruleset_ui_adaptation_generated_at": "2026-04-18T18:16:11.298298Z",
+    "ruleset_ui_adaptation_age_seconds": 6,
+    "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "ui_flagship_release_gate_status": "pass",
+    "ui_flagship_release_gate_generated_at": "2026-04-18T18:16:17.509484Z",
+    "ui_flagship_release_gate_age_seconds": 0,
+    "release_channel_receipt_exists": true,
+    "release_channel_channel_id": "docker",
+    "release_channel_version": "run-20260414-1836",
+    "release_channel_generated_at": "2026-04-18T17:29:29Z",
+    "release_channel_age_seconds": 2808,
+    "workflow_parity_receipt_channel_ids": {
+      "chummer5a_workflow_parity": "docker",
+      "sr4_workflow_parity": "docker",
+      "sr6_workflow_parity": "docker",
+      "sr4_sr6_frontier": "docker",
+      "ruleset_ui_adaptation": "docker"
+    },
+    "flagship_gate.headProofs.status_normalized": {
+      "avalonia": "pass",
+      "blazor-desktop": "pass"
+    },
+    "flagship_gate.headProofs.status_malformed_entries": [],
+    "flagship_gate.headProofs.status_non_canonical_keys": [],
+    "flagship_gate.headProofs.status_duplicate_normalized_keys": [],
+    "flagship_required_desktop_heads": [
+      "avalonia",
+      "blazor-desktop"
+    ],
+    "canonical_required_desktop_heads": [
+      "avalonia"
+    ],
+    "flagship_missing_canonical_required_desktop_heads": [],
+    "flagship_head_proof_statuses": {
+      "avalonia": "pass",
+      "blazor-desktop": "pass"
+    },
+    "required_head_contract_markers": {
+      "avalonia": [
+        "status",
+        "visualReview",
+        "themeReadabilityContrast",
+        "bundledDemoRunner",
+        "releaseLifecycle",
+        "requiredRuntimeBackedTests",
+        "requiredLifecycleTests",
+        "sourceTestFile",
+        "testSuites"
+      ],
+      "blazor-desktop": [
+        "status",
+        "shellChrome",
+        "commandSurface",
+        "dialogSurface",
+        "journeyPanels",
+        "releaseLifecycle",
+        "requiredShellTests",
+        "requiredLifecycleTests",
+        "sourceTestFile",
+        "testSuites"
+      ]
+    },
+    "flagship_head_contract_marker_statuses": {
+      "avalonia": {
+        "status": "pass",
+        "visualReview": "pass",
+        "themeReadabilityContrast": "pass",
+        "bundledDemoRunner": "pass",
+        "releaseLifecycle": "pass",
+        "requiredRuntimeBackedTests": "pass",
+        "requiredLifecycleTests": "pass",
+        "sourceTestFile": "pass",
+        "testSuites": "pass"
+      },
+      "blazor-desktop": {
+        "status": "pass",
+        "shellChrome": "pass",
+        "commandSurface": "pass",
+        "dialogSurface": "pass",
+        "journeyPanels": "pass",
+        "releaseLifecycle": "pass",
+        "requiredShellTests": "pass",
+        "requiredLifecycleTests": "pass",
+        "sourceTestFile": "pass",
+        "testSuites": "pass"
+      }
+    },
+    "flagship_head_missing_contract_markers": {
+      "avalonia": [],
+      "blazor-desktop": []
+    },
+    "flagship_head_source_test_file_paths": {
+      "avalonia": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "blazor-desktop": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
+    },
+    "flagship_head_source_test_file_exists": {
+      "avalonia": true,
+      "blazor-desktop": true
+    },
+    "flagship_head_source_test_file_within_repo_root": {
+      "avalonia": true,
+      "blazor-desktop": true
+    },
+    "flagship_missing_or_not_ready_desktop_heads": [],
+    "workflow_family_receipt_count_checked": 60,
+    "workflow_family_missing_receipts": [],
+    "workflow_family_failing_receipts": [],
+    "workflow_family_failing_receipts_external": [],
+    "workflow_execution_receipt_count_checked": 20,
+    "workflow_execution_missing_receipts": [],
+    "workflow_execution_failing_receipts": [],
+    "workflow_execution_failing_receipts_external": [],
+    "workflow_execution_weak_receipts": [],
+    "legacy_execution_receipt_paths": [],
+    "required_workflow_family_ids": [
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+      "attributes-skills-skill-groups-specializations-knowledge-languages",
+      "create-open-import-save-save-as-print-export",
+      "cyberware-bioware-modular-hierarchies-nested-plugins",
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+      "improvements-explain-result-parity",
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+      "metatype-priorities-karma-entry",
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+      "recovery-reload-migration-roundtrips"
+    ],
+    "missing_required_workflow_family_ids": {},
+    "not_ready_required_workflow_family_ids": {},
+    "missing_required_workflow_family_audit_tests": {}
+  }
+}

@@ -6,11 +6,10 @@ SCRIPT_DIR="$(cd -L "$(dirname "${BASH_SOURCE[0]}")" && pwd -L)"
 REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
 REPO_ROOT="$REPO_ROOT_PHYSICAL"
-REPO_ROOT_ALIAS=""
 if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
   ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
   if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
-    REPO_ROOT_ALIAS="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
   fi
 fi
 WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd -P)"

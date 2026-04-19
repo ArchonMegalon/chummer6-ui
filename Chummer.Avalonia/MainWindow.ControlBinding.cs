@@ -30,6 +30,8 @@ internal static class MainWindowControlBinder
         EventHandler onReportIssueRequested,
         EventHandler onSettingsRequested,
         EventHandler onLoadDemoRunnerRequested,
+        EventHandler onKeepLocalWorkRequested,
+        EventHandler onWorkspaceSupportRequested,
         EventHandler<string> onMenuSelected,
         EventHandler<string> onWorkspaceSelected,
         EventHandler<string> onNavigationTabSelected,
@@ -57,6 +59,10 @@ internal static class MainWindowControlBinder
         toolStrip.SettingsRequested += onSettingsRequested;
         toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
         summaryHeader.NavigationTabSelected += onNavigationTabSelected;
+        summaryHeader.KeepLocalWorkRequested += onKeepLocalWorkRequested;
+        summaryHeader.SaveLocalWorkRequested += onSaveRequested;
+        summaryHeader.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
+        summaryHeader.WorkspaceSupportRequested += onWorkspaceSupportRequested;
         menuBar.MenuSelected += onMenuSelected;
         navigatorPane.WorkspaceSelected += onWorkspaceSelected;
         navigatorPane.NavigationTabSelected += onNavigationTabSelected;

@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
         x:Class="Chummer.Avalonia.MainWindow"
-        Width="1220"
-        Height="760"
+        Width="1280"
+        Height="800"
         MinWidth="960"
         MinHeight="560"
         Title="Chummer Desktop"
@@ -29,7 +29,7 @@
       <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
     </Border>
 
-    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="208,*,0" ColumnSpacing="2" Margin="1,1,1,0">
+    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="228,*,0" ColumnSpacing="2" Margin="1,1,1,0">
       <Border x:Name="LeftNavigatorRegion" Grid.Column="0" Classes="shell-panel">
         <controls:NavigatorPaneControl x:Name="NavigatorPaneControl" />
       </Border>

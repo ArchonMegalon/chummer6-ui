@@ -1,0 +1,17 @@
+{
+  "contract_name": "chummer6-ui.external_host_proof_blockers",
+  "generated_at": "2026-04-16T15:51:59Z",
+  "manifest_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
+  "downloads_dir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
+  "startup_smoke_dir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke",
+  "base_url": "https://chummer.run",
+  "timeout_seconds": 10,
+  "max_receipt_age_seconds": 604800,
+  "release_published_at": "2026-04-16T15:51:58Z",
+  "status": "ready",
+  "missing_required_platform_head_rid_tuples": [],
+  "unresolved_hosts": [],
+  "unresolved_tuples": [],
+  "external_proof_request_count": 0,
+  "external_proof_requests": []
+}

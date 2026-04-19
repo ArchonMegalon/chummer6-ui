@@ -113,8 +113,9 @@
                 <span class="badge">@BuildBuildBlockerBadge(Projection)</span>
             </div>
             <dl class="facts compact">
-                <div><dt>Explain</dt><dd>@(Projection.ExplainEntryId ?? "pending")</dd></div>
+                <div><dt>Explain receipt</dt><dd>@BuildBuildBlockerExplainReceipt(Projection)</dd></div>
                 <div><dt>Rule environment</dt><dd>@BuildBuildBlockerEnvironment(Projection)</dd></div>
+                <div><dt>Environment diff</dt><dd>@BuildBuildBlockerEnvironmentDiff(Projection)</dd></div>
                 <div><dt>Before</dt><dd>@BuildBuildBlockerBefore(Projection)</dd></div>
                 <div><dt>After</dt><dd>@BuildBuildBlockerAfter(Projection)</dd></div>
                 <div><dt>Support reuse</dt><dd>@BuildBuildBlockerSupport(Projection)</dd></div>
@@ -475,6 +476,9 @@
     private static string BuildBuildBlockerEnvironment(BuildLabConceptIntakeProjection projection)
         => $"{projection.RulesetId} / {projection.BuildMethod}";
 
+    private static string BuildBuildBlockerEnvironmentDiff(BuildLabConceptIntakeProjection projection)
+        => $"{BuildBuildBlockerBefore(projection)} -> {BuildBuildBlockerAfter(projection)}";
+
     private static string BuildBuildBlockerBefore(BuildLabConceptIntakeProjection projection)
     {
         string summary = FirstNonBlank(
@@ -494,6 +498,12 @@
             projection.NextSafeAction,
             projection.SupportClosureSummary,
             projection.CanContinue ? "Build can continue with the current receipt." : "Resolve the blocker before handoff.");
+
+    private static string BuildBuildBlockerExplainReceipt(BuildLabConceptIntakeProjection projection)
+        => FirstNonBlank(
+            projection.ExplainEntryId,
+            projection.SourceDocumentId,
+            $"{projection.RulesetId}/{projection.BuildMethod} blocker receipt");
 
     private static string BuildBuildBlockerSupport(BuildLabConceptIntakeProjection projection)
         => FirstNonBlank(

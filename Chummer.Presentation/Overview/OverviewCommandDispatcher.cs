@@ -2,6 +2,7 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Contracts.Content;
+using Chummer.Contracts.Api;
 
 namespace Chummer.Presentation.Overview;
 
@@ -27,7 +28,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
 
         if (OverviewCommandPolicy.IsImportHintCommand(commandId))
         {
-            DesktopDialogState dialog = BuildCommandDialog(commandId, context);
+            DesktopDialogState dialog = await BuildCommandDialogAsync(commandId, context, ct);
             context.Publish(context.State with
             {
                 Error = null,
@@ -39,7 +40,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
 
         if (OverviewCommandPolicy.IsDialogCommand(commandId))
         {
-            DesktopDialogState dialog = BuildCommandDialog(commandId, context);
+            DesktopDialogState dialog = await BuildCommandDialogAsync(commandId, context, ct);
             context.Publish(context.State with
             {
                 Error = null,
@@ -110,8 +111,22 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
         }
     }
 
-    private static DesktopDialogState BuildCommandDialog(string commandId, OverviewCommandExecutionContext context)
+    private static async Task<DesktopDialogState> BuildCommandDialogAsync(
+        string commandId,
+        OverviewCommandExecutionContext context,
+        CancellationToken ct)
     {
+        MasterIndexResponse? masterIndex = null;
+        TranslatorLanguagesResponse? translatorLanguages = null;
+        if (RequiresMasterIndex(commandId))
+        {
+            masterIndex = await context.GetMasterIndexAsync(ct);
+            if (string.Equals(commandId, "translator", StringComparison.Ordinal))
+            {
+                translatorLanguages = await context.GetTranslatorLanguagesAsync(ct);
+            }
+        }
+
         return context.DialogFactory.CreateCommandDialog(
             commandId,
             context.State.Profile,
@@ -120,8 +135,15 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             context.CurrentWorkspace,
             ResolveDialogRulesetId(context),
             runtimeInspector: null,
+            masterIndex: masterIndex,
+            translatorLanguages: translatorLanguages,
             openWorkspaces: context.State.OpenWorkspaces);
     }
+
+    private static bool RequiresMasterIndex(string commandId)
+        => string.Equals(commandId, "master_index", StringComparison.Ordinal)
+            || string.Equals(commandId, "translator", StringComparison.Ordinal)
+            || string.Equals(commandId, "xml_editor", StringComparison.Ordinal);
 
     private static async Task OpenRuntimeInspectorDialogAsync(OverviewCommandExecutionContext context, CancellationToken ct)
     {

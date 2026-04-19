@@ -203,6 +203,29 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "xml_editor",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: "{\"sectionId\":\"profile\"}",
+            currentWorkspace: null,
+            rulesetId: null,
+            masterIndex: CreateMasterIndexResponse());
+
+        Assert.AreEqual("dialog.xml_editor", dialog.Id);
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorLanePosture"));
+        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorOverlayCount"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorCustomDataLanePosture"));
+        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorCustomDataDirectoryCount"));
+        Assert.AreEqual("xml bridge is governed: 2 enabled data overlays expose XML payloads.", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorReceipt"));
+        Assert.AreEqual("{\"sectionId\":\"profile\"}", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorDialog"));
+    }
+
+    [TestMethod]
     public void CreateCommandDialog_dice_roller_surfaces_initiative_preview_and_roster_context()
     {
         DesktopDialogFactory factory = new();

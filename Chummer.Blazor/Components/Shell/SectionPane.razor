@@ -137,14 +137,16 @@
 
             @if (HasBuildBlockerReceipt(buildLab))
             {
+                @* m104: blazor_build_blocker_receipts *@
                 <section class="browse-detail-pane" data-build-blocker-explain-receipt>
                     <div class="coach-card-header">
                         <h4>Build blocker receipt</h4>
                         <span class="badge">@BuildBuildBlockerBadge(buildLab)</span>
                     </div>
                     <dl class="build-lab-decision-grid">
-                        <div><dt>Explain</dt><dd>@(buildLab.ExplainEntryId ?? "pending")</dd></div>
+                        <div><dt>Explain receipt</dt><dd>@BuildBuildBlockerExplainReceipt(buildLab)</dd></div>
                         <div><dt>Rule environment</dt><dd>@BuildBuildBlockerEnvironment(buildLab)</dd></div>
+                        <div><dt>Environment diff</dt><dd>@BuildBuildBlockerEnvironmentDiff(buildLab)</dd></div>
                         <div><dt>Before</dt><dd>@BuildBuildBlockerBefore(buildLab)</dd></div>
                         <div><dt>After</dt><dd>@BuildBuildBlockerAfter(buildLab)</dd></div>
                         <div><dt>Support reuse</dt><dd>@BuildBuildBlockerSupport(buildLab)</dd></div>
@@ -954,6 +956,9 @@
     private static string BuildBuildBlockerEnvironment(BuildLabConceptIntakeState buildLab)
         => $"{buildLab.RulesetId} / {buildLab.BuildMethod}";
 
+    private static string BuildBuildBlockerEnvironmentDiff(BuildLabConceptIntakeState buildLab)
+        => $"{BuildBuildBlockerBefore(buildLab)} -> {BuildBuildBlockerAfter(buildLab)}";
+
     private static string BuildBuildBlockerBefore(BuildLabConceptIntakeState buildLab)
     {
         string summary = FirstNonBlank(
@@ -970,6 +975,12 @@
 
     private static string BuildBuildBlockerAfter(BuildLabConceptIntakeState buildLab)
         => FirstNonBlank(buildLab.NextSafeAction, buildLab.SupportClosureSummary, buildLab.CanContinue ? "Build can continue with the current receipt." : "Resolve the blocker before handoff.");
+
+    private static string BuildBuildBlockerExplainReceipt(BuildLabConceptIntakeState buildLab)
+        => FirstNonBlank(
+            buildLab.ExplainEntryId,
+            buildLab.SourceDocumentId,
+            $"{buildLab.RulesetId}/{buildLab.BuildMethod} blocker receipt");
 
     private static string BuildBuildBlockerSupport(BuildLabConceptIntakeState buildLab)
         => FirstNonBlank(buildLab.SupportClosureSummary, buildLab.ExplainEntryId is null ? "Support can cite the visible blocker receipt." : $"Support can cite explain receipt {buildLab.ExplainEntryId}.");

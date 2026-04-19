@@ -299,6 +299,9 @@ public static class DesktopInstallLinkingRuntime
                         $"Version: {state.ApplicationVersion}",
                         $"Channel: {state.ChannelId}",
                         $"Platform: {state.Platform}/{state.Arch}",
+                        "Restore posture: review claimed-install entitlement, stale-state visibility, and conflict choices before restoring workspace continuity.",
+                        "Stale-state visibility: keep the local workspace visible until support confirms the current continuity packet.",
+                        "Conflict choices: keep local work, save local work, or review Campaign Workspace before accepting restore replacement.",
                         string.IsNullOrWhiteSpace(state.LastClaimMessage) ? null : $"Hub message: {state.LastClaimMessage}",
                         string.IsNullOrWhiteSpace(state.LastClaimError) ? null : $"Claim error: {state.LastClaimError}"
                     }.Where(static item => !string.IsNullOrWhiteSpace(item))),
@@ -377,7 +380,32 @@ public static class DesktopInstallLinkingRuntime
         ArgumentNullException.ThrowIfNull(state);
         if (workspace is null)
         {
-            return BuildSupportPortalRelativePathForInstall(state);
+            return BuildSupportPortalRelativePath(
+                new SupportPortalPrefill(
+                    Kind: "bug_report",
+                    Title: $"Workspace restore review needs help for {state.HeadId}",
+                    Summary: "No local workspace is selected, but restore continuation, stale-state visibility, and conflict choices need support review before replacement.",
+                    Detail: string.Join(
+                        "\n",
+                        new[]
+                        {
+                            "Workspace: none selected",
+                            "Workspace ID: none",
+                            "Ruleset: unknown",
+                            "Local save state: no local workspace is selected.",
+                            "Restore posture: review workspace continuation, stale-state visibility, and conflict choices before replacing local work.",
+                            "Stale-state visibility: keep the local workspace list visible until support confirms the current continuity packet.",
+                            "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open Workspace Support before accepting restore replacement.",
+                            $"Install ID: {state.InstallationId}",
+                            $"Head: {state.HeadId}",
+                            $"Version: {state.ApplicationVersion}"
+                        }.Where(static item => !string.IsNullOrWhiteSpace(item))),
+                    InstallationId: state.InstallationId,
+                    ApplicationVersion: state.ApplicationVersion,
+                    ReleaseChannel: state.ChannelId,
+                    HeadId: state.HeadId,
+                    Platform: state.Platform,
+                    Arch: state.Arch));
         }
 
         string workspaceName = string.IsNullOrWhiteSpace(workspace.Summary.Name)
@@ -396,6 +424,11 @@ public static class DesktopInstallLinkingRuntime
                         $"Workspace ID: {workspace.Id.Value}",
                         $"Ruleset: {workspace.RulesetId}",
                         $"Build method: {workspace.Summary.BuildMethod}",
+                        $"Last local update: {workspace.LastUpdatedUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
+                        $"Local save state: {(workspace.HasSavedWorkspace ? "saved workspace is available" : "unsaved or missing local workspace file")}.",
+                        "Restore posture: review workspace continuation, stale-state visibility, and conflict choices before replacing local work.",
+                        "Stale-state visibility: keep the local workspace visible until support confirms the current continuity packet.",
+                        "Conflict choices: keep local work, save local work, or review Campaign Workspace before accepting restore replacement.",
                         $"Install ID: {state.InstallationId}",
                         $"Head: {state.HeadId}",
                         $"Version: {state.ApplicationVersion}"

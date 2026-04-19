@@ -123,7 +123,10 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Campaign-safe decision rail");
         StringAssert.Contains(cut.Markup, "Build blocker receipt");
         StringAssert.Contains(cut.Markup, "1 blocker signal(s)");
+        StringAssert.Contains(cut.Markup, "Explain receipt");
         StringAssert.Contains(cut.Markup, "Rule environment");
+        StringAssert.Contains(cut.Markup, "Environment diff");
+        StringAssert.Contains(cut.Markup, "One provider binding still needs review. -&gt; Rebind runtime before export.");
         StringAssert.Contains(cut.Markup, "sr5 / Priority");
         StringAssert.Contains(cut.Markup, "Before");
         StringAssert.Contains(cut.Markup, "After");

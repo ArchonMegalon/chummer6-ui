@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-04-18T18:14:34.322998Z",
+  "contract_name": "chummer6-ui.sr4_workflow_family_verification_receipt",
+  "status": "pass",
+  "summary": "SR4 workflow-family verification evidence is explicitly grounded for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr4",
+    "familyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+    "proofKind": "sr4_family_oracle",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+      "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
+      "Menu_click_surfaces_visible_command_choices_in_shell"
+    ],
+    "oracle": {
+      "sourceRepoPath": "/docker/fleet/repos/chummer4",
+      "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
+    },
+    "executionReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json"
+    ],
+    "executionFailures": [],
+    "executionExternalBlockers": []
+  }
+}

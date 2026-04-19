@@ -275,7 +275,7 @@ button:disabled {
 
 .workspace-layout {
     display: grid;
-    grid-template-columns: 208px minmax(0, 1fr);
+    grid-template-columns: 228px minmax(0, 1fr);
     gap: 0.15rem;
     min-height: calc(100vh - 86px);
     padding: 0.15rem 0.15rem 0.2rem;

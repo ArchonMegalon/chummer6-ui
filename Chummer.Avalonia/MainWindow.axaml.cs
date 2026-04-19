@@ -6,6 +6,7 @@ using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Chummer.Presentation.UiKit;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Chummer.Avalonia;
@@ -89,6 +90,8 @@ public partial class MainWindow : Window
             onReportIssueRequested: ToolStrip_OnReportIssueRequested,
             onSettingsRequested: ToolStrip_OnSettingsRequested,
             onLoadDemoRunnerRequested: ToolStrip_OnLoadDemoRunnerRequested,
+            onKeepLocalWorkRequested: SummaryHeader_OnKeepLocalWorkRequested,
+            onWorkspaceSupportRequested: SummaryHeader_OnWorkspaceSupportRequested,
             onMenuSelected: MenuBar_OnMenuSelected,
             onWorkspaceSelected: NavigatorPane_OnWorkspaceSelected,
             onNavigationTabSelected: NavigatorPane_OnNavigationTabSelected,
@@ -128,6 +131,18 @@ public partial class MainWindow : Window
         }
         catch
         {
+            string fallbackIconPath = Path.Combine(AppContext.BaseDirectory, "chummer.ico");
+            if (File.Exists(fallbackIconPath))
+            {
+                try
+                {
+                    Icon = new WindowIcon(fallbackIconPath);
+                }
+                catch
+                {
+                }
+            }
+
             // Keep startup resilient if the icon payload is unavailable in a local dev build.
         }
     }

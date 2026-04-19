@@ -40,6 +40,11 @@ internal static class MainWindowFeedbackCoordinator
         toolStrip.SetStatusText(S("desktop.shell.feedback.campaign_workspace_reviewed"));
     }
 
+    public static void ShowLocalWorkspaceKept(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText("Local workspace remains visible while restore and conflict review stay manual.");
+    }
+
     public static void ShowUpdateReviewed(ToolStripControl toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.update_reviewed"));

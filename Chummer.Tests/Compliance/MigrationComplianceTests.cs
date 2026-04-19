@@ -91,6 +91,128 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Next90_m103_veteran_certification_guard_binds_screenshots_to_promoted_avalonia_head()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "next90-m103-ui-veteran-certification-check.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "CHUMMER_RELEASE_CHANNEL_PATH");
+        StringAssert.Contains(scriptText, "PROMOTED_PRIMARY_HEAD = \"avalonia\"");
+        StringAssert.Contains(scriptText, "REQUIRED_PROMOTED_PLATFORMS");
+        StringAssert.Contains(scriptText, "promotedPlatformHeads");
+        StringAssert.Contains(scriptText, "desktopRouteTruth");
+        StringAssert.Contains(scriptText, "promotedInstallerTuples");
+        StringAssert.Contains(scriptText, "parityPosture=flagship_primary");
+        StringAssert.Contains(scriptText, "promotedHeadTaskProof");
+        StringAssert.Contains(scriptText, "legacyFamiliarity");
+        StringAssert.Contains(scriptText, "task_103_2_status_complete");
+        StringAssert.Contains(scriptText, "task_103_2_landed_commit_bound");
+        StringAssert.Contains(scriptText, "task_103_2_receipt_proof_bound");
+        StringAssert.Contains(scriptText, "Queue item proof is missing required M103 closure evidence");
+    }
+
+    [TestMethod]
+    public void Next90_m103_veteran_certification_guard_stays_in_standard_verify_path()
+    {
+        string verifyPath = FindPath("scripts", "ai", "verify.sh");
+        string verifyText = File.ReadAllText(verifyPath);
+
+        StringAssert.Contains(verifyText, "checking next-90 M103 Chummer5a veteran certification guard");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh");
+    }
+
+    [TestMethod]
+    public void Next90_m103_veteran_certification_receipt_proves_completed_promoted_head_parity()
+    {
+        string receiptPath = FindPath(".codex-studio", "published", "NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json");
+        using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        JsonElement root = receipt.RootElement;
+
+        Assert.AreEqual("pass", root.GetProperty("status").GetString(), "M103 receipt must stay pass once the completed package is queued.");
+        Assert.AreEqual("next90-m103-ui-veteran-certification", root.GetProperty("packageId").GetString());
+        Assert.AreEqual(2257965187, root.GetProperty("frontierId").GetInt64());
+        Assert.AreEqual(103, root.GetProperty("milestoneId").GetInt32());
+        Assert.AreEqual("W7", root.GetProperty("wave").GetString());
+        Assert.AreEqual("avalonia", root.GetProperty("promotedPrimaryHead").GetString());
+        Assert.AreEqual(0, root.GetProperty("reasons").GetArrayLength(), "Completed M103 proof must not carry unresolved reasons.");
+        CollectionAssert.AreEquivalent(
+            new[] { "veteran_migration_certification", "screenshot_parity:desktop" },
+            ReadStringArray(root.GetProperty("ownedSurfaces")).ToArray());
+
+        JsonElement evidence = root.GetProperty("evidence");
+        JsonElement queueItem = evidence.GetProperty("queueItem");
+        Assert.AreEqual("complete", queueItem.GetProperty("status").GetString());
+        Assert.AreEqual("a8e4f92c", queueItem.GetProperty("landed_commit").GetString());
+        CollectionAssert.AreEqual(
+            new[] { "Chummer.Avalonia", "Chummer.Blazor", "Chummer.Tests", "scripts" },
+            ReadStringArray(queueItem.GetProperty("allowed_paths")).ToArray(),
+            "Queue authority must remain scoped to the assigned package paths.");
+
+        JsonElement promotedBinding = evidence.GetProperty("promotedDesktopHeadBinding");
+        Assert.AreEqual("published", promotedBinding.GetProperty("status").GetString());
+        Assert.AreEqual("avalonia", promotedBinding.GetProperty("primaryHead").GetString());
+        CollectionAssert.AreEquivalent(
+            new[] { "linux", "windows", "macos" },
+            ReadStringArray(promotedBinding.GetProperty("promotedInstallerTuplePlatforms")).ToArray());
+
+        JsonElement routeTruth = promotedBinding.GetProperty("primaryRouteTruth");
+        foreach (string platform in new[] { "linux", "windows", "macos" })
+        {
+            JsonElement route = routeTruth.GetProperty(platform);
+            Assert.AreEqual("primary", route.GetProperty("routeRole").GetString(), $"{platform} M103 route must bind to the primary head.");
+            Assert.AreEqual("promoted", route.GetProperty("promotionState").GetString(), $"{platform} M103 route must be promoted.");
+            Assert.AreEqual("flagship_primary", route.GetProperty("parityPosture").GetString(), $"{platform} M103 route must carry flagship parity posture.");
+        }
+
+        JsonElement surfaceResults = evidence.GetProperty("surfaceResults");
+        HashSet<string> screenshotDigests = new(StringComparer.Ordinal);
+        foreach (string surface in new[] { "menu", "toolstrip", "roster", "master_index", "settings", "import" })
+        {
+            JsonElement result = surfaceResults.GetProperty(surface);
+            Assert.IsTrue(result.GetProperty("screenshotGeneratedByTest").GetBoolean(), $"{surface} screenshot must be generated by the Avalonia gate.");
+            Assert.IsTrue(result.GetProperty("publishedScreenshotExists").GetBoolean(), $"{surface} screenshot must be published.");
+            Assert.IsTrue(result.GetProperty("publishedScreenshotIsPng").GetBoolean(), $"{surface} screenshot must be a valid PNG.");
+            Assert.IsTrue(result.GetProperty("publishedScreenshotWidth").GetInt32() >= 1200, $"{surface} screenshot is too narrow.");
+            Assert.IsTrue(result.GetProperty("publishedScreenshotHeight").GetInt32() >= 760, $"{surface} screenshot is too short.");
+            string screenshotDigest = result.GetProperty("publishedScreenshotSha256").GetString() ?? string.Empty;
+            Assert.AreNotEqual(string.Empty, screenshotDigest, $"{surface} screenshot must carry a digest.");
+            Assert.IsTrue(screenshotDigests.Add(screenshotDigest), $"{surface} screenshot must be distinct from the other M103 parity screenshots.");
+            Assert.AreEqual(0, result.GetProperty("missingMarkers").GetArrayLength(), $"{surface} source markers must remain present.");
+
+            JsonElement workflowMap = result.GetProperty("workflowMap");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(workflowMap.GetProperty("legacyFamiliarity").GetString()), $"{surface} needs legacy familiarity text.");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(workflowMap.GetProperty("promotedHeadTaskProof").GetString()), $"{surface} needs promoted-head task proof.");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(workflowMap.GetProperty("parityQuestion").GetString()), $"{surface} needs a veteran parity question.");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(workflowMap.GetProperty("screenshotEvidenceRole").GetString()), $"{surface} needs a screenshot evidence role.");
+        }
+
+        JsonElement legacyBaselineResults = evidence.GetProperty("legacyBaselineResults");
+        foreach ((string Surface, int ExpectedMarkerCount, string ExpectedSourceFileSuffix) baseline in new[]
+                 {
+                     ("menu", 4, "Chummer/Forms/ChummerMainForm.Designer.cs"),
+                     ("toolstrip", 5, "Chummer/Forms/ChummerMainForm.Designer.cs"),
+                     ("roster", 4, "Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs"),
+                     ("master_index", 3, "Chummer/Forms/Utility Forms/MasterIndex.Designer.cs"),
+                     ("settings", 4, "Chummer/Forms/EditGlobalSettings.Designer.cs"),
+                     ("import", 4, "Chummer/Forms/Utility Forms/HeroLabImporter.Designer.cs"),
+                 })
+        {
+            JsonElement baselineResult = legacyBaselineResults.GetProperty(baseline.Surface);
+            Assert.AreEqual(0, baselineResult.GetProperty("missingMarkers").GetArrayLength(), $"{baseline.Surface} Chummer5a baseline markers must remain present.");
+            Assert.AreEqual(baseline.ExpectedMarkerCount, baselineResult.GetProperty("markerCount").GetInt32(), $"{baseline.Surface} Chummer5a baseline marker count drifted.");
+            StringAssert.EndsWith(
+                baselineResult.GetProperty("sourceFile").GetString() ?? string.Empty,
+                baseline.ExpectedSourceFileSuffix,
+                $"{baseline.Surface} Chummer5a baseline source file drifted.");
+        }
+
+        static IEnumerable<string> ReadStringArray(JsonElement array)
+        {
+            return array.EnumerateArray().Select(element => element.GetString() ?? string.Empty);
+        }
+    }
+
+    [TestMethod]
     public void Dual_head_adapter_projects_reference_shared_presentation_layer()
     {
         string blazorProjectPath = FindPath("Chummer.Blazor", "Chummer.Blazor.csproj");
@@ -3865,6 +3987,12 @@ public class MigrationComplianceTests
         string executableGateScriptText = File.ReadAllText(executableGateScriptPath);
 
         StringAssert.Contains(flagshipGateScriptText, "lock_dir=\"$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock\"");
+        StringAssert.Contains(flagshipGateScriptText, "lock_owner_pid_path=\"$lock_dir/owner.pid\"");
+        StringAssert.Contains(flagshipGateScriptText, "lock_stale_max_age_seconds=\"${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-900}\"");
+        StringAssert.Contains(flagshipGateScriptText, "prune_lock_if_stale() {");
+        StringAssert.Contains(flagshipGateScriptText, "stale_empty:");
+        StringAssert.Contains(flagshipGateScriptText, "stale_owner_only:");
+        StringAssert.Contains(flagshipGateScriptText, "printf '%s\\n' \"$$\" >\"$lock_owner_pid_path\"");
         StringAssert.Contains(flagshipGateScriptText, "capture_screenshot_dir=\"$(mktemp -d");
         StringAssert.Contains(flagshipGateScriptText, "staged_screenshot_dir=\"$(mktemp -d");
         StringAssert.Contains(flagshipGateScriptText, "for _ in $(seq 1 150); do");
@@ -5429,6 +5557,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "scripts/build-desktop-installer.sh now honors `CHUMMER_DESKTOP_INSTALLER_TMPDIR`");
         StringAssert.Contains(runbookText, "hdiutil: create failed - No space left on device");
         StringAssert.Contains(runbookText, "workspace-backed path on the target SSD");
+        StringAssert.Contains(runbookText, "UseChummerEngineContractsLocalFeed=false");
     }
 
     [TestMethod]

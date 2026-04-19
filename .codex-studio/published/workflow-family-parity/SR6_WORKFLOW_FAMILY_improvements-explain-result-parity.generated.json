@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-04-18T18:15:03.657159Z",
+  "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
+  "status": "pass",
+  "summary": "SR6 workflow-family parity evidence is explicitly grounded for improvements-explain-result-parity.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr6",
+    "familyId": "improvements-explain-result-parity",
+    "proofKind": "sr6_family_carry_forward",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_workspace_action_summary_matches"
+    ],
+    "oracle": {
+      "classification": "carry-forward",
+      "rationale": "Explain and result surfaces are still expected to remain in parity under the promoted SR6 desktop head.",
+      "releaseGateTests": [
+        "Avalonia_and_Blazor_workspace_action_summary_matches"
+      ]
+    },
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/improvements-explain-result-parity.generated.json"
+    ],
+    "verificationFailures": [],
+    "verificationExternalBlockers": []
+  }
+}

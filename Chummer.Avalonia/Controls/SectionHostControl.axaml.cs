@@ -393,8 +393,11 @@ public partial class SectionHostControl : UserControl
 
         if (HasBuildBlockerReceipt(buildLab))
         {
+            // m104: avalonia_build_blocker_receipts
             lines.Add($"Build blocker receipt: {BuildBuildBlockerBadge(buildLab)}");
+            lines.Add($"Explain receipt: {BuildBuildBlockerExplainReceipt(buildLab)}");
             lines.Add($"Rule environment: {buildLab.RulesetId} / {buildLab.BuildMethod}");
+            lines.Add($"Environment diff: {BuildBuildBlockerBefore(buildLab)} -> {BuildBuildBlockerAfter(buildLab)}");
             lines.Add($"Before: {BuildBuildBlockerBefore(buildLab)}");
             lines.Add($"After: {BuildBuildBlockerAfter(buildLab)}");
             lines.Add($"Support reuse: {BuildBuildBlockerSupport(buildLab)}");
@@ -433,6 +436,12 @@ public partial class SectionHostControl : UserControl
 
     private static string BuildBuildBlockerAfter(BuildLabConceptIntakeState buildLab)
         => FirstNonBlank(buildLab.NextSafeAction, buildLab.SupportClosureSummary, buildLab.CanContinue ? "Build can continue with the current receipt." : "Resolve the blocker before handoff.");
+
+    private static string BuildBuildBlockerExplainReceipt(BuildLabConceptIntakeState buildLab)
+        => FirstNonBlank(
+            buildLab.ExplainEntryId,
+            buildLab.SourceDocumentId,
+            $"{buildLab.RulesetId}/{buildLab.BuildMethod} blocker receipt");
 
     private static string BuildBuildBlockerSupport(BuildLabConceptIntakeState buildLab)
         => FirstNonBlank(buildLab.SupportClosureSummary, string.IsNullOrWhiteSpace(buildLab.ExplainEntryId) ? "Support can cite the visible blocker receipt." : $"Support can cite explain receipt {buildLab.ExplainEntryId}.");

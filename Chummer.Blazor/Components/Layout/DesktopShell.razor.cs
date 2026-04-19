@@ -11,11 +11,11 @@ public partial class DesktopShell : IDisposable
 {
     private static readonly string[] PreferredToolStripCommandOrder =
     [
-        "new_character",
-        "open_character",
         "save_character",
         "print_character",
         "copy",
+        "new_character",
+        "open_character",
         "close_window",
         "global_settings"
     ];

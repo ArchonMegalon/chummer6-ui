@@ -19,13 +19,26 @@ ui_kit_version="${CHUMMER_UI_KIT_PACKAGE_VERSION:-0.1.0-preview}"
 bootstrap_engine_contracts_feed="${CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_FEED:-1}"
 
 workspace_root="$(cd "$repo_root/.." && pwd)"
+package_plane_lock_root="${CHUMMER_PACKAGE_PLANE_LOCK_ROOT:-$workspace_root/.tmp/ai}"
+package_plane_lock_file="${CHUMMER_PACKAGE_PLANE_LOCK_FILE:-$package_plane_lock_root/with-package-plane.lock}"
+
+if [[ "${CHUMMER_PACKAGE_PLANE_SERIALIZE:-1}" == "1" ]] && [[ -z "${CHUMMER_PACKAGE_PLANE_LOCK_HELD:-}" ]]; then
+  if command -v flock >/dev/null 2>&1; then
+    mkdir -p "$package_plane_lock_root"
+    export CHUMMER_PACKAGE_PLANE_LOCK_HELD=1
+    exec flock --exclusive --close "$package_plane_lock_file" "${BASH:-bash}" "$0" "$@"
+  fi
+fi
+
 contracts_project="$workspace_root/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj"
 engine_contracts_bootstrap_script="$workspace_root/chummer-core-engine/scripts/ai/bootstrap-contracts-feed.sh"
 engine_contracts_feed_root="${CHUMMER_ENGINE_CONTRACTS_FEED:-$workspace_root/chummer-core-engine/.tmp/ai/local-nuget}"
 campaign_contracts_project="$workspace_root/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj"
+play_contracts_project="$workspace_root/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj"
 run_contracts_project="$workspace_root/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj"
 hub_registry_contracts_project="$workspace_root/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj"
 ui_kit_project="$workspace_root/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj"
+media_contracts_project="$workspace_root/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj"
 
 restore_args=()
 
@@ -76,4 +89,59 @@ restore_args+=(
   -p:ChummerUiKitPackageVersion="$ui_kit_version"
 )
 
-exec dotnet "$@" "${restore_args[@]}"
+ensure_ref_assembly() {
+  local project_path="$1"
+  local ref_path="$2"
+
+  if [[ -f "$ref_path" ]]; then
+    return
+  fi
+
+  dotnet build "$project_path" --nologo -v minimal -m:1 "${restore_args[@]}" >/dev/null
+}
+
+should_prebuild_local_owners=0
+case "${1:-}" in
+  build|test|publish)
+    should_prebuild_local_owners=1
+    ;;
+  run)
+    should_prebuild_local_owners=1
+    for arg in "$@"; do
+      if [[ "$arg" == "--no-build" ]]; then
+        should_prebuild_local_owners=0
+        break
+      fi
+    done
+    ;;
+esac
+
+if [[ -z "$published_feed_sources" ]] && [[ "$should_prebuild_local_owners" == "1" ]]; then
+  ensure_ref_assembly \
+    "$contracts_project" \
+    "$workspace_root/chummer-core-engine/Chummer.Contracts/obj/Debug/net10.0/ref/Chummer.Engine.Contracts.dll"
+  ensure_ref_assembly \
+    "$hub_registry_contracts_project" \
+    "$workspace_root/chummer-hub-registry/Chummer.Hub.Registry.Contracts/obj/Debug/net10.0/ref/Chummer.Hub.Registry.Contracts.dll"
+  ensure_ref_assembly \
+    "$play_contracts_project" \
+    "$workspace_root/chummer.run-services/Chummer.Play.Contracts/obj/Debug/net10.0/ref/Chummer.Play.Contracts.dll"
+  ensure_ref_assembly \
+    "$campaign_contracts_project" \
+    "$workspace_root/chummer.run-services/Chummer.Campaign.Contracts/obj/Debug/net10.0/ref/Chummer.Campaign.Contracts.dll"
+
+  if [[ -f "$media_contracts_project" ]]; then
+    ensure_ref_assembly \
+      "$media_contracts_project" \
+      "$workspace_root/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/obj/Debug/net10.0/ref/Chummer.Media.Contracts.dll"
+  fi
+
+  ensure_ref_assembly \
+    "$run_contracts_project" \
+    "$workspace_root/chummer.run-services/Chummer.Run.Contracts/obj/Debug/net10.0/ref/Chummer.Run.Contracts.dll"
+  ensure_ref_assembly \
+    "$ui_kit_project" \
+    "$workspace_root/chummer-ui-kit/src/Chummer.Ui.Kit/obj/Debug/net10.0/ref/Chummer.Ui.Kit.dll"
+fi
+
+dotnet "$@" "${restore_args[@]}"

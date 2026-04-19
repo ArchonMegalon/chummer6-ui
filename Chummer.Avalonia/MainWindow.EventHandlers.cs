@@ -1,8 +1,10 @@
 using System.Text;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
+using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 
 namespace Chummer.Avalonia;
@@ -182,6 +184,63 @@ public partial class MainWindow
         await RunUiActionAsync(
             () => _interactionCoordinator.OpenRuntimeInspectorAsync(CancellationToken.None),
             "open runtime inspector");
+    }
+
+    private void SummaryHeader_OnKeepLocalWorkRequested(object? sender, EventArgs e)
+    {
+        MainWindowFeedbackCoordinator.ShowLocalWorkspaceKept(_controls.ToolStrip);
+    }
+
+    private async void SummaryHeader_OnWorkspaceSupportRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                DesktopInstallLinkingState installState = DesktopInstallLinkingRuntime.LoadOrCreateState(DesktopHeadId);
+                if (DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(installState, ResolveActiveSupportWorkspace()))
+                {
+                    MainWindowFeedbackCoordinator.ShowSupportReviewed(_controls.ToolStrip);
+                    return;
+                }
+
+                await DesktopSupportWindow.ShowAsync(this, DesktopHeadId);
+                MainWindowFeedbackCoordinator.ShowSupportReviewed(_controls.ToolStrip);
+            },
+            "open workspace support");
+    }
+
+    private WorkspaceListItem? ResolveActiveSupportWorkspace()
+    {
+        CharacterWorkspaceId? activeWorkspaceId = _adapter.State.Session.ActiveWorkspaceId ?? _adapter.State.WorkspaceId;
+        OpenWorkspaceState? activeWorkspace = _adapter.State.Session.OpenWorkspaces
+            .Concat(_adapter.State.OpenWorkspaces)
+            .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, activeWorkspaceId?.Value, StringComparison.Ordinal));
+        activeWorkspace ??= _adapter.State.Session.OpenWorkspaces
+            .Concat(_adapter.State.OpenWorkspaces)
+            .OrderByDescending(workspace => workspace.LastOpenedUtc)
+            .FirstOrDefault();
+
+        if (activeWorkspace is null)
+        {
+            return null;
+        }
+
+        CharacterFileSummary summary = new(
+            Name: string.IsNullOrWhiteSpace(activeWorkspace.Name) ? activeWorkspace.Id.Value : activeWorkspace.Name,
+            Alias: activeWorkspace.Alias,
+            Metatype: string.Empty,
+            BuildMethod: string.Empty,
+            CreatedVersion: activeWorkspace.RulesetId,
+            AppVersion: string.Empty,
+            Karma: 0,
+            Nuyen: 0,
+            Created: true);
+        return new WorkspaceListItem(
+            Id: activeWorkspace.Id,
+            Summary: summary,
+            LastUpdatedUtc: activeWorkspace.LastOpenedUtc,
+            RulesetId: activeWorkspace.RulesetId,
+            HasSavedWorkspace: activeWorkspace.HasSavedWorkspace);
     }
 
     private async void MenuBar_OnMenuSelected(object? sender, string menuId)

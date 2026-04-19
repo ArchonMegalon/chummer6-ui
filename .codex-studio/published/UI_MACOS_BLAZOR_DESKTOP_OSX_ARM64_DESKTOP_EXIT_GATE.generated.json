@@ -1,0 +1,116 @@
+{
+  "contract_name": "chummer6-ui.macos_desktop_exit_gate",
+  "generated_at": "2026-04-11T14:18:23Z",
+  "channelId": "preview",
+  "releaseVersion": "run-20260410-123339",
+  "status": "failed",
+  "summary": "macOS desktop exit gate failed: macOS startup smoke receipt is stale (92572s old).",
+  "reason": "macOS desktop exit gate checks failed",
+  "head": {
+    "app_key": "blazor-desktop",
+    "platform": "macos",
+    "rid": "osx-arm64",
+    "launch_target": "Chummer.Blazor.Desktop"
+  },
+  "artifact": {
+    "installer_path": "",
+    "installer_exists": false,
+    "installer_size_bytes": 0,
+    "installer_sha256": "",
+    "file_name": "chummer-blazor-desktop-osx-arm64-installer.dmg",
+    "installer_candidate_paths": [
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-blazor-desktop-osx-arm64-installer.dmg"
+    ],
+    "installer_primary_shelf_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
+    "installer_from_primary_shelf": false
+  },
+  "startup_smoke": {
+    "status": "fail",
+    "receipt_path": "",
+    "candidate_paths": [
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json"
+    ],
+    "ready_checkpoint": "pre_ui_event_loop",
+    "artifact_digest": "sha256:586a5af64beb0d43f104c1b2cb3659d167efb40cf65db252d06b51221140bc21",
+    "channel_id": "preview",
+    "rid": "osx-arm64",
+    "version": "run-20260410-123339",
+    "host_class": "macos-host",
+    "operating_system": "macOS 26.4.1",
+    "artifact_path": "dist/files/chummer-blazor-desktop-osx-arm64-installer.dmg",
+    "artifact_relative_path": "files/chummer-blazor-desktop-osx-arm64-installer.dmg",
+    "receipt_recorded_at": "2026-04-10T12:35:31.0765+00:00",
+    "receipt_age_seconds": 92572,
+    "receipt_max_age_seconds": 86400,
+    "receipt_max_future_skew_seconds": 300,
+    "external_blocker": "missing_macos_host_capability",
+    "receipt": {}
+  },
+  "checks": {
+    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "app_key": "blazor-desktop",
+    "rid": "osx-arm64",
+    "launch_target": "Chummer.Blazor.Desktop",
+    "host_operating_system": "Linux",
+    "host_operating_system_normalized": "linux",
+    "host_supports_macos_startup_smoke": false,
+    "release_channel_status": "published",
+    "release_channel_id": "docker",
+    "release_channel_version": "local-docker",
+    "artifact": {
+      "installer_path": "",
+      "installer_exists": false,
+      "installer_size_bytes": 0,
+      "installer_sha256": "",
+      "file_name": "chummer-blazor-desktop-osx-arm64-installer.dmg",
+      "installer_candidate_paths": [
+        "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-blazor-desktop-osx-arm64-installer.dmg"
+      ],
+      "installer_primary_shelf_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
+      "installer_from_primary_shelf": false
+    },
+    "startup_smoke_candidate_paths": [
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json"
+    ],
+    "startup_smoke": {
+      "status": "fail",
+      "receipt_path": "",
+      "candidate_paths": [
+        "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json"
+      ],
+      "ready_checkpoint": "pre_ui_event_loop",
+      "artifact_digest": "sha256:586a5af64beb0d43f104c1b2cb3659d167efb40cf65db252d06b51221140bc21",
+      "channel_id": "preview",
+      "rid": "osx-arm64",
+      "version": "run-20260410-123339",
+      "host_class": "macos-host",
+      "operating_system": "macOS 26.4.1",
+      "artifact_path": "dist/files/chummer-blazor-desktop-osx-arm64-installer.dmg",
+      "artifact_relative_path": "files/chummer-blazor-desktop-osx-arm64-installer.dmg",
+      "receipt_recorded_at": "2026-04-10T12:35:31.0765+00:00",
+      "receipt_age_seconds": 92572,
+      "receipt_max_age_seconds": 86400,
+      "receipt_max_future_skew_seconds": 300,
+      "external_blocker": "missing_macos_host_capability",
+      "receipt": {}
+    },
+    "startup_smoke_receipt_path": "",
+    "startup_smoke_receipt_found": false,
+    "startup_smoke_external_blocker": "missing_macos_host_capability"
+  },
+  "reasons": [
+    "macOS startup smoke receipt is stale (92572s old)."
+  ]
+}

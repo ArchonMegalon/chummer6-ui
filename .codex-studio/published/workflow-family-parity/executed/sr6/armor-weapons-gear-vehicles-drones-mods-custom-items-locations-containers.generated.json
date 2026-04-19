@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-04-18T18:15:03.437258Z",
+  "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
+  "status": "pass",
+  "summary": "SR6 workflow-family execution evidence is explicitly grounded for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr6",
+    "familyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+    "proofKind": "sr6_family_release_gated_execution",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
+      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+    ],
+    "oracle": {
+      "classification": "carry-forward",
+      "rationale": "Inventory, combat, and vehicle workflows remain explicit promoted-head SR6 proof targets.",
+      "releaseGateTests": [
+        "Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices",
+        "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
+        "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+      ]
+    },
+    "dotnetTest": {
+      "project": "Chummer.Tests/Chummer.Tests.csproj",
+      "configuration": "Release",
+      "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
+      "exitCode": 0
+    },
+    "apiProbe": {
+      "baseUrl": "http://127.0.0.1:8088",
+      "results": [
+        {
+          "path": "/api/workspaces",
+          "ok": false,
+          "statusCode": 0,
+          "error": "<urlopen error [Errno 111] Connection refused>"
+        },
+        {
+          "path": "/api/shell/bootstrap",
+          "ok": false,
+          "statusCode": 0,
+          "error": "<urlopen error [Errno 111] Connection refused>"
+        }
+      ]
+    },
+    "external_blocker": "",
+    "matchedPassedTests": [
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
+      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+    ],
+    "missingAuditTests": [],
+    "failedAuditTests": {}
+  }
+}

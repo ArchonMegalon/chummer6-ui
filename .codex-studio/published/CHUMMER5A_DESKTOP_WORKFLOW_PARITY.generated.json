@@ -1,0 +1,24 @@
+{
+  "generatedAt": "2026-04-18T18:15:03.801567Z",
+  "contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
+  "channelId": "docker",
+  "status": "pass",
+  "summary": "Chummer5a desktop workflow parity is explicitly proven across the promoted head.",
+  "reasons": [],
+  "evidence": {
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "releaseChannelExists": true,
+    "releaseChannelChannelId": "docker",
+    "releaseChannelGeneratedAt": "2026-04-18T17:29:29Z",
+    "workflowLedgerPath": "/docker/chummercomplete/chummer-presentation/docs/WORKFLOW_PARITY_LEDGER.json",
+    "parityOraclePath": "/docker/chummercomplete/chummer-presentation/docs/PARITY_ORACLE.json",
+    "parityChecklistPath": "/docker/chummercomplete/chummer-presentation/docs/PARITY_CHECKLIST.md",
+    "requiredFamilyCount": 10,
+    "ledgerFamilyCount": 10,
+    "missingFamilyIds": [],
+    "nonReadyFamilyIds": [],
+    "tabsMissingInCatalog": 0,
+    "workspaceActionsMissingInCatalog": 0,
+    "missingTestRefs": {}
+  }
+}

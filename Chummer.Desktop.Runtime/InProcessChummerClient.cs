@@ -15,6 +15,7 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Infrastructure.Owners;
+using Chummer.Infrastructure.Xml;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Rulesets.Hosting;
@@ -32,6 +33,7 @@ public sealed class InProcessChummerClient : IChummerClient
     private readonly IHubInstallPreviewService? _hubInstallPreviewService;
     private readonly IActiveRuntimeStatusService? _activeRuntimeStatusService;
     private readonly IRuntimeInspectorService? _runtimeInspectorService;
+    private readonly IToolCatalogService _toolCatalogService;
     private readonly IRulesetSelectionPolicy _rulesetSelectionPolicy;
     private readonly IShellPreferencesService _shellPreferencesService;
     private readonly IShellSessionService _shellSessionService;
@@ -45,6 +47,7 @@ public sealed class InProcessChummerClient : IChummerClient
         IHubInstallPreviewService? hubInstallPreviewService = null,
         IActiveRuntimeStatusService? activeRuntimeStatusService = null,
         IRuntimeInspectorService? runtimeInspectorService = null,
+        IToolCatalogService? toolCatalogService = null,
         IRulesetSelectionPolicy? rulesetSelectionPolicy = null,
         IShellPreferencesService? shellPreferencesService = null,
         IShellSessionService? shellSessionService = null,
@@ -57,6 +60,7 @@ public sealed class InProcessChummerClient : IChummerClient
         _hubInstallPreviewService = hubInstallPreviewService;
         _activeRuntimeStatusService = activeRuntimeStatusService;
         _runtimeInspectorService = runtimeInspectorService;
+        _toolCatalogService = toolCatalogService ?? new XmlToolCatalogService();
         _rulesetSelectionPolicy = rulesetSelectionPolicy ?? new DefaultRulesetSelectionPolicy(new RulesetPluginRegistry(Array.Empty<IRulesetPlugin>()));
         _shellPreferencesService = shellPreferencesService ?? new ShellPreferencesService(new InMemoryShellPreferencesStore());
         _shellSessionService = shellSessionService ?? new ShellSessionService(new InMemoryShellSessionStore());
@@ -198,6 +202,18 @@ public sealed class InProcessChummerClient : IChummerClient
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
         return Task.FromResult(_runtimeInspectorService?.GetProfileProjection(owner, profileId, rulesetId));
+    }
+
+    public Task<MasterIndexResponse> GetMasterIndexAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(_toolCatalogService.GetMasterIndex());
+    }
+
+    public Task<TranslatorLanguagesResponse> GetTranslatorLanguagesAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(_toolCatalogService.GetTranslatorLanguages());
     }
 
     public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct)

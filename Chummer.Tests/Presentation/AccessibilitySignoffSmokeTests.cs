@@ -802,6 +802,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "ReadPortableExchangePreviewAsync");
         RequireContains(source, "GetPortableExchangePreviewAsync");
         RequireContains(source, "OpenCampaignWorkspaceAsync()");
+        RequireContains(source, "ResolveSupportWorkspace()");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
         RequireContains(source, "OpenArtifactShelfView");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal($\"/artifacts?view={Uri.EscapeDataString(view)}\")");
@@ -866,6 +868,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "OpenWorkspaceInDesktopShellAsync");
         RequireContains(source, "mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal");
+        RequireContains(source, "ResolveSupportWorkspace()");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
         RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
 
@@ -883,13 +887,16 @@ internal static class AccessibilitySignoffSmokeTests
     private static void DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs");
-        RequireContains(source, "BuildRestoreChoiceLines()");
-        RequireContains(source, "Stale/conflict posture:");
-        RequireContains(source, "Conflict choice: keep local work, restore the claimed-device copy, or route support before merging");
-        RequireContains(source, "Restore choice: continue the current local workspace");
-        RequireContains(source, "Stale-state visibility: live server restore is unavailable");
-        RequireContains(source, "_campaignProjection.Watchouts.Take(4)");
-        RequireContains(source, "actions.Add(CreateButton(S(\"desktop.home.button.open_work_support\"), OpenWorkspaceSupport));");
+        RequireContains(source, "BuildCampaignRestoreContinuitySummary()");
+        RequireContains(source, "BuildRestoreContinuityChoiceSummary()");
+        RequireContains(source, "BuildRestoreStaleStateVisibilitySummary()");
+        RequireContains(source, "BuildRestoreConflictChoiceSummary()");
+        RequireContains(source, "Restore choice: open the current campaign workspace");
+        RequireContains(source, "Stale state: server continuity is unavailable");
+        RequireContains(source, "Conflict choices:");
+        RequireContains(source, "Review before continuing:");
+        RequireContains(source, "Support choice: open the tracked case");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
     }
 
     private static void DesktopUpdateSurface_is_a_real_top_level_surface()
@@ -1243,6 +1250,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(importPanelSource, "BuildImportHint()");
         RequireContains(importPanelSource, "BuildImportDebugHeading()");
         RequireContains(importPanelSource, "BuildImportRawActionLabel()");
+        RequireContains(importPanelSource, "BuildImportRuleEnvironment(activity.Receipt)");
         RequireContains(importPanelSource, "BuildImportDiffBefore(activity.Receipt)");
         RequireContains(importPanelSource, "BuildImportDiffAfter(activity.Receipt)");
         RequireContains(importPanelSource, "BuildImportSupportReuse(activity.Receipt)");
@@ -1253,8 +1261,12 @@ internal static class AccessibilitySignoffSmokeTests
         string avaloniaShellProjectorSource = ReadSource("Chummer.Avalonia/MainWindow.ShellFrameProjector.cs");
         RequireContains(avaloniaShellProjectorSource, "Import environment before:");
         RequireContains(avaloniaShellProjectorSource, "Import environment after:");
+        RequireContains(avaloniaShellProjectorSource, "Import rule environment:");
         RequireContains(avaloniaShellProjectorSource, "Import explain receipt:");
         RequireContains(avaloniaShellProjectorSource, "Support reuse:");
+
+        string avaloniaDesktopHomeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        RequireContains(avaloniaDesktopHomeSource, "BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)");
 
         string avaloniaSectionHostSource = ReadSource("Chummer.Avalonia/Controls/SectionHostControl.axaml.cs");
         RequireContains(avaloniaSectionHostSource, "Build blocker receipt:");

@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-04-18T18:14:34.363069Z",
+  "contract_name": "chummer6-ui.sr4_workflow_family_parity_receipt",
+  "status": "pass",
+  "summary": "SR4 workflow-family parity evidence is explicitly grounded for cyberware-bioware-modular-hierarchies-nested-plugins.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr4",
+    "familyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
+    "proofKind": "sr4_family_oracle",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
+      "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
+      "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
+    ],
+    "oracle": {
+      "sourceRepoPath": "/docker/fleet/repos/chummer4",
+      "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
+    },
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json"
+    ],
+    "verificationFailures": [],
+    "verificationExternalBlockers": []
+  }
+}

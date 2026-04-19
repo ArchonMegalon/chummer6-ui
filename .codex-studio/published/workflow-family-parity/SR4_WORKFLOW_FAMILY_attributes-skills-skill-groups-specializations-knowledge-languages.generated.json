@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-04-18T18:14:34.362221Z",
+  "contract_name": "chummer6-ui.sr4_workflow_family_parity_receipt",
+  "status": "pass",
+  "summary": "SR4 workflow-family parity evidence is explicitly grounded for attributes-skills-skill-groups-specializations-knowledge-languages.",
+  "reasons": [],
+  "evidence": {
+    "edition": "sr4",
+    "familyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
+    "proofKind": "sr4_family_oracle",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "auditTests": [
+      "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+    ],
+    "oracle": {
+      "sourceRepoPath": "/docker/fleet/repos/chummer4",
+      "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
+    },
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json"
+    ],
+    "verificationFailures": [],
+    "verificationExternalBlockers": []
+  }
+}

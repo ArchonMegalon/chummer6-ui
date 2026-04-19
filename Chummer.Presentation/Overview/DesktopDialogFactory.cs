@@ -168,8 +168,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "xml_editor" => new DesktopDialogState(
                 "dialog.xml_editor",
                 "XML Editor",
-                "Edit/import flow in this head is file-first; this is a debug preview.",
-                [new DesktopDialogField("xmlEditorDialog", "XML", activeSectionJson ?? "<character />", "<character />", true)],
+                masterIndex is null
+                    ? "Edit/import flow in this head is file-first; this preview surfaces current XML bridge posture."
+                    : $"Edit/import flow stays file-first while XML bridge posture is {masterIndex.XmlBridgePosture} with {masterIndex.EnabledDataOverlayCount} enabled overlays and custom-data lane {masterIndex.CustomDataLanePosture}.",
+                [
+                    new DesktopDialogField("xmlEditorLanePosture", "XML Bridge", masterIndex?.XmlBridgePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorOverlayCount", "Enabled XML Overlays", (masterIndex?.EnabledDataOverlayCount ?? 0).ToString(), "0", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorCustomDataLanePosture", "Custom Data Lane", masterIndex?.CustomDataLanePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorCustomDataDirectoryCount", "Custom Data Directories", (masterIndex?.DistinctCustomDataDirectoryCount ?? 0).ToString(), "0", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorReceipt", "XML Bridge Receipt", masterIndex?.XmlBridgeLaneReceipt ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorDialog", "XML", activeSectionJson ?? "<character />", "<character />", true)
+                ],
                 [
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
