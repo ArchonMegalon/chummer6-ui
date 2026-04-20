@@ -533,7 +533,53 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.contact_connection", dialog.Id);
         Assert.AreEqual("Mr. Johnson", DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnectionName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnectionDetails"), "Current Connection/Loyalty: 5 / 3");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactConnectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactConnectionNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_skill_group_uses_dense_utility_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("skill_group", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.skill_group", dialog.Id);
+        Assert.AreEqual("Stealth", DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillGroupName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillGroupSections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillGroupDetails"), "Skills | Disguise, Palming, Sneaking");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillGroupDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillGroupNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual("Close", dialog.Actions.Single(action => string.Equals(action.Id, "close", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_combat_reload_uses_dense_utility_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("combat_reload", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.combat_reload", dialog.Id);
+        Assert.AreEqual("Colt M23", DesktopDialogFieldValueParser.GetValue(dialog, "uiCombatReloadWeapon"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCombatReloadDetails"), "Current Magazine | 3 / 15");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCombatReloadDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiCombatReloadNotes", StringComparison.Ordinal)).VisualKind);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_combat_damage_track_uses_dense_utility_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("combat_damage_track", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.combat_damage_track", dialog.Id);
+        Assert.AreEqual("3 / 10", DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackPhysical"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackDetails"), "Penalty | none");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiDamageTrackDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiDamageTrackNotes", StringComparison.Ordinal)).VisualKind);
     }
 
     [TestMethod]
@@ -710,7 +756,10 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.show_source", dialog.Id);
         Assert.AreEqual("Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceBook"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceDetails"), "PDF: /books/core-rulebook.pdf#page=424");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceSections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceDetails"), "PDF | /books/core-rulebook.pdf#page=424");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiSourceDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSourceNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiSourceDetails", StringComparison.Ordinal)).LayoutSlot);
     }
 
@@ -723,7 +772,10 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.create_entry", dialog.Id);
         Assert.AreEqual("New entry", DesktopDialogFieldValueParser.GetValue(dialog, "uiCreateEntryName"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiEntryDetails"), "Creating an entry");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiEntrySections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiEntryDetails"), "Operation | Create entry");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiEntryDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiEntryNotes", StringComparison.Ordinal)).VisualKind);
     }
 
     [TestMethod]
@@ -736,6 +788,8 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.move_up", dialog.Id);
         Assert.AreEqual("Move Up", DesktopDialogFieldValueParser.GetValue(dialog, "uiActionLabel"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionDetails"), "one position higher");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiActionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiActionNotes", StringComparison.Ordinal)).VisualKind);
     }
 
     [TestMethod]
@@ -747,6 +801,7 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.toggle_free_paid", dialog.Id);
         Assert.AreEqual("Toggle Free/Paid", DesktopDialogFieldValueParser.GetValue(dialog, "uiActionLabel"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionSections"), "Receipt");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionNotes"), "Pricing state changes remain compact");
     }
 

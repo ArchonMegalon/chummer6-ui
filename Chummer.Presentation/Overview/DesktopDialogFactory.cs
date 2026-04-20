@@ -581,6 +581,36 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             VisualKind: DesktopDialogFieldVisualKinds.Tree);
     }
 
+    private static string BuildGridValue(params (string Key, string Value)[] rows)
+    {
+        return string.Join(
+            Environment.NewLine,
+            rows.Select(row => string.Concat(row.Key, " | ", row.Value)));
+    }
+
+    private static string NormalizeGridValue(string value)
+    {
+        string[] lines = value.Split([Environment.NewLine], StringSplitOptions.None);
+        return string.Join(
+            Environment.NewLine,
+            lines.Select(line => line.Contains(" | ", StringComparison.Ordinal) || !line.Contains(": ", StringComparison.Ordinal)
+                ? line
+                : line.Replace(": ", " | ", StringComparison.Ordinal)));
+    }
+
+    private static DesktopDialogField BuildUtilitySectionsField(string id, string first = "Summary", string second = "Details", string third = "Notes")
+    {
+        string sections = first + Environment.NewLine + second + Environment.NewLine + third;
+        return new DesktopDialogField(
+            id,
+            "Sections",
+            sections,
+            first,
+            IsReadOnly: true,
+            IsMultiline: true,
+            VisualKind: DesktopDialogFieldVisualKinds.Tabs);
+    }
+
     private static IReadOnlyList<DesktopDialogField> BuildCyberwareSelectionFields()
     {
         string categoryTree =
@@ -848,9 +878,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         return
         [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Details", "Notes"),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", entityName, entityName, IsReadOnly: true),
-            new DesktopDialogField("uiDeleteSummary", "Details", summary, summary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiDeleteSummary", "Details", NormalizeGridValue(summary), NormalizeGridValue(summary), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1063,83 +1094,85 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildSourceDetailsFields()
     {
-        string sourceDetails =
-            "Book: Core Rulebook" + Environment.NewLine +
-            "Page: 424" + Environment.NewLine +
-            "PDF: /books/core-rulebook.pdf#page=424" + Environment.NewLine +
-            "Site Snapshot: governed" + Environment.NewLine +
-            "Reference posture: canonical flagship route";
+        string sourceDetails = BuildGridValue(
+            ("Book", "Core Rulebook"),
+            ("Page", "424"),
+            ("PDF", "/books/core-rulebook.pdf#page=424"),
+            ("Site Snapshot", "governed"),
+            ("Reference posture", "canonical flagship route"));
 
         return
         [
+            BuildUtilitySectionsField("uiSourceSections", "Source", "Details", "Notes"),
             new DesktopDialogField("uiSourceBook", "Book", "Core Rulebook", "Core Rulebook", IsReadOnly: true),
             new DesktopDialogField("uiSourcePage", "Page", "424", "424", IsReadOnly: true),
-            new DesktopDialogField("uiSourceDetails", "Source Details", sourceDetails, sourceDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSourceNotes", "Notes", "Source references stay compact and copyable without pushing the runner workbench off screen.", "Source references stay compact and copyable without pushing the runner workbench off screen.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiSourceDetails", "Source Details", sourceDetails, sourceDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiSourceNotes", "Notes", "Source references stay compact and copyable without pushing the runner workbench off screen.", "Source references stay compact and copyable without pushing the runner workbench off screen.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildExternalLinkFields(string label, string url, string notes)
     {
-        string details =
-            $"Destination: {label}{Environment.NewLine}" +
-            $"URL: {url}{Environment.NewLine}" +
-            "Action: open in browser";
+        string details = BuildGridValue(
+            ("Destination", label),
+            ("URL", url),
+            ("Action", "open in browser"));
 
         return
         [
-            new DesktopDialogField("uiLinkSections", "Sections", "Link" + Environment.NewLine + "Notes", "Link", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            BuildUtilitySectionsField("uiLinkSections", "Link", "Details", "Notes"),
             new DesktopDialogField("uiLinkLabel", "Destination", label, label, IsReadOnly: true),
             new DesktopDialogField("uiLinkUrl", "URL", url, url, IsReadOnly: true),
-            new DesktopDialogField("uiLinkDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiLinkNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiLinkDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiLinkNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildPrintUtilityFields(string scope, string notes)
     {
-        string details =
-            $"Scope: {scope}{Environment.NewLine}" +
-            "Output: host print preview" + Environment.NewLine +
-            "Format: current sheet / PDF-compatible";
+        string details = BuildGridValue(
+            ("Scope", scope),
+            ("Output", "host print preview"),
+            ("Format", "current sheet / PDF-compatible"));
 
         return
         [
-            new DesktopDialogField("uiPrintSections", "Sections", "Preview" + Environment.NewLine + "Settings", "Preview", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            BuildUtilitySectionsField("uiPrintSections", "Preview", "Details", "Notes"),
             new DesktopDialogField("uiPrintScope", "Print Scope", scope, scope, IsReadOnly: true),
-            new DesktopDialogField("uiPrintDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiPrintNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiPrintDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiPrintNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildEntryEditorFields(string currentValue, bool isEdit)
     {
-        string details =
-            $"{(isEdit ? "Editing" : "Creating")} an entry in a compact list/detail posture." + Environment.NewLine +
-            $"Current Value: {currentValue}";
+        string details = BuildGridValue(
+            ("Operation", isEdit ? "Edit entry" : "Create entry"),
+            ("Current Value", currentValue),
+            ("Posture", "compact list/detail utility"));
 
         return
         [
-            new DesktopDialogField("uiEntrySections", "Sections", "Entry" + Environment.NewLine + "Notes", "Entry", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            BuildUtilitySectionsField("uiEntrySections", "Entry", "Details", "Notes"),
             new DesktopDialogField(isEdit ? "uiEditEntryName" : "uiCreateEntryName", "Entry Name", currentValue, currentValue),
-            new DesktopDialogField("uiEntryDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiEntryNotes", "Notes", "Entry creation and editing stay compact and preserve list context.", "Entry creation and editing stay compact and preserve list context.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiEntryDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiEntryNotes", "Notes", "Entry creation and editing stay compact and preserve list context.", "Entry creation and editing stay compact and preserve list context.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildWindowUtilityFields(string title, string notes)
     {
-        string details =
-            $"Action: {title}{Environment.NewLine}" +
-            "Scope: desktop host shell" + Environment.NewLine +
-            "Behavior: host/platform specific";
+        string details = BuildGridValue(
+            ("Action", title),
+            ("Scope", "desktop host shell"),
+            ("Behavior", "host/platform specific"));
 
         return
         [
-            new DesktopDialogField("uiWindowSections", "Sections", "Action" + Environment.NewLine + "Notes", "Action", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            BuildUtilitySectionsField("uiWindowSections", "Action", "Details", "Notes"),
             new DesktopDialogField("uiWindowAction", "Action", title, title, IsReadOnly: true),
-            new DesktopDialogField("uiWindowDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiWindowNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiWindowDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiWindowNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1157,18 +1190,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         string manifest = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MANIFEST") ?? string.Empty;
         string autoApply = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_AUTO_APPLY") ?? "true";
-        string details =
-            $"Manifest: {manifest}{Environment.NewLine}" +
-            $"Auto Apply: {autoApply}{Environment.NewLine}" +
-            "Support Path: /account/support";
+        string details = BuildGridValue(
+            ("Manifest", manifest),
+            ("Auto Apply", autoApply),
+            ("Support Path", "/account/support"));
 
         return
         [
-            new DesktopDialogField("updateSections", "Sections", "Channel" + Environment.NewLine + "Support", "Channel", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            BuildUtilitySectionsField("updateSections", "Channel", "Details", "Notes"),
             new DesktopDialogField("updateManifest", "Manifest", manifest, "unset", IsReadOnly: true),
             new DesktopDialogField("updateAutoApply", "Auto apply", autoApply, "true", IsReadOnly: true),
             new DesktopDialogField("updateSupportPath", "Support after update", "/account/support", "/account/support", IsReadOnly: true),
-            new DesktopDialogField("updateDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
+            new DesktopDialogField("updateDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("updateNotes", "Notes", "Channel, manifest, and support route remain visible while update posture is reviewed.", "Channel, manifest, and support route remain visible while update posture is reviewed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1176,10 +1210,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         return
         [
-            new DesktopDialogField("uiActionSections", "Sections", "Action" + Environment.NewLine + "Receipt", "Action", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            BuildUtilitySectionsField("uiActionSections", "Action", "Receipt", "Notes"),
             new DesktopDialogField("uiActionLabel", "Action", actionLabel, actionLabel, IsReadOnly: true),
-            new DesktopDialogField("uiActionDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiActionNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiActionDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiActionNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1318,17 +1352,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static IReadOnlyList<DesktopDialogField> BuildContactConnectionFields()
     {
         string details =
-            "Selected Contact: Mr. Johnson" + Environment.NewLine +
-            "Role: Fixer" + Environment.NewLine +
-            "Current Connection/Loyalty: 5 / 3";
+            "Selected Contact | Mr. Johnson" + Environment.NewLine +
+            "Role | Fixer" + Environment.NewLine +
+            "Current Connection/Loyalty | 5 / 3";
 
         return
         [
+            BuildUtilitySectionsField("uiContactConnectionSections", "Contact", "Details", "Notes"),
             new DesktopDialogField("uiContactConnectionName", "Contact", "Mr. Johnson", "Mr. Johnson", IsReadOnly: true),
             new DesktopDialogField("uiContactConnection", "Connection", "5", "5", InputType: "number"),
             new DesktopDialogField("uiContactLoyalty", "Loyalty", "3", "3", InputType: "number"),
-            new DesktopDialogField("uiContactConnectionDetails", "Contact Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiContactConnectionNotes", "Notes", "Adjusting connection and loyalty keeps the selected contact summary visible.", "Adjusting connection and loyalty keeps the selected contact summary visible.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiContactConnectionDetails", "Contact Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiContactConnectionNotes", "Notes", "Adjusting connection and loyalty keeps the selected contact summary visible.", "Adjusting connection and loyalty keeps the selected contact summary visible.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1535,10 +1570,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Mount Gear",
                 "Select the host and review the mountable gear summary before applying the change.",
                 [
+                    BuildUtilitySectionsField("uiGearMountSections", "Mount", "Details", "Notes"),
                     new DesktopDialogField("uiGearMountTarget", "Selected Gear", "Smartgun System", "Smartgun System", IsReadOnly: true),
                     new DesktopDialogField("uiGearMountHost", "Host", "Ares Predator V", "Ares Predator V"),
-                    new DesktopDialogField("uiGearMountDetails", "Mount Details", "Selected Gear: Smartgun System" + Environment.NewLine + "Target Host: Ares Predator V" + Environment.NewLine + "Compatibility: Valid" + Environment.NewLine + "Source: Core Rulebook p. 433", "Selected Gear: Smartgun System" + Environment.NewLine + "Target Host: Ares Predator V" + Environment.NewLine + "Compatibility: Valid" + Environment.NewLine + "Source: Core Rulebook p. 433", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiGearMountNotes", "Notes", "Keep compatibility and source visible while mounting the selected gear.", "Keep compatibility and source visible while mounting the selected gear.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+                    new DesktopDialogField("uiGearMountDetails", "Mount Details", "Selected Gear | Smartgun System" + Environment.NewLine + "Target Host | Ares Predator V" + Environment.NewLine + "Compatibility | Valid" + Environment.NewLine + "Source | Core Rulebook p. 433", "Selected Gear | Smartgun System" + Environment.NewLine + "Target Host | Ares Predator V" + Environment.NewLine + "Compatibility | Valid" + Environment.NewLine + "Source | Core Rulebook p. 433", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiGearMountNotes", "Notes", "Keep compatibility and source visible while mounting the selected gear.", "Keep compatibility and source visible while mounting the selected gear.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "gear_source" => new DesktopDialogState(
@@ -1624,10 +1660,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Bind/Link",
                 "Review the selected magical item before applying the bind/link action.",
                 [
+                    BuildUtilitySectionsField("uiMagicBindSections", "Binding", "Details", "Notes"),
                     new DesktopDialogField("uiMagicBindTarget", "Selected Entry", "Force 4 Focus", "Force 4 Focus", IsReadOnly: true),
                     new DesktopDialogField("uiMagicBindCost", "Binding Cost", "16", "16", IsReadOnly: true),
-                    new DesktopDialogField("uiMagicBindDetails", "Bind Details", "Selected Entry: Force 4 Focus" + Environment.NewLine + "Binding Cost: 16 Karma" + Environment.NewLine + "Availability: Bound magical item" + Environment.NewLine + "Source: Core Rulebook p. 319", "Selected Entry: Force 4 Focus" + Environment.NewLine + "Binding Cost: 16 Karma" + Environment.NewLine + "Availability: Bound magical item" + Environment.NewLine + "Source: Core Rulebook p. 319", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiMagicBindNotes", "Notes", "Binding cost and source remain visible before confirmation.", "Binding cost and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+                    new DesktopDialogField("uiMagicBindDetails", "Bind Details", "Selected Entry | Force 4 Focus" + Environment.NewLine + "Binding Cost | 16 Karma" + Environment.NewLine + "Availability | Bound magical item" + Environment.NewLine + "Source | Core Rulebook p. 319", "Selected Entry | Force 4 Focus" + Environment.NewLine + "Binding Cost | 16 Karma" + Environment.NewLine + "Availability | Bound magical item" + Environment.NewLine + "Source | Core Rulebook p. 319", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiMagicBindNotes", "Notes", "Binding cost and source remain visible before confirmation.", "Binding cost and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "magic_source" => new DesktopDialogState(
@@ -1734,10 +1771,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Skill Group",
                 "Review the skill group and ratings before assigning or breaking the group.",
                 [
+                    BuildUtilitySectionsField("uiSkillGroupSections", "Group", "Details", "Notes"),
                     new DesktopDialogField("uiSkillGroupName", "Group", "Stealth", "Stealth", IsReadOnly: true),
                     new DesktopDialogField("uiSkillGroupRating", "Rating", "4", "4", InputType: "number"),
-                    new DesktopDialogField("uiSkillGroupDetails", "Group Details", "Group: Stealth" + Environment.NewLine + "Skills: Disguise, Palming, Sneaking" + Environment.NewLine + "Current Rating: 4", "Group: Stealth" + Environment.NewLine + "Skills: Disguise, Palming, Sneaking" + Environment.NewLine + "Current Rating: 4", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiSkillGroupNotes", "Notes", "Group composition and current rating remain visible while editing.", "Group composition and current rating remain visible while editing.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+                    new DesktopDialogField("uiSkillGroupDetails", "Group Details", "Group | Stealth" + Environment.NewLine + "Skills | Disguise, Palming, Sneaking" + Environment.NewLine + "Current Rating | 4", "Group | Stealth" + Environment.NewLine + "Skills | Disguise, Palming, Sneaking" + Environment.NewLine + "Current Rating | 4", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiSkillGroupNotes", "Notes", "Group composition and current rating remain visible while editing.", "Group composition and current rating remain visible while editing.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "combat_add_weapon" => new DesktopDialogState(
@@ -1763,10 +1801,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Reload Weapon",
                 "Review weapon and ammo state before applying the reload.",
                 [
+                    BuildUtilitySectionsField("uiCombatReloadSections", "Weapon", "Details", "Notes"),
                     new DesktopDialogField("uiCombatReloadWeapon", "Weapon", "Colt M23", "Colt M23", IsReadOnly: true),
                     new DesktopDialogField("uiCombatReloadAmmo", "Ammo", "Regular Ammo (15)", "Regular Ammo (15)"),
-                    new DesktopDialogField("uiCombatReloadDetails", "Reload Details", "Selected Weapon: Colt M23" + Environment.NewLine + "Current Magazine: 3 / 15" + Environment.NewLine + "Selected Ammo: Regular Ammo (15)", "Selected Weapon: Colt M23" + Environment.NewLine + "Current Magazine: 3 / 15" + Environment.NewLine + "Selected Ammo: Regular Ammo (15)", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiCombatReloadNotes", "Notes", "Weapon and ammo selection remain visible while reloading.", "Weapon and ammo selection remain visible while reloading.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+                    new DesktopDialogField("uiCombatReloadDetails", "Reload Details", "Selected Weapon | Colt M23" + Environment.NewLine + "Current Magazine | 3 / 15" + Environment.NewLine + "Selected Ammo | Regular Ammo (15)", "Selected Weapon | Colt M23" + Environment.NewLine + "Current Magazine | 3 / 15" + Environment.NewLine + "Selected Ammo | Regular Ammo (15)", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiCombatReloadNotes", "Notes", "Weapon and ammo selection remain visible while reloading.", "Weapon and ammo selection remain visible while reloading.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "combat_damage_track" => new DesktopDialogState(
@@ -1774,10 +1813,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Damage Track",
                 "Review current physical and stun track posture before applying the change.",
                 [
+                    BuildUtilitySectionsField("uiDamageTrackSections", "Tracks", "Details", "Notes"),
                     new DesktopDialogField("uiDamageTrackPhysical", "Physical", "3 / 10", "3 / 10", IsReadOnly: true),
                     new DesktopDialogField("uiDamageTrackStun", "Stun", "1 / 10", "1 / 10", IsReadOnly: true),
-                    new DesktopDialogField("uiDamageTrackDetails", "Track Details", "Physical: 3 / 10" + Environment.NewLine + "Stun: 1 / 10" + Environment.NewLine + "Penalty: none", "Physical: 3 / 10" + Environment.NewLine + "Stun: 1 / 10" + Environment.NewLine + "Penalty: none", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiDamageTrackNotes", "Notes", "Current track posture remains visible before applying the damage step.", "Current track posture remains visible before applying the damage step.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+                    new DesktopDialogField("uiDamageTrackDetails", "Track Details", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiDamageTrackNotes", "Notes", "Current track posture remains visible before applying the damage step.", "Current track posture remains visible before applying the damage step.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "vehicle_add" => new DesktopDialogState(
