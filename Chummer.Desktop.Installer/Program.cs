@@ -430,7 +430,7 @@ internal static class Program
         }
 
         string normalizedSwitch = ClaimCodeSwitch.AsSpan(2).ToString();
-        if (string.Equals(argSpan, normalizedSwitch, StringComparison.OrdinalIgnoreCase)
+        if (argSpan.Equals(normalizedSwitch, StringComparison.OrdinalIgnoreCase)
             && index + 1 < args.Length)
         {
             claimCode = NormalizeClaimCode(args[index + 1]);
@@ -461,7 +461,7 @@ internal static class Program
             return null;
         }
 
-        return string.Concat(claimCode.Trim().Where(static char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+        return string.Concat(claimCode.Trim().Where(static ch => char.IsLetterOrDigit(ch)).ToArray()).ToUpperInvariant();
     }
 
     private static void RecordPayloadResolution(string chosenSource, IReadOnlyCollection<string> attempts)
