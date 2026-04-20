@@ -50,6 +50,9 @@
     public IReadOnlyList<OpenWorkspaceState> OpenWorkspaces { get; set; } = [];
 
     [Parameter]
+    public string? CurrentLanguage { get; set; }
+
+    [Parameter]
     public CharacterWorkspaceId? ActiveWorkspaceId { get; set; }
 
     [Parameter]

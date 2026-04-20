@@ -93,6 +93,7 @@ paths = {
     "post_flagship_feedback": repo_root / "feedback" / "2026-04-13-post-flagship-release-train-and-veteran-certification.md",
     "app_axaml": repo_root / "Chummer.Avalonia" / "App.axaml",
     "main_window_axaml": repo_root / "Chummer.Avalonia" / "MainWindow.axaml",
+    "main_window_state_refresh": repo_root / "Chummer.Avalonia" / "MainWindow.StateRefresh.cs",
     "section_host_axaml": repo_root / "Chummer.Avalonia" / "Controls" / "SectionHostControl.axaml",
     "toolstrip_axaml": repo_root / "Chummer.Avalonia" / "Controls" / "ToolStripControl.axaml",
     "summary_header_axaml": repo_root / "Chummer.Avalonia" / "Controls" / "SummaryHeaderControl.axaml",
@@ -123,6 +124,7 @@ feedback_text = read_text(paths["feedback"])
 post_feedback_text = read_text(paths["post_flagship_feedback"])
 app_text = read_text(paths["app_axaml"])
 main_window_text = read_text(paths["main_window_axaml"])
+main_window_state_refresh_text = read_text(paths["main_window_state_refresh"])
 section_host_text = read_text(paths["section_host_axaml"])
 toolstrip_text = read_text(paths["toolstrip_axaml"])
 summary_header_text = read_text(paths["summary_header_axaml"])
@@ -174,14 +176,18 @@ budget_evidence.update(
         "sectionTitleFontSize": section_title_font_size,
         "toolstripItemHeight": toolstrip_item_height,
         "sectionRowsListHeight": section_rows_height_value,
-        "mainWindowContentColumns": "228,*,0" if 'ColumnDefinitions="228,*,0"' in main_window_text else "missing",
+        "mainWindowContentColumns": "0,*,0" if 'ColumnDefinitions="0,*,0"' in main_window_text else "missing",
+        "conditionalNavigatorCollapse": all(
+            token in (main_window_text + main_window_state_refresh_text)
+            for token in ['x:Name="LeftNavigatorRegion"', 'IsVisible="False"', "new GridLength(228)", "new GridLength(0)"]
+        ),
         "rightRailCollapsed": all(
             token in main_window_text
             for token in ['Width="0"', 'MinWidth="0"', 'MaxWidth="0"', 'IsHitTestVisible="False"']
         ),
         "loadedRunnerTabStripPanel": all(
             token in summary_header_text
-            for token in ['x:Name="LoadedRunnerTabStripBorder"', 'x:Name="LoadedRunnerTabStripPanel"', "classic-tabs"]
+            for token in ['x:Name="LoadedRunnerTabStripBorder"', "classic-tabs"]
         ),
     }
 )
@@ -201,7 +207,9 @@ if toolstrip_item_height is None or toolstrip_item_height > 32:
 if section_rows_height_value is None or section_rows_height_value < 160:
     reasons.append(f"Dense section rows list is too short for row-visibility proof: {section_rows_height_value}.")
 if budget_evidence["mainWindowContentColumns"] == "missing":
-    reasons.append("Main window does not keep the classic 228,*,0 dense workbench column posture.")
+    reasons.append("Main window does not keep the classic center-first 0,*,0 dense workbench posture.")
+if not budget_evidence["conditionalNavigatorCollapse"]:
+    reasons.append("Default shell does not collapse workspace chrome until a multi-workspace session exists.")
 if not budget_evidence["rightRailCollapsed"]:
     reasons.append("Default right rail does not surrender space back to the dense center pane.")
 if not budget_evidence["loadedRunnerTabStripPanel"]:
@@ -223,10 +231,10 @@ for disallowed in ["shell-action-badge", "shell-action-caption", "Quick Actions"
 
 for token in [
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
-    "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
+    "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
     "Visual_review_evidence_is_published_for_light_and_dark_shell_states",
     "Assert.IsTrue(toolbarButtonHeights.All(height => height <= 40d)",
-    "Assert.IsTrue(leftNavigatorRegion.Bounds.Width >= 200d && leftNavigatorRegion.Bounds.Width <= 260d",
+    "Assert.IsFalse(leftNavigatorRegion.IsVisible",
     "Assert.IsTrue(menuBarRegion.Bounds.Height <= 72d",
     "Assert.IsTrue(statusStripRegion.Bounds.Height <= 72d",
     "02-menu-open-light.png",
@@ -240,7 +248,7 @@ if not status_pass(visual_gate.get("status")):
     reasons.append("Desktop visual familiarity gate is not passing.")
 if not status_pass(layout_gate.get("status")):
     reasons.append("Chummer5a layout hard gate is not passing.")
-for key in ["legacy_dense_builder_rhythm", "runtime_backed_toolstrip_actions", "runtime_backed_menu_bar_labels"]:
+for key in ["legacy_dense_builder_rhythm", "runtime_backed_toolstrip_actions", "runtime_backed_menu_bar_labels", "default_single_runner_keeps_workspace_chrome_collapsed"]:
     if not status_pass(visual_evidence.get(key)):
         reasons.append(f"Desktop visual familiarity evidence does not pass {key}.")
 required_screenshots = set(visual_evidence.get("required_screenshots") or [])

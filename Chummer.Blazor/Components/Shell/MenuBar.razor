@@ -39,6 +39,9 @@
     public IReadOnlyList<AppCommandDefinition> MenuRoots { get; set; } = [];
 
     [Parameter]
+    public string? CurrentLanguage { get; set; }
+
+    [Parameter]
     public string? OpenMenuId { get; set; }
 
     [Parameter]

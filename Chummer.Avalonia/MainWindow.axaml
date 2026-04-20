@@ -29,8 +29,12 @@
       <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
     </Border>
 
-    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="228,*,0" ColumnSpacing="2" Margin="1,1,1,0">
-      <Border x:Name="LeftNavigatorRegion" Grid.Column="0" Classes="shell-panel">
+    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="0,*,0" ColumnSpacing="0" Margin="1,1,1,0">
+      <Border x:Name="LeftNavigatorRegion"
+              Grid.Column="0"
+              Classes="shell-panel"
+              IsVisible="False"
+              IsHitTestVisible="False">
         <controls:NavigatorPaneControl x:Name="NavigatorPaneControl" />
       </Border>
 

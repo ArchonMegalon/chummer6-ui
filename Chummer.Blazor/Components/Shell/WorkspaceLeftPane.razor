@@ -7,6 +7,7 @@
 
 <aside class="left-pane">
     <OpenWorkspaceTree OpenWorkspaces="OpenWorkspaces"
+                       CurrentLanguage="@(DesktopLocalizationCatalog.NormalizeOrDefault(State.Preferences.Language))"
                        ActiveWorkspaceId="ActiveWorkspaceId"
                        IsBusy="State.IsBusy"
                        OpenWorkspaceRequested="OpenWorkspaceRequested"

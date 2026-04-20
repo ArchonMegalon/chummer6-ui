@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T18:16:17.857922Z",
+  "generatedAt": "2026-04-20T07:07:21.996354Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, and settings.",

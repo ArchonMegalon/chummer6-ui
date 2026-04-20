@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Chummer.Contracts.Presentation;
 
@@ -29,8 +30,10 @@ public partial class SummaryHeaderControl : UserControl
 
     public SummaryHeaderControl()
     {
+        _suppressTabSelectionChanged = true;
         InitializeComponent();
         ApplyRestoreContinuityAutomationText();
+        _suppressTabSelectionChanged = false;
     }
 
     public void SetState(SummaryHeaderState state)
@@ -48,8 +51,6 @@ public partial class SummaryHeaderControl : UserControl
         IReadOnlyList<NavigatorTabItem> navigationTabs,
         string? activeTabId)
     {
-        LoadedRunnerTabStripHeading.Text = string.IsNullOrWhiteSpace(heading) ? "Runner Tabs" : heading;
-
         NavigatorTabItem[] visibleTabs = navigationTabs
             .Where(tab => tab.Enabled)
             .ToArray();
@@ -74,7 +75,8 @@ public partial class SummaryHeaderControl : UserControl
             return;
         }
 
-        if (LoadedRunnerTabStrip.SelectedItem is NavigatorTabItem { Id.Length: > 0 } tab)
+        if (sender is SelectingItemsControl { SelectedItem: NavigatorTabItem tab }
+            && !string.IsNullOrWhiteSpace(tab.Id))
         {
             NavigationTabSelected?.Invoke(this, tab.Id);
         }

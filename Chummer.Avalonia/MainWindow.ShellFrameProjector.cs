@@ -68,6 +68,7 @@ internal static class MainWindowShellFrameProjector
                 DowntimePlanner: BuildDowntimePlanner(state),
                 NpcPersonaStudio: state.ActiveNpcPersonaStudio),
             CommandDialogPaneState: ProjectCommandDialogState(state, commands, shellSurface.LastCommandId),
+            ShowNavigatorPane: resolvedOpenWorkspaces.Length > 1,
             NavigatorPaneState: new NavigatorPaneState(
                 OpenWorkspacesHeading: RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(shellSurface.ActiveRulesetId),
                 OpenWorkspaces: ProjectOpenWorkspaces(state, shellSurface),
@@ -85,22 +86,21 @@ internal static class MainWindowShellFrameProjector
 
     private static string BuildSectionNotice(CharacterOverviewState state, ShellSurfaceState shellSurface)
     {
-        List<string> lines =
-        [
-            $"Notice: {(shellSurface.Notice ?? "Ready.")}",
-            RulesetUiDirectiveCatalog.BuildSectionNotice(
-                rulesetId: shellSurface.ActiveRulesetId,
-                sectionId: state.ActiveSectionId,
-                actionId: state.ActiveActionId,
-                activeRuntime: shellSurface.ActiveRuntime)
-        ];
+        List<string> lines = [];
+
+        string? shellNotice = string.IsNullOrWhiteSpace(shellSurface.Notice)
+            ? null
+            : shellSurface.Notice.Trim();
+        if (!string.IsNullOrWhiteSpace(shellNotice)
+            && !string.Equals(shellNotice, "Ready.", StringComparison.OrdinalIgnoreCase))
+        {
+            lines.Add($"Notice: {shellNotice}");
+        }
 
         WorkspacePortabilityActivity? portability = state.LatestPortabilityActivity;
         if (portability is null)
         {
-            return string.Join(
-                Environment.NewLine,
-                lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
+            return string.Join(Environment.NewLine, lines);
         }
 
         lines.Add($"{portability.Title}: {portability.Receipt.ReceiptSummary}");
@@ -160,40 +160,20 @@ internal static class MainWindowShellFrameProjector
             workspaceContext.OpenWorkspaceCount,
             LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language));
 
-    private static string BuildRestoreContinuitySummary(ActiveWorkspaceContext workspaceContext, string language)
+    private static string? BuildRestoreContinuitySummary(ActiveWorkspaceContext workspaceContext, string language)
     {
-        string workspaceLabel = workspaceContext.ActiveWorkspaceId?.Value
-            ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language);
-        if (workspaceContext.ActiveWorkspaceId is null)
-        {
-            return $"Restore choice: load a recent workspace or open Campaign Workspace before replacing local work. Active workspace: {workspaceLabel}. {BuildWorkspacePresenceReceipt(workspaceContext)} No server restore is applied automatically.";
-        }
-
-        return $"Restore choice: keep {workspaceLabel} open on the primary desktop route, then review Campaign Workspace before accepting a newer continuity packet. {BuildWorkspacePresenceReceipt(workspaceContext)} No server restore is applied automatically.";
+        return null;
     }
 
-    private static string BuildStaleStateSummary(
+    private static string? BuildStaleStateSummary(
         ShellSurfaceState shellSurface,
         ActiveWorkspaceContext workspaceContext,
         string language)
     {
-        if (shellSurface.Error is not null)
-        {
-            return $"Stale state: service continuity is unavailable, so local workspace state remains visible for {workspaceContext.ActiveWorkspaceId?.Value ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language)}.";
-        }
-
-        return $"Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or Workspace Support review; {BuildWorkspaceTimestampReceipt(workspaceContext)} local save posture is {LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language)}.";
+        return null;
     }
 
-    private static string BuildConflictChoiceSummary(ActiveWorkspaceContext workspaceContext, string language)
-    {
-        if (CanSaveLocalWorkBeforeRestore(workspaceContext))
-        {
-            return $"Conflict choices: save local work, review Campaign Workspace, open workspace support, or continue without replacing this unsaved desktop state; {BuildWorkspaceTimestampReceipt(workspaceContext)} no server restore is applied automatically.";
-        }
-
-        return $"Conflict choices: keep local work visible, review Campaign Workspace, or open workspace support before replacing local work; {BuildWorkspaceTimestampReceipt(workspaceContext)} current save posture is {LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language)}; no server restore is applied automatically.";
-    }
+    private static string? BuildConflictChoiceSummary(ActiveWorkspaceContext workspaceContext, string language) => null;
 
     private static bool CanSaveLocalWorkBeforeRestore(ActiveWorkspaceContext workspaceContext)
         => string.Equals(workspaceContext.ActiveWorkspaceSaveStatus, "unsaved", StringComparison.Ordinal);
@@ -522,6 +502,7 @@ internal sealed record MainWindowShellFrame(
     MainWindowChromeState ChromeState,
     SectionHostState SectionHostState,
     CommandDialogPaneState CommandDialogPaneState,
+    bool ShowNavigatorPane,
     NavigatorPaneState NavigatorPaneState,
     IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> WorkspaceActionsById);
 

@@ -16,6 +16,7 @@ signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 avalonia_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 dual_head_tests_path="$repo_root/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
 blazor_shell_tests_path="$repo_root/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
+desktop_shell_ruleset_tests_path="$repo_root/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs"
 desktop_update_runtime_tests_path="$repo_root/Chummer.Tests/DesktopUpdateRuntimeTests.cs"
 desktop_install_linking_runtime_tests_path="$repo_root/Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
 desktop_startup_smoke_runtime_tests_path="$repo_root/Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs"
@@ -146,16 +147,17 @@ if ! rg -q "b14-flagship-ui-release-gate\\.sh" "$signoff_path"; then
   exit 42
 fi
 
-python3 - <<'PY' "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path"
+python3 - <<'PY' "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_shell_ruleset_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path"
 import sys
 from pathlib import Path
 
 avalonia_gate_tests_path = Path(sys.argv[1])
 dual_head_tests_path = Path(sys.argv[2])
 blazor_shell_tests_path = Path(sys.argv[3])
-desktop_update_runtime_tests_path = Path(sys.argv[4])
-desktop_install_linking_runtime_tests_path = Path(sys.argv[5])
-desktop_startup_smoke_runtime_tests_path = Path(sys.argv[6])
+desktop_shell_ruleset_tests_path = Path(sys.argv[4])
+desktop_update_runtime_tests_path = Path(sys.argv[5])
+desktop_install_linking_runtime_tests_path = Path(sys.argv[6])
+desktop_startup_smoke_runtime_tests_path = Path(sys.argv[7])
 avalonia_text = avalonia_gate_tests_path.read_text(encoding="utf-8")
 required_avalonia_tests = [
     "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers",
@@ -163,7 +165,7 @@ required_avalonia_tests = [
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
-    "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
+    "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
     "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
@@ -179,6 +181,7 @@ required_avalonia_tests = [
     "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
     "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
     "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+    "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
     "Character_creation_preserves_familiar_dense_builder_rhythm",
     "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
     "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
@@ -229,6 +232,20 @@ if missing_blazor:
         "[b14] FAIL: missing required Blazor desktop shell tests: " + ", ".join(missing_blazor)
     )
 
+desktop_shell_ruleset_text = desktop_shell_ruleset_tests_path.read_text(encoding="utf-8")
+required_blazor_desktop_shell_tests = [
+    "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
+    "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",
+]
+missing_blazor_desktop_shell = [
+    name for name in required_blazor_desktop_shell_tests if name not in desktop_shell_ruleset_text
+]
+if missing_blazor_desktop_shell:
+    raise SystemExit(
+        "[b14] FAIL: missing required Blazor desktop shell layout tests: "
+        + ", ".join(missing_blazor_desktop_shell)
+    )
+
 desktop_update_runtime_text = desktop_update_runtime_tests_path.read_text(encoding="utf-8")
 desktop_install_linking_runtime_text = desktop_install_linking_runtime_tests_path.read_text(encoding="utf-8")
 desktop_startup_smoke_runtime_text = desktop_startup_smoke_runtime_tests_path.read_text(encoding="utf-8")
@@ -258,7 +275,7 @@ run_with_retry 2 "flagship Avalonia headless UI gate tests" \
 
 echo "[b14] running flagship Blazor desktop shell gate tests..."
 run_with_retry 2 "flagship Blazor desktop shell gate tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" -v minimal >/dev/null
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests|FullyQualifiedName~DesktopShellRulesetCatalogTests" -v minimal >/dev/null
 
 echo "[b14] running desktop install/update/recovery runtime tests..."
 run_with_retry 2 "desktop install/update/recovery runtime tests" \
@@ -359,7 +376,7 @@ bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_shell_ruleset_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
 import json
 import os
 import sys
@@ -373,6 +390,7 @@ from datetime import datetime, timezone
     avalonia_gate_tests_path,
     dual_head_tests_path,
     blazor_shell_tests_path,
+    desktop_shell_ruleset_tests_path,
     desktop_update_runtime_tests_path,
     desktop_install_linking_runtime_tests_path,
     desktop_startup_smoke_runtime_tests_path,
@@ -385,7 +403,7 @@ from datetime import datetime, timezone
     localization_release_gate_receipt_path,
     veteran_task_time_receipt_path,
     chummer5a_screenshot_review_receipt_path,
-) = sys.argv[1:20]
+) = sys.argv[1:21]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -427,11 +445,92 @@ required_blazor_shell_tests = [
     "StatusStrip_announces_status_via_shared_live_region_semantics",
     "CampaignJournalPanel_renders_explicit_downtime_planner_calendar_and_schedule_views",
 ]
+required_blazor_desktop_shell_tests = [
+    "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
+    "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",
+]
 required_lifecycle_runtime_tests = [
     "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling",
     "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context",
     "TryHandleAsync_writes_receipt_when_requested",
 ]
+with open(avalonia_gate_tests_path, "r", encoding="utf-8") as handle:
+    avalonia_gate_tests_text = handle.read()
+with open(blazor_shell_tests_path, "r", encoding="utf-8") as handle:
+    blazor_shell_tests_text = handle.read()
+with open(desktop_shell_ruleset_tests_path, "r", encoding="utf-8") as handle:
+    desktop_shell_ruleset_tests_text = handle.read()
+with open(layout_hard_gate_receipt_path, "r", encoding="utf-8") as handle:
+    layout_hard_gate_receipt = json.load(handle)
+
+def status_ok(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"pass", "passed", "ready"}
+
+def proof_status(*conditions: bool) -> str:
+    return "pass" if all(conditions) else "fail"
+
+def tests_present(text: str, names: list[str]) -> bool:
+    return all(name in text for name in names)
+
+default_single_runner_layout_tests = [
+    "Opening_mainframe_preserves_chummer5a_successor_workbench_posture",
+    "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
+    "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
+    "Loaded_runner_preserves_visible_character_tab_posture",
+    "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+]
+runtime_backed_navigator_tests = [
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+    "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
+]
+classic_chrome_copy_tests = [
+    "Opening_mainframe_preserves_chummer5a_successor_workbench_posture",
+    "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
+]
+tab_panel_only_tests = [
+    "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
+    "Loaded_runner_preserves_visible_character_tab_posture",
+]
+legacy_workbench_tests = [
+    "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+    "Loaded_runner_preserves_visible_character_tab_posture",
+]
+runtime_shell_menu_tests = [
+    "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
+    "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
+]
+runtime_toolstrip_tests = [
+    "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
+    "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
+]
+layout_gate_status = proof_status(status_ok(str(layout_hard_gate_receipt.get("status") or "").strip().lower()))
+blazor_shell_chrome_status = proof_status(
+    tests_present(blazor_shell_tests_text, required_blazor_shell_tests),
+    tests_present(desktop_shell_ruleset_tests_text, required_blazor_desktop_shell_tests),
+)
+default_single_runner_layout_status = proof_status(
+    status_ok(str(layout_hard_gate_receipt.get("status") or "").strip().lower()),
+    tests_present(avalonia_gate_tests_text, default_single_runner_layout_tests),
+    tests_present(desktop_shell_ruleset_tests_text, required_blazor_desktop_shell_tests),
+)
+runtime_backed_codex_tree_status = proof_status(
+    tests_present(avalonia_gate_tests_text, runtime_backed_navigator_tests)
+)
+runtime_backed_classic_chrome_copy_status = proof_status(
+    tests_present(avalonia_gate_tests_text, classic_chrome_copy_tests)
+)
+runtime_backed_tab_panel_only_header_status = proof_status(
+    tests_present(avalonia_gate_tests_text, tab_panel_only_tests)
+)
+runtime_backed_legacy_workbench_status = proof_status(
+    tests_present(avalonia_gate_tests_text, legacy_workbench_tests)
+)
+runtime_backed_shell_menu_status = proof_status(
+    tests_present(avalonia_gate_tests_text, runtime_shell_menu_tests)
+)
+runtime_backed_toolstrip_actions_status = proof_status(
+    tests_present(avalonia_gate_tests_text, runtime_toolstrip_tests)
+)
 with open(workflow_parity_receipt_path, "r", encoding="utf-8") as handle:
     workflow_parity_receipt = json.load(handle)
 if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
@@ -439,8 +538,6 @@ if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pas
         "[b14] FAIL: explicit Chummer5a desktop workflow parity proof is not passed: "
         + ", ".join(workflow_parity_receipt.get("reasons") or ["missing reason"])
     )
-with open(layout_hard_gate_receipt_path, "r", encoding="utf-8") as handle:
-    layout_hard_gate_receipt = json.load(handle)
 if str(layout_hard_gate_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
     raise SystemExit(
         "[b14] FAIL: explicit Chummer5a layout hard gate proof is not passed: "
@@ -515,28 +612,41 @@ payload = {
         "settingsInlineDialog": "pass",
         "demoRunnerDispatch": "pass",
         "keyboardShortcutParity": "pass",
-        "legacyFamiliarityBridge": "pass",
+        "legacyFamiliarityBridge": proof_status(
+            status_ok(str(layout_hard_gate_receipt.get("status") or "").strip().lower()),
+            tests_present(avalonia_gate_tests_text, legacy_workbench_tests),
+            tests_present(avalonia_gate_tests_text, default_single_runner_layout_tests),
+        ),
         "crossHeadWorkflowParity": "pass",
         "installUpdateRecoveryLifecycle": "pass",
         "themeReadabilityContrast": "pass",
-        "blazorDesktopShellChrome": "pass",
-        "runtimeBackedShellMenu": "pass",
-        "runtimeBackedMenuBarLabels": "pass",
-        "runtimeBackedClickablePrimaryMenus": "pass",
-        "runtimeBackedToolstripActions": "pass",
-        "runtimeBackedCodexTree": "pass",
+        "blazorDesktopShellChrome": blazor_shell_chrome_status,
+        "runtimeBackedShellMenu": runtime_backed_shell_menu_status,
+        "runtimeBackedMenuBarLabels": runtime_backed_shell_menu_status,
+        "runtimeBackedClickablePrimaryMenus": runtime_backed_shell_menu_status,
+        "runtimeBackedToolstripActions": runtime_backed_toolstrip_actions_status,
+        "runtimeBackedCodexTree": runtime_backed_codex_tree_status,
         "runtimeBackedSr4CodexOrientationModel": "pass",
         "runtimeBackedSr5CodexOrientationModel": "pass",
         "runtimeBackedSr6CodexOrientationModel": "pass",
-        "runtimeBackedClassicChromeCopy": "pass",
-        "chummer5aLayoutHardGate": "pass",
-        "runtimeBackedTabPanelOnlyHeader": "pass",
-        "runtimeBackedChromeEnabledAfterRunnerLoad": "pass",
-        "runtimeBackedDemoRunnerImport": "pass",
+        "runtimeBackedClassicChromeCopy": runtime_backed_classic_chrome_copy_status,
+        "chummer5aLayoutHardGate": layout_gate_status,
+        "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": default_single_runner_layout_status,
+        "runtimeBackedTabPanelOnlyHeader": runtime_backed_tab_panel_only_header_status,
+        "runtimeBackedChromeEnabledAfterRunnerLoad": proof_status(
+            "Runtime_backed_shell_chrome_stays_enabled_after_runner_load" in avalonia_gate_tests_text
+        ),
+        "runtimeBackedDemoRunnerImport": proof_status(
+            "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters" in avalonia_gate_tests_text
+        ),
         "fullInteractiveControlInventory": "pass",
         "mainWindowInteractionInventory": "pass",
-        "runtimeBackedLegacyWorkbench": "pass",
-        "legacyDenseBuilderRhythm": "pass",
+        "runtimeBackedLegacyWorkbench": runtime_backed_legacy_workbench_status,
+        "legacyDenseBuilderRhythm": proof_status(
+            status_ok(str(layout_hard_gate_receipt.get("status") or "").strip().lower()),
+            "Character_creation_preserves_familiar_dense_builder_rhythm" in avalonia_gate_tests_text,
+            "Desktop_shell_preserves_classic_dense_center_first_workbench_posture" in avalonia_gate_tests_text,
+        ),
         "legacyCreationWorkflowRhythm": "pass",
         "legacyAdvancementWorkflowRhythm": "pass",
         "legacyBrowseDetailConfirmRhythm": "pass",
@@ -565,14 +675,14 @@ payload = {
             "visualReview": "pass",
             "themeReadabilityContrast": "pass",
             "bundledDemoRunner": "pass",
-            "layoutParityHardGate": "pass",
+            "layoutParityHardGate": layout_gate_status,
             "releaseLifecycle": "pass",
             "requiredRuntimeBackedTests": [
                 "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
                 "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
                 "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
                 "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
-                "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
+                "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
                 "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
                 "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
                 "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
@@ -588,6 +698,7 @@ payload = {
                 "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
                 "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
                 "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+                "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
                 "Character_creation_preserves_familiar_dense_builder_rhythm",
                 "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
                 "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
@@ -603,15 +714,18 @@ payload = {
             "status": "pass",
             "testSuites": [
                 "BlazorShellComponentTests",
+                "DesktopShellRulesetCatalogTests",
                 "DualHeadAcceptanceTests"
             ],
-            "shellChrome": "pass",
+            "shellChrome": blazor_shell_chrome_status,
             "commandSurface": "pass",
             "dialogSurface": "pass",
             "journeyPanels": "pass",
             "releaseLifecycle": "pass",
             "sourceTestFile": blazor_shell_tests_path,
             "requiredShellTests": required_blazor_shell_tests,
+            "desktopShellRulesetSourceTestFile": desktop_shell_ruleset_tests_path,
+            "requiredDesktopShellLayoutTests": required_blazor_desktop_shell_tests,
             "requiredLifecycleTests": required_lifecycle_runtime_tests,
         },
     },

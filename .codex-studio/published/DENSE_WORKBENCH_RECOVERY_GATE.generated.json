@@ -1,9 +1,11 @@
 {
-  "generatedAt": "2026-04-17T14:10:36.756934Z",
+  "generatedAt": "2026-04-20T05:19:55.795303Z",
   "contractName": "chummer6-ui.dense_workbench_recovery_gate",
-  "status": "pass",
-  "summary": "Dense workbench recovery frontier is closed by executable budget, accessibility, and screenshot-backed familiarity proof.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "Dense workbench recovery frontier still has blocking proof gaps.",
+  "reasons": [
+    "Desktop visual familiarity evidence does not pass default_single_runner_keeps_workspace_chrome_collapsed."
+  ],
   "frontierIdsClosed": [
     5179993690,
     2518566268,
@@ -31,12 +33,13 @@
     "sectionTitleFontSize": "11",
     "toolstripItemHeight": 28,
     "sectionRowsListHeight": 176,
-    "mainWindowContentColumns": "228,*,0",
+    "mainWindowContentColumns": "0,*,0",
+    "conditionalNavigatorCollapse": true,
     "rightRailCollapsed": true,
     "loadedRunnerTabStripPanel": true
   },
   "screenshotBackedReview": {
-    "status": "pass",
+    "status": "fail",
     "requiredScreenshots": [
       "01-initial-shell-light.png",
       "02-menu-open-light.png",
@@ -78,6 +81,7 @@
     "post_flagship_feedback": "/docker/chummercomplete/chummer-presentation/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md",
     "app_axaml": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml",
     "main_window_axaml": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.axaml",
+    "main_window_state_refresh": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.StateRefresh.cs",
     "section_host_axaml": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/SectionHostControl.axaml",
     "toolstrip_axaml": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
     "summary_header_axaml": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",

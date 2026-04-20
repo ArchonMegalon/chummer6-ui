@@ -24,6 +24,7 @@ toolstrip_axaml_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axam
 toolstrip_codebehind_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"
 summary_header_axaml_path="$repo_root/Chummer.Avalonia/Controls/SummaryHeaderControl.axaml"
 ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
+desktop_shell_ruleset_tests_path="$repo_root/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs"
 legacy_frmcareer_designer_path="/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs"
 skip_release_gate_lock_wait="${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
 release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
@@ -56,7 +57,7 @@ fi
 echo "[desktop-visual-familiarity-gate] running Chummer5a layout hard gate..."
 bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
 
-python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
+python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$desktop_shell_ruleset_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
 from __future__ import annotations
 
 import json
@@ -307,8 +308,8 @@ def path_within_root(path: Path, root: Path) -> bool:
         return False
 
 
-repo_root, receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, legacy_frmcareer_designer_path, release_channel_path = [
-    Path(value) for value in sys.argv[1:14]
+repo_root, receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, desktop_shell_ruleset_tests_path, legacy_frmcareer_designer_path, release_channel_path = [
+    Path(value) for value in sys.argv[1:15]
 ]
 
 reasons: List[str] = []
@@ -321,6 +322,7 @@ evidence: Dict[str, Any] = {
     "toolstrip_axaml_path": str(toolstrip_axaml_path),
     "toolstrip_codebehind_path": str(toolstrip_codebehind_path),
     "ui_gate_tests_path": str(ui_gate_tests_path),
+    "desktop_shell_ruleset_tests_path": str(desktop_shell_ruleset_tests_path),
     "legacy_frmcareer_designer_path": str(legacy_frmcareer_designer_path),
     "minimum_shell_review_size": {"width": 1280, "height": 800},
     "minimum_dialog_review_size": {"width": 900, "height": 700},
@@ -518,6 +520,9 @@ runtime_backed_menu_bar_labels = str(interaction_proof.get("runtimeBackedMenuBar
 runtime_backed_clickable_primary_menus = str(interaction_proof.get("runtimeBackedClickablePrimaryMenus") or "").strip().lower()
 runtime_backed_toolstrip_actions = str(interaction_proof.get("runtimeBackedToolstripActions") or "").strip().lower()
 runtime_backed_codex_tree = str(interaction_proof.get("runtimeBackedCodexTree") or "").strip().lower()
+default_single_runner_keeps_workspace_chrome_collapsed = str(
+    interaction_proof.get("defaultSingleRunnerKeepsWorkspaceChromeCollapsed") or ""
+).strip().lower()
 runtime_backed_classic_chrome_copy = str(interaction_proof.get("runtimeBackedClassicChromeCopy") or "").strip().lower()
 runtime_backed_tab_panel_only_header = str(interaction_proof.get("runtimeBackedTabPanelOnlyHeader") or "").strip().lower()
 runtime_backed_chrome_enabled_after_runner_load = str(interaction_proof.get("runtimeBackedChromeEnabledAfterRunnerLoad") or "").strip().lower()
@@ -575,6 +580,7 @@ required_legacy_interaction_statuses = {
     "runtimeBackedFileMenuRoutes": runtime_backed_file_menu_routes,
     "runtimeBackedMasterIndex": runtime_backed_master_index,
     "runtimeBackedCharacterRoster": runtime_backed_character_roster,
+    "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": default_single_runner_keeps_workspace_chrome_collapsed,
     "legacyMainframeVisualSimilarity": legacy_mainframe_visual_similarity,
     "legacyDenseBuilderRhythm": legacy_dense_builder_rhythm,
     "legacyCreationWorkflowRhythm": legacy_creation_workflow_rhythm,
@@ -599,6 +605,7 @@ evidence["runtime_backed_menu_bar_labels"] = runtime_backed_menu_bar_labels
 evidence["runtime_backed_clickable_primary_menus"] = runtime_backed_clickable_primary_menus
 evidence["runtime_backed_toolstrip_actions"] = runtime_backed_toolstrip_actions
 evidence["runtime_backed_codex_tree"] = runtime_backed_codex_tree
+evidence["default_single_runner_keeps_workspace_chrome_collapsed"] = default_single_runner_keeps_workspace_chrome_collapsed
 evidence["runtime_backed_classic_chrome_copy"] = runtime_backed_classic_chrome_copy
 evidence["runtime_backed_tab_panel_only_header"] = runtime_backed_tab_panel_only_header
 evidence["runtime_backed_chrome_enabled_after_runner_load"] = runtime_backed_chrome_enabled_after_runner_load
@@ -658,7 +665,9 @@ if not status_ok(runtime_backed_clickable_primary_menus):
 if not status_ok(runtime_backed_toolstrip_actions):
     reasons.append("Flagship UI release gate does not prove runtime-backed labeled workbench actions.")
 if not status_ok(runtime_backed_codex_tree):
-    reasons.append("Flagship UI release gate does not prove a runtime-backed codex tree left rail.")
+    reasons.append("Flagship UI release gate does not prove the auxiliary runtime-backed navigator/workspace rail contract.")
+if not status_ok(default_single_runner_keeps_workspace_chrome_collapsed):
+    reasons.append("Flagship UI release gate does not prove the default single-runner shell collapses workspace chrome and preserves center-first density.")
 if not status_ok(runtime_backed_classic_chrome_copy):
     reasons.append("Flagship UI release gate does not prove runtime-backed classic chrome copy and anti-dashboard posture.")
 if not status_ok(runtime_backed_tab_panel_only_header):
@@ -720,7 +729,7 @@ required_test_names = [
     "Master_index_is_a_first_class_runtime_backed_workbench_route",
     "Character_roster_is_a_first_class_runtime_backed_workbench_route",
     "Desktop_shell_preserves_chummer5a_familiarity_cues",
-    "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
+    "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
     "Theme_tokens_preserve_chummer5a_palette_and_readability",
     "Loaded_runner_preserves_visible_character_tab_posture",
     "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
@@ -736,7 +745,7 @@ required_test_names = [
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
-    "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
+    "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
     "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
@@ -755,6 +764,17 @@ evidence["required_tests"] = required_test_names
 evidence["missing_tests"] = missing_tests
 if missing_tests:
     reasons.append("Visual familiarity tests are missing: " + ", ".join(missing_tests))
+
+required_desktop_shell_test_names = [
+    "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
+    "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",
+]
+desktop_shell_test_text = desktop_shell_ruleset_tests_path.read_text(encoding="utf-8") if desktop_shell_ruleset_tests_path.is_file() else ""
+missing_desktop_shell_tests = [name for name in required_desktop_shell_test_names if name not in desktop_shell_test_text]
+evidence["required_desktop_shell_tests"] = required_desktop_shell_test_names
+evidence["missing_desktop_shell_tests"] = missing_desktop_shell_tests
+if missing_desktop_shell_tests:
+    reasons.append("Desktop shell layout tests are missing: " + ", ".join(missing_desktop_shell_tests))
 
 toolstrip_axaml_text = toolstrip_axaml_path.read_text(encoding="utf-8") if toolstrip_axaml_path.is_file() else ""
 toolstrip_codebehind_text = toolstrip_codebehind_path.read_text(encoding="utf-8") if toolstrip_codebehind_path.is_file() else ""
@@ -793,7 +813,7 @@ if present_disallowed_toolstrip_markers:
 summary_header_text = summary_header_axaml_path.read_text(encoding="utf-8") if summary_header_axaml_path.is_file() else ""
 required_summary_header_markers = [
     "x:Name=\"LoadedRunnerTabStripBorder\"",
-    "x:Name=\"LoadedRunnerTabStripPanel\"",
+    "x:Name=\"LoadedRunnerTabStrip\"",
 ]
 missing_summary_header_markers = [
     marker for marker in required_summary_header_markers if marker not in summary_header_text

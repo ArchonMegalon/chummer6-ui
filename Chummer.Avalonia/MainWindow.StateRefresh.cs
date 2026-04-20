@@ -1,6 +1,8 @@
 using Chummer.Avalonia.Controls;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
+using Avalonia;
+using Avalonia.Controls;
 
 namespace Chummer.Avalonia;
 
@@ -24,6 +26,22 @@ public partial class MainWindow
     {
         _transientStateCoordinator.ApplyShellFrame(shellFrame);
         _controls.ApplyShellFrame(shellFrame);
+        ApplyWorkbenchChromeVisibility(shellFrame);
+    }
+
+    private void ApplyWorkbenchChromeVisibility(MainWindowShellFrame shellFrame)
+    {
+        bool showNavigatorPane = shellFrame.ShowNavigatorPane;
+        LeftNavigatorRegion.IsVisible = showNavigatorPane;
+        LeftNavigatorRegion.IsHitTestVisible = showNavigatorPane;
+
+        if (ContentRegion.ColumnDefinitions.Count >= 3)
+        {
+            ContentRegion.ColumnDefinitions[0].Width = showNavigatorPane
+                ? new GridLength(228)
+                : new GridLength(0);
+            ContentRegion.ColumnSpacing = showNavigatorPane ? 2 : 0;
+        }
     }
 
     private void ApplyPostRefreshEffects(CharacterOverviewState state)

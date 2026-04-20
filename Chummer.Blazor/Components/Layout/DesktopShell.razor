@@ -7,6 +7,7 @@
      tabindex="0"
      @onkeydown="OnShellKeyDown">
     <MenuBar MenuRoots="@MenuRoots.ToArray()"
+             CurrentLanguage="@CurrentLanguage"
              OpenMenuId="@_shellSurfaceState.OpenMenuId"
              IsBusy="@State.IsBusy"
              MenuCommands="@MenuCommands"
@@ -15,6 +16,7 @@
              ExecuteCommandRequested="@ExecuteCommandAsync" />
 
     <ToolStrip Commands="@ToolStripCommands.ToArray()"
+               CurrentLanguage="@CurrentLanguage"
                LastCommandId="@(_shellSurfaceState.LastCommandId ?? State.LastCommandId)"
                IsBusy="@State.IsBusy"
                IsCommandEnabled="@IsCommandEnabled"
@@ -38,20 +40,23 @@
                    SelectTabRequested="@SelectTabAsync"
                    InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
 
-    <div class="workspace-layout">
-        <WorkspaceLeftPane State="@State"
-                           OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
-                           ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
-                           ActiveTabId="@_shellSurfaceState.ActiveTabId"
-                           NavigationTabs="@NavigationTabs"
-                           ActiveWorkspaceActions="@ActiveWorkspaceActions"
-                           ActiveWorkflowSurfaceActions="@ActiveWorkflowSurfaceActions"
-                           IsNavigationTabEnabled="@IsNavigationTabEnabled"
-                           OpenWorkspaceRequested="@OpenWorkspaceAsync"
-                           CloseWorkspaceRequested="@CloseWorkspaceAsync"
-                           SelectTabRequested="@SelectTabAsync"
-                           ExecuteWorkspaceActionRequested="@ExecuteWorkspaceActionAsync"
-                           ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
+    <div class="workspace-layout @(ShowLeftPane ? "workspace-layout--with-left-pane" : "workspace-layout--without-left-pane")">
+        @if (ShowLeftPane)
+        {
+            <WorkspaceLeftPane State="@State"
+                               OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
+                               ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+                               ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                               NavigationTabs="@NavigationTabs"
+                               ActiveWorkspaceActions="@ActiveWorkspaceActions"
+                               ActiveWorkflowSurfaceActions="@ActiveWorkflowSurfaceActions"
+                               IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                               OpenWorkspaceRequested="@OpenWorkspaceAsync"
+                               CloseWorkspaceRequested="@CloseWorkspaceAsync"
+                               SelectTabRequested="@SelectTabAsync"
+                               ExecuteWorkspaceActionRequested="@ExecuteWorkspaceActionAsync"
+                               ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
+        }
 
         <main class="center-pane">
             <SectionPane State="@State" />

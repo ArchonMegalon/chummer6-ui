@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.windows_desktop_exit_gate",
-  "generated_at": "2026-04-18T17:21:19Z",
+  "generated_at": "2026-04-20T05:08:35Z",
   "channelId": "docker",
   "releaseVersion": "run-20260414-1836",
   "status": "passed",
@@ -47,8 +47,8 @@
       "releaseVersion": "run-20260414-1836",
       "installAccessClass": "account_required",
       "compatibilityState": "compatible",
-      "generated_at": "2026-04-17T12:03:23Z",
-      "generatedAt": "2026-04-17T12:03:23Z",
+      "generated_at": "2026-04-19T13:16:51Z",
+      "generatedAt": "2026-04-19T13:16:51Z",
       "id": "avalonia-win-x64-installer"
     },
     "windows_installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
@@ -99,7 +99,7 @@
       "/docker/chummercomplete/chummer6-ui/files/chummer-avalonia-win-x64-installer.exe"
     ],
     "startup_smoke_completed_at": "2026-04-14T20:30:00Z",
-    "startup_smoke_age_seconds": 334279,
+    "startup_smoke_age_seconds": 463115,
     "startup_smoke_max_age_seconds": 604800,
     "startup_smoke_max_future_skew_seconds": 300,
     "ui_local_release_status": "passed",

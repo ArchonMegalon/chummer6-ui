@@ -4016,8 +4016,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling");
         StringAssert.Contains(flagshipGateScriptText, "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context");
         StringAssert.Contains(flagshipGateScriptText, "TryHandleAsync_writes_receipt_when_requested");
-        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist");
         StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
+        StringAssert.Contains(flagshipGateScriptText, "\"defaultSingleRunnerKeepsWorkspaceChromeCollapsed\":");
         StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr4CodexOrientationModel\": \"pass\"");
         StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr5CodexOrientationModel\": \"pass\"");
         StringAssert.Contains(flagshipGateScriptText, "\"runtimeBackedSr6CodexOrientationModel\": \"pass\"");

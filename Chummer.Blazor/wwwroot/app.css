@@ -275,10 +275,17 @@ button:disabled {
 
 .workspace-layout {
     display: grid;
-    grid-template-columns: 228px minmax(0, 1fr);
     gap: 0.15rem;
     min-height: calc(100vh - 86px);
     padding: 0.15rem 0.15rem 0.2rem;
+}
+
+.workspace-layout--with-left-pane {
+    grid-template-columns: 228px minmax(0, 1fr);
+}
+
+.workspace-layout--without-left-pane {
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .left-pane,

@@ -4,14 +4,7 @@
 @using Chummer.Presentation.Rulesets
 @using Chummer.Presentation.Shell
 
-<section class="workbench-tab-strip panel" aria-label="@BuildSummaryHeading()">
-    <div class="workbench-summary-copy">
-        <span class="tab-strip-label">@BuildSummaryHeading()</span>
-        <span class="workbench-runtime-summary"
-              title="@BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId())">
-            @BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId())
-        </span>
-    </div>
+<section class="workbench-tab-strip panel" aria-label="@BuildNavigationTabsHeading()">
     <div class="tab-strip-buttons"
          role="tablist"
          aria-label="@BuildNavigationTabsHeading()">
@@ -54,16 +47,8 @@
     [Parameter]
     public EventCallback InspectRuntimeRequested { get; set; }
 
-    private string BuildSummaryHeading()
-        => RulesetUiDirectiveCatalog.BuildSummaryHeading(ResolveActiveRulesetId());
-
     private string BuildNavigationTabsHeading()
         => RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(ResolveActiveRulesetId());
-
-    private static string BuildActiveRuntimeSummary(
-        Chummer.Contracts.Content.ActiveRuntimeStatusProjection? activeRuntime,
-        string? rulesetId)
-        => ShellStatusTextFormatter.BuildActiveRuntimeSummary(activeRuntime, rulesetId);
 
     private string FormatNavigationTabLabel(NavigationTabDefinition tab)
         => RulesetUiDirectiveCatalog.FormatNavigationTabLabel(tab.RulesetId, tab.Id, tab.Label);
