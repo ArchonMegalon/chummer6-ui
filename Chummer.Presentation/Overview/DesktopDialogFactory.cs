@@ -623,12 +623,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Wired Reflexes 2 · Initiative boost · Essence 3.00" + Environment.NewLine +
             "Cybereyes Rating 4 · Sensor suite · Essence 0.40" + Environment.NewLine +
             "Cyberarm Basic · Capacity shell · Essence 1.00";
-        string selectionDetails =
-            "Selected: Wired Reflexes 2" + Environment.NewLine +
-            "Availability: 12R" + Environment.NewLine +
-            "Cost: ¥149,000" + Environment.NewLine +
-            "Essence: 3.00" + Environment.NewLine +
-            "Capacity: n/a";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Wired Reflexes 2"),
+            ("Availability", "12R"),
+            ("Cost", "¥149,000"),
+            ("Essence", "3.00"),
+            ("Capacity", "n/a"));
         string notes =
             "Grade modifiers, essence/cost deltas, and source details are surfaced here before the implant is added." + Environment.NewLine +
             "Modular limb add-ons and mount payloads still follow the runner detail tabs after selection.";
@@ -650,8 +650,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiCyberwareCapacity", "Capacity", "n/a", "n/a", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareCost", "Cost", "149000", "149000", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareSource", "Source", "Core Rulebook p. 461", "Core Rulebook p. 461", IsReadOnly: true),
-            new DesktopDialogField("uiCyberwareSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiCyberwareNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiCyberwareSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiCyberwareNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -694,11 +694,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Ares Predator V · Pistol · ¥725" + Environment.NewLine +
             "Armor Jacket · Armor · ¥1000" + Environment.NewLine +
             "Medkit Rating 6 · Gear · ¥1500";
-        string selectionDetails =
-            "Selected: Ares Predator V" + Environment.NewLine +
-            "Category: Firearms" + Environment.NewLine +
-            "Availability: 5R" + Environment.NewLine +
-            "Cost: ¥725";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Ares Predator V"),
+            ("Category", "Firearms"),
+            ("Availability", "5R"),
+            ("Cost", "¥725"));
 
         return
         [
@@ -712,8 +712,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiGearQuantity", "Quantity", "1", "1", InputType: "number"),
             new DesktopDialogField("uiGearCost", "Cost", "725", "725", IsReadOnly: true),
             new DesktopDialogField("uiGearSource", "Source", "Core Rulebook p. 424", "Core Rulebook p. 424", IsReadOnly: true),
-            new DesktopDialogField("uiGearSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiGearNotes", "Notes", "Use gear details to confirm legality, source, and rating before adding.", "Use gear details to confirm legality, source, and rating before adding.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiGearSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiGearNotes", "Notes", "Use gear details to confirm legality, source, and rating before adding.", "Use gear details to confirm legality, source, and rating before adding.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -755,11 +755,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Stunbolt · Combat · DV F-3" + Environment.NewLine +
             "Improved Reflexes · Adept Power · 2.5 PP" + Environment.NewLine +
             "Cleaner · Complex Form · Level × 1";
-        string selectionDetails =
-            "Selected: Stunbolt" + Environment.NewLine +
-            "Category: Combat" + Environment.NewLine +
-            "Drain: F-3" + Environment.NewLine +
-            "Source: Core Rulebook p. 288";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Stunbolt"),
+            ("Category", "Combat"),
+            ("Drain", "F-3"),
+            ("Source", "Core Rulebook p. 288"));
 
         return
         [
@@ -772,8 +772,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiMagicCategory", "Category", "Combat", "Combat"),
             new DesktopDialogField("uiMagicLevel", "Level", "1", "1", InputType: "number"),
             new DesktopDialogField("uiMagicSource", "Source", "Core Rulebook p. 288", "Core Rulebook p. 288", IsReadOnly: true),
-            new DesktopDialogField("uiMagicSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiMagicNotes", "Notes", "Drain, PP, or target limits stay visible here before the selection is confirmed.", "Drain, PP, or target limits stay visible here before the selection is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiMagicSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiMagicNotes", "Notes", "Drain, PP, or target limits stay visible here before the selection is confirmed.", "Drain, PP, or target limits stay visible here before the selection is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -789,11 +789,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Stunbolt · Combat · DV F-3" + Environment.NewLine +
             "Heal · Health · DV F-4" + Environment.NewLine +
             "Improved Invisibility · Illusion · DV F-1";
-        string selectionDetails =
-            "Selected: Stunbolt" + Environment.NewLine +
-            "Category: Combat" + Environment.NewLine +
-            "Type: Mana" + Environment.NewLine +
-            "Drain: F-3";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Stunbolt"),
+            ("Category", "Combat"),
+            ("Type", "Mana"),
+            ("Drain", "F-3"));
 
         return
         [
@@ -805,8 +805,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiSpellCandidateList", "Available Spells", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiSpellCategory", "Category", "Combat", "Combat"),
             new DesktopDialogField("uiSpellSource", "Source", "Core Rulebook p. 288", "Core Rulebook p. 288", IsReadOnly: true),
-            new DesktopDialogField("uiSpellSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSpellNotes", "Notes", "Spell source, category, and drain remain visible through confirmation.", "Spell source, category, and drain remain visible through confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiSpellSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiSpellNotes", "Notes", "Spell source, category, and drain remain visible through confirmation.", "Spell source, category, and drain remain visible through confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -822,11 +822,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Improved Reflexes · 2.5 PP" + Environment.NewLine +
             "Combat Sense · 0.5 PP/level" + Environment.NewLine +
             "Killing Hands · 0.5 PP";
-        string selectionDetails =
-            "Selected: Improved Reflexes" + Environment.NewLine +
-            "Power Points: 2.5" + Environment.NewLine +
-            "Level: 1" + Environment.NewLine +
-            "Source: Core Rulebook p. 309";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Improved Reflexes"),
+            ("Power Points", "2.5"),
+            ("Level", "1"),
+            ("Source", "Core Rulebook p. 309"));
 
         return
         [
@@ -837,8 +837,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiAdeptPowerCandidateList", "Available Powers", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiAdeptPowerLevel", "Level", "1", "1", InputType: "number"),
             new DesktopDialogField("uiAdeptPowerSource", "Source", "Core Rulebook p. 309", "Core Rulebook p. 309", IsReadOnly: true),
-            new DesktopDialogField("uiAdeptPowerSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiAdeptPowerNotes", "Notes", "Power-point cost and source stay visible before confirmation.", "Power-point cost and source stay visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiAdeptPowerSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiAdeptPowerNotes", "Notes", "Power-point cost and source stay visible before confirmation.", "Power-point cost and source stay visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -854,11 +854,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Jazz · Initiative boost · 1 dose" + Environment.NewLine +
             "Cram · Alertness boost · 1 dose" + Environment.NewLine +
             "Psyche · Sustained focus · 1 dose";
-        string selectionDetails =
-            "Selected: Jazz" + Environment.NewLine +
-            "Speed: 1 Combat Turn" + Environment.NewLine +
-            "Crash: 1 hour" + Environment.NewLine +
-            "Source: Core Rulebook p. 411";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Jazz"),
+            ("Speed", "1 Combat Turn"),
+            ("Crash", "1 hour"),
+            ("Source", "Core Rulebook p. 411"));
 
         return
         [
@@ -869,8 +869,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDrugCandidateList", "Available Drugs", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDrugQuantity", "Quantity", "1", "1", InputType: "number"),
             new DesktopDialogField("uiDrugSource", "Source", "Core Rulebook p. 411", "Core Rulebook p. 411", IsReadOnly: true),
-            new DesktopDialogField("uiDrugSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDrugNotes", "Notes", "Speed, crash, and source remain visible before the dose is added.", "Speed, crash, and source remain visible before the dose is added.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiDrugSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDrugNotes", "Notes", "Speed, crash, and source remain visible before the dose is added.", "Speed, crash, and source remain visible before the dose is added.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -897,11 +897,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Cleaner · Target: Persona" + Environment.NewLine +
             "Diffusion of Firewall · Target: Device" + Environment.NewLine +
             "Editor · Target: File";
-        string selectionDetails =
-            "Selected: Cleaner" + Environment.NewLine +
-            "Target: Persona" + Environment.NewLine +
-            "Level: 1" + Environment.NewLine +
-            "Source: Data Trails p. 178";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Cleaner"),
+            ("Target", "Persona"),
+            ("Level", "1"),
+            ("Source", "Data Trails p. 178"));
 
         return
         [
@@ -912,8 +912,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiComplexFormCandidateList", "Available Forms", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiComplexFormLevel", "Level", "1", "1", InputType: "number"),
             new DesktopDialogField("uiComplexFormSource", "Source", "Data Trails p. 178", "Data Trails p. 178", IsReadOnly: true),
-            new DesktopDialogField("uiComplexFormSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiComplexFormNotes", "Notes", "Targeting and source stay visible before the form is confirmed.", "Targeting and source stay visible before the form is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiComplexFormSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiComplexFormNotes", "Notes", "Targeting and source stay visible before the form is confirmed.", "Targeting and source stay visible before the form is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -929,11 +929,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Armor · Common Program" + Environment.NewLine +
             "Baby Monitor · Hacking Program" + Environment.NewLine +
             "Stealth Dongle · Cyberdeck Item";
-        string selectionDetails =
-            "Selected: Armor" + Environment.NewLine +
-            "Slot: Common" + Environment.NewLine +
-            "Cost: ¥600" + Environment.NewLine +
-            "Source: Data Trails p. 60";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Armor"),
+            ("Slot", "Common"),
+            ("Cost", "¥600"),
+            ("Source", "Data Trails p. 60"));
 
         return
         [
@@ -944,8 +944,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiMatrixProgramCandidateList", "Available Programs", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiMatrixProgramSlot", "Slot", "Common", "Common"),
             new DesktopDialogField("uiMatrixProgramSource", "Source", "Data Trails p. 60", "Data Trails p. 60", IsReadOnly: true),
-            new DesktopDialogField("uiMatrixProgramSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiMatrixProgramNotes", "Notes", "Program slot and source remain visible before confirmation.", "Program slot and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiMatrixProgramSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiMatrixProgramNotes", "Notes", "Program slot and source remain visible before confirmation.", "Program slot and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -961,11 +961,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Perception · Active Skill · Linked Attribute: Intuition" + Environment.NewLine +
             "Sneaking · Active Skill · Linked Attribute: Agility" + Environment.NewLine +
             "Pilot Ground Craft · Active Skill · Linked Attribute: Reaction";
-        string selectionDetails =
-            "Selected: Perception" + Environment.NewLine +
-            "Category: Active Skill" + Environment.NewLine +
-            "Attribute: Intuition" + Environment.NewLine +
-            "Defaulting: Yes";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Perception"),
+            ("Category", "Active Skill"),
+            ("Attribute", "Intuition"),
+            ("Defaulting", "Yes"));
 
         return
         [
@@ -976,8 +976,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiSkillName", "Skill", "Perception", "Perception"),
             new DesktopDialogField("uiSkillCandidateList", "Available Skills", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiSkillRating", "Rating", "1", "1", InputType: "number"),
-            new DesktopDialogField("uiSkillSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSkillNotes", "Notes", "Skill category, linked attribute, and defaulting posture remain visible before confirmation.", "Skill category, linked attribute, and defaulting posture remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiSkillSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiSkillNotes", "Notes", "Skill category, linked attribute, and defaulting posture remain visible before confirmation.", "Skill category, linked attribute, and defaulting posture remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -993,8 +993,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         [
             new DesktopDialogField("uiSkillSpecializationSkill", "Skill", "Perception", "Perception", IsReadOnly: true),
             new DesktopDialogField("uiSkillSpec", "Specialization", "Visual", "Visual"),
-            new DesktopDialogField("uiSkillSpecializationDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSkillSpecializationNotes", "Notes", "Skill, existing specialization posture, and linked attribute remain visible before applying the specialization.", "Skill, existing specialization posture, and linked attribute remain visible before applying the specialization.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiSkillSpecializationDetails", "Selection Details", NormalizeGridValue(details), NormalizeGridValue(details), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiSkillSpecializationNotes", "Notes", "Skill, existing specialization posture, and linked attribute remain visible before applying the specialization.", "Skill, existing specialization posture, and linked attribute remain visible before applying the specialization.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1010,11 +1010,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Metamagic · Masking" + Environment.NewLine +
             "Metamagic · Centering" + Environment.NewLine +
             "Submersion · Echo";
-        string selectionDetails =
-            "Selected: Masking" + Environment.NewLine +
-            "Track: Initiation" + Environment.NewLine +
-            "Grade: 1" + Environment.NewLine +
-            "Source: Street Grimoire p. 140";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Masking"),
+            ("Track", "Initiation"),
+            ("Grade", "1"),
+            ("Source", "Street Grimoire p. 140"));
 
         return
         [
@@ -1024,8 +1024,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiInitiationGrade", "Grade", "1", "1", InputType: "number"),
             new DesktopDialogField("uiInitiationCandidateList", "Available Rewards", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiInitiationReward", "Reward", "Masking", "Masking"),
-            new DesktopDialogField("uiInitiationSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiInitiationNotes", "Notes", "Grade and metamagic/echo choice stay visible before confirmation.", "Grade and metamagic/echo choice stay visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiInitiationSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiInitiationNotes", "Notes", "Grade and metamagic/echo choice stay visible before confirmation.", "Grade and metamagic/echo choice stay visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1041,11 +1041,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Watcher Spirit · Spirit" + Environment.NewLine +
             "Air Spirit · Spirit" + Environment.NewLine +
             "Ally Spirit · Ally";
-        string selectionDetails =
-            "Selected: Watcher Spirit" + Environment.NewLine +
-            "Force: 3" + Environment.NewLine +
-            "Type: Spirit" + Environment.NewLine +
-            "Source: Core Rulebook p. 302";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Watcher Spirit"),
+            ("Force", "3"),
+            ("Type", "Spirit"),
+            ("Source", "Core Rulebook p. 302"));
 
         return
         [
@@ -1056,8 +1056,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiSpiritName", "Name", "Watcher Spirit", "Watcher Spirit"),
             new DesktopDialogField("uiSpiritCandidateList", "Available Entries", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiSpiritForce", "Force", "3", "3", InputType: "number"),
-            new DesktopDialogField("uiSpiritSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSpiritNotes", "Notes", "Type, force, and source remain visible before confirmation.", "Type, force, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiSpiritSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiSpiritNotes", "Notes", "Type, force, and source remain visible before confirmation.", "Type, force, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1073,11 +1073,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Natural Weapon · Passive" + Environment.NewLine +
             "Elemental Attack · Active" + Environment.NewLine +
             "Guard · Passive";
-        string selectionDetails =
-            "Selected: Natural Weapon" + Environment.NewLine +
-            "Type: Passive" + Environment.NewLine +
-            "Rating: 1" + Environment.NewLine +
-            "Source: Core Rulebook p. 398";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Natural Weapon"),
+            ("Type", "Passive"),
+            ("Rating", "1"),
+            ("Source", "Core Rulebook p. 398"));
 
         return
         [
@@ -1087,8 +1087,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiCritterPowerName", "Power", "Natural Weapon", "Natural Weapon"),
             new DesktopDialogField("uiCritterPowerCandidateList", "Available Powers", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiCritterPowerRating", "Rating", "1", "1", InputType: "number"),
-            new DesktopDialogField("uiCritterPowerSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiCritterPowerNotes", "Notes", "Power type, rating, and source remain visible before confirmation.", "Power type, rating, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiCritterPowerSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiCritterPowerNotes", "Notes", "Power type, rating, and source remain visible before confirmation.", "Power type, rating, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1229,12 +1229,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Hyundai Shin-Hyung · Car · ¥16,000" + Environment.NewLine +
             "GMC Roadmaster · Truck · ¥74,000" + Environment.NewLine +
             "MCT Fly-Spy · Drone · ¥2,000";
-        string selectionDetails =
-            "Selected: Hyundai Shin-Hyung" + Environment.NewLine +
-            "Role: Vehicle" + Environment.NewLine +
-            "Handling: 4" + Environment.NewLine +
-            "Armor: 8" + Environment.NewLine +
-            "Source: Core Rulebook p. 465";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Hyundai Shin-Hyung"),
+            ("Role", "Vehicle"),
+            ("Handling", "4"),
+            ("Armor", "8"),
+            ("Source", "Core Rulebook p. 465"));
 
         return
         [
@@ -1247,8 +1247,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleHandling", "Handling", "4", "4", InputType: "number"),
             new DesktopDialogField("uiVehicleCost", "Cost", "16000", "16000", IsReadOnly: true),
             new DesktopDialogField("uiVehicleSource", "Source", "Core Rulebook p. 465", "Core Rulebook p. 465", IsReadOnly: true),
-            new DesktopDialogField("uiVehicleSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiVehicleNotes", "Notes", "Vehicle stats and source remain visible before the selection is confirmed.", "Vehicle stats and source remain visible before the selection is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiVehicleSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiVehicleNotes", "Notes", "Vehicle stats and source remain visible before the selection is confirmed.", "Vehicle stats and source remain visible before the selection is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1291,11 +1291,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Spoof Chips · Electronics · ¥3,000" + Environment.NewLine +
             "GridLink Override · Electronics · ¥2,500" + Environment.NewLine +
             "Rigger Adaptation · Powertrain · ¥2,500";
-        string selectionDetails =
-            "Selected: Spoof Chips" + Environment.NewLine +
-            "Slot: Body" + Environment.NewLine +
-            "Availability: 8" + Environment.NewLine +
-            "Source: Rigger 5.0 p. 159";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Spoof Chips"),
+            ("Slot", "Body"),
+            ("Availability", "8"),
+            ("Source", "Rigger 5.0 p. 159"));
 
         return
         [
@@ -1306,18 +1306,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleModCandidateList", "Available Mods", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiVehicleModSlot", "Slot", "Body", "Body"),
             new DesktopDialogField("uiVehicleModSource", "Source", "Rigger 5.0 p. 159", "Rigger 5.0 p. 159", IsReadOnly: true),
-            new DesktopDialogField("uiVehicleModSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiVehicleModNotes", "Notes", "Slot, availability, and source remain visible before confirmation.", "Slot, availability, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiVehicleModSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiVehicleModNotes", "Notes", "Slot, availability, and source remain visible before confirmation.", "Slot, availability, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildContactAddFields()
     {
-        string details =
-            "Template: Street Doc" + Environment.NewLine +
-            "Archetype: Medical" + Environment.NewLine +
-            "Connection/Loyalty: 3 / 2" + Environment.NewLine +
-            "Notes: Can source restricted clinic time";
+        string details = BuildGridValue(
+            ("Template", "Street Doc"),
+            ("Archetype", "Medical"),
+            ("Connection/Loyalty", "3 / 2"),
+            ("Notes", "Can source restricted clinic time"));
 
         return
         [
@@ -1325,18 +1325,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiContactRole", "Role", "Street Doc", "Street Doc"),
             new DesktopDialogField("uiContactConnection", "Connection", "3", "3", InputType: "number"),
             new DesktopDialogField("uiContactLoyalty", "Loyalty", "2", "2", InputType: "number"),
-            new DesktopDialogField("uiContactDetails", "Contact Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiContactNotes", "Notes", "Role, connection, loyalty, and summary stay visible while authoring the contact entry.", "Role, connection, loyalty, and summary stay visible while authoring the contact entry.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiContactDetails", "Contact Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiContactNotes", "Notes", "Role, connection, loyalty, and summary stay visible while authoring the contact entry.", "Role, connection, loyalty, and summary stay visible while authoring the contact entry.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildContactEditFields()
     {
-        string details =
-            "Selected Contact: Mr. Johnson" + Environment.NewLine +
-            "Role: Fixer" + Environment.NewLine +
-            "Connection/Loyalty: 5 / 3" + Environment.NewLine +
-            "Notes: Keeps premium jobs flowing";
+        string details = BuildGridValue(
+            ("Selected Contact", "Mr. Johnson"),
+            ("Role", "Fixer"),
+            ("Connection/Loyalty", "5 / 3"),
+            ("Notes", "Keeps premium jobs flowing"));
 
         return
         [
@@ -1344,8 +1344,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiContactEditRole", "Role", "Fixer", "Fixer"),
             new DesktopDialogField("uiContactEditConnection", "Connection", "5", "5", InputType: "number"),
             new DesktopDialogField("uiContactEditLoyalty", "Loyalty", "3", "3", InputType: "number"),
-            new DesktopDialogField("uiContactEditDetails", "Contact Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiContactEditNotes", "Notes", "Connection, loyalty, and contact role remain visible while editing.", "Connection, loyalty, and contact role remain visible while editing.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiContactEditDetails", "Contact Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiContactEditNotes", "Notes", "Connection, loyalty, and contact role remain visible while editing.", "Connection, loyalty, and contact role remain visible while editing.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1379,11 +1379,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "First Impression · Positive · 11 Karma" + Environment.NewLine +
             "Allergy (Common, Mild) · Negative · -10 Karma" + Environment.NewLine +
             "Toughness · Positive · 9 Karma";
-        string details =
-            "Selected: First Impression" + Environment.NewLine +
-            "Type: Positive" + Environment.NewLine +
-            "Karma: 11" + Environment.NewLine +
-            "Source: Core Rulebook p. 73";
+        string details = BuildGridValue(
+            ("Selected", "First Impression"),
+            ("Type", "Positive"),
+            ("Karma", "11"),
+            ("Source", "Core Rulebook p. 73"));
 
         return
         [
@@ -1394,8 +1394,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiQualityName", "Quality", "First Impression", "First Impression"),
             new DesktopDialogField("uiQualityCandidateList", "Available Qualities", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiQualityKarma", "Karma", "11", "11", IsReadOnly: true),
-            new DesktopDialogField("uiQualitySelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiQualityNotes", "Notes", "Quality type, karma cost, and source remain visible before confirmation.", "Quality type, karma cost, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiQualitySelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiQualityNotes", "Notes", "Quality type, karma cost, and source remain visible before confirmation.", "Quality type, karma cost, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1411,12 +1411,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Ares Alpha · Assault Rifle · ¥2,650" + Environment.NewLine +
             "Defiance T-250 · Shotgun · ¥450" + Environment.NewLine +
             "Colt M23 · Heavy Pistol · ¥750";
-        string details =
-            "Selected: Colt M23" + Environment.NewLine +
-            "Damage: 7P" + Environment.NewLine +
-            "AP: -1" + Environment.NewLine +
-            "Mode: SA" + Environment.NewLine +
-            "Source: Core Rulebook p. 424";
+        string details = BuildGridValue(
+            ("Selected", "Colt M23"),
+            ("Damage", "7P"),
+            ("AP", "-1"),
+            ("Mode", "SA"),
+            ("Source", "Core Rulebook p. 424"));
 
         return
         [
@@ -1429,8 +1429,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiWeaponAccuracy", "Accuracy", "5", "5", IsReadOnly: true),
             new DesktopDialogField("uiWeaponCost", "Cost", "750", "750", IsReadOnly: true),
             new DesktopDialogField("uiWeaponSource", "Source", "Core Rulebook p. 424", "Core Rulebook p. 424", IsReadOnly: true),
-            new DesktopDialogField("uiWeaponSelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiWeaponNotes", "Notes", "Damage, AP, firing mode, and source remain visible before confirmation.", "Damage, AP, firing mode, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiWeaponSelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiWeaponNotes", "Notes", "Damage, AP, firing mode, and source remain visible before confirmation.", "Damage, AP, firing mode, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1446,12 +1446,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Armor Jacket · Armor 12 · ¥1000" + Environment.NewLine +
             "Actioneer Business Clothes · Armor 8 · ¥1500" + Environment.NewLine +
             "PPP System · Armor +1 · ¥250";
-        string details =
-            "Selected: Armor Jacket" + Environment.NewLine +
-            "Armor: 12" + Environment.NewLine +
-            "Availability: 12" + Environment.NewLine +
-            "Capacity: n/a" + Environment.NewLine +
-            "Source: Core Rulebook p. 436";
+        string details = BuildGridValue(
+            ("Selected", "Armor Jacket"),
+            ("Armor", "12"),
+            ("Availability", "12"),
+            ("Capacity", "n/a"),
+            ("Source", "Core Rulebook p. 436"));
 
         return
         [
@@ -1464,8 +1464,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiArmorRating", "Armor", "12", "12", IsReadOnly: true),
             new DesktopDialogField("uiArmorCost", "Cost", "1000", "1000", IsReadOnly: true),
             new DesktopDialogField("uiArmorSource", "Source", "Core Rulebook p. 436", "Core Rulebook p. 436", IsReadOnly: true),
-            new DesktopDialogField("uiArmorSelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Detail, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiArmorNotes", "Notes", "Armor rating, legality, and source remain visible before confirmation.", "Armor rating, legality, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Summary)
+            new DesktopDialogField("uiArmorSelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiArmorNotes", "Notes", "Armor rating, legality, and source remain visible before confirmation.", "Armor rating, legality, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
