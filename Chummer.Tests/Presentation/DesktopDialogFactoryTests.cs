@@ -51,7 +51,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsPropertyGrid", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsTree", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsPropertyGrid", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Summary, dialog.Fields.Single(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)).VisualKind);
         StringAssert.Contains(dialog.Message ?? string.Empty, "Phase-1 desktop language changes apply on restart.");
     }
 
@@ -87,6 +87,8 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.open_notes", dialog.Id);
         Assert.AreEqual("From notes panel", DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesEditor"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesSections"), "Metadata");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesDetails"), "Behavior | inline notes editing");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiNotesDetails", StringComparison.Ordinal)).VisualKind);
     }
 
     [TestMethod]
@@ -197,12 +199,16 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("/books/core-rulebook.pdf", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectedSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Reference posture | governed");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetPreview"), "No governed rule snippets");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Source toggles: governed");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Source toggles | governed");
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSnippetPreview", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCharacterSetting", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSelectedSource", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceSelectionSummary", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexImportOracleMatrix", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("12", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourcebooks"));
         Assert.AreEqual("67% (8/12)", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexReferenceCoverage"));
         Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSettingsLane"));
@@ -364,7 +370,9 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "rosterTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunner", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Image, dialog.Fields.Single(field => string.Equals(field.Id, "rosterMugshot", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunnerStatus", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunnerNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "rosterEntries", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "rosterTree", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunner", StringComparison.Ordinal)).LayoutSlot);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "GST · Ghost · unsaved · sr6");
