@@ -53,6 +53,7 @@ def numeric_style(text: str, selector: str, property_name: str) -> float | None:
 receipt_path = Path(sys.argv[1])
 app_text = read("Chummer.Avalonia/App.axaml")
 main_window_text = read("Chummer.Avalonia/MainWindow.axaml")
+main_window_state_refresh_text = read("Chummer.Avalonia/MainWindow.StateRefresh.cs")
 section_host_text = read("Chummer.Avalonia/Controls/SectionHostControl.axaml")
 toolstrip_text = read("Chummer.Avalonia/Controls/ToolStripControl.axaml")
 test_text = read("Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs")
@@ -103,8 +104,17 @@ if style_value(app_text, "ListBoxItem", "Padding") != "3,1":
 if style_value(app_text, "Button", "Padding") != "5,1":
     reasons.append("Dense toolbar buttons must use Button padding 5,1.")
 
-if 'ColumnDefinitions="228,*,0"' not in main_window_text:
-    reasons.append("Flagship workbench must keep the narrow-left / dominant-center / collapsed-right desktop layout.")
+if 'ColumnDefinitions="0,*,0"' not in main_window_text:
+    reasons.append("Flagship workbench must default to a center-first 0,*,0 desktop layout for the single-runner shell.")
+for token in [
+    'x:Name="LeftNavigatorRegion"',
+    'IsVisible="False"',
+    "ApplyWorkbenchChromeVisibility(shellFrame);",
+    "new GridLength(228)",
+    "new GridLength(0)",
+]:
+    if token not in (main_window_text + main_window_state_refresh_text):
+        reasons.append(f"Flagship workbench is missing required compact-layout token: {token}")
 if 'x:Name="WorkspaceStripRegion"' in main_window_text:
     reasons.append("Default flagship workbench must not restore a decorative workspace-strip row.")
 right_shell_index = main_window_text.find('x:Name="RightShellRegion"')
@@ -121,7 +131,8 @@ for forbidden in ["dashboard", "mainframe", "control center"]:
         reasons.append(f"Decorative shell copy is still present in Avalonia workbench XAML: {forbidden}.")
 
 required_tests = [
-    "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
+    "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
+    "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Character_creation_preserves_familiar_dense_builder_rhythm",
@@ -140,7 +151,7 @@ evidence.update(
         "buttonPadding": style_value(app_text, "Button", "Padding"),
         "usesCompactFluentDensity": 'FluentTheme DensityStyle="Compact"' in app_text,
         "usesFlatSectionPanels": 'Classes="shell-card"' not in section_host_text,
-        "mainWindowLayout": "ColumnDefinitions=\"228,*,0\"" if 'ColumnDefinitions="228,*,0"' in main_window_text else "missing",
+        "mainWindowLayout": "ColumnDefinitions=\"0,*,0\"" if 'ColumnDefinitions="0,*,0"' in main_window_text else "missing",
         "requiredTests": required_tests,
     }
 )

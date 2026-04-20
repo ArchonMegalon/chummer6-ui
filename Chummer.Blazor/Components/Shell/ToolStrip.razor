@@ -20,6 +20,9 @@
     public IReadOnlyList<AppCommandDefinition> Commands { get; set; } = [];
 
     [Parameter]
+    public string? CurrentLanguage { get; set; }
+
+    [Parameter]
     public string? LastCommandId { get; set; }
 
     [Parameter]

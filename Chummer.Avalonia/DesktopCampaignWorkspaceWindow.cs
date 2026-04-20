@@ -339,7 +339,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         [
             _campaignProjection.RestoreSummary,
             _campaignProjection.DeviceRoleSummary,
-            BuildRestoreContinuityChoiceSummary(),
+            BuildCampaignRestoreContinuitySummary(),
             BuildRestoreStaleStateVisibilitySummary(),
             "Review before continuing: keep local work visible until the restore, stale-state, and conflict choices below are resolved.",
             BuildRestoreConflictChoiceSummary()
@@ -379,6 +379,9 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
         return string.Join("\n", lines);
     }
+
+    private string BuildCampaignRestoreContinuitySummary()
+        => BuildRestoreContinuityChoiceSummary();
 
     private string BuildRestoreContinuityChoiceSummary()
     {

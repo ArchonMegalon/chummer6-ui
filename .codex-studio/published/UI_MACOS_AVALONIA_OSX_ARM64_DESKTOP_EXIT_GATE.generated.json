@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.macos_desktop_exit_gate",
-  "generated_at": "2026-04-18T17:21:19Z",
+  "generated_at": "2026-04-19T19:16:37Z",
   "channelId": "docker",
   "releaseVersion": "run-20260414-1836",
   "status": "passed",
@@ -53,7 +53,7 @@
       "/docker/chummercomplete/chummer6-ui/dist/files/chummer-avalonia-osx-arm64-installer.dmg"
     ],
     "receipt_recorded_at": "2026-04-15T01:53:37Z",
-    "receipt_age_seconds": 314862,
+    "receipt_age_seconds": 408180,
     "receipt_max_age_seconds": 604800,
     "receipt_max_future_skew_seconds": 300,
     "external_blocker": "",
@@ -113,8 +113,8 @@
       "releaseVersion": "run-20260414-1836",
       "installAccessClass": "account_required",
       "compatibilityState": "compatible",
-      "generated_at": "2026-04-17T12:03:23Z",
-      "generatedAt": "2026-04-17T12:03:23Z",
+      "generated_at": "2026-04-19T13:16:51Z",
+      "generatedAt": "2026-04-19T13:16:51Z",
       "id": "avalonia-osx-arm64-installer"
     },
     "artifact": {
@@ -165,7 +165,7 @@
         "/docker/chummercomplete/chummer6-ui/dist/files/chummer-avalonia-osx-arm64-installer.dmg"
       ],
       "receipt_recorded_at": "2026-04-15T01:53:37Z",
-      "receipt_age_seconds": 314862,
+      "receipt_age_seconds": 408180,
       "receipt_max_age_seconds": 604800,
       "receipt_max_future_skew_seconds": 300,
       "external_blocker": "",

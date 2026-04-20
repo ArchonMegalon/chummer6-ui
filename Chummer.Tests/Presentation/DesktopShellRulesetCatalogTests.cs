@@ -46,14 +46,11 @@ public sealed class DesktopShellRulesetCatalogTests
     }
 
     [DataTestMethod]
-    [DataRow(RulesetDefaults.Sr4, "Oracle intake desk", "Shadowrun 4 preview import cockpit", "Desktop Summary · SR4 Preview", "SR4 Preview Dossiers", "Import SR4 Oracle File", "SR4 Preview Result", "SR4 Preview Commands")]
-    [DataRow(RulesetDefaults.Sr5, "Flagship desktop workbench", "Shadowrun 5 flagship workbench", "Desktop Summary · SR5 Workbench", "SR5 Workbench Dossiers", "Import SR5 Workbench File", "SR5 Workbench Result", "SR5 Workbench Commands")]
-    [DataRow(RulesetDefaults.Sr6, "Starter and beta desk", "Shadowrun 6 guided starter cockpit", "Desktop Summary · SR6 Starter", "SR6 Starter Dossiers", "Import SR6 Starter File", "SR6 Starter Result", "SR6 Starter Commands")]
+    [DataRow(RulesetDefaults.Sr4, "SR4 Preview Dossiers", "Import SR4 Oracle File", "SR4 Preview Result", "SR4 Preview Commands")]
+    [DataRow(RulesetDefaults.Sr5, "SR5 Workbench Dossiers", "Import SR5 Workbench File", "SR5 Workbench Result", "SR5 Workbench Commands")]
+    [DataRow(RulesetDefaults.Sr6, "SR6 Starter Dossiers", "Import SR6 Starter File", "SR6 Starter Result", "SR6 Starter Commands")]
     public void DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane(
         string rulesetId,
-        string expectedEyebrow,
-        string expectedTitle,
-        string expectedSummary,
         string expectedDossiers,
         string expectedImportHeading,
         string expectedResultHeading,
@@ -96,19 +93,20 @@ public sealed class DesktopShellRulesetCatalogTests
         cut.WaitForAssertion(() =>
         {
             Assert.IsFalse(cut.Markup.Contains("data-testid=\"desktop-flagship-marquee\"", StringComparison.Ordinal));
-            Assert.IsFalse(cut.Markup.Contains(expectedEyebrow, StringComparison.Ordinal));
-            Assert.IsFalse(cut.Markup.Contains(expectedTitle, StringComparison.Ordinal));
-            StringAssert.Contains(cut.Markup, expectedSummary);
-            StringAssert.Contains(cut.Markup, expectedDossiers);
+            Assert.AreEqual(0, cut.FindAll(".workbench-summary-copy").Count, "Desktop shell must keep the header tab-only in the compact single-runner posture.");
+            Assert.AreEqual(0, cut.FindAll(".workbench-runtime-summary").Count, "Desktop shell must not burn header width on runtime copy in the compact single-runner posture.");
+            Assert.IsFalse(cut.Markup.Contains(expectedDossiers, StringComparison.Ordinal), "Single-runner posture must not surface workspace dossiers on first paint.");
             StringAssert.Contains(cut.Markup, expectedImportHeading);
             StringAssert.Contains(cut.Markup, expectedResultHeading);
             StringAssert.Contains(cut.Markup, expectedCommandHeading);
-            StringAssert.Contains(cut.Find("#complianceState").TextContent, $"Ruleset: {rulesetId} (");
+            StringAssert.Contains(cut.Find("#complianceState").TextContent, "Ruleset:");
+            StringAssert.Contains(cut.Find("#complianceState").TextContent, RulesetUiDirectiveCatalog.Resolve(rulesetId).DisplayName);
             StringAssert.Contains(cut.Find("#complianceState").TextContent, RulesetUiDirectiveCatalog.Resolve(rulesetId).FileExtension);
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Workflows: 1 defs / 1 surfaces");
-            Assert.AreEqual(
-                ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellState.ActiveRuntime, rulesetId),
-                cut.Find(".workbench-runtime-summary").TextContent.Trim());
+            Assert.IsFalse(cut.Find("#complianceState").TextContent.Contains("preview/oracle-first", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Find("#complianceState").TextContent.Contains("primary/workbench", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Find("#complianceState").TextContent.Contains("beta/edge-first", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Find("#complianceState").TextContent.Contains("flagship", StringComparison.OrdinalIgnoreCase));
         });
     }
 
@@ -119,17 +117,24 @@ public sealed class DesktopShellRulesetCatalogTests
         context.JSInterop.Mode = JSRuntimeMode.Loose;
 
         CharacterWorkspaceId workspaceId = new("ws-sr6");
+        CharacterWorkspaceId secondaryWorkspaceId = new("ws-sr6-secondary");
         OpenWorkspaceState openWorkspace = new(
             Id: workspaceId,
             Name: "SR6 Runner",
             Alias: "SR6",
             LastOpenedUtc: DateTimeOffset.UtcNow,
             RulesetId: "sr6");
+        OpenWorkspaceState secondaryWorkspace = new(
+            Id: secondaryWorkspaceId,
+            Name: "SR6 Backup",
+            Alias: "SR6B",
+            LastOpenedUtc: DateTimeOffset.UtcNow.AddMinutes(-10),
+            RulesetId: "sr6");
 
         CharacterOverviewState overviewState = CharacterOverviewState.Empty with
         {
-            Session = new WorkspaceSessionState(workspaceId, [openWorkspace], [workspaceId]),
-            OpenWorkspaces = [openWorkspace],
+            Session = new WorkspaceSessionState(workspaceId, [openWorkspace, secondaryWorkspace], [workspaceId, secondaryWorkspaceId]),
+            OpenWorkspaces = [openWorkspace, secondaryWorkspace],
             WorkspaceId = workspaceId,
             ActiveTabId = "tab-info",
             IsBusy = false
@@ -155,10 +160,16 @@ public sealed class DesktopShellRulesetCatalogTests
             Alias: openWorkspace.Alias,
             LastOpenedUtc: openWorkspace.LastOpenedUtc,
             RulesetId: "sr6");
+        ShellWorkspaceState secondaryShellWorkspace = new(
+            Id: secondaryWorkspaceId,
+            Name: secondaryWorkspace.Name,
+            Alias: secondaryWorkspace.Alias,
+            LastOpenedUtc: secondaryWorkspace.LastOpenedUtc,
+            RulesetId: "sr6");
         ShellState shellState = ShellState.Empty with
         {
             ActiveWorkspaceId = workspaceId,
-            OpenWorkspaces = [shellWorkspace],
+            OpenWorkspaces = [shellWorkspace, secondaryShellWorkspace],
             ActiveRulesetId = "sr6",
             Commands = [menuRoot],
             MenuRoots = [menuRoot],
@@ -196,25 +207,21 @@ public sealed class DesktopShellRulesetCatalogTests
             StringAssert.Contains(actionButtons[0].TextContent, "SR6 Matrix Action");
             Assert.AreEqual("workflow.surface.sr6", workflowButtons[0].GetAttribute("data-workflow-surface"));
             StringAssert.Contains(workflowButtons[0].TextContent, "SR6 Matrix Action");
-            StringAssert.Contains(cut.Find("#complianceState").TextContent, "Runtime: Shadowrun 6 · beta/edge-first · SR6 Core [sr6-runtime-fp-001]");
-            Assert.AreEqual(
-                "Shadowrun 6 · beta/edge-first · SR6 Core [sr6-runtime-fp-001] (available)",
-                cut.Find(".workbench-runtime-summary").TextContent.Trim());
-            StringAssert.Contains(cut.Find("#complianceState").TextContent, "Ruleset: sr6 (beta/edge-first");
+            Assert.AreEqual(0, cut.FindAll(".workbench-runtime-summary").Count);
+            StringAssert.Contains(cut.Find("#complianceState").TextContent, "Ruleset: Shadowrun 6");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, ".chum6");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Workflows: 1 defs / 1 surfaces");
             Assert.IsFalse(cut.Markup.Contains("data-testid=\"desktop-flagship-marquee\"", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("Starter and beta desk", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("Shadowrun 6 guided starter cockpit", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("SR6 home cockpit foregrounds starter kits", StringComparison.Ordinal));
-            StringAssert.Contains(cut.Markup, "Desktop Summary · SR6 Starter");
             StringAssert.Contains(cut.Markup, "SR6 Starter Dossiers");
             StringAssert.Contains(cut.Markup, "SR6 Starter Tabs");
         });
     }
 
     [TestMethod]
-    public void DesktopShell_runtime_summary_uses_read_only_shell_chrome_without_inline_inspector_button()
+    public void DesktopShell_summary_header_stays_tab_only_without_runtime_copy_or_inline_inspector_button()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -251,9 +258,7 @@ public sealed class DesktopShellRulesetCatalogTests
         cut.WaitForAssertion(() =>
         {
             Assert.AreEqual(0, cut.FindAll("#summaryRuntimeInspect").Count);
-            Assert.AreEqual(
-                "Shadowrun 6 · beta/edge-first · SR6 Core [sr6-runtime-fp-001] (available)",
-                cut.Find(".workbench-runtime-summary").TextContent.Trim());
+            Assert.AreEqual(0, cut.FindAll(".workbench-runtime-summary").Count);
         });
 
         Assert.IsNull(presenter.ExecutedCommandId);
@@ -303,6 +308,138 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.IsFalse(cut.Markup.Contains("panel metadata", StringComparison.Ordinal), "The default desktop shell must not mount the metadata slab above the workbench.");
             Assert.IsFalse(cut.Markup.Contains("section-payload", StringComparison.Ordinal), "The default desktop shell must not surface raw section payload dumps.");
             Assert.IsFalse(cut.Markup.Contains("{\"skills\":1}", StringComparison.Ordinal), "The default desktop shell must keep raw section JSON out of the visible workbench.");
+        });
+    }
+
+    [TestMethod]
+    public void DesktopShell_hides_workspace_left_pane_for_single_runner_posture()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        CharacterWorkspaceId workspaceId = new("ws-sr5");
+        OpenWorkspaceState openWorkspace = new(
+            Id: workspaceId,
+            Name: "SR5 Runner",
+            Alias: "SR5",
+            LastOpenedUtc: DateTimeOffset.UtcNow,
+            RulesetId: RulesetDefaults.Sr5);
+        CharacterOverviewState overviewState = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(workspaceId, [openWorkspace], [workspaceId]),
+            OpenWorkspaces = [openWorkspace],
+            WorkspaceId = workspaceId,
+            ActiveTabId = "tab-info",
+            IsBusy = false
+        };
+        ShellState shellState = CreateShellState(
+            workspaceId,
+            openWorkspace,
+            RulesetDefaults.Sr5,
+            runtimeTitle: "SR5 Core",
+            runtimeFingerprint: "sr5-runtime-fp-compact");
+
+        RegisterDesktopShellServices(
+            context,
+            overviewState,
+            shellState,
+            FakeWorkbenchCoachApiClient.CreateDefault("sr5-runtime-fp-compact"),
+            new CatalogOnlyRulesetPlugin(RulesetDefaults.Sr5));
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual(0, cut.FindAll(".left-pane").Count, "Single-runner posture must not render the workspace left pane.");
+            Assert.AreEqual(0, cut.FindAll(".mdi-strip").Count, "Single-runner posture must not render MDI workspace chrome.");
+            StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--without-left-pane");
+            Assert.IsFalse(cut.Markup.Contains("SR5 Workbench Dossiers", StringComparison.Ordinal), "Single-runner posture must not spend first-paint copy on workspace dossiers.");
+        });
+    }
+
+    [TestMethod]
+    public void DesktopShell_restores_workspace_left_pane_for_multi_workspace_session()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        CharacterWorkspaceId activeWorkspaceId = new("ws-sr5-primary");
+        CharacterWorkspaceId secondaryWorkspaceId = new("ws-sr5-secondary");
+        OpenWorkspaceState activeWorkspace = new(
+            Id: activeWorkspaceId,
+            Name: "SR5 Runner",
+            Alias: "SR5",
+            LastOpenedUtc: DateTimeOffset.UtcNow,
+            RulesetId: RulesetDefaults.Sr5);
+        OpenWorkspaceState secondaryWorkspace = new(
+            Id: secondaryWorkspaceId,
+            Name: "Backup Runner",
+            Alias: "BR",
+            LastOpenedUtc: DateTimeOffset.UtcNow.AddMinutes(-5),
+            RulesetId: RulesetDefaults.Sr5);
+        CharacterOverviewState overviewState = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(activeWorkspaceId, [activeWorkspace, secondaryWorkspace], [activeWorkspaceId, secondaryWorkspaceId]),
+            OpenWorkspaces = [activeWorkspace, secondaryWorkspace],
+            WorkspaceId = activeWorkspaceId,
+            ActiveTabId = "tab-info",
+            IsBusy = false
+        };
+        AppCommandDefinition menuRoot = new("file", "menu.file", "menu", false, true, RulesetDefaults.Sr5);
+        NavigationTabDefinition infoTab = new("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5);
+        WorkflowDefinition workflowDefinition = new(
+            WorkflowId: WorkflowDefinitionIds.CareerWorkbench,
+            Title: "Career Workbench",
+            SurfaceIds: ["workflow.surface.sr5"],
+            RequiresOpenWorkspace: true);
+        WorkflowSurfaceDefinition workflowSurface = new(
+            SurfaceId: "workflow.surface.sr5",
+            WorkflowId: WorkflowDefinitionIds.CareerWorkbench,
+            Kind: WorkflowSurfaceKinds.Workbench,
+            RegionId: ShellRegionIds.SectionPane,
+            LayoutToken: WorkflowLayoutTokens.CareerWorkbench,
+            ActionIds: ["sr5.action.matrix"]);
+        ShellState shellState = ShellState.Empty with
+        {
+            ActiveWorkspaceId = activeWorkspaceId,
+            OpenWorkspaces =
+            [
+                new ShellWorkspaceState(activeWorkspaceId, activeWorkspace.Name, activeWorkspace.Alias, activeWorkspace.LastOpenedUtc, RulesetDefaults.Sr5),
+                new ShellWorkspaceState(secondaryWorkspaceId, secondaryWorkspace.Name, secondaryWorkspace.Alias, secondaryWorkspace.LastOpenedUtc, RulesetDefaults.Sr5)
+            ],
+            ActiveRulesetId = RulesetDefaults.Sr5,
+            Commands = [menuRoot],
+            MenuRoots = [menuRoot],
+            NavigationTabs = [infoTab],
+            ActiveTabId = infoTab.Id,
+            WorkflowDefinitions = [workflowDefinition],
+            WorkflowSurfaces = [workflowSurface],
+            ActiveRuntime = new ActiveRuntimeStatusProjection(
+                ProfileId: "official.sr5.core",
+                Title: "SR5 Core",
+                RulesetId: RulesetDefaults.Sr5,
+                RuntimeFingerprint: "sr5-runtime-fp-multi",
+                InstallState: ArtifactInstallStates.Available,
+                RulePackCount: 1,
+                ProviderBindingCount: 1,
+                WarningCount: 0)
+        };
+
+        RegisterDesktopShellServices(
+            context,
+            overviewState,
+            shellState,
+            FakeWorkbenchCoachApiClient.CreateDefault("sr5-runtime-fp-multi"),
+            new CatalogOnlyRulesetPlugin(RulesetDefaults.Sr5));
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual(1, cut.FindAll(".left-pane").Count, "Multi-workspace posture must restore the workspace left pane.");
+            Assert.AreEqual(1, cut.FindAll(".mdi-strip").Count, "Multi-workspace posture must restore the MDI workspace strip.");
+            StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--with-left-pane");
+            StringAssert.Contains(cut.Markup, "SR5 Workbench Dossiers");
         });
     }
 
@@ -382,6 +519,7 @@ public sealed class DesktopShellRulesetCatalogTests
             new Sr6CatalogPlugin());
 
         IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+        cut.Find("[data-testid=\"refresh-workbench-coach-sidecar\"]").Click();
 
         cut.WaitForAssertion(() =>
         {

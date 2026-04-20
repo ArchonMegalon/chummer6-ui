@@ -194,6 +194,10 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         string releaseGatePath = ResolveSourceFile("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
         string visualGatePath = ResolveSourceFile("scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
+        string layoutGatePath = ResolveSourceFile("scripts", "ai", "milestones", "chummer5a-layout-hard-gate.sh");
+        string mainWindowPath = ResolveSourceFile("Chummer.Avalonia", "MainWindow.axaml");
+        string mainWindowStateRefreshPath = ResolveSourceFile("Chummer.Avalonia", "MainWindow.StateRefresh.cs");
+        string avaloniaProjectorPath = ResolveSourceFile("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs");
         string toolStripPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "ToolStripControl.axaml");
         string navigatorPanePath = ResolveSourceFile("Chummer.Avalonia", "Controls", "NavigatorPaneControl.axaml");
         string shellCatalogPath = ResolveSourceFile("Chummer.Presentation", "Shell", "CatalogOnlyRulesetShellCatalogResolver.cs");
@@ -206,6 +210,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         string releaseGateText = File.ReadAllText(releaseGatePath);
         string visualGateText = File.ReadAllText(visualGatePath);
+        string layoutGateText = File.ReadAllText(layoutGatePath);
+        string mainWindowText = File.ReadAllText(mainWindowPath);
+        string mainWindowStateRefreshText = File.ReadAllText(mainWindowStateRefreshPath);
+        string avaloniaProjectorText = File.ReadAllText(avaloniaProjectorPath);
         string toolStripText = File.ReadAllText(toolStripPath);
         string navigatorPaneText = File.ReadAllText(navigatorPanePath);
         string shellCatalogText = File.ReadAllText(shellCatalogPath);
@@ -218,6 +226,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         StringAssert.Contains(releaseGateText, "chummer5a-layout-hard-gate.sh");
         StringAssert.Contains(visualGateText, "chummer5a-layout-hard-gate.sh");
+        StringAssert.Contains(layoutGateText, "defaultSingleRunnerKeepsWorkspaceChromeCollapsed");
         StringAssert.Contains(toolStripText, "x:Name=\"DesktopHomeButton\"");
         StringAssert.Contains(toolStripText, "x:Name=\"ImportFileButton\"");
         StringAssert.Contains(toolStripText, "x:Name=\"SaveButton\"");
@@ -255,11 +264,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             blazorShellText.IndexOf("\"new_character\"", StringComparison.Ordinal) <
             blazorShellText.IndexOf("\"open_character\"", StringComparison.Ordinal),
             "Blazor desktop shell must keep new before open in the preferred toolstrip order.");
+        StringAssert.Contains(blazorShellText, "private bool ShowLeftPane =>");
+        StringAssert.Contains(blazorShellText, "_shellSurfaceState.OpenWorkspaces.Count > 1");
         StringAssert.Contains(shellCatalogText, "Command(\"switch_ruleset\", \"command.switch_ruleset\", \"special\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"new_window\", \"command.new_window\", \"windows\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"close_window\", \"command.close_window\", \"windows\", false)");
         StringAssert.Contains(shellChromeBoundaryText, "[\"switch_ruleset\"] = \"Switch Ruleset...\"");
         StringAssert.Contains(shellChromeBoundaryText, "[\"new_window\"] = \"New Window\"");
+        StringAssert.Contains(mainWindowText, "ColumnDefinitions=\"0,*,0\"");
+        StringAssert.Contains(mainWindowText, "x:Name=\"LeftNavigatorRegion\"");
+        StringAssert.Contains(mainWindowText, "IsVisible=\"False\"");
+        StringAssert.Contains(mainWindowStateRefreshText, "ApplyWorkbenchChromeVisibility(shellFrame);");
+        StringAssert.Contains(mainWindowStateRefreshText, "new GridLength(228)");
+        StringAssert.Contains(mainWindowStateRefreshText, "new GridLength(0)");
+        StringAssert.Contains(avaloniaProjectorText, "ShowNavigatorPane: resolvedOpenWorkspaces.Length > 1");
         StringAssert.Contains(navigatorPaneText, "x:Name=\"CodexHeadingText\"");
         StringAssert.Contains(navigatorPaneText, "IsVisible=\"False\"");
         StringAssert.Contains(sectionPaneText, "classic-summary-grid");
@@ -267,12 +285,15 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(workspaceLeftPaneText, "@if (ShowSectionActions)");
         StringAssert.Contains(workspaceLeftPaneText, "@if (ShowWorkflowSurfaces)");
         StringAssert.Contains(openWorkspaceTreeText, "class=\"visually-hidden\"");
+        StringAssert.Contains(workspaceLeftPaneText, "class=\"left-pane\"");
         Assert.IsFalse(
             openWorkspaceTreeText.Contains("workspace.Id.Value</span>", StringComparison.Ordinal),
             "Classic left-rail parity must not print workspace ids inside the visible dossier tree rows.");
         StringAssert.Contains(appCssText, ".classic-summary-grid");
         StringAssert.Contains(appCssText, ".classic-attribute-grid");
         StringAssert.Contains(appCssText, ".visually-hidden");
+        StringAssert.Contains(appCssText, ".workspace-layout--with-left-pane");
+        StringAssert.Contains(appCssText, ".workspace-layout--without-left-pane");
     }
 
     [TestMethod]
@@ -475,17 +496,20 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             harness.WaitForReady();
 
+            Control leftNavigatorRegion = harness.FindControl<Control>("LeftNavigatorRegion");
             Assert.IsTrue(harness.FindControl<Control>("MenuBarRegion").IsVisible, "Workbench-first startup must expose a real File menu immediately.");
             Assert.IsTrue(harness.FindControl<Control>("ToolStripRegion").IsVisible, "Workbench-first startup must expose runtime-backed workbench actions immediately.");
             Assert.IsNull(harness.FindControlOrDefault<Control>("WorkspaceStripRegion"), "Fresh startup must not mount an extra workspace strip above the editor.");
             Assert.IsNull(harness.FindControlOrDefault<Control>("QuickStartContainer"), "Fresh startup must not reopen a desktop home cockpit or quick-start filler.");
+            Assert.IsFalse(leftNavigatorRegion.IsVisible, "Fresh startup must not spend first-paint width on workspace chrome.");
+            Assert.IsTrue(leftNavigatorRegion.Bounds.Width <= 1d, "Fresh startup must collapse the workspace rail until multiple workspaces exist.");
 
             string[] visibleTexts = harness.Window.GetVisualDescendants()
                 .OfType<TextBlock>()
+                .Where(text => text.IsVisible)
                 .Select(text => (text.Text ?? string.Empty).Trim())
                 .Where(static value => !string.IsNullOrWhiteSpace(value))
                 .ToArray();
-            Assert.IsTrue(harness.FindControl<TreeView>("NavigatorTree").IsVisible, "Classic orientation must rely on the left tree, not a dashboard title.");
             CollectionAssert.DoesNotContain(visibleTexts, "mainframe");
             CollectionAssert.DoesNotContain(visibleTexts, "dashboard");
             CollectionAssert.DoesNotContain(visibleTexts, "control center");
@@ -493,37 +517,20 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture()
+    public void Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist()
     {
         WithRuntimeHarness(harness =>
         {
             harness.WaitForReady();
 
-            TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
-            NavigatorTreeItem[] rootItems = SnapshotTreeItems(navigatorTree);
-            string[] rootLabels = rootItems.Select(item => item.Label).ToArray();
-            string? rulesetId = harness.State.OpenWorkspaces
-                .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
-                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))
-                ?? harness.State.NavigationTabs
-                    .Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId))
-                    .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
-            string[] expectedRootLabels =
-            [
-                RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(rulesetId),
-                RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(rulesetId),
-                RulesetUiDirectiveCatalog.BuildSectionActionsHeading(rulesetId),
-                RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(rulesetId),
-            ];
+            Control leftNavigatorRegion = harness.FindControl<Control>("LeftNavigatorRegion");
+            Control centerShellRegion = harness.FindControl<Control>("CenterShellRegion");
 
-            Assert.IsTrue(
-                rootLabels.SequenceEqual(expectedRootLabels, StringComparer.Ordinal),
-                "The codex tree must keep the classic left-rail group order. Expected: "
-                + string.Join(" | ", expectedRootLabels)
-                + " ; actual: "
-                + string.Join(" | ", rootLabels));
-            Assert.IsNull(harness.FindControlOrDefault<TabControl>("LoadedRunnerTabStrip"), "The legacy-oriented left rail must be a tree navigator, not a second tab control.");
-            Assert.IsNull(harness.FindControlOrDefault<ListBox>("NavigationTabsList"), "The legacy-oriented left rail must not fall back to a dashboard-style tab list.");
+            Assert.IsFalse(leftNavigatorRegion.IsVisible, "Single-runner startup must keep the workspace rail collapsed.");
+            Assert.IsTrue(leftNavigatorRegion.Bounds.Width <= 1d, "Single-runner startup must surrender workspace-rail width back to the workbench.");
+            Assert.IsTrue(centerShellRegion.Bounds.Width >= 800d, "Single-runner startup must leave the center workbench dominant.");
+            Assert.IsFalse(harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible, "Fresh startup must not show runner-tab chrome before a runner is loaded.");
+            Assert.IsNull(harness.FindControlOrDefault<ListBox>("NavigationTabsList"), "The shell must not fall back to a roomy dashboard tab list.");
         });
     }
 
@@ -548,20 +555,31 @@ public sealed class AvaloniaFlagshipUiGateTests
                     string.Equals(harness.ShellPresenter.State.PreferredRulesetId, rulesetId, StringComparison.Ordinal)
                     && string.Equals(harness.ShellPresenter.State.ActiveRulesetId, rulesetId, StringComparison.Ordinal));
 
-                TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
-                string[] rootLabels = SnapshotTreeItems(navigatorTree).Select(item => item.Label).ToArray();
-                string[] expectedRootLabels =
-                [
-                    RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(rulesetId),
-                    RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(rulesetId),
-                    RulesetUiDirectiveCatalog.BuildSectionActionsHeading(rulesetId),
-                    RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(rulesetId),
-                ];
+                Control leftNavigatorRegion = harness.FindControl<Control>("LeftNavigatorRegion");
+                TabStrip tabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
+                var availabilityEvaluator = new DefaultCommandAvailabilityEvaluator();
+                string openWorkspacesHeading = RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(rulesetId);
+                string navigationTabsHeading = RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(rulesetId);
+                string sectionActionsHeading = RulesetUiDirectiveCatalog.BuildSectionActionsHeading(rulesetId);
+                string workflowSurfacesHeading = RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(rulesetId);
+                NavigatorTabItem[] projectedTabs = SnapshotLoadedRunnerTabs(tabStrip);
+                string[] expectedTabLabels = harness.ShellPresenter.State.NavigationTabs
+                    .Where(tab => availabilityEvaluator.IsNavigationTabEnabled(tab, harness.State))
+                    .Select(tab => RulesetUiDirectiveCatalog.FormatNavigationTabLabel(rulesetId, tab.Id, tab.Label))
+                    .ToArray();
+                string[] actualTabLabels = projectedTabs
+                    .Select(tab => tab.Label)
+                    .ToArray();
 
                 CollectionAssert.AreEqual(
-                    expectedRootLabels,
-                    rootLabels,
-                    $"Ruleset '{rulesetId}' must keep the codex tree on ruleset-specific familiar landmarks.");
+                    expectedTabLabels,
+                    actualTabLabels,
+                    $"Ruleset '{rulesetId}' must keep the runtime-backed tab landmarks aligned with the active ruleset.");
+                Assert.IsFalse(leftNavigatorRegion.IsVisible, "Single-runner ruleset switching must keep the auxiliary navigator rail collapsed.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(openWorkspacesHeading));
+                Assert.IsFalse(string.IsNullOrWhiteSpace(navigationTabsHeading));
+                Assert.IsFalse(string.IsNullOrWhiteSpace(sectionActionsHeading));
+                Assert.IsFalse(string.IsNullOrWhiteSpace(workflowSurfacesHeading));
             }
         });
     }
@@ -612,7 +630,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             CollectionAssert.DoesNotContain(visibleTexts, "Coach Sidecar");
             CollectionAssert.DoesNotContain(visibleTexts, "Coach Launch");
             CollectionAssert.DoesNotContain(visibleTexts, "Recent Coach Guidance");
-            Assert.IsTrue(harness.FindControl<TreeView>("NavigatorTree").IsVisible, "Classic orientation must keep the left tree visible.");
+            Assert.IsFalse(visibleTexts.Any(text => text.Contains("Ruleset posture:", StringComparison.Ordinal)));
+            Assert.IsFalse(visibleTexts.Any(text => text.Contains("flagship", StringComparison.OrdinalIgnoreCase)));
+            Assert.IsFalse(harness.FindControl<Control>("LeftNavigatorRegion").IsVisible, "Classic single-runner orientation must keep workspace chrome collapsed.");
+            Assert.IsFalse(harness.FindControl<Control>("RestoreContinuityStatusBorder").IsVisible, "Default startup must not mount the restore continuity banner without a real restore handoff.");
             Assert.IsTrue(harness.FindControl<ListBox>("SectionRowsList").IsVisible, "Classic orientation must keep the dense section list visible.");
         });
     }
@@ -1164,7 +1185,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Desktop_shell_preserves_classic_dense_three_pane_workbench_posture()
+    public void Desktop_shell_preserves_classic_dense_center_first_workbench_posture()
     {
         WithHarness(harness =>
         {
@@ -1178,21 +1199,25 @@ public sealed class AvaloniaFlagshipUiGateTests
             Control summaryHeaderRegion = harness.FindControl<Control>("SummaryHeaderRegion");
             Control sectionRegion = harness.FindControl<Control>("SectionRegion");
             Control statusStripRegion = harness.FindControl<Control>("StatusStripRegion");
-            TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
-            TextBlock codexHeading = harness.FindControl<TextBlock>("CodexHeadingText");
-            TextBlock codexCaption = harness.FindControl<TextBlock>("CodexCaptionText");
+            Control loadedRunnerTabStripBorder = harness.FindControl<Control>("LoadedRunnerTabStripBorder");
+            Control restoreContinuityStatusBorder = harness.FindControl<Control>("RestoreContinuityStatusBorder");
+            Control noticeBorder = harness.FindControl<Control>("NoticeBorder");
+            TextBlock? codexHeading = harness.FindControlOrDefault<TextBlock>("CodexHeadingText");
+            TextBlock? codexCaption = harness.FindControlOrDefault<TextBlock>("CodexCaptionText");
 
             Assert.IsNull(harness.FindControlOrDefault<Control>("WorkspaceStripRegion"), "The default workbench must not spend a dedicated row on workspace-strip chrome.");
-            Assert.IsTrue(leftNavigatorRegion.Bounds.Width >= 200d && leftNavigatorRegion.Bounds.Width <= 260d, "Left navigation must stay dense and desktop-scaled instead of consuming editor space.");
+            Assert.IsFalse(leftNavigatorRegion.IsVisible, "The default workbench must not show workspace rail chrome for a single runner.");
+            Assert.IsTrue(leftNavigatorRegion.Bounds.Width <= 1d, "The default workbench must not reserve meaningful width for the workspace rail.");
             Assert.IsTrue(rightShellRegion.IsVisible, "The collapsed right rail must stay mounted so command palette and dialog surfaces remain routable.");
             Assert.IsTrue(rightShellRegion.Bounds.Width <= 1d, "Collapsed right rail must surrender space back to the workbench.");
-            Assert.IsTrue(centerShellRegion.Bounds.Width > leftNavigatorRegion.Bounds.Width, "The central editing workbench must remain the dominant pane.");
+            Assert.IsTrue(centerShellRegion.Bounds.Width >= 900d, "The central editing workbench must keep the reclaimed single-runner width.");
             Assert.IsTrue(menuBarRegion.Bounds.Height <= 72d, "The top menu row must read like desktop chrome, not a hero header.");
             Assert.IsTrue(statusStripRegion.Bounds.Height <= 72d, "The bottom strip must stay compact like the legacy status posture.");
-            Assert.IsFalse(codexHeading.IsVisible, "The left rail must not waste a dedicated heading row above the classic navigator tree.");
-            Assert.IsFalse(codexCaption.IsVisible, "The left rail must not spend first-paint space on a navigator caption.");
-            Assert.IsTrue(navigatorTree.Bounds.Width > 0d && navigatorTree.Bounds.Height > 0d, "The left rail must render a visible codex tree.");
-            Assert.IsNull(harness.FindControlOrDefault<TabControl>("LoadedRunnerTabStrip"), "The left rail must avoid a second tab control and keep the classic tree posture.");
+            Assert.IsNull(codexHeading, "The compact single-runner shell must not mount a codex heading placeholder.");
+            Assert.IsNull(codexCaption, "The compact single-runner shell must not mount a codex caption placeholder.");
+            Assert.IsFalse(loadedRunnerTabStripBorder.IsVisible, "The default workbench must not spend header height on runner tabs before a runner is loaded.");
+            Assert.IsFalse(restoreContinuityStatusBorder.IsVisible, "The default workbench must not spend first-paint height on restore continuity chrome.");
+            Assert.IsFalse(noticeBorder.IsVisible, "The default workbench must not spend first-paint height on posture copy.");
 
             Point summaryTop = harness.TranslateToWindow(summaryHeaderRegion);
             Point sectionTop = harness.TranslateToWindow(sectionRegion);
@@ -1230,34 +1255,18 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         WithLoadedRunnerHarness(harness =>
         {
-            TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
+            Control leftNavigatorRegion = harness.FindControl<Control>("LeftNavigatorRegion");
             Control tabStrip = harness.FindControl<Control>("LoadedRunnerTabStripBorder");
             TabStrip tabStripControl = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
 
             harness.WaitUntil(() => harness.FindControlOrDefault<Control>("QuickStartContainer") is null);
             harness.WaitUntil(() => tabStrip.IsVisible && SnapshotLoadedRunnerTabs(tabStripControl).Length > 0);
-            harness.WaitUntil(() =>
-            {
-                NavigatorTreeItem[] treeItems = SnapshotTreeItems(navigatorTree);
-                return FindTreeItem(treeItems, NavigatorTreeNodeKind.NavigationTab, static item =>
-                    item.Label.Contains("Runner", StringComparison.Ordinal)) is not null;
-            });
 
-            NavigatorTreeItem[] rootItems = SnapshotTreeItems(navigatorTree);
-            NavigatorTreeItem tabGroup = FindTreeItem(rootItems, NavigatorTreeNodeKind.Group, static item =>
-                item.Label.Contains("Tabs", StringComparison.Ordinal))!;
-
-            Assert.IsTrue(navigatorTree.IsVisible);
+            Assert.IsFalse(leftNavigatorRegion.IsVisible, "Loaded single-runner posture must keep workspace chrome collapsed.");
             Assert.IsTrue(tabStrip.IsVisible);
-            Assert.IsTrue(navigatorTree.Bounds.Width > 0d && navigatorTree.Bounds.Height > 0d, "Codex tree should render with a visible desktop footprint.");
-            Assert.IsTrue(tabGroup.Children.Length > 0, "Loaded runner posture requires a visible tabs branch in the codex tree.");
             Assert.IsTrue(SnapshotLoadedRunnerTabs(tabStripControl).Any(tab =>
                 tab.Label.Contains("Runner", StringComparison.Ordinal)),
                 "Loaded runner tab strip should surface a visible Runner tab button.");
-            Assert.IsNotNull(
-                FindTreeItem(tabGroup.Children, NavigatorTreeNodeKind.NavigationTab, static item =>
-                    item.Label.Contains("Runner", StringComparison.Ordinal)),
-                "Loaded runner codex tree must expose a Runner leaf.");
         });
     }
 
@@ -1268,15 +1277,26 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             Control tabStrip = harness.FindControl<Control>("LoadedRunnerTabStripBorder");
             TabStrip tabStripControl = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
+            Control restoreContinuityStatusBorder = harness.FindControl<Control>("RestoreContinuityStatusBorder");
+            Control noticeBorder = harness.FindControl<Control>("NoticeBorder");
 
             harness.WaitUntil(() => tabStrip.IsVisible && SnapshotLoadedRunnerTabs(tabStripControl).Length > 0);
 
+            Assert.IsFalse(restoreContinuityStatusBorder.IsVisible, "Loaded runner header must remain a tab strip, not a restore dossier.");
+            Assert.IsFalse(noticeBorder.IsVisible, "Loaded runner shell must not pin a posture banner above the workbench.");
             Assert.IsNull(harness.FindControlOrDefault<Control>("NameValueText"));
             Assert.IsNull(harness.FindControlOrDefault<Control>("AliasValueText"));
             Assert.IsNull(harness.FindControlOrDefault<Control>("KarmaValueText"));
             Assert.IsNull(harness.FindControlOrDefault<Control>("SkillsValueText"));
             Assert.IsNull(harness.FindControlOrDefault<Control>("RuntimeValueText"));
             Assert.IsNull(harness.FindControlOrDefault<Control>("RuntimeInspectButton"));
+            CollectionAssert.DoesNotContain(
+                harness.Window.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Select(text => (text.Text ?? string.Empty).Trim())
+                    .Where(static value => !string.IsNullOrWhiteSpace(value))
+                    .ToArray(),
+                "Runner Tabs");
         });
     }
 
@@ -1291,7 +1311,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(harness.FindControl<ProgressBar>("WorkbenchProgressBar").IsVisible);
             Assert.IsTrue(harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible);
 
-            TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
+            Control leftNavigatorRegion = harness.FindControl<Control>("LeftNavigatorRegion");
+            TabStrip tabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
             ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
 
@@ -1299,24 +1320,31 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.FindControlOrDefault<Control>("QuickStartContainer") is null
                 && sectionRows.ItemCount > 0
                 && !string.IsNullOrWhiteSpace(preview.Text)
-                && SnapshotTreeItems(navigatorTree).Length >= 4);
+                && SnapshotLoadedRunnerTabs(tabStrip).Length > 0);
 
-            NavigatorTreeItem[] rootItems = SnapshotTreeItems(navigatorTree);
-            NavigatorTreeItem tabGroup = FindTreeItem(rootItems, NavigatorTreeNodeKind.Group, static item =>
-                item.Label.Contains("Tabs", StringComparison.Ordinal))!;
-
-            Assert.IsTrue(navigatorTree.IsVisible, "Legacy frmCareer parity requires a visible codex tree posture.");
+            Assert.IsFalse(leftNavigatorRegion.IsVisible, "Legacy frmCareer parity must keep workspace chrome collapsed for a single runner.");
             Assert.IsTrue(sectionRows.IsVisible, "Legacy frmCareer parity requires a visible dense section/workbench list.");
             Assert.IsFalse(string.IsNullOrWhiteSpace(preview.Text), "Legacy frmCareer parity requires a visible detail/preview pane.");
 
-            string[] tabItems = tabGroup.Children.Select(item => item.ToString() ?? string.Empty).ToArray();
-            Assert.IsTrue(tabItems.Any(item => item.Contains("profile", StringComparison.OrdinalIgnoreCase)), "Legacy frmCareer parity requires an info/profile navigation landmark.");
-            Assert.IsTrue(tabItems.Any(item => item.Contains("gear", StringComparison.OrdinalIgnoreCase)), "Legacy frmCareer parity requires a gear navigation landmark.");
+            NavigatorTabItem[] tabItems = SnapshotLoadedRunnerTabs(tabStrip);
+            Assert.IsTrue(
+                tabItems.Any(item =>
+                    item.Id.Contains("info", StringComparison.OrdinalIgnoreCase)
+                    || item.SectionId.Contains("character", StringComparison.OrdinalIgnoreCase)
+                    || item.SectionId.Contains("profile", StringComparison.OrdinalIgnoreCase)),
+                "Legacy frmCareer parity requires a stable info/profile navigation landmark.");
+            Assert.IsTrue(
+                tabItems.Any(item =>
+                    item.Id.Contains("gear", StringComparison.OrdinalIgnoreCase)
+                    || item.SectionId.Contains("gear", StringComparison.OrdinalIgnoreCase)),
+                "Legacy frmCareer parity requires a gear navigation landmark.");
 
-            NavigatorTreeItem? gearTab = FindTreeItem(tabGroup.Children, NavigatorTreeNodeKind.NavigationTab, static item =>
-                item.Label.Contains("Gear", StringComparison.OrdinalIgnoreCase));
-            Assert.IsNotNull(gearTab, "Legacy frmCareer parity requires a gear leaf in the codex tree.");
-            navigatorTree.SelectedItem = gearTab;
+            NavigatorTabItem? gearTab = tabItems.FirstOrDefault(item =>
+                item.Id.Contains("gear", StringComparison.OrdinalIgnoreCase)
+                || item.SectionId.Contains("gear", StringComparison.OrdinalIgnoreCase)
+                || item.Label.Contains("Gear", StringComparison.OrdinalIgnoreCase));
+            Assert.IsNotNull(gearTab, "Legacy frmCareer parity requires a gear tab in the loaded-runner header.");
+            tabStrip.SelectedItem = gearTab;
             harness.WaitUntil(() => string.Equals(harness.ShellPresenter.State.ActiveTabId, gearTab.Id, StringComparison.Ordinal));
 
             string previewPayload = preview.Text ?? string.Empty;
@@ -1666,13 +1694,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                 captured[expectedFiles[5]] = harness.CaptureScreenshotBytes();
 
                 harness.SetTheme(ThemeVariant.Light);
-                TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
+                TabStrip loadedRunnerTabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
                 harness.WaitUntil(() =>
-                {
-                    NavigatorTreeItem[] treeItems = SnapshotTreeItems(navigatorTree);
-                    return FindTreeItem(treeItems, NavigatorTreeNodeKind.NavigationTab, static item =>
-                        item.Label.Contains("Runner", StringComparison.Ordinal)) is not null;
-                });
+                    harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible
+                    && SnapshotLoadedRunnerTabs(loadedRunnerTabStrip).Any(item =>
+                        item.Id.Contains("info", StringComparison.OrdinalIgnoreCase)
+                        || item.Label.Contains("Runner", StringComparison.OrdinalIgnoreCase)));
                 captured[expectedFiles[6]] = harness.CaptureScreenshotBytes();
 
                 ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");

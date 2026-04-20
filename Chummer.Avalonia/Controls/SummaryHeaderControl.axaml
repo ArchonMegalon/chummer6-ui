@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:contracts="clr-namespace:Chummer.Avalonia.Controls"
              x:Class="Chummer.Avalonia.Controls.SummaryHeaderControl">
-  <StackPanel Spacing="6">
+  <StackPanel Spacing="2">
     <Border x:Name="RestoreContinuityStatusBorder"
             Classes="shell-card subtle"
             Padding="8,6"
@@ -66,23 +66,17 @@
 
     <Border x:Name="LoadedRunnerTabStripBorder"
             Classes="shell-card subtle"
-            Padding="8,6"
+            Padding="2,1"
             IsVisible="False">
-      <StackPanel Spacing="6">
-        <TextBlock x:Name="LoadedRunnerTabStripHeading"
-                   Classes="shell-kicker"
-                   Text="Runner Tabs" />
-        <TabStrip x:Name="LoadedRunnerTabStrip"
-                  Classes="classic-tabs"
-                  SelectionChanged="LoadedRunnerTabStrip_OnSelectionChanged"
-                  SelectionMode="Single">
-          <TabStrip.ItemTemplate>
-            <DataTemplate x:DataType="contracts:NavigatorTabItem">
-              <TextBlock Text="{Binding Label}" />
-            </DataTemplate>
-          </TabStrip.ItemTemplate>
-        </TabStrip>
-      </StackPanel>
+      <TabStrip x:Name="LoadedRunnerTabStrip"
+                Classes="classic-tabs"
+                SelectionChanged="LoadedRunnerTabStrip_OnSelectionChanged">
+        <TabStrip.ItemTemplate>
+          <DataTemplate x:DataType="contracts:NavigatorTabItem">
+            <TextBlock Text="{Binding Label}" />
+          </DataTemplate>
+        </TabStrip.ItemTemplate>
+      </TabStrip>
     </Border>
   </StackPanel>
 </UserControl>

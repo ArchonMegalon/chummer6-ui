@@ -1,17 +1,67 @@
 {
   "contract_name": "chummer6-ui.external_host_proof_blockers",
-  "generated_at": "2026-04-16T15:51:59Z",
+  "generated_at": "2026-04-20T07:28:41Z",
   "manifest_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
   "downloads_dir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
   "startup_smoke_dir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke",
   "base_url": "https://chummer.run",
   "timeout_seconds": 10,
   "max_receipt_age_seconds": 604800,
-  "release_published_at": "2026-04-16T15:51:58Z",
-  "status": "ready",
-  "missing_required_platform_head_rid_tuples": [],
-  "unresolved_hosts": [],
-  "unresolved_tuples": [],
-  "external_proof_request_count": 0,
-  "external_proof_requests": []
+  "release_published_at": "2026-04-20T07:23:39Z",
+  "status": "blocked",
+  "missing_required_platform_head_rid_tuples": [
+    "avalonia:win-x64:windows"
+  ],
+  "unresolved_hosts": [
+    "windows"
+  ],
+  "unresolved_tuples": [
+    "avalonia:win-x64:windows"
+  ],
+  "external_proof_request_count": 1,
+  "external_proof_requests": [
+    {
+      "tupleId": "avalonia:win-x64:windows",
+      "requiredHost": "windows",
+      "expectedPublicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
+      "requiredProofs": [
+        "promoted_installer_artifact",
+        "startup_smoke_receipt"
+      ],
+      "expectedArtifactId": "avalonia-win-x64-installer",
+      "installAccessClass": "",
+      "expectedInstallerRelativePath": "files/chummer-avalonia-win-x64-installer.exe",
+      "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "installerPresent": false,
+      "installerSha256": "",
+      "expectedInstallerSha256": "",
+      "startupSmokeReceiptPresent": false,
+      "startupSmokeReceiptRecordedAtUtc": "",
+      "startupSmokeReceiptAgeSeconds": null,
+      "startupSmokeReceiptStatus": "",
+      "startupSmokeReceiptChannelId": "",
+      "startupSmokeReceiptVersion": "",
+      "publicRouteProbe": {
+        "checked": true,
+        "url": "https://chummer.run/downloads/install/avalonia-win-x64-installer",
+        "http_status": 403,
+        "ok": false,
+        "error": "http_403",
+        "installAccessClass": "",
+        "authExpected": false,
+        "authChallengeAccepted": false
+      },
+      "blockerCodes": [
+        "installer_missing",
+        "receipt_missing",
+        "public_route_unhealthy"
+      ],
+      "blockerMessages": [
+        "installer missing at /docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
+        "startup smoke receipt missing at /docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+        "public install route unhealthy (status=403, error=http_403)"
+      ],
+      "ready": false
+    }
+  ]
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T18:15:03.686438Z",
+  "generatedAt": "2026-04-20T07:06:56.129225Z",
   "contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
   "channelId": "docker",
   "status": "pass",
@@ -9,7 +9,7 @@
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
     "releaseChannelChannelId": "docker",
-    "releaseChannelGeneratedAt": "2026-04-18T17:29:29Z",
+    "releaseChannelGeneratedAt": "2026-04-19T13:16:51Z",
     "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
     "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "missingFamilyIds": [],

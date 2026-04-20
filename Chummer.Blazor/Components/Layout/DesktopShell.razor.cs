@@ -55,12 +55,16 @@ public partial class DesktopShell : IDisposable
 
     private CharacterOverviewState State => _bridge?.Current ?? Presenter.State;
     private ShellState ShellState => ShellPresenter.State;
+    private string CurrentLanguage => DesktopLocalizationCatalog.NormalizeOrDefault(State.Preferences.Language);
 
     private IEnumerable<AppCommandDefinition> HeadCommands =>
         _shellSurfaceState.Commands.Where(command => !string.Equals(command.Group, "menu", StringComparison.Ordinal));
 
     private IEnumerable<AppCommandDefinition> ToolStripCommands =>
         ResolveToolStripCommands();
+
+    private bool ShowLeftPane =>
+        _shellSurfaceState.OpenWorkspaces.Count > 1;
 
     private IReadOnlyList<AppCommandDefinition> MenuRoots =>
         _shellSurfaceState.MenuRoots;

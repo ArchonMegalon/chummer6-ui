@@ -1184,12 +1184,11 @@ internal static class AccessibilitySignoffSmokeTests
     {
         string summaryHeaderSource = ReadSource("Chummer.Blazor/Components/Shell/SummaryHeader.razor");
         RequireContains(summaryHeaderSource, "BuildNavigationTabsHeading()");
-        RequireContains(summaryHeaderSource, "BuildSummaryHeading()");
-        RequireContains(summaryHeaderSource, "RulesetUiDirectiveCatalog.BuildSummaryHeading");
         RequireContains(summaryHeaderSource, "RulesetUiDirectiveCatalog.BuildNavigationTabsHeading");
-        RequireContains(summaryHeaderSource, "BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId())");
         RequireContains(summaryHeaderSource, "FormatNavigationTabLabel(tab)");
         RequireContains(summaryHeaderSource, "RulesetUiDirectiveCatalog.FormatNavigationTabLabel");
+        RequireDoesNotContain(summaryHeaderSource, "BuildSummaryHeading()");
+        RequireDoesNotContain(summaryHeaderSource, "BuildActiveRuntimeSummary(ShellSurface.ActiveRuntime, ResolveActiveRulesetId())");
 
         string openWorkspaceSource = ReadSource("Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor");
         RequireContains(openWorkspaceSource, "BuildOpenWorkspacesHeading()");

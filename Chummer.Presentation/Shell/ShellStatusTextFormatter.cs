@@ -34,14 +34,9 @@ public static class ShellStatusTextFormatter
 
         int workflowDefinitionCount = shellSurface.WorkflowDefinitions?.Count ?? 0;
         int workflowSurfaceCount = shellSurface.WorkflowSurfaces?.Count ?? 0;
-        string runtimeState = shellSurface.ActiveRuntime is null
-            ? "Runtime: none"
-            : $"Runtime: {BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId)}";
-        string rulesetSummary = RulesetUiDirectiveCatalog.BuildComplianceRulesetSummary(
-            shellSurface.ActiveRulesetId,
-            shellSurface.ActiveRuntime);
-
-        return $"{runtimeState} | Ruleset: {rulesetSummary} | Workflows: {workflowDefinitionCount} defs / {workflowSurfaceCount} surfaces | Prefs: {preferences.UiScalePercent}%/{preferences.Theme}/{preferences.Language}";
+        RulesetUiDirective directive = RulesetUiDirectiveCatalog.Resolve(shellSurface.ActiveRulesetId ?? shellSurface.ActiveRuntime?.RulesetId);
+        string rulesetSummary = $"{directive.DisplayName} {directive.FileExtension}";
+        return $"Ruleset: {rulesetSummary} | Workflows: {workflowDefinitionCount} defs / {workflowSurfaceCount} surfaces | Prefs: {preferences.UiScalePercent}%/{preferences.Theme}/{preferences.Language}";
     }
 
     private static string TrimFingerprint(string runtimeFingerprint)

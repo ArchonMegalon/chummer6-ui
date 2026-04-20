@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T18:16:17.686485Z",
+  "generatedAt": "2026-04-20T07:07:21.823646Z",
   "contract_name": "chummer6-ui.chummer5a_layout_hard_gate",
   "status": "pass",
   "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
@@ -73,6 +73,9 @@
       "new_character": 460,
       "open_character": 485
     },
-    "requiredTestName": "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers"
+    "requiredTestName": "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers",
+    "mainWindowDefaultContentColumns": "0,*,0",
+    "blazorSupportsCompactSingleRunnerLayout": true,
+    "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": true
   }
 }

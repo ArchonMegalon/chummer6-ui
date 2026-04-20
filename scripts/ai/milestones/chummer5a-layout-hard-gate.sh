@@ -12,14 +12,17 @@ toolstrip_axaml_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axam
 toolstrip_codebehind_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"
 section_host_axaml_path="$repo_root/Chummer.Avalonia/Controls/SectionHostControl.axaml"
 main_window_axaml_path="$repo_root/Chummer.Avalonia/MainWindow.axaml"
+main_window_state_refresh_path="$repo_root/Chummer.Avalonia/MainWindow.StateRefresh.cs"
 main_window_event_handlers_path="$repo_root/Chummer.Avalonia/MainWindow.EventHandlers.cs"
 main_window_control_binding_path="$repo_root/Chummer.Avalonia/MainWindow.ControlBinding.cs"
+avalonia_projector_path="$repo_root/Chummer.Avalonia/MainWindow.ShellFrameProjector.cs"
 app_axaml_codebehind_path="$repo_root/Chummer.Avalonia/App.axaml.cs"
 if [[ -d "$canonical_presentation_root/Chummer.Blazor" ]]; then
   blazor_root="$canonical_presentation_root/Chummer.Blazor"
 else
   blazor_root="$repo_root/Chummer.Blazor"
 fi
+blazor_shell_markup_path="$blazor_root/Components/Layout/DesktopShell.razor"
 blazor_shell_path="$blazor_root/Components/Layout/DesktopShell.razor.cs"
 blazor_css_path="$blazor_root/wwwroot/app.css"
 resolver_path="$repo_root/Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs"
@@ -28,6 +31,7 @@ blazor_desktop_project_path="$repo_root/Chummer.Blazor.Desktop/Chummer.Blazor.De
 release_gate_path="$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh"
 visual_gate_path="$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh"
 ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
+desktop_shell_ruleset_tests_path="$repo_root/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs"
 
 mkdir -p "$(dirname "$receipt_path")"
 
@@ -39,9 +43,12 @@ python3 - <<'PY' \
   "$toolstrip_codebehind_path" \
   "$section_host_axaml_path" \
   "$main_window_axaml_path" \
+  "$main_window_state_refresh_path" \
   "$main_window_event_handlers_path" \
   "$main_window_control_binding_path" \
+  "$avalonia_projector_path" \
   "$app_axaml_codebehind_path" \
+  "$blazor_shell_markup_path" \
   "$blazor_shell_path" \
   "$blazor_css_path" \
   "$resolver_path" \
@@ -49,7 +56,8 @@ python3 - <<'PY' \
   "$blazor_desktop_project_path" \
   "$release_gate_path" \
   "$visual_gate_path" \
-  "$ui_gate_tests_path"
+  "$ui_gate_tests_path" \
+  "$desktop_shell_ruleset_tests_path"
 from __future__ import annotations
 
 import json
@@ -79,9 +87,12 @@ def write_receipt(path: Path, payload: dict[str, object]) -> None:
     toolstrip_codebehind_path,
     section_host_axaml_path,
     main_window_axaml_path,
+    main_window_state_refresh_path,
     main_window_event_handlers_path,
     main_window_control_binding_path,
+    avalonia_projector_path,
     app_axaml_codebehind_path,
+    blazor_shell_markup_path,
     blazor_shell_path,
     blazor_css_path,
     resolver_path,
@@ -90,7 +101,8 @@ def write_receipt(path: Path, payload: dict[str, object]) -> None:
     release_gate_path,
     visual_gate_path,
     ui_gate_tests_path,
-) = [Path(value) for value in sys.argv[1:19]]
+    desktop_shell_ruleset_tests_path,
+) = [Path(value) for value in sys.argv[1:23]]
 
 reasons: list[str] = []
 evidence: dict[str, object] = {}
@@ -103,9 +115,12 @@ required_paths = [
     toolstrip_codebehind_path,
     section_host_axaml_path,
     main_window_axaml_path,
+    main_window_state_refresh_path,
     main_window_event_handlers_path,
     main_window_control_binding_path,
+    avalonia_projector_path,
     app_axaml_codebehind_path,
+    blazor_shell_markup_path,
     blazor_shell_path,
     blazor_css_path,
     resolver_path,
@@ -114,6 +129,7 @@ required_paths = [
     release_gate_path,
     visual_gate_path,
     ui_gate_tests_path,
+    desktop_shell_ruleset_tests_path,
 ]
 
 missing_paths = [str(path) for path in required_paths[1:] if not path.is_file()]
@@ -135,9 +151,12 @@ toolstrip_text = read_text(toolstrip_axaml_path)
 toolstrip_codebehind_text = read_text(toolstrip_codebehind_path)
 section_host_text = read_text(section_host_axaml_path)
 main_window_text = read_text(main_window_axaml_path)
+main_window_state_refresh_text = read_text(main_window_state_refresh_path)
 main_window_event_handlers_text = read_text(main_window_event_handlers_path)
 main_window_control_binding_text = read_text(main_window_control_binding_path)
+avalonia_projector_text = read_text(avalonia_projector_path)
 app_text = read_text(app_axaml_codebehind_path)
+blazor_shell_markup_text = read_text(blazor_shell_markup_path)
 blazor_shell_text = read_text(blazor_shell_path)
 blazor_css_text = read_text(blazor_css_path)
 resolver_text = read_text(resolver_path)
@@ -146,6 +165,7 @@ blazor_desktop_project_text = read_text(blazor_desktop_project_path)
 release_gate_text = read_text(release_gate_path)
 visual_gate_text = read_text(visual_gate_path)
 ui_gate_tests_text = read_text(ui_gate_tests_path)
+desktop_shell_ruleset_tests_text = read_text(desktop_shell_ruleset_tests_path)
 
 legacy_menu_markers = ["mnuCreateFile", "mnuCreateEdit", "mnuCreateSpecial"]
 legacy_toolbar_markers = ["tsMain.Items.AddRange", "tsbSave", "tsbPrint", "tsbCopy"]
@@ -213,8 +233,19 @@ for token in required_toolstrip_codebehind_tokens:
     if token not in toolstrip_codebehind_text:
         reasons.append(f"Avalonia toolstrip code-behind is missing required parity token: {token}")
 
-if 'ColumnDefinitions="228,*,0"' not in main_window_text:
-    reasons.append("Avalonia main window no longer reserves the classic narrow-left / no-right-rail content layout.")
+if 'ColumnDefinitions="0,*,0"' not in main_window_text:
+    reasons.append("Avalonia main window must default to a center-first 0,*,0 content layout for the single-runner shell.")
+if 'x:Name="LeftNavigatorRegion"' not in main_window_text or 'IsVisible="False"' not in main_window_text:
+    reasons.append("Avalonia main window must keep the workspace rail hidden in the default XAML posture.")
+for token in [
+    "ApplyWorkbenchChromeVisibility(shellFrame);",
+    "new GridLength(228)",
+    "new GridLength(0)",
+]:
+    if token not in main_window_state_refresh_text:
+        reasons.append(f"Avalonia shell refresh is missing required conditional workspace-rail token: {token}")
+if "ShowNavigatorPane: resolvedOpenWorkspaces.Length > 1" not in avalonia_projector_text:
+    reasons.append("Avalonia shell projector must only surface the navigator pane for multi-workspace sessions.")
 right_shell_index = main_window_text.find('x:Name="RightShellRegion"')
 right_shell_snippet = (
     main_window_text[right_shell_index:right_shell_index + 420]
@@ -294,8 +325,17 @@ elif not (
 ):
     reasons.append("Blazor desktop shell toolstrip order diverges from the classic save/print/copy-first contract.")
 
-if "grid-template-columns: 228px minmax(0, 1fr);" not in blazor_css_text:
-    reasons.append("Blazor desktop shell layout no longer uses the classic narrow-left two-column workbench frame.")
+for token in [
+    "@if (ShowLeftPane)",
+    "workspace-layout--with-left-pane",
+    "workspace-layout--without-left-pane",
+]:
+    if token not in blazor_shell_markup_text:
+        reasons.append(f"Blazor desktop shell markup is missing required compact-layout token: {token}")
+if "_shellSurfaceState.OpenWorkspaces.Count > 1" not in blazor_shell_text:
+    reasons.append("Blazor desktop shell must only show the workspace rail for multi-workspace sessions.")
+if "grid-template-columns: 228px minmax(0, 1fr);" not in blazor_css_text or "grid-template-columns: minmax(0, 1fr);" not in blazor_css_text:
+    reasons.append("Blazor desktop shell CSS must support both compact single-runner and multi-workspace layouts.")
 if ".right-pane {\n    display: none;" not in blazor_css_text and ".right-pane {\r\n    display: none;" not in blazor_css_text:
     reasons.append("Blazor desktop shell still exposes the right-side rail.")
 
@@ -324,6 +364,12 @@ for script_label, script_text in [("release", release_gate_text), ("visual", vis
 required_test_name = "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers"
 if required_test_name not in ui_gate_tests_text:
     reasons.append("Avalonia flagship UI gate tests do not include the Chummer5a layout hard gate wiring proof.")
+for test_name in [
+    "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
+    "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",
+]:
+    if test_name not in desktop_shell_ruleset_tests_text:
+        reasons.append(f"Desktop shell ruleset tests are missing required layout proof: {test_name}")
 
 evidence.update(
     {
@@ -339,6 +385,13 @@ evidence.update(
         "orderedVisibleButtons": ordered_visible_buttons,
         "blazorPreferredToolstripOrderPositions": preferred_order_positions,
         "requiredTestName": required_test_name,
+        "mainWindowDefaultContentColumns": "0,*,0" if 'ColumnDefinitions="0,*,0"' in main_window_text else "missing",
+        "blazorSupportsCompactSingleRunnerLayout": "grid-template-columns: minmax(0, 1fr);" in blazor_css_text,
+        "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": (
+            'ColumnDefinitions="0,*,0"' in main_window_text
+            and 'IsVisible="False"' in main_window_text
+            and "_shellSurfaceState.OpenWorkspaces.Count > 1" in blazor_shell_text
+        ),
     }
 )
 

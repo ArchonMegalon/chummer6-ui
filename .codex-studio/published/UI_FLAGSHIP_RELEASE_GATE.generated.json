@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-18T18:16:17.509484Z",
+  "generatedAt": "2026-04-20T07:07:21.668524Z",
   "status": "pass",
   "releaseGate": "b14-flagship-ui-release-gate",
   "desktopHead": "avalonia",
@@ -38,6 +38,7 @@
     "runtimeBackedSr6CodexOrientationModel": "pass",
     "runtimeBackedClassicChromeCopy": "pass",
     "chummer5aLayoutHardGate": "pass",
+    "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": "pass",
     "runtimeBackedTabPanelOnlyHeader": "pass",
     "runtimeBackedChromeEnabledAfterRunnerLoad": "pass",
     "runtimeBackedDemoRunnerImport": "pass",
@@ -80,7 +81,7 @@
         "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
         "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
         "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
-        "Runtime_backed_codex_tree_preserves_legacy_left_rail_navigation_posture",
+        "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
         "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
         "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
         "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
@@ -96,6 +97,7 @@
         "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
         "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
         "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+        "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
         "Character_creation_preserves_familiar_dense_builder_rhythm",
         "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
         "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
@@ -115,6 +117,7 @@
       "status": "pass",
       "testSuites": [
         "BlazorShellComponentTests",
+        "DesktopShellRulesetCatalogTests",
         "DualHeadAcceptanceTests"
       ],
       "shellChrome": "pass",
@@ -129,6 +132,11 @@
         "DialogHost_renders_dialog_and_emits_events",
         "StatusStrip_announces_status_via_shared_live_region_semantics",
         "CampaignJournalPanel_renders_explicit_downtime_planner_calendar_and_schedule_views"
+      ],
+      "desktopShellRulesetSourceTestFile": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs",
+      "requiredDesktopShellLayoutTests": [
+        "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
+        "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session"
       ],
       "requiredLifecycleTests": [
         "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling",
@@ -214,92 +222,92 @@
       {
         "name": "01-initial-shell-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
-        "sizeBytes": 49585
+        "sizeBytes": 23917
       },
       {
         "name": "02-menu-open-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
-        "sizeBytes": 50763
+        "sizeBytes": 26513
       },
       {
         "name": "03-settings-open-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
-        "sizeBytes": 51429
+        "sizeBytes": 27830
       },
       {
         "name": "04-loaded-runner-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
-        "sizeBytes": 81647
+        "sizeBytes": 62661
       },
       {
         "name": "05-dense-section-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-        "sizeBytes": 81660
+        "sizeBytes": 62691
       },
       {
         "name": "06-dense-section-dark.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-        "sizeBytes": 79837
+        "sizeBytes": 58914
       },
       {
         "name": "07-loaded-runner-tabs-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
-        "sizeBytes": 81660
+        "sizeBytes": 62691
       },
       {
         "name": "08-cyberware-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
-        "sizeBytes": 84431
+        "sizeBytes": 64892
       },
       {
         "name": "09-vehicles-section-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
-        "sizeBytes": 67683
+        "sizeBytes": 47852
       },
       {
         "name": "10-contacts-section-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
-        "sizeBytes": 67461
+        "sizeBytes": 47708
       },
       {
         "name": "11-diary-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
-        "sizeBytes": 63810
+        "sizeBytes": 44706
       },
       {
         "name": "12-magic-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
-        "sizeBytes": 61725
+        "sizeBytes": 42740
       },
       {
         "name": "13-matrix-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
-        "sizeBytes": 66833
+        "sizeBytes": 47246
       },
       {
         "name": "14-advancement-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/14-advancement-dialog-light.png",
-        "sizeBytes": 65054
+        "sizeBytes": 45665
       },
       {
         "name": "15-creation-section-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
-        "sizeBytes": 60986
+        "sizeBytes": 41772
       },
       {
         "name": "16-master-index-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/16-master-index-dialog-light.png",
-        "sizeBytes": 63385
+        "sizeBytes": 43433
       },
       {
         "name": "17-character-roster-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/17-character-roster-dialog-light.png",
-        "sizeBytes": 63919
+        "sizeBytes": 43890
       },
       {
         "name": "18-import-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png",
-        "sizeBytes": 61869
+        "sizeBytes": 42970
       }
     ]
   },
@@ -346,9 +354,10 @@
       "buttonPadding": "5,1",
       "usesCompactFluentDensity": true,
       "usesFlatSectionPanels": true,
-      "mainWindowLayout": "ColumnDefinitions=\"228,*,0\"",
+      "mainWindowLayout": "ColumnDefinitions=\"0,*,0\"",
       "requiredTests": [
-        "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
+        "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
+        "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
         "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
         "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
         "Character_creation_preserves_familiar_dense_builder_rhythm"
