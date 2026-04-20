@@ -611,6 +611,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             VisualKind: DesktopDialogFieldVisualKinds.Tabs);
     }
 
+    private static IReadOnlyList<DesktopDialogAction> BuildAddAndMoreActions(string primaryLabel = "OK")
+    {
+        return
+        [
+            new DesktopDialogAction("add", primaryLabel, true),
+            new DesktopDialogAction("add_more", "Add & More"),
+            new DesktopDialogAction("cancel", "Cancel")
+        ];
+    }
+
     private static IReadOnlyList<DesktopDialogField> BuildCyberwareSelectionFields()
     {
         string categoryTree =
@@ -1485,10 +1495,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Entry",
                 "Add a new entry while keeping the compact list/detail editor posture.",
                 BuildEntryEditorFields("New entry", false),
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions("Add")),
             "edit_entry" => new DesktopDialogState(
                 "dialog.ui.edit_entry",
                 "Edit Entry",
@@ -1545,10 +1552,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Gear",
                 "Browse the catalog, inspect source and cost, then confirm the selected gear item.",
                 BuildGearSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "gear_edit" => new DesktopDialogState(
                 "dialog.ui.gear_edit",
                 "Edit Gear",
@@ -1593,10 +1597,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Cyberware",
                 "Search, filter, review source/cost/essence details, and confirm the selected implant.",
                 BuildCyberwareSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "cyberware_edit" => new DesktopDialogState(
                 "dialog.ui.cyberware_edit",
                 "Edit Cyberware",
@@ -1623,10 +1624,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Drug",
                 "Browse drugs, inspect speed and crash posture, then confirm the selected dose.",
                 BuildDrugSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "drug_delete" => new DesktopDialogState(
                 "dialog.ui.drug_delete",
                 "Remove Drug",
@@ -1644,10 +1642,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Spell/Power",
                 "Choose the magical entry, review category and drain, then confirm the selection.",
                 BuildMagicSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "magic_delete" => new DesktopDialogState(
                 "dialog.ui.magic_delete",
                 "Delete Spell/Power",
@@ -1683,73 +1678,49 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Spell",
                 "Search the spell list, inspect source and drain, then confirm the learned spell.",
                 BuildSpellSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "adept_power_add" => new DesktopDialogState(
                 "dialog.ui.adept_power_add",
                 "Add Adept Power",
                 "Search available adept powers, inspect PP cost and source, then confirm the selected power.",
                 BuildAdeptPowerSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "complex_form_add" => new DesktopDialogState(
                 "dialog.ui.complex_form_add",
                 "Add Complex Form",
                 "Browse complex forms, inspect target and source, then confirm the selected form.",
                 BuildComplexFormSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "initiation_add" => new DesktopDialogState(
                 "dialog.ui.initiation_add",
                 "Add Initiation / Submersion",
                 "Choose the reward, review grade and track, then confirm the initiation or submersion step.",
                 BuildInitiationSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "spirit_add" => new DesktopDialogState(
                 "dialog.ui.spirit_add",
                 "Add Spirit / Ally / Familiar",
                 "Browse spirits and allies, inspect force and type, then confirm the selected entry.",
                 BuildSpiritSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "critter_power_add" => new DesktopDialogState(
                 "dialog.ui.critter_power_add",
                 "Add Critter Power",
                 "Browse critter powers, inspect type and source, then confirm the selected power.",
                 BuildCritterPowerSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "matrix_program_add" => new DesktopDialogState(
                 "dialog.ui.matrix_program_add",
                 "Add Program / Cyberdeck Item",
                 "Browse matrix programs and cyberdeck items, inspect slot and source, then confirm the selected entry.",
                 BuildMatrixProgramSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "skill_add" => new DesktopDialogState(
                 "dialog.ui.skill_add",
                 "Add Skill",
                 "Browse skills, inspect category and linked attribute, then confirm the selected skill.",
                 BuildSkillSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "skill_specialize" => new DesktopDialogState(
                 "dialog.ui.skill_specialize",
                 "Specialize Skill",
@@ -1788,19 +1759,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Weapon",
                 "Browse weapons, inspect combat stats and source, then confirm the selected weapon.",
                 BuildWeaponSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "combat_add_armor" => new DesktopDialogState(
                 "dialog.ui.combat_add_armor",
                 "Add Armor",
                 "Browse armor, inspect protection values and source, then confirm the selected armor.",
                 BuildArmorSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "combat_reload" => new DesktopDialogState(
                 "dialog.ui.combat_reload",
                 "Reload Weapon",
@@ -1830,10 +1795,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Vehicle / Drone",
                 "Browse vehicles and drones, inspect stats and source, then confirm the selected entry.",
                 BuildVehicleSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "vehicle_edit" => new DesktopDialogState(
                 "dialog.ui.vehicle_edit",
                 "Edit Vehicle / Drone",
@@ -1860,19 +1822,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Vehicle Mod",
                 "Browse modifications, inspect slot, availability, and source, then confirm the selected mod.",
                 BuildVehicleModSelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "contact_add" => new DesktopDialogState(
                 "dialog.ui.contact_add",
                 "Add Contact",
                 "Author the contact with the same dense detail posture used by classic Chummer utility forms.",
                 BuildContactAddFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "contact_edit" => new DesktopDialogState(
                 "dialog.ui.contact_edit",
                 "Edit Contact",
@@ -1908,10 +1864,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Quality",
                 "Browse qualities, inspect karma cost and source, then confirm the selected quality.",
                 BuildQualitySelectionFields(),
-                [
-                    new DesktopDialogAction("add", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                BuildAddAndMoreActions()),
             "quality_delete" => new DesktopDialogState(
                 "dialog.ui.quality_delete",
                 "Remove Quality",
