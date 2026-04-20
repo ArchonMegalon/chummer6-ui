@@ -399,6 +399,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -420,6 +421,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -516,6 +518,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiDrugSelectionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiDrugNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -532,6 +535,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -701,6 +705,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiQualitySelectionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiQualityNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -737,6 +742,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -776,6 +782,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -828,6 +835,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiEntryDetails"), "Operation | Create entry");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiEntryDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiEntryNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
