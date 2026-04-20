@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Input;
@@ -71,46 +72,145 @@ public partial class DesktopDialogWindow : Window
     private void BuildFields(IReadOnlyList<DesktopDialogField> fields)
     {
         _dialogFieldsPanel.Children.Clear();
-        foreach (DesktopDialogField field in fields)
+        for (int index = 0; index < fields.Count; index++)
         {
-            StackPanel row = new()
+            DesktopDialogField field = fields[index];
+            if (string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
+                && index + 1 < fields.Count
+                && string.Equals(fields[index + 1].LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal))
             {
-                Spacing = 4
-            };
-            row.Children.Add(new TextBlock
-            {
-                Text = field.Label,
-                FontWeight = FontWeight.SemiBold
-            });
-            row.Children.Add(CreateFieldControl(field));
-            _dialogFieldsPanel.Children.Add(row);
+                _dialogFieldsPanel.Children.Add(CreateSplitFieldRow(field, fields[index + 1]));
+                index++;
+                continue;
+            }
+
+            _dialogFieldsPanel.Children.Add(CreateStandaloneFieldRow(field));
         }
+    }
+
+    private Control CreateStandaloneFieldRow(DesktopDialogField field)
+    {
+        return CreateFieldPane(field);
+    }
+
+    private Control CreateSplitFieldRow(DesktopDialogField left, DesktopDialogField right)
+    {
+        Grid row = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            ColumnSpacing = 8
+        };
+        Control leftPane = CreateFieldPane(left);
+        Control rightPane = CreateFieldPane(right);
+        Grid.SetColumn(leftPane, 0);
+        Grid.SetColumn(rightPane, 1);
+        row.Children.Add(leftPane);
+        row.Children.Add(rightPane);
+        return row;
+    }
+
+    private Control CreateFieldPane(DesktopDialogField field)
+    {
+        if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
+        {
+            return new CheckBox
+            {
+                Content = field.Label,
+                IsChecked = ParseCheckbox(field.Value),
+                IsEnabled = !field.IsReadOnly
+            }.Also(checkBox =>
+            {
+                if (!field.IsReadOnly)
+                {
+                    checkBox.IsCheckedChanged += (_, _) =>
+                    {
+                        string nextValue = checkBox.IsChecked == true ? "true" : "false";
+                        if (string.Equals(nextValue, field.Value, StringComparison.Ordinal))
+                        {
+                            return;
+                        }
+
+                        QueueDialogFieldUpdate(field.Id, nextValue);
+                    };
+                }
+            });
+        }
+
+        Grid row = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("156,*"),
+            RowDefinitions = field.IsMultiline ? new RowDefinitions("Auto,Auto") : new RowDefinitions("Auto"),
+            ColumnSpacing = 8,
+            RowSpacing = 4
+        };
+
+        TextBlock label = new()
+        {
+            Text = field.Label,
+            VerticalAlignment = field.IsMultiline ? global::Avalonia.Layout.VerticalAlignment.Top : global::Avalonia.Layout.VerticalAlignment.Center,
+            FontWeight = FontWeight.SemiBold
+        };
+        row.Children.Add(label);
+
+        Control fieldControl = CreateFieldControl(field);
+        Grid.SetColumn(fieldControl, field.IsMultiline ? 0 : 1);
+        if (field.IsMultiline)
+        {
+            Grid.SetColumnSpan(fieldControl, 2);
+            Grid.SetRow(fieldControl, 1);
+        }
+
+        row.Children.Add(fieldControl);
+        return row;
     }
 
     private Control CreateFieldControl(DesktopDialogField field)
     {
-        if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
+        if (field.IsReadOnly && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
         {
-            CheckBox checkBox = new()
+            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tabs, StringComparison.Ordinal))
             {
-                IsChecked = ParseCheckbox(field.Value),
-                IsEnabled = !field.IsReadOnly
-            };
-            if (!field.IsReadOnly)
-            {
-                checkBox.IsCheckedChanged += (_, _) =>
-                {
-                    string nextValue = checkBox.IsChecked == true ? "true" : "false";
-                    if (string.Equals(nextValue, field.Value, StringComparison.Ordinal))
-                    {
-                        return;
-                    }
-
-                    QueueDialogFieldUpdate(field.Id, nextValue);
-                };
+                return CreateTabsPanel(field.Value);
             }
 
-            return checkBox;
+            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Image, StringComparison.Ordinal))
+            {
+                return CreateImagePlaceholderPanel(field.Value);
+            }
+
+            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
+            {
+                return CreateGridPanel(field.Value);
+            }
+
+            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
+            {
+                return CreateSnippetPanel(field.Value);
+            }
+        }
+
+        if (field.IsReadOnly && field.IsMultiline && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
+        {
+            Border panel = new()
+            {
+                BorderThickness = new Thickness(1),
+                BorderBrush = Brushes.Gray,
+                Background = Brushes.Transparent,
+                Padding = new Thickness(6, 4),
+                MinHeight = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal)
+                    || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
+                    ? 160
+                    : 124,
+                Child = new TextBlock
+                {
+                    Text = field.Value,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontFamily = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
+                        ? new FontFamily("Consolas, Menlo, Monaco, monospace")
+                        : default
+                }
+            };
+            return panel;
         }
 
         TextBox textBox = new()
@@ -120,7 +220,9 @@ public partial class DesktopDialogWindow : Window
             IsReadOnly = field.IsReadOnly,
             AcceptsReturn = field.IsMultiline,
             TextWrapping = field.IsMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
-            MinHeight = field.IsMultiline ? 120 : 30
+            MinHeight = field.IsMultiline
+                ? string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Detail, StringComparison.Ordinal) ? 136 : 104
+                : 24
         };
         if (!field.IsReadOnly)
         {
@@ -139,6 +241,135 @@ public partial class DesktopDialogWindow : Window
         return textBox;
     }
 
+    private static Control CreateTabsPanel(string value)
+    {
+        WrapPanel tabs = new()
+        {
+            Orientation = global::Avalonia.Layout.Orientation.Horizontal
+        };
+
+        foreach (string line in value.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            tabs.Children.Add(new Border
+            {
+                BorderThickness = new Thickness(1),
+                BorderBrush = Brushes.Gray,
+                Background = Brushes.Transparent,
+                Margin = new Thickness(0, 0, 4, 4),
+                Padding = new Thickness(8, 3),
+                Child = new TextBlock { Text = line }
+            });
+        }
+
+        return tabs;
+    }
+
+    private static Control CreateImagePlaceholderPanel(string value)
+    {
+        string[] lines = value.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        StackPanel panel = new()
+        {
+            Spacing = 4
+        };
+        panel.Children.Add(new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Gray,
+            Background = Brushes.Transparent,
+            MinHeight = 136,
+            Child = new TextBlock
+            {
+                Text = lines.Length > 0 ? lines[0] : "Mugshot Preview",
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+            }
+        });
+
+        if (lines.Length > 1)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = string.Join(Environment.NewLine, lines.Skip(1)),
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
+
+        return panel;
+    }
+
+    private static Control CreateGridPanel(string value)
+    {
+        StackPanel rows = new()
+        {
+            Spacing = 3
+        };
+
+        foreach ((string key, string data) in ParseGridRows(value))
+        {
+            Grid row = new()
+            {
+                ColumnDefinitions = new ColumnDefinitions("156,*"),
+                ColumnSpacing = 8
+            };
+            TextBlock keyText = new()
+            {
+                Text = key,
+                FontWeight = FontWeight.SemiBold
+            };
+            TextBlock valueText = new()
+            {
+                Text = data,
+                TextWrapping = TextWrapping.Wrap
+            };
+            Grid.SetColumn(keyText, 0);
+            Grid.SetColumn(valueText, 1);
+            row.Children.Add(keyText);
+            row.Children.Add(valueText);
+            rows.Children.Add(row);
+        }
+
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Gray,
+            Background = Brushes.Transparent,
+            Padding = new Thickness(6, 4),
+            Child = rows
+        };
+    }
+
+    private static Control CreateSnippetPanel(string value)
+    {
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Gray,
+            Background = Brushes.Transparent,
+            Padding = new Thickness(6, 4),
+            Child = new TextBlock
+            {
+                Text = value,
+                TextWrapping = TextWrapping.Wrap
+            }
+        };
+    }
+
+    private static IEnumerable<(string Key, string Value)> ParseGridRows(string value)
+    {
+        foreach (string line in value.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            string[] parts = line.Split('|', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 2)
+            {
+                yield return (parts[0], parts[1]);
+            }
+            else
+            {
+                yield return (line, string.Empty);
+            }
+        }
+    }
+
     private void BuildActions(IReadOnlyList<DesktopDialogAction> actions)
     {
         _dialogActionsPanel.Children.Clear();
@@ -147,7 +378,8 @@ public partial class DesktopDialogWindow : Window
             Button button = new()
             {
                 Content = action.Label,
-                MinWidth = 88
+                MinWidth = 82,
+                Classes = { "shell-action", action.IsPrimary ? "primary" : "quiet" }
             };
             if (action.IsPrimary)
             {
@@ -180,7 +412,9 @@ public partial class DesktopDialogWindow : Window
         }
 
         _dialogFieldsPanel.Children
-            .SelectMany(row => row.GetVisualDescendants())
+            .SelectMany(row => row is InputElement inputElement
+                ? row.GetVisualDescendants().OfType<InputElement>().Prepend(inputElement)
+                : row.GetVisualDescendants().OfType<InputElement>())
             .OfType<InputElement>()
             .FirstOrDefault(control => control.Focusable && control.IsEnabled)?
             .Focus();
@@ -234,5 +468,14 @@ public partial class DesktopDialogWindow : Window
             _dialogMessageText.Text = DesktopDialogChromeBoundary.BuildFailureMessage(operationName, ex.Message);
             _dialogMessageText.IsVisible = true;
         }
+    }
+}
+
+internal static class DesktopDialogWindowExtensions
+{
+    public static T Also<T>(this T instance, Action<T> configure)
+    {
+        configure(instance);
+        return instance;
     }
 }

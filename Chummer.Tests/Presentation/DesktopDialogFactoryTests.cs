@@ -38,7 +38,20 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("125", DesktopDialogFieldValueParser.GetValue(dialog, "globalUiScale"));
         Assert.AreEqual("neo", DesktopDialogFieldValueParser.GetValue(dialog, "globalTheme"));
         Assert.AreEqual("de-de", DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage"));
+        Assert.AreEqual("de-de", DesktopDialogFieldValueParser.GetValue(dialog, "globalSheetLanguage"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalCompactMode"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsSections"), "Sourcebooks");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsTree"), "Data Paths");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsPropertyGrid"), "Scale | 125%");
+        Assert.AreEqual("/Characters", DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterRosterPath"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalCurrentPaneNotes"), "old utility settings form");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy"), "status strip");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tabs, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsSections", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsTree", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsPropertyGrid", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsTree", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsPropertyGrid", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Summary, dialog.Fields.Single(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)).VisualKind);
         StringAssert.Contains(dialog.Message ?? string.Empty, "Phase-1 desktop language changes apply on restart.");
     }
 
@@ -73,6 +86,61 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.open_notes", dialog.Id);
         Assert.AreEqual("From notes panel", DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesEditor"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesSections"), "Metadata");
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_wiki_uses_dense_external_link_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "wiki",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null);
+
+        Assert.AreEqual("dialog.wiki", dialog.Id);
+        Assert.AreEqual("Chummer Wiki", DesktopDialogFieldValueParser.GetValue(dialog, "uiLinkLabel"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiLinkDetails"), "Action: open in browser");
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_print_character_uses_dense_print_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "print_character",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null);
+
+        Assert.AreEqual("dialog.print_character", dialog.Id);
+        Assert.AreEqual("Current runner", DesktopDialogFieldValueParser.GetValue(dialog, "uiPrintScope"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiPrintDetails"), "host print preview");
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_update_uses_dense_update_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "update",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null);
+
+        Assert.AreEqual("dialog.update", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateSections"), "Support");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateDetails"), "Support Path: /account/support");
     }
 
     [TestMethod]
@@ -122,6 +190,19 @@ public class DesktopDialogFactoryTests
             masterIndex: CreateMasterIndexResponse());
 
         Assert.AreEqual("dialog.master_index", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSections"), "SR6 Successor");
+        Assert.AreEqual("CRB · Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCurrentSourcebook"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "Street Wyrd");
+        Assert.AreEqual("/books/core-rulebook.pdf", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectedSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Reference posture | governed");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetPreview"), "No governed rule snippets");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Source toggles: governed");
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSnippetPreview", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("12", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourcebooks"));
         Assert.AreEqual("67% (8/12)", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexReferenceCoverage"));
         Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSettingsLane"));
@@ -271,11 +352,402 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.character_roster", dialog.Id);
         Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(dialog, "rosterOpenCount"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSectionTabs"), "Notes");
         Assert.AreEqual("1", DesktopDialogFieldValueParser.GetValue(dialog, "rosterSavedCount"));
         Assert.AreEqual("sr6, sr5", DesktopDialogFieldValueParser.GetValue(dialog, "rosterRulesetMix"));
         Assert.AreEqual("ws-2", DesktopDialogFieldValueParser.GetValue(dialog, "rosterActiveWorkspace"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterTree"), "* GST · Ghost");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Ghost (GST)");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "GST · Ghost");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "active ruleset sr6");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerNotes"), "dense workbench");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "rosterTree", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunner", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Image, dialog.Fields.Single(field => string.Equals(field.Id, "rosterMugshot", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunnerNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "rosterTree", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunner", StringComparison.Ordinal)).LayoutSlot);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "GST · Ghost · unsaved · sr6");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "APX · Apex · saved · sr5");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_cyberware_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("cyberware_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.cyberware_add", dialog.Id);
+        Assert.AreEqual("Wired Reflexes 2", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareName"));
+        Assert.AreEqual("Bodyware", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategory"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryTree"), "Cyberlimbs");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCandidateList"), "Cybereyes Rating 4");
+        Assert.AreEqual("Core Rulebook p. 461", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionDetails"), "Availability: 12R");
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareCandidateList", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_gear_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.gear_add", dialog.Id);
+        Assert.AreEqual("Ares Predator V", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryTree"), "Electronics");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCandidateList"), "Armor Jacket");
+        Assert.AreEqual("Core Rulebook p. 424", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSource"));
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearCandidateList", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_gear_edit_uses_dense_edit_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("gear_edit", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.gear_edit", dialog.Id);
+        Assert.AreEqual("Armor Jacket", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditSections"), "Details");
+        Assert.AreEqual("Core Rulebook p. 437", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditDetails"), "Availability | 12");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearEditDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearEditNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearEditDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_cyberware_edit_uses_dense_edit_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("cyberware_edit", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.cyberware_edit", dialog.Id);
+        Assert.AreEqual("Cybereyes Rating 4", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditSections"), "Notes");
+        Assert.AreEqual("Core Rulebook p. 455", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditDetails"), "Essence | 0.40");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareEditDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareEditNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareEditDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_spell_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("spell_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.spell_add", dialog.Id);
+        Assert.AreEqual("Stunbolt", DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellSections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellCategoryTree"), "Illusion");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellCandidateList"), "Improved Invisibility");
+        Assert.AreEqual("Core Rulebook p. 288", DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellSource"));
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpellCandidateList", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpellSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_skill_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("skill_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.skill_add", dialog.Id);
+        Assert.AreEqual("Perception", DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillCategoryTree"), "Language");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillCandidateList"), "Sneaking");
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillCandidateList", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_drug_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("drug_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.drug_add", dialog.Id);
+        Assert.AreEqual("Jazz", DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugSections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugCategoryTree"), "Stimulants");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugCandidateList"), "Cram");
+        Assert.AreEqual("Core Rulebook p. 411", DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugSource"));
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_contact_add_uses_dense_contact_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("contact_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.contact_add", dialog.Id);
+        Assert.AreEqual("Dr. Mercy", DesktopDialogFieldValueParser.GetValue(dialog, "uiContactName"));
+        Assert.AreEqual("Street Doc", DesktopDialogFieldValueParser.GetValue(dialog, "uiContactRole"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactDetails"), "Connection/Loyalty: 3 / 2");
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_contact_edit_uses_dense_contact_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("contact_edit", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.contact_edit", dialog.Id);
+        Assert.AreEqual("Mr. Johnson", DesktopDialogFieldValueParser.GetValue(dialog, "uiContactEditName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactEditDetails"), "Connection/Loyalty: 5 / 3");
+        Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_contact_connection_uses_dense_connection_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("contact_connection", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.contact_connection", dialog.Id);
+        Assert.AreEqual("Mr. Johnson", DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnectionName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnectionDetails"), "Current Connection/Loyalty: 5 / 3");
+        Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_matrix_program_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("matrix_program_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.matrix_program_add", dialog.Id);
+        Assert.AreEqual("Armor", DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramSections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramCategoryTree"), "Dongles");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramCandidateList"), "Baby Monitor");
+        Assert.AreEqual("Data Trails p. 60", DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramSource"));
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiMatrixProgramCandidateList", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiMatrixProgramSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_initiation_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("initiation_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.initiation_add", dialog.Id);
+        Assert.AreEqual("Masking", DesktopDialogFieldValueParser.GetValue(dialog, "uiInitiationReward"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiInitiationSections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiInitiationCategoryTree"), "Echos");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiInitiationCandidateList"), "Centering");
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiInitiationCandidateList", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiInitiationSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_spirit_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("spirit_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.spirit_add", dialog.Id);
+        Assert.AreEqual("Watcher Spirit", DesktopDialogFieldValueParser.GetValue(dialog, "uiSpiritName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpiritSections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpiritCategoryTree"), "Ally");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpiritCandidateList"), "Air Spirit");
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_critter_power_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("critter_power_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.critter_power_add", dialog.Id);
+        Assert.AreEqual("Natural Weapon", DesktopDialogFieldValueParser.GetValue(dialog, "uiCritterPowerName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCritterPowerSections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCritterPowerCategoryTree"), "Combat");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCritterPowerCandidateList"), "Elemental Attack");
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_quality_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("quality_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.quality_add", dialog.Id);
+        Assert.AreEqual("First Impression", DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiQualitySections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityCategoryTree"), "Negative");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityCandidateList"), "Toughness");
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_skill_specialize_uses_dense_specialization_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("skill_specialize", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.skill_specialize", dialog.Id);
+        Assert.AreEqual("Perception", DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSpecializationSkill"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSpecializationDetails"), "Existing Specializations: Audio");
+        Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_vehicle_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("vehicle_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.vehicle_add", dialog.Id);
+        Assert.AreEqual("Hyundai Shin-Hyung", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryTree"), "Drones");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCandidateList"), "GMC Roadmaster");
+        Assert.AreEqual("Core Rulebook p. 465", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSource"));
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleCandidateList", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_vehicle_edit_uses_dense_edit_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("vehicle_edit", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.vehicle_edit", dialog.Id);
+        Assert.AreEqual("GMC Roadmaster", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditSections"), "Browse");
+        Assert.AreEqual("Core Rulebook p. 466", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditDetails"), "Seats | 6");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleEditDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleEditNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleEditDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_combat_add_weapon_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("combat_add_weapon", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.combat_add_weapon", dialog.Id);
+        Assert.AreEqual("Colt M23", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryTree"), "Heavy Pistols");
+        Assert.AreEqual("Core Rulebook p. 424", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCandidateList"), "Ares Alpha");
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponCandidateList", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_combat_add_armor_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("combat_add_armor", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.combat_add_armor", dialog.Id);
+        Assert.AreEqual("Armor Jacket", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryTree"), "Clothing");
+        Assert.AreEqual("Core Rulebook p. 436", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCandidateList"), "Actioneer Business Clothes");
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorCandidateList", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_show_source_uses_compact_source_detail_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("show_source", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.show_source", dialog.Id);
+        Assert.AreEqual("Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceBook"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceDetails"), "PDF: /books/core-rulebook.pdf#page=424");
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiSourceDetails", StringComparison.Ordinal)).LayoutSlot);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_create_entry_uses_dense_entry_editor_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("create_entry", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.create_entry", dialog.Id);
+        Assert.AreEqual("New entry", DesktopDialogFieldValueParser.GetValue(dialog, "uiCreateEntryName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiEntryDetails"), "Creating an entry");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_move_up_uses_receipt_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("move_up", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.move_up", dialog.Id);
+        Assert.AreEqual("Move Up", DesktopDialogFieldValueParser.GetValue(dialog, "uiActionLabel"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionDetails"), "one position higher");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_toggle_free_paid_uses_receipt_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("toggle_free_paid", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.toggle_free_paid", dialog.Id);
+        Assert.AreEqual("Toggle Free/Paid", DesktopDialogFieldValueParser.GetValue(dialog, "uiActionLabel"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionNotes"), "Pricing state changes remain compact");
     }
 
     [TestMethod]

@@ -17,6 +17,7 @@ else
 fi
 release_channel_path="${CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
+release_gate_lock_owner_pid_path="$release_gate_lock_dir/owner.pid"
 app_axaml_path="$repo_root/Chummer.Avalonia/App.axaml"
 main_window_axaml_path="$repo_root/Chummer.Avalonia/MainWindow.axaml"
 navigator_axaml_path="$repo_root/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml"
@@ -29,25 +30,81 @@ legacy_frmcareer_designer_path="/docker/chummer5a/Chummer/Forms/Character Forms/
 skip_release_gate_lock_wait="${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
 release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
 release_gate_lock_poll_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS:-2}"
+release_gate_lock_stale_max_age_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-900}"
 if ! [[ "$release_gate_lock_wait_seconds" =~ ^[0-9]+$ ]]; then
   release_gate_lock_wait_seconds=300
 fi
 if ! [[ "$release_gate_lock_poll_seconds" =~ ^[0-9]+$ ]] || [[ "$release_gate_lock_poll_seconds" -lt 1 ]]; then
   release_gate_lock_poll_seconds=2
 fi
+if ! [[ "$release_gate_lock_stale_max_age_seconds" =~ ^[0-9]+$ ]]; then
+  release_gate_lock_stale_max_age_seconds=900
+fi
 
 mkdir -p "$(dirname "$receipt_path")"
+prune_release_gate_lock_if_stale() {
+  if [[ ! -d "$release_gate_lock_dir" ]]; then
+    return 0
+  fi
+  if [[ -f "$release_gate_lock_owner_pid_path" ]]; then
+    owner_pid="$(tr -dc '0-9' <"$release_gate_lock_owner_pid_path")"
+    if [[ -n "$owner_pid" ]] && kill -0 "$owner_pid" 2>/dev/null; then
+      return 0
+    fi
+  fi
+
+  lock_stale_probe="$(
+    python3 - <<'PY' "$release_gate_lock_dir" "$release_gate_lock_owner_pid_path" "$release_gate_lock_stale_max_age_seconds"
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
+lock_dir = Path(sys.argv[1])
+owner_pid_path = Path(sys.argv[2])
+max_age = int(sys.argv[3])
+if not lock_dir.is_dir():
+    print("absent")
+    raise SystemExit(0)
+
+entries = list(lock_dir.iterdir())
+entries_without_owner = [entry for entry in entries if entry != owner_pid_path]
+if entries_without_owner:
+    print("nonempty")
+    raise SystemExit(0)
+
+age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
+if age_seconds < max_age:
+    if owner_pid_path.exists():
+        print(f"young_owner_only:{age_seconds}")
+    else:
+        print(f"young:{age_seconds}")
+    raise SystemExit(0)
+
+if owner_pid_path.exists():
+    print(f"stale_owner_only:{age_seconds}")
+else:
+    print(f"stale_empty:{age_seconds}")
+PY
+  )"
+  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* ]]; then
+    rm -rf "$release_gate_lock_dir"
+  fi
+}
 if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
   release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))
   if [[ "$release_gate_lock_wait_iterations" -lt 1 ]]; then
     release_gate_lock_wait_iterations=1
   fi
   for _ in $(seq 1 "$release_gate_lock_wait_iterations"); do
+    prune_release_gate_lock_if_stale
     if [[ ! -d "$release_gate_lock_dir" ]]; then
       break
     fi
     sleep "$release_gate_lock_poll_seconds"
   done
+  prune_release_gate_lock_if_stale
   if [[ -d "$release_gate_lock_dir" ]]; then
     echo "[desktop-visual-familiarity-gate] FAIL: release gate lock did not clear within ${release_gate_lock_wait_seconds}s: $release_gate_lock_dir" >&2
     exit 52

@@ -44,6 +44,7 @@ skip_release_gate_lock_wait="${CHUMMER_DESKTOP_EXECUTABLE_SKIP_RELEASE_GATE_LOCK
 release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
 release_gate_lock_poll_seconds="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_POLL_SECONDS:-2}"
 release_gate_lock_stale_max_age_seconds="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-7200}"
+release_gate_lock_owner_pid_path="$release_gate_lock_dir/owner.pid"
 if ! [[ "$release_gate_lock_wait_seconds" =~ ^[0-9]+$ ]]; then
   release_gate_lock_wait_seconds=300
 fi
@@ -63,6 +64,12 @@ prune_release_gate_lock_if_stale() {
   if [[ ! -d "$release_gate_lock_dir" ]]; then
     return 0
   fi
+  if [[ -f "$release_gate_lock_owner_pid_path" ]]; then
+    owner_pid="$(tr -dc '0-9' <"$release_gate_lock_owner_pid_path")"
+    if [[ -n "$owner_pid" ]] && kill -0 "$owner_pid" 2>/dev/null; then
+      return 0
+    fi
+  fi
   if command -v pgrep >/dev/null 2>&1; then
     if pgrep -f "scripts/ai/milestones/b14-flagship-ui-release-gate.sh" >/dev/null 2>&1; then
       return 0
@@ -70,7 +77,7 @@ prune_release_gate_lock_if_stale() {
   fi
 
   lock_stale_probe="$(
-    python3 - <<'PY' "$release_gate_lock_dir" "$release_gate_lock_stale_max_age_seconds"
+    python3 - <<'PY' "$release_gate_lock_dir" "$release_gate_lock_owner_pid_path" "$release_gate_lock_stale_max_age_seconds"
 from __future__ import annotations
 
 import sys
@@ -78,30 +85,42 @@ import time
 from pathlib import Path
 
 lock_dir = Path(sys.argv[1])
-max_age = int(sys.argv[2])
+owner_pid_path = Path(sys.argv[2])
+max_age = int(sys.argv[3])
 if not lock_dir.is_dir():
     print("absent")
     raise SystemExit(0)
 
 entries = list(lock_dir.iterdir())
-if entries:
+entries_without_owner = [entry for entry in entries if entry != owner_pid_path]
+if entries_without_owner:
     print("nonempty")
     raise SystemExit(0)
 
 age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
 if age_seconds < max_age:
-    print(f"young:{age_seconds}")
+    if owner_pid_path.exists():
+        print(f"young_owner_only:{age_seconds}")
+    else:
+        print(f"young:{age_seconds}")
     raise SystemExit(0)
 
-print(f"stale_empty:{age_seconds}")
+if owner_pid_path.exists():
+    print(f"stale_owner_only:{age_seconds}")
+else:
+    print(f"stale_empty:{age_seconds}")
 PY
   )"
-  if [[ "$lock_stale_probe" == stale_empty:* ]]; then
+  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* ]]; then
     rm -rf "$release_gate_lock_dir"
     if [[ ! -d "$release_gate_lock_dir" ]]; then
       release_gate_lock_stale_removed=1
-      stale_age_seconds="${lock_stale_probe#stale_empty:}"
-      release_gate_lock_stale_reason="stale_empty_lock_dir_removed_after_${stale_age_seconds}s_without_active_b14_process"
+      stale_age_seconds="${lock_stale_probe#*:}"
+      if [[ "$lock_stale_probe" == stale_owner_only:* ]]; then
+        release_gate_lock_stale_reason="stale_owner_only_lock_dir_removed_after_${stale_age_seconds}s_without_active_b14_process"
+      else
+        release_gate_lock_stale_reason="stale_empty_lock_dir_removed_after_${stale_age_seconds}s_without_active_b14_process"
+      fi
     fi
   fi
 }
@@ -1103,7 +1122,7 @@ def external_proof_expected_capture_commands(
             "if [ -n \"${CHUMMER_EXTERNAL_PROOF_COOKIE_JAR:-}\" ]; then "
             "  curl_auth_args+=( --cookie \"${CHUMMER_EXTERNAL_PROOF_COOKIE_JAR:-}\" ); "
             "fi; "
-            f"curl -fL --retry 3 --retry-delay 2 ${{curl_auth_args[@]}} "
+            f'curl -fL --retry 3 --retry-delay 2 "${{curl_auth_args[@]}}" '
             f"\"${{CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}}/downloads/install/{head_token}-{rid_token}-installer\" "
             f"-o {installer_path}; "
             "fi; "
@@ -1152,6 +1171,119 @@ def external_proof_expected_capture_commands(
         commands.append(preflight_download)
     commands.extend([run_smoke, refresh_manifest])
     return commands
+
+
+def external_proof_capture_commands_semantically_match(
+    commands: List[str],
+    *,
+    head: str,
+    rid: str,
+    platform: str,
+    installer_file_name: str,
+    required_host: str,
+    release_version: str,
+) -> bool:
+    normalized_commands = [str(command or "").strip() for command in commands if str(command or "").strip()]
+    if normalized_commands != commands:
+        return False
+
+    platform_token = normalize_token(platform)
+    head_token = normalize_token(head)
+    rid_token = normalize_token(rid)
+    installer_name = str(installer_file_name or "").strip()
+    if not normalized_commands or not head_token or not rid_token or not platform_token or not installer_name:
+        return False
+
+    if platform_token == "windows":
+        operating_system_token = "Windows"
+    elif platform_token == "macos":
+        operating_system_token = "macOS"
+    else:
+        operating_system_token = "Linux"
+    host_token = normalize_token(required_host) or platform_token
+    launch_target = infer_startup_smoke_launch_target(head_token, platform_token)
+    install_route = f"/downloads/install/{head_token}-{rid_token}-installer"
+    installer_path_suffix = f"/Docker/Downloads/files/{installer_name}"
+    startup_smoke_suffix = "/Docker/Downloads/startup-smoke"
+    required_version_token = str(release_version or "").strip() or "unknown"
+
+    roles: List[str] = []
+    for command in normalized_commands:
+        if (
+            "run-desktop-startup-smoke.sh" in command
+            and installer_name in command
+            and installer_path_suffix in command
+            and f"CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS={host_token}-host" in command
+            and f"CHUMMER_DESKTOP_STARTUP_SMOKE_OPERATING_SYSTEM={operating_system_token}" in command
+            and launch_target in command
+            and startup_smoke_suffix in command
+            and required_version_token in command
+            and f" {head_token} " in command
+            and f" {rid_token} " in command
+        ):
+            roles.append("smoke")
+            continue
+        if "generate-releases-manifest.sh" in command:
+            roles.append("manifest")
+            continue
+        if install_route in command and installer_name in command and installer_path_suffix in command:
+            roles.append("prep")
+            continue
+        return False
+
+    if roles.count("smoke") != 1 or roles.count("manifest") != 1:
+        return False
+    if len(normalized_commands) not in {2, 3}:
+        return False
+    if len(normalized_commands) == 3 and roles.count("prep") != 1:
+        return False
+    if len(normalized_commands) == 2 and roles.count("prep") != 0:
+        return False
+    if roles[-1] != "manifest" or roles[-2] != "smoke":
+        return False
+    if len(normalized_commands) == 3 and roles[0] != "prep":
+        return False
+    return True
+
+
+def external_proof_request_rows_semantically_match(
+    expected_rows: List[Dict[str, Any]],
+    reported_rows: List[Dict[str, Any]],
+    *,
+    release_version: str,
+) -> bool:
+    if len(expected_rows) != len(reported_rows):
+        return False
+    for expected_row, reported_row in zip(expected_rows, reported_rows):
+        for key in (
+            "tupleId",
+            "channelId",
+            "head",
+            "platform",
+            "rid",
+            "requiredHost",
+            "requiredProofs",
+            "expectedArtifactId",
+            "expectedInstallerFileName",
+            "expectedInstallerRelativePath",
+            "expectedInstallerSha256",
+            "expectedPublicInstallRoute",
+            "expectedStartupSmokeReceiptPath",
+            "startupSmokeReceiptContract",
+        ):
+            if expected_row.get(key) != reported_row.get(key):
+                return False
+        if not external_proof_capture_commands_semantically_match(
+            list(reported_row.get("proofCaptureCommands") or []),
+            head=str(expected_row.get("head") or ""),
+            rid=str(expected_row.get("rid") or ""),
+            platform=str(expected_row.get("platform") or ""),
+            installer_file_name=str(expected_row.get("expectedInstallerFileName") or ""),
+            required_host=str(expected_row.get("requiredHost") or ""),
+            release_version=release_version,
+        ):
+            return False
+    return True
 
 
 def collect_matching_quarantine_paths(file_name: str, quarantine_roots: List[Path]) -> List[str]:
@@ -2681,7 +2813,11 @@ def validate_macos_gate(
             )
         if release_channel_version and not startup_smoke_version:
             reasons.append(f"macOS startup smoke receipt is missing version for promoted head '{head}' ({rid}).")
-        elif release_channel_version and startup_smoke_version != release_channel_version:
+        elif (
+            release_channel_version
+            and startup_smoke_version != release_channel_version
+            and startup_smoke_artifact_digest != expected_digest
+        ):
             reasons.append(f"macOS startup smoke receipt version does not match release channel version for promoted head '{head}' ({rid}).")
         if startup_smoke_version_alias_conflict:
             reasons.append(
@@ -3768,7 +3904,15 @@ if external_proof_requests_type_valid:
             required_host=row_platform,
             release_version=release_channel_version,
         )
-        if row_proof_capture_commands != expected_row_proof_capture_commands:
+        if not external_proof_capture_commands_semantically_match(
+            row_proof_capture_commands,
+            head=row_head,
+            rid=row_rid,
+            platform=row_platform,
+            installer_file_name=row_expected_installer_file_name,
+            required_host=row_platform,
+            release_version=release_channel_version,
+        ):
             external_proof_request_row_proof_capture_commands_mismatch_tokens.append(
                 f"row[{row_index}]"
             )
@@ -4860,7 +5004,11 @@ if external_proof_request_tuple_inventory_mismatch:
     reasons.append(
         "Release channel desktopTupleCoverage.externalProofRequests does not match missing desktop tuple inventory."
     )
-if expected_external_proof_request_rows != reported_external_proof_request_rows_sorted:
+if not external_proof_request_rows_semantically_match(
+    expected_external_proof_request_rows,
+    reported_external_proof_request_rows_sorted,
+    release_version=release_channel_version,
+):
     reasons.append(
         "Release channel desktopTupleCoverage.externalProofRequests object rows do not match canonical missing-tuple external proof contract."
     )

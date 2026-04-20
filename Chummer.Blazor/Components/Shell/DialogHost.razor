@@ -1,5 +1,6 @@
 @namespace Chummer.Blazor.Components.Shell
 @using Chummer.Presentation.UiKit
+@using Chummer.Presentation.Overview
 @using Microsoft.AspNetCore.Components
 @* m104: blazor_dialog_surface *@
 @if (Dialog is { } dialog)
@@ -20,44 +21,78 @@
             <div id="@AccessibilityPrimitiveBoundary.BuildDialogDescriptionId(dialog.Id)" class="dialog-body">
                 @if (!string.IsNullOrWhiteSpace(dialog.Message))
                 {
-                    <p class="note">@dialog.Message</p>
-                }
-                @if (DialogTrustReceiptText.HasDialogTrustReceipt(dialog))
-                {
-                    <section class="coach-card" data-dialog-explain-receipt>
-                        <div class="coach-card-header">
-                            <h3>Dialog trust receipt</h3>
-                            <span class="badge">@dialog.Id</span>
-                        </div>
-                        <dl class="facts compact">
-                            <div><dt>Before</dt><dd>@DialogTrustReceiptText.BuildDialogBefore(dialog)</dd></div>
-                            <div><dt>After</dt><dd>@DialogTrustReceiptText.BuildDialogAfter(dialog)</dd></div>
-                            <div><dt>Explain receipt</dt><dd>@DialogTrustReceiptText.BuildDialogExplainReceipt(dialog)</dd></div>
-                            <div><dt>Support reuse</dt><dd>@DialogTrustReceiptText.BuildDialogSupportReuse(dialog)</dd></div>
-                        </dl>
-                    </section>
+                    <p class="dialog-note">@dialog.Message</p>
                 }
                 @foreach (DesktopDialogField field in dialog.Fields)
                 {
-                    <label>
-                        @field.Label
+                    <label class="dialog-field @(string.Equals(field.InputType, "checkbox", StringComparison.Ordinal) ? "dialog-field--checkbox" : string.Empty) @(BuildDialogFieldLayoutClass(field)) @(BuildDialogFieldVisualClass(field))">
                         @if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
                         {
                             <input type="checkbox"
                                    checked="@IsDialogCheckboxChecked(field)"
                                    disabled="@field.IsReadOnly"
                                    @onchange="e => OnDialogCheckboxChangedAsync(field, e.Value)" />
+                            <span class="dialog-label">@field.Label</span>
                         }
                         else if (field.IsMultiline)
                         {
-                            <textarea value="@field.Value"
-                                      placeholder="@field.Placeholder"
-                                      readonly="@field.IsReadOnly"
-                                      @oninput="e => OnDialogFieldInputAsync(field, e.Value?.ToString())"></textarea>
+                            <span class="dialog-label">@field.Label</span>
+                            @if (field.IsReadOnly && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
+                            {
+                                <div class="@BuildDialogVisualClass(field)">
+                                    @if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tabs, StringComparison.Ordinal))
+                                    {
+                                        @foreach (string item in SplitVisualLines(field.Value))
+                                        {
+                                            <span class="dialog-tab-chip">@item</span>
+                                        }
+                                    }
+                                    else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Image, StringComparison.Ordinal))
+                                    {
+                                        <div class="dialog-image-placeholder">
+                                            <div class="dialog-image-box">@SplitVisualLines(field.Value).FirstOrDefault() ?? "Mugshot Preview"</div>
+                                            @foreach (string item in SplitVisualLines(field.Value).Skip(1))
+                                            {
+                                                <div>@item</div>
+                                            }
+                                        </div>
+                                    }
+                                    else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
+                                    {
+                                        <div class="dialog-grid">
+                                            @foreach ((string key, string value) in SplitGridRows(field.Value))
+                                            {
+                                                <div class="dialog-grid-row">
+                                                    <span class="dialog-grid-key">@key</span>
+                                                    <span class="dialog-grid-value">@value</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
+                                    {
+                                        <div class="dialog-snippet">@field.Value</div>
+                                    }
+                                    else
+                                    {
+                                        <pre class="dialog-visual-pre">@field.Value</pre>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <textarea class="@BuildDialogInputClass(field)"
+                                          value="@field.Value"
+                                          placeholder="@field.Placeholder"
+                                          readonly="@field.IsReadOnly"
+                                          @oninput="e => OnDialogFieldInputAsync(field, e.Value?.ToString())"></textarea>
+                            }
                         }
                         else
                         {
-                            <input type="@field.InputType"
+                            <span class="dialog-label">@field.Label</span>
+                            <input class="@BuildDialogInputClass(field)"
+                                   type="@field.InputType"
                                    value="@field.Value"
                                    placeholder="@field.Placeholder"
                                    readonly="@field.IsReadOnly"
@@ -144,5 +179,75 @@
         return string.Equals(field.Value, "1", StringComparison.Ordinal)
             || string.Equals(field.Value, "on", StringComparison.OrdinalIgnoreCase)
             || string.Equals(field.Value, "yes", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildDialogFieldLayoutClass(DesktopDialogField field)
+    {
+        return field.LayoutSlot switch
+        {
+            DesktopDialogFieldLayoutSlots.Left => "dialog-field--left",
+            DesktopDialogFieldLayoutSlots.Right => "dialog-field--right",
+            _ => "dialog-field--full"
+        };
+    }
+
+    private static string BuildDialogFieldVisualClass(DesktopDialogField field)
+    {
+        return field.VisualKind switch
+        {
+            DesktopDialogFieldVisualKinds.List => "dialog-field--list",
+            DesktopDialogFieldVisualKinds.Tree => "dialog-field--tree",
+            DesktopDialogFieldVisualKinds.Grid => "dialog-field--grid",
+            DesktopDialogFieldVisualKinds.Detail => "dialog-field--detail",
+            DesktopDialogFieldVisualKinds.Summary => "dialog-field--summary",
+            DesktopDialogFieldVisualKinds.Snippet => "dialog-field--snippet",
+            DesktopDialogFieldVisualKinds.Tabs => "dialog-field--tabs",
+            DesktopDialogFieldVisualKinds.Image => "dialog-field--image",
+            _ => string.Empty
+        };
+    }
+
+    private static string BuildDialogInputClass(DesktopDialogField field)
+    {
+        return field.VisualKind switch
+        {
+            DesktopDialogFieldVisualKinds.List => "dialog-input dialog-input--list",
+            DesktopDialogFieldVisualKinds.Tree => "dialog-input dialog-input--tree",
+            DesktopDialogFieldVisualKinds.Grid => "dialog-input dialog-input--grid",
+            DesktopDialogFieldVisualKinds.Detail => "dialog-input dialog-input--detail",
+            DesktopDialogFieldVisualKinds.Summary => "dialog-input dialog-input--summary",
+            DesktopDialogFieldVisualKinds.Snippet => "dialog-input dialog-input--snippet",
+            _ => "dialog-input"
+        };
+    }
+
+    private static string BuildDialogVisualClass(DesktopDialogField field)
+    {
+        return field.VisualKind switch
+        {
+            DesktopDialogFieldVisualKinds.Tabs => "dialog-visual dialog-visual--tabs",
+            DesktopDialogFieldVisualKinds.Image => "dialog-visual dialog-visual--image",
+            DesktopDialogFieldVisualKinds.Tree => "dialog-visual dialog-visual--tree",
+            DesktopDialogFieldVisualKinds.Grid => "dialog-visual dialog-visual--grid",
+            DesktopDialogFieldVisualKinds.Snippet => "dialog-visual dialog-visual--snippet",
+            _ => "dialog-visual"
+        };
+    }
+
+    private static IReadOnlyList<string> SplitVisualLines(string value)
+    {
+        return value.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    private static IReadOnlyList<(string Key, string Value)> SplitGridRows(string value)
+    {
+        return value
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line =>
+            {
+                string[] parts = line.Split('|', 2, StringSplitOptions.TrimEntries);
+                return parts.Length == 2 ? (parts[0], parts[1]) : (line, string.Empty);
+            })
+            .ToArray();
     }
 }

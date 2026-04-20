@@ -346,6 +346,11 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "release_gate_lock_stale_reason=\"\"");
         StringAssert.Contains(scriptText, "prune_release_gate_lock_if_stale()");
         StringAssert.Contains(scriptText, "release_gate_lock_stale_max_age_seconds");
+        StringAssert.Contains(scriptText, "release_gate_lock_owner_pid_path=\"$release_gate_lock_dir/owner.pid\"");
+        StringAssert.Contains(scriptText, "owner_pid_path = Path(sys.argv[2])");
+        StringAssert.Contains(scriptText, "entries_without_owner = [entry for entry in entries if entry != owner_pid_path]");
+        StringAssert.Contains(scriptText, "stale_owner_only:");
+        StringAssert.Contains(scriptText, "stale_owner_only_lock_dir_removed_after_");
         StringAssert.Contains(scriptText, "stale_empty_lock_dir_removed_after_");
         StringAssert.Contains(scriptText, "without_active_b14_process");
         StringAssert.Contains(scriptText, "if pgrep -f \"scripts/ai/milestones/b14-flagship-ui-release-gate.sh\" >/dev/null 2>&1; then");

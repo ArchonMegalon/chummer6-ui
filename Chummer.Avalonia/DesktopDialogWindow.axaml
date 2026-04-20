@@ -1,27 +1,52 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Chummer.Avalonia.DesktopDialogWindow"
-        Width="760"
-        Height="520"
-        MinWidth="560"
+        Width="860"
+        Height="560"
+        MinWidth="640"
         MinHeight="360"
         WindowStartupLocation="CenterOwner"
         CanResize="True"
         Background="{DynamicResource ChummerShellSurfaceAltBrush}"
+        ShowInTaskbar="False"
         Title="Dialog">
-  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10" Margin="12">
-    <Border Grid.Row="0" BorderThickness="1" BorderBrush="{DynamicResource ChummerShellCardBorderBrush}" Padding="8" Background="{DynamicResource ChummerShellDialogHeaderBrush}">
-      <TextBlock Name="DialogTitleText" FontWeight="Bold" Text="Dialog" />
-    </Border>
+  <Border BorderThickness="1"
+          BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
+          Background="{DynamicResource ChummerShellSurfaceBrush}">
+    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="0">
+      <Border Grid.Row="0"
+              Background="{DynamicResource ChummerShellDialogHeaderBrush}"
+              BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
+              BorderThickness="0,0,0,1"
+              Padding="6,3">
+        <TextBlock Name="DialogTitleText"
+                   FontWeight="SemiBold"
+                   Text="Dialog" />
+      </Border>
 
-    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-      <StackPanel Spacing="10">
-        <TextBlock Name="DialogMessageText" TextWrapping="Wrap" />
+      <ScrollViewer Grid.Row="1"
+                    VerticalScrollBarVisibility="Auto"
+                    Padding="8,6">
+        <StackPanel Spacing="6">
+          <TextBlock Name="DialogMessageText"
+                     Classes="shell-caption"
+                     TextWrapping="Wrap"
+                     IsVisible="False" />
 
-        <StackPanel Name="DialogFieldsPanel" Spacing="10" />
-      </StackPanel>
-    </ScrollViewer>
+          <StackPanel Name="DialogFieldsPanel" Spacing="6" />
+        </StackPanel>
+      </ScrollViewer>
 
-    <StackPanel Grid.Row="2" Name="DialogActionsPanel" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" />
-  </Grid>
+      <Border Grid.Row="2"
+              Background="{DynamicResource ChummerShellChromeBrush}"
+              BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
+              BorderThickness="0,1,0,0"
+              Padding="6,4">
+        <StackPanel Name="DialogActionsPanel"
+                    Orientation="Horizontal"
+                    Spacing="6"
+                    HorizontalAlignment="Right" />
+      </Border>
+    </Grid>
+  </Border>
 </Window>

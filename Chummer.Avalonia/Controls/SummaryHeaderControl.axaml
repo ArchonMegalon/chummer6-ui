@@ -73,7 +73,7 @@
                 SelectionChanged="LoadedRunnerTabStrip_OnSelectionChanged">
         <TabStrip.ItemTemplate>
           <DataTemplate x:DataType="contracts:NavigatorTabItem">
-            <TextBlock Text="{Binding Label}" />
+            <TextBlock Text="{Binding Label}" Classes="shell-tab-label" />
           </DataTemplate>
         </TabStrip.ItemTemplate>
       </TabStrip>
