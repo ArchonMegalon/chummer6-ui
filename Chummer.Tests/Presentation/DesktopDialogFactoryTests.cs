@@ -385,7 +385,9 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryTree"), "Cyberlimbs");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCandidateList"), "Cybereyes Rating 4");
         Assert.AreEqual("Core Rulebook p. 461", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSource"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionDetails"), "Availability: 12R");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionDetails"), "Availability | 12R");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
@@ -401,9 +403,12 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.gear_add", dialog.Id);
         Assert.AreEqual("Ares Predator V", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionDetails"), "Category | Firearms");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryTree"), "Electronics");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCandidateList"), "Armor Jacket");
         Assert.AreEqual("Core Rulebook p. 424", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSource"));
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
@@ -455,9 +460,12 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.spell_add", dialog.Id);
         Assert.AreEqual("Stunbolt", DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellSections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellSelectionDetails"), "Type | Mana");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellCategoryTree"), "Illusion");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellCandidateList"), "Improved Invisibility");
         Assert.AreEqual("Core Rulebook p. 288", DesktopDialogFieldValueParser.GetValue(dialog, "uiSpellSource"));
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpellSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpellNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpellCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpellSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
@@ -473,8 +481,11 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.skill_add", dialog.Id);
         Assert.AreEqual("Perception", DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSelectionDetails"), "Defaulting | Yes");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillCategoryTree"), "Language");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillCandidateList"), "Sneaking");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
@@ -490,9 +501,12 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.drug_add", dialog.Id);
         Assert.AreEqual("Jazz", DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugSections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugSelectionDetails"), "Crash | 1 hour");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugCategoryTree"), "Stimulants");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugCandidateList"), "Cram");
         Assert.AreEqual("Core Rulebook p. 411", DesktopDialogFieldValueParser.GetValue(dialog, "uiDrugSource"));
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiDrugSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiDrugNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
     }
 
@@ -506,7 +520,9 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.contact_add", dialog.Id);
         Assert.AreEqual("Dr. Mercy", DesktopDialogFieldValueParser.GetValue(dialog, "uiContactName"));
         Assert.AreEqual("Street Doc", DesktopDialogFieldValueParser.GetValue(dialog, "uiContactRole"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactDetails"), "Connection/Loyalty: 3 / 2");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactDetails"), "Connection/Loyalty | 3 / 2");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
     }
 
@@ -519,7 +535,9 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.contact_edit", dialog.Id);
         Assert.AreEqual("Mr. Johnson", DesktopDialogFieldValueParser.GetValue(dialog, "uiContactEditName"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactEditDetails"), "Connection/Loyalty: 5 / 3");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactEditDetails"), "Connection/Loyalty | 5 / 3");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactEditDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactEditNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
     }
 
@@ -592,9 +610,12 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.matrix_program_add", dialog.Id);
         Assert.AreEqual("Armor", DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramSections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramSelectionDetails"), "Slot | Common");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramCategoryTree"), "Dongles");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramCandidateList"), "Baby Monitor");
         Assert.AreEqual("Data Trails p. 60", DesktopDialogFieldValueParser.GetValue(dialog, "uiMatrixProgramSource"));
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiMatrixProgramSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiMatrixProgramNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiMatrixProgramCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiMatrixProgramSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
@@ -610,8 +631,11 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.initiation_add", dialog.Id);
         Assert.AreEqual("Masking", DesktopDialogFieldValueParser.GetValue(dialog, "uiInitiationReward"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiInitiationSections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiInitiationSelectionDetails"), "Grade | 1");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiInitiationCategoryTree"), "Echos");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiInitiationCandidateList"), "Centering");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiInitiationSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiInitiationNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiInitiationCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiInitiationSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
@@ -627,8 +651,11 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.spirit_add", dialog.Id);
         Assert.AreEqual("Watcher Spirit", DesktopDialogFieldValueParser.GetValue(dialog, "uiSpiritName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpiritSections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpiritSelectionDetails"), "Force | 3");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpiritCategoryTree"), "Ally");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpiritCandidateList"), "Air Spirit");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpiritSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpiritNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
     }
 
@@ -642,8 +669,11 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.critter_power_add", dialog.Id);
         Assert.AreEqual("Natural Weapon", DesktopDialogFieldValueParser.GetValue(dialog, "uiCritterPowerName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCritterPowerSections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCritterPowerSelectionDetails"), "Type | Passive");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCritterPowerCategoryTree"), "Combat");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCritterPowerCandidateList"), "Elemental Attack");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCritterPowerSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiCritterPowerNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
     }
 
@@ -657,8 +687,11 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.quality_add", dialog.Id);
         Assert.AreEqual("First Impression", DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiQualitySections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiQualitySelectionDetails"), "Karma | 11");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityCategoryTree"), "Negative");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityCandidateList"), "Toughness");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiQualitySelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiQualityNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
     }
 
@@ -671,7 +704,9 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.skill_specialize", dialog.Id);
         Assert.AreEqual("Perception", DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSpecializationSkill"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSpecializationDetails"), "Existing Specializations: Audio");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSpecializationDetails"), "Existing Specializations | Audio");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillSpecializationDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillSpecializationNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
     }
 
@@ -685,9 +720,12 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.vehicle_add", dialog.Id);
         Assert.AreEqual("Hyundai Shin-Hyung", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSelectionDetails"), "Armor | 8");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryTree"), "Drones");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCandidateList"), "GMC Roadmaster");
         Assert.AreEqual("Core Rulebook p. 465", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSource"));
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
@@ -721,9 +759,12 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.combat_add_weapon", dialog.Id);
         Assert.AreEqual("Colt M23", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSections"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionDetails"), "Damage | 7P");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryTree"), "Heavy Pistols");
         Assert.AreEqual("Core Rulebook p. 424", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCandidateList"), "Ares Alpha");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
@@ -739,9 +780,12 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.combat_add_armor", dialog.Id);
         Assert.AreEqual("Armor Jacket", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionDetails"), "Availability | 12");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryTree"), "Clothing");
         Assert.AreEqual("Core Rulebook p. 436", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCandidateList"), "Actioneer Business Clothes");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
