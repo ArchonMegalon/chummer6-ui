@@ -92,7 +92,7 @@ internal static class MainWindowShellFrameProjector
             ? null
             : shellSurface.Notice.Trim();
         if (!string.IsNullOrWhiteSpace(shellNotice)
-            && !string.Equals(shellNotice, "Ready.", StringComparison.OrdinalIgnoreCase))
+            && !IsRoutineShellNotice(shellNotice))
         {
             lines.Add($"Notice: {shellNotice}");
         }
@@ -103,28 +103,26 @@ internal static class MainWindowShellFrameProjector
             return string.Join(Environment.NewLine, lines);
         }
 
-        lines.Add($"{portability.Title}: {portability.Receipt.ReceiptSummary}");
-        lines.Add($"Import rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(portability.Receipt)}");
-        lines.Add($"Import environment before: {DesktopTrustReceiptText.BuildImportDiffBefore(portability.Receipt)}");
-        lines.Add($"Import environment after: {DesktopTrustReceiptText.BuildImportDiffAfter(portability.Receipt)}");
-        lines.Add($"Import explain receipt: {DesktopTrustReceiptText.BuildImportExplainReceipt(portability.Receipt)}");
-        lines.Add($"Next safe action: {portability.Receipt.NextSafeAction}");
-        lines.Add($"Support reuse: {DesktopTrustReceiptText.BuildImportSupportReuse(portability.Receipt)}");
-
-        if (portability.Receipt.SupportedExchangeModes.Count > 0)
-        {
-            lines.Add($"Exchange modes: {string.Join(", ", portability.Receipt.SupportedExchangeModes)}");
-        }
-
         string? watchout = portability.Receipt.Notes
             .FirstOrDefault(note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase))
             ?.Summary;
         if (!string.IsNullOrWhiteSpace(watchout))
         {
-            lines.Add($"Watchout: {watchout}");
+            lines.Add($"Import watchout: {watchout}");
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static bool IsRoutineShellNotice(string shellNotice)
+    {
+        if (string.Equals(shellNotice, "Ready.", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return shellNotice.StartsWith("Command '", StringComparison.OrdinalIgnoreCase)
+            && shellNotice.EndsWith("dispatched.", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildToolStripStatusText(
@@ -417,7 +415,9 @@ internal static class MainWindowShellFrameProjector
                 field.Placeholder,
                 field.IsMultiline,
                 field.IsReadOnly,
-                field.InputType))
+                field.InputType,
+                field.VisualKind,
+                field.LayoutSlot))
             .ToArray();
         DialogActionDisplayItem[] actions = state.ActiveDialog.Actions
             .Select(action => new DialogActionDisplayItem(action.Id, action.Label, action.IsPrimary))

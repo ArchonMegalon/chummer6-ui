@@ -1,48 +1,77 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.CommandDialogPaneControl">
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Spacing="12">
-      <Border Classes="shell-card subtle">
-        <StackPanel Spacing="8">
-          <!-- Shell section heading -->
-          <TextBlock Classes="shell-kicker" Text="Section Commands" />
-          <ListBox x:Name="CommandsList">
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <StackPanel Spacing="2">
-                  <TextBlock Classes="shell-section-title" Text="{Binding Id}" />
-                  <TextBlock Classes="shell-caption" Text="{Binding Group, StringFormat=Group: {0}}" />
-                </StackPanel>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-            <ListBox.ItemsPanel>
-              <ItemsPanelTemplate>
-                <VirtualizingStackPanel />
-              </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-          </ListBox>
-        </StackPanel>
+  <Border Classes="shell-card"
+          Padding="0">
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto"
+          RowSpacing="0">
+      <Border Grid.Row="0"
+              Background="{DynamicResource ChummerShellDialogHeaderBrush}"
+              BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
+              BorderThickness="0,0,0,1"
+              Padding="6,3">
+        <TextBlock x:Name="DialogTitleText"
+                   Text="(none)"
+                   FontWeight="SemiBold"
+                   TextWrapping="Wrap" />
       </Border>
 
-      <Border Classes="shell-card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="shell-kicker" Text="Dialog Briefing" />
-          <TextBlock Text="Dialog Title" Classes="shell-section-title" />
-          <TextBlock x:Name="DialogTitleText" Text="(none)" TextWrapping="Wrap" />
-          <TextBlock Text="Dialog Message" Classes="shell-section-title" />
-          <TextBlock x:Name="DialogMessageText" Text="(none)" TextWrapping="Wrap" />
-        </StackPanel>
+      <Border Grid.Row="1"
+              x:Name="DialogMessageBorder"
+              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+              BorderThickness="0,0,0,1"
+              Padding="6,3"
+              IsVisible="False">
+        <TextBlock x:Name="DialogMessageText"
+                   Classes="shell-caption"
+                   Text="(none)"
+                   TextWrapping="Wrap" />
       </Border>
 
-      <Border Classes="shell-card">
-        <Grid RowDefinitions="Auto,*,Auto,*" RowSpacing="8">
-          <TextBlock Grid.Row="0" Text="Dialog Fields" Classes="shell-section-title" />
-          <StackPanel Grid.Row="1" x:Name="DialogFieldsHost" Spacing="10" />
-          <TextBlock Grid.Row="2" Text="Dialog Actions" Classes="shell-section-title" />
-          <WrapPanel Grid.Row="3" x:Name="DialogActionsHost" Orientation="Horizontal" ItemHeight="40" />
-        </Grid>
+      <ScrollViewer Grid.Row="2"
+                    VerticalScrollBarVisibility="Auto"
+                    Padding="6,4">
+        <StackPanel x:Name="DialogFieldsHost" Spacing="6" />
+      </ScrollViewer>
+
+      <Border Grid.Row="3"
+              x:Name="DialogActionsBorder"
+              Background="{DynamicResource ChummerShellChromeBrush}"
+              BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
+              BorderThickness="0,1,0,0"
+              Padding="6,4"
+              IsVisible="False">
+        <WrapPanel x:Name="DialogActionsHost"
+                   Orientation="Horizontal"
+                   HorizontalAlignment="Right"
+                   ItemHeight="26" />
       </Border>
-    </StackPanel>
-  </ScrollViewer>
+
+      <Border Grid.Row="4"
+              x:Name="CommandsHostBorder"
+              Classes="shell-panel subtle"
+              Padding="3,2"
+              IsVisible="False">
+        <ListBox x:Name="CommandsList">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                <TextBlock Grid.Column="0"
+                           Classes="shell-caption"
+                           Text="{Binding Label}" />
+                <TextBlock Grid.Column="1"
+                           Classes="shell-caption"
+                           Text="{Binding Group}" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <VirtualizingStackPanel />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+        </ListBox>
+      </Border>
+    </Grid>
+  </Border>
 </UserControl>

@@ -4039,6 +4039,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "skip_release_gate_lock_wait=\"${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}\"");
         StringAssert.Contains(visualGateScriptText, "release_gate_lock_wait_seconds=\"${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}\"");
         StringAssert.Contains(visualGateScriptText, "release_gate_lock_poll_seconds=\"${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS:-2}\"");
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_owner_pid_path=\"$release_gate_lock_dir/owner.pid\"");
+        StringAssert.Contains(visualGateScriptText, "release_gate_lock_stale_max_age_seconds=\"${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-900}\"");
+        StringAssert.Contains(visualGateScriptText, "prune_release_gate_lock_if_stale() {");
+        StringAssert.Contains(visualGateScriptText, "entries_without_owner = [entry for entry in entries if entry != owner_pid_path]");
+        StringAssert.Contains(visualGateScriptText, "stale_owner_only:");
         StringAssert.Contains(visualGateScriptText, "release_gate_lock_wait_iterations=$((release_gate_lock_wait_seconds / release_gate_lock_poll_seconds))");
         StringAssert.Contains(visualGateScriptText, "for _ in $(seq 1 \"$release_gate_lock_wait_iterations\"); do");
         StringAssert.Contains(visualGateScriptText, "sleep \"$release_gate_lock_poll_seconds\"");

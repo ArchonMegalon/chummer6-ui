@@ -40,10 +40,9 @@ public partial class SectionHostControl : UserControl
 
     public void SetNotice(string notice)
     {
-        string normalizedNotice = string.IsNullOrWhiteSpace(notice) ? "Notice: Ready." : notice;
+        string normalizedNotice = string.IsNullOrWhiteSpace(notice) ? string.Empty : notice;
         NoticeText.Text = normalizedNotice;
-        NoticeBorder.IsVisible =
-            !string.Equals(normalizedNotice, "Notice: Ready.", StringComparison.Ordinal)
+        NoticeBorder.IsVisible = !string.IsNullOrWhiteSpace(normalizedNotice)
             && !string.Equals(normalizedNotice, "Ready.", StringComparison.Ordinal);
     }
 

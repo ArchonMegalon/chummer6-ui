@@ -726,6 +726,19 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Desktop_dialog_surfaces_use_real_windowed_dialogs_and_quiet_blazor_chrome()
+    {
+        string postRefreshSource = File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "MainWindow.PostRefreshCoordinators.cs"));
+        StringAssert.Contains(postRefreshSource, "dialogWindow.BindDialog(activeDialog);");
+        StringAssert.Contains(postRefreshSource, "dialogWindow.Show(owner);");
+
+        string dialogHostSource = File.ReadAllText(ResolveSourceFile("Chummer.Blazor", "Components", "Shell", "DialogHost.razor"));
+        Assert.IsFalse(
+            dialogHostSource.Contains("Dialog trust receipt", StringComparison.Ordinal),
+            "Default dialog chrome must not spend space on trust-receipt copy.");
+    }
+
+    [TestMethod]
     public void Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters()
     {
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -1422,6 +1435,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
             TextBlock notice = harness.FindControl<TextBlock>("NoticeText");
+            Border noticeBorder = harness.FindControl<Border>("NoticeBorder");
 
             harness.WaitUntil(() => sectionRows.ItemCount >= 8);
             string[] rowText = SnapshotListBoxItems(sectionRows).Select(item => item.ToString() ?? string.Empty).ToArray();
@@ -1429,7 +1443,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             CollectionAssert.Contains(rowText, "gear.weapons[0] = Ares Alpha");
             CollectionAssert.Contains(rowText, "gear.armor[0] = Armor Jacket");
             StringAssert.Contains(preview.Text ?? string.Empty, "\"combat\"");
-            StringAssert.Contains(notice.Text ?? string.Empty, "Notice:");
+            Assert.IsFalse(noticeBorder.IsVisible, "Routine command-dispatch noise should stay hidden in the dense classic workbench.");
+            Assert.IsTrue(string.IsNullOrWhiteSpace(notice.Text), "Routine command-dispatch copy should not consume visible workbench space.");
         });
     }
 

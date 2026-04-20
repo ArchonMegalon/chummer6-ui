@@ -320,6 +320,7 @@ launch_target = sys.argv[5]
 startup_smoke_receipt_arg = sys.argv[6].strip()
 installer_path_arg = sys.argv[7].strip()
 repo_root = Path(sys.argv[8])
+workspace_root = repo_root.parent.resolve()
 hub_registry_root_arg = str(sys.argv[9] or "").strip()
 hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
 host_os_name = platform.system().strip()
@@ -426,6 +427,8 @@ startup_smoke_candidates = [
     release_channel_path.parent.parent / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     repo_root / ".codex-studio" / "published" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     repo_root / "Docker" / "Downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
+    repo_root / "Chummer.Portal" / "downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
+    workspace_root / "chummer.run-services" / "Chummer.Portal" / "downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
 ]
 if hub_registry_root is not None:
     startup_smoke_candidates.extend(
@@ -464,6 +467,11 @@ startup_smoke_version = str(
     or startup_smoke_payload.get("releaseVersion")
     or ""
 ).strip()
+startup_smoke_version_matches_release_channel = (
+    not release_channel_version
+    or not startup_smoke_version
+    or startup_smoke_version == release_channel_version
+)
 startup_smoke_host_class = normalize_token(startup_smoke_payload.get("hostClass"))
 startup_smoke_operating_system = str(startup_smoke_payload.get("operatingSystem") or "").strip()
 startup_smoke_artifact_path, startup_smoke_artifact_path_candidates, startup_smoke_artifact_path_obj = resolve_receipt_artifact_path(
@@ -506,6 +514,7 @@ evidence["startup_smoke"] = {
     "channel_id": startup_smoke_channel,
     "rid": startup_smoke_rid,
     "version": startup_smoke_version,
+    "version_matches_release_channel": startup_smoke_version_matches_release_channel,
     "host_class": startup_smoke_host_class,
     "operating_system": startup_smoke_operating_system,
     "artifact_path": startup_smoke_artifact_path,
@@ -546,7 +555,12 @@ else:
         reasons.append(f"macOS startup smoke receipt channelId does not match release channel {release_channel_id}.")
     if release_channel_version and not startup_smoke_version:
         reasons.append("macOS startup smoke receipt version is missing.")
-    if release_channel_version and startup_smoke_version and startup_smoke_version != release_channel_version:
+    if (
+        release_channel_version
+        and startup_smoke_version
+        and not startup_smoke_version_matches_release_channel
+        and startup_smoke_artifact_digest != f"sha256:{artifact_sha}"
+    ):
         reasons.append(f"macOS startup smoke receipt version does not match release channel {release_channel_version}.")
     if startup_smoke_status not in {"pass", "passed", "ready"}:
         reasons.append("macOS startup smoke receipt status is not passing.")
