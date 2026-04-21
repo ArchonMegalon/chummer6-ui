@@ -421,8 +421,8 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.RulesetId, RulesetDefaults.Sr5)
             .Add(component => component.State, state));
 
-        StringAssert.Contains(commandCut.Markup, "SR6 Preview Commands");
-        StringAssert.Contains(commandCut.Markup, "No SR6 preview-desk commands are currently available.");
+        StringAssert.Contains(commandCut.Markup, "SR6 Setup Tools");
+        StringAssert.Contains(commandCut.Markup, "No SR6 setup-workbench tools are currently available.");
         StringAssert.Contains(resultCut.Markup, "SR5 Editor Result");
         StringAssert.Contains(resultCut.Markup, "Shadowrun 5 stays on the main desktop editor");
         StringAssert.Contains(resultCut.Markup, "SR5 editor is ready");

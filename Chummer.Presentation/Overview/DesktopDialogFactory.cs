@@ -3055,22 +3055,22 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "move_up" => new DesktopDialogState(
                 "dialog.ui.move_up",
-                "Move Up",
-                "Moved selection up.",
+                "Move Entry Up",
+                "Review the reordered list and continue in the same utility pane.",
                 BuildActionReceiptFields("Move Up", "Selected entry moved one position higher in the current ordered list.", "Ordering stays compact and list-oriented like the legacy utility flows."),
-                [new DesktopDialogAction("close", "Close", true)]),
+                [new DesktopDialogAction("continue", "Continue", true)]),
             "move_down" => new DesktopDialogState(
                 "dialog.ui.move_down",
-                "Move Down",
-                "Moved selection down.",
+                "Move Entry Down",
+                "Review the reordered list and continue in the same utility pane.",
                 BuildActionReceiptFields("Move Down", "Selected entry moved one position lower in the current ordered list.", "Ordering stays compact and list-oriented like the legacy utility flows."),
-                [new DesktopDialogAction("close", "Close", true)]),
+                [new DesktopDialogAction("continue", "Continue", true)]),
             "toggle_free_paid" => new DesktopDialogState(
                 "dialog.ui.toggle_free_paid",
-                "Free/Paid",
-                "Toggled free/paid state for selected item.",
+                "Pricing Posture",
+                "Review the new pricing posture and continue in the same utility pane.",
                 BuildActionReceiptFields("Toggle Free/Paid", "Selected item pricing posture was toggled between free and paid.", "Pricing state changes remain compact and explicit instead of disappearing into background chrome."),
-                [new DesktopDialogAction("close", "Close", true)]),
+                [new DesktopDialogAction("continue", "Continue", true)]),
             "show_source" => new DesktopDialogState(
                 "dialog.ui.show_source",
                 "Source",
@@ -3112,7 +3112,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogField("uiGearMountDetails", "Mount Details", "Selected Gear | Smartgun System" + Environment.NewLine + "Target Host | Ares Predator V" + Environment.NewLine + "Compatibility | Valid" + Environment.NewLine + "Source | Core Rulebook p. 433", "Selected Gear | Smartgun System" + Environment.NewLine + "Target Host | Ares Predator V" + Environment.NewLine + "Compatibility | Valid" + Environment.NewLine + "Source | Core Rulebook p. 433", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                     new DesktopDialogField("uiGearMountNotes", "Notes", "Keep compatibility and source visible while mounting the selected gear.", "Keep compatibility and source visible while mounting the selected gear.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
-                [new DesktopDialogAction("close", "Close", true)]),
+                [
+                    new DesktopDialogAction("apply", "Mount", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "gear_source" => new DesktopDialogState(
                 "dialog.ui.gear_source",
                 "Gear Source",
@@ -3184,7 +3187,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogField("uiMagicBindDetails", "Bind Details", "Selected Entry | Force 4 Focus" + Environment.NewLine + "Binding Cost | 16 Karma" + Environment.NewLine + "Availability | Bound magical item" + Environment.NewLine + "Source | Core Rulebook p. 319", "Selected Entry | Force 4 Focus" + Environment.NewLine + "Binding Cost | 16 Karma" + Environment.NewLine + "Availability | Bound magical item" + Environment.NewLine + "Source | Core Rulebook p. 319", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                     new DesktopDialogField("uiMagicBindNotes", "Notes", "Binding cost and source remain visible before confirmation.", "Binding cost and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
-                [new DesktopDialogAction("close", "Close", true)]),
+                [
+                    new DesktopDialogAction("apply", "Bind", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "magic_source" => new DesktopDialogState(
                 "dialog.ui.magic_source",
                 "Magic Source",
@@ -3268,7 +3274,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogField("uiSkillGroupDetails", "Group Details", "Group | Stealth" + Environment.NewLine + "Skills | Disguise, Palming, Sneaking" + Environment.NewLine + "Current Rating | 4", "Group | Stealth" + Environment.NewLine + "Skills | Disguise, Palming, Sneaking" + Environment.NewLine + "Current Rating | 4", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                     new DesktopDialogField("uiSkillGroupNotes", "Notes", "Group composition and current rating remain visible while editing.", "Group composition and current rating remain visible while editing.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
-                [new DesktopDialogAction("close", "Close", true)]),
+                [
+                    new DesktopDialogAction("apply", "Apply", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "combat_add_weapon" => new DesktopDialogState(
                 "dialog.ui.combat_add_weapon",
                 "Add Weapon",
@@ -3290,9 +3299,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogField("uiCombatReloadWeapon", "Weapon", "Colt M23", "Colt M23", IsReadOnly: true),
                     new DesktopDialogField("uiCombatReloadAmmo", "Ammo", "Regular Ammo (15)", "Regular Ammo (15)"),
                     new DesktopDialogField("uiCombatReloadDetails", "Reload Details", "Selected Weapon | Colt M23" + Environment.NewLine + "Current Magazine | 3 / 15" + Environment.NewLine + "Selected Ammo | Regular Ammo (15)", "Selected Weapon | Colt M23" + Environment.NewLine + "Current Magazine | 3 / 15" + Environment.NewLine + "Selected Ammo | Regular Ammo (15)", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiCombatReloadCommands", "Command Posture", "Reload selected weapon" + Environment.NewLine + "Keep ammo and magazine posture visible" + Environment.NewLine + "Return to combat tab after applying", "Reload selected weapon", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                     new DesktopDialogField("uiCombatReloadNotes", "Notes", "Weapon and ammo selection remain visible while reloading.", "Weapon and ammo selection remain visible while reloading.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
-                [new DesktopDialogAction("close", "Close", true)]),
+                [
+                    new DesktopDialogAction("apply", "Reload", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "combat_damage_track" => new DesktopDialogState(
                 "dialog.ui.combat_damage_track",
                 "Damage Track",
@@ -3302,9 +3315,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogField("uiDamageTrackPhysical", "Physical", "3 / 10", "3 / 10", IsReadOnly: true),
                     new DesktopDialogField("uiDamageTrackStun", "Stun", "1 / 10", "1 / 10", IsReadOnly: true),
                     new DesktopDialogField("uiDamageTrackDetails", "Track Details", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiDamageTrackCommands", "Command Posture", "Apply current damage step" + Environment.NewLine + "Keep penalty posture visible" + Environment.NewLine + "Return to combat tab after applying", "Apply current damage step", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                     new DesktopDialogField("uiDamageTrackNotes", "Notes", "Current track posture remains visible before applying the damage step.", "Current track posture remains visible before applying the damage step.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
-                [new DesktopDialogAction("close", "Close", true)]),
+                [
+                    new DesktopDialogAction("apply", "Apply", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "vehicle_add" => new DesktopDialogState(
                 "dialog.ui.vehicle_add",
                 "Add Vehicle / Drone",

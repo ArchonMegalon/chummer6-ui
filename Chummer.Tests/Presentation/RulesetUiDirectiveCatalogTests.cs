@@ -177,8 +177,8 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr6ImportHint, ".chum6");
         Assert.AreEqual("SR4 Oracle Debug Import", sr4ImportDebug);
         Assert.AreEqual("Import SR6 Raw XML", sr6ImportAction);
-        Assert.AreEqual("SR4 Import Commands", sr4Commands);
-        Assert.AreEqual("No SR6 preview-desk commands are currently available.", sr6CommandHint);
+        Assert.AreEqual("SR4 Import Tools", sr4Commands);
+        Assert.AreEqual("No SR6 setup-workbench tools are currently available.", sr6CommandHint);
         Assert.AreEqual("SR5 Editor Result", sr5Result);
         StringAssert.Contains(sr5ResultHint, ".chum5");
         StringAssert.Contains(sr4Ready, "import");
@@ -199,13 +199,13 @@ public sealed class RulesetUiDirectiveCatalogTests
     public void FormatDialogNotice_applies_ruleset_specific_dialog_prefixes()
     {
         Assert.AreEqual(
-            "SR4 import desk: Gear 'Ares Alpha' added.",
+            "SR4 import workbench: Gear 'Ares Alpha' added.",
             RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr4, "Gear 'Ares Alpha' added."));
         Assert.AreEqual(
             "SR5 editor: Cyberware 'Wired Reflexes 2' added.",
             RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr5, "Cyberware 'Wired Reflexes 2' added."));
         Assert.AreEqual(
-            "SR6 preview desk: Program 'Armor' added.",
+            "SR6 setup workbench: Program 'Armor' added.",
             RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr6, "Program 'Armor' added."));
         Assert.AreEqual(
             "Generic notice.",

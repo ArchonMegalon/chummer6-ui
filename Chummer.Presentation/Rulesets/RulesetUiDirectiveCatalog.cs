@@ -316,9 +316,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Import Commands",
+            RulesetDefaults.Sr4 => "SR4 Import Tools",
             RulesetDefaults.Sr5 => "SR5 Editor Commands",
-            RulesetDefaults.Sr6 => "SR6 Preview Commands",
+            RulesetDefaults.Sr6 => "SR6 Setup Tools",
             _ => "Commands"
         };
     }
@@ -328,9 +328,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "No SR4 import-desk commands are currently available.",
+            RulesetDefaults.Sr4 => "No SR4 import-workbench tools are currently available.",
             RulesetDefaults.Sr5 => "No SR5 editor commands are currently available.",
-            RulesetDefaults.Sr6 => "No SR6 preview-desk commands are currently available.",
+            RulesetDefaults.Sr6 => "No SR6 setup-workbench tools are currently available.",
             _ => "No commands are currently available."
         };
     }
@@ -340,9 +340,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Import Result",
+            RulesetDefaults.Sr4 => "SR4 Import Summary",
             RulesetDefaults.Sr5 => "SR5 Editor Result",
-            RulesetDefaults.Sr6 => "SR6 Preview Result",
+            RulesetDefaults.Sr6 => "SR6 Setup Summary",
             _ => "Result"
         };
     }
@@ -530,9 +530,9 @@ public static class RulesetUiDirectiveCatalog
 
         return Resolve(rulesetId).RulesetId switch
         {
-            RulesetDefaults.Sr4 => $"SR4 import desk: {notice}",
+            RulesetDefaults.Sr4 => $"SR4 import workbench: {notice}",
             RulesetDefaults.Sr5 => $"SR5 editor: {notice}",
-            RulesetDefaults.Sr6 => $"SR6 preview desk: {notice}",
+            RulesetDefaults.Sr6 => $"SR6 setup workbench: {notice}",
             _ => notice
         };
     }
