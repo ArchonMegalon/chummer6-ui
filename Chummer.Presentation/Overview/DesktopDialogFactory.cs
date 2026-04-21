@@ -581,15 +581,32 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string selectedRunnerStatus = selectedRunner is null
             ? "No runner selected."
             : $"Opened {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC · {(selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet")} · active ruleset {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)}";
+        string selectionTrail = selectedRunner is null
+            ? BuildGridValue(
+                ("Active Runner", $"{alias} · {name}"),
+                ("Save Posture", string.IsNullOrWhiteSpace(workspace) ? "not saved yet" : "workspace available"),
+                ("Watch Folder", "not configured"))
+            : BuildGridValue(
+                ("Active Runner", $"{selectedRunner.Alias} · {selectedRunner.Name}"),
+                ("Save Posture", selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet"),
+                ("Watch Folder", "not configured"));
         string watchFolderStatus = BuildGridValue(
             ("Watch Folder", "not configured"),
             ("Watcher", "inactive"),
             ("Watched Files", watchedCount.ToString(CultureInfo.InvariantCulture)),
             ("Saved Workspaces", savedCount.ToString(CultureInfo.InvariantCulture)));
+        string runnerCommands =
+            "Open selected runner" + Environment.NewLine +
+            "Save selected runner" + Environment.NewLine +
+            "Open containing folder";
+        string watchFolderCommands =
+            "Configure watch folder" + Environment.NewLine +
+            "Scan watch folder now" + Environment.NewLine +
+            "Open imported runner";
         string mugshotStatus =
             "Runner Mugshot" + Environment.NewLine +
             $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}" + Environment.NewLine +
-            "Portrait preview stays pinned on the right like the legacy roster." + Environment.NewLine +
+            "Portrait preview stays pinned in the legacy roster portrait slot." + Environment.NewLine +
             "Image pipeline remains placeholder-backed until a real mugshot source is wired.";
 
         return
@@ -603,9 +620,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterSelectionTrail", "Selection Trail", selectionTrail, selectionTrail, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterMugshot", "Mugshot", mugshotStatus, "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterSelectedRunner", "Selected Runner", selectedRunnerSummary, selectedRunnerSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterWatchFolderStatus", "Watch Folder", watchFolderStatus, watchFolderStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterRunnerCommands", "Runner Commands", runnerCommands, runnerCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterWatchFolderCommands", "Watch Folder Commands", watchFolderCommands, watchFolderCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterSelectedRunnerStatus", "Runner Status", selectedRunnerStatus, selectedRunnerStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterSelectedRunnerBackground", "Background / Concept", selectedRunnerBackground, selectedRunnerBackground, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterSelectedRunnerNotes", "Bio / Concept / Notes", selectedRunnerNotes, selectedRunnerNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
