@@ -3,7 +3,9 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Chummer.Presentation.Overview;
+using System.IO;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -363,22 +365,55 @@ public partial class CommandDialogPaneControl : UserControl
     private static Control CreateImagePlaceholderPanel(string value)
     {
         string[] lines = value.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        string? portraitSource = lines
+            .FirstOrDefault(line => line.StartsWith("Portrait Source | ", StringComparison.Ordinal))
+            ?.Substring("Portrait Source | ".Length)
+            .Trim();
         StackPanel panel = new()
         {
             Spacing = 4
         };
+        Control previewControl;
+        if (!string.IsNullOrWhiteSpace(portraitSource) && File.Exists(portraitSource))
+        {
+            try
+            {
+                previewControl = new Image
+                {
+                    Source = new Bitmap(portraitSource),
+                    Stretch = Stretch.Uniform,
+                    HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                    VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+                    MaxHeight = 220
+                };
+            }
+            catch
+            {
+                previewControl = new TextBlock
+                {
+                    Text = lines.Length > 0 ? lines[0] : "Mugshot Preview",
+                    HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                    VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+                };
+            }
+        }
+        else
+        {
+            previewControl = new TextBlock
+            {
+                Text = lines.Length > 0 ? lines[0] : "Mugshot Preview",
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+            };
+        }
+
         panel.Children.Add(new Border
         {
             BorderThickness = new Thickness(1),
             BorderBrush = Brushes.Gray,
             Background = Brushes.Transparent,
             MinHeight = 136,
-            Child = new TextBlock
-            {
-                Text = lines.Length > 0 ? lines[0] : "Mugshot Preview",
-                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
-                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
-            }
+            Child = previewControl
         });
 
         if (lines.Length > 1)

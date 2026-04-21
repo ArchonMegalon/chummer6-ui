@@ -216,7 +216,7 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.IsFalse(cut.Markup.Contains("Shadowrun 6 guided starter cockpit", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("SR6 home cockpit foregrounds starter kits", StringComparison.Ordinal));
             StringAssert.Contains(cut.Markup, "SR6 Roster");
-            StringAssert.Contains(cut.Markup, "SR6 Preview Tabs");
+            StringAssert.Contains(cut.Markup, "SR6 Setup Tabs");
         });
     }
 
