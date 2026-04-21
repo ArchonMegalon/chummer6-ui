@@ -87,15 +87,18 @@ public partial class CommandDialogPaneControl : UserControl
     {
         _suppressDialogUpdates = true;
         DialogFieldsHost.Children.Clear();
+        DialogFieldDisplayItem[] visibleFields = fields
+            .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+            .ToArray();
 
-        for (int index = 0; index < fields.Length; index++)
+        for (int index = 0; index < visibleFields.Length; index++)
         {
-            DialogFieldDisplayItem field = fields[index];
+            DialogFieldDisplayItem field = visibleFields[index];
             if (string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
-                && index + 1 < fields.Length
-                && string.Equals(fields[index + 1].LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal))
+                && index + 1 < visibleFields.Length
+                && string.Equals(visibleFields[index + 1].LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal))
             {
-                DialogFieldsHost.Children.Add(CreateSplitFieldRow(field, fields[index + 1]));
+                DialogFieldsHost.Children.Add(CreateSplitFieldRow(field, visibleFields[index + 1]));
                 index++;
                 continue;
             }
