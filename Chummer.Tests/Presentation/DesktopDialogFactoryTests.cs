@@ -178,6 +178,21 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateUiControlDialog_edit_entry_keeps_legacy_navigation_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("edit_entry", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.edit_entry", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiEntrySections"), "Details");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiEntryContextTree"), "Current Entry");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiEntryCommandList"), "Apply changes to the current row");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "uiEntryContextTree", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "uiEntryCommandList", StringComparison.Ordinal)).VisualKind);
+    }
+
+    [TestMethod]
     public void CreateCommandDialog_translator_lists_locked_shipping_locales()
     {
         DesktopDialogFactory factory = new();
@@ -989,7 +1004,12 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.gear_delete", dialog.Id);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSections"), "Impact");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Armor Jacket");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "> Armor Jacket");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo Posture | re-add manually from the same utility family");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to the current workbench tab");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteNavigationTree", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteRecoveryCommands", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteImpact", StringComparison.Ordinal)).VisualKind);
     }
 

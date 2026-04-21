@@ -1481,12 +1481,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildDeleteConfirmationFields(string entityName, string summary, string notes)
     {
+        string navigationTree =
+            "[Current Runner]" + Environment.NewLine +
+            "├─ Active Section" + Environment.NewLine +
+            $"└─ {entityName}";
+        string nearbyEntries =
+            "Previous Entry" + Environment.NewLine +
+            $"> {entityName}" + Environment.NewLine +
+            "Next Entry";
+        string recoveryCommands =
+            "Review parent section totals" + Environment.NewLine +
+            "Re-open the same picker family" + Environment.NewLine +
+            "Return to the current workbench tab";
+
         return
         [
             BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Notes"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", navigationTree, navigationTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Current List", nearbyEntries, nearbyEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", entityName, entityName, IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", NormalizeGridValue(summary), NormalizeGridValue(summary), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteImpact", "Impact", "Removal Scope | current runner only" + Environment.NewLine + "Undo Posture | re-add manually from the same utility family" + Environment.NewLine + "Neighbor Context | surrounding list remains in view", "Removal Scope | current runner only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", recoveryCommands, recoveryCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1764,10 +1780,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Operation", isEdit ? "Edit entry" : "Create entry"),
             ("Current Value", currentValue),
             ("Posture", "compact list/detail utility"));
+        string navigationTree =
+            "[Current List]" + Environment.NewLine +
+            "├─ Previous Entry" + Environment.NewLine +
+            $"└─ {currentValue}";
+        string commandList =
+            (isEdit ? "Apply changes to the current row" : "Add entry and keep list focus") + Environment.NewLine +
+            "Keep the surrounding list visible" + Environment.NewLine +
+            "Return to the same utility family";
 
         return
         [
             BuildUtilitySectionsField("uiEntrySections", "Entry", "Details", "Notes"),
+            new DesktopDialogField("uiEntryContextTree", "Navigation", navigationTree, navigationTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiEntryCommandList", "Command Posture", commandList, commandList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField(isEdit ? "uiEditEntryName" : "uiCreateEntryName", "Entry Name", currentValue, currentValue),
             new DesktopDialogField("uiEntryDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiEntryNotes", "Notes", "Entry creation and editing stay compact and preserve list context.", "Entry creation and editing stay compact and preserve list context.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
