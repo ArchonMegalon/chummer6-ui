@@ -5,6 +5,7 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Explain;
 using System.Globalization;
+using System.IO;
 
 namespace Chummer.Presentation.Overview;
 
@@ -183,7 +184,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.character_roster",
                 "Character Roster",
                 "Open runners on the left, keep the selected runner summary on the right, and keep background plus notes compact underneath like the legacy roster utility.",
-                BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces),
+                BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces, preferences),
                 [new DesktopDialogAction("close", "Close", true)]),
             "data_exporter" => new DesktopDialogState(
                 "dialog.data_exporter",
@@ -523,7 +524,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string alias,
         string workspace,
         CharacterWorkspaceId? currentWorkspace,
-        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces,
+        DesktopPreferenceState preferences)
     {
         IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
         OpenWorkspaceState[] ordered = roster
@@ -534,7 +536,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             .ThenBy(candidate => candidate.Id.Value, StringComparer.Ordinal)
             .ToArray();
         int savedCount = ordered.Count(candidate => candidate.HasSavedWorkspace);
-        int watchedCount = 0;
+        string rosterPath = string.IsNullOrWhiteSpace(preferences.CharacterRosterPath)
+            ? DesktopPreferenceState.Default.CharacterRosterPath
+            : preferences.CharacterRosterPath.Trim();
+        bool watchFolderConfigured = !string.IsNullOrWhiteSpace(rosterPath);
+        OpenWorkspaceState[] savedCandidates = ordered.Where(candidate => candidate.HasSavedWorkspace).ToArray();
+        int watchedCount = savedCandidates.Length;
         OpenWorkspaceState? selectedRunner = ordered.FirstOrDefault(candidate => currentWorkspace is not null
             && string.Equals(candidate.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal))
             ?? ordered.FirstOrDefault();
@@ -550,9 +557,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 Environment.NewLine,
                 ordered.Select(candidate =>
                     $"{(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? ">" : " ")} {candidate.Alias} · {candidate.Name} · {(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)} · {(candidate.HasSavedWorkspace ? "saved" : "unsaved")} · opened {candidate.LastOpenedUtc:MM-dd HH:mm} UTC"));
+        string watchFolderTree = !watchFolderConfigured
+            ? "└─ not configured"
+            : savedCandidates.Length == 0
+                ? $"└─ {rosterPath}{Environment.NewLine}   └─ no saved runners staged yet"
+                : $"└─ {rosterPath}{Environment.NewLine}{string.Join(Environment.NewLine, savedCandidates.Select((candidate, index) => $"{(index == savedCandidates.Length - 1 ? "   └─ " : "   ├─ ")}{candidate.Alias} · {candidate.Name} · saved workspace"))}";
         string rosterTree = ordered.Length == 0
-            ? $"[Open Characters]{Environment.NewLine}└─ {alias} · {name}{Environment.NewLine}[Watch Folder]{Environment.NewLine}└─ not configured"
-            : $"[Open Characters]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}└─ not configured";
+            ? $"[Open Characters]{Environment.NewLine}└─ {alias} · {name}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}"
+            : $"[Open Characters]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}";
         string selectedRunnerSummary = selectedRunner is null
             ? BuildGridValue(
                 ("Character Name", name),
@@ -581,33 +593,38 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string selectedRunnerStatus = selectedRunner is null
             ? "No runner selected."
             : $"Opened {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC · {(selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet")} · active ruleset {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)}";
+        string portraitCandidate = BuildRosterPortraitCandidatePath(rosterPath, selectedRunner, alias, name, workspace);
         string selectionTrail = selectedRunner is null
             ? BuildGridValue(
                 ("Active Runner", $"{alias} · {name}"),
                 ("Save Posture", string.IsNullOrWhiteSpace(workspace) ? "not saved yet" : "workspace available"),
-                ("Watch Folder", "not configured"))
+                ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"))
             : BuildGridValue(
                 ("Active Runner", $"{selectedRunner.Alias} · {selectedRunner.Name}"),
                 ("Save Posture", selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet"),
-                ("Watch Folder", "not configured"));
+                ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"));
         string watchFolderStatus = BuildGridValue(
-            ("Watch Folder", "not configured"),
-            ("Watcher", "inactive"),
+            ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"),
+            ("Watcher", watchFolderConfigured ? "configured via global settings" : "inactive"),
             ("Watched Files", watchedCount.ToString(CultureInfo.InvariantCulture)),
-            ("Saved Workspaces", savedCount.ToString(CultureInfo.InvariantCulture)));
+            ("Saved Workspaces", savedCount.ToString(CultureInfo.InvariantCulture)),
+            ("Scan Posture", watchFolderConfigured ? "manual refresh in this head" : "configure a roster folder first"));
         string runnerCommands =
             "Open selected runner" + Environment.NewLine +
             "Save selected runner" + Environment.NewLine +
-            "Open containing folder";
-        string watchFolderCommands =
-            "Configure watch folder" + Environment.NewLine +
-            "Scan watch folder now" + Environment.NewLine +
-            "Open imported runner";
+            (selectedRunner?.HasSavedWorkspace == true ? "Open saved runner location" : "Save runner to roster folder");
+        string watchFolderCommands = watchFolderConfigured
+            ? "Open roster folder" + Environment.NewLine +
+              "Refresh watched file list" + Environment.NewLine +
+              "Open selected saved runner"
+            : "Configure watch folder" + Environment.NewLine +
+              "Scan watch folder now" + Environment.NewLine +
+              "Open imported runner";
         string mugshotStatus =
-            "Runner Mugshot" + Environment.NewLine +
+            "Runner Portrait" + Environment.NewLine +
             $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}" + Environment.NewLine +
-            "Portrait preview stays pinned in the legacy roster portrait slot." + Environment.NewLine +
-            "Image pipeline remains placeholder-backed until a real mugshot source is wired.";
+            $"Portrait Source | {portraitCandidate}" + Environment.NewLine +
+            "Portrait Status | legacy portrait slot uses the configured roster path and awaits a real image pipeline.";
 
         return
         [
@@ -631,6 +648,56 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterSelectedRunnerNotes", "Bio / Concept / Notes", selectedRunnerNotes, selectedRunnerNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterEntries", "Roster Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List)
         ];
+    }
+
+    private static string BuildRosterPortraitCandidatePath(
+        string rosterPath,
+        OpenWorkspaceState? selectedRunner,
+        string fallbackAlias,
+        string fallbackName,
+        string workspace)
+    {
+        string baseName = BuildRosterPortraitBaseName(selectedRunner?.Alias, selectedRunner?.Name);
+
+        if (string.IsNullOrWhiteSpace(baseName))
+        {
+            baseName = BuildRosterPortraitBaseName(fallbackAlias, fallbackName);
+        }
+
+        if (string.IsNullOrWhiteSpace(baseName))
+        {
+            baseName = !string.IsNullOrWhiteSpace(workspace) ? workspace : "active-runner";
+        }
+
+        if (string.IsNullOrWhiteSpace(rosterPath))
+        {
+            return $"{baseName}.png";
+        }
+
+        return Path.Combine(rosterPath, $"{baseName}.png");
+    }
+
+    private static string BuildRosterPortraitBaseName(string? alias, string? name)
+    {
+        string candidate = !string.IsNullOrWhiteSpace(alias)
+            ? alias.Trim()
+            : !string.IsNullOrWhiteSpace(name)
+                ? name.Trim()
+                : string.Empty;
+
+        if (string.IsNullOrWhiteSpace(candidate))
+        {
+            return string.Empty;
+        }
+
+        char[] sanitized = candidate
+            .Select(character => char.IsLetterOrDigit(character) || character is '-' or '_'
+                ? character
+                : '-')
+            .ToArray();
+
+        string normalized = new string(sanitized).Trim('-');
+        return string.IsNullOrWhiteSpace(normalized) ? "active-runner" : normalized;
     }
 
     private static string BuildInitiativePreview(int baseValue, int diceCount, int woundModifier, int pass)
