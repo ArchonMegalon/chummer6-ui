@@ -1281,18 +1281,21 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 FormatNuyen(option.BaseCost * ResolveGradeCostMultiplier(grade) * (blackMarket ? 0.9m : 1m))
             )).ToArray());
 
-        return ReplaceDialogFields(
-            dialog,
-            ("uiCyberwareCategory", selected.Branch, selected.Branch),
-            ("uiCyberwareCategoryTree", categoryTree, categoryTree),
-            ("uiCyberwareCandidateList", candidateList, candidateList),
-            ("uiCyberwareBrowseGrid", browseGrid, browseGrid),
-            ("uiCyberwareName", selected.Name, selected.Name),
-            ("uiCyberwareSource", selected.Source, selected.Source),
-            ("uiCyberwareSelectionDetails", details, details),
-            ("uiCyberwareSelectionTrail", selectionTrail, selectionTrail),
-            ("uiCyberwareFilterSummary", filterSummary, filterSummary),
-            ("uiCyberwareLiveRecalc", liveRecalc, liveRecalc));
+        return ReplaceDialogActions(
+            ReplaceDialogFields(
+                dialog,
+                ("uiCyberwareCategory", selected.Branch, selected.Branch),
+                ("uiCyberwareCategoryTree", categoryTree, categoryTree),
+                ("uiCyberwareCandidateList", candidateList, candidateList),
+                ("uiCyberwareBrowseGrid", browseGrid, browseGrid),
+                ("uiCyberwareName", selected.Name, selected.Name),
+                ("uiCyberwareSource", selected.Source, selected.Source),
+                ("uiCyberwareSelectionDetails", details, details),
+                ("uiCyberwareSelectionTrail", selectionTrail, selectionTrail),
+                ("uiCyberwareFilterSummary", filterSummary, filterSummary),
+                ("uiCyberwareLiveRecalc", liveRecalc, liveRecalc)),
+            ("add", $"Add {selected.Name}", true),
+            ("add_more", $"Add & More {selected.Name}", false));
     }
 
     private static DesktopDialogState RebuildGearSelectionDialog(DesktopDialogState dialog)
@@ -1366,18 +1369,21 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 FormatNuyen(freeItem ? 0m : option.BaseCost * (blackMarket ? 0.9m : 1m))
             )).ToArray());
 
-        return ReplaceDialogFields(
-            dialog,
-            ("uiGearCategory", selected.Branch, selected.Branch),
-            ("uiGearCategoryTree", categoryTree, categoryTree),
-            ("uiGearCandidateList", candidateList, candidateList),
-            ("uiGearBrowseGrid", browseGrid, browseGrid),
-            ("uiGearName", selected.Name, selected.Name),
-            ("uiGearSource", selected.Source, selected.Source),
-            ("uiGearSelectionDetails", details, details),
-            ("uiGearSelectionTrail", selectionTrail, selectionTrail),
-            ("uiGearFilterSummary", filterSummary, filterSummary),
-            ("uiGearLiveRecalc", liveRecalc, liveRecalc));
+        return ReplaceDialogActions(
+            ReplaceDialogFields(
+                dialog,
+                ("uiGearCategory", selected.Branch, selected.Branch),
+                ("uiGearCategoryTree", categoryTree, categoryTree),
+                ("uiGearCandidateList", candidateList, candidateList),
+                ("uiGearBrowseGrid", browseGrid, browseGrid),
+                ("uiGearName", selected.Name, selected.Name),
+                ("uiGearSource", selected.Source, selected.Source),
+                ("uiGearSelectionDetails", details, details),
+                ("uiGearSelectionTrail", selectionTrail, selectionTrail),
+                ("uiGearFilterSummary", filterSummary, filterSummary),
+                ("uiGearLiveRecalc", liveRecalc, liveRecalc)),
+            ("add", $"Add {selected.Name}", true),
+            ("add_more", $"Add & More {selected.Name}", false));
     }
 
     private static DesktopDialogState RebuildWeaponSelectionDialog(DesktopDialogState dialog)
@@ -1452,19 +1458,22 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 FormatNuyen(freeItem ? 0m : option.BaseCost * (blackMarket ? 0.9m : 1m))
             )).ToArray());
 
-        return ReplaceDialogFields(
-            dialog,
-            ("uiWeaponCategory", selected.Branch, selected.Branch),
-            ("uiWeaponCategoryTree", categoryTree, categoryTree),
-            ("uiWeaponCandidateList", candidateList, candidateList),
-            ("uiWeaponBrowseGrid", browseGrid, browseGrid),
-            ("uiWeaponName", selected.Name, selected.Name),
-            ("uiWeaponSource", selected.Source, selected.Source),
-            ("uiWeaponSelectionDetails", details, details),
-            ("uiWeaponIncludedAccessories", selected.Accessories, selected.Accessories),
-            ("uiWeaponSelectionTrail", selectionTrail, selectionTrail),
-            ("uiWeaponFilterSummary", filterSummary, filterSummary),
-            ("uiWeaponLiveRecalc", liveRecalc, liveRecalc));
+        return ReplaceDialogActions(
+            ReplaceDialogFields(
+                dialog,
+                ("uiWeaponCategory", selected.Branch, selected.Branch),
+                ("uiWeaponCategoryTree", categoryTree, categoryTree),
+                ("uiWeaponCandidateList", candidateList, candidateList),
+                ("uiWeaponBrowseGrid", browseGrid, browseGrid),
+                ("uiWeaponName", selected.Name, selected.Name),
+                ("uiWeaponSource", selected.Source, selected.Source),
+                ("uiWeaponSelectionDetails", details, details),
+                ("uiWeaponIncludedAccessories", selected.Accessories, selected.Accessories),
+                ("uiWeaponSelectionTrail", selectionTrail, selectionTrail),
+                ("uiWeaponFilterSummary", filterSummary, filterSummary),
+                ("uiWeaponLiveRecalc", liveRecalc, liveRecalc)),
+            ("add", $"Add {selected.Name}", true),
+            ("add_more", $"Add & More {selected.Name}", false));
     }
 
     private static DesktopDialogState RebuildArmorSelectionDialog(DesktopDialogState dialog)
@@ -1538,18 +1547,21 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 FormatNuyen(freeItem ? 0m : option.BaseCost * (blackMarket ? 0.9m : 1m))
             )).ToArray());
 
-        return ReplaceDialogFields(
-            dialog,
-            ("uiArmorCategory", selected.Branch, selected.Branch),
-            ("uiArmorCategoryTree", categoryTree, categoryTree),
-            ("uiArmorCandidateList", candidateList, candidateList),
-            ("uiArmorBrowseGrid", browseGrid, browseGrid),
-            ("uiArmorName", selected.Name, selected.Name),
-            ("uiArmorSource", selected.Source, selected.Source),
-            ("uiArmorSelectionDetails", details, details),
-            ("uiArmorSelectionTrail", selectionTrail, selectionTrail),
-            ("uiArmorFilterSummary", filterSummary, filterSummary),
-            ("uiArmorLiveRecalc", liveRecalc, liveRecalc));
+        return ReplaceDialogActions(
+            ReplaceDialogFields(
+                dialog,
+                ("uiArmorCategory", selected.Branch, selected.Branch),
+                ("uiArmorCategoryTree", categoryTree, categoryTree),
+                ("uiArmorCandidateList", candidateList, candidateList),
+                ("uiArmorBrowseGrid", browseGrid, browseGrid),
+                ("uiArmorName", selected.Name, selected.Name),
+                ("uiArmorSource", selected.Source, selected.Source),
+                ("uiArmorSelectionDetails", details, details),
+                ("uiArmorSelectionTrail", selectionTrail, selectionTrail),
+                ("uiArmorFilterSummary", filterSummary, filterSummary),
+                ("uiArmorLiveRecalc", liveRecalc, liveRecalc)),
+            ("add", $"Add {selected.Name}", true),
+            ("add_more", $"Add & More {selected.Name}", false));
     }
 
     private static DesktopDialogState RebuildVehicleSelectionDialog(DesktopDialogState dialog)
@@ -1636,20 +1648,23 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 FormatNuyen(freeItem ? 0m : option.BaseCost * (usedVehicle ? 1m - (usedVehicleDiscount / 100m) : 1m) * (blackMarket ? 0.9m : 1m))
             )).ToArray());
 
-        return ReplaceDialogFields(
-            dialog,
-            ("uiVehicleCategory", selected.Branch, selected.Branch),
-            ("uiVehicleCategoryTree", categoryTree, categoryTree),
-            ("uiVehicleCandidateList", candidateList, candidateList),
-            ("uiVehicleBrowseGrid", browseGrid, browseGrid),
-            ("uiVehicleName", selected.Name, selected.Name),
-            ("uiVehicleRole", selected.Role, selected.Role),
-            ("uiVehicleSource", selected.Source, selected.Source),
-            ("uiVehicleSelectionDetails", details, details),
-            ("uiVehicleSelectionTrail", selectionTrail, selectionTrail),
-            ("uiVehicleFilterSummary", filterSummary, filterSummary),
-            ("uiVehicleLiveRecalc", liveRecalc, liveRecalc),
-            ("uiVehicleCost", decimal.Round(cost, 0).ToString(CultureInfo.InvariantCulture), decimal.Round(cost, 0).ToString(CultureInfo.InvariantCulture)));
+        return ReplaceDialogActions(
+            ReplaceDialogFields(
+                dialog,
+                ("uiVehicleCategory", selected.Branch, selected.Branch),
+                ("uiVehicleCategoryTree", categoryTree, categoryTree),
+                ("uiVehicleCandidateList", candidateList, candidateList),
+                ("uiVehicleBrowseGrid", browseGrid, browseGrid),
+                ("uiVehicleName", selected.Name, selected.Name),
+                ("uiVehicleRole", selected.Role, selected.Role),
+                ("uiVehicleSource", selected.Source, selected.Source),
+                ("uiVehicleSelectionDetails", details, details),
+                ("uiVehicleSelectionTrail", selectionTrail, selectionTrail),
+                ("uiVehicleFilterSummary", filterSummary, filterSummary),
+                ("uiVehicleLiveRecalc", liveRecalc, liveRecalc),
+                ("uiVehicleCost", decimal.Round(cost, 0).ToString(CultureInfo.InvariantCulture), decimal.Round(cost, 0).ToString(CultureInfo.InvariantCulture))),
+            ("add", $"Add {selected.Name}", true),
+            ("add_more", $"Add & More {selected.Name}", false));
     }
 
     private static DesktopDialogState RebuildCyberwareEditDialog(DesktopDialogState dialog)
