@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
@@ -561,6 +562,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSections"), "Filters");
         Assert.AreEqual("All Books", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearBookFilter"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearHideOverAvailLimit"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearShowOnlyAffordItems"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearStack"));
         Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearDoItYourself"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionDetails"), "Category | Firearms");
@@ -918,8 +920,12 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSections"), "Filters");
         Assert.AreEqual("Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBookFilter"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleShowDrones"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleShowOnlyAffordItems"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleFreeItem"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBlackMarketDiscount"));
         Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleUsedVehicle"));
         Assert.AreEqual("25.00", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleUsedVehicleDiscount"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleViewModes"), "Browse");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSelectionDetails"), "Armor | 8");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSelectionDetails"), "Book | Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryTree"), "Drones");
@@ -972,9 +978,12 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSections"), "Filters");
         Assert.AreEqual("All Books", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponBookFilter"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponHideOverAvailLimit"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponShowOnlyAffordItems"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponViewModes"), "Browse");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionDetails"), "Damage | 7P");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionDetails"), "Book | Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryTree"), "Heavy Pistols");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponIncludedAccessories"), "Smartgun System");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionTrail"), "Category Path | Weapons > Heavy Pistols > Colt M23");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryCommands"), "Review accessories and ammo follow-through after choosing the base weapon");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponResultCommands"), "Use OK for one add or Add & More to keep the selector open");
@@ -1004,6 +1013,9 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSections"), "Filters");
         Assert.AreEqual("All Books", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorBookFilter"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorHideOverAvailLimit"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorShowOnlyAffordItems"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorBlackMarketDiscount"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorViewModes"), "Browse");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionDetails"), "Availability | 12");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionDetails"), "Book | Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryTree"), "Clothing");
@@ -1020,6 +1032,104 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_cyberware_add_updates_selection_from_filters()
+    {
+        DesktopDialogFactory factory = new();
+        DesktopDialogState dialog = WithFieldValues(
+            factory.CreateUiControlDialog("cyberware_add", DesktopPreferenceState.Default),
+            ("uiCyberwareCategory", "Headware"),
+            ("uiCyberwareSearch", "eyes"),
+            ("uiCyberwareName", "Cybereyes Rating 4"),
+            ("uiCyberwareGrade", "Alpha"),
+            ("uiCyberwareBlackMarketDiscount", "true"));
+
+        dialog = RebuildDynamicDialog(dialog);
+
+        Assert.AreEqual("Cybereyes Rating 4", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareName"));
+        Assert.AreEqual("Core Rulebook p. 455", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCandidateList"), "> Cybereyes Rating 4");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionDetails"), "Cost | ¥17,280");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionDetails"), "Essence | 0.32");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionTrail"), "Category Path | Cyberware > Headware > Cybereyes Rating 4");
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_gear_add_updates_selection_from_search_and_affordability()
+    {
+        DesktopDialogFactory factory = new();
+        DesktopDialogState dialog = WithFieldValues(
+            factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default),
+            ("uiGearSearch", "medkit"),
+            ("uiGearName", "Medkit Rating 6"),
+            ("uiGearShowOnlyAffordItems", "true"));
+
+        dialog = RebuildDynamicDialog(dialog);
+
+        Assert.AreEqual("Medkit Rating 6", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCandidateList"), "> Medkit Rating 6");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionDetails"), "Category | General");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionTrail"), "Category Path | Gear > General > Medical");
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_weapon_add_updates_selection_and_accessories()
+    {
+        DesktopDialogFactory factory = new();
+        DesktopDialogState dialog = WithFieldValues(
+            factory.CreateUiControlDialog("combat_add_weapon", DesktopPreferenceState.Default),
+            ("uiWeaponSearch", "Defiance"),
+            ("uiWeaponName", "Defiance T-250"),
+            ("uiWeaponShowOnlyAffordItems", "true"));
+
+        dialog = RebuildDynamicDialog(dialog);
+
+        Assert.AreEqual("Defiance T-250", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionDetails"), "Mode | SS/SA");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponIncludedAccessories"), "Internal Smartgun");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionTrail"), "Category Path | Weapons > Shotguns > Defiance T-250");
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_armor_add_updates_selection_from_branch_filters()
+    {
+        DesktopDialogFactory factory = new();
+        DesktopDialogState dialog = WithFieldValues(
+            factory.CreateUiControlDialog("combat_add_armor", DesktopPreferenceState.Default),
+            ("uiArmorCategory", "Shields"),
+            ("uiArmorSearch", "Ballistic"),
+            ("uiArmorName", "Ballistic Shield"),
+            ("uiArmorShowOnlyAffordItems", "true"),
+            ("uiArmorBlackMarketDiscount", "true"));
+
+        dialog = RebuildDynamicDialog(dialog);
+
+        Assert.AreEqual("Ballistic Shield", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionDetails"), "Cost | ¥810");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionTrail"), "Category Path | Armor > Shields > Ballistic Shield");
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_vehicle_add_updates_selection_with_used_vehicle_flow()
+    {
+        DesktopDialogFactory factory = new();
+        DesktopDialogState dialog = WithFieldValues(
+            factory.CreateUiControlDialog("vehicle_add", DesktopPreferenceState.Default),
+            ("uiVehicleSearch", "Fly-Spy"),
+            ("uiVehicleName", "MCT Fly-Spy"),
+            ("uiVehicleShowOnlyAffordItems", "true"),
+            ("uiVehicleBlackMarketDiscount", "true"),
+            ("uiVehicleUsedVehicle", "true"),
+            ("uiVehicleUsedVehicleDiscount", "25.00"));
+
+        dialog = RebuildDynamicDialog(dialog);
+
+        Assert.AreEqual("MCT Fly-Spy", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSelectionDetails"), "Role | Vehicle / Drone Catalog");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleLiveRecalc"), "Selected Cost | ¥1,350");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSelectionTrail"), "Category Path | Vehicles > Drones > MCT Fly-Spy");
     }
 
     [TestMethod]
@@ -1497,5 +1607,41 @@ public class DesktopDialogFactoryTests
             HouseRuleLanePosture: "governed",
             HouseRuleOverlayCount: 3,
             Sr6SuccessorLaneReceipt: "sr6 successor lane is partial: supplement/governed designers/house-rule posture remains mixed.");
+    }
+
+    private static DesktopDialogState WithFieldValues(DesktopDialogState dialog, params (string FieldId, string Value)[] replacements)
+    {
+        return dialog with
+        {
+            Fields = dialog.Fields
+                .Select(field =>
+                {
+                    foreach ((string fieldId, string value) in replacements)
+                    {
+                        if (string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                        {
+                            return field with
+                            {
+                                Value = value,
+                                Placeholder = value
+                            };
+                        }
+                    }
+
+                    return field;
+                })
+                .ToArray()
+        };
+    }
+
+    private static DesktopDialogState RebuildDynamicDialog(DesktopDialogState dialog)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
+            "RebuildDynamicDialog",
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("RebuildDynamicDialog was not found.");
+
+        return (DesktopDialogState)(method.Invoke(null, [dialog, DesktopPreferenceState.Default])
+            ?? throw new InvalidOperationException("RebuildDynamicDialog returned null."));
     }
 }
