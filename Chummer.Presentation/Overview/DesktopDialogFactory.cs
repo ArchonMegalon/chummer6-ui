@@ -186,7 +186,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Character Roster",
                 "Open runners on the left, keep the selected runner summary on the right, and keep background plus notes compact underneath like the legacy roster utility.",
                 BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces, preferences),
-                [new DesktopDialogAction("close", "Close", true)]),
+                BuildRosterActions(name, alias, workspace, currentWorkspace, openWorkspaces, preferences)),
             "data_exporter" => new DesktopDialogState(
                 "dialog.data_exporter",
                 "Data Exporter",
@@ -520,6 +520,87 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             : string.Equals(activePane, "updates", StringComparison.OrdinalIgnoreCase) ? "updates"
             : string.Equals(activePane, "paths", StringComparison.OrdinalIgnoreCase) ? "paths"
             : "general";
+
+    private static IReadOnlyList<DesktopDialogAction> BuildRosterActions(
+        string name,
+        string alias,
+        string workspace,
+        CharacterWorkspaceId? currentWorkspace,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces,
+        DesktopPreferenceState preferences)
+    {
+        IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
+        OpenWorkspaceState[] ordered = roster
+            .OrderByDescending(candidate => candidate.LastOpenedUtc)
+            .ThenBy(candidate => candidate.Alias, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
+            .ThenBy(candidate => RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Id.Value, StringComparer.Ordinal)
+            .ToArray();
+        OpenWorkspaceState? selectedRunner = ordered.FirstOrDefault(candidate => currentWorkspace is not null
+            && string.Equals(candidate.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal))
+            ?? ordered.FirstOrDefault();
+
+        string rosterPath = string.IsNullOrWhiteSpace(preferences.CharacterRosterPath)
+            ? DesktopPreferenceState.Default.CharacterRosterPath
+            : preferences.CharacterRosterPath.Trim();
+        bool watchFolderConfigured = !string.IsNullOrWhiteSpace(rosterPath);
+        bool watchFolderExists = watchFolderConfigured && Directory.Exists(rosterPath);
+        string[] watchedFiles = watchFolderExists
+            ? Directory.EnumerateFiles(rosterPath, "*", SearchOption.AllDirectories)
+                .Where(path =>
+                {
+                    string extension = Path.GetExtension(path);
+                    return string.Equals(extension, ".chum5", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".chum6", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase);
+                })
+                .Select(path => Path.GetRelativePath(rosterPath, path))
+                .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
+                .OrderBy(candidate => candidate, StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : Array.Empty<string>();
+        string[] watchFileHints = BuildRosterWatchFileHints(selectedRunner, alias, name, workspace);
+        string? selectedWatchedFile = watchedFiles.FirstOrDefault(file =>
+        {
+            string fileStem = Path.GetFileNameWithoutExtension(file);
+            return watchFileHints.Any(candidate => string.Equals(candidate, fileStem, StringComparison.OrdinalIgnoreCase));
+        });
+        (string portraitCandidate, _, _) = ResolveRosterPortraitCandidate(rosterPath, selectedWatchedFile, selectedRunner, alias, name, workspace);
+        bool hasPortrait = File.Exists(portraitCandidate);
+
+        List<DesktopDialogAction> actions = [];
+        if (selectedRunner is not null)
+        {
+            actions.Add(new DesktopDialogAction("open_runner", $"Open Runner {selectedRunner.Alias}", true));
+        }
+        else
+        {
+            actions.Add(new DesktopDialogAction("open_runner", $"Open Runner {alias}", true));
+        }
+
+        if (!string.IsNullOrWhiteSpace(selectedWatchedFile))
+        {
+            actions.Add(new DesktopDialogAction("open_watch_file", $"Open Watch File {Path.GetFileName(selectedWatchedFile)}"));
+        }
+
+        actions.Add(new DesktopDialogAction(
+            "open_roster_folder",
+            watchFolderConfigured ? (watchFolderExists ? "Open Roster Folder" : "Create Roster Folder") : "Configure Roster Folder"));
+
+        if (hasPortrait)
+        {
+            actions.Add(new DesktopDialogAction("open_portrait", $"Open Portrait {Path.GetFileName(portraitCandidate)}"));
+        }
+        else
+        {
+            actions.Add(new DesktopDialogAction("open_portrait", "Open Portrait Slot"));
+        }
+
+        actions.Add(new DesktopDialogAction("close", "Close"));
+        return actions;
+    }
 
     private static IReadOnlyList<DesktopDialogField> BuildRosterFields(
         string name,
