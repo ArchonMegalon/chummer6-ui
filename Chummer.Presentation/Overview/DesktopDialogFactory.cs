@@ -1387,6 +1387,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         decimal essence = selected.BaseEssence * ResolveGradeEssenceMultiplier(grade);
 
         string selectedGroup = ResolveCyberwareGroup(selected.Branch);
+        string effectiveCategory = MatchesSelectionCategory(category, selected.Branch, selectedGroup)
+            ? category
+            : selected.Branch;
         string categoryTree = BuildSelectionGroupedBranchTree("Cyberware", options.Select(option => (ResolveCyberwareGroup(option.Branch), option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selectedGroup));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
@@ -1435,11 +1438,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return ReplaceDialogActions(
             ReplaceDialogFields(
                 dialog,
-                ("uiCyberwareCategory", selected.Branch, selected.Branch),
+                ("uiCyberwareCategory", effectiveCategory, effectiveCategory),
                 ("uiCyberwareCategoryTree", categoryTree, categoryTree),
                 ("uiCyberwareCandidateList", candidateList, candidateList),
                 ("uiCyberwareBrowseGrid", browseGrid, browseGrid),
                 ("uiCyberwareName", selected.Name, selected.Name),
+                ("uiCyberwareSelectedBranch", selected.Branch, selected.Branch),
                 ("uiCyberwareSource", selected.Source, selected.Source),
                 ("uiCyberwareSelectionDetails", details, details),
                 ("uiCyberwareSelectionTrail", selectionTrail, selectionTrail),
@@ -1447,6 +1451,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiCyberwareFilterSummary", filterSummary, filterSummary),
                 ("uiCyberwareLiveRecalc", liveRecalc, liveRecalc),
                 ("uiCyberwareResultCommands", resultCommands, resultCommands)),
+            ("focus_category", BuildSelectionCategoryActionLabel(effectiveCategory, selected.Branch), false),
+            ("toggle_search_scope", BuildSelectionSearchActionLabel(searchInCategoryOnly), false),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
     }
@@ -1492,6 +1498,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
             ?? filtered[0];
         decimal cost = freeItem ? 0m : selected.BaseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
+        string effectiveCategory = MatchesSelectionCategory(category, selected.Branch, selected.Group)
+            ? category
+            : selected.Branch;
         string categoryTree = BuildSelectionGroupedBranchTree("Gear", options.Select(option => (option.Group, option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selected.Group));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
@@ -1538,11 +1547,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return ReplaceDialogActions(
             ReplaceDialogFields(
                 dialog,
-                ("uiGearCategory", selected.Branch, selected.Branch),
+                ("uiGearCategory", effectiveCategory, effectiveCategory),
                 ("uiGearCategoryTree", categoryTree, categoryTree),
                 ("uiGearCandidateList", candidateList, candidateList),
                 ("uiGearBrowseGrid", browseGrid, browseGrid),
                 ("uiGearName", selected.Name, selected.Name),
+                ("uiGearSelectedBranch", selected.Branch, selected.Branch),
                 ("uiGearSource", selected.Source, selected.Source),
                 ("uiGearSelectionDetails", details, details),
                 ("uiGearSelectionTrail", selectionTrail, selectionTrail),
@@ -1550,6 +1560,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiGearFilterSummary", filterSummary, filterSummary),
                 ("uiGearLiveRecalc", liveRecalc, liveRecalc),
                 ("uiGearResultCommands", resultCommands, resultCommands)),
+            ("focus_category", BuildSelectionCategoryActionLabel(effectiveCategory, selected.Branch), false),
+            ("toggle_search_scope", BuildSelectionSearchActionLabel(searchInCategoryOnly), false),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
     }
@@ -1595,6 +1607,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
             ?? filtered[0];
         decimal cost = freeItem ? 0m : selected.BaseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
+        string effectiveCategory = MatchesSelectionCategory(category, selected.Branch, selected.Group)
+            ? category
+            : selected.Branch;
         string categoryTree = BuildSelectionGroupedBranchTree("Weapons", options.Select(option => (option.Group, option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selected.Group));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
@@ -1642,11 +1657,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return ReplaceDialogActions(
             ReplaceDialogFields(
                 dialog,
-                ("uiWeaponCategory", selected.Branch, selected.Branch),
+                ("uiWeaponCategory", effectiveCategory, effectiveCategory),
                 ("uiWeaponCategoryTree", categoryTree, categoryTree),
                 ("uiWeaponCandidateList", candidateList, candidateList),
                 ("uiWeaponBrowseGrid", browseGrid, browseGrid),
                 ("uiWeaponName", selected.Name, selected.Name),
+                ("uiWeaponSelectedBranch", selected.Branch, selected.Branch),
                 ("uiWeaponSource", selected.Source, selected.Source),
                 ("uiWeaponSelectionDetails", details, details),
                 ("uiWeaponIncludedAccessories", selected.Accessories, selected.Accessories),
@@ -1655,6 +1671,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiWeaponFilterSummary", filterSummary, filterSummary),
                 ("uiWeaponLiveRecalc", liveRecalc, liveRecalc),
                 ("uiWeaponResultCommands", resultCommands, resultCommands)),
+            ("focus_category", BuildSelectionCategoryActionLabel(effectiveCategory, selected.Branch), false),
+            ("toggle_search_scope", BuildSelectionSearchActionLabel(searchInCategoryOnly), false),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
     }
@@ -1701,6 +1719,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ?? filtered[0];
         decimal cost = freeItem ? 0m : selected.BaseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
         string selectedGroup = ResolveArmorGroup(selected.Branch);
+        string effectiveCategory = MatchesSelectionCategory(category, selected.Branch, selectedGroup)
+            ? category
+            : selected.Branch;
         string categoryTree = BuildSelectionGroupedBranchTree("Armor", options.Select(option => (ResolveArmorGroup(option.Branch), option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selectedGroup));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
@@ -1748,11 +1769,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return ReplaceDialogActions(
             ReplaceDialogFields(
                 dialog,
-                ("uiArmorCategory", selected.Branch, selected.Branch),
+                ("uiArmorCategory", effectiveCategory, effectiveCategory),
                 ("uiArmorCategoryTree", categoryTree, categoryTree),
                 ("uiArmorCandidateList", candidateList, candidateList),
                 ("uiArmorBrowseGrid", browseGrid, browseGrid),
                 ("uiArmorName", selected.Name, selected.Name),
+                ("uiArmorSelectedBranch", selected.Branch, selected.Branch),
                 ("uiArmorSource", selected.Source, selected.Source),
                 ("uiArmorSelectionDetails", details, details),
                 ("uiArmorSelectionTrail", selectionTrail, selectionTrail),
@@ -1760,6 +1782,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiArmorFilterSummary", filterSummary, filterSummary),
                 ("uiArmorLiveRecalc", liveRecalc, liveRecalc),
                 ("uiArmorResultCommands", resultCommands, resultCommands)),
+            ("focus_category", BuildSelectionCategoryActionLabel(effectiveCategory, selected.Branch), false),
+            ("toggle_search_scope", BuildSelectionSearchActionLabel(searchInCategoryOnly), false),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
     }
@@ -1819,6 +1843,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             cost = 0m;
 
         string selectedGroup = ResolveVehicleGroup(selected.Branch);
+        string effectiveCategory = MatchesSelectionCategory(category, selected.Branch, selectedGroup)
+            ? category
+            : selected.Branch;
         string categoryTree = BuildSelectionGroupedBranchTree("Vehicles", options.Where(option => showDrones || !option.IsDrone).Select(option => (ResolveVehicleGroup(option.Branch), option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selectedGroup));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
@@ -1866,11 +1893,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return ReplaceDialogActions(
             ReplaceDialogFields(
                 dialog,
-                ("uiVehicleCategory", selected.Branch, selected.Branch),
+                ("uiVehicleCategory", effectiveCategory, effectiveCategory),
                 ("uiVehicleCategoryTree", categoryTree, categoryTree),
                 ("uiVehicleCandidateList", candidateList, candidateList),
                 ("uiVehicleBrowseGrid", browseGrid, browseGrid),
                 ("uiVehicleName", selected.Name, selected.Name),
+                ("uiVehicleSelectedBranch", selected.Branch, selected.Branch),
                 ("uiVehicleRole", selected.Role, selected.Role),
                 ("uiVehicleSource", selected.Source, selected.Source),
                 ("uiVehicleSelectionDetails", details, details),
@@ -1880,6 +1908,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiVehicleLiveRecalc", liveRecalc, liveRecalc),
                 ("uiVehicleResultCommands", resultCommands, resultCommands),
                 ("uiVehicleCost", decimal.Round(cost, 0).ToString(CultureInfo.InvariantCulture), decimal.Round(cost, 0).ToString(CultureInfo.InvariantCulture))),
+            ("focus_category", BuildSelectionCategoryActionLabel(effectiveCategory, selected.Branch), false),
+            ("toggle_search_scope", BuildSelectionSearchActionLabel(searchInCategoryOnly), false),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
     }
@@ -2010,6 +2040,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static string BuildSelectionSearchScope(bool searchInCategoryOnly)
         => searchInCategoryOnly ? "current category only" : "all categories";
 
+    private static bool IsShowAllSelectionCategory(string? category)
+        => string.IsNullOrWhiteSpace(category)
+            || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase);
+
+    private static string BuildSelectionCategoryActionLabel(string? category, string selectedBranch)
+        => IsShowAllSelectionCategory(category)
+            ? $"Focus {selectedBranch}"
+            : "Show All Categories";
+
+    private static string BuildSelectionSearchActionLabel(bool searchInCategoryOnly)
+        => searchInCategoryOnly ? "Search All Categories" : "Search Current Category";
+
     private static string BuildSelectionBrowseGrid(params (string Name, string Category, string Availability, string Cost)[] rows)
     {
         if (rows.Length == 0)
@@ -2063,6 +2106,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ];
     }
 
+    private static IReadOnlyList<DesktopDialogAction> BuildLegacySelectionActions(string primaryLabel = "OK")
+    {
+        return
+        [
+            new DesktopDialogAction("add", primaryLabel, true),
+            new DesktopDialogAction("add_more", "Add & More"),
+            new DesktopDialogAction("focus_category", "Show All Categories"),
+            new DesktopDialogAction("toggle_search_scope", "Search All Categories"),
+            new DesktopDialogAction("cancel", "Cancel")
+        ];
+    }
+
     private static IReadOnlyList<DesktopDialogField> BuildCyberwareSelectionFields()
     {
         string categoryTree = BuildSelectionGroupedBranchTree(
@@ -2097,6 +2152,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiCyberwareCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiCyberwareSearch", "Search", string.Empty, "Search cyberware"),
             new DesktopDialogField("uiCyberwareCategory", "Category", "Show All", "Show All"),
+            new DesktopDialogField("uiCyberwareSelectedBranch", "Selected Branch", "Bodyware", "Bodyware", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             BuildFilterToggleField("uiCyberwareSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiCyberwareBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiCyberwareName", "Cyberware", "Wired Reflexes 2", "Wired Reflexes 2"),
@@ -2192,6 +2248,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiGearCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiGearSearch", "Search", string.Empty, "Search gear"),
             new DesktopDialogField("uiGearCategory", "Category", "Show All", "Show All"),
+            new DesktopDialogField("uiGearSelectedBranch", "Selected Branch", "Pistols", "Pistols", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             BuildFilterToggleField("uiGearSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiGearBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiGearName", "Gear Name", "Ares Predator V", "Ares Predator V"),
@@ -2940,6 +2997,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiVehicleCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiVehicleSearch", "Search", string.Empty, "Search vehicles"),
             new DesktopDialogField("uiVehicleCategory", "Category", "Show All", "Show All"),
+            new DesktopDialogField("uiVehicleSelectedBranch", "Selected Branch", "Cars", "Cars", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             BuildFilterToggleField("uiVehicleSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiVehicleRole", "Role", "Vehicle", "Vehicle"),
             new DesktopDialogField("uiVehicleBookFilter", "Data File", "All Books", "All Books"),
@@ -3160,6 +3218,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiWeaponCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiWeaponSearch", "Search", string.Empty, "Search weapons"),
             new DesktopDialogField("uiWeaponCategory", "Category", "Show All", "Show All"),
+            new DesktopDialogField("uiWeaponSelectedBranch", "Selected Branch", "Heavy Pistols", "Heavy Pistols", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             BuildFilterToggleField("uiWeaponSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiWeaponBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiWeaponName", "Weapon", "Colt M23", "Colt M23"),
@@ -3223,6 +3282,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiArmorCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiArmorSearch", "Search", string.Empty, "Search armor"),
             new DesktopDialogField("uiArmorCategory", "Category", "Show All", "Show All"),
+            new DesktopDialogField("uiArmorSelectedBranch", "Selected Branch", "Armor", "Armor", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             BuildFilterToggleField("uiArmorSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiArmorBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiArmorName", "Armor", "Armor Jacket", "Armor Jacket"),
@@ -3328,7 +3388,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "Add Gear",
                     "Browse the catalog, inspect source and cost, then confirm the selected gear item.",
                     BuildGearSelectionFields(),
-                    BuildAddAndMoreActions())),
+                    BuildLegacySelectionActions())),
             "gear_edit" => new DesktopDialogState(
                 "dialog.ui.gear_edit",
                 "Edit Gear",
@@ -3374,7 +3434,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "Add Cyberware",
                     "Search, filter, review source/cost/essence details, and confirm the selected implant.",
                     BuildCyberwareSelectionFields(),
-                    BuildAddAndMoreActions())),
+                    BuildLegacySelectionActions())),
             "cyberware_edit" => new DesktopDialogState(
                 "dialog.ui.cyberware_edit",
                 "Edit Cyberware",
@@ -3531,14 +3591,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "Add Weapon",
                     "Browse weapons, inspect combat stats and source, then confirm the selected weapon.",
                     BuildWeaponSelectionFields(),
-                    BuildAddAndMoreActions())),
+                    BuildLegacySelectionActions())),
             "combat_add_armor" => RebuildArmorSelectionDialog(
                 new DesktopDialogState(
                     "dialog.ui.combat_add_armor",
                     "Add Armor",
                     "Browse armor, inspect protection values and source, then confirm the selected armor.",
                     BuildArmorSelectionFields(),
-                    BuildAddAndMoreActions())),
+                    BuildLegacySelectionActions())),
             "combat_reload" => new DesktopDialogState(
                 "dialog.ui.combat_reload",
                 "Reload Weapon",
@@ -3577,7 +3637,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "Add Vehicle / Drone",
                     "Browse vehicles and drones, inspect stats and source, then confirm the selected entry.",
                     BuildVehicleSelectionFields(),
-                    BuildAddAndMoreActions())),
+                    BuildLegacySelectionActions())),
             "vehicle_edit" => new DesktopDialogState(
                 "dialog.ui.vehicle_edit",
                 "Edit Vehicle / Drone",

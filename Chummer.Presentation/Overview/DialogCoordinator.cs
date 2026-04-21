@@ -169,6 +169,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
             }
         }
 
+        if (TryCoordinateLegacySelectionAction(dialog, actionId, context))
+        {
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.open_notes", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
         {
             string notes = DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesEditor") ?? string.Empty;
@@ -854,6 +859,101 @@ public sealed class DialogCoordinator : IDialogCoordinator
             RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(context.State), notice),
             fieldIdsToReset);
 
+    private static bool TryCoordinateLegacySelectionAction(
+        DesktopDialogState dialog,
+        string actionId,
+        DialogCoordinationContext context)
+    {
+        if (!TryGetLegacySelectionDialogConfig(dialog.Id, out LegacySelectionDialogConfig config))
+        {
+            return false;
+        }
+
+        switch (actionId)
+        {
+            case "focus_category":
+            {
+                string currentCategory = ReadDialogValue(dialog, config.CategoryFieldId, "Show All");
+                string selectedBranch = ReadDialogValue(dialog, config.SelectedBranchFieldId, currentCategory);
+                string nextCategory = IsShowAllSelectionCategory(currentCategory) && !string.IsNullOrWhiteSpace(selectedBranch)
+                    ? selectedBranch
+                    : "Show All";
+
+                PublishLegacySelectionDialog(
+                    context,
+                    UpdateDialogField(dialog, config.CategoryFieldId, nextCategory),
+                    $"Category focus changed to '{nextCategory}'.");
+                return true;
+            }
+            case "toggle_search_scope":
+            {
+                bool currentScope = DesktopDialogFieldValueParser.ParseBool(dialog, config.SearchScopeFieldId, true);
+                bool nextScope = !currentScope;
+                PublishLegacySelectionDialog(
+                    context,
+                    UpdateDialogField(dialog, config.SearchScopeFieldId, nextScope ? "true" : "false"),
+                    nextScope
+                        ? "Search scope changed to the current category."
+                        : "Search scope changed to all categories.");
+                return true;
+            }
+            default:
+                return false;
+        }
+    }
+
+    private static bool TryGetLegacySelectionDialogConfig(
+        string dialogId,
+        out LegacySelectionDialogConfig config)
+    {
+        config = dialogId switch
+        {
+            "dialog.ui.cyberware_add" => new LegacySelectionDialogConfig("uiCyberwareCategory", "uiCyberwareSearchInCategoryOnly", "uiCyberwareSelectedBranch"),
+            "dialog.ui.gear_add" => new LegacySelectionDialogConfig("uiGearCategory", "uiGearSearchInCategoryOnly", "uiGearSelectedBranch"),
+            "dialog.ui.combat_add_weapon" => new LegacySelectionDialogConfig("uiWeaponCategory", "uiWeaponSearchInCategoryOnly", "uiWeaponSelectedBranch"),
+            "dialog.ui.combat_add_armor" => new LegacySelectionDialogConfig("uiArmorCategory", "uiArmorSearchInCategoryOnly", "uiArmorSelectedBranch"),
+            "dialog.ui.vehicle_add" => new LegacySelectionDialogConfig("uiVehicleCategory", "uiVehicleSearchInCategoryOnly", "uiVehicleSelectedBranch"),
+            _ => new LegacySelectionDialogConfig(string.Empty, string.Empty, string.Empty)
+        };
+
+        return !string.IsNullOrWhiteSpace(config.CategoryFieldId);
+    }
+
+    private static DesktopDialogState UpdateDialogField(
+        DesktopDialogState dialog,
+        string fieldId,
+        string value)
+    {
+        return dialog with
+        {
+            Fields = dialog.Fields
+                .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
+                    ? field with { Value = value, Placeholder = value }
+                    : field)
+                .ToArray()
+        };
+    }
+
+    private static bool IsShowAllSelectionCategory(string? category)
+        => string.IsNullOrWhiteSpace(category)
+            || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase);
+
+    private static void PublishLegacySelectionDialog(
+        DialogCoordinationContext context,
+        DesktopDialogState dialog,
+        string notice)
+    {
+        CharacterOverviewState state = context.GetState();
+        DesktopDialogState rebuiltDialog = DesktopDialogFactory.RebuildDynamicDialog(dialog, state.Preferences);
+        context.Publish(state with
+        {
+            ActiveDialog = rebuiltDialog,
+            Error = null,
+            Notice = RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(state), notice)
+        });
+    }
+
     private static void RefreshCharacterRosterDialog(
         DesktopDialogState dialog,
         DialogCoordinationContext context)
@@ -1209,6 +1309,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string SettingsLanePosture,
         List<MasterIndexCoordinatorFileSnapshot> Files,
         List<MasterIndexCoordinatorSourcebookSnapshot> Sourcebooks);
+
+    private sealed record LegacySelectionDialogConfig(
+        string CategoryFieldId,
+        string SearchScopeFieldId,
+        string SelectedBranchFieldId);
 
     private sealed record MasterIndexCoordinatorFileSnapshot(
         string File,
