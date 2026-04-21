@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -119,6 +120,7 @@ public partial class CommandDialogPaneControl : UserControl
                 MinWidth = 82,
                 Classes = { "shell-action", action.IsPrimary ? "primary" : "quiet" }
             };
+            ApplyAccessibility(button, action.AccessibleName, action.ToolTip, action.HelpText);
             button.Click += DialogActionButton_OnClick;
             DialogActionsHost.Children.Add(button);
         }
@@ -151,12 +153,17 @@ public partial class CommandDialogPaneControl : UserControl
         {
             Spacing = 4
         };
-        row.Children.Add(new TextBlock
+        TextBlock label = new()
         {
             Text = field.Label,
             FontWeight = FontWeight.SemiBold
-        });
-        row.Children.Add(CreateFieldControl(field));
+        };
+        ApplyAccessibility(label, field.AccessibleName, field.ToolTip, field.HelpText);
+        row.Children.Add(label);
+
+        Control fieldControl = CreateFieldControl(field);
+        ApplyAccessibility(fieldControl, field.AccessibleName, field.ToolTip, field.HelpText);
+        row.Children.Add(fieldControl);
         return row;
     }
 
@@ -190,34 +197,58 @@ public partial class CommandDialogPaneControl : UserControl
                 };
             }
 
+            ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
             return checkBox;
         }
 
         if (field.IsReadOnly && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
         {
-            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tabs, StringComparison.Ordinal))
+            Control visualControl;
+            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
             {
-                return CreateTabsPanel(field.Value);
+                visualControl = CreateStructuredTextPanel(field.Value, useMonospace: true, minHeight: 160);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
+            {
+                visualControl = CreateStructuredTextPanel(field.Value, useMonospace: false, minHeight: 160);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tabs, StringComparison.Ordinal))
+            {
+                visualControl = CreateTabsPanel(field.Value);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Image, StringComparison.Ordinal))
+            {
+                visualControl = CreateImagePlaceholderPanel(field.Value);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
+            {
+                visualControl = CreateGridPanel(field.Value);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
+            {
+                visualControl = CreateSnippetPanel(field.Value);
+            }
+            else
+            {
+                visualControl = CreateSnippetPanel(field.Value);
             }
 
-            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Image, StringComparison.Ordinal))
-            {
-                return CreateImagePlaceholderPanel(field.Value);
-            }
-
-            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
-            {
-                return CreateGridPanel(field.Value);
-            }
-
-            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
-            {
-                return CreateSnippetPanel(field.Value);
-            }
+            ApplyAccessibility(visualControl, field.AccessibleName, field.ToolTip, field.HelpText);
+            return visualControl;
         }
 
         if (field.IsReadOnly && field.IsMultiline && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
         {
+            TextBlock textBlock = new()
+            {
+                Text = field.Value,
+                TextWrapping = TextWrapping.Wrap
+            };
+            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
+            {
+                textBlock.FontFamily = new FontFamily("Consolas, Menlo, Monaco, monospace");
+            }
+
             Border panel = new()
             {
                 BorderThickness = new Thickness(1),
@@ -228,15 +259,9 @@ public partial class CommandDialogPaneControl : UserControl
                     || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
                     ? 160
                     : 120,
-                Child = new TextBlock
-                {
-                    Text = field.Value,
-                    TextWrapping = TextWrapping.Wrap,
-                    FontFamily = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
-                        ? new FontFamily("Consolas, Menlo, Monaco, monospace")
-                        : default
-                }
+                Child = textBlock
             };
+            ApplyAccessibility(panel, field.AccessibleName, field.ToolTip, field.HelpText);
             return panel;
         }
 
@@ -272,7 +297,15 @@ public partial class CommandDialogPaneControl : UserControl
             };
         }
 
+        ApplyAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
         return textBox;
+    }
+
+    private static void ApplyAccessibility(Control control, string accessibleName, string toolTip, string helpText)
+    {
+        AutomationProperties.SetName(control, accessibleName);
+        AutomationProperties.SetHelpText(control, helpText);
+        ToolTip.SetTip(control, toolTip);
     }
 
     private static Control CreateTabsPanel(string value)
@@ -388,6 +421,24 @@ public partial class CommandDialogPaneControl : UserControl
         };
     }
 
+    private static Control CreateStructuredTextPanel(string value, bool useMonospace, double minHeight)
+    {
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Gray,
+            Background = Brushes.Transparent,
+            Padding = new Thickness(6, 4),
+            MinHeight = minHeight,
+            Child = new TextBlock
+            {
+                Text = value,
+                TextWrapping = TextWrapping.Wrap,
+                FontFamily = useMonospace ? new FontFamily("Consolas, Menlo, Monaco, monospace") : FontFamily.Default
+            }
+        };
+    }
+
     private static IEnumerable<(string Key, string Value)> ParseGridRows(string value)
     {
         foreach (string line in value.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -444,6 +495,17 @@ public sealed record DialogFieldDisplayItem(
     string VisualKind = DesktopDialogFieldVisualKinds.Default,
     string LayoutSlot = DesktopDialogFieldLayoutSlots.Full)
 {
+    public string AccessibleName => DesktopDialogAccessibility.BuildFieldAccessibleName(Label);
+    public string ToolTip => DesktopDialogAccessibility.BuildFieldToolTip(Label, Placeholder, Value);
+    public string HelpText => DesktopDialogAccessibility.BuildFieldHelpText(
+        Label,
+        Placeholder,
+        Value,
+        InputType,
+        IsReadOnly,
+        IsMultiline,
+        VisualKind);
+
     public override string ToString()
     {
         return $"{Label}: {Value}";
@@ -452,6 +514,10 @@ public sealed record DialogFieldDisplayItem(
 
 public sealed record DialogActionDisplayItem(string Id, string Label, bool IsPrimary)
 {
+    public string AccessibleName => DesktopDialogAccessibility.BuildActionAccessibleName(Label);
+    public string ToolTip => DesktopDialogAccessibility.BuildActionToolTip(Label);
+    public string HelpText => DesktopDialogAccessibility.BuildActionHelpText(Label, IsPrimary);
+
     public override string ToString()
     {
         return $"{Label} ({Id}){(IsPrimary ? " *" : string.Empty)}";

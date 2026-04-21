@@ -30,16 +30,16 @@ public static class RulesetUiDirectiveCatalog
         DisplayName: "Shared shell",
         PostureLabel: "cross-ruleset",
         FileExtension: "ruleset codecs",
-        HomeSpotlight: "Shared home cockpit still needs a grounded ruleset before build, rules, or release claims are trustworthy.",
-        ResumeLaneSummary: "Shared shell resume lane still needs a grounded ruleset before the next handoff is trustworthy.",
+        HomeSpotlight: "Select a ruleset before trusting build, rules, export, or release results.",
+        ResumeLaneSummary: "Resume the current character only after ruleset and runtime status are confirmed.",
         OpenWorkspaceLabel: "Open grounded workspace",
-        BuildFollowThroughLabel: "Open build follow-through",
-        WorkspaceFollowThroughLabel: "Open workspace follow-through",
-        NextActionPrefix: "Grounded lane",
+        BuildFollowThroughLabel: "Open build details",
+        WorkspaceFollowThroughLabel: "Open character details",
+        NextActionPrefix: "Next step",
         DefaultSectionSummary: "Select or restore a grounded ruleset before you trust rules, build, or export depth.",
-        BuildLabSectionSummary: "Build Lab stays generic until a grounded ruleset drives starter paths, browse affordances, and runtime compatibility.",
+        BuildLabSectionSummary: "Build stays generic until a grounded ruleset drives creation, browsing, and runtime compatibility.",
         RulesSectionSummary: "Rules and validation stay generic until a grounded ruleset restores the matching runtime and capability diagnostics.",
-        UngroundedHomeSummary: "the first restored workspace still needs to pin a real runtime fingerprint before build, explain, and export depth are trustworthy.",
+        UngroundedHomeSummary: "the first restored character still needs a real runtime fingerprint before build, explain, and export depth are trustworthy.",
         PinnedRuntimeHomeSummary: "a runtime fingerprint is pinned, but the rules-aware surface still needs grounded section state before it is trustworthy.",
         GroundedHomeSummary: "shared-shell posture only; restore a grounded ruleset before claiming per-ruleset completion.",
         BuildExplainWatchouts:
@@ -51,66 +51,66 @@ public static class RulesetUiDirectiveCatalog
     private static readonly RulesetUiDirective Sr4 = new(
         RulesetId: RulesetDefaults.Sr4,
         DisplayName: "Shadowrun 4",
-        PostureLabel: "preview/oracle-first",
+        PostureLabel: "preview import",
         FileExtension: ".chum4",
-        HomeSpotlight: "SR4 home cockpit foregrounds oracle import, codec parity, and preview-safe rules evidence before any full workbench claim.",
-        ResumeLaneSummary: "Resume the SR4 oracle-preview dossier with parity receipts and codec-backed import evidence visible.",
-        OpenWorkspaceLabel: "Open SR4 oracle preview",
-        BuildFollowThroughLabel: "Open SR4 import follow-through",
-        WorkspaceFollowThroughLabel: "Open SR4 dossier follow-through",
+        HomeSpotlight: "SR4 starts with import results and parity evidence before any full editor claim.",
+        ResumeLaneSummary: "Resume the SR4 character with parity receipts and import evidence visible.",
+        OpenWorkspaceLabel: "Open SR4 character",
+        BuildFollowThroughLabel: "Open SR4 import details",
+        WorkspaceFollowThroughLabel: "Open SR4 character details",
         NextActionPrefix: "SR4 import",
-        DefaultSectionSummary: "SR4 stays preview-first: favor oracle import, codec review, and parity receipts over assuming full workbench parity.",
-        BuildLabSectionSummary: "SR4 Build Lab is an oracle-import preview lane, so starter paths and export affordances should stay constrained to codec-backed flows.",
+        DefaultSectionSummary: "SR4 stays import-first: favor import review and parity receipts over assuming full editor parity.",
+        BuildLabSectionSummary: "SR4 Build focuses on imported characters, safe export paths, and codec-backed flows.",
         RulesSectionSummary: "SR4 rules and validation stay preview-only until deterministic providers replace the experimental host.",
-        UngroundedHomeSummary: "oracle import, codec proof, and parity receipts come before full workbench claims.",
+        UngroundedHomeSummary: "import receipts, codec proof, and parity evidence come before full editor claims.",
         PinnedRuntimeHomeSummary: "a preview fingerprint is pinned, but codec and parity proof still gate trustworthy rules and workflow depth.",
-        GroundedHomeSummary: "oracle-backed preview posture keeps import/export and explain honest while parity proof is still growing.",
+        GroundedHomeSummary: "preview import posture keeps import, export, and explain honest while parity proof is still growing.",
         BuildExplainWatchouts:
         [
-            "SR4 remains preview-only, so import/export and parity receipts are safer than assuming full workbench parity.",
+            "SR4 remains preview-only, so import/export and parity receipts are safer than assuming full editor parity.",
             "SR4 rules and validation still depend on experimental-provider gaps being made explicit."
         ]);
 
     private static readonly RulesetUiDirective Sr5 = new(
         RulesetId: RulesetDefaults.Sr5,
         DisplayName: "Shadowrun 5",
-        PostureLabel: "primary/workbench",
+        PostureLabel: "main editor",
         FileExtension: ".chum5",
-        HomeSpotlight: "SR5 home cockpit foregrounds the flagship workbench, provider truth, and release-safe .chum5 continuity.",
-        ResumeLaneSummary: "Resume the SR5 workbench dossier with runtime/provider truth and full workbench follow-through visible.",
-        OpenWorkspaceLabel: "Open SR5 workbench",
-        BuildFollowThroughLabel: "Open SR5 workbench follow-through",
-        WorkspaceFollowThroughLabel: "Open SR5 dossier follow-through",
-        NextActionPrefix: "SR5 workbench",
-        DefaultSectionSummary: "SR5 is the flagship workbench lane. Keep runtime/profile status visible instead of implying the deterministic host gap is already closed.",
-        BuildLabSectionSummary: "SR5 Build Lab is the flagship lane, but runtime/profile compatibility still gates safe apply, export, and campaign return.",
+        HomeSpotlight: "SR5 opens to the main character editor with runtime and provider truth visible.",
+        ResumeLaneSummary: "Resume the SR5 character with runtime and provider truth visible.",
+        OpenWorkspaceLabel: "Open SR5 character",
+        BuildFollowThroughLabel: "Open SR5 build details",
+        WorkspaceFollowThroughLabel: "Open SR5 character details",
+        NextActionPrefix: "SR5",
+        DefaultSectionSummary: "SR5 is the main desktop editor. Keep runtime and profile status visible instead of implying the deterministic host gap is already closed.",
+        BuildLabSectionSummary: "SR5 Build stays grounded in runtime and profile compatibility before apply, export, and campaign return.",
         RulesSectionSummary: "SR5 rules and validation must surface provider-unavailable or rebind diagnostics honestly until the deterministic host is complete.",
-        UngroundedHomeSummary: "the primary workbench lane still needs a grounded runtime fingerprint before build, explain, and support closure are trustworthy.",
-        PinnedRuntimeHomeSummary: "a runtime fingerprint is pinned, but provider truth and refreshed rules sections still gate trustworthy workbench claims.",
-        GroundedHomeSummary: "the flagship workbench lane keeps provider and runtime truth visible while deterministic-host completion is still in flight.",
+        UngroundedHomeSummary: "the main editor still needs a grounded runtime fingerprint before build, explain, and support closure are trustworthy.",
+        PinnedRuntimeHomeSummary: "a runtime fingerprint is pinned, but provider truth and refreshed rules sections still gate trustworthy editor claims.",
+        GroundedHomeSummary: "the main desktop editor keeps provider and runtime truth visible while deterministic-host completion is still in flight.",
         BuildExplainWatchouts:
         [
-            "SR5 is the primary lane, but runtime/profile honesty still matters for explain, validate, and runtime inspector flows.",
+            "SR5 is the primary desktop editor, but runtime/profile honesty still matters for explain, validate, and runtime inspector flows.",
             "SR5 import, export, and print affordances should keep .chum5 reality explicit instead of implying cross-ruleset parity."
         ]);
 
     private static readonly RulesetUiDirective Sr6 = new(
         RulesetId: RulesetDefaults.Sr6,
         DisplayName: "Shadowrun 6",
-        PostureLabel: "beta/edge-first",
+        PostureLabel: "guided preview",
         FileExtension: ".chum6",
-        HomeSpotlight: "SR6 home cockpit foregrounds starter kits, edge-first beta guidance, and experimental-host honesty before parity claims.",
-        ResumeLaneSummary: "Resume the SR6 starter lane with beta/runtime honesty and curated kit guidance visible.",
-        OpenWorkspaceLabel: "Open SR6 starter lane",
-        BuildFollowThroughLabel: "Open SR6 starter follow-through",
-        WorkspaceFollowThroughLabel: "Open SR6 dossier follow-through",
-        NextActionPrefix: "SR6 starter",
-        DefaultSectionSummary: "SR6 stays beta-first: curated starters and preview packets are safe, but the experimental host still limits depth.",
-        BuildLabSectionSummary: "SR6 Build Lab should emphasize curated starter kits, edge-first flows, and preview-safe guidance rather than claiming full parity.",
+        HomeSpotlight: "SR6 starts with guided setup, curated kits, and explicit runtime honesty before parity claims.",
+        ResumeLaneSummary: "Resume the SR6 character with runtime honesty and curated kit guidance visible.",
+        OpenWorkspaceLabel: "Open SR6 character",
+        BuildFollowThroughLabel: "Open SR6 build details",
+        WorkspaceFollowThroughLabel: "Open SR6 character details",
+        NextActionPrefix: "SR6",
+        DefaultSectionSummary: "SR6 stays guided-preview first: curated starts are safe, but the experimental host still limits depth.",
+        BuildLabSectionSummary: "SR6 Build should emphasize curated setup, edge-first flows, and preview-safe guidance rather than claiming full parity.",
         RulesSectionSummary: "SR6 rules and validation stay beta/preview until deterministic providers replace the experimental host.",
         UngroundedHomeSummary: "starter-kit proof, runtime honesty, and preview-safe guidance come before full parity claims.",
         PinnedRuntimeHomeSummary: "a beta fingerprint is pinned, but experimental-host honesty still gates trustworthy rules and workflow depth.",
-        GroundedHomeSummary: "beta posture keeps curated starter flows and experimental-host honesty visible while deterministic providers are still landing.",
+        GroundedHomeSummary: "guided preview posture keeps curated setup and experimental-host honesty visible while deterministic providers are still landing.",
         BuildExplainWatchouts:
         [
             "SR6 remains beta/preview until deterministic providers replace the experimental host.",
@@ -144,8 +144,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "Desktop Summary · SR4 Preview",
-            RulesetDefaults.Sr5 => "Desktop Summary · SR5 Workbench",
-            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Starter",
+            RulesetDefaults.Sr5 => "Desktop Summary · SR5 Editor",
+            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Guided Preview",
             _ => "Desktop Summary Header"
         };
     }
@@ -155,10 +155,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Oracle intake desk",
-            RulesetDefaults.Sr5 => "Flagship desktop workbench",
-            RulesetDefaults.Sr6 => "Starter and beta desk",
-            _ => "Grounded desktop shell"
+            RulesetDefaults.Sr4 => "SR4 import preview",
+            RulesetDefaults.Sr5 => "SR5 main editor",
+            RulesetDefaults.Sr6 => "SR6 guided preview",
+            _ => "Desktop editor"
         };
     }
 
@@ -167,10 +167,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Shadowrun 4 preview import cockpit",
-            RulesetDefaults.Sr5 => "Shadowrun 5 flagship workbench",
-            RulesetDefaults.Sr6 => "Shadowrun 6 guided starter cockpit",
-            _ => "Grounded shared-shell cockpit"
+            RulesetDefaults.Sr4 => "Shadowrun 4 character import",
+            RulesetDefaults.Sr5 => "Shadowrun 5 character editor",
+            RulesetDefaults.Sr6 => "Shadowrun 6 guided character setup",
+            _ => "Character editor"
         };
     }
 
@@ -179,9 +179,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Preview Dossiers",
-            RulesetDefaults.Sr5 => "SR5 Workbench Dossiers",
-            RulesetDefaults.Sr6 => "SR6 Starter Dossiers",
+            RulesetDefaults.Sr4 => "SR4 Characters",
+            RulesetDefaults.Sr5 => "SR5 Characters",
+            RulesetDefaults.Sr6 => "SR6 Characters",
             _ => "Open Characters"
         };
     }
@@ -191,9 +191,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "No open SR4 oracle preview",
-            RulesetDefaults.Sr5 => "No open SR5 workbench",
-            RulesetDefaults.Sr6 => "No open SR6 starter lane",
+            RulesetDefaults.Sr4 => "No open SR4 character",
+            RulesetDefaults.Sr5 => "No open SR5 character",
+            RulesetDefaults.Sr6 => "No open SR6 character",
             _ => "No open character"
         };
     }
@@ -211,8 +211,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "SR4 Preview Tabs",
-            RulesetDefaults.Sr5 => "SR5 Workbench Tabs",
-            RulesetDefaults.Sr6 => "SR6 Starter Tabs",
+            RulesetDefaults.Sr5 => "SR5 Editor Tabs",
+            RulesetDefaults.Sr6 => "SR6 Preview Tabs",
             _ => "Workspace Tabs"
         };
     }
@@ -223,8 +223,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "SR4 Preview Actions",
-            RulesetDefaults.Sr5 => "SR5 Workbench Actions",
-            RulesetDefaults.Sr6 => "SR6 Starter Actions",
+            RulesetDefaults.Sr5 => "SR5 Editor Actions",
+            RulesetDefaults.Sr6 => "SR6 Preview Actions",
             _ => "Section Actions"
         };
     }
@@ -235,8 +235,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "SR4 Preview Flows",
-            RulesetDefaults.Sr5 => "SR5 Workbench Flows",
-            RulesetDefaults.Sr6 => "SR6 Starter Flows",
+            RulesetDefaults.Sr5 => "SR5 Editor Flows",
+            RulesetDefaults.Sr6 => "SR6 Preview Flows",
             _ => "Workflow Surfaces"
         };
     }
@@ -247,8 +247,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "Import SR4 Oracle File",
-            RulesetDefaults.Sr5 => "Import SR5 Workbench File",
-            RulesetDefaults.Sr6 => "Import SR6 Starter File",
+            RulesetDefaults.Sr5 => "Import SR5 Character File",
+            RulesetDefaults.Sr6 => "Import SR6 Character File",
             _ => "Import Character File"
         };
     }
@@ -268,9 +268,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Primary lane: .chum4 oracle preview with parity-safe XML fallback.",
-            RulesetDefaults.Sr5 => "Primary lane: .chum5 flagship workbench continuity with XML fallback for governed restores.",
-            RulesetDefaults.Sr6 => "Primary lane: .chum6 starter and beta intake with preview-safe XML fallback.",
+            RulesetDefaults.Sr4 => "Primary format: .chum4 with parity-safe XML fallback.",
+            RulesetDefaults.Sr5 => "Primary format: .chum5 with XML fallback for governed restores.",
+            RulesetDefaults.Sr6 => "Primary format: .chum6 with preview-safe XML fallback.",
             _ => "Accept native ruleset files or raw XML when the active ruleset is still unresolved."
         };
     }
@@ -281,8 +281,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "(no SR4 preview file selected)",
-            RulesetDefaults.Sr5 => "(no SR5 workbench file selected)",
-            RulesetDefaults.Sr6 => "(no SR6 starter file selected)",
+            RulesetDefaults.Sr5 => "(no SR5 character file selected)",
+            RulesetDefaults.Sr6 => "(no SR6 character file selected)",
             _ => "(none)"
         };
     }
@@ -293,8 +293,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "SR4 Oracle Debug Import",
-            RulesetDefaults.Sr5 => "SR5 Workbench XML Import",
-            RulesetDefaults.Sr6 => "SR6 Starter XML Import",
+            RulesetDefaults.Sr5 => "SR5 XML Import",
+            RulesetDefaults.Sr6 => "SR6 XML Import",
             _ => "Raw XML Debug Import"
         };
     }
@@ -317,8 +317,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "SR4 Preview Commands",
-            RulesetDefaults.Sr5 => "SR5 Workbench Commands",
-            RulesetDefaults.Sr6 => "SR6 Starter Commands",
+            RulesetDefaults.Sr5 => "SR5 Editor Commands",
+            RulesetDefaults.Sr6 => "SR6 Preview Commands",
             _ => "Commands"
         };
     }
@@ -329,8 +329,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "No SR4 preview commands are currently available.",
-            RulesetDefaults.Sr5 => "No SR5 workbench commands are currently available.",
-            RulesetDefaults.Sr6 => "No SR6 starter commands are currently available.",
+            RulesetDefaults.Sr5 => "No SR5 editor commands are currently available.",
+            RulesetDefaults.Sr6 => "No SR6 preview commands are currently available.",
             _ => "No commands are currently available."
         };
     }
@@ -341,8 +341,8 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "SR4 Preview Result",
-            RulesetDefaults.Sr5 => "SR5 Workbench Result",
-            RulesetDefaults.Sr6 => "SR6 Starter Result",
+            RulesetDefaults.Sr5 => "SR5 Editor Result",
+            RulesetDefaults.Sr6 => "SR6 Preview Result",
             _ => "Result"
         };
     }
@@ -352,9 +352,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Shadowrun 4 stays on the preview/oracle-first lane; keep codec and parity evidence explicit.",
-            RulesetDefaults.Sr5 => "Shadowrun 5 stays on the primary/workbench lane; keep provider truth and .chum5 continuity explicit.",
-            RulesetDefaults.Sr6 => "Shadowrun 6 stays on the beta/edge-first lane; keep starter-kit and runtime honesty explicit.",
+            RulesetDefaults.Sr4 => "Shadowrun 4 stays in import preview; keep codec and parity evidence explicit.",
+            RulesetDefaults.Sr5 => "Shadowrun 5 stays on the main desktop editor; keep provider truth and .chum5 continuity explicit.",
+            RulesetDefaults.Sr6 => "Shadowrun 6 stays in guided preview; keep starter-kit and runtime honesty explicit.",
             _ => "Shared shell posture is still unresolved; keep runtime and ruleset evidence explicit."
         };
     }
@@ -364,9 +364,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 preview lane is ready; keep oracle import and parity evidence explicit.",
-            RulesetDefaults.Sr5 => "SR5 workbench lane is ready; keep provider truth and .chum5 continuity explicit.",
-            RulesetDefaults.Sr6 => "SR6 starter lane is ready; keep beta/runtime honesty explicit.",
+            RulesetDefaults.Sr4 => "SR4 preview is ready; keep import and parity evidence explicit.",
+            RulesetDefaults.Sr5 => "SR5 editor is ready; keep provider truth and .chum5 continuity explicit.",
+            RulesetDefaults.Sr6 => "SR6 preview is ready; keep runtime honesty explicit.",
             _ => "Ready."
         };
     }
@@ -378,22 +378,22 @@ public static class RulesetUiDirectiveCatalog
 
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 when string.Equals(normalizedTabId, "tab-create", StringComparison.Ordinal) => "Oracle Intake",
-            RulesetDefaults.Sr4 when string.Equals(normalizedTabId, "tab-info", StringComparison.Ordinal) => "Persona",
-            RulesetDefaults.Sr4 when string.Equals(normalizedTabId, "tab-gear", StringComparison.Ordinal) => "Gear Preview",
-            RulesetDefaults.Sr4 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules Preview",
+            RulesetDefaults.Sr4 when string.Equals(normalizedTabId, "tab-create", StringComparison.Ordinal) => "Import",
+            RulesetDefaults.Sr4 when string.Equals(normalizedTabId, "tab-info", StringComparison.Ordinal) => "Character",
+            RulesetDefaults.Sr4 when string.Equals(normalizedTabId, "tab-gear", StringComparison.Ordinal) => "Gear",
+            RulesetDefaults.Sr4 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules",
 
-            RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-create", StringComparison.Ordinal) => "Workbench",
+            RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-create", StringComparison.Ordinal) => "Character",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-info", StringComparison.Ordinal) => "Runner",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-gear", StringComparison.Ordinal) => "Gear & Ware",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules & Validation",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-calendar", StringComparison.Ordinal) => "Career Log",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-improvements", StringComparison.Ordinal) => "Career Track",
 
-            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-create", StringComparison.Ordinal) => "Starter Kits",
-            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-info", StringComparison.Ordinal) => "Runner",
+            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-create", StringComparison.Ordinal) => "Create",
+            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-info", StringComparison.Ordinal) => "Character",
             RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-gear", StringComparison.Ordinal) => "Loadout",
-            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules Beta",
+            RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules",
             _ => fallbackLabel
         };
     }
@@ -406,26 +406,26 @@ public static class RulesetUiDirectiveCatalog
 
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Oracle Intake",
-            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Preview Summary",
+            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Import",
+            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Character Summary",
             RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Parity Check",
-            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-info.metadata", StringComparison.Ordinal) => "Stamp Metadata",
-            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-rules.rules", StringComparison.Ordinal) => "Rules Preview",
-            RulesetDefaults.Sr4 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Gear Preview",
+            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-info.metadata", StringComparison.Ordinal) => "Edit Metadata",
+            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-rules.rules", StringComparison.Ordinal) => "Rules",
+            RulesetDefaults.Sr4 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Gear",
 
-            RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Workbench Intake",
-            RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Runner Summary",
+            RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Create Character",
+            RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Character Summary",
             RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Validate & Rebind",
             RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.rules", StringComparison.Ordinal) => "Rules & Provider",
             RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.build", StringComparison.Ordinal) => "Build Plan",
             RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.progress", StringComparison.Ordinal) => "Career Track",
-            RulesetDefaults.Sr5 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Loadout",
+            RulesetDefaults.Sr5 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Gear",
 
-            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Starter Intake",
-            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Runner Summary",
-            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Beta Safety Check",
-            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.profile", StringComparison.Ordinal) => "Runner Card",
-            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-rules.rules", StringComparison.Ordinal) => "Rules Beta",
+            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Create Character",
+            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Character Summary",
+            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Safety Check",
+            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.profile", StringComparison.Ordinal) => "Character Card",
+            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-rules.rules", StringComparison.Ordinal) => "Rules",
             RulesetDefaults.Sr6 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Loadout",
             _ => fallbackLabel
         };
@@ -440,7 +440,7 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId ?? activeRuntime?.RulesetId);
         string runtimeQualifier = BuildRuntimeQualifier(directive, activeRuntime);
         string sectionSummary = ResolveSectionSummary(directive, sectionId, actionId);
-        return $"Ruleset posture: {directive.DisplayName} is on the {directive.PostureLabel} lane. {sectionSummary} Runtime posture: {runtimeQualifier}.";
+        return $"Ruleset posture: {directive.DisplayName} is in {directive.PostureLabel} mode. {sectionSummary} Runtime posture: {runtimeQualifier}.";
     }
 
     public static string BuildUngroundedRulePosture(string? rulesetId)
@@ -483,7 +483,7 @@ public static class RulesetUiDirectiveCatalog
         string name = string.IsNullOrWhiteSpace(summary.Name) ? "Unnamed runner" : summary.Name;
         string alias = string.IsNullOrWhiteSpace(summary.Alias) ? string.Empty : $" / {summary.Alias}";
         string metatype = string.IsNullOrWhiteSpace(summary.Metatype) ? "metatype unresolved" : summary.Metatype;
-        string buildMethod = string.IsNullOrWhiteSpace(summary.BuildMethod) ? "build lane unresolved" : summary.BuildMethod;
+        string buildMethod = string.IsNullOrWhiteSpace(summary.BuildMethod) ? "build method unresolved" : summary.BuildMethod;
         string updatedAt = lastUpdatedUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm");
         return $"{directive.DisplayName} resume: {name}{alias} · {metatype} · {buildMethod} · {directive.ResumeLaneSummary} Updated {updatedAt} UTC.";
     }
@@ -533,14 +533,14 @@ public static class RulesetUiDirectiveCatalog
 
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Preview Parity Flow",
-            RulesetDefaults.Sr4 when normalizedActionId.Contains("summary", StringComparison.Ordinal) => "Preview Summary Flow",
+            RulesetDefaults.Sr4 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Parity Check",
+            RulesetDefaults.Sr4 when normalizedActionId.Contains("summary", StringComparison.Ordinal) => "Character Summary",
 
-            RulesetDefaults.Sr5 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Workbench Validation Flow",
-            RulesetDefaults.Sr5 when normalizedActionId.Contains("summary", StringComparison.Ordinal) => "Workbench Summary Flow",
+            RulesetDefaults.Sr5 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Validation",
+            RulesetDefaults.Sr5 when normalizedActionId.Contains("summary", StringComparison.Ordinal) => "Character Summary",
 
-            RulesetDefaults.Sr6 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Starter Safety Flow",
-            RulesetDefaults.Sr6 when normalizedActionId.Contains("summary", StringComparison.Ordinal) => "Starter Summary Flow",
+            RulesetDefaults.Sr6 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Safety Check",
+            RulesetDefaults.Sr6 when normalizedActionId.Contains("summary", StringComparison.Ordinal) => "Character Summary",
             _ => fallbackLabel
         };
     }
@@ -577,11 +577,11 @@ public static class RulesetUiDirectiveCatalog
                 ? "preview runtime attention required"
                 : "preview runtime remains parity-gated",
             RulesetDefaults.Sr5 => hasWarnings
-                ? "primary lane with runtime/provider attention required"
-                : "primary lane keeps provider truth explicit",
+                ? "runtime/provider attention required"
+                : "provider truth remains explicit",
             RulesetDefaults.Sr6 => hasWarnings
-                ? "beta lane with active runtime warnings"
-                : "beta lane keeps experimental-host honesty visible",
+                ? "runtime warnings remain active"
+                : "experimental-host honesty remains visible",
             _ => hasWarnings
                 ? "runtime attention required"
                 : "ruleset still unresolved"
@@ -601,6 +601,8 @@ public static class RulesetUiDirectiveCatalog
             || label.Contains("Shadowrun", StringComparison.OrdinalIgnoreCase)
             || label.Contains("oracle", StringComparison.OrdinalIgnoreCase)
             || label.Contains("workbench", StringComparison.OrdinalIgnoreCase)
-            || label.Contains("starter", StringComparison.OrdinalIgnoreCase);
+            || label.Contains("starter", StringComparison.OrdinalIgnoreCase)
+            || label.Contains("editor", StringComparison.OrdinalIgnoreCase)
+            || label.Contains("preview", StringComparison.OrdinalIgnoreCase);
     }
 }

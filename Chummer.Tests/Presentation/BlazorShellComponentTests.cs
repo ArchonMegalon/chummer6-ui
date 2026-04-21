@@ -49,10 +49,14 @@ public sealed class BlazorShellComponentTests
                 command => string.Equals(command.Id, "save_character", StringComparison.Ordinal)));
 
         Assert.HasCount(1, cut.FindAll(".menu-btn"));
+        StringAssert.Contains(cut.Find(".menu-bar").ClassName, "classic-menu-bar");
+        StringAssert.Contains(cut.Find(".menu-btn").ClassName, "classic-menu-button");
         StringAssert.Contains(cut.Find(".menu-btn").ClassName, "active");
+        Assert.AreEqual("File", cut.Find(".menu-btn").TextContent.Trim());
 
         IReadOnlyList<AngleSharp.Dom.IElement> menuButtons = cut.FindAll(".menu-item");
         Assert.HasCount(2, menuButtons);
+        StringAssert.Contains(cut.Find(".menu-dropdown").ClassName, "classic-menu-dropdown");
         Assert.IsFalse(menuButtons[0].HasAttribute("disabled"));
         Assert.IsTrue(menuButtons[1].HasAttribute("disabled"));
     }
@@ -108,12 +112,32 @@ public sealed class BlazorShellComponentTests
 
         IReadOnlyList<AngleSharp.Dom.IElement> toolButtons = cut.FindAll(".tool-btn");
         Assert.HasCount(2, toolButtons);
+        StringAssert.Contains(cut.Find(".tool-strip").ClassName, "classic-tool-strip");
+        StringAssert.Contains(toolButtons[0].ClassName, "classic-tool-button");
         Assert.IsTrue(toolButtons[0].HasAttribute("disabled"));
         Assert.IsFalse(toolButtons[1].HasAttribute("disabled"));
         StringAssert.Contains(toolButtons[1].ClassName, "selected");
 
         toolButtons[1].Click();
         Assert.AreEqual("print_character", executedCommandId);
+    }
+
+    [TestMethod]
+    public void ToolStrip_renders_classic_group_divider_between_copy_and_new()
+    {
+        using var context = new BunitContext();
+        IRenderedComponent<ToolStrip> cut = context.Render<ToolStrip>(parameters => parameters
+            .Add(component => component.Commands,
+            [
+                new AppCommandDefinition("save_character", "command.save", "file", true, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("print_character", "command.print", "file", true, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("copy", "command.copy", "edit", true, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("new_character", "command.new", "file", true, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("open_character", "command.open", "file", true, true, RulesetDefaults.Sr5)
+            ])
+            .Add(component => component.IsCommandEnabled, _ => true));
+
+        Assert.HasCount(1, cut.FindAll(".tool-divider"));
     }
 
     [TestMethod]
@@ -134,7 +158,7 @@ public sealed class BlazorShellComponentTests
         Assert.HasCount(2, docs);
         StringAssert.Contains(docs[0].TextContent, "*");
         StringAssert.Contains(docs[0].GetAttribute("title"), "Shadowrun 5");
-        StringAssert.Contains(docs[0].GetAttribute("title"), "primary/workbench");
+        StringAssert.Contains(docs[0].GetAttribute("title"), "main editor");
         Assert.IsLessThan(0, docs[1].TextContent.IndexOf('*'));
     }
 
@@ -147,7 +171,7 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.RulesetId, RulesetDefaults.Sr6)
             .Add(component => component.IsBusy, false));
 
-        StringAssert.Contains(cut.Markup, "No open SR6 starter lane");
+        StringAssert.Contains(cut.Markup, "No open SR6 character");
     }
 
     [TestMethod]
@@ -214,11 +238,11 @@ public sealed class BlazorShellComponentTests
                 (Action<WorkspaceSurfaceActionDefinition>)(action => executedAction = action))
             .Add(component => component.ExecuteWorkflowSurfaceRequested, (Action<string>)(actionId => executedWorkflowSurfaceActionId = actionId)));
 
-        StringAssert.Contains(cut.Markup, "SR5 Workbench Actions");
-        StringAssert.Contains(cut.Markup, "SR5 Workbench Flows");
-        StringAssert.Contains(cut.Markup, "SR5 Workbench Dossiers");
-        StringAssert.Contains(cut.Markup, "Ares Runner (AR) · Shadowrun 5 · primary/workbench");
-        StringAssert.Contains(cut.Markup, "Workbench Summary Flow");
+        StringAssert.Contains(cut.Markup, "SR5 Editor Actions");
+        StringAssert.Contains(cut.Markup, "SR5 Editor Flows");
+        StringAssert.Contains(cut.Markup, "SR5 Characters");
+        StringAssert.Contains(cut.Markup, "Ares Runner (AR) · Shadowrun 5 · main editor");
+        StringAssert.Contains(cut.Markup, "Character Summary");
         Assert.AreEqual("Validate & Rebind", cut.Find(".section-actions .action-button").TextContent.Trim());
 
         cut.Find(".navigator .command-button").Click();
@@ -289,12 +313,14 @@ public sealed class BlazorShellComponentTests
         AngleSharp.Dom.IElement enabledTab = cut.Find(".workbench-tab-strip #tab-info");
         AngleSharp.Dom.IElement createTab = cut.Find(".workbench-tab-strip #tab-create");
         AngleSharp.Dom.IElement disabledTab = cut.Find(".workbench-tab-strip #tab-skills");
+        StringAssert.Contains(cut.Find(".workbench-tab-strip").ClassName, "classic-tab-strip");
+        StringAssert.Contains(enabledTab.ClassName, "classic-workbench-tab");
         Assert.IsFalse(enabledTab.HasAttribute("disabled"));
         Assert.IsTrue(disabledTab.HasAttribute("disabled"));
         StringAssert.Contains(enabledTab.ClassName, "active");
-        StringAssert.Contains(cut.Markup, "SR5 Workbench Tabs");
+        StringAssert.Contains(cut.Markup, "SR5 Editor Tabs");
         Assert.AreEqual("Runner", enabledTab.TextContent.Trim());
-        Assert.AreEqual("Workbench", createTab.TextContent.Trim());
+        Assert.AreEqual("Character", createTab.TextContent.Trim());
 
         enabledTab.Click();
 
@@ -322,10 +348,12 @@ public sealed class BlazorShellComponentTests
 
         Assert.AreEqual("ws-1", openedWorkspaceId);
         Assert.AreEqual("ws-1", closedWorkspaceId);
+        StringAssert.Contains(cut.Find(".navigator").ClassName, "classic-navigator");
+        StringAssert.Contains(cut.Find(".navigator .command-button").ClassName, "classic-navigator-button");
         StringAssert.Contains(cut.Find(".navigator .command-button").ClassName, "selected");
-        StringAssert.Contains(cut.Markup, "SR5 Workbench Dossiers");
+        StringAssert.Contains(cut.Markup, "SR5 Characters");
         StringAssert.Contains(cut.Markup, "Shadowrun 5");
-        StringAssert.Contains(cut.Markup, "primary/workbench");
+        StringAssert.Contains(cut.Markup, "main editor");
         Assert.AreEqual("ws-1", cut.Find(".navigator .command-button").GetAttribute("title"));
         Assert.AreEqual(0, cut.FindAll(".navigator .command-button .hint").Count, "Classic dossier rows must not print workspace ids into the visible left rail.");
     }
@@ -358,7 +386,7 @@ public sealed class BlazorShellComponentTests
                     ]))));
 
         StringAssert.Contains(cut.Markup, "Import SR4 Oracle File");
-        StringAssert.Contains(cut.Markup, "Primary lane: .chum4 oracle preview");
+        StringAssert.Contains(cut.Markup, "Primary format: .chum4 with parity-safe XML fallback.");
         StringAssert.Contains(cut.Markup, "(no SR4 preview file selected)");
         StringAssert.Contains(cut.Markup, "SR4 Oracle Debug Import");
         StringAssert.Contains(cut.Markup, "Import receipt");
@@ -393,11 +421,11 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.RulesetId, RulesetDefaults.Sr5)
             .Add(component => component.State, state));
 
-        StringAssert.Contains(commandCut.Markup, "SR6 Starter Commands");
-        StringAssert.Contains(commandCut.Markup, "No SR6 starter commands are currently available.");
-        StringAssert.Contains(resultCut.Markup, "SR5 Workbench Result");
-        StringAssert.Contains(resultCut.Markup, "Shadowrun 5 stays on the primary/workbench lane");
-        StringAssert.Contains(resultCut.Markup, "SR5 workbench lane is ready");
+        StringAssert.Contains(commandCut.Markup, "SR6 Preview Commands");
+        StringAssert.Contains(commandCut.Markup, "No SR6 preview commands are currently available.");
+        StringAssert.Contains(resultCut.Markup, "SR5 Editor Result");
+        StringAssert.Contains(resultCut.Markup, "Shadowrun 5 stays on the main desktop editor");
+        StringAssert.Contains(resultCut.Markup, "SR5 editor is ready");
     }
 
     [TestMethod]
@@ -1678,8 +1706,33 @@ public sealed class BlazorShellComponentTests
         Assert.AreEqual("Save Character", cut.Find("#dialogTitle").TextContent.Trim());
         Assert.AreEqual("dialog", cut.Find(".desktop-dialog").GetAttribute("role"));
         Assert.AreEqual("true", cut.Find(".desktop-dialog").GetAttribute("aria-modal"));
+        StringAssert.Contains(cut.Find(".desktop-dialog").ClassName, "classic-dialog");
+        StringAssert.Contains(cut.Find(".dialog-titlebar").ClassName, "classic-dialog-titlebar");
+        StringAssert.Contains(cut.Find(".dialog-body").ClassName, "classic-dialog-grid");
         StringAssert.StartsWith(cut.Find(".desktop-dialog").GetAttribute("aria-describedby"), "dialog-description-save-dialog", StringComparison.Ordinal);
-        Assert.IsTrue(cut.Find("input[placeholder='readonly token']").HasAttribute("readonly"));
+        IElement nameInput = cut.Find("input[placeholder='enter name']");
+        IElement notesInput = cut.Find("textarea[placeholder='enter notes']");
+        IElement readonlyToken = cut.Find("input[placeholder='readonly token']");
+        IElement checkbox = cut.Find("input[type='checkbox']");
+        IElement saveButton = cut.Find("#dialogFooter .action-btn.primary");
+        IElement closeButton = cut.Find("#dialogClose");
+
+        Assert.IsTrue(readonlyToken.HasAttribute("readonly"));
+        Assert.AreEqual("Name: enter name", nameInput.GetAttribute("title"));
+        Assert.AreEqual("Name", nameInput.GetAttribute("aria-label"));
+        StringAssert.Contains(nameInput.GetAttribute("aria-description"), "Editable text field");
+        Assert.AreEqual("Notes: enter notes", notesInput.GetAttribute("title"));
+        Assert.AreEqual("Notes", notesInput.GetAttribute("aria-label"));
+        StringAssert.Contains(notesInput.GetAttribute("aria-description"), "Editable multi-line text field");
+        Assert.AreEqual("House Rules", checkbox.GetAttribute("title"));
+        Assert.AreEqual("House Rules", checkbox.GetAttribute("aria-label"));
+        StringAssert.Contains(checkbox.GetAttribute("aria-description"), "Editable checkbox");
+        Assert.AreEqual("Save", saveButton.GetAttribute("title"));
+        Assert.AreEqual("Save", saveButton.GetAttribute("aria-label"));
+        StringAssert.Contains(saveButton.ClassName, "classic-dialog-action");
+        StringAssert.Contains(saveButton.GetAttribute("aria-description"), "Primary dialog action");
+        Assert.AreEqual("Close dialog", closeButton.GetAttribute("title"));
+        Assert.AreEqual("Close dialog", closeButton.GetAttribute("aria-label"));
 
         cut.Find("input[placeholder='enter name']").Input("Neo");
         cut.Find("textarea[placeholder='enter notes']").Input("Updated notes");

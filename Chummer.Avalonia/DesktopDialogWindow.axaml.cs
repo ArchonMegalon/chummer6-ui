@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Input;
@@ -113,12 +114,14 @@ public partial class DesktopDialogWindow : Window
     {
         if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
         {
-            return new CheckBox
+            CheckBox checkBox = new()
             {
                 Content = field.Label,
                 IsChecked = ParseCheckbox(field.Value),
                 IsEnabled = !field.IsReadOnly
-            }.Also(checkBox =>
+            };
+            ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
+            return checkBox.Also(checkBox =>
             {
                 if (!field.IsReadOnly)
                 {
@@ -150,9 +153,11 @@ public partial class DesktopDialogWindow : Window
             VerticalAlignment = field.IsMultiline ? global::Avalonia.Layout.VerticalAlignment.Top : global::Avalonia.Layout.VerticalAlignment.Center,
             FontWeight = FontWeight.SemiBold
         };
+        ApplyAccessibility(label, field.AccessibleName, field.ToolTip, field.HelpText);
         row.Children.Add(label);
 
         Control fieldControl = CreateFieldControl(field);
+        ApplyAccessibility(fieldControl, field.AccessibleName, field.ToolTip, field.HelpText);
         Grid.SetColumn(fieldControl, field.IsMultiline ? 0 : 1);
         if (field.IsMultiline)
         {
@@ -168,29 +173,52 @@ public partial class DesktopDialogWindow : Window
     {
         if (field.IsReadOnly && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
         {
-            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tabs, StringComparison.Ordinal))
+            Control visualControl;
+            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
             {
-                return CreateTabsPanel(field.Value);
+                visualControl = CreateStructuredTextPanel(field.Value, useMonospace: true, minHeight: 160);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
+            {
+                visualControl = CreateStructuredTextPanel(field.Value, useMonospace: false, minHeight: 160);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tabs, StringComparison.Ordinal))
+            {
+                visualControl = CreateTabsPanel(field.Value);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Image, StringComparison.Ordinal))
+            {
+                visualControl = CreateImagePlaceholderPanel(field.Value);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
+            {
+                visualControl = CreateGridPanel(field.Value);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
+            {
+                visualControl = CreateSnippetPanel(field.Value);
+            }
+            else
+            {
+                visualControl = CreateSnippetPanel(field.Value);
             }
 
-            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Image, StringComparison.Ordinal))
-            {
-                return CreateImagePlaceholderPanel(field.Value);
-            }
-
-            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
-            {
-                return CreateGridPanel(field.Value);
-            }
-
-            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
-            {
-                return CreateSnippetPanel(field.Value);
-            }
+            ApplyAccessibility(visualControl, field.AccessibleName, field.ToolTip, field.HelpText);
+            return visualControl;
         }
 
         if (field.IsReadOnly && field.IsMultiline && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
         {
+            TextBlock textBlock = new()
+            {
+                Text = field.Value,
+                TextWrapping = TextWrapping.Wrap
+            };
+            if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
+            {
+                textBlock.FontFamily = new FontFamily("Consolas, Menlo, Monaco, monospace");
+            }
+
             Border panel = new()
             {
                 BorderThickness = new Thickness(1),
@@ -201,15 +229,9 @@ public partial class DesktopDialogWindow : Window
                     || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
                     ? 160
                     : 124,
-                Child = new TextBlock
-                {
-                    Text = field.Value,
-                    TextWrapping = TextWrapping.Wrap,
-                    FontFamily = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
-                        ? new FontFamily("Consolas, Menlo, Monaco, monospace")
-                        : default
-                }
+                Child = textBlock
             };
+            ApplyAccessibility(panel, field.AccessibleName, field.ToolTip, field.HelpText);
             return panel;
         }
 
@@ -238,6 +260,7 @@ public partial class DesktopDialogWindow : Window
             };
         }
 
+        ApplyAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
         return textBox;
     }
 
@@ -354,6 +377,24 @@ public partial class DesktopDialogWindow : Window
         };
     }
 
+    private static Control CreateStructuredTextPanel(string value, bool useMonospace, double minHeight)
+    {
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Gray,
+            Background = Brushes.Transparent,
+            Padding = new Thickness(6, 4),
+            MinHeight = minHeight,
+            Child = new TextBlock
+            {
+                Text = value,
+                TextWrapping = TextWrapping.Wrap,
+                FontFamily = useMonospace ? new FontFamily("Consolas, Menlo, Monaco, monospace") : FontFamily.Default
+            }
+        };
+    }
+
     private static IEnumerable<(string Key, string Value)> ParseGridRows(string value)
     {
         foreach (string line in value.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -370,6 +411,13 @@ public partial class DesktopDialogWindow : Window
         }
     }
 
+    private static void ApplyAccessibility(Control control, string accessibleName, string toolTip, string helpText)
+    {
+        AutomationProperties.SetName(control, accessibleName);
+        AutomationProperties.SetHelpText(control, helpText);
+        ToolTip.SetTip(control, toolTip);
+    }
+
     private void BuildActions(IReadOnlyList<DesktopDialogAction> actions)
     {
         _dialogActionsPanel.Children.Clear();
@@ -381,6 +429,7 @@ public partial class DesktopDialogWindow : Window
                 MinWidth = 82,
                 Classes = { "shell-action", action.IsPrimary ? "primary" : "quiet" }
             };
+            ApplyAccessibility(button, action.AccessibleName, action.ToolTip, action.HelpText);
             if (action.IsPrimary)
             {
                 button.FontWeight = FontWeight.SemiBold;

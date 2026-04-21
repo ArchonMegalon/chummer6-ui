@@ -46,9 +46,9 @@ public sealed class DesktopShellRulesetCatalogTests
     }
 
     [DataTestMethod]
-    [DataRow(RulesetDefaults.Sr4, "SR4 Preview Dossiers", "Import SR4 Oracle File", "SR4 Preview Result", "SR4 Preview Commands")]
-    [DataRow(RulesetDefaults.Sr5, "SR5 Workbench Dossiers", "Import SR5 Workbench File", "SR5 Workbench Result", "SR5 Workbench Commands")]
-    [DataRow(RulesetDefaults.Sr6, "SR6 Starter Dossiers", "Import SR6 Starter File", "SR6 Starter Result", "SR6 Starter Commands")]
+    [DataRow(RulesetDefaults.Sr4, "SR4 Characters", "Import SR4 Oracle File", "SR4 Preview Result", "SR4 Preview Commands")]
+    [DataRow(RulesetDefaults.Sr5, "SR5 Characters", "Import SR5 Character File", "SR5 Editor Result", "SR5 Editor Commands")]
+    [DataRow(RulesetDefaults.Sr6, "SR6 Characters", "Import SR6 Character File", "SR6 Preview Result", "SR6 Preview Commands")]
     public void DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane(
         string rulesetId,
         string expectedDossiers,
@@ -215,8 +215,8 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.IsFalse(cut.Markup.Contains("Starter and beta desk", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("Shadowrun 6 guided starter cockpit", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("SR6 home cockpit foregrounds starter kits", StringComparison.Ordinal));
-            StringAssert.Contains(cut.Markup, "SR6 Starter Dossiers");
-            StringAssert.Contains(cut.Markup, "SR6 Starter Tabs");
+            StringAssert.Contains(cut.Markup, "SR6 Characters");
+            StringAssert.Contains(cut.Markup, "SR6 Preview Tabs");
         });
     }
 
@@ -353,7 +353,7 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.AreEqual(0, cut.FindAll(".left-pane").Count, "Single-runner posture must not render the workspace left pane.");
             Assert.AreEqual(0, cut.FindAll(".mdi-strip").Count, "Single-runner posture must not render MDI workspace chrome.");
             StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--without-left-pane");
-            Assert.IsFalse(cut.Markup.Contains("SR5 Workbench Dossiers", StringComparison.Ordinal), "Single-runner posture must not spend first-paint copy on workspace dossiers.");
+            Assert.IsFalse(cut.Markup.Contains("SR5 Characters", StringComparison.Ordinal), "Single-runner posture must not spend first-paint copy on workspace headings.");
         });
     }
 
@@ -439,7 +439,7 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.AreEqual(1, cut.FindAll(".left-pane").Count, "Multi-workspace posture must restore the workspace left pane.");
             Assert.AreEqual(1, cut.FindAll(".mdi-strip").Count, "Multi-workspace posture must restore the MDI workspace strip.");
             StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--with-left-pane");
-            StringAssert.Contains(cut.Markup, "SR5 Workbench Dossiers");
+            StringAssert.Contains(cut.Markup, "SR5 Characters");
         });
     }
 

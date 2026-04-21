@@ -487,15 +487,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return
         [
-            new DesktopDialogField("rosterSectionTabs", "Sections", "Roster" + Environment.NewLine + "Details" + Environment.NewLine + "Notes", "Roster", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("rosterSectionTabs", "Sections", "Roster" + Environment.NewLine + "Runner" + Environment.NewLine + "Portrait" + Environment.NewLine + "Notes", "Roster", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true),
             new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true),
             new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true),
             new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true),
             new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterMugshot", "Mugshot", "Runner Mugshot" + Environment.NewLine + $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}", "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterSelectedRunner", "Selected Runner", selectedRunnerSummary, selectedRunnerSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("rosterMugshot", "Mugshot", "Runner Mugshot" + Environment.NewLine + $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}", "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image),
             new DesktopDialogField("rosterSelectedRunnerStatus", "Runner Status", selectedRunnerStatus, selectedRunnerStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterSelectedRunnerNotes", "Bio / Concept / Notes", selectedRunnerNotes, selectedRunnerNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterEntries", "Roster Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List)
@@ -1488,6 +1488,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string controlId,
         DesktopPreferenceState preferences)
     {
+        if (!LegacyUiControlCatalog.IsKnown(controlId))
+        {
+            return CreateGenericUiControlDialog(controlId);
+        }
+
         return controlId switch
         {
             "create_entry" => new DesktopDialogState(
@@ -1877,13 +1882,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
-            _ => new DesktopDialogState(
-                "dialog.ui.generic",
-                "Desktop Control",
-                $"Desktop control '{controlId}' triggered.",
-                BuildActionReceiptFields("Desktop Control", $"Triggered control: {controlId}", "This control does not yet have a dedicated legacy-shaped utility form."),
-                [new DesktopDialogAction("close", "Close", true)])
+            _ => throw new InvalidOperationException($"Known legacy UI control '{controlId}' is missing a dedicated dialog mapping.")
         };
+    }
+
+    private static DesktopDialogState CreateGenericUiControlDialog(string controlId)
+    {
+        return new DesktopDialogState(
+            "dialog.ui.generic",
+            "Desktop Control",
+            $"Desktop control '{controlId}' triggered.",
+            BuildActionReceiptFields("Desktop Control", $"Triggered control: {controlId}", "This control does not yet have a dedicated legacy-shaped utility form."),
+            [new DesktopDialogAction("close", "Close", true)]);
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildTranslatorFields(
