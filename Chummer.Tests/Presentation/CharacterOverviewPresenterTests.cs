@@ -1079,6 +1079,7 @@ public class CharacterOverviewPresenterTests
         await presenter.UpdateDialogFieldAsync("globalUiScale", "125", CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("globalTheme", "dark-steel", CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("globalLanguage", "de-de", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("globalSheetLanguage", "fr-fr", CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("globalCompactMode", "true", CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("globalUpdatePolicy", "Preview channel · check daily", CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("globalCharacterRosterPath", "/var/chummer/roster", CancellationToken.None);
@@ -1087,6 +1088,7 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual(125, presenter.State.Preferences.UiScalePercent);
         Assert.AreEqual("dark-steel", presenter.State.Preferences.Theme);
         Assert.AreEqual("de-de", presenter.State.Preferences.Language);
+        Assert.AreEqual("fr-fr", presenter.State.Preferences.SheetLanguage);
         Assert.IsTrue(presenter.State.Preferences.CompactMode);
         Assert.AreEqual("Preview channel · check daily", presenter.State.Preferences.UpdateChannel);
         Assert.AreEqual("/var/chummer/roster", presenter.State.Preferences.CharacterRosterPath);

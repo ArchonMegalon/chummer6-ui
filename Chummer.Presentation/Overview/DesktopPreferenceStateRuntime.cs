@@ -19,6 +19,7 @@ public static class DesktopPreferenceStateRuntime
         {
             Theme = string.IsNullOrWhiteSpace(state.Theme) ? DesktopPreferenceState.Default.Theme : state.Theme.Trim(),
             Language = DesktopLocalizationCatalog.NormalizeOrDefault(state.Language),
+            SheetLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(string.IsNullOrWhiteSpace(state.SheetLanguage) ? state.Language : state.SheetLanguage),
             CharacterPriority = string.IsNullOrWhiteSpace(state.CharacterPriority) ? DesktopPreferenceState.Default.CharacterPriority : state.CharacterPriority.Trim(),
             CharacterNotes = state.CharacterNotes ?? string.Empty,
             StartupBehavior = string.IsNullOrWhiteSpace(state.StartupBehavior) ? DesktopPreferenceState.Default.StartupBehavior : state.StartupBehavior.Trim(),

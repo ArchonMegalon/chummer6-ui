@@ -29,6 +29,7 @@ public class DialogCoordinatorTests
                     new DesktopDialogField("globalUiScale", "UI Scale", "125", "100"),
                     new DesktopDialogField("globalTheme", "Theme", "dark-steel", "chummer"),
                     new DesktopDialogField("globalLanguage", "Language", "de-de", "en-us"),
+                    new DesktopDialogField("globalSheetLanguage", "Sheet Language", "fr-fr", "en-us"),
                     new DesktopDialogField("globalCompactMode", "Compact", "true", "false")
                 ],
                 Actions:
@@ -50,6 +51,7 @@ public class DialogCoordinatorTests
         Assert.AreEqual(125, published.Preferences.UiScalePercent);
         Assert.AreEqual("dark-steel", published.Preferences.Theme);
         Assert.AreEqual("de-de", published.Preferences.Language);
+        Assert.AreEqual("fr-fr", published.Preferences.SheetLanguage);
         Assert.IsTrue(published.Preferences.CompactMode);
         StringAssert.Contains(published.Notice ?? string.Empty, "Restart the desktop head to fully apply");
     }
