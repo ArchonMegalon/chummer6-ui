@@ -3,6 +3,7 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
 using System.Globalization;
+using System.IO;
 using System.Text;
 
 namespace Chummer.Presentation.Overview;
@@ -121,6 +122,28 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             ApplyCharacterSettings(dialog, context);
             return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.character_roster", StringComparison.Ordinal))
+        {
+            switch (actionId)
+            {
+                case "refresh_watch_folder":
+                    RefreshCharacterRosterDialog(dialog, context);
+                    return;
+                case "open_runner":
+                    OpenCharacterRosterRunner(dialog, context);
+                    return;
+                case "open_watch_file":
+                    PublishCharacterRosterCommandNotice(dialog, context, "rosterSelectedWatchFile", "No watched runner file is currently matched.", relativePath => $"Watch file '{relativePath}' surfaced in the roster workbench.");
+                    return;
+                case "open_roster_folder":
+                    OpenCharacterRosterFolder(dialog, context);
+                    return;
+                case "open_portrait":
+                    PublishCharacterRosterCommandNotice(dialog, context, "rosterPortraitPath", "No portrait slot is currently matched.", portraitPath => $"Portrait slot '{Path.GetFileName(portraitPath)}' surfaced in the roster workbench.");
+                    return;
+            }
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.open_notes", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
@@ -807,6 +830,120 @@ public sealed class DialogCoordinator : IDialogCoordinator
             dialog,
             RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(context.State), notice),
             fieldIdsToReset);
+
+    private static void RefreshCharacterRosterDialog(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context)
+    {
+        string rosterPath = DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderPath")
+            ?? context.State.Preferences.CharacterRosterPath;
+        bool folderConfigured = !string.IsNullOrWhiteSpace(rosterPath);
+        bool folderExisted = folderConfigured && Directory.Exists(rosterPath);
+
+        if (folderConfigured && !folderExisted)
+        {
+            Directory.CreateDirectory(rosterPath);
+        }
+
+        string notice = !folderConfigured
+            ? "Set Character Roster Path in Global Settings before refreshing the roster watch folder."
+            : folderExisted
+                ? "Roster watch folder refreshed."
+                : $"Roster folder created and refreshed at '{rosterPath}'.";
+
+        PublishCharacterRosterDialog(context, notice);
+    }
+
+    private static void OpenCharacterRosterRunner(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context)
+    {
+        string runnerId = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerId") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(runnerId))
+        {
+            PublishCharacterRosterDialog(context, "No runner is currently selected in the roster.");
+            return;
+        }
+
+        OpenWorkspaceState? selectedRunner = context.State.OpenWorkspaces
+            .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, runnerId, StringComparison.Ordinal));
+        if (selectedRunner is null)
+        {
+            PublishCharacterRosterDialog(context, $"Selected roster runner '{runnerId}' is not available in the current workbench session.");
+            return;
+        }
+
+        context.Publish(context.State with
+        {
+            WorkspaceId = selectedRunner.Id,
+            ActiveDialog = null,
+            Error = null,
+            Notice = RulesetUiDirectiveCatalog.FormatDialogNotice(
+                RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId),
+                $"Runner '{selectedRunner.Alias}' opened from roster.")
+        });
+    }
+
+    private static void OpenCharacterRosterFolder(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context)
+    {
+        string rosterPath = DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderPath")
+            ?? context.State.Preferences.CharacterRosterPath;
+        if (string.IsNullOrWhiteSpace(rosterPath))
+        {
+            PublishCharacterRosterDialog(context, "Set Character Roster Path in Global Settings before opening the roster folder.");
+            return;
+        }
+
+        bool folderExisted = Directory.Exists(rosterPath);
+        if (!folderExisted)
+        {
+            Directory.CreateDirectory(rosterPath);
+        }
+
+        PublishCharacterRosterDialog(
+            context,
+            folderExisted
+                ? $"Roster folder ready at '{rosterPath}'."
+                : $"Roster folder created at '{rosterPath}'.");
+    }
+
+    private static void PublishCharacterRosterCommandNotice(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context,
+        string fieldId,
+        string emptyNotice,
+        Func<string, string> noticeFactory)
+    {
+        string selectedValue = DesktopDialogFieldValueParser.GetValue(dialog, fieldId) ?? string.Empty;
+        PublishCharacterRosterDialog(
+            context,
+            string.IsNullOrWhiteSpace(selectedValue) ? emptyNotice : noticeFactory(selectedValue));
+    }
+
+    private static void PublishCharacterRosterDialog(
+        DialogCoordinationContext context,
+        string notice)
+    {
+        DesktopDialogFactory dialogFactory = new();
+        CharacterOverviewState state = context.GetState();
+        DesktopDialogState rosterDialog = dialogFactory.CreateCommandDialog(
+            "character_roster",
+            state.Profile,
+            state.Preferences,
+            state.ActiveSectionJson,
+            state.WorkspaceId,
+            ResolveContextRulesetId(state),
+            openWorkspaces: state.OpenWorkspaces);
+
+        context.Publish(state with
+        {
+            ActiveDialog = rosterDialog,
+            Error = null,
+            Notice = notice
+        });
+    }
 
     private static string? ResolveContextRulesetId(CharacterOverviewState state)
     {
