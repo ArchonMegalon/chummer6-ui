@@ -533,18 +533,20 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Settings File | sr6 roster setting");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "GST · Ghost");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), $"Portrait Source | {Path.Combine(rosterPath, "GST.png")}");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Status | loaded from watch folder");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Match | watched runner sibling");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Status | loaded from watched runner sibling");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Bytes | 8");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), $"Watch Folder | {rosterPath}");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Watcher | FileSystemWatcher active");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Include Subdirectories | Yes");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Watched Files | 2");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Selected Watch File | GST.chum5");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Portrait Match | watched runner sibling");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterRunnerCommands"), "Open selected runner");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterRunnerCommands"), "Save runner to roster folder");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open roster folder");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open selected watched runner");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open portrait location");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open matched portrait");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "active ruleset sr6");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "watch file GST.chum5");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerBackground"), "Dense-workbench veteran entry");
@@ -568,6 +570,49 @@ public class DesktopDialogFactoryTests
             Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "rosterWatchFolderStatus", StringComparison.Ordinal)).LayoutSlot);
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "GST · Ghost · sr6 · unsaved");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "APX · Apex · sr5 · saved");
+        }
+        finally
+        {
+            if (Directory.Exists(rosterPath))
+            {
+                Directory.Delete(rosterPath, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_character_roster_prefers_watched_runner_sibling_portrait()
+    {
+        DesktopDialogFactory factory = new();
+        string rosterPath = Path.Combine(Path.GetTempPath(), $"chummer-roster-{Guid.NewGuid():N}");
+        string nestedPath = Path.Combine(rosterPath, "campaign-a");
+        Directory.CreateDirectory(nestedPath);
+        File.WriteAllText(Path.Combine(nestedPath, "ghost-runner.chum5"), "runner");
+        File.WriteAllText(Path.Combine(nestedPath, "ghost-runner.png"), "portrait");
+
+        try
+        {
+            DesktopPreferenceState preferences = DesktopPreferenceState.Default with
+            {
+                CharacterRosterPath = rosterPath
+            };
+
+            DesktopDialogState dialog = factory.CreateCommandDialog(
+                "character_roster",
+                profile: CreateProfile("Ghost Runner", "GST"),
+                preferences,
+                activeSectionJson: null,
+                currentWorkspace: new CharacterWorkspaceId("ghost-runner"),
+                rulesetId: RulesetDefaults.Sr5,
+                openWorkspaces:
+                [
+                    new OpenWorkspaceState(new CharacterWorkspaceId("ghost-runner"), "Ghost Runner", "GST", DateTimeOffset.Parse("2026-04-04T12:00:00+00:00"), RulesetDefaults.Sr5, true)
+                ]);
+
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Watch File | campaign-a/ghost-runner.chum5");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), $"Portrait Source | {Path.Combine(nestedPath, "ghost-runner.png")}");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Match | watched runner sibling");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open matched portrait");
         }
         finally
         {
