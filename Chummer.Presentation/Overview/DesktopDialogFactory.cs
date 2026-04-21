@@ -3548,6 +3548,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string selectedSnippetLabel = selectedSnippet is null
             ? "none"
             : BuildMasterIndexSnippetLabel(selectedSnippet);
+        string sourceLinkKinds = BuildReferenceTargetKinds(selectedSourcebook);
         string resultInspector = BuildGridValue(
             ("Selected Result", selectedSnippetLabel),
             ("Data File", selectedFileName),
@@ -3555,8 +3556,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Linked Source", selectedSource),
             ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"),
             ("Activation", "select row / open source"),
-            ("Reference Posture", selectedSourcebook.ReferencePosture),
-            ("Use Setting", masterIndex.SettingsLanePosture));
+            ("Source Link", sourceLinkKinds),
+            ("Use Setting", "Character Settings"));
         string selectionTrail = BuildGridValue(
             ("Data File", selectedFileName),
             ("Search", "all rows"),
@@ -3571,14 +3572,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Open selected result page" + Environment.NewLine +
             "Keep source and notes pinned on the right";
         string libraryNotes =
-            $"{masterIndex.Sourcebooks.Count} active books selected. Reference links are available for most active books, and snippet coverage is {masterIndex.ReferenceCoveragePercent}%." + Environment.NewLine +
+            $"{masterIndex.Sourcebooks.Count} active books loaded. Linked sources are available for most active books, and note coverage is {masterIndex.ReferenceCoveragePercent}%." + Environment.NewLine +
             "Use Data File on the left, pick a row in the list, and keep Source plus Notes visible on the right like the old reference utility.";
         string importNotes =
             $"Import coverage is {importCoverage}. Covered sources stay in the current utility posture; missing source families: {missingImportSources}.";
         string sr6Notes =
             $"SR6 successor posture is {masterIndex.Sr6SupplementLanePosture}. Designer tool coverage is {sr6DesignerCoverage}, and house-rule overlays remain {masterIndex.HouseRuleLanePosture}.";
         string snippetPreview = selectedSourcebook.RuleSnippets.Count == 0
-            ? "No governed rule snippets are currently attached to the selected source." + Environment.NewLine + "Reference notes stay in this pane once an indexed entry is selected."
+            ? "No indexed notes are currently attached to the selected source." + Environment.NewLine + "Reference notes stay in this pane once an indexed entry is selected."
             : string.Join(
                 Environment.NewLine + Environment.NewLine,
                 selectedSourcebook.RuleSnippets.Take(2).Select(
@@ -3587,13 +3588,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ? "Snippet Preview | unavailable" + Environment.NewLine + "Keep note text on the right like the legacy utility form."
             : BuildGridValue(
                 ("Snippet Page", selectedSourcebook.RuleSnippets[0].Page.ToString(CultureInfo.InvariantCulture)),
-                ("Snippet Provenance", selectedSourcebook.RuleSnippets[0].Provenance),
+                ("Data File", selectedSourcebook.RuleSnippets[0].Provenance),
                 ("Snippet Count", selectedSourcebook.RuleSnippetCount.ToString(CultureInfo.InvariantCulture)),
                 ("Note Posture", "right-pane legacy preview"));
         string selectionProfile = BuildGridValue(
-            ("Use Setting", $"{masterIndex.SettingsLanePosture} ({masterIndex.SettingsProfileCount} profiles)"),
-            ("Source toggles", $"{masterIndex.SourceToggleLanePosture} · {masterIndex.DistinctSourcebookToggles} toggles"),
-            ("Custom data", masterIndex.CustomDataLanePosture),
+            ("Use Setting", $"Character Settings ({masterIndex.SettingsProfileCount} profiles)"),
+            ("Source Toggles", $"{masterIndex.DistinctSourcebookToggles} toggles"),
+            ("Custom Data", $"{masterIndex.DistinctCustomDataDirectoryCount} folders"),
             ("Modify", "Modify..."));
         MasterIndexRuleSnippetEntry[] catalogSnippets = selectedSourcebook.RuleSnippets.Take(6).ToArray();
         string fileSelection = BuildMasterIndexFileSelection(masterIndex.Files, selectedFile);
@@ -3628,7 +3629,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("Selected item", $"{selectedSourcebook.Name} ({selectedSourcebook.Code})"),
                 ("Source", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
                 ("Linked Source", selectedSource),
-                ("Open Action", string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "open snapshot" : "open linked PDF"));
+                ("Open Action", string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "open linked source" : "open linked PDF"));
 
         List<DesktopDialogField> fields =
         [
@@ -3791,12 +3792,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Search", searchLine),
             ("Selected Result", selectedResultLabel),
             ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")));
+        string sourceLinkKinds = BuildMasterIndexReferenceTargetKinds(selectedSourcebook);
         string sourceDetails = BuildGridValue(
             ("Data File", selectedFileName),
             ("Selected item", $"{selectedSourcebook.Name} ({selectedSourcebook.Code})"),
             ("Source", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
             ("Linked Source", selectedSource),
-            ("Open Action", string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "open snapshot/source" : "open linked PDF"),
+            ("Open Action", string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "open linked source" : "open linked PDF"),
             ("Visible Results", filteredSnippets.Count.ToString(CultureInfo.InvariantCulture)));
         string resultInspector = BuildGridValue(
             ("Selected Result", selectedResultLabel),
@@ -3805,12 +3807,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Linked Source", selectedSource),
             ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"),
             ("Activation", "double-click row / open source"),
-            ("Reference Posture", selectedSourcebook.ReferencePosture),
-            ("Use Setting", snapshot.SettingsLanePosture));
+            ("Source Link", sourceLinkKinds),
+            ("Use Setting", "Character Settings"));
         string sourceCommands =
             $"Change data file | {selectedFileName}" + Environment.NewLine +
             $"Switch sourcebook | {selectedSourcebook.Code} · {selectedSourcebook.Name}" + Environment.NewLine +
-            $"Modify character setting | {snapshot.SettingsLanePosture}" + Environment.NewLine +
+            "Modify character setting | Character Settings" + Environment.NewLine +
             (string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
                 ? $"Open linked source | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "snapshot")}" 
                 : $"Open linked PDF | p. {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}");
@@ -3819,19 +3821,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"Open page | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}" + Environment.NewLine +
             "Keep source and notes pinned on the right";
         string snippetPreview = selectedSnippet is null
-            ? "No governed rule snippets match the current data-file and search filters." + Environment.NewLine +
+            ? "No indexed notes match the current data-file and search filters." + Environment.NewLine +
               "Keep Source plus Notes pinned on the right while switching file, sourcebook, or result."
             : $"Page {selectedSnippet.Page} · {selectedSnippet.Provenance}{Environment.NewLine}{selectedSnippet.Snippet}";
         string snippetInspector = selectedSnippet is null
             ? BuildGridValue(
                 ("Snippet Count", "0"),
                 ("Snippet Page", "unavailable"),
-                ("Snippet Provenance", "unavailable"),
+                ("Data File", "unavailable"),
                 ("Note Posture", "right-pane legacy preview"))
             : BuildGridValue(
                 ("Snippet Count", filteredSnippets.Count.ToString(CultureInfo.InvariantCulture)),
                 ("Snippet Page", selectedSnippet.Page.ToString(CultureInfo.InvariantCulture)),
-                ("Snippet Provenance", selectedSnippet.Provenance),
+                ("Data File", selectedSnippet.Provenance),
                 ("Note Posture", "right-pane legacy preview"));
         string sourceClickReminder = string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
             ? "No local PDF is attached; switch sourcebook or keep the linked source visible while notes stay pinned on the right."
@@ -3870,7 +3872,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 : (selectedSnippet is null ? "Open Linked PDF" : $"Open PDF p. {selectedSnippet.Page}"), true),
             ("switch_file", $"Change Data File ({selectedFileName})", false),
             ("switch_sourcebook", $"Switch Sourcebook ({selectedSourcebook.Code})", false),
-            ("edit_setting", $"Modify Setting ({snapshot.SettingsLanePosture})", false));
+            ("edit_setting", "Modify Setting (Character Settings)", false));
     }
 
     private static IReadOnlyList<DesktopDialogAction> BuildMasterIndexActions(MasterIndexResponse? masterIndex)
@@ -3897,10 +3899,26 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         int permanentCount = sourcebooks.Count(sourcebook => sourcebook.Permanent);
         int selectableCount = sourcebooks.Count - permanentCount;
-        int governedReferenceCount = sourcebooks.Count(sourcebook => string.Equals(sourcebook.ReferencePosture, "governed", StringComparison.Ordinal));
-        int governedReferenceSourceCount = sourcebooks.Count(sourcebook => string.Equals(sourcebook.ReferenceSourcePosture, "governed", StringComparison.Ordinal));
+        int linkedSourceCount = sourcebooks.Count(sourcebook =>
+            !string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath)
+            || !string.IsNullOrWhiteSpace(sourcebook.ReferenceUrl)
+            || !string.IsNullOrWhiteSpace(sourcebook.ReferenceSnapshot));
+        int localPdfCount = sourcebooks.Count(sourcebook => !string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath));
 
-        return $"{sourcebooks.Count} sourcebooks ({selectableCount} selectable, {permanentCount} permanent); reference posture governed on {governedReferenceCount}/{sourcebooks.Count}, source provenance governed on {governedReferenceSourceCount}/{sourcebooks.Count}.";
+        return $"{sourcebooks.Count} sourcebooks ({selectableCount} selectable, {permanentCount} permanent); linked sources on {linkedSourceCount}/{sourcebooks.Count}, local PDFs on {localPdfCount}/{sourcebooks.Count}.";
+    }
+
+    private static string BuildMasterIndexReferenceTargetKinds(MasterIndexDialogSourcebookSnapshot sourcebook)
+    {
+        List<string> kinds = [];
+        if (!string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath))
+            kinds.Add("pdf");
+        if (!string.IsNullOrWhiteSpace(sourcebook.ReferenceUrl))
+            kinds.Add("url");
+        if (!string.IsNullOrWhiteSpace(sourcebook.ReferenceSnapshot))
+            kinds.Add("snapshot");
+
+        return kinds.Count == 0 ? "none" : string.Join("+", kinds);
     }
 
     private static string BuildImportOracleMatrix(MasterIndexResponse masterIndex)
