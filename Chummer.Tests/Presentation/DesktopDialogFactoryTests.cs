@@ -228,32 +228,43 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSections"), "Results");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetailTabs"), "Setting");
         Assert.AreEqual("Data File / Search / Notes", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexPaneHeader"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"), "All Sources");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"), "CRB · Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"), "All");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"), "books.xml · 42 entries");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCurrentFile"), "books.xml · 42 indexed entries");
         Assert.AreEqual("CRB · Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCurrentSourcebook"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSearchHints"), "Data File stays on the left");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSearchHints"), "Data File filters the list on the left");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectionTrail"), "Data File | books.xml");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectionTrail"), "Search | all rows");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectionTrail"), "Selected Result | Reference notes stay in this pane");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceTree"), "CRB · Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceTree"), "SW · Street Wyrd");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceTree"), "> CRB · Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "[Current File]");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "books.xml");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "[Current Book]");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "p. 20 · Reference notes stay in this pane");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultList"), "> p. 20 · Reference notes stay in this pane");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultList"), "books.xml");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Pin the selected sourcebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceClickReminder"), "Click to open linked PDF");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Change data file filter");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Modify character setting");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceClickReminder"), "Click to open linked PDF at p. 20");
         Assert.AreEqual("/books/core-rulebook.pdf", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectedSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Data File | books.xml");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Selected item | Core Rulebook (CRB)");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Source | CRB · Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Selected Result | Reference notes stay in this pane");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Data File | books.xml");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Activation | select row / open source");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Reference Posture | governed");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Keep notes pane locked on the active entry");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Select result to refresh notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Keep source and notes pinned on the right");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetInspector"), "Snippet Count | 16");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetPreview"), "Reference notes stay in this pane");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexNotesPane"), "active books selected");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexNotesPane"), "Use Data File on the left");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Use Setting | governed");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Modify | Modify...");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexFileSelection", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCurrentFile", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).VisualKind);
@@ -269,6 +280,9 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSelectedSource", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceSelectionSummary", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexImportOracleMatrix", StringComparison.Ordinal)).VisualKind);
+        CollectionAssert.AreEqual(
+            new[] { "open_source", "switch_file", "edit_setting", "close" },
+            dialog.Actions.Select(action => action.Id).ToArray());
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexLibraryNotes", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexImportNotes", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSr6Notes", StringComparison.Ordinal)).LayoutSlot);
@@ -1361,7 +1375,12 @@ public class DesktopDialogFactoryTests
         return new MasterIndexResponse(
             Count: 4,
             GeneratedUtc: DateTimeOffset.UtcNow,
-            Files: [],
+            Files:
+            [
+                new MasterIndexFileEntry("armor.xml", "chummer", 18),
+                new MasterIndexFileEntry("books.xml", "chummer", 42),
+                new MasterIndexFileEntry("weapons.xml", "chummer", 27)
+            ],
             ReferenceLanePosture: "governed",
             SourcebookCount: 12,
             Sourcebooks:
