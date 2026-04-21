@@ -1032,8 +1032,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool blackMarket = DesktopDialogFieldValueParser.ParseBool(dialog, "uiCyberwareBlackMarketDiscount", false);
         bool hideOverAvail = DesktopDialogFieldValueParser.ParseBool(dialog, "uiCyberwareHideOverAvailLimit", true);
         bool hideBannedGrades = DesktopDialogFieldValueParser.ParseBool(dialog, "uiCyberwareHideBannedGrades", true);
-        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareBookFilter") ?? "Core Rulebook";
-        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategory") ?? "Bodyware";
+        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareBookFilter") ?? "All Books";
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategory") ?? "Show All";
+        bool searchInCategoryOnly = DesktopDialogFieldValueParser.ParseBool(dialog, "uiCyberwareSearchInCategoryOnly", true);
         string search = (DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSearch") ?? string.Empty).Trim();
         string requestedName = DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareName") ?? "Wired Reflexes 2";
         int availLimit = 12;
@@ -1049,18 +1050,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         var filtered = options
             .Where(option => string.IsNullOrWhiteSpace(category)
                 || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(search)
-                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || (!searchInCategoryOnly && option.Branch.Contains(search, StringComparison.OrdinalIgnoreCase)))
             .Where(option => !hideOverAvail || option.AvailScore <= availLimit)
             .Where(option => !hideBannedGrades || option.AvailScore <= availLimit)
             .ToArray();
 
         if (filtered.Length == 0)
-            filtered = options.Where(option => string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)).ToArray();
+            filtered = options.Where(option => string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)).ToArray();
         if (filtered.Length == 0)
             filtered = options;
 
@@ -1071,7 +1074,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             cost *= 0.9m;
         decimal essence = selected.BaseEssence * ResolveGradeEssenceMultiplier(grade);
 
-        string categoryTree = BuildSelectionBranchTree("Cyberware", options.Select(option => option.Branch), selected.Branch);
+        string categoryTree = BuildSelectionBranchTree("Cyberware", options.Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1094,6 +1097,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return ReplaceDialogFields(
             dialog,
+            ("uiCyberwareCategory", selected.Branch, selected.Branch),
             ("uiCyberwareCategoryTree", categoryTree, categoryTree),
             ("uiCyberwareCandidateList", candidateList, candidateList),
             ("uiCyberwareName", selected.Name, selected.Name),
@@ -1112,7 +1116,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool hideOverAvail = DesktopDialogFieldValueParser.ParseBool(dialog, "uiGearHideOverAvailLimit", true);
         bool showOnlyAfford = DesktopDialogFieldValueParser.ParseBool(dialog, "uiGearShowOnlyAffordItems", false);
         string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiGearBookFilter") ?? "All Books";
-        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategory") ?? "All";
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategory") ?? "Show All";
+        bool searchInCategoryOnly = DesktopDialogFieldValueParser.ParseBool(dialog, "uiGearSearchInCategoryOnly", true);
         string search = (DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSearch") ?? string.Empty).Trim();
         string requestedName = DesktopDialogFieldValueParser.GetValue(dialog, "uiGearName") ?? "Ares Predator V";
 
@@ -1127,25 +1132,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         var filtered = options
             .Where(option => string.IsNullOrWhiteSpace(category)
                 || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(search)
-                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || (!searchInCategoryOnly && option.Branch.Contains(search, StringComparison.OrdinalIgnoreCase)))
             .Where(option => !hideOverAvail || option.AvailScore <= 12)
             .Where(option => !showOnlyAfford || option.Affordable)
             .ToArray();
 
         if (filtered.Length == 0)
-            filtered = options.Where(option => string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase)).ToArray();
+            filtered = options.Where(option => string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase) || string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase)).ToArray();
         if (filtered.Length == 0)
             filtered = options;
 
         var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
             ?? filtered[0];
         decimal cost = freeItem ? 0m : selected.BaseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
-        string categoryTree = BuildSelectionBranchTree("Gear", options.Select(option => option.Group), selected.Group);
+        string categoryTree = BuildSelectionBranchTree("Gear", options.Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1154,10 +1162,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Cost", FormatNuyen(cost)),
             ("Book", selected.Book));
         string selectionTrail = BuildGridValue(
-            ("Category Path", $"Gear > {selected.Group} > {selected.Branch}"),
+            ("Category Path", $"Gear > {selected.Branch} > {selected.Name}"),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Stack and discount posture stay live"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Gear > {selected.Group}{Environment.NewLine}Filter Posture | availability, source, and pricing stay live";
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Gear > {selected.Branch}{Environment.NewLine}Filter Posture | availability, source, and pricing stay live";
         string liveRecalc = BuildGridValue(
             ("Recalculated Cost", FormatNuyen(cost)),
             ("Free Item", freeItem ? "Yes" : "No"),
@@ -1166,6 +1174,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return ReplaceDialogFields(
             dialog,
+            ("uiGearCategory", selected.Branch, selected.Branch),
             ("uiGearCategoryTree", categoryTree, categoryTree),
             ("uiGearCandidateList", candidateList, candidateList),
             ("uiGearName", selected.Name, selected.Name),
@@ -1184,7 +1193,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool hideOverAvail = DesktopDialogFieldValueParser.ParseBool(dialog, "uiWeaponHideOverAvailLimit", true);
         bool showOnlyAfford = DesktopDialogFieldValueParser.ParseBool(dialog, "uiWeaponShowOnlyAffordItems", false);
         string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponBookFilter") ?? "All Books";
-        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategory") ?? "Firearms";
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategory") ?? "Show All";
+        bool searchInCategoryOnly = DesktopDialogFieldValueParser.ParseBool(dialog, "uiWeaponSearchInCategoryOnly", true);
         string search = (DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSearch") ?? string.Empty).Trim();
         string requestedName = DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponName") ?? "Colt M23";
 
@@ -1199,25 +1209,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         var filtered = options
             .Where(option => string.IsNullOrWhiteSpace(category)
                 || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(search)
-                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || (!searchInCategoryOnly && option.Branch.Contains(search, StringComparison.OrdinalIgnoreCase)))
             .Where(option => !hideOverAvail || option.AvailScore <= 12)
             .Where(option => !showOnlyAfford || option.Affordable)
             .ToArray();
 
         if (filtered.Length == 0)
-            filtered = options.Where(option => string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase)).ToArray();
+            filtered = options.Where(option => string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase) || string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase)).ToArray();
         if (filtered.Length == 0)
             filtered = options;
 
         var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
             ?? filtered[0];
         decimal cost = freeItem ? 0m : selected.BaseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
-        string categoryTree = BuildSelectionBranchTree("Weapons", options.Where(option => string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase) || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)).Select(option => option.Branch), selected.Branch);
+        string categoryTree = BuildSelectionBranchTree("Weapons", options.Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1239,6 +1252,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return ReplaceDialogFields(
             dialog,
+            ("uiWeaponCategory", selected.Branch, selected.Branch),
             ("uiWeaponCategoryTree", categoryTree, categoryTree),
             ("uiWeaponCandidateList", candidateList, candidateList),
             ("uiWeaponName", selected.Name, selected.Name),
@@ -1258,7 +1272,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool hideOverAvail = DesktopDialogFieldValueParser.ParseBool(dialog, "uiArmorHideOverAvailLimit", true);
         bool showOnlyAfford = DesktopDialogFieldValueParser.ParseBool(dialog, "uiArmorShowOnlyAffordItems", false);
         string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorBookFilter") ?? "All Books";
-        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategory") ?? "Armor";
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategory") ?? "Show All";
+        bool searchInCategoryOnly = DesktopDialogFieldValueParser.ParseBool(dialog, "uiArmorSearchInCategoryOnly", true);
         string search = (DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSearch") ?? string.Empty).Trim();
         string requestedName = DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorName") ?? "Armor Jacket";
 
@@ -1273,25 +1288,27 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         var filtered = options
             .Where(option => string.IsNullOrWhiteSpace(category)
                 || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(search)
-                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || (!searchInCategoryOnly && option.Branch.Contains(search, StringComparison.OrdinalIgnoreCase)))
             .Where(option => !hideOverAvail || option.AvailScore <= 12)
             .Where(option => !showOnlyAfford || option.Affordable)
             .ToArray();
 
         if (filtered.Length == 0)
-            filtered = options.Where(option => string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)).ToArray();
+            filtered = options.Where(option => string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)).ToArray();
         if (filtered.Length == 0)
             filtered = options;
 
         var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
             ?? filtered[0];
         decimal cost = freeItem ? 0m : selected.BaseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
-        string categoryTree = BuildSelectionBranchTree("Armor", options.Select(option => option.Branch), selected.Branch);
+        string categoryTree = BuildSelectionBranchTree("Armor", options.Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1313,6 +1330,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return ReplaceDialogFields(
             dialog,
+            ("uiArmorCategory", selected.Branch, selected.Branch),
             ("uiArmorCategoryTree", categoryTree, categoryTree),
             ("uiArmorCandidateList", candidateList, candidateList),
             ("uiArmorName", selected.Name, selected.Name),
@@ -1332,7 +1350,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool blackMarket = DesktopDialogFieldValueParser.ParseBool(dialog, "uiVehicleBlackMarketDiscount", false);
         bool usedVehicle = DesktopDialogFieldValueParser.ParseBool(dialog, "uiVehicleUsedVehicle", false);
         decimal usedVehicleDiscount = ParseDecimalField(dialog, "uiVehicleUsedVehicleDiscount", 25m);
-        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBookFilter") ?? "Core Rulebook";
+        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBookFilter") ?? "All Books";
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategory") ?? "Show All";
+        bool searchInCategoryOnly = DesktopDialogFieldValueParser.ParseBool(dialog, "uiVehicleSearchInCategoryOnly", true);
         string search = (DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSearch") ?? string.Empty).Trim();
         string requestedName = DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleName") ?? "Hyundai Shin-Hyung";
 
@@ -1347,15 +1367,22 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         var filtered = options
             .Where(option => showDrones || !option.IsDrone)
+            .Where(option => string.IsNullOrWhiteSpace(category)
+                || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
             .Where(option => string.IsNullOrWhiteSpace(search)
-                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || (!searchInCategoryOnly && option.Branch.Contains(search, StringComparison.OrdinalIgnoreCase)))
             .Where(option => !hideOverAvail || option.AvailScore <= 12)
             .Where(option => !showOnlyAfford || option.Affordable)
             .ToArray();
 
+        if (filtered.Length == 0)
+            filtered = options.Where(option => (showDrones || !option.IsDrone) && (string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase))).ToArray();
         if (filtered.Length == 0)
             filtered = options.Where(option => showDrones || !option.IsDrone).ToArray();
         if (filtered.Length == 0)
@@ -1371,7 +1398,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         if (freeItem)
             cost = 0m;
 
-        string categoryTree = BuildSelectionBranchTree("Vehicles", filtered.Select(option => option.Branch), selected.Branch);
+        string categoryTree = BuildSelectionBranchTree("Vehicles", options.Where(option => showDrones || !option.IsDrone).Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1393,6 +1420,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return ReplaceDialogFields(
             dialog,
+            ("uiVehicleCategory", selected.Branch, selected.Branch),
             ("uiVehicleCategoryTree", categoryTree, categoryTree),
             ("uiVehicleCandidateList", candidateList, candidateList),
             ("uiVehicleName", selected.Name, selected.Name),
@@ -1598,8 +1626,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionSectionsField("uiCyberwareSections"),
             BuildSelectionTreeField("uiCyberwareCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiCyberwareSearch", "Search", string.Empty, "Search cyberware"),
-            new DesktopDialogField("uiCyberwareCategory", "Category", "Bodyware", "Bodyware"),
-            new DesktopDialogField("uiCyberwareBookFilter", "Data File", "Core Rulebook", "Core Rulebook"),
+            new DesktopDialogField("uiCyberwareCategory", "Category", "Show All", "Show All"),
+            BuildFilterToggleField("uiCyberwareSearchInCategoryOnly", "Search In Category Only", true),
+            new DesktopDialogField("uiCyberwareBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiCyberwareName", "Cyberware", "Wired Reflexes 2", "Wired Reflexes 2"),
             new DesktopDialogField("uiCyberwareCandidateList", "Available Cyberware", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiCyberwareGrade", "Grade", "Standard", "Standard"),
@@ -1681,14 +1710,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Availability", "5R"),
             ("Cost", "¥725"),
             ("Book", "Core Rulebook"));
-        string selectionTrailPath = "Gear > Firearms > Pistols";
-
         return
         [
             BuildSelectionSectionsField("uiGearSections"),
             BuildSelectionTreeField("uiGearCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiGearSearch", "Search", string.Empty, "Search gear"),
-            new DesktopDialogField("uiGearCategory", "Category", "All", "All"),
+            new DesktopDialogField("uiGearCategory", "Category", "Show All", "Show All"),
+            BuildFilterToggleField("uiGearSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiGearBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiGearName", "Gear Name", "Ares Predator V", "Ares Predator V"),
             new DesktopDialogField("uiGearCandidateList", "Available Gear", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -1704,12 +1732,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiGearCost", "Cost", "725", "725", IsReadOnly: true),
             new DesktopDialogField("uiGearSource", "Source", "Core Rulebook p. 424", "Core Rulebook p. 424", IsReadOnly: true),
             new DesktopDialogField("uiGearSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            BuildSelectionTrailField("uiGearSelectionTrail", selectionTrailPath, "Ares Predator V", "Stack and discount posture stay live"),
+            BuildSelectionTrailField("uiGearSelectionTrail", "Gear > Pistols > Ares Predator V", "Ares Predator V", "Stack and discount posture stay live"),
             BuildSelectionCommandsField("uiGearCategoryCommands", "Category Commands",
                 "Move the tree without losing source or legality posture",
                 "Keep Do It Yourself and Stack visible while browsing",
                 "Review accessories after locking the base item"),
-            new DesktopDialogField("uiGearFilterSummary", "Filter Summary", "Filtered Catalog | 6 shown / 8 total" + Environment.NewLine + "Category Path | Gear > Firearms" + Environment.NewLine + "Filter Posture | availability, source, and pricing stay live", "Filtered Catalog | 6 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("uiGearFilterSummary", "Filter Summary", "Filtered Catalog | 6 shown / 8 total" + Environment.NewLine + "Category Path | Gear > Pistols" + Environment.NewLine + "Filter Posture | availability, source, and pricing stay live", "Filtered Catalog | 6 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiGearLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥725" + Environment.NewLine + "Free Item | No" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥725", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiGearResultCommands", "Result Commands",
                 "Compare cost, rating, and legality on the right before adding",
@@ -2354,8 +2382,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleViewModes", "View Modes", "List View" + Environment.NewLine + "Browse", "Browse", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             BuildSelectionTreeField("uiVehicleCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiVehicleSearch", "Search", string.Empty, "Search vehicles"),
+            new DesktopDialogField("uiVehicleCategory", "Category", "Show All", "Show All"),
+            BuildFilterToggleField("uiVehicleSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiVehicleRole", "Role", "Vehicle", "Vehicle"),
-            new DesktopDialogField("uiVehicleBookFilter", "Data File", "Core Rulebook", "Core Rulebook"),
+            new DesktopDialogField("uiVehicleBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiVehicleName", "Vehicle", "Hyundai Shin-Hyung", "Hyundai Shin-Hyung"),
             new DesktopDialogField("uiVehicleCandidateList", "Available Vehicles", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             BuildFilterToggleField("uiVehicleShowDrones", "Show Drones", true),
@@ -2566,7 +2596,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiWeaponViewModes", "View Modes", "List View" + Environment.NewLine + "Browse", "Browse", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             BuildSelectionTreeField("uiWeaponCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiWeaponSearch", "Search", string.Empty, "Search weapons"),
-            new DesktopDialogField("uiWeaponCategory", "Category", "Firearms", "Firearms"),
+            new DesktopDialogField("uiWeaponCategory", "Category", "Show All", "Show All"),
+            BuildFilterToggleField("uiWeaponSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiWeaponBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiWeaponName", "Weapon", "Colt M23", "Colt M23"),
             new DesktopDialogField("uiWeaponCandidateList", "Available Weapons", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -2622,7 +2653,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiArmorViewModes", "View Modes", "List View" + Environment.NewLine + "Browse", "Browse", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             BuildSelectionTreeField("uiArmorCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiArmorSearch", "Search", string.Empty, "Search armor"),
-            new DesktopDialogField("uiArmorCategory", "Category", "Armor", "Armor"),
+            new DesktopDialogField("uiArmorCategory", "Category", "Show All", "Show All"),
+            BuildFilterToggleField("uiArmorSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiArmorBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiArmorName", "Armor", "Armor Jacket", "Armor Jacket"),
             new DesktopDialogField("uiArmorCandidateList", "Available Armor", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
