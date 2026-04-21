@@ -174,8 +174,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.master_index",
                 "Master Index",
                 masterIndex is null
-                    ? "Catalog data is served by the API and surfaced here in desktop parity mode."
-                    : $"Catalog parity: {masterIndex.SourcebookCount} sourcebooks, {masterIndex.ReferenceCoveragePercent}% snippet coverage, settings={masterIndex.SettingsLanePosture}, import={masterIndex.ImportOracleLanePosture}.",
+                    ? "Search the catalog, inspect the selected reference, and keep the current source visible."
+                    : $"Search the catalog, inspect the selected reference, and keep the current source visible across {masterIndex.SourcebookCount} sourcebooks.",
                 BuildMasterIndexFields(masterIndex),
                 [new DesktopDialogAction("close", "Close", true)]),
             "character_roster" => new DesktopDialogState(
@@ -2117,21 +2117,34 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"Source toggles: {masterIndex.SourceToggleLanePosture}{Environment.NewLine}" +
             $"Custom data: {masterIndex.CustomDataLanePosture}{Environment.NewLine}" +
             $"Translator: {masterIndex.TranslatorLanePosture}";
+        string resultList = string.Join(
+            Environment.NewLine,
+            masterIndex.Sourcebooks
+                .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
+                .Take(8)
+                .Select(sourcebook =>
+                    $"{sourcebook.Code} · {sourcebook.Name} · {sourcebook.RuleSnippetCount} snippet(s) · {(sourcebook.Permanent ? "always on" : "toggleable")}"));
+        string searchHints =
+            "Search terms filter the current reference catalog. Keep the source tree on the left and the selected entry details on the right, like the legacy utility form.";
 
         List<DesktopDialogField> fields =
         [
             new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSections", "Sections", "Catalog" + Environment.NewLine + "Sources" + Environment.NewLine + "Options" + Environment.NewLine + "Import", "Catalog", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("masterIndexSections", "Sections", "Search" + Environment.NewLine + "Results" + Environment.NewLine + "Sources" + Environment.NewLine + "Snippets", "Search", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             new DesktopDialogField("masterIndexSearch", "Search", string.Empty, "Search terms"),
-            new DesktopDialogField("masterIndexCurrentSourcebook", "Current File", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", IsReadOnly: true),
-            new DesktopDialogField("masterIndexCharacterSetting", "Options", NormalizeGridValue(selectionProfile), NormalizeGridValue(selectionProfile), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
+            new DesktopDialogField("masterIndexSearchHints", "Search Hints", searchHints, searchHints, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("masterIndexCurrentSourcebook", "Selected Book", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", IsReadOnly: true),
+            new DesktopDialogField("masterIndexCharacterSetting", "Current Filters", NormalizeGridValue(selectionProfile), NormalizeGridValue(selectionProfile), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("masterIndexCatalogEntries", "Items", catalogEntries, catalogEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("masterIndexDetails", "Details", sourceDetails, sourceDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("masterIndexResultList", "Results", resultList, resultList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
             new DesktopDialogField("masterIndexSnippetPreview", "Snippet Preview", snippetPreview, snippetPreview, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("masterIndexSelectedSource", "Source", selectedSource, selectedSource, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexLibraryNotes", "Library Notes", libraryNotes, libraryNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexImportNotes", "Import Notes", importNotes, importNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexSr6Notes", "SR6 Notes", sr6Notes, sr6Notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("masterIndexSourceSelectionSummary", "Source Selection Summary", sourcebookSelectionSummary, sourcebookSelectionSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("masterIndexLibraryNotes", "Library Notes", libraryNotes, libraryNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexImportNotes", "Import Notes", importNotes, importNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6Notes", "SR6 Notes", sr6Notes, sr6Notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexSourcebooks", "Sourcebooks", masterIndex.SourcebookCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexReferenceCoverage", "Snippet Coverage", $"{masterIndex.ReferenceCoveragePercent}% ({masterIndex.SourcebooksWithSnippets}/{masterIndex.SourcebookCount})", "0%", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexReferenceSources", "Reference Sources", referenceSources, referenceSources, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -2139,7 +2152,6 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("masterIndexSettingsLane", "Settings Lane", masterIndex.SettingsLanePosture, masterIndex.SettingsLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexSourceToggleLane", "Source Toggle Lane", masterIndex.SourceToggleLanePosture, masterIndex.SourceToggleLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexSourceSelectionReceipt", "Source Selection Receipt", masterIndex.SourceSelectionLaneReceipt, masterIndex.SourceSelectionLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSourceSelectionSummary", "Source Selection Summary", sourcebookSelectionSummary, sourcebookSelectionSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("masterIndexCustomDataLane", "Custom Data Lane", masterIndex.CustomDataLanePosture, masterIndex.CustomDataLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring Receipt", masterIndex.CustomDataAuthoringLaneReceipt, masterIndex.CustomDataAuthoringLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexXmlBridgeReceipt", "XML Bridge Receipt", masterIndex.XmlBridgeLaneReceipt, masterIndex.XmlBridgeLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
