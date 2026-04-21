@@ -1269,8 +1269,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Essence", essence.ToString("0.00", CultureInfo.InvariantCulture)),
             ("Capacity", selected.Capacity),
             ("Book", selected.Book));
+        string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
             ("Category Path", $"Cyberware > {selected.Branch} > {selected.Name}"),
+            ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Add & More keeps the selector open"));
         string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Cyberware > {selected.Branch}{Environment.NewLine}Filter Posture | grade, availability, and source stay live";
@@ -1279,6 +1281,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Recalculated Essence", essence.ToString("0.00", CultureInfo.InvariantCulture)),
             ("Black Market", blackMarket ? "Yes" : "No"),
             ("Add Again", "Stays open"));
+        string categoryCommands = BuildSelectionList(
+        [
+            $"Category | {selected.Branch}",
+            $"Search Scope | {searchScope}",
+            $"Data File | {selected.Book}",
+            "Move the tree without losing grade or availability posture",
+            "Review suites and accessories after picking the base implant"
+        ]);
+        string resultCommands = BuildSelectionList(
+        [
+            $"Review source, cost, and essence for {selected.Name}",
+            $"Use OK once or Add & More for repeated {selected.Branch.ToLowerInvariant()} picks",
+            $"Keep grade {grade} and rating posture visible while browsing"
+        ]);
         string browseGrid = BuildSelectionBrowseGrid(
             filtered.Take(3).Select(option => (
                 option.Name,
@@ -1298,8 +1314,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiCyberwareSource", selected.Source, selected.Source),
                 ("uiCyberwareSelectionDetails", details, details),
                 ("uiCyberwareSelectionTrail", selectionTrail, selectionTrail),
+                ("uiCyberwareCategoryCommands", categoryCommands, categoryCommands),
                 ("uiCyberwareFilterSummary", filterSummary, filterSummary),
-                ("uiCyberwareLiveRecalc", liveRecalc, liveRecalc)),
+                ("uiCyberwareLiveRecalc", liveRecalc, liveRecalc),
+                ("uiCyberwareResultCommands", resultCommands, resultCommands)),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
     }
@@ -1357,8 +1375,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Availability", selected.Availability),
             ("Cost", FormatNuyen(cost)),
             ("Book", selected.Book));
+        string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
             ("Category Path", $"Gear > {selected.Branch} > {selected.Name}"),
+            ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Stack and discount posture stay live"));
         string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Gear > {selected.Branch}{Environment.NewLine}Filter Posture | availability, source, and pricing stay live";
@@ -1367,6 +1387,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Free Item", freeItem ? "Yes" : "No"),
             ("Black Market", blackMarket ? "Yes" : "No"),
             ("Add Again", "Stays open"));
+        string categoryCommands = BuildSelectionList(
+        [
+            $"Category | {selected.Branch}",
+            $"Search Scope | {searchScope}",
+            $"Data File | {selected.Book}",
+            $"Stack | {(DesktopDialogFieldValueParser.ParseBool(dialog, "uiGearStack", true) ? "On" : "Off")}",
+            $"Do It Yourself | {(DesktopDialogFieldValueParser.ParseBool(dialog, "uiGearDoItYourself", false) ? "On" : "Off")}"
+        ]);
+        string resultCommands = BuildSelectionList(
+        [
+            $"Review price, rating, and legality for {selected.Name}",
+            $"Use OK once or Add & More to keep shopping in {selected.Branch}",
+            "Keep quantity, markup, and source visible while confirming"
+        ]);
         string browseGrid = BuildSelectionBrowseGrid(
             filtered.Take(3).Select(option => (
                 option.Name,
@@ -1386,8 +1420,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiGearSource", selected.Source, selected.Source),
                 ("uiGearSelectionDetails", details, details),
                 ("uiGearSelectionTrail", selectionTrail, selectionTrail),
+                ("uiGearCategoryCommands", categoryCommands, categoryCommands),
                 ("uiGearFilterSummary", filterSummary, filterSummary),
-                ("uiGearLiveRecalc", liveRecalc, liveRecalc)),
+                ("uiGearLiveRecalc", liveRecalc, liveRecalc),
+                ("uiGearResultCommands", resultCommands, resultCommands)),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
     }
@@ -1446,8 +1482,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Mode", selected.Mode),
             ("Cost", FormatNuyen(cost)),
             ("Book", selected.Book));
+        string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
             ("Category Path", $"Weapons > {selected.Branch} > {selected.Name}"),
+            ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Add & More keeps the selector open"));
         string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Weapons > {selected.Branch}{Environment.NewLine}Filter Posture | availability, discounts, and source stay live";
@@ -1456,6 +1494,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Accuracy", selected.Accuracy),
             ("Black Market", blackMarket ? "Yes" : "No"),
             ("Add Again", "Stays open"));
+        string categoryCommands = BuildSelectionList(
+        [
+            $"Category | {selected.Branch}",
+            $"Search Scope | {searchScope}",
+            $"Data File | {selected.Book}",
+            $"Black Market | {(blackMarket ? "On" : "Off")}",
+            "Review accessories and ammo follow-through after choosing the base weapon"
+        ]);
+        string resultCommands = BuildSelectionList(
+        [
+            $"Review damage, mode, and accessories for {selected.Name}",
+            "Use OK for one add or Add & More to keep the selector open",
+            $"Keep ammo, source, and legality visible while confirming {selected.Name}"
+        ]);
         string browseGrid = BuildSelectionBrowseGrid(
             filtered.Take(3).Select(option => (
                 option.Name,
@@ -1476,8 +1528,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiWeaponSelectionDetails", details, details),
                 ("uiWeaponIncludedAccessories", selected.Accessories, selected.Accessories),
                 ("uiWeaponSelectionTrail", selectionTrail, selectionTrail),
+                ("uiWeaponCategoryCommands", categoryCommands, categoryCommands),
                 ("uiWeaponFilterSummary", filterSummary, filterSummary),
-                ("uiWeaponLiveRecalc", liveRecalc, liveRecalc)),
+                ("uiWeaponLiveRecalc", liveRecalc, liveRecalc),
+                ("uiWeaponResultCommands", resultCommands, resultCommands)),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
     }
@@ -1535,8 +1589,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Capacity", selected.Capacity),
             ("Cost", FormatNuyen(cost)),
             ("Book", selected.Book));
+        string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
             ("Category Path", $"Armor > {selected.Branch} > {selected.Name}"),
+            ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Source and markup stay visible through confirmation"));
         string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Armor > {selected.Branch}{Environment.NewLine}Filter Posture | availability, source, and markup stay live";
@@ -1545,6 +1601,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Armor", selected.Armor),
             ("Free Item", freeItem ? "Yes" : "No"),
             ("Add Again", "Stays open"));
+        string categoryCommands = BuildSelectionList(
+        [
+            $"Category | {selected.Branch}",
+            $"Search Scope | {searchScope}",
+            $"Data File | {selected.Book}",
+            $"Black Market | {(blackMarket ? "On" : "Off")}",
+            "Keep protection, source, and markup posture visible while browsing"
+        ]);
+        string resultCommands = BuildSelectionList(
+        [
+            $"Review armor value and source for {selected.Name}",
+            "Use OK for one add or Add & More to keep the selector open",
+            $"Keep free-item and cost posture visible while confirming {selected.Name}"
+        ]);
         string browseGrid = BuildSelectionBrowseGrid(
             filtered.Take(3).Select(option => (
                 option.Name,
@@ -1564,8 +1634,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiArmorSource", selected.Source, selected.Source),
                 ("uiArmorSelectionDetails", details, details),
                 ("uiArmorSelectionTrail", selectionTrail, selectionTrail),
+                ("uiArmorCategoryCommands", categoryCommands, categoryCommands),
                 ("uiArmorFilterSummary", filterSummary, filterSummary),
-                ("uiArmorLiveRecalc", liveRecalc, liveRecalc)),
+                ("uiArmorLiveRecalc", liveRecalc, liveRecalc),
+                ("uiArmorResultCommands", resultCommands, resultCommands)),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
     }
@@ -1636,8 +1708,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Armor", selected.Armor),
             ("Source", selected.Source),
             ("Book", selected.Book));
+        string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
             ("Category Path", $"Vehicles > {selected.Branch} > {selected.Name}"),
+            ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Used-vehicle and drone posture stay live"));
         string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Vehicles > {selected.Branch}{Environment.NewLine}Filter Posture | vehicle/drone and availability stay live";
@@ -1646,6 +1720,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Show Drones", showDrones ? "Yes" : "No"),
             ("Availability Filter", hideOverAvail ? "On" : "Off"),
             ("Add Again", "Stays open"));
+        string categoryCommands = BuildSelectionList(
+        [
+            $"Category | {selected.Branch}",
+            $"Search Scope | {searchScope}",
+            $"Data File | {selected.Book}",
+            $"Show Drones | {(showDrones ? "On" : "Off")}",
+            $"Used Vehicle | {(usedVehicle ? "On" : "Off")}"
+        ]);
+        string resultCommands = BuildSelectionList(
+        [
+            $"Review handling, armor, and source for {selected.Name}",
+            "Keep cost and used-vehicle posture visible through confirmation",
+            $"Use OK once or Add & More to keep browsing {selected.Role.ToLowerInvariant()} entries"
+        ]);
         string browseGrid = BuildSelectionBrowseGrid(
             filtered.Take(3).Select(option => (
                 option.Name,
@@ -1666,8 +1754,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("uiVehicleSource", selected.Source, selected.Source),
                 ("uiVehicleSelectionDetails", details, details),
                 ("uiVehicleSelectionTrail", selectionTrail, selectionTrail),
+                ("uiVehicleCategoryCommands", categoryCommands, categoryCommands),
                 ("uiVehicleFilterSummary", filterSummary, filterSummary),
                 ("uiVehicleLiveRecalc", liveRecalc, liveRecalc),
+                ("uiVehicleResultCommands", resultCommands, resultCommands),
                 ("uiVehicleCost", decimal.Round(cost, 0).ToString(CultureInfo.InvariantCulture), decimal.Round(cost, 0).ToString(CultureInfo.InvariantCulture))),
             ("add", $"Add {selected.Name}", true),
             ("add_more", $"Add & More {selected.Name}", false));
@@ -1795,6 +1885,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             IsMultiline: true,
             VisualKind: DesktopDialogFieldVisualKinds.List);
     }
+
+    private static string BuildSelectionSearchScope(bool searchInCategoryOnly)
+        => searchInCategoryOnly ? "current category only" : "all categories";
 
     private static string BuildSelectionBrowseGrid(params (string Name, string Category, string Availability, string Cost)[] rows)
     {
