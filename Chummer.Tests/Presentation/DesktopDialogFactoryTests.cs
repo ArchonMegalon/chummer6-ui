@@ -1217,6 +1217,8 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionDetails"), "Cost | ¥17,280");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionDetails"), "Essence | 0.32");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionTrail"), "Category Path | Cyberware > Headware > Cybereyes Rating 4");
+        Assert.AreEqual("Add Cybereyes Rating 4", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More Cybereyes Rating 4", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1237,6 +1239,8 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearBrowseGrid"), "Medkit Rating 6 | Medical | 8 | ¥1,500");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionDetails"), "Category | General");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionTrail"), "Category Path | Gear > Medical > Medkit Rating 6");
+        Assert.AreEqual("Add Medkit Rating 6", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More Medkit Rating 6", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1257,6 +1261,8 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionDetails"), "Mode | SS/SA");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponIncludedAccessories"), "Internal Smartgun");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionTrail"), "Category Path | Weapons > Shotguns > Defiance T-250");
+        Assert.AreEqual("Add Defiance T-250", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More Defiance T-250", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1278,6 +1284,8 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionDetails"), "Cost | ¥810");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorBrowseGrid"), "Ballistic Shield | Shields | 8 | ¥810");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionTrail"), "Category Path | Armor > Shields > Ballistic Shield");
+        Assert.AreEqual("Add Ballistic Shield", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More Ballistic Shield", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1301,6 +1309,8 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBrowseGrid"), "MCT Fly-Spy | Drones | 4 | ¥1,350");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleLiveRecalc"), "Selected Cost | ¥1,350");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSelectionTrail"), "Category Path | Vehicles > Drones > MCT Fly-Spy");
+        Assert.AreEqual("Add MCT Fly-Spy", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More MCT Fly-Spy", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
