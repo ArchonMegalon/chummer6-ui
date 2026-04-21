@@ -1758,7 +1758,10 @@ public class DualHeadAcceptanceTests
             return NormalizeWorkspaceTokenValue(value);
 
         if (string.Equals(fieldId, "rosterSelectedRunner", StringComparison.Ordinal))
-            return UtcMinuteStampRegex.Replace(NormalizeWorkspaceTokenValue(value), "<timestamp>");
+            return Regex.Replace(
+                UtcMinuteStampRegex.Replace(NormalizeWorkspaceTokenValue(value), "<timestamp>"),
+                "(?<=File Name\\s\\|\\s)[A-Za-z0-9-]+",
+                "<workspace>");
 
         if (string.Equals(fieldId, "rosterSelectedRunnerStatus", StringComparison.Ordinal))
             return UtcMinuteStampRegex.Replace(value, "<timestamp>");
