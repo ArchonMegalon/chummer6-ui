@@ -366,25 +366,32 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.character_roster", dialog.Id);
         Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(dialog, "rosterOpenCount"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSectionTabs"), "Background");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSectionTabs"), "Notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterDetailTabs"), "Overview");
         Assert.AreEqual("1", DesktopDialogFieldValueParser.GetValue(dialog, "rosterSavedCount"));
         Assert.AreEqual("sr6, sr5", DesktopDialogFieldValueParser.GetValue(dialog, "rosterRulesetMix"));
         Assert.AreEqual("ws-2", DesktopDialogFieldValueParser.GetValue(dialog, "rosterActiveWorkspace"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterTree"), "* GST · Ghost");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterTree"), "* GST · Ghost [sr6]");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Ghost (GST)");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Last opened | 2026-04-04 12:00 UTC");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "GST · Ghost");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "real art pipeline");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "active ruleset sr6");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerNotes"), "dense workbench");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerBackground"), "Dense-workbench veteran entry");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerNotes"), "dense-workbench");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "rosterTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunner", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Image, dialog.Fields.Single(field => string.Equals(field.Id, "rosterMugshot", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tabs, dialog.Fields.Single(field => string.Equals(field.Id, "rosterDetailTabs", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunnerStatus", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunnerBackground", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunnerNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "rosterEntries", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "rosterTree", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunner", StringComparison.Ordinal)).LayoutSlot);
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "GST · Ghost · unsaved · sr6");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "APX · Apex · saved · sr5");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "GST · Ghost · sr6 · unsaved");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "APX · Apex · sr5 · saved");
     }
 
     [TestMethod]
