@@ -580,6 +580,13 @@ public class DesktopDialogFactoryTests
             Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "rosterWatchFolderStatus", StringComparison.Ordinal)).LayoutSlot);
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "GST · Ghost · sr6 · unsaved");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "APX · Apex · sr5 · saved");
+            CollectionAssert.AreEqual(
+                new[] { "open_runner", "open_watch_file", "open_roster_folder", "open_portrait", "close" },
+                dialog.Actions.Select(action => action.Id).ToArray());
+            Assert.AreEqual("Open Runner GST", dialog.Actions.Single(action => string.Equals(action.Id, "open_runner", StringComparison.Ordinal)).Label);
+            Assert.AreEqual("Open Watch File GST.chum5", dialog.Actions.Single(action => string.Equals(action.Id, "open_watch_file", StringComparison.Ordinal)).Label);
+            Assert.AreEqual("Open Roster Folder", dialog.Actions.Single(action => string.Equals(action.Id, "open_roster_folder", StringComparison.Ordinal)).Label);
+            Assert.AreEqual("Open Portrait GST.png", dialog.Actions.Single(action => string.Equals(action.Id, "open_portrait", StringComparison.Ordinal)).Label);
         }
         finally
         {
@@ -623,6 +630,8 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), $"Portrait Source | {Path.Combine(nestedPath, "ghost-runner.png")}");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Match | watched runner sibling");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open matched portrait");
+            Assert.AreEqual("Open Portrait ghost-runner.png", dialog.Actions.Single(action => string.Equals(action.Id, "open_portrait", StringComparison.Ordinal)).Label);
+            Assert.AreEqual("Open Watch File ghost-runner.chum5", dialog.Actions.Single(action => string.Equals(action.Id, "open_watch_file", StringComparison.Ordinal)).Label);
         }
         finally
         {
