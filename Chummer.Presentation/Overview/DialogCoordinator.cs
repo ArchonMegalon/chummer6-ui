@@ -136,7 +136,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
                     OpenCharacterRosterRunner(dialog, context);
                     return;
                 case "open_watch_file":
-                    PublishCharacterRosterCommandNotice(dialog, context, "rosterSelectedWatchFile", "No watched runner file is currently matched.", relativePath => $"Watch file '{relativePath}' surfaced in the roster workbench.");
+                    OpenCharacterRosterWatchFile(dialog, context);
                     return;
                 case "open_roster_folder":
                     OpenCharacterRosterFolder(dialog, context);
@@ -907,6 +907,48 @@ public sealed class DialogCoordinator : IDialogCoordinator
         });
     }
 
+    private static void OpenCharacterRosterWatchFile(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context)
+    {
+        string selectedWatchFile = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedWatchFile") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(selectedWatchFile))
+        {
+            PublishCharacterRosterDialog(context, "No watched runner file is currently matched.");
+            return;
+        }
+
+        CharacterOverviewState state = context.GetState();
+        string watchFileStem = Path.GetFileNameWithoutExtension(selectedWatchFile);
+        string normalizedWatchFileStem = NormalizeCharacterRosterWatchToken(watchFileStem);
+        OpenWorkspaceState? matchedRunner = state.OpenWorkspaces.FirstOrDefault(workspace =>
+            string.Equals(NormalizeCharacterRosterWatchToken(workspace.Id.Value), normalizedWatchFileStem, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(NormalizeCharacterRosterWatchToken(workspace.Alias), normalizedWatchFileStem, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(NormalizeCharacterRosterWatchToken(workspace.Name), normalizedWatchFileStem, StringComparison.OrdinalIgnoreCase));
+
+        if (matchedRunner is null)
+        {
+            PublishCharacterRosterDialog(context, $"Watch file '{selectedWatchFile}' surfaced in the roster workbench.");
+            return;
+        }
+
+        if (state.WorkspaceId is not null && string.Equals(state.WorkspaceId.Value.Value, matchedRunner.Id.Value, StringComparison.Ordinal))
+        {
+            PublishCharacterRosterDialog(context, $"Watch file '{selectedWatchFile}' is already aligned with runner '{matchedRunner.Alias}'.");
+            return;
+        }
+
+        context.Publish(state with
+        {
+            WorkspaceId = matchedRunner.Id,
+            ActiveDialog = null,
+            Error = null,
+            Notice = RulesetUiDirectiveCatalog.FormatDialogNotice(
+                RulesetDefaults.NormalizeOptional(matchedRunner.RulesetId),
+                $"Watched runner '{matchedRunner.Alias}' opened from roster watch folder.")
+        });
+    }
+
     private static void OpenCharacterRosterFolder(
         DesktopDialogState dialog,
         DialogCoordinationContext context)
@@ -1144,6 +1186,23 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         string? value = DesktopDialogFieldValueParser.GetValue(dialog, fieldId);
         return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static string NormalizeCharacterRosterWatchToken(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        char[] normalized = value
+            .Trim()
+            .Select(character => char.IsLetterOrDigit(character) || character is '-' or '_'
+                ? char.ToLowerInvariant(character)
+                : '-')
+            .ToArray();
+
+        return new string(normalized).Trim('-');
     }
 
     private sealed record MasterIndexCoordinatorSnapshot(
