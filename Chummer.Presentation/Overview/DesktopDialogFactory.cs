@@ -1168,12 +1168,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Recalculated Essence", essence.ToString("0.00", CultureInfo.InvariantCulture)),
             ("Black Market", blackMarket ? "Yes" : "No"),
             ("Add Again", "Stays open"));
+        string browseGrid = BuildSelectionBrowseGrid(
+            filtered.Take(3).Select(option => (
+                option.Name,
+                option.Branch,
+                option.Availability,
+                FormatNuyen(option.BaseCost * ResolveGradeCostMultiplier(grade) * (blackMarket ? 0.9m : 1m))
+            )).ToArray());
 
         return ReplaceDialogFields(
             dialog,
             ("uiCyberwareCategory", selected.Branch, selected.Branch),
             ("uiCyberwareCategoryTree", categoryTree, categoryTree),
             ("uiCyberwareCandidateList", candidateList, candidateList),
+            ("uiCyberwareBrowseGrid", browseGrid, browseGrid),
             ("uiCyberwareName", selected.Name, selected.Name),
             ("uiCyberwareSource", selected.Source, selected.Source),
             ("uiCyberwareSelectionDetails", details, details),
@@ -1245,12 +1253,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Free Item", freeItem ? "Yes" : "No"),
             ("Black Market", blackMarket ? "Yes" : "No"),
             ("Add Again", "Stays open"));
+        string browseGrid = BuildSelectionBrowseGrid(
+            filtered.Take(3).Select(option => (
+                option.Name,
+                option.Branch,
+                option.Availability,
+                FormatNuyen(freeItem ? 0m : option.BaseCost * (blackMarket ? 0.9m : 1m))
+            )).ToArray());
 
         return ReplaceDialogFields(
             dialog,
             ("uiGearCategory", selected.Branch, selected.Branch),
             ("uiGearCategoryTree", categoryTree, categoryTree),
             ("uiGearCandidateList", candidateList, candidateList),
+            ("uiGearBrowseGrid", browseGrid, browseGrid),
             ("uiGearName", selected.Name, selected.Name),
             ("uiGearSource", selected.Source, selected.Source),
             ("uiGearSelectionDetails", details, details),
@@ -1323,12 +1339,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Accuracy", selected.Accuracy),
             ("Black Market", blackMarket ? "Yes" : "No"),
             ("Add Again", "Stays open"));
+        string browseGrid = BuildSelectionBrowseGrid(
+            filtered.Take(3).Select(option => (
+                option.Name,
+                option.Branch,
+                option.Availability,
+                FormatNuyen(freeItem ? 0m : option.BaseCost * (blackMarket ? 0.9m : 1m))
+            )).ToArray());
 
         return ReplaceDialogFields(
             dialog,
             ("uiWeaponCategory", selected.Branch, selected.Branch),
             ("uiWeaponCategoryTree", categoryTree, categoryTree),
             ("uiWeaponCandidateList", candidateList, candidateList),
+            ("uiWeaponBrowseGrid", browseGrid, browseGrid),
             ("uiWeaponName", selected.Name, selected.Name),
             ("uiWeaponSource", selected.Source, selected.Source),
             ("uiWeaponSelectionDetails", details, details),
@@ -1401,12 +1425,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Armor", selected.Armor),
             ("Free Item", freeItem ? "Yes" : "No"),
             ("Add Again", "Stays open"));
+        string browseGrid = BuildSelectionBrowseGrid(
+            filtered.Take(3).Select(option => (
+                option.Name,
+                option.Branch,
+                option.Availability,
+                FormatNuyen(freeItem ? 0m : option.BaseCost * (blackMarket ? 0.9m : 1m))
+            )).ToArray());
 
         return ReplaceDialogFields(
             dialog,
             ("uiArmorCategory", selected.Branch, selected.Branch),
             ("uiArmorCategoryTree", categoryTree, categoryTree),
             ("uiArmorCandidateList", candidateList, candidateList),
+            ("uiArmorBrowseGrid", browseGrid, browseGrid),
             ("uiArmorName", selected.Name, selected.Name),
             ("uiArmorSource", selected.Source, selected.Source),
             ("uiArmorSelectionDetails", details, details),
@@ -1491,12 +1523,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Show Drones", showDrones ? "Yes" : "No"),
             ("Availability Filter", hideOverAvail ? "On" : "Off"),
             ("Add Again", "Stays open"));
+        string browseGrid = BuildSelectionBrowseGrid(
+            filtered.Take(3).Select(option => (
+                option.Name,
+                option.Branch,
+                option.Availability,
+                FormatNuyen(freeItem ? 0m : option.BaseCost * (usedVehicle ? 1m - (usedVehicleDiscount / 100m) : 1m) * (blackMarket ? 0.9m : 1m))
+            )).ToArray());
 
         return ReplaceDialogFields(
             dialog,
             ("uiVehicleCategory", selected.Branch, selected.Branch),
             ("uiVehicleCategoryTree", categoryTree, categoryTree),
             ("uiVehicleCandidateList", candidateList, candidateList),
+            ("uiVehicleBrowseGrid", browseGrid, browseGrid),
             ("uiVehicleName", selected.Name, selected.Name),
             ("uiVehicleRole", selected.Role, selected.Role),
             ("uiVehicleSource", selected.Source, selected.Source),
@@ -1630,6 +1670,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             VisualKind: DesktopDialogFieldVisualKinds.List);
     }
 
+    private static string BuildSelectionBrowseGrid(params (string Name, string Category, string Availability, string Cost)[] rows)
+    {
+        if (rows.Length == 0)
+        {
+            return "Name | Category | Avail | Cost" + Environment.NewLine + "(no results) | - | - | -";
+        }
+
+        return string.Join(
+            Environment.NewLine,
+            new[] { "Name | Category | Avail | Cost" }.Concat(
+                rows.Select(row => $"{row.Name} | {row.Category} | {row.Availability} | {row.Cost}")));
+    }
+
     private static string BuildGridValue(params (string Key, string Value)[] rows)
     {
         return string.Join(
@@ -1705,6 +1758,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiCyberwareBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiCyberwareName", "Cyberware", "Wired Reflexes 2", "Wired Reflexes 2"),
             new DesktopDialogField("uiCyberwareCandidateList", "Available Cyberware", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiCyberwareBrowseGrid", "Catalog Grid", BuildSelectionBrowseGrid(("Wired Reflexes 2", "Bodyware", "12R", "¥149,000"), ("Reaction Enhancers 2", "Bodyware", "8R", "¥26,000"), ("Cybereyes Rating 4", "Headware", "12", "¥16,000")), "Name | Category | Avail | Cost", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiCyberwareGrade", "Grade", "Standard", "Standard"),
             BuildFilterToggleField("uiCyberwareHideBannedGrades", "Hide Banned Grades", true),
             BuildFilterToggleField("uiCyberwareHideOverAvailLimit", "Hide over Availability", true),
@@ -1794,6 +1848,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiGearBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiGearName", "Gear Name", "Ares Predator V", "Ares Predator V"),
             new DesktopDialogField("uiGearCandidateList", "Available Gear", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiGearBrowseGrid", "Catalog Grid", BuildSelectionBrowseGrid(("Ares Predator V", "Pistols", "5R", "¥725"), ("Armor Jacket", "Armor", "12", "¥1,000"), ("Medkit Rating 6", "Medical", "8", "¥1,500")), "Name | Category | Avail | Cost", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildFilterToggleField("uiGearHideOverAvailLimit", "Hide over Availability", true),
             BuildFilterToggleField("uiGearShowOnlyAffordItems", "Show Only Items I Can Afford", false),
             BuildFilterToggleField("uiGearBlackMarketDiscount", "Black Market Discount", false),
@@ -2537,6 +2592,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiVehicleName", "Vehicle", "Hyundai Shin-Hyung", "Hyundai Shin-Hyung"),
             new DesktopDialogField("uiVehicleCandidateList", "Available Vehicles", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiVehicleBrowseGrid", "Catalog Grid", BuildSelectionBrowseGrid(("Hyundai Shin-Hyung", "Cars", "8", "¥16,000"), ("GMC Roadmaster", "Trucks", "12F", "¥74,000"), ("MCT Fly-Spy", "Drones", "4", "¥2,000")), "Name | Category | Avail | Cost", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildFilterToggleField("uiVehicleShowDrones", "Show Drones", true),
             BuildFilterToggleField("uiVehicleHideOverAvailLimit", "Hide over Availability", true),
             BuildFilterToggleField("uiVehicleShowOnlyAffordItems", "Show Only Items I Can Afford", false),
@@ -2750,6 +2806,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiWeaponBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiWeaponName", "Weapon", "Colt M23", "Colt M23"),
             new DesktopDialogField("uiWeaponCandidateList", "Available Weapons", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiWeaponBrowseGrid", "Catalog Grid", BuildSelectionBrowseGrid(("Ares Alpha", "Assault Rifles", "11F", "¥2,650"), ("Colt M23", "Heavy Pistols", "5R", "¥750"), ("Defiance T-250", "Shotguns", "4R", "¥450")), "Name | Category | Avail | Cost", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildFilterToggleField("uiWeaponHideOverAvailLimit", "Hide over Availability", true),
             BuildFilterToggleField("uiWeaponShowOnlyAffordItems", "Show Only Items I Can Afford", false),
             BuildFilterToggleField("uiWeaponBlackMarketDiscount", "Black Market Discount", false),
@@ -2807,6 +2864,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiArmorBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiArmorName", "Armor", "Armor Jacket", "Armor Jacket"),
             new DesktopDialogField("uiArmorCandidateList", "Available Armor", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiArmorBrowseGrid", "Catalog Grid", BuildSelectionBrowseGrid(("Armor Jacket", "Armor", "12", "¥1,000"), ("Actioneer Business Clothes", "Clothing", "10", "¥1,500"), ("Ballistic Shield", "Shields", "8", "¥900")), "Name | Category | Avail | Cost", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildFilterToggleField("uiArmorHideOverAvailLimit", "Hide over Availability", true),
             BuildFilterToggleField("uiArmorShowOnlyAffordItems", "Show Only Items I Can Afford", false),
             BuildFilterToggleField("uiArmorBlackMarketDiscount", "Black Market Discount", false),
