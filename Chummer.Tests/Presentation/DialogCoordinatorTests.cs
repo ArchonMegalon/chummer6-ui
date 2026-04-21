@@ -406,7 +406,7 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("add_more", context, CancellationToken.None);
 
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR4 import desk:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR4 import workbench:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Gear 'Ares Predator V' added.");
     }
 
@@ -517,7 +517,7 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("add", context, CancellationToken.None);
 
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 preview desk:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup workbench:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Program 'Armor' added.");
     }
 
