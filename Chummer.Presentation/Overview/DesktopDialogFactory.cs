@@ -651,7 +651,25 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"   └─ Roster and External Tools";
         string sections =
             $"General{Environment.NewLine}Sourcebooks{Environment.NewLine}Updates{Environment.NewLine}Data Paths";
-        string detailTabs = "Overview" + Environment.NewLine + "Controls" + Environment.NewLine + "Notes";
+        string legacyTopTabs =
+            "Global Options" + Environment.NewLine +
+            "Custom Data Directories" + Environment.NewLine +
+            "GitHub Issues" + Environment.NewLine +
+            "Plugins";
+        string detailTabs = pane switch
+        {
+            "sourcebooks" => "Defaults" + Environment.NewLine + "Controls" + Environment.NewLine + "Notes",
+            "updates" => "Startup" + Environment.NewLine + "Channel" + Environment.NewLine + "Notes",
+            "paths" => "Roster" + Environment.NewLine + "PDFs" + Environment.NewLine + "Notes",
+            _ => "Desktop" + Environment.NewLine + "Language" + Environment.NewLine + "Notes"
+        };
+        string detailTabDefault = pane switch
+        {
+            "sourcebooks" => "Defaults",
+            "updates" => "Startup",
+            "paths" => "Roster",
+            _ => "Desktop"
+        };
         string paneHeader = pane switch
         {
             "sourcebooks" => "Sourcebooks / Build Defaults",
@@ -701,6 +719,36 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "paths" => "Data paths and external helpers stay grouped here so roster/import/print workflows remain obvious and compact like the legacy utility surfaces.",
             _ => "This pane should behave like the old utility settings form: navigation stays on the left, current-pane facts stay visible on the right, and dense work continues without wasting space."
         };
+        string paneTools = pane switch
+        {
+            "sourcebooks" => BuildGridValue(
+                ("Build Defaults", "Priority + karma + house rules"),
+                ("Sourcebook Control", "Master Index / Character Settings"),
+                ("Toggle Posture", "governed by rules environment"),
+                ("Current Language", normalizedLanguage)),
+            "updates" => BuildGridValue(
+                ("Startup", preferences.StartupBehavior),
+                ("Update Channel", preferences.UpdateChannel),
+                ("Check on Launch", preferences.CheckForUpdatesOnLaunch ? "enabled" : "disabled"),
+                ("Restart Needed", "language / shell only")),
+            "paths" => BuildGridValue(
+                ("Character Roster Path", preferences.CharacterRosterPath),
+                ("PDF Viewer", preferences.PdfViewerPath),
+                ("PDF Parameters", "<page>"),
+                ("PDF Offset", "0")),
+            _ => BuildGridValue(
+                ("Desktop Language", normalizedLanguage),
+                ("Sheet Language", normalizedSheetLanguage),
+                ("Theme", preferences.Theme),
+                ("Scale", $"{preferences.UiScalePercent}%")),
+        };
+        string paneCommandList = pane switch
+        {
+            "sourcebooks" => "Review default priority" + Environment.NewLine + "Review karma ratio" + Environment.NewLine + "Return to source toggles",
+            "updates" => "Set startup mode" + Environment.NewLine + "Choose update channel" + Environment.NewLine + "Check for updates on launch",
+            "paths" => "Browse roster path" + Environment.NewLine + "Remove roster path" + Environment.NewLine + "Browse PDF application" + Environment.NewLine + "Scan folder for PDF files" + Environment.NewLine + "Test PDF helper",
+            _ => "Set desktop language" + Environment.NewLine + "Set sheet language" + Environment.NewLine + "Change theme" + Environment.NewLine + "Adjust UI scale"
+        };
         string restartPosture = pane switch
         {
             "updates" => "Update and startup edits apply immediately where possible; desktop language changes still call for a restart.",
@@ -716,11 +764,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         [
             new DesktopDialogField("globalActivePane", "Active Pane", pane, "general", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("globalSettingsSections", "Sections", sections, "General", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("globalSettingsDetailTabs", "Pane Tabs", detailTabs, "Overview", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("globalLegacyTabBar", "Legacy Tabs", legacyTopTabs, "Global Options", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("globalSettingsDetailTabs", "Pane Tabs", detailTabs, detailTabDefault, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             new DesktopDialogField("globalSettingsTree", "Navigation", settingsTree, "[Settings]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("globalSettingsPropertyGrid", "Current Pane", settingsGrid, settingsGrid, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("globalPaneTools", "Pane Tools", paneTools, paneTools, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("globalCurrentPaneHeader", "Pane Header", paneHeader, paneHeader, IsReadOnly: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("globalCurrentPaneWorkflows", "Workflow Checklist", settingsWorkflows, settingsWorkflows, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
+            new DesktopDialogField("globalPaneCommandList", "Pane Commands", paneCommandList, paneCommandList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
 
             new DesktopDialogField("globalTheme", localize("desktop.dialog.global_settings.field.theme"), preferences.Theme, "classic", LayoutSlot: generalSlot),
             new DesktopDialogField("globalUiScale", localize("desktop.dialog.global_settings.field.ui_scale"), preferences.UiScalePercent.ToString(), "100", InputType: "number", LayoutSlot: generalSlot),
