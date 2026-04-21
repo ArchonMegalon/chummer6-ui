@@ -209,6 +209,8 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"), "CRB · Core Rulebook");
         Assert.AreEqual("CRB · Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCurrentSourcebook"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSearchHints"), "Data File stays on the left");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceTree"), "CRB · Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceTree"), "SW · Street Wyrd");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "Street Wyrd");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultList"), "Core Rulebook [CRB]");
@@ -217,16 +219,21 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("/books/core-rulebook.pdf", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectedSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Selected item | Core Rulebook (CRB)");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Source | CRB · Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Reference Posture | governed");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetInspector"), "Snippet Count | 16");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetPreview"), "Reference notes stay in this pane");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexNotesPane"), "active books selected");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Use Setting | governed");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Modify | Modify...");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexFileSelection", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexResultList", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexResultInspector", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSnippetInspector", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSnippetPreview", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceClickReminder", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexNotesPane", StringComparison.Ordinal)).VisualKind);
@@ -1280,7 +1287,19 @@ public class DesktopDialogFactoryTests
                     Permanent: true,
                     ReferencePosture: "governed",
                     RuleSnippetCount: 16,
-                    RuleSnippets: [],
+                    RuleSnippets:
+                    [
+                        new MasterIndexRuleSnippetEntry(
+                            Language: "en-us",
+                            Page: 20,
+                            Snippet: "Reference notes stay in this pane while the selected entry remains visible.",
+                            Provenance: "books.xml"),
+                        new MasterIndexRuleSnippetEntry(
+                            Language: "en-us",
+                            Page: 21,
+                            Snippet: "Indexed source detail remains on the right, matching the legacy utility posture.",
+                            Provenance: "books.xml")
+                    ],
                     ReferenceSourcePosture: "governed",
                     LocalPdfPath: "/books/core-rulebook.pdf",
                     ReferenceUrl: "https://example.test/core-rulebook"),

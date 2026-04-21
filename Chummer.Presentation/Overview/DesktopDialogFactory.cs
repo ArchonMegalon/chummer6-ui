@@ -2526,7 +2526,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogField("masterIndexDetailTabs", "Pane Tabs", "Results" + Environment.NewLine + "Source" + Environment.NewLine + "Notes" + Environment.NewLine + "Setting", "Results", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
                 new DesktopDialogField("masterIndexFileSelection", "Data File", "All Sources", "All Sources", IsReadOnly: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
                 new DesktopDialogField("masterIndexSearch", "Search", string.Empty, "Search index"),
+                new DesktopDialogField("masterIndexSourceTree", "Source Tree", "[Sourcebooks]" + Environment.NewLine + "└─ All Sources", "[Sourcebooks]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
                 new DesktopDialogField("masterIndexCatalogEntries", "Items", "No catalog entries discovered.", "No catalog entries discovered.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField("masterIndexResultInspector", "Result Inspector", "Selected Result | none" + Environment.NewLine + "Current Book | none" + Environment.NewLine + "Linked Source | unavailable" + Environment.NewLine + "Reference Posture | missing", "Selected Result | none", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField("masterIndexSnippetInspector", "Snippet Inspector", "Snippet Count | 0" + Environment.NewLine + "Snippet Page | unavailable" + Environment.NewLine + "Snippet Provenance | unavailable" + Environment.NewLine + "Note Posture | right-pane legacy preview", "Snippet Count | 0", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField("masterIndexSourceClickReminder", "Linked Source", "No linked PDF is available for the current selection.", "No linked PDF is available for the current selection.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
                 new DesktopDialogField("masterIndexNotesPane", "Notes", "Open a result to inspect notes and linked source text.", "Open a result to inspect notes and linked source text.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField("masterIndexCharacterSetting", "Use Setting", "Use Setting | default" + Environment.NewLine + "Modify | Modify...", "Use Setting | default", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid)
@@ -2566,6 +2569,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             Environment.NewLine,
             masterIndex.Sourcebooks.Select(sourcebook =>
                 $"└─ {sourcebook.Name} [{sourcebook.Code}]"));
+        string sourceTree = "[Sourcebooks]" + Environment.NewLine + string.Join(
+            Environment.NewLine,
+            masterIndex.Sourcebooks
+                .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(sourcebook => $"├─ {sourcebook.Code} · {sourcebook.Name}"));
         string selectedSource = selectedSourcebook.LocalPdfPath
             ?? selectedSourcebook.ReferenceUrl
             ?? selectedSourcebook.ReferenceSnapshot
@@ -2579,6 +2588,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"Reference posture | {selectedSourcebook.ReferencePosture}{Environment.NewLine}" +
             $"Source provenance | {selectedSourcebook.ReferenceSourcePosture}{Environment.NewLine}" +
             $"Route | {selectedSource}";
+        string resultInspector = BuildGridValue(
+            ("Selected Result", $"{selectedSourcebook.Name} ({selectedSourcebook.Code})"),
+            ("Current Book", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
+            ("Linked Source", selectedSource),
+            ("Reference Posture", selectedSourcebook.ReferencePosture),
+            ("Use Setting", masterIndex.SettingsLanePosture));
         string libraryNotes =
             $"{masterIndex.Sourcebooks.Count} active books selected. Reference links are available for most active books, and snippet coverage is {masterIndex.ReferenceCoveragePercent}%." + Environment.NewLine +
             "Use the catalog tree on the left and keep the current book details visible on the right, like the old reference utility.";
@@ -2592,6 +2607,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 Environment.NewLine + Environment.NewLine,
                 selectedSourcebook.RuleSnippets.Take(2).Select(
                     snippet => $"Page {snippet.Page} · {snippet.Provenance}{Environment.NewLine}{snippet.Snippet}"));
+        string snippetInspector = selectedSourcebook.RuleSnippets.Count == 0
+            ? "Snippet Preview | unavailable" + Environment.NewLine + "Keep note text on the right like the legacy utility form."
+            : BuildGridValue(
+                ("Snippet Page", selectedSourcebook.RuleSnippets[0].Page.ToString(CultureInfo.InvariantCulture)),
+                ("Snippet Provenance", selectedSourcebook.RuleSnippets[0].Provenance),
+                ("Snippet Count", selectedSourcebook.RuleSnippetCount.ToString(CultureInfo.InvariantCulture)),
+                ("Note Posture", "right-pane legacy preview"));
         string selectionProfile = BuildGridValue(
             ("Use Setting", $"{masterIndex.SettingsLanePosture} ({masterIndex.SettingsProfileCount} profiles)"),
             ("Source toggles", $"{masterIndex.SourceToggleLanePosture} · {masterIndex.DistinctSourcebookToggles} toggles"),
@@ -2620,10 +2642,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("masterIndexSearchHints", "Search Hints", searchHints, searchHints, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("masterIndexCurrentSourcebook", "Selected Book", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", IsReadOnly: true),
             new DesktopDialogField("masterIndexCharacterSetting", "Current Filters", NormalizeGridValue(selectionProfile), NormalizeGridValue(selectionProfile), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
+            new DesktopDialogField("masterIndexSourceTree", "Source Tree", sourceTree, "[Sourcebooks]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("masterIndexCatalogEntries", "Items", catalogEntries, catalogEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("masterIndexDetails", "Details", sourceDetails, sourceDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexResultList", "Results", resultList, resultList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
+            new DesktopDialogField("masterIndexResultInspector", "Result Inspector", resultInspector, resultInspector, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexSnippetPreview", "Snippet Preview", snippetPreview, snippetPreview, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("masterIndexSnippetInspector", "Snippet Inspector", snippetInspector, snippetInspector, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexSourceClickReminder", "Linked Source", sourceClickReminder, sourceClickReminder, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("masterIndexNotesPane", "Notes", libraryNotes + Environment.NewLine + Environment.NewLine + snippetPreview, libraryNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("masterIndexSelectedSource", "Source", selectedSource, selectedSource, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
