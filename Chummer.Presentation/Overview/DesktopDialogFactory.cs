@@ -589,6 +589,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "open_roster_folder",
             watchFolderConfigured ? (watchFolderExists ? "Open Roster Folder" : "Create Roster Folder") : "Configure Roster Folder"));
 
+        actions.Add(new DesktopDialogAction(
+            "refresh_watch_folder",
+            watchFolderConfigured
+                ? (watchFolderExists ? "Refresh Watch Folder" : "Create and Refresh Watch Folder")
+                : "Scan Watch Folder Now"));
+
         if (hasPortrait)
         {
             actions.Add(new DesktopDialogAction("open_portrait", $"Open Portrait {Path.GetFileName(portraitCandidate)}"));
@@ -3863,6 +3869,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ? (selectedSnippet is null ? "Open Linked Source" : $"Open Linked Source p. {selectedSnippet.Page}")
                 : (selectedSnippet is null ? "Open Linked PDF" : $"Open PDF p. {selectedSnippet.Page}"), true),
             ("switch_file", $"Change Data File ({selectedFileName})", false),
+            ("switch_sourcebook", $"Switch Sourcebook ({selectedSourcebook.Code})", false),
             ("edit_setting", $"Modify Setting ({snapshot.SettingsLanePosture})", false));
     }
 
@@ -3877,6 +3884,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         [
             new DesktopDialogAction("open_source", hasLinkedSource ? "Open Linked PDF" : "Open Linked Source", true),
             new DesktopDialogAction("switch_file", "Change Data File"),
+            new DesktopDialogAction("switch_sourcebook", "Switch Sourcebook"),
             new DesktopDialogAction("edit_setting", "Modify Setting"),
             new DesktopDialogAction("close", "Close")
         ];

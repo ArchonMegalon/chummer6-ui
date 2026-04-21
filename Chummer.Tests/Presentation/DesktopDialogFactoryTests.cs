@@ -283,10 +283,11 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceSelectionSummary", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexImportOracleMatrix", StringComparison.Ordinal)).VisualKind);
         CollectionAssert.AreEqual(
-            new[] { "open_source", "switch_file", "edit_setting", "close" },
+            new[] { "open_source", "switch_file", "switch_sourcebook", "edit_setting", "close" },
             dialog.Actions.Select(action => action.Id).ToArray());
         Assert.AreEqual("Open Linked PDF", dialog.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Change Data File", dialog.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Switch Sourcebook", dialog.Actions.Single(action => string.Equals(action.Id, "switch_sourcebook", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Modify Setting", dialog.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexLibraryNotes", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexImportNotes", StringComparison.Ordinal)).LayoutSlot);
@@ -351,6 +352,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultCommands"), "Activate result | Indexed source detail remains on the right");
         Assert.AreEqual("Open PDF p. 21", rebuilt.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Change Data File (books.xml)", rebuilt.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Switch Sourcebook (CRB)", rebuilt.Actions.Single(action => string.Equals(action.Id, "switch_sourcebook", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Modify Setting (governed)", rebuilt.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
     }
 
@@ -581,11 +583,12 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "GST · Ghost · sr6 · unsaved");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "APX · Apex · sr5 · saved");
             CollectionAssert.AreEqual(
-                new[] { "open_runner", "open_watch_file", "open_roster_folder", "open_portrait", "close" },
+                new[] { "open_runner", "open_watch_file", "open_roster_folder", "refresh_watch_folder", "open_portrait", "close" },
                 dialog.Actions.Select(action => action.Id).ToArray());
             Assert.AreEqual("Open Runner GST", dialog.Actions.Single(action => string.Equals(action.Id, "open_runner", StringComparison.Ordinal)).Label);
             Assert.AreEqual("Open Watch File GST.chum5", dialog.Actions.Single(action => string.Equals(action.Id, "open_watch_file", StringComparison.Ordinal)).Label);
             Assert.AreEqual("Open Roster Folder", dialog.Actions.Single(action => string.Equals(action.Id, "open_roster_folder", StringComparison.Ordinal)).Label);
+            Assert.AreEqual("Refresh Watch Folder", dialog.Actions.Single(action => string.Equals(action.Id, "refresh_watch_folder", StringComparison.Ordinal)).Label);
             Assert.AreEqual("Open Portrait GST.png", dialog.Actions.Single(action => string.Equals(action.Id, "open_portrait", StringComparison.Ordinal)).Label);
         }
         finally
