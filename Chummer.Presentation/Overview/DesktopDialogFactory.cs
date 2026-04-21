@@ -3661,7 +3661,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Current Book", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
             ("Linked Source", selectedSource),
             ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"),
-            ("Activation", "select row / open source"),
+            ("Activation", "double-click row / open source"),
             ("Source Link", sourceLinkKinds),
             ("Use Setting", "Character Settings"));
         string selectionTrail = BuildGridValue(
@@ -3670,12 +3670,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Selected Result", selectedSnippetLabel),
             ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"));
         string sourceCommands =
-            "Change data file filter" + Environment.NewLine +
-            "Modify character setting" + Environment.NewLine +
-            (string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "Open linked source snapshot" : "Open linked PDF");
+            $"Change data file | {selectedFileName}" + Environment.NewLine +
+            $"Switch sourcebook | {selectedSourcebook.Code} · {selectedSourcebook.Name}" + Environment.NewLine +
+            "Modify character setting | Character Settings" + Environment.NewLine +
+            (string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
+                ? $"Open linked source | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "snapshot")}"
+                : $"Open linked PDF | p. {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}");
         string resultCommands =
-            "Select result to refresh notes" + Environment.NewLine +
-            "Open selected result page" + Environment.NewLine +
+            $"Activate result | {selectedSnippetLabel}" + Environment.NewLine +
+            $"Open page | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}" + Environment.NewLine +
             "Keep source and notes pinned on the right";
         string libraryNotes =
             $"{masterIndex.Sourcebooks.Count} active books loaded. Linked sources are available for most active books, and note coverage is {masterIndex.ReferenceCoveragePercent}%." + Environment.NewLine +
@@ -3983,17 +3986,32 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogAction> BuildMasterIndexActions(MasterIndexResponse? masterIndex)
     {
-        bool hasLinkedSource = masterIndex?.Sourcebooks.Any(sourcebook =>
-            !string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath)
-            || !string.IsNullOrWhiteSpace(sourcebook.ReferenceUrl)
-            || !string.IsNullOrWhiteSpace(sourcebook.ReferenceSnapshot)) == true;
+        MasterIndexSourcebookEntry? selectedSourcebook = masterIndex?.Sourcebooks.FirstOrDefault();
+        MasterIndexRuleSnippetEntry? selectedSnippet = selectedSourcebook?.RuleSnippets.FirstOrDefault();
+        MasterIndexFileEntry? selectedFile = masterIndex is null
+            ? null
+            : ResolveMasterIndexSelectedFile(masterIndex.Files, selectedSnippet);
+        string selectedFileName = selectedFile?.File ?? "All";
+        bool hasLinkedSource = selectedSourcebook is not null
+            && (!string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
+                || !string.IsNullOrWhiteSpace(selectedSourcebook.ReferenceUrl)
+                || !string.IsNullOrWhiteSpace(selectedSourcebook.ReferenceSnapshot));
 
         return
         [
-            new DesktopDialogAction("open_source", hasLinkedSource ? "Open Linked PDF" : "Open Linked Source", true),
-            new DesktopDialogAction("switch_file", "Change Data File"),
-            new DesktopDialogAction("switch_sourcebook", "Switch Sourcebook"),
-            new DesktopDialogAction("edit_setting", "Modify Setting"),
+            new DesktopDialogAction(
+                "open_source",
+                hasLinkedSource
+                    ? (selectedSnippet is null ? "Open Linked PDF" : $"Open PDF p. {selectedSnippet.Page}")
+                    : (selectedSnippet is null ? "Open Linked Source" : $"Open Linked Source p. {selectedSnippet.Page}"),
+                true),
+            new DesktopDialogAction("switch_file", $"Change Data File ({selectedFileName})"),
+            new DesktopDialogAction(
+                "switch_sourcebook",
+                selectedSourcebook is null
+                    ? "Switch Sourcebook"
+                    : $"Switch Sourcebook ({selectedSourcebook.Code})"),
+            new DesktopDialogAction("edit_setting", "Modify Setting (Character Settings)"),
             new DesktopDialogAction("close", "Close")
         ];
     }
