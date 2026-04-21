@@ -90,6 +90,51 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_apply_global_settings_updates_preferences_and_keeps_dialog_open()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.global_settings",
+                Title: "Global Settings",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("globalActivePane", "Active Pane", "updates", "general", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                    new DesktopDialogField("globalUiScale", "UI Scale", "125", "100", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                    new DesktopDialogField("globalTheme", "Theme", "dark-steel", "chummer", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                    new DesktopDialogField("globalLanguage", "Language", "de-de", "en-us", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                    new DesktopDialogField("globalCompactMode", "Compact", "true", "false", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                    new DesktopDialogField("globalUpdatePolicy", "Updates", "Preview channel · check daily", "Preview channel · check weekly"),
+                    new DesktopDialogField("globalCheckForUpdates", "Check", "false", "true", InputType: "checkbox"),
+                    new DesktopDialogField("globalCharacterRosterPath", "Character Roster Path", "/tmp/roster", "/Characters", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("apply", "Apply"),
+                    new DesktopDialogAction("save", "Save", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("apply", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("updates", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "globalActivePane"));
+        Assert.AreEqual("Preview channel · check daily", published.Preferences.UpdateChannel);
+        Assert.IsFalse(published.Preferences.CheckForUpdatesOnLaunch);
+        Assert.AreEqual(125, published.Preferences.UiScalePercent);
+        Assert.AreEqual("/tmp/roster", published.Preferences.CharacterRosterPath);
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_apply_metadata_calls_update_delegate_and_closes_dialog_on_success()
     {
         DialogCoordinator coordinator = new();

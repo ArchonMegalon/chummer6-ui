@@ -54,6 +54,7 @@ public partial class CommandDialogPaneControl : UserControl
         DialogMessageBorder.IsVisible = !string.IsNullOrWhiteSpace(message);
         RebuildDialogFields(fields.ToArray());
         RebuildDialogActions(actions.ToArray());
+        RefreshDialogVisuals();
     }
 
     private void CommandsList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -127,6 +128,31 @@ public partial class CommandDialogPaneControl : UserControl
             button.Click += DialogActionButton_OnClick;
             DialogActionsHost.Children.Add(button);
         }
+    }
+
+    private void RefreshDialogVisuals()
+    {
+        DialogTitleText.InvalidateMeasure();
+        DialogTitleText.InvalidateArrange();
+        DialogTitleText.InvalidateVisual();
+        DialogMessageText.InvalidateMeasure();
+        DialogMessageText.InvalidateArrange();
+        DialogMessageText.InvalidateVisual();
+        DialogMessageBorder.InvalidateMeasure();
+        DialogMessageBorder.InvalidateArrange();
+        DialogMessageBorder.InvalidateVisual();
+        DialogFieldsHost.InvalidateMeasure();
+        DialogFieldsHost.InvalidateArrange();
+        DialogFieldsHost.InvalidateVisual();
+        DialogActionsHost.InvalidateMeasure();
+        DialogActionsHost.InvalidateArrange();
+        DialogActionsHost.InvalidateVisual();
+        DialogActionsBorder.InvalidateMeasure();
+        DialogActionsBorder.InvalidateArrange();
+        DialogActionsBorder.InvalidateVisual();
+        InvalidateMeasure();
+        InvalidateArrange();
+        InvalidateVisual();
     }
 
     private Control CreateStandaloneFieldRow(DialogFieldDisplayItem field)

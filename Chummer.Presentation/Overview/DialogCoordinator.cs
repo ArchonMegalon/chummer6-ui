@@ -103,9 +103,10 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
+        if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal)
+            && (string.Equals(actionId, "save", StringComparison.Ordinal) || string.Equals(actionId, "apply", StringComparison.Ordinal)))
         {
-            ApplyGlobalSettings(dialog, context);
+            ApplyGlobalSettings(dialog, context, closeDialog: string.Equals(actionId, "save", StringComparison.Ordinal));
             return;
         }
 
@@ -385,29 +386,26 @@ public sealed class DialogCoordinator : IDialogCoordinator
         return null;
     }
 
-    private static void ApplyGlobalSettings(DesktopDialogState dialog, DialogCoordinationContext context)
+    private static void ApplyGlobalSettings(DesktopDialogState dialog, DialogCoordinationContext context, bool closeDialog)
     {
-        int uiScalePercent = DesktopDialogFieldValueParser.ParseInt(dialog, "globalUiScale", context.State.Preferences.UiScalePercent);
-        string theme = DesktopDialogFieldValueParser.GetValue(dialog, "globalTheme") ?? context.State.Preferences.Theme;
-        string requestedLanguage = DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage") ?? context.State.Preferences.Language;
-        string language = DesktopLocalizationCatalog.NormalizeOrDefault(requestedLanguage);
-        bool compactMode = DesktopDialogFieldValueParser.ParseBool(dialog, "globalCompactMode", context.State.Preferences.CompactMode);
+        DesktopPreferenceState nextPreferences = DesktopDialogFactory.ParseGlobalSettingsPreferences(dialog, context.State.Preferences);
+        string language = DesktopLocalizationCatalog.NormalizeOrDefault(nextPreferences.Language);
         bool languageChanged = !string.Equals(
             DesktopLocalizationCatalog.NormalizeOrDefault(context.State.Preferences.Language),
             language,
             StringComparison.Ordinal);
+        DesktopDialogState? nextDialog = closeDialog
+            ? null
+            : DesktopDialogFactory.BuildGlobalSettingsDialog(
+                nextPreferences,
+                language,
+                DesktopDialogFactory.ReadGlobalSettingsActivePane(dialog));
 
         context.Publish(context.State with
         {
-            ActiveDialog = null,
+            ActiveDialog = nextDialog,
             Error = null,
-            Preferences = context.State.Preferences with
-            {
-                UiScalePercent = uiScalePercent,
-                Theme = theme,
-                Language = language,
-                CompactMode = compactMode
-            },
+            Preferences = nextPreferences,
             Notice = languageChanged
                 ? DesktopLocalizationCatalog.GetRequiredFormattedString(
                     "desktop.dialog.global_settings.notice.updated_restart",

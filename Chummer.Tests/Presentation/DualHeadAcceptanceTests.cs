@@ -45,9 +45,12 @@ public class DualHeadAcceptanceTests
     private static readonly SocketsHttpHandler SharedHttpHandler = CreateSharedHttpHandler();
     private static readonly RulesetShellCatalogResolverService ShellCatalogResolver =
         CreateShellCatalogResolver();
-    private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
+    private static readonly Regex WorkspaceColonTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
+    private static readonly Regex WorkspacePipeTokenRegex = new("(?<=Workspace\\s\\|\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
     private static readonly Regex WorkspaceFileNameRegex = new("^[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex WorkspaceFileTokenRegex = new("[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex SectionWorkspaceIdRegex = new("(\"workspaceId\"\\s*:\\s*\")[^\"]+(\")", RegexOptions.Compiled);
+    private static readonly Regex UtcMinuteStampRegex = new(@"\b\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC\b", RegexOptions.Compiled);
 
     private static RulesetShellCatalogResolverService CreateShellCatalogResolver()
     {
@@ -237,7 +240,7 @@ public class DualHeadAcceptanceTests
         Assert.AreEqual("tab-skills", blazorState.ActiveTabId);
         Assert.AreEqual("skills", avaloniaState.ActiveSectionId);
         Assert.AreEqual("skills", blazorState.ActiveSectionId);
-        Assert.AreEqual(avaloniaState.ActiveSectionJson, blazorState.ActiveSectionJson);
+        Assert.AreEqual(NormalizeSectionJson(avaloniaState.ActiveSectionJson), NormalizeSectionJson(blazorState.ActiveSectionJson));
         Assert.HasCount(avaloniaState.ActiveSectionRows.Count, blazorState.ActiveSectionRows);
     }
 
@@ -550,7 +553,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -571,7 +574,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -624,7 +627,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -645,7 +648,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -700,7 +703,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -721,7 +724,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -776,7 +779,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -797,7 +800,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -850,7 +853,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -871,7 +874,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -926,7 +929,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -947,7 +950,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
             }
         }
 
@@ -1015,6 +1018,52 @@ public class DualHeadAcceptanceTests
             Assert.IsTrue(avaloniaSnapshots.TryGetValue(commandId, out CommandDialogSnapshot? avalonia), $"Missing Avalonia dialog snapshot for command '{commandId}'.");
             Assert.IsTrue(blazorSnapshots.TryGetValue(commandId, out CommandDialogSnapshot? blazor), $"Missing Blazor dialog snapshot for command '{commandId}'.");
             AssertCommandDialogSnapshotEqual(avalonia, blazor, commandId);
+        }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts()
+    {
+        string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
+        byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
+        string[] controlIds = LegacyUiControlCatalog.All.ToArray();
+
+        Dictionary<string, CommandDialogSnapshot> avaloniaSnapshots = await CaptureAvaloniaUiControlDialogSnapshotsAsync(documentBytes, controlIds);
+        Dictionary<string, CommandDialogSnapshot> blazorSnapshots = await CaptureBlazorUiControlDialogSnapshotsAsync(documentBytes, controlIds);
+
+        foreach (string controlId in controlIds)
+        {
+            Assert.IsTrue(avaloniaSnapshots.TryGetValue(controlId, out CommandDialogSnapshot? avalonia), $"Missing Avalonia dialog snapshot for UI control '{controlId}'.");
+            Assert.IsTrue(blazorSnapshots.TryGetValue(controlId, out CommandDialogSnapshot? blazor), $"Missing Blazor dialog snapshot for UI control '{controlId}'.");
+            AssertCommandDialogSnapshotEqual(avalonia, blazor, controlId);
+        }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_non_dialog_shared_commands_preserve_matching_state_transitions()
+    {
+        string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
+        byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
+        string[] commandIds =
+        [
+            "copy",
+            "paste",
+            "refresh_character",
+            "new_character",
+            "new_critter",
+            "close_all",
+            "close_window"
+        ];
+        DefaultCommandAvailabilityEvaluator evaluator = new();
+
+        Dictionary<string, SharedCommandSnapshot> avaloniaSnapshots = await CaptureAvaloniaSharedCommandSnapshotsAsync(documentBytes, commandIds, evaluator);
+        Dictionary<string, SharedCommandSnapshot> blazorSnapshots = await CaptureBlazorSharedCommandSnapshotsAsync(documentBytes, commandIds, evaluator);
+
+        foreach (string commandId in commandIds)
+        {
+            Assert.IsTrue(avaloniaSnapshots.TryGetValue(commandId, out SharedCommandSnapshot? avalonia), $"Missing Avalonia command snapshot for '{commandId}'.");
+            Assert.IsTrue(blazorSnapshots.TryGetValue(commandId, out SharedCommandSnapshot? blazor), $"Missing Blazor command snapshot for '{commandId}'.");
+            AssertSharedCommandSnapshotEqual(avalonia, blazor, commandId);
         }
     }
 
@@ -1345,7 +1394,7 @@ public class DualHeadAcceptanceTests
                 state.ActiveTabId,
                 state.ActiveActionId,
                 state.ActiveSectionId,
-                state.ActiveSectionJson,
+                NormalizeSectionJson(state.ActiveSectionJson),
                 state.ActiveSectionRows.Count);
         }
 
@@ -1372,7 +1421,7 @@ public class DualHeadAcceptanceTests
                 state.ActiveTabId,
                 state.ActiveActionId,
                 state.ActiveSectionId,
-                state.ActiveSectionJson,
+                NormalizeSectionJson(state.ActiveSectionJson),
                 state.ActiveSectionRows.Count);
         }
 
@@ -1417,6 +1466,92 @@ public class DualHeadAcceptanceTests
             await bridge.ExecuteCommandAsync(commandId, CancellationToken.None);
             snapshots[commandId] = TakeCommandDialogSnapshot(commandId, ResolveBridgeState(callbackState, bridge));
             await bridge.CloseDialogAsync(CancellationToken.None);
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<Dictionary<string, CommandDialogSnapshot>> CaptureAvaloniaUiControlDialogSnapshotsAsync(
+        byte[] documentBytes,
+        IReadOnlyList<string> controlIds)
+    {
+        var snapshots = new Dictionary<string, CommandDialogSnapshot>(StringComparer.Ordinal);
+        using HttpClient http = CreateClient();
+        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using var adapter = new CharacterOverviewViewModelAdapter(presenter);
+        await adapter.InitializeAsync(CancellationToken.None);
+        await adapter.ImportAsync(documentBytes, CancellationToken.None);
+
+        foreach (string controlId in controlIds)
+        {
+            await adapter.HandleUiControlAsync(controlId, CancellationToken.None);
+            snapshots[controlId] = TakeCommandDialogSnapshot(controlId, adapter.State);
+            await adapter.CloseDialogAsync(CancellationToken.None);
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<Dictionary<string, CommandDialogSnapshot>> CaptureBlazorUiControlDialogSnapshotsAsync(
+        byte[] documentBytes,
+        IReadOnlyList<string> controlIds)
+    {
+        var snapshots = new Dictionary<string, CommandDialogSnapshot>(StringComparer.Ordinal);
+        using HttpClient http = CreateClient();
+        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        CharacterOverviewState callbackState = CharacterOverviewState.Empty;
+        using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
+        await bridge.InitializeAsync(CancellationToken.None);
+        await bridge.ImportAsync(documentBytes, CancellationToken.None);
+
+        foreach (string controlId in controlIds)
+        {
+            await bridge.HandleUiControlAsync(controlId, CancellationToken.None);
+            snapshots[controlId] = TakeCommandDialogSnapshot(controlId, ResolveBridgeState(callbackState, bridge));
+            await bridge.CloseDialogAsync(CancellationToken.None);
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<Dictionary<string, SharedCommandSnapshot>> CaptureAvaloniaSharedCommandSnapshotsAsync(
+        byte[] documentBytes,
+        IReadOnlyList<string> commandIds,
+        DefaultCommandAvailabilityEvaluator evaluator)
+    {
+        var snapshots = new Dictionary<string, SharedCommandSnapshot>(StringComparer.Ordinal);
+
+        foreach (string commandId in commandIds)
+        {
+            using HttpClient http = CreateClient();
+            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            using var adapter = new CharacterOverviewViewModelAdapter(presenter);
+            await adapter.InitializeAsync(CancellationToken.None);
+            await adapter.ImportAsync(documentBytes, CancellationToken.None);
+            await adapter.ExecuteCommandAsync(commandId, CancellationToken.None);
+            snapshots[commandId] = TakeSharedCommandSnapshot(commandId, adapter.State, evaluator);
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<Dictionary<string, SharedCommandSnapshot>> CaptureBlazorSharedCommandSnapshotsAsync(
+        byte[] documentBytes,
+        IReadOnlyList<string> commandIds,
+        DefaultCommandAvailabilityEvaluator evaluator)
+    {
+        var snapshots = new Dictionary<string, SharedCommandSnapshot>(StringComparer.Ordinal);
+
+        foreach (string commandId in commandIds)
+        {
+            using HttpClient http = CreateClient();
+            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            CharacterOverviewState callbackState = CharacterOverviewState.Empty;
+            using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
+            await bridge.InitializeAsync(CancellationToken.None);
+            await bridge.ImportAsync(documentBytes, CancellationToken.None);
+            await bridge.ExecuteCommandAsync(commandId, CancellationToken.None);
+            snapshots[commandId] = TakeSharedCommandSnapshot(commandId, ResolveBridgeState(callbackState, bridge), evaluator);
         }
 
         return snapshots;
@@ -1597,6 +1732,22 @@ public class DualHeadAcceptanceTests
             NormalizeDownloadNotice(state.Notice));
     }
 
+    private static SharedCommandSnapshot TakeSharedCommandSnapshot(
+        string commandId,
+        CharacterOverviewState state,
+        DefaultCommandAvailabilityEvaluator evaluator)
+    {
+        return new SharedCommandSnapshot(
+            commandId,
+            state.LastCommandId,
+            NormalizeDownloadNotice(state.Notice),
+            state.Error,
+            state.Profile?.Name,
+            state.Profile?.Alias,
+            state.HasSavedWorkspace,
+            BuildShellRegionSnapshot(state, evaluator));
+    }
+
     private static string NormalizeDialogFieldValue(string fieldId, string value)
     {
         if (string.Equals(fieldId, "workspace", StringComparison.Ordinal)
@@ -1604,7 +1755,13 @@ public class DualHeadAcceptanceTests
             return "<workspace>";
 
         if (string.Equals(fieldId, "dataExportPreview", StringComparison.Ordinal))
-            return WorkspaceTokenRegex.Replace(value, "<workspace>");
+            return NormalizeWorkspaceTokenValue(value);
+
+        if (string.Equals(fieldId, "rosterSelectedRunner", StringComparison.Ordinal))
+            return NormalizeWorkspaceTokenValue(value);
+
+        if (string.Equals(fieldId, "rosterSelectedRunnerStatus", StringComparison.Ordinal))
+            return UtcMinuteStampRegex.Replace(value, "<timestamp>");
 
         if (string.Equals(fieldId, "diceRosterContext", StringComparison.Ordinal))
             return Regex.Replace(value, "(?<=active\\s)[A-Za-z0-9-]+", "<workspace>");
@@ -1616,6 +1773,20 @@ public class DualHeadAcceptanceTests
             return Regex.Replace(value, @"Generated:\s+.+$", "Generated: <timestamp>", RegexOptions.Multiline);
 
         return value;
+    }
+
+    private static string NormalizeWorkspaceTokenValue(string value)
+    {
+        string normalized = WorkspaceColonTokenRegex.Replace(value, "<workspace>");
+        return WorkspacePipeTokenRegex.Replace(normalized, "<workspace>");
+    }
+
+    private static string? NormalizeSectionJson(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return json;
+
+        return SectionWorkspaceIdRegex.Replace(json, "$1<workspace>$2");
     }
 
     private static string? NormalizeDownloadFileName(string? fileName)
@@ -1701,6 +1872,22 @@ public class DualHeadAcceptanceTests
         Assert.AreEqual(avalonia.MimeType, blazor.MimeType, $"Print mime type mismatch for '{commandId}'.");
         Assert.AreEqual(avalonia.Title, blazor.Title, $"Print title mismatch for '{commandId}'.");
         Assert.AreEqual(avalonia.Notice, blazor.Notice, $"Print notice mismatch for '{commandId}'.");
+    }
+
+    private static void AssertSharedCommandSnapshotEqual(
+        SharedCommandSnapshot avalonia,
+        SharedCommandSnapshot blazor,
+        string commandId)
+    {
+        Assert.AreEqual(commandId, avalonia.CommandId);
+        Assert.AreEqual(commandId, blazor.CommandId);
+        Assert.AreEqual(avalonia.LastCommandId, blazor.LastCommandId, $"Last command mismatch for '{commandId}'.");
+        Assert.AreEqual(avalonia.Notice, blazor.Notice, $"Notice mismatch for '{commandId}'.");
+        Assert.AreEqual(avalonia.Error, blazor.Error, $"Error mismatch for '{commandId}'.");
+        Assert.AreEqual(avalonia.ProfileName, blazor.ProfileName, $"Profile name mismatch for '{commandId}'.");
+        Assert.AreEqual(avalonia.ProfileAlias, blazor.ProfileAlias, $"Profile alias mismatch for '{commandId}'.");
+        Assert.AreEqual(avalonia.HasSavedWorkspace, blazor.HasSavedWorkspace, $"Saved-workspace flag mismatch for '{commandId}'.");
+        AssertShellRegionsEqual(avalonia.ShellRegion, blazor.ShellRegion, commandId);
     }
 
     private static ShellRegionSnapshot BuildShellRegionSnapshot(CharacterOverviewState state, DefaultCommandAvailabilityEvaluator evaluator)
@@ -1802,6 +1989,16 @@ public class DualHeadAcceptanceTests
         string? Message,
         DialogFieldSnapshot[] Fields,
         string[] ActionIds);
+
+    private sealed record SharedCommandSnapshot(
+        string CommandId,
+        string? LastCommandId,
+        string? Notice,
+        string? Error,
+        string? ProfileName,
+        string? ProfileAlias,
+        bool HasSavedWorkspace,
+        ShellRegionSnapshot ShellRegion);
 
     private sealed record PendingDownloadSnapshot(
         string? LastCommandId,

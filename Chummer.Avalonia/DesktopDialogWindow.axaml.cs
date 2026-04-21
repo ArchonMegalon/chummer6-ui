@@ -38,6 +38,8 @@ public partial class DesktopDialogWindow : Window
         _adapter = adapter;
     }
 
+    public string? BoundDialogId { get; private set; }
+
     public void AttachAdapter(CharacterOverviewViewModelAdapter adapter)
     {
         _adapter = adapter;
@@ -45,6 +47,8 @@ public partial class DesktopDialogWindow : Window
 
     public void BindDialog(DesktopDialogState dialog)
     {
+        BoundDialogId = dialog.Id;
+        ApplyDialogSizing(dialog.Id);
         Title = dialog.Title;
         _dialogTitleText.Text = dialog.Title;
         _dialogMessageText.Text = dialog.Message ?? string.Empty;
@@ -52,6 +56,7 @@ public partial class DesktopDialogWindow : Window
 
         BuildFields(dialog.Fields);
         BuildActions(dialog.Actions);
+        RefreshDialogVisuals();
     }
 
     public void CloseFromPresenter()
@@ -449,6 +454,41 @@ public partial class DesktopDialogWindow : Window
             };
             _dialogActionsPanel.Children.Add(button);
         }
+    }
+
+    private void RefreshDialogVisuals()
+    {
+        _dialogTitleText.InvalidateMeasure();
+        _dialogTitleText.InvalidateArrange();
+        _dialogTitleText.InvalidateVisual();
+        _dialogMessageText.InvalidateMeasure();
+        _dialogMessageText.InvalidateArrange();
+        _dialogMessageText.InvalidateVisual();
+        _dialogFieldsPanel.InvalidateMeasure();
+        _dialogFieldsPanel.InvalidateArrange();
+        _dialogFieldsPanel.InvalidateVisual();
+        _dialogActionsPanel.InvalidateMeasure();
+        _dialogActionsPanel.InvalidateArrange();
+        _dialogActionsPanel.InvalidateVisual();
+        InvalidateMeasure();
+        InvalidateArrange();
+        InvalidateVisual();
+    }
+
+    private void ApplyDialogSizing(string? dialogId)
+    {
+        (double width, double height, double minWidth, double minHeight) size = dialogId switch
+        {
+            "dialog.master_index" => (980d, 640d, 760d, 440d),
+            "dialog.character_roster" => (900d, 620d, 700d, 420d),
+            "dialog.global_settings" => (920d, 600d, 700d, 420d),
+            _ => (860d, 560d, 640d, 360d)
+        };
+
+        Width = size.width;
+        Height = size.height;
+        MinWidth = size.minWidth;
+        MinHeight = size.minHeight;
     }
 
     private void OnOpened(object? sender, EventArgs e)
