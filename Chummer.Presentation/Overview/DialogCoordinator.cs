@@ -139,6 +139,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.create_entry", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            PublishDialogAddMore(context, dialog, "Entry added. Editor remains open for another entry.", "uiCreateEntryName");
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.edit_entry", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
         {
             string entryName = ReadDialogValue(dialog, "uiEditEntryName", "Current Entry");
@@ -159,6 +165,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.gear_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string gearName = ReadDialogValue(dialog, "uiGearName", "Ares Predator");
+            PublishDialogAddMore(context, dialog, $"Gear '{gearName}' added. Dialog remains open for another item.", "uiGearQuantity", "uiGearMarkup", "uiGearFreeItem");
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.gear_edit", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
         {
             string gearName = ReadDialogValue(dialog, "uiGearEditName", "Selected Gear");
@@ -172,10 +185,45 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.cyberware_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string cyberwareName = ReadDialogValue(dialog, "uiCyberwareName", "Wired Reflexes 2");
+            PublishDialogNotice(context, $"Cyberware '{cyberwareName}' added.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.cyberware_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string cyberwareName = ReadDialogValue(dialog, "uiCyberwareName", "Wired Reflexes 2");
+            PublishDialogAddMore(context, dialog, $"Cyberware '{cyberwareName}' added. Dialog remains open for another implant.", "uiCyberwareRating", "uiCyberwareMarkup", "uiCyberwareDiscount", "uiCyberwareBlackMarketDiscount");
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.magic_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string magicName = ReadDialogValue(dialog, "uiMagicName", "Spell or Power");
             PublishDialogNotice(context, $"Spell/power '{magicName}' added.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.magic_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string magicName = ReadDialogValue(dialog, "uiMagicName", "Spell or Power");
+            PublishDialogAddMore(context, dialog, $"Spell/power '{magicName}' added. Dialog remains open for another selection.", "uiMagicLevel");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.spell_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string spellName = ReadDialogValue(dialog, "uiSpellName", "Stunbolt");
+            PublishDialogNotice(context, $"Spell '{spellName}' added.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.spell_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string spellName = ReadDialogValue(dialog, "uiSpellName", "Stunbolt");
+            PublishDialogAddMore(context, dialog, $"Spell '{spellName}' added. Dialog remains open for another spell.", "uiSpellExtendedOnly");
             return;
         }
 
@@ -189,6 +237,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             string skillName = ReadDialogValue(dialog, "uiSkillName", "Perception");
             PublishDialogNotice(context, $"Skill '{skillName}' added.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.skill_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string skillName = ReadDialogValue(dialog, "uiSkillName", "Perception");
+            PublishDialogAddMore(context, dialog, $"Skill '{skillName}' added. Dialog remains open for another skill.", "uiSkillRating");
             return;
         }
 
@@ -212,6 +267,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.combat_add_weapon", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string weaponName = ReadDialogValue(dialog, "uiWeaponName", "Colt M23");
+            PublishDialogAddMore(context, dialog, $"Weapon '{weaponName}' added. Dialog remains open for another weapon.", "uiWeaponMarkup", "uiWeaponFreeItem", "uiWeaponBlackMarketDiscount");
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.combat_add_armor", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string armorName = ReadDialogValue(dialog, "uiArmorName", "Armor Jacket");
@@ -219,10 +281,66 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.combat_add_armor", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string armorName = ReadDialogValue(dialog, "uiArmorName", "Armor Jacket");
+            PublishDialogAddMore(context, dialog, $"Armor '{armorName}' added. Dialog remains open for another armor item.", "uiArmorMarkup", "uiArmorFreeItem");
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.contact_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string contactName = ReadDialogValue(dialog, "uiContactName", "Contact Name");
             PublishDialogNotice(context, $"Contact '{contactName}' added.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.contact_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string contactName = ReadDialogValue(dialog, "uiContactName", "Contact Name");
+            PublishDialogAddMore(context, dialog, $"Contact '{contactName}' added. Dialog remains open for another contact.", "uiContactName", "uiContactConnection", "uiContactLoyalty");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.matrix_program_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string programName = ReadDialogValue(dialog, "uiMatrixProgramName", "Armor");
+            PublishDialogNotice(context, $"Program '{programName}' added.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.matrix_program_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string programName = ReadDialogValue(dialog, "uiMatrixProgramName", "Armor");
+            PublishDialogAddMore(context, dialog, $"Program '{programName}' added. Dialog remains open for another matrix entry.", "uiMatrixProgramShowDongles");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.vehicle_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string vehicleName = ReadDialogValue(dialog, "uiVehicleName", "Hyundai Shin-Hyung");
+            PublishDialogNotice(context, $"Vehicle '{vehicleName}' added.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.vehicle_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string vehicleName = ReadDialogValue(dialog, "uiVehicleName", "Hyundai Shin-Hyung");
+            PublishDialogAddMore(context, dialog, $"Vehicle '{vehicleName}' added. Dialog remains open for another entry.", "uiVehicleShowDrones");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.quality_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string qualityName = ReadDialogValue(dialog, "uiQualityName", "First Impression");
+            PublishDialogNotice(context, $"Quality '{qualityName}' added.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.quality_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string qualityName = ReadDialogValue(dialog, "uiQualityName", "First Impression");
+            PublishDialogAddMore(context, dialog, $"Quality '{qualityName}' added. Dialog remains open for another quality.", "uiQualityMetagenicOnly");
             return;
         }
 
@@ -642,6 +760,32 @@ public sealed class DialogCoordinator : IDialogCoordinator
             ActiveDialog = null,
             Error = null,
             Preferences = preferences ?? context.State.Preferences,
+            Notice = notice
+        });
+    }
+
+    private static void PublishDialogAddMore(
+        DialogCoordinationContext context,
+        DesktopDialogState dialog,
+        string notice,
+        params string[] fieldIdsToReset)
+    {
+        DesktopDialogState resetDialog = dialog with
+        {
+            Fields = dialog.Fields
+                .Select(field => fieldIdsToReset.Contains(field.Id, StringComparer.Ordinal)
+                    ? field with { Value = field.Placeholder }
+                    : field)
+                .ToArray(),
+            Message = "Previous selection added. Add & More keeps the classic selector open for the next entry."
+        };
+
+        resetDialog = DesktopDialogFactory.RebuildDynamicDialog(resetDialog, context.State.Preferences);
+
+        context.Publish(context.State with
+        {
+            ActiveDialog = resetDialog,
+            Error = null,
             Notice = notice
         });
     }

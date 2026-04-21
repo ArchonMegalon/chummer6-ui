@@ -342,6 +342,87 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_add_more_gear_keeps_dialog_open_and_rebuilds_preview()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default,
+            ActiveDialog = factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default) with
+            {
+                Fields = factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default).Fields
+                    .Select(field => field.Id switch
+                    {
+                        "uiGearMarkup" => field with { Value = "15" },
+                        "uiGearBlackMarketDiscount" => field with { Value = "true" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("add_more", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("dialog.ui.gear_add", published.ActiveDialog!.Id);
+        Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearMarkup"));
+        StringAssert.Contains(published.ActiveDialog.Message ?? string.Empty, "Add & More keeps the classic selector open");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearSelectionDetails"), "Cost | ¥653");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearLiveRecalc"), "Add Again | Stays open");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearLiveRecalc"), "Black Market | Yes");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Gear 'Ares Predator V' added.");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_add_more_cyberware_keeps_dialog_open_and_rebuilds_preview()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default,
+            ActiveDialog = factory.CreateUiControlDialog("cyberware_add", DesktopPreferenceState.Default) with
+            {
+                Fields = factory.CreateUiControlDialog("cyberware_add", DesktopPreferenceState.Default).Fields
+                    .Select(field => field.Id switch
+                    {
+                        "uiCyberwareGrade" => field with { Value = "Alpha" },
+                        "uiCyberwareMarkup" => field with { Value = "10" },
+                        "uiCyberwareBlackMarketDiscount" => field with { Value = "true" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("add_more", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("dialog.ui.cyberware_add", published.ActiveDialog!.Id);
+        Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiCyberwareMarkup"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiCyberwareSelectionDetails"), "Grade | Alpha");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiCyberwareSelectionDetails"), "Cost | ¥160,920");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiCyberwareLiveRecalc"), "Black Market | Yes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiCyberwareLiveRecalc"), "Recalculated Cost | ¥160,920");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Cyberware 'Wired Reflexes 2' added.");
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_apply_ruleset_calls_delegate_and_closes_dialog_on_success()
     {
         DialogCoordinator coordinator = new();
