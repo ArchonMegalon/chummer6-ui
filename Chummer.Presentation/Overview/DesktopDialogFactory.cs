@@ -1069,6 +1069,30 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return dialog;
     }
 
+    private static DesktopDialogState ReplaceDialogActions(
+        DesktopDialogState dialog,
+        params (string ActionId, string Label, bool? IsPrimary)[] replacements)
+    {
+        DesktopDialogAction[] actions = dialog.Actions
+            .Select(action =>
+            {
+                (string ActionId, string Label, bool? IsPrimary) replacement = replacements
+                    .FirstOrDefault(candidate => string.Equals(candidate.ActionId, action.Id, StringComparison.Ordinal));
+
+                if (string.IsNullOrWhiteSpace(replacement.ActionId))
+                    return action;
+
+                return action with
+                {
+                    Label = replacement.Label,
+                    IsPrimary = replacement.IsPrimary ?? action.IsPrimary
+                };
+            })
+            .ToArray();
+
+        return dialog with { Actions = actions };
+    }
+
     private static string BuildSelectionBranchTree(
         string root,
         IEnumerable<string> branches,
@@ -3665,13 +3689,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Reference Posture", selectedSourcebook.ReferencePosture),
             ("Use Setting", snapshot.SettingsLanePosture));
         string sourceCommands =
-            "Change data file filter" + Environment.NewLine +
-            "Switch sourcebook" + Environment.NewLine +
-            "Modify character setting" + Environment.NewLine +
-            (string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "Open linked source snapshot" : "Open linked PDF");
+            $"Change data file | {selectedFileName}" + Environment.NewLine +
+            $"Switch sourcebook | {selectedSourcebook.Code} · {selectedSourcebook.Name}" + Environment.NewLine +
+            $"Modify character setting | {snapshot.SettingsLanePosture}" + Environment.NewLine +
+            (string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
+                ? $"Open linked source | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "snapshot")}" 
+                : $"Open linked PDF | p. {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}");
         string resultCommands =
-            "Select result to refresh notes" + Environment.NewLine +
-            "Double-click result to open source page" + Environment.NewLine +
+            $"Activate result | {selectedResultLabel}" + Environment.NewLine +
+            $"Open page | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}" + Environment.NewLine +
             "Keep source and notes pinned on the right";
         string snippetPreview = selectedSnippet is null
             ? "No governed rule snippets match the current data-file and search filters." + Environment.NewLine +
@@ -3697,28 +3723,34 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Use Data File on the left, then switch sourcebook or result without losing the source/notes pane rhythm." +
             Environment.NewLine + Environment.NewLine + snippetPreview;
 
-        return ReplaceDialogFields(
-            dialog,
-            ("masterIndexActiveSourcebookId", selectedSourcebook.Id, selectedSourcebook.Id),
-            ("masterIndexActiveFile", selectedFileName, selectedFileName),
-            ("masterIndexActiveResultKey", selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page), selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page)),
-            ("masterIndexCurrentSourcebook", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
-            ("masterIndexFileSelection", fileSelection, "All"),
-            ("masterIndexCurrentFile", selectedFileSummary, selectedFileSummary),
-            ("masterIndexSearchHints", searchHints, searchHints),
-            ("masterIndexSelectionTrail", selectionTrail, selectionTrail),
-            ("masterIndexSourceTree", sourceTree, "[Sourcebooks]"),
-            ("masterIndexCatalogEntries", catalogEntries, catalogEntries),
-            ("masterIndexSourceCommands", sourceCommands, sourceCommands),
-            ("masterIndexDetails", sourceDetails, sourceDetails),
-            ("masterIndexResultList", resultList, resultList),
-            ("masterIndexResultInspector", resultInspector, resultInspector),
-            ("masterIndexResultCommands", resultCommands, resultCommands),
-            ("masterIndexSnippetPreview", snippetPreview, snippetPreview),
-            ("masterIndexSnippetInspector", snippetInspector, snippetInspector),
-            ("masterIndexSourceClickReminder", sourceClickReminder, sourceClickReminder),
-            ("masterIndexNotesPane", notesPane, notesPane),
-            ("masterIndexSelectedSource", selectedSource, selectedSource));
+        return ReplaceDialogActions(
+            ReplaceDialogFields(
+                dialog,
+                ("masterIndexActiveSourcebookId", selectedSourcebook.Id, selectedSourcebook.Id),
+                ("masterIndexActiveFile", selectedFileName, selectedFileName),
+                ("masterIndexActiveResultKey", selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page), selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page)),
+                ("masterIndexCurrentSourcebook", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
+                ("masterIndexFileSelection", fileSelection, "All"),
+                ("masterIndexCurrentFile", selectedFileSummary, selectedFileSummary),
+                ("masterIndexSearchHints", searchHints, searchHints),
+                ("masterIndexSelectionTrail", selectionTrail, selectionTrail),
+                ("masterIndexSourceTree", sourceTree, "[Sourcebooks]"),
+                ("masterIndexCatalogEntries", catalogEntries, catalogEntries),
+                ("masterIndexSourceCommands", sourceCommands, sourceCommands),
+                ("masterIndexDetails", sourceDetails, sourceDetails),
+                ("masterIndexResultList", resultList, resultList),
+                ("masterIndexResultInspector", resultInspector, resultInspector),
+                ("masterIndexResultCommands", resultCommands, resultCommands),
+                ("masterIndexSnippetPreview", snippetPreview, snippetPreview),
+                ("masterIndexSnippetInspector", snippetInspector, snippetInspector),
+                ("masterIndexSourceClickReminder", sourceClickReminder, sourceClickReminder),
+                ("masterIndexNotesPane", notesPane, notesPane),
+                ("masterIndexSelectedSource", selectedSource, selectedSource)),
+            ("open_source", string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
+                ? (selectedSnippet is null ? "Open Linked Source" : $"Open Linked Source p. {selectedSnippet.Page}")
+                : (selectedSnippet is null ? "Open Linked PDF" : $"Open PDF p. {selectedSnippet.Page}"), true),
+            ("switch_file", $"Change Data File ({selectedFileName})", false),
+            ("edit_setting", $"Modify Setting ({snapshot.SettingsLanePosture})", false));
     }
 
     private static IReadOnlyList<DesktopDialogAction> BuildMasterIndexActions(MasterIndexResponse? masterIndex)
