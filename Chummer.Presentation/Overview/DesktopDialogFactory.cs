@@ -4,6 +4,7 @@ using Chummer.Contracts.Content;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Explain;
+using System.Globalization;
 
 namespace Chummer.Presentation.Overview;
 
@@ -487,6 +488,24 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return BuildGlobalSettingsDialog(parsedPreferences, parsedPreferences.Language, activePane);
     }
 
+    internal static DesktopDialogState RebuildDynamicDialog(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
+    {
+        if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal))
+            return RebuildGlobalSettingsDialog(dialog, fallback);
+
+        return dialog.Id switch
+        {
+            "dialog.ui.cyberware_add" => RebuildCyberwareSelectionDialog(dialog),
+            "dialog.ui.gear_add" => RebuildGearSelectionDialog(dialog),
+            "dialog.ui.combat_add_weapon" => RebuildWeaponSelectionDialog(dialog),
+            "dialog.ui.combat_add_armor" => RebuildArmorSelectionDialog(dialog),
+            "dialog.ui.vehicle_add" => RebuildVehicleSelectionDialog(dialog),
+            _ => dialog
+        };
+    }
+
     internal static string ReadGlobalSettingsActivePane(DesktopDialogState dialog)
         => NormalizeGlobalSettingsPane(DesktopDialogFieldValueParser.GetValue(dialog, "globalActivePane"));
 
@@ -731,6 +750,251 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogField(id, label, normalized, normalized, InputType: "checkbox");
     }
 
+    private static decimal ParseDecimalField(DesktopDialogState dialog, string fieldId, decimal fallback)
+    {
+        string? raw = DesktopDialogFieldValueParser.GetValue(dialog, fieldId);
+        return decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value)
+            ? value
+            : fallback;
+    }
+
+    private static string FormatNuyen(decimal value)
+        => string.Create(CultureInfo.InvariantCulture, $"¥{decimal.Round(value, 0):N0}");
+
+    private static decimal ResolveGradeCostMultiplier(string grade)
+        => grade.Trim().ToLowerInvariant() switch
+        {
+            "alpha" => 1.2m,
+            "beta" => 1.5m,
+            "delta" => 2.5m,
+            _ => 1.0m
+        };
+
+    private static decimal ResolveGradeEssenceMultiplier(string grade)
+        => grade.Trim().ToLowerInvariant() switch
+        {
+            "alpha" => 0.8m,
+            "beta" => 0.7m,
+            "delta" => 0.5m,
+            _ => 1.0m
+        };
+
+    private static DesktopDialogState ReplaceDialogField(
+        DesktopDialogState dialog,
+        string fieldId,
+        string value,
+        string? placeholder = null)
+    {
+        DesktopDialogField[] fields = dialog.Fields
+            .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
+                ? field with
+                {
+                    Value = value,
+                    Placeholder = placeholder ?? value
+                }
+                : field)
+            .ToArray();
+        return dialog with { Fields = fields };
+    }
+
+    private static DesktopDialogState RebuildCyberwareSelectionDialog(DesktopDialogState dialog)
+    {
+        string grade = DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareGrade") ?? "Standard";
+        decimal markupPercent = ParseDecimalField(dialog, "uiCyberwareMarkup", 0m);
+        bool blackMarket = DesktopDialogFieldValueParser.ParseBool(dialog, "uiCyberwareBlackMarketDiscount", false);
+        bool hideOverAvail = DesktopDialogFieldValueParser.ParseBool(dialog, "uiCyberwareHideOverAvailLimit", true);
+        bool hideBannedGrades = DesktopDialogFieldValueParser.ParseBool(dialog, "uiCyberwareHideBannedGrades", true);
+        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareBookFilter") ?? "Core Rulebook";
+
+        int shown = 9;
+        if (hideOverAvail)
+            shown -= 2;
+        if (hideBannedGrades)
+            shown -= 1;
+        if (!string.Equals(dataFile, "All Books", StringComparison.Ordinal))
+            shown -= 3;
+        shown = Math.Max(1, shown);
+
+        decimal baseCost = 149000m;
+        decimal cost = baseCost * ResolveGradeCostMultiplier(grade) * (1m + (markupPercent / 100m));
+        if (blackMarket)
+            cost *= 0.9m;
+        decimal essence = 3.0m * ResolveGradeEssenceMultiplier(grade);
+
+        string details = BuildGridValue(
+            ("Selected", "Wired Reflexes 2"),
+            ("Grade", grade),
+            ("Availability", "12R"),
+            ("Cost", FormatNuyen(cost)),
+            ("Essence", essence.ToString("0.00", CultureInfo.InvariantCulture)),
+            ("Capacity", "n/a"),
+            ("Book", dataFile));
+        string filterSummary = $"Filtered Catalog | {shown} shown / 9 total{Environment.NewLine}Category Path | Cyberware > Bodyware{Environment.NewLine}Filter Posture | grade, availability, and source stay live";
+        string liveRecalc = BuildGridValue(
+            ("Recalculated Cost", FormatNuyen(cost)),
+            ("Recalculated Essence", essence.ToString("0.00", CultureInfo.InvariantCulture)),
+            ("Black Market", blackMarket ? "Yes" : "No"),
+            ("Add Again", "Stays open"));
+
+        return ReplaceDialogField(
+            ReplaceDialogField(
+                ReplaceDialogField(dialog, "uiCyberwareSelectionDetails", details),
+                "uiCyberwareFilterSummary",
+                filterSummary),
+            "uiCyberwareLiveRecalc",
+            liveRecalc);
+    }
+
+    private static DesktopDialogState RebuildGearSelectionDialog(DesktopDialogState dialog)
+    {
+        decimal markupPercent = ParseDecimalField(dialog, "uiGearMarkup", 0m);
+        bool blackMarket = DesktopDialogFieldValueParser.ParseBool(dialog, "uiGearBlackMarketDiscount", false);
+        bool freeItem = DesktopDialogFieldValueParser.ParseBool(dialog, "uiGearFreeItem", false);
+        bool hideOverAvail = DesktopDialogFieldValueParser.ParseBool(dialog, "uiGearHideOverAvailLimit", true);
+        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiGearBookFilter") ?? "All Books";
+
+        int shown = hideOverAvail ? 6 : 8;
+        if (!string.Equals(dataFile, "All Books", StringComparison.Ordinal))
+            shown -= 3;
+        shown = Math.Max(1, shown);
+
+        decimal baseCost = 725m;
+        decimal cost = freeItem ? 0m : baseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
+        string details = BuildGridValue(
+            ("Selected", "Ares Predator V"),
+            ("Category", "Firearms"),
+            ("Availability", "5R"),
+            ("Cost", FormatNuyen(cost)),
+            ("Book", dataFile));
+        string filterSummary = $"Filtered Catalog | {shown} shown / 8 total{Environment.NewLine}Category Path | Gear > Firearms{Environment.NewLine}Filter Posture | availability, source, and pricing stay live";
+        string liveRecalc = BuildGridValue(
+            ("Recalculated Cost", FormatNuyen(cost)),
+            ("Free Item", freeItem ? "Yes" : "No"),
+            ("Black Market", blackMarket ? "Yes" : "No"),
+            ("Add Again", "Stays open"));
+
+        return ReplaceDialogField(
+            ReplaceDialogField(
+                ReplaceDialogField(dialog, "uiGearSelectionDetails", details),
+                "uiGearFilterSummary",
+                filterSummary),
+            "uiGearLiveRecalc",
+            liveRecalc);
+    }
+
+    private static DesktopDialogState RebuildWeaponSelectionDialog(DesktopDialogState dialog)
+    {
+        decimal markupPercent = ParseDecimalField(dialog, "uiWeaponMarkup", 0m);
+        bool blackMarket = DesktopDialogFieldValueParser.ParseBool(dialog, "uiWeaponBlackMarketDiscount", false);
+        bool freeItem = DesktopDialogFieldValueParser.ParseBool(dialog, "uiWeaponFreeItem", false);
+        bool hideOverAvail = DesktopDialogFieldValueParser.ParseBool(dialog, "uiWeaponHideOverAvailLimit", true);
+        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponBookFilter") ?? "All Books";
+
+        int shown = hideOverAvail ? 7 : 10;
+        if (!string.Equals(dataFile, "All Books", StringComparison.Ordinal))
+            shown -= 4;
+        shown = Math.Max(1, shown);
+
+        decimal baseCost = 750m;
+        decimal cost = freeItem ? 0m : baseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
+        string details = BuildGridValue(
+            ("Selected", "Colt M23"),
+            ("Damage", "7P"),
+            ("AP", "-1"),
+            ("Mode", "SA"),
+            ("Cost", FormatNuyen(cost)),
+            ("Book", dataFile));
+        string filterSummary = $"Filtered Catalog | {shown} shown / 10 total{Environment.NewLine}Category Path | Weapons > Heavy Pistols{Environment.NewLine}Filter Posture | availability, discounts, and source stay live";
+        string liveRecalc = BuildGridValue(
+            ("Recalculated Cost", FormatNuyen(cost)),
+            ("Accuracy", "5"),
+            ("Black Market", blackMarket ? "Yes" : "No"),
+            ("Add Again", "Stays open"));
+
+        return ReplaceDialogField(
+            ReplaceDialogField(
+                ReplaceDialogField(dialog, "uiWeaponSelectionDetails", details),
+                "uiWeaponFilterSummary",
+                filterSummary),
+            "uiWeaponLiveRecalc",
+            liveRecalc);
+    }
+
+    private static DesktopDialogState RebuildArmorSelectionDialog(DesktopDialogState dialog)
+    {
+        decimal markupPercent = ParseDecimalField(dialog, "uiArmorMarkup", 0m);
+        bool freeItem = DesktopDialogFieldValueParser.ParseBool(dialog, "uiArmorFreeItem", false);
+        bool hideOverAvail = DesktopDialogFieldValueParser.ParseBool(dialog, "uiArmorHideOverAvailLimit", true);
+        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorBookFilter") ?? "All Books";
+
+        int shown = hideOverAvail ? 5 : 7;
+        if (!string.Equals(dataFile, "All Books", StringComparison.Ordinal))
+            shown -= 2;
+        shown = Math.Max(1, shown);
+
+        decimal baseCost = 1000m;
+        decimal cost = freeItem ? 0m : baseCost * (1m + (markupPercent / 100m));
+        string details = BuildGridValue(
+            ("Selected", "Armor Jacket"),
+            ("Armor", "12"),
+            ("Availability", "12"),
+            ("Capacity", "n/a"),
+            ("Cost", FormatNuyen(cost)),
+            ("Book", dataFile));
+        string filterSummary = $"Filtered Catalog | {shown} shown / 7 total{Environment.NewLine}Category Path | Armor > Armor{Environment.NewLine}Filter Posture | availability, source, and markup stay live";
+        string liveRecalc = BuildGridValue(
+            ("Recalculated Cost", FormatNuyen(cost)),
+            ("Armor", "12"),
+            ("Free Item", freeItem ? "Yes" : "No"),
+            ("Add Again", "Stays open"));
+
+        return ReplaceDialogField(
+            ReplaceDialogField(
+                ReplaceDialogField(dialog, "uiArmorSelectionDetails", details),
+                "uiArmorFilterSummary",
+                filterSummary),
+            "uiArmorLiveRecalc",
+            liveRecalc);
+    }
+
+    private static DesktopDialogState RebuildVehicleSelectionDialog(DesktopDialogState dialog)
+    {
+        bool showDrones = DesktopDialogFieldValueParser.ParseBool(dialog, "uiVehicleShowDrones", true);
+        bool hideOverAvail = DesktopDialogFieldValueParser.ParseBool(dialog, "uiVehicleHideOverAvailLimit", true);
+        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBookFilter") ?? "Core Rulebook";
+
+        int shown = 8;
+        if (hideOverAvail)
+            shown -= 2;
+        if (!showDrones)
+            shown -= 3;
+        if (!string.Equals(dataFile, "All Books", StringComparison.Ordinal))
+            shown -= 1;
+        shown = Math.Max(1, shown);
+
+        string details = BuildGridValue(
+            ("Selected", "Hyundai Shin-Hyung"),
+            ("Role", showDrones ? "Vehicle / Drone Catalog" : "Vehicle"),
+            ("Handling", "4"),
+            ("Armor", "8"),
+            ("Source", "Core Rulebook p. 465"),
+            ("Book", dataFile));
+        string filterSummary = $"Filtered Catalog | {shown} shown / 8 total{Environment.NewLine}Category Path | Vehicles > Cars{Environment.NewLine}Filter Posture | vehicle/drone and availability stay live";
+        string liveRecalc = BuildGridValue(
+            ("Selected Cost", FormatNuyen(16000m)),
+            ("Show Drones", showDrones ? "Yes" : "No"),
+            ("Availability Filter", hideOverAvail ? "On" : "Off"),
+            ("Add Again", "Stays open"));
+
+        return ReplaceDialogField(
+            ReplaceDialogField(
+                ReplaceDialogField(dialog, "uiVehicleSelectionDetails", details),
+                "uiVehicleFilterSummary",
+                filterSummary),
+            "uiVehicleLiveRecalc",
+            liveRecalc);
+    }
+
     private static DesktopDialogField BuildSelectionTreeField(string id, string label, string tree)
     {
         return new DesktopDialogField(
@@ -830,6 +1094,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiCyberwareCost", "Cost", "149000", "149000", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareSource", "Source", "Core Rulebook p. 461", "Core Rulebook p. 461", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiCyberwareFilterSummary", "Filter Summary", "Filtered Catalog | 3 shown / 9 total" + Environment.NewLine + "Category Path | Cyberware > Bodyware" + Environment.NewLine + "Filter Posture | grade, availability, and source stay live", "Filtered Catalog | 3 shown / 9 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("uiCyberwareLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥149,000" + Environment.NewLine + "Recalculated Essence | 3.00" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥149,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiCyberwareNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -898,6 +1164,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiGearCost", "Cost", "725", "725", IsReadOnly: true),
             new DesktopDialogField("uiGearSource", "Source", "Core Rulebook p. 424", "Core Rulebook p. 424", IsReadOnly: true),
             new DesktopDialogField("uiGearSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiGearFilterSummary", "Filter Summary", "Filtered Catalog | 6 shown / 8 total" + Environment.NewLine + "Category Path | Gear > Firearms" + Environment.NewLine + "Filter Posture | availability, source, and pricing stay live", "Filtered Catalog | 6 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("uiGearLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥725" + Environment.NewLine + "Free Item | No" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥725", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiGearNotes", "Notes", "Use gear details to confirm legality, source, rating, and discount posture before adding.", "Use gear details to confirm legality, source, rating, and discount posture before adding.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1453,6 +1721,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleCost", "Cost", "16000", "16000", IsReadOnly: true),
             new DesktopDialogField("uiVehicleSource", "Source", "Core Rulebook p. 465", "Core Rulebook p. 465", IsReadOnly: true),
             new DesktopDialogField("uiVehicleSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiVehicleFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 8 total" + Environment.NewLine + "Category Path | Vehicles > Cars" + Environment.NewLine + "Filter Posture | vehicle/drone and availability stay live", "Filtered Catalog | 5 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("uiVehicleLiveRecalc", "Live Recalculation", "Selected Cost | ¥16,000" + Environment.NewLine + "Show Drones | Yes" + Environment.NewLine + "Availability Filter | On" + Environment.NewLine + "Add Again | Stays open", "Selected Cost | ¥16,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiVehicleNotes", "Notes", "Vehicle stats, source, and vehicle/drone filter posture remain visible before the selection is confirmed.", "Vehicle stats, source, and vehicle/drone filter posture remain visible before the selection is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1645,6 +1915,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiWeaponCost", "Cost", "750", "750", IsReadOnly: true),
             new DesktopDialogField("uiWeaponSource", "Source", "Core Rulebook p. 424", "Core Rulebook p. 424", IsReadOnly: true),
             new DesktopDialogField("uiWeaponSelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiWeaponFilterSummary", "Filter Summary", "Filtered Catalog | 7 shown / 10 total" + Environment.NewLine + "Category Path | Weapons > Heavy Pistols" + Environment.NewLine + "Filter Posture | availability, discounts, and source stay live", "Filtered Catalog | 7 shown / 10 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("uiWeaponLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥750" + Environment.NewLine + "Accuracy | 5" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥750", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiWeaponNotes", "Notes", "Damage, AP, firing mode, source, and pricing filters remain visible before confirmation.", "Damage, AP, firing mode, source, and pricing filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1685,6 +1957,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiArmorCost", "Cost", "1000", "1000", IsReadOnly: true),
             new DesktopDialogField("uiArmorSource", "Source", "Core Rulebook p. 436", "Core Rulebook p. 436", IsReadOnly: true),
             new DesktopDialogField("uiArmorSelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiArmorFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 7 total" + Environment.NewLine + "Category Path | Armor > Armor" + Environment.NewLine + "Filter Posture | availability, source, and markup stay live", "Filtered Catalog | 5 shown / 7 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("uiArmorLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥1,000" + Environment.NewLine + "Armor | 12" + Environment.NewLine + "Free Item | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥1,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiArmorNotes", "Notes", "Armor rating, legality, source, and pricing filters remain visible before confirmation.", "Armor rating, legality, source, and pricing filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }

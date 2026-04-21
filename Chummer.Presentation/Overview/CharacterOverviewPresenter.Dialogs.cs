@@ -41,10 +41,7 @@ public sealed partial class CharacterOverviewPresenter
                 : field)
             .ToArray();
         DesktopDialogState updatedDialog = dialog with { Fields = updatedFields };
-        if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal))
-        {
-            updatedDialog = DesktopDialogFactory.RebuildGlobalSettingsDialog(updatedDialog, State.Preferences);
-        }
+        updatedDialog = DesktopDialogFactory.RebuildDynamicDialog(updatedDialog, State.Preferences);
 
         Publish(State with
         {
