@@ -1225,6 +1225,118 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return string.Join(Environment.NewLine, lines);
     }
 
+    private static string BuildSelectionGroupedBranchTree(
+        string root,
+        IEnumerable<(string Group, string Branch)> entries,
+        string? selectedBranch)
+    {
+        var grouped = entries
+            .Where(entry => !string.IsNullOrWhiteSpace(entry.Branch))
+            .Select(entry => (
+                Group: string.IsNullOrWhiteSpace(entry.Group) ? root : entry.Group.Trim(),
+                Branch: entry.Branch.Trim()))
+            .Distinct()
+            .GroupBy(entry => entry.Group, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (grouped.Length == 0)
+            return $"[{root}]";
+
+        List<string> lines = [$"[{root}]"];
+        for (int groupIndex = 0; groupIndex < grouped.Length; groupIndex++)
+        {
+            var group = grouped[groupIndex];
+            bool lastGroup = groupIndex == grouped.Length - 1;
+            lines.Add($"{(lastGroup ? "└─" : "├─")} {group.Key}");
+
+            string[] branches = group
+                .Select(entry => entry.Branch)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(branch => branch, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            for (int branchIndex = 0; branchIndex < branches.Length; branchIndex++)
+            {
+                string branch = branches[branchIndex];
+                bool selected = !string.IsNullOrWhiteSpace(selectedBranch)
+                    && string.Equals(branch, selectedBranch, StringComparison.OrdinalIgnoreCase);
+                bool lastBranch = branchIndex == branches.Length - 1;
+                string prefix = lastGroup ? "   " : "│  ";
+                prefix += lastBranch ? "└─" : "├─";
+                lines.Add($"{prefix} {(selected ? ">" : " ")} {branch}");
+            }
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildSelectionCategoryPath(
+        string root,
+        string? group,
+        string branch,
+        string? item = null)
+    {
+        List<string> segments = [root];
+        if (!string.IsNullOrWhiteSpace(group)
+            && !string.Equals(group, root, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(group, branch, StringComparison.OrdinalIgnoreCase))
+        {
+            segments.Add(group);
+        }
+
+        segments.Add(branch);
+        if (!string.IsNullOrWhiteSpace(item))
+        {
+            segments.Add(item);
+        }
+
+        return string.Join(" > ", segments);
+    }
+
+    private static bool MatchesSelectionCategory(
+        string? category,
+        string branch,
+        string? group = null)
+    {
+        if (string.IsNullOrWhiteSpace(category)
+            || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.Equals(branch, category, StringComparison.OrdinalIgnoreCase)
+            || (!string.IsNullOrWhiteSpace(group)
+                && string.Equals(group, category, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string ResolveSelectionTreeBranch(
+        string? category,
+        string selectedBranch,
+        string? selectedGroup = null)
+        => MatchesSelectionCategory(category, selectedBranch, selectedGroup)
+            ? selectedBranch
+            : category ?? selectedBranch;
+
+    private static string ResolveCyberwareGroup(string branch)
+        => string.Equals(branch, "Cyberlimbs", StringComparison.OrdinalIgnoreCase)
+            ? "Augmentation Frames"
+            : "Core Systems";
+
+    private static string ResolveArmorGroup(string branch)
+        => branch.Trim().ToLowerInvariant() switch
+        {
+            "armor" or "clothing" => "Protective Wear",
+            "shields" or "ppp" => "Protective Accessories",
+            _ => "Armor Catalog"
+        };
+
+    private static string ResolveVehicleGroup(string branch)
+        => string.Equals(branch, "Drones", StringComparison.OrdinalIgnoreCase)
+            ? "Drone Platforms"
+            : "Ground Vehicles";
+
     private static string BuildSelectionList(IEnumerable<string> lines)
         => string.Join(Environment.NewLine, lines.Where(line => !string.IsNullOrWhiteSpace(line)));
 
@@ -1251,10 +1363,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
 
         var filtered = options
-            .Where(option => string.IsNullOrWhiteSpace(category)
-                || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase))
+            .Where(option => MatchesSelectionCategory(category, option.Branch, ResolveCyberwareGroup(option.Branch)))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
@@ -1266,7 +1375,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             .ToArray();
 
         if (filtered.Length == 0)
-            filtered = options.Where(option => string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)).ToArray();
+            filtered = options.Where(option => MatchesSelectionCategory(category, option.Branch, ResolveCyberwareGroup(option.Branch))).ToArray();
         if (filtered.Length == 0)
             filtered = options;
 
@@ -1277,7 +1386,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             cost *= 0.9m;
         decimal essence = selected.BaseEssence * ResolveGradeEssenceMultiplier(grade);
 
-        string categoryTree = BuildSelectionBranchTree("Cyberware", options.Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
+        string selectedGroup = ResolveCyberwareGroup(selected.Branch);
+        string categoryTree = BuildSelectionGroupedBranchTree("Cyberware", options.Select(option => (ResolveCyberwareGroup(option.Branch), option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selectedGroup));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1289,11 +1399,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Book", selected.Book));
         string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
-            ("Category Path", $"Cyberware > {selected.Branch} > {selected.Name}"),
+            ("Category Path", BuildSelectionCategoryPath("Cyberware", selectedGroup, selected.Branch, selected.Name)),
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Add & More keeps the selector open"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Cyberware > {selected.Branch}{Environment.NewLine}Filter Posture | grade, availability, and source stay live";
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Cyberware", selectedGroup, selected.Branch)}{Environment.NewLine}Filter Posture | grade, availability, and source stay live";
         string liveRecalc = BuildGridValue(
             ("Recalculated Cost", FormatNuyen(cost)),
             ("Recalculated Essence", essence.ToString("0.00", CultureInfo.InvariantCulture)),
@@ -1301,6 +1411,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Add Again", "Stays open"));
         string categoryCommands = BuildSelectionList(
         [
+            $"Group | {selectedGroup}",
             $"Category | {selected.Branch}",
             $"Search Scope | {searchScope}",
             $"Data File | {selected.Book}",
@@ -1362,11 +1473,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
 
         var filtered = options
-            .Where(option => string.IsNullOrWhiteSpace(category)
-                || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase))
+            .Where(option => MatchesSelectionCategory(category, option.Branch, option.Group))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
@@ -1378,14 +1485,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             .ToArray();
 
         if (filtered.Length == 0)
-            filtered = options.Where(option => string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase) || string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase)).ToArray();
+            filtered = options.Where(option => MatchesSelectionCategory(category, option.Branch, option.Group)).ToArray();
         if (filtered.Length == 0)
             filtered = options;
 
         var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
             ?? filtered[0];
         decimal cost = freeItem ? 0m : selected.BaseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
-        string categoryTree = BuildSelectionBranchTree("Gear", options.Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
+        string categoryTree = BuildSelectionGroupedBranchTree("Gear", options.Select(option => (option.Group, option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selected.Group));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1395,11 +1502,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Book", selected.Book));
         string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
-            ("Category Path", $"Gear > {selected.Branch} > {selected.Name}"),
+            ("Category Path", BuildSelectionCategoryPath("Gear", selected.Group, selected.Branch, selected.Name)),
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Stack and discount posture stay live"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Gear > {selected.Branch}{Environment.NewLine}Filter Posture | availability, source, and pricing stay live";
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Gear", selected.Group, selected.Branch)}{Environment.NewLine}Filter Posture | availability, source, and pricing stay live";
         string liveRecalc = BuildGridValue(
             ("Recalculated Cost", FormatNuyen(cost)),
             ("Free Item", freeItem ? "Yes" : "No"),
@@ -1407,6 +1514,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Add Again", "Stays open"));
         string categoryCommands = BuildSelectionList(
         [
+            $"Group | {selected.Group}",
             $"Category | {selected.Branch}",
             $"Search Scope | {searchScope}",
             $"Data File | {selected.Book}",
@@ -1468,11 +1576,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
 
         var filtered = options
-            .Where(option => string.IsNullOrWhiteSpace(category)
-                || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase))
+            .Where(option => MatchesSelectionCategory(category, option.Branch, option.Group))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
@@ -1484,14 +1588,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             .ToArray();
 
         if (filtered.Length == 0)
-            filtered = options.Where(option => string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase) || string.Equals(option.Group, category, StringComparison.OrdinalIgnoreCase)).ToArray();
+            filtered = options.Where(option => MatchesSelectionCategory(category, option.Branch, option.Group)).ToArray();
         if (filtered.Length == 0)
             filtered = options;
 
         var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
             ?? filtered[0];
         decimal cost = freeItem ? 0m : selected.BaseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
-        string categoryTree = BuildSelectionBranchTree("Weapons", options.Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
+        string categoryTree = BuildSelectionGroupedBranchTree("Weapons", options.Select(option => (option.Group, option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selected.Group));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1502,11 +1606,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Book", selected.Book));
         string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
-            ("Category Path", $"Weapons > {selected.Branch} > {selected.Name}"),
+            ("Category Path", BuildSelectionCategoryPath("Weapons", selected.Group, selected.Branch, selected.Name)),
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Add & More keeps the selector open"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Weapons > {selected.Branch}{Environment.NewLine}Filter Posture | availability, discounts, and source stay live";
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Weapons", selected.Group, selected.Branch)}{Environment.NewLine}Filter Posture | availability, discounts, and source stay live";
         string liveRecalc = BuildGridValue(
             ("Recalculated Cost", FormatNuyen(cost)),
             ("Accuracy", selected.Accuracy),
@@ -1514,6 +1618,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Add Again", "Stays open"));
         string categoryCommands = BuildSelectionList(
         [
+            $"Group | {selected.Group}",
             $"Category | {selected.Branch}",
             $"Search Scope | {searchScope}",
             $"Data File | {selected.Book}",
@@ -1576,10 +1681,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
 
         var filtered = options
-            .Where(option => string.IsNullOrWhiteSpace(category)
-                || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase))
+            .Where(option => MatchesSelectionCategory(category, option.Branch, ResolveArmorGroup(option.Branch)))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
@@ -1591,14 +1693,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             .ToArray();
 
         if (filtered.Length == 0)
-            filtered = options.Where(option => string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase)).ToArray();
+            filtered = options.Where(option => MatchesSelectionCategory(category, option.Branch, ResolveArmorGroup(option.Branch))).ToArray();
         if (filtered.Length == 0)
             filtered = options;
 
         var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
             ?? filtered[0];
         decimal cost = freeItem ? 0m : selected.BaseCost * (1m + (markupPercent / 100m)) * (blackMarket ? 0.9m : 1m);
-        string categoryTree = BuildSelectionBranchTree("Armor", options.Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
+        string selectedGroup = ResolveArmorGroup(selected.Branch);
+        string categoryTree = BuildSelectionGroupedBranchTree("Armor", options.Select(option => (ResolveArmorGroup(option.Branch), option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selectedGroup));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1609,11 +1712,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Book", selected.Book));
         string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
-            ("Category Path", $"Armor > {selected.Branch} > {selected.Name}"),
+            ("Category Path", BuildSelectionCategoryPath("Armor", selectedGroup, selected.Branch, selected.Name)),
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Source and markup stay visible through confirmation"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Armor > {selected.Branch}{Environment.NewLine}Filter Posture | availability, source, and markup stay live";
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Armor", selectedGroup, selected.Branch)}{Environment.NewLine}Filter Posture | availability, source, and markup stay live";
         string liveRecalc = BuildGridValue(
             ("Recalculated Cost", FormatNuyen(cost)),
             ("Armor", selected.Armor),
@@ -1621,6 +1724,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Add Again", "Stays open"));
         string categoryCommands = BuildSelectionList(
         [
+            $"Group | {selectedGroup}",
             $"Category | {selected.Branch}",
             $"Search Scope | {searchScope}",
             $"Data File | {selected.Book}",
@@ -1686,10 +1790,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         var filtered = options
             .Where(option => showDrones || !option.IsDrone)
-            .Where(option => string.IsNullOrWhiteSpace(category)
-                || string.Equals(category, "All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase))
+            .Where(option => MatchesSelectionCategory(category, option.Branch, ResolveVehicleGroup(option.Branch)))
             .Where(option => string.IsNullOrWhiteSpace(dataFile)
                 || string.Equals(dataFile, "All Books", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
@@ -1701,7 +1802,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             .ToArray();
 
         if (filtered.Length == 0)
-            filtered = options.Where(option => (showDrones || !option.IsDrone) && (string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) || string.Equals(option.Branch, category, StringComparison.OrdinalIgnoreCase))).ToArray();
+            filtered = options.Where(option => (showDrones || !option.IsDrone) && MatchesSelectionCategory(category, option.Branch, ResolveVehicleGroup(option.Branch))).ToArray();
         if (filtered.Length == 0)
             filtered = options.Where(option => showDrones || !option.IsDrone).ToArray();
         if (filtered.Length == 0)
@@ -1717,7 +1818,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         if (freeItem)
             cost = 0m;
 
-        string categoryTree = BuildSelectionBranchTree("Vehicles", options.Where(option => showDrones || !option.IsDrone).Select(option => option.Branch), string.Equals(category, "Show All", StringComparison.OrdinalIgnoreCase) ? selected.Branch : category);
+        string selectedGroup = ResolveVehicleGroup(selected.Branch);
+        string categoryTree = BuildSelectionGroupedBranchTree("Vehicles", options.Where(option => showDrones || !option.IsDrone).Select(option => (ResolveVehicleGroup(option.Branch), option.Branch)), ResolveSelectionTreeBranch(category, selected.Branch, selectedGroup));
         string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
         string details = BuildGridValue(
             ("Selected", selected.Name),
@@ -1728,11 +1830,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Book", selected.Book));
         string searchScope = BuildSelectionSearchScope(searchInCategoryOnly);
         string selectionTrail = BuildGridValue(
-            ("Category Path", $"Vehicles > {selected.Branch} > {selected.Name}"),
+            ("Category Path", BuildSelectionCategoryPath("Vehicles", selectedGroup, selected.Branch, selected.Name)),
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Used-vehicle and drone posture stay live"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | Vehicles > {selected.Branch}{Environment.NewLine}Filter Posture | vehicle/drone and availability stay live";
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Vehicles", selectedGroup, selected.Branch)}{Environment.NewLine}Filter Posture | vehicle/drone and availability stay live";
         string liveRecalc = BuildGridValue(
             ("Selected Cost", FormatNuyen(cost)),
             ("Show Drones", showDrones ? "Yes" : "No"),
@@ -1740,6 +1842,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Add Again", "Stays open"));
         string categoryCommands = BuildSelectionList(
         [
+            $"Group | {selectedGroup}",
             $"Category | {selected.Branch}",
             $"Search Scope | {searchScope}",
             $"Data File | {selected.Book}",
@@ -1962,12 +2065,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildCyberwareSelectionFields()
     {
-        string categoryTree =
-            "[Cyberware]" + Environment.NewLine +
-            "├─ Bodyware" + Environment.NewLine +
-            "├─ Headware" + Environment.NewLine +
-            "├─ Cyberlimbs" + Environment.NewLine +
-            "└─ Accessories";
+        string categoryTree = BuildSelectionGroupedBranchTree(
+            "Cyberware",
+            [
+                ("Core Systems", "Accessories"),
+                ("Core Systems", "Bodyware"),
+                ("Augmentation Frames", "Cyberlimbs"),
+                ("Core Systems", "Headware")
+            ],
+            "Bodyware");
         string candidateList =
             "Wired Reflexes 2 · Initiative boost · Essence 3.00" + Environment.NewLine +
             "Cybereyes Rating 4 · Sensor suite · Essence 0.40" + Environment.NewLine +
@@ -1980,7 +2086,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Essence", "3.00"),
             ("Capacity", "n/a"),
             ("Book", "Core Rulebook"));
-        string selectionTrailPath = "Cyberware > Bodyware > Wired Reflexes";
+        string selectionTrailPath = BuildSelectionCategoryPath("Cyberware", "Core Systems", "Bodyware", "Wired Reflexes 2");
         string notes =
             "Grade modifiers, essence/cost deltas, and source details are surfaced here before the implant is added." + Environment.NewLine +
             "Grade, book, and availability filters stay visible like the old selection form while Add & More remains available.";
@@ -2013,10 +2119,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiCyberwareSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionTrailField("uiCyberwareSelectionTrail", selectionTrailPath, "Wired Reflexes 2", "Add & More keeps the selector open"),
             BuildSelectionCommandsField("uiCyberwareCategoryCommands", "Category Commands",
+                "Group | Core Systems",
+                "Category | Bodyware",
+                "Data File | Core Rulebook",
                 "Move the tree without losing grade or availability posture",
-                "Review suites and accessories after picking the base implant",
-                "Keep source and category scope visible while browsing"),
-            new DesktopDialogField("uiCyberwareFilterSummary", "Filter Summary", "Filtered Catalog | 3 shown / 9 total" + Environment.NewLine + "Category Path | Cyberware > Bodyware" + Environment.NewLine + "Filter Posture | grade, availability, and source stay live", "Filtered Catalog | 3 shown / 9 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                "Review suites and accessories after picking the base implant"),
+            new DesktopDialogField("uiCyberwareFilterSummary", "Filter Summary", "Filtered Catalog | 3 shown / 9 total" + Environment.NewLine + "Category Path | Cyberware > Core Systems > Bodyware" + Environment.NewLine + "Filter Posture | grade, availability, and source stay live", "Filtered Catalog | 3 shown / 9 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiCyberwareLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥149,000" + Environment.NewLine + "Recalculated Essence | 3.00" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥149,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiCyberwareResultCommands", "Result Commands",
                 "Compare source, cost, and essence on the right before adding",
@@ -2059,12 +2167,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildGearSelectionFields()
     {
-        string categoryTree =
-            "[Gear]" + Environment.NewLine +
-            "├─ Firearms" + Environment.NewLine +
-            "├─ Armor" + Environment.NewLine +
-            "├─ Electronics" + Environment.NewLine +
-            "└─ General";
+        string categoryTree = BuildSelectionGroupedBranchTree(
+            "Gear",
+            [
+                ("Armor", "Armor"),
+                ("Electronics", "Visual"),
+                ("Firearms", "Pistols"),
+                ("General", "Medical")
+            ],
+            "Pistols");
         string candidateList =
             "Ares Predator V · Pistol · ¥725" + Environment.NewLine +
             "Armor Jacket · Armor · ¥1000" + Environment.NewLine +
@@ -2098,12 +2209,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiGearCost", "Cost", "725", "725", IsReadOnly: true),
             new DesktopDialogField("uiGearSource", "Source", "Core Rulebook p. 424", "Core Rulebook p. 424", IsReadOnly: true),
             new DesktopDialogField("uiGearSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            BuildSelectionTrailField("uiGearSelectionTrail", "Gear > Pistols > Ares Predator V", "Ares Predator V", "Stack and discount posture stay live"),
+            BuildSelectionTrailField("uiGearSelectionTrail", BuildSelectionCategoryPath("Gear", "Firearms", "Pistols", "Ares Predator V"), "Ares Predator V", "Stack and discount posture stay live"),
             BuildSelectionCommandsField("uiGearCategoryCommands", "Category Commands",
+                "Group | Firearms",
+                "Category | Pistols",
+                "Data File | Core Rulebook",
                 "Move the tree without losing source or legality posture",
-                "Keep Do It Yourself and Stack visible while browsing",
-                "Review accessories after locking the base item"),
-            new DesktopDialogField("uiGearFilterSummary", "Filter Summary", "Filtered Catalog | 6 shown / 8 total" + Environment.NewLine + "Category Path | Gear > Pistols" + Environment.NewLine + "Filter Posture | availability, source, and pricing stay live", "Filtered Catalog | 6 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                "Keep Do It Yourself and Stack visible while browsing"),
+            new DesktopDialogField("uiGearFilterSummary", "Filter Summary", "Filtered Catalog | 6 shown / 8 total" + Environment.NewLine + "Category Path | Gear > Firearms > Pistols" + Environment.NewLine + "Filter Posture | availability, source, and pricing stay live", "Filtered Catalog | 6 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiGearLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥725" + Environment.NewLine + "Free Item | No" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥725", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiGearResultCommands", "Result Commands",
                 "Compare cost, rating, and legality on the right before adding",
@@ -2798,12 +2911,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildVehicleSelectionFields()
     {
-        string categoryTree =
-            "[Vehicles]" + Environment.NewLine +
-            "├─ Cars" + Environment.NewLine +
-            "├─ Trucks" + Environment.NewLine +
-            "├─ Bikes" + Environment.NewLine +
-            "└─ Drones";
+        string categoryTree = BuildSelectionGroupedBranchTree(
+            "Vehicles",
+            [
+                ("Ground Vehicles", "Bikes"),
+                ("Ground Vehicles", "Cars"),
+                ("Drone Platforms", "Drones"),
+                ("Ground Vehicles", "Trucks")
+            ],
+            "Cars");
         string candidateList =
             "Hyundai Shin-Hyung · Car · ¥16,000" + Environment.NewLine +
             "GMC Roadmaster · Truck · ¥74,000" + Environment.NewLine +
@@ -2815,7 +2931,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Armor", "8"),
             ("Source", "Core Rulebook p. 465"),
             ("Book", "Core Rulebook"));
-        string selectionTrailPath = "Vehicles > Cars > Hyundai Shin-Hyung";
+        string selectionTrailPath = BuildSelectionCategoryPath("Vehicles", "Ground Vehicles", "Cars", "Hyundai Shin-Hyung");
 
         return
         [
@@ -2843,10 +2959,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionTrailField("uiVehicleSelectionTrail", selectionTrailPath, "Hyundai Shin-Hyung", "Used-vehicle and drone posture stay live"),
             BuildSelectionCommandsField("uiVehicleCategoryCommands", "Category Commands",
+                "Group | Ground Vehicles",
+                "Category | Cars",
+                "Data File | Core Rulebook",
                 "Move between chassis and drone branches without losing live filters",
-                "Keep used-vehicle and availability posture visible while browsing",
-                "Review mod follow-through after choosing the chassis"),
-            new DesktopDialogField("uiVehicleFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 8 total" + Environment.NewLine + "Category Path | Vehicles > Cars" + Environment.NewLine + "Filter Posture | vehicle/drone and availability stay live", "Filtered Catalog | 5 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                "Keep used-vehicle and availability posture visible while browsing"),
+            new DesktopDialogField("uiVehicleFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 8 total" + Environment.NewLine + "Category Path | Vehicles > Ground Vehicles > Cars" + Environment.NewLine + "Filter Posture | vehicle/drone and availability stay live", "Filtered Catalog | 5 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiVehicleLiveRecalc", "Live Recalculation", "Selected Cost | ¥16,000" + Environment.NewLine + "Show Drones | Yes" + Environment.NewLine + "Availability Filter | On" + Environment.NewLine + "Add Again | Stays open", "Selected Cost | ¥16,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiVehicleResultCommands", "Result Commands",
                 "Compare handling, armor, and source on the right before adding",
@@ -3013,12 +3131,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildWeaponSelectionFields()
     {
-        string categoryTree =
-            "[Weapons]" + Environment.NewLine +
-            "├─ Assault Rifles" + Environment.NewLine +
-            "├─ Heavy Pistols" + Environment.NewLine +
-            "├─ Shotguns" + Environment.NewLine +
-            "└─ Melee";
+        string categoryTree = BuildSelectionGroupedBranchTree(
+            "Weapons",
+            [
+                ("Firearms", "Assault Rifles"),
+                ("Firearms", "Heavy Pistols"),
+                ("Melee", "Melee"),
+                ("Firearms", "Shotguns")
+            ],
+            "Heavy Pistols");
         string candidateList =
             "Ares Alpha · Assault Rifle · ¥2,650" + Environment.NewLine +
             "Defiance T-250 · Shotgun · ¥450" + Environment.NewLine +
@@ -3030,7 +3151,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Mode", "SA"),
             ("Source", "Core Rulebook p. 424"),
             ("Book", "Core Rulebook"));
-        string selectionTrailPath = "Weapons > Heavy Pistols > Colt M23";
+        string selectionTrailPath = BuildSelectionCategoryPath("Weapons", "Firearms", "Heavy Pistols", "Colt M23");
 
         return
         [
@@ -3056,10 +3177,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiWeaponIncludedAccessories", "Included Accessories", "Smartgun System" + Environment.NewLine + "Top Rail Mount", "Smartgun System", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionTrailField("uiWeaponSelectionTrail", selectionTrailPath, "Colt M23", "Add & More keeps the selector open"),
             BuildSelectionCommandsField("uiWeaponCategoryCommands", "Category Commands",
+                "Group | Firearms",
+                "Category | Heavy Pistols",
+                "Data File | Core Rulebook",
                 "Move between firearm branches without losing live filters",
-                "Keep availability and discount posture visible while browsing",
-                "Review accessories and ammo follow-through after choosing the base weapon"),
-            new DesktopDialogField("uiWeaponFilterSummary", "Filter Summary", "Filtered Catalog | 7 shown / 10 total" + Environment.NewLine + "Category Path | Weapons > Heavy Pistols" + Environment.NewLine + "Filter Posture | availability, discounts, and source stay live", "Filtered Catalog | 7 shown / 10 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                "Keep availability and discount posture visible while browsing"),
+            new DesktopDialogField("uiWeaponFilterSummary", "Filter Summary", "Filtered Catalog | 7 shown / 10 total" + Environment.NewLine + "Category Path | Weapons > Firearms > Heavy Pistols" + Environment.NewLine + "Filter Posture | availability, discounts, and source stay live", "Filtered Catalog | 7 shown / 10 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiWeaponLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥750" + Environment.NewLine + "Accuracy | 5" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥750", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiWeaponResultCommands", "Result Commands",
                 "Compare damage, AP, and source on the right before adding",
@@ -3071,12 +3194,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildArmorSelectionFields()
     {
-        string categoryTree =
-            "[Armor]" + Environment.NewLine +
-            "├─ Armor" + Environment.NewLine +
-            "├─ Clothing" + Environment.NewLine +
-            "├─ Shields" + Environment.NewLine +
-            "└─ PPP";
+        string categoryTree = BuildSelectionGroupedBranchTree(
+            "Armor",
+            [
+                ("Protective Wear", "Armor"),
+                ("Protective Wear", "Clothing"),
+                ("Protective Accessories", "PPP"),
+                ("Protective Accessories", "Shields")
+            ],
+            "Armor");
         string candidateList =
             "Armor Jacket · Armor 12 · ¥1000" + Environment.NewLine +
             "Actioneer Business Clothes · Armor 8 · ¥1500" + Environment.NewLine +
@@ -3088,7 +3214,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Capacity", "n/a"),
             ("Source", "Core Rulebook p. 436"),
             ("Book", "Core Rulebook"));
-        string selectionTrailPath = "Armor > Armor > Armor Jacket";
+        string selectionTrailPath = BuildSelectionCategoryPath("Armor", "Protective Wear", "Armor", "Armor Jacket");
 
         return
         [
@@ -3113,10 +3239,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiArmorSelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionTrailField("uiArmorSelectionTrail", selectionTrailPath, "Armor Jacket", "Source and markup stay visible through confirmation"),
             BuildSelectionCommandsField("uiArmorCategoryCommands", "Category Commands",
+                "Group | Protective Wear",
+                "Category | Armor",
+                "Data File | Core Rulebook",
                 "Move between armor branches without losing live filters",
-                "Keep availability and free-item posture visible while browsing",
-                "Review mods and accessories after selecting the base armor"),
-            new DesktopDialogField("uiArmorFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 7 total" + Environment.NewLine + "Category Path | Armor > Armor" + Environment.NewLine + "Filter Posture | availability, source, and markup stay live", "Filtered Catalog | 5 shown / 7 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                "Keep availability and free-item posture visible while browsing"),
+            new DesktopDialogField("uiArmorFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 7 total" + Environment.NewLine + "Category Path | Armor > Protective Wear > Armor" + Environment.NewLine + "Filter Posture | availability, source, and markup stay live", "Filtered Catalog | 5 shown / 7 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiArmorLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥1,000" + Environment.NewLine + "Armor | 12" + Environment.NewLine + "Free Item | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥1,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiArmorResultCommands", "Result Commands",
                 "Compare armor, legality, and source on the right before adding",
