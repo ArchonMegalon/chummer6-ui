@@ -385,9 +385,9 @@ public sealed class BlazorShellComponentTests
                             Summary: "Street Magic source toggle changed during import.")
                     ]))));
 
-        StringAssert.Contains(cut.Markup, "Import SR4 Oracle File");
+        StringAssert.Contains(cut.Markup, "Import SR4 Character File");
         StringAssert.Contains(cut.Markup, "Primary format: .chum4 with parity-safe XML fallback.");
-        StringAssert.Contains(cut.Markup, "(no SR4 preview file selected)");
+        StringAssert.Contains(cut.Markup, "(no SR4 character file selected)");
         StringAssert.Contains(cut.Markup, "SR4 Oracle Debug Import");
         StringAssert.Contains(cut.Markup, "Import receipt");
         StringAssert.Contains(cut.Markup, "Import landed with a governed receipt.");
@@ -421,8 +421,8 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.RulesetId, RulesetDefaults.Sr5)
             .Add(component => component.State, state));
 
-        StringAssert.Contains(commandCut.Markup, "SR6 Preview Commands");
-        StringAssert.Contains(commandCut.Markup, "No SR6 preview commands are currently available.");
+        StringAssert.Contains(commandCut.Markup, "SR6 Workbench Commands");
+        StringAssert.Contains(commandCut.Markup, "No SR6 workbench commands are currently available.");
         StringAssert.Contains(resultCut.Markup, "SR5 Editor Result");
         StringAssert.Contains(resultCut.Markup, "Shadowrun 5 stays on the main desktop editor");
         StringAssert.Contains(resultCut.Markup, "SR5 editor is ready");

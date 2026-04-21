@@ -36,12 +36,12 @@ public sealed class RulesetUiDirectiveCatalogTests
                 InstallState: ArtifactInstallStates.Available,
                 WarningCount: 0));
 
-        StringAssert.Contains(sr4, "preview import");
+        StringAssert.Contains(sr4, "import workbench");
         StringAssert.Contains(sr4, ".chum4");
         StringAssert.Contains(sr5, "main editor");
         StringAssert.Contains(sr5, ".chum5");
         StringAssert.Contains(sr5, "runtime/provider attention required");
-        StringAssert.Contains(sr6, "guided preview");
+        StringAssert.Contains(sr6, "guided workbench");
         StringAssert.Contains(sr6, ".chum6");
         StringAssert.Contains(sr6, "experimental-host honesty visible");
     }
@@ -64,10 +64,10 @@ public sealed class RulesetUiDirectiveCatalogTests
                 WarningCount: 1));
 
         StringAssert.Contains(sr4Rules, "Shadowrun 4");
-        StringAssert.Contains(sr4Rules, "preview-only");
+        StringAssert.Contains(sr4Rules, "parity-gated");
         StringAssert.Contains(sr5BuildLab, "main desktop editor");
         StringAssert.Contains(sr5BuildLab, "campaign return");
-        StringAssert.Contains(sr6Rules, "beta/preview");
+        StringAssert.Contains(sr6Rules, "preview-gated");
         StringAssert.Contains(sr6Rules, "runtime warnings remain active");
     }
 
@@ -85,11 +85,11 @@ public sealed class RulesetUiDirectiveCatalogTests
             installState: ArtifactInstallStates.Installed);
 
         StringAssert.Contains(sr4, ".chum4");
-        StringAssert.Contains(sr4, "preview import");
+        StringAssert.Contains(sr4, "import workbench");
         StringAssert.Contains(sr5, ".chum5");
         StringAssert.Contains(sr5, "main editor");
         StringAssert.Contains(sr6, ".chum6");
-        StringAssert.Contains(sr6, "guided preview");
+        StringAssert.Contains(sr6, "guided workbench");
         StringAssert.Contains(sr6, "Seattle Nights");
     }
 
@@ -117,7 +117,7 @@ public sealed class RulesetUiDirectiveCatalogTests
         string sr6WorkspaceFollowThrough = RulesetUiDirectiveCatalog.BuildWorkspaceFollowThroughActionLabel(RulesetDefaults.Sr6, "Open workspace follow-through");
         string? sr5Prefix = RulesetUiDirectiveCatalog.BuildNextActionPrefix(RulesetDefaults.Sr5);
 
-        StringAssert.Contains(sr4Spotlight, "import results");
+        StringAssert.Contains(sr4Spotlight, "import intake");
         StringAssert.Contains(sr5Resume, "Shadowrun 5 resume");
         StringAssert.Contains(sr5Resume, "SR5 character");
         StringAssert.Contains(sr5Resume, "Apex / Ghost");
@@ -163,22 +163,22 @@ public sealed class RulesetUiDirectiveCatalogTests
         Assert.AreEqual("Oracle intake desk", sr4MarqueeEyebrow);
         Assert.AreEqual("Shadowrun 5 character editor", sr5MarqueeTitle);
         Assert.AreEqual("Starter and beta desk", sr6MarqueeEyebrow);
-        Assert.AreEqual("Desktop Summary · SR4 Preview", sr4Summary);
+        Assert.AreEqual("Desktop Summary · SR4 Import Workbench", sr4Summary);
         Assert.AreEqual("SR5 Characters", sr5Dossiers);
         Assert.AreEqual("No open SR6 character", sr6EmptyStrip);
         StringAssert.Contains(sr5StripTitle, "Shadowrun 5");
         StringAssert.Contains(sr5StripTitle, "main editor");
         StringAssert.Contains(sr5StripTitle, "unsaved");
-        Assert.AreEqual("SR4 Preview Tabs", sr4Tabs);
+        Assert.AreEqual("SR4 Workbench Tabs", sr4Tabs);
         Assert.AreEqual("SR5 Editor Actions", sr5Actions);
-        Assert.AreEqual("SR6 Preview Flows", sr6Flows);
-        Assert.AreEqual("Import SR4 Oracle File", sr4Import);
+        Assert.AreEqual("SR6 Workbench Flows", sr6Flows);
+        Assert.AreEqual("Import SR4 Character File", sr4Import);
         Assert.AreEqual(".chum5,.chum4,.chum6,.xml,text/xml,application/xml", sr5ImportAccept);
         StringAssert.Contains(sr6ImportHint, ".chum6");
         Assert.AreEqual("SR4 Oracle Debug Import", sr4ImportDebug);
         Assert.AreEqual("Import SR6 Raw XML", sr6ImportAction);
-        Assert.AreEqual("SR4 Preview Commands", sr4Commands);
-        Assert.AreEqual("No SR6 preview commands are currently available.", sr6CommandHint);
+        Assert.AreEqual("SR4 Workbench Commands", sr4Commands);
+        Assert.AreEqual("No SR6 workbench commands are currently available.", sr6CommandHint);
         Assert.AreEqual("SR5 Editor Result", sr5Result);
         StringAssert.Contains(sr5ResultHint, ".chum5");
         StringAssert.Contains(sr4Ready, "import");
@@ -187,11 +187,11 @@ public sealed class RulesetUiDirectiveCatalogTests
         Assert.AreEqual("Rules", sr6Rules);
         Assert.AreEqual("Parity Check", sr4Validate);
         Assert.AreEqual("Build Plan", sr5Build);
-        Assert.AreEqual("Loadout", sr6Inventory);
+        Assert.AreEqual("Gear", sr6Inventory);
         StringAssert.Contains(sr5Workspace, "Shadowrun 5");
         StringAssert.Contains(sr5Workspace, "main editor");
         StringAssert.Contains(sr5Workspace, "saved");
-        Assert.AreEqual("Safety Check", sr6Workflow);
+        Assert.AreEqual("Validation", sr6Workflow);
         Assert.AreEqual("SR6 Matrix Action", preservedWorkflow);
     }
 }
