@@ -898,12 +898,79 @@ public class DialogCoordinatorTests
                 UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
                 GetState: () => published);
 
+        await coordinator.CoordinateAsync("open_watch_file", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("dialog.character_roster", published.ActiveDialog!.Id);
+        StringAssert.Contains(published.Notice ?? string.Empty, "already aligned");
+        StringAssert.Contains(published.Notice ?? string.Empty, "GST");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_open_watch_file_character_roster_switches_workspace_when_watch_file_matches_another_runner()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        string rosterPath = Path.Combine(Path.GetTempPath(), $"chummer-roster-watch-switch-{Guid.NewGuid():N}");
+        string nestedPath = Path.Combine(rosterPath, "campaign-a");
+        Directory.CreateDirectory(nestedPath);
+        File.WriteAllText(Path.Combine(nestedPath, "apex-runner.chum5"), "runner");
+        CharacterWorkspaceId workspaceOne = new("ghost-runner");
+        CharacterWorkspaceId workspaceTwo = new("apex-runner");
+        OpenWorkspaceState[] openWorkspaces =
+        [
+            new OpenWorkspaceState(workspaceOne, "Ghost Runner", "GST", DateTimeOffset.Parse("2026-04-21T08:00:00+00:00"), RulesetDefaults.Sr5, true),
+            new OpenWorkspaceState(workspaceTwo, "Apex", "APX", DateTimeOffset.Parse("2026-04-21T09:00:00+00:00"), RulesetDefaults.Sr6, true)
+        ];
+        DesktopPreferenceState preferences = DesktopPreferenceState.Default with
+        {
+            CharacterRosterPath = rosterPath
+        };
+
+        try
+        {
+            DesktopDialogState rosterDialog = WithFieldValues(
+                factory.CreateCommandDialog(
+                    "character_roster",
+                    CreateProfile("Ghost Runner", "GST"),
+                    preferences,
+                    activeSectionJson: null,
+                    currentWorkspace: workspaceOne,
+                    rulesetId: RulesetDefaults.Sr5,
+                    openWorkspaces: openWorkspaces),
+                ("rosterSelectedWatchFile", "campaign-a/apex-runner.chum5"));
+
+            CharacterOverviewState published = CharacterOverviewState.Empty with
+            {
+                Profile = CreateProfile("Ghost Runner", "GST"),
+                Preferences = preferences,
+                WorkspaceId = workspaceOne,
+                OpenWorkspaces = openWorkspaces,
+                ActiveDialog = rosterDialog
+            };
+
+            DialogCoordinationContext context = new(
+                State: published,
+                Publish: state => published = state,
+                ImportAsync: static (_, _) => Task.CompletedTask,
+                UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+                GetState: () => published);
+
             await coordinator.CoordinateAsync("open_watch_file", context, CancellationToken.None);
 
-            Assert.IsNotNull(published.ActiveDialog);
-            Assert.AreEqual("dialog.character_roster", published.ActiveDialog!.Id);
-            StringAssert.Contains(published.Notice ?? string.Empty, "campaign-a/ghost-runner.chum5");
+            Assert.IsNull(published.ActiveDialog);
+            Assert.AreEqual(workspaceTwo, published.WorkspaceId);
+            StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
+            StringAssert.Contains(published.Notice ?? string.Empty, "Watched runner 'APX' opened from roster watch folder.");
         }
+        finally
+        {
+            if (Directory.Exists(rosterPath))
+            {
+                Directory.Delete(rosterPath, recursive: true);
+            }
+        }
+    }
         finally
         {
             if (Directory.Exists(rosterPath))
