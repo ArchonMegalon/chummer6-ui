@@ -36,7 +36,12 @@ public sealed class DesktopPreferenceRuntimeTests
                 Language = "DE-DE",
                 CompactMode = true,
                 CharacterPriority = " SumToTen ",
-                CharacterNotes = "Desk notes"
+                CharacterNotes = "Desk notes",
+                StartupBehavior = " Restore roster ",
+                UpdateChannel = " Preview weekly ",
+                CharacterRosterPath = " /Tmp/Roster ",
+                PdfViewerPath = " /usr/bin/zathura ",
+                VisibleChromePolicy = " Compact shell only "
             });
 
         DesktopPreferenceState loaded = DesktopPreferenceRuntime.LoadOrCreateState("avalonia");
@@ -47,6 +52,11 @@ public sealed class DesktopPreferenceRuntimeTests
         Assert.IsTrue(loaded.CompactMode);
         Assert.AreEqual("SumToTen", loaded.CharacterPriority);
         Assert.AreEqual("Desk notes", loaded.CharacterNotes);
+        Assert.AreEqual("Restore roster", loaded.StartupBehavior);
+        Assert.AreEqual("Preview weekly", loaded.UpdateChannel);
+        Assert.AreEqual("/Tmp/Roster", loaded.CharacterRosterPath);
+        Assert.AreEqual("/usr/bin/zathura", loaded.PdfViewerPath);
+        Assert.AreEqual("Compact shell only", loaded.VisibleChromePolicy);
     }
 
     [TestMethod]

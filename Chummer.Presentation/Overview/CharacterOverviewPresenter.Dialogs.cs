@@ -40,9 +40,15 @@ public sealed partial class CharacterOverviewPresenter
                 ? field with { Value = DesktopDialogFieldValueParser.Normalize(field, value) }
                 : field)
             .ToArray();
+        DesktopDialogState updatedDialog = dialog with { Fields = updatedFields };
+        if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal))
+        {
+            updatedDialog = DesktopDialogFactory.RebuildGlobalSettingsDialog(updatedDialog, State.Preferences);
+        }
+
         Publish(State with
         {
-            ActiveDialog = dialog with { Fields = updatedFields },
+            ActiveDialog = updatedDialog,
             Error = null
         });
         return Task.CompletedTask;

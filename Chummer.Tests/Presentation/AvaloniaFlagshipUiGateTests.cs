@@ -1960,6 +1960,13 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() =>
                     harness.ScreenshotRootContainsVisibleText("Selected Runner")
                     && harness.ScreenshotRootContainsVisibleText("Roster Entries"));
+                harness.SetTheme(ThemeVariant.Dark);
+                harness.SetTheme(ThemeVariant.Light);
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Character Roster",
+                        StringComparison.Ordinal));
                 CaptureCurrentFrame(GetVeteranCertificationReviewStep("roster").ScreenshotFileName);
                 harness.InvokeDialogAction("close");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
@@ -3089,7 +3096,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         private Control GetScreenshotRootControl()
         {
             Window screenshotRoot = GetScreenshotRoot();
-            return screenshotRoot.Content as Control ?? screenshotRoot;
+            return screenshotRoot is DesktopDialogWindow
+                ? screenshotRoot
+                : screenshotRoot.Content as Control ?? screenshotRoot;
         }
 
         public Control GetScreenshotRootControlForTesting()

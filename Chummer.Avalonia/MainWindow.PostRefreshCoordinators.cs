@@ -63,7 +63,15 @@ internal static class MainWindowPostRefreshCoordinator
             return null;
         }
 
-        DesktopDialogWindow dialogWindow = currentWindow ?? CreateDialogWindow(adapter, onClosed);
+        DesktopDialogWindow? reusableWindow = currentWindow;
+        if (reusableWindow is not null
+            && !string.Equals(reusableWindow.BoundDialogId, activeDialog.Id, StringComparison.Ordinal))
+        {
+            reusableWindow.CloseFromPresenter();
+            reusableWindow = null;
+        }
+
+        DesktopDialogWindow dialogWindow = reusableWindow ?? CreateDialogWindow(adapter, onClosed);
         dialogWindow.AttachAdapter(adapter);
         dialogWindow.BindDialog(activeDialog);
 

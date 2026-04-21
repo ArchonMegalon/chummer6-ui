@@ -20,6 +20,11 @@ public static class DesktopPreferenceStateRuntime
             Theme = string.IsNullOrWhiteSpace(state.Theme) ? DesktopPreferenceState.Default.Theme : state.Theme.Trim(),
             Language = DesktopLocalizationCatalog.NormalizeOrDefault(state.Language),
             CharacterPriority = string.IsNullOrWhiteSpace(state.CharacterPriority) ? DesktopPreferenceState.Default.CharacterPriority : state.CharacterPriority.Trim(),
-            CharacterNotes = state.CharacterNotes ?? string.Empty
+            CharacterNotes = state.CharacterNotes ?? string.Empty,
+            StartupBehavior = string.IsNullOrWhiteSpace(state.StartupBehavior) ? DesktopPreferenceState.Default.StartupBehavior : state.StartupBehavior.Trim(),
+            UpdateChannel = string.IsNullOrWhiteSpace(state.UpdateChannel) ? DesktopPreferenceState.Default.UpdateChannel : state.UpdateChannel.Trim(),
+            CharacterRosterPath = string.IsNullOrWhiteSpace(state.CharacterRosterPath) ? DesktopPreferenceState.Default.CharacterRosterPath : state.CharacterRosterPath.Trim(),
+            PdfViewerPath = string.IsNullOrWhiteSpace(state.PdfViewerPath) ? DesktopPreferenceState.Default.PdfViewerPath : state.PdfViewerPath.Trim(),
+            VisibleChromePolicy = string.IsNullOrWhiteSpace(state.VisibleChromePolicy) ? DesktopPreferenceState.Default.VisibleChromePolicy : state.VisibleChromePolicy.Trim()
         };
 }

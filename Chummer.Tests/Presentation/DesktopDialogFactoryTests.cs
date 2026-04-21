@@ -40,18 +40,20 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("de-de", DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage"));
         Assert.AreEqual("de-de", DesktopDialogFieldValueParser.GetValue(dialog, "globalSheetLanguage"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalCompactMode"));
+        Assert.AreEqual("general", DesktopDialogFieldValueParser.GetValue(dialog, "globalActivePane"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsSections"), "Sourcebooks");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsTree"), "Data Paths");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsPropertyGrid"), "Scale | 125%");
         Assert.AreEqual("/Characters", DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterRosterPath"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalCurrentPaneNotes"), "old utility settings form");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy"), "status strip");
+        Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tabs, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsSections", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsPropertyGrid", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsTree", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsPropertyGrid", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)).LayoutSlot);
         StringAssert.Contains(dialog.Message ?? string.Empty, "Phase-1 desktop language changes apply on restart.");
     }
 
