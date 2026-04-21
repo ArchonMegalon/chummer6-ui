@@ -502,6 +502,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dialog.ui.combat_add_weapon" => RebuildWeaponSelectionDialog(dialog),
             "dialog.ui.combat_add_armor" => RebuildArmorSelectionDialog(dialog),
             "dialog.ui.vehicle_add" => RebuildVehicleSelectionDialog(dialog),
+            "dialog.ui.cyberware_edit" => RebuildCyberwareEditDialog(dialog),
+            "dialog.ui.gear_edit" => RebuildGearEditDialog(dialog),
+            "dialog.ui.vehicle_edit" => RebuildVehicleEditDialog(dialog),
             _ => dialog
         };
     }
@@ -995,6 +998,86 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             liveRecalc);
     }
 
+    private static DesktopDialogState RebuildCyberwareEditDialog(DesktopDialogState dialog)
+    {
+        string grade = DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditGrade") ?? "Standard";
+        decimal rating = ParseDecimalField(dialog, "uiCyberwareEditRating", 4m);
+        decimal cost = ParseDecimalField(dialog, "uiCyberwareEditCost", 16000m);
+        decimal essence = 0.10m * rating * ResolveGradeEssenceMultiplier(grade);
+
+        string details = BuildGridValue(
+            ("Selected", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditName") ?? "Cybereyes Rating 4"),
+            ("Category", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditCategory") ?? "Headware"),
+            ("Grade", grade),
+            ("Rating", rating.ToString("0", CultureInfo.InvariantCulture)),
+            ("Essence", essence.ToString("0.00", CultureInfo.InvariantCulture)),
+            ("Source", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditSource") ?? "Core Rulebook p. 455"));
+        string liveSummary = BuildGridValue(
+            ("Recalculated Cost", FormatNuyen(cost)),
+            ("Recalculated Essence", essence.ToString("0.00", CultureInfo.InvariantCulture)),
+            ("Posture", "legacy edit utility"),
+            ("Follow-through", "use implant tabs for payloads"));
+
+        return ReplaceDialogField(
+            ReplaceDialogField(
+                ReplaceDialogField(dialog, "uiCyberwareEditDetails", details),
+                "uiCyberwareEditLiveSummary",
+                liveSummary),
+            "uiCyberwareEditEssence",
+            essence.ToString("0.00", CultureInfo.InvariantCulture));
+    }
+
+    private static DesktopDialogState RebuildGearEditDialog(DesktopDialogState dialog)
+    {
+        decimal quantity = ParseDecimalField(dialog, "uiGearEditQuantity", 1m);
+        decimal rating = ParseDecimalField(dialog, "uiGearEditRating", 0m);
+        decimal cost = ParseDecimalField(dialog, "uiGearEditCost", 1000m);
+
+        string details = BuildGridValue(
+            ("Selected", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditName") ?? "Armor Jacket"),
+            ("Category", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditCategory") ?? "Armor"),
+            ("Quantity", quantity.ToString("0", CultureInfo.InvariantCulture)),
+            ("Rating", rating.ToString("0", CultureInfo.InvariantCulture)),
+            ("Availability", "12"),
+            ("Source", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditSource") ?? "Core Rulebook p. 437"));
+        string liveSummary = BuildGridValue(
+            ("Total Cost", FormatNuyen(cost * Math.Max(quantity, 1m))),
+            ("Wireless", "n/a"),
+            ("Legality", "Restricted carry not required"),
+            ("Posture", "legacy edit utility"));
+
+        return ReplaceDialogField(
+            ReplaceDialogField(dialog, "uiGearEditDetails", details),
+            "uiGearEditLiveSummary",
+            liveSummary);
+    }
+
+    private static DesktopDialogState RebuildVehicleEditDialog(DesktopDialogState dialog)
+    {
+        decimal handling = ParseDecimalField(dialog, "uiVehicleEditHandling", 3m);
+        decimal speed = ParseDecimalField(dialog, "uiVehicleEditSpeed", 4m);
+        decimal body = ParseDecimalField(dialog, "uiVehicleEditBody", 18m);
+        decimal armor = ParseDecimalField(dialog, "uiVehicleEditArmor", 16m);
+
+        string details = BuildGridValue(
+            ("Selected", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditName") ?? "GMC Roadmaster"),
+            ("Role", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditRole") ?? "Truck"),
+            ("Handling", handling.ToString("0", CultureInfo.InvariantCulture)),
+            ("Speed", speed.ToString("0", CultureInfo.InvariantCulture)),
+            ("Body / Armor", $"{body:0} / {armor:0}"),
+            ("Source", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditSource") ?? "Core Rulebook p. 466"));
+        string liveSummary = BuildGridValue(
+            ("Control Posture", "manual + rigger ready"),
+            ("Damage Soak", $"{body + armor:0}"),
+            ("Seats", "6"),
+            ("Posture", "legacy edit utility"));
+
+        return ReplaceDialogField(
+            ReplaceDialogField(dialog, "uiVehicleEditDetails", details),
+            "uiVehicleEditLiveSummary",
+            liveSummary);
+    }
+
     private static DesktopDialogField BuildSelectionTreeField(string id, string label, string tree)
     {
         return new DesktopDialogField(
@@ -1123,6 +1206,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiCyberwareEditEssence", "Essence", "0.40", "0.40", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareEditSource", "Source", "Core Rulebook p. 455", "Core Rulebook p. 455", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareEditDetails", "Implant Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiCyberwareEditLiveSummary", "Live Summary", "Recalculated Cost | ¥16,000" + Environment.NewLine + "Recalculated Essence | 0.40" + Environment.NewLine + "Posture | legacy edit utility" + Environment.NewLine + "Follow-through | use implant tabs for payloads", "Recalculated Cost | ¥16,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiCyberwareEditNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1192,6 +1276,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiGearEditCost", "Cost", "1000", "1000", InputType: "number"),
             new DesktopDialogField("uiGearEditSource", "Source", "Core Rulebook p. 437", "Core Rulebook p. 437", IsReadOnly: true),
             new DesktopDialogField("uiGearEditDetails", "Item Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiGearEditLiveSummary", "Live Summary", "Total Cost | ¥1,000" + Environment.NewLine + "Wireless | n/a" + Environment.NewLine + "Legality | Restricted carry not required" + Environment.NewLine + "Posture | legacy edit utility", "Total Cost | ¥1,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiGearEditNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1334,9 +1419,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         return
         [
-            BuildUtilitySectionsField("uiDeleteSections", "Target", "Details", "Notes"),
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Notes"),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", entityName, entityName, IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", NormalizeGridValue(summary), NormalizeGridValue(summary), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", "Removal Scope | current runner only" + Environment.NewLine + "Undo Posture | re-add manually from the same utility family" + Environment.NewLine + "Neighbor Context | surrounding list remains in view", "Removal Scope | current runner only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1679,9 +1765,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         return
         [
-            BuildUtilitySectionsField("uiActionSections", "Action", "Receipt", "Notes"),
+            BuildUtilitySectionsField("uiActionSections", "Action", "Impact", "Notes"),
             new DesktopDialogField("uiActionLabel", "Action", actionLabel, actionLabel, IsReadOnly: true),
-            new DesktopDialogField("uiActionDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiActionDetails", "Details", NormalizeGridValue(details), NormalizeGridValue(details), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiActionImpact", "Impact", "List Context | preserved" + Environment.NewLine + "Work rhythm | compact classic utility" + Environment.NewLine + "Next step | continue in the same section", "List Context | preserved", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiActionNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1750,6 +1837,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleEditArmor", "Armor", "16", "16", InputType: "number"),
             new DesktopDialogField("uiVehicleEditSource", "Source", "Core Rulebook p. 466", "Core Rulebook p. 466", IsReadOnly: true),
             new DesktopDialogField("uiVehicleEditDetails", "Vehicle Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiVehicleEditLiveSummary", "Live Summary", "Control Posture | manual + rigger ready" + Environment.NewLine + "Damage Soak | 34" + Environment.NewLine + "Seats | 6" + Environment.NewLine + "Posture | legacy edit utility", "Control Posture | manual + rigger ready", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiVehicleEditNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
