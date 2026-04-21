@@ -5,6 +5,7 @@ using Chummer.Presentation.Shell;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 
 namespace Chummer.Presentation.Overview;
 
@@ -157,16 +158,10 @@ public sealed class DialogCoordinator : IDialogCoordinator
                         $"Linked source for '{ReadDialogValue(dialog, "masterIndexCurrentSourcebook", "current sourcebook")}' remains pinned on the right.");
                     return;
                 case "switch_file":
-                    PublishMasterIndexDialog(
-                        context,
-                        dialog,
-                        $"Master Index file filter remains '{ReadDialogValue(dialog, "masterIndexCurrentFile", "All data files")}'.");
+                    CycleMasterIndexFile(dialog, context);
                     return;
                 case "switch_sourcebook":
-                    PublishMasterIndexDialog(
-                        context,
-                        dialog,
-                        $"Master Index sourcebook remains '{ReadDialogValue(dialog, "masterIndexCurrentSourcebook", "current sourcebook")}'.");
+                    CycleMasterIndexSourcebook(dialog, context);
                     return;
                 case "edit_setting":
                     OpenCharacterSettingsFromMasterIndex(context);
@@ -988,6 +983,117 @@ public sealed class DialogCoordinator : IDialogCoordinator
         });
     }
 
+    private static void CycleMasterIndexFile(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context)
+    {
+        MasterIndexCoordinatorSnapshot? snapshot = ReadMasterIndexSnapshot(dialog);
+        if (snapshot is null)
+        {
+            PublishMasterIndexDialog(context, dialog, "Master Index file filter remains unresolved.");
+            return;
+        }
+
+        string[] files = ["All", .. snapshot.Files.Select(file => file.File).Where(file => !string.IsNullOrWhiteSpace(file)).Distinct(StringComparer.OrdinalIgnoreCase)];
+        string currentFile = ReadDialogValue(dialog, "masterIndexActiveFile", "All");
+        int currentIndex = Array.FindIndex(files, file => string.Equals(file, currentFile, StringComparison.OrdinalIgnoreCase));
+        int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % files.Length;
+        string nextFile = files[nextIndex];
+
+        DesktopDialogState updatedDialog = dialog with
+        {
+            Fields = dialog.Fields
+                .Select(field => field.Id switch
+                {
+                    "masterIndexActiveFile" => field with { Value = nextFile, Placeholder = nextFile },
+                    "masterIndexActiveResultKey" => field with { Value = string.Empty, Placeholder = string.Empty },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        PublishMasterIndexDialog(
+            context,
+            updatedDialog,
+            $"Master Index file filter changed to '{nextFile}'.");
+    }
+
+    private static void CycleMasterIndexSourcebook(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context)
+    {
+        MasterIndexCoordinatorSnapshot? snapshot = ReadMasterIndexSnapshot(dialog);
+        if (snapshot is null || snapshot.Sourcebooks.Count == 0)
+        {
+            PublishMasterIndexDialog(context, dialog, "Master Index sourcebook remains unresolved.");
+            return;
+        }
+
+        string currentId = ReadDialogValue(dialog, "masterIndexActiveSourcebookId", snapshot.Sourcebooks[0].Id);
+        string currentFile = ReadDialogValue(dialog, "masterIndexActiveFile", "All");
+        int currentIndex = snapshot.Sourcebooks.FindIndex(sourcebook => string.Equals(sourcebook.Id, currentId, StringComparison.Ordinal));
+        int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % snapshot.Sourcebooks.Count;
+        MasterIndexCoordinatorSourcebookSnapshot nextSourcebook = snapshot.Sourcebooks[nextIndex];
+        string nextFile = ResolveMasterIndexSourcebookFileSelection(nextSourcebook, currentFile);
+
+        DesktopDialogState updatedDialog = dialog with
+        {
+            Fields = dialog.Fields
+                .Select(field => field.Id switch
+                {
+                    "masterIndexActiveSourcebookId" => field with { Value = nextSourcebook.Id, Placeholder = nextSourcebook.Id },
+                    "masterIndexCurrentSourcebook" => field with { Value = $"{nextSourcebook.Code} · {nextSourcebook.Name}", Placeholder = $"{nextSourcebook.Code} · {nextSourcebook.Name}" },
+                    "masterIndexActiveFile" => field with { Value = nextFile, Placeholder = nextFile },
+                    "masterIndexActiveResultKey" => field with { Value = string.Empty, Placeholder = string.Empty },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        PublishMasterIndexDialog(
+            context,
+            updatedDialog,
+            string.Equals(nextFile, currentFile, StringComparison.OrdinalIgnoreCase)
+                ? $"Master Index sourcebook changed to '{nextSourcebook.Code} · {nextSourcebook.Name}'."
+                : $"Master Index sourcebook changed to '{nextSourcebook.Code} · {nextSourcebook.Name}' and data file changed to '{nextFile}'.");
+    }
+
+    private static string ResolveMasterIndexSourcebookFileSelection(
+        MasterIndexCoordinatorSourcebookSnapshot sourcebook,
+        string currentFile)
+    {
+        if (string.IsNullOrWhiteSpace(currentFile) || string.Equals(currentFile, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            return SelectFirstMasterIndexSourcebookFile(sourcebook) ?? "All";
+        }
+
+        bool currentFileHasEntries = sourcebook.RuleSnippets.Any(snippet =>
+            string.Equals(snippet.File, currentFile, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(snippet.Provenance, currentFile, StringComparison.OrdinalIgnoreCase));
+
+        return currentFileHasEntries
+            ? currentFile
+            : SelectFirstMasterIndexSourcebookFile(sourcebook) ?? "All";
+    }
+
+    private static string? SelectFirstMasterIndexSourcebookFile(MasterIndexCoordinatorSourcebookSnapshot sourcebook)
+    {
+        return sourcebook.RuleSnippets
+            .Select(snippet => !string.IsNullOrWhiteSpace(snippet.File) ? snippet.File : snippet.Provenance)
+            .FirstOrDefault(file => !string.IsNullOrWhiteSpace(file));
+    }
+
+    private static MasterIndexCoordinatorSnapshot? ReadMasterIndexSnapshot(DesktopDialogState dialog)
+    {
+        string snapshotJson = DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnapshot") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(snapshotJson))
+        {
+            return null;
+        }
+
+        return JsonSerializer.Deserialize<MasterIndexCoordinatorSnapshot>(snapshotJson);
+    }
+
     private static void OpenCharacterSettingsFromMasterIndex(DialogCoordinationContext context)
     {
         DesktopDialogFactory dialogFactory = new();
@@ -1039,5 +1145,31 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string? value = DesktopDialogFieldValueParser.GetValue(dialog, fieldId);
         return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
     }
+
+    private sealed record MasterIndexCoordinatorSnapshot(
+        string SettingsLanePosture,
+        List<MasterIndexCoordinatorFileSnapshot> Files,
+        List<MasterIndexCoordinatorSourcebookSnapshot> Sourcebooks);
+
+    private sealed record MasterIndexCoordinatorFileSnapshot(
+        string File,
+        int ElementCount);
+
+    private sealed record MasterIndexCoordinatorSourcebookSnapshot(
+        string Id,
+        string Code,
+        string Name,
+        string ReferencePosture,
+        string ReferenceSourcePosture,
+        string? LocalPdfPath,
+        string? ReferenceUrl,
+        string? ReferenceSnapshot,
+        List<MasterIndexCoordinatorSnippetSnapshot> RuleSnippets);
+
+    private sealed record MasterIndexCoordinatorSnippetSnapshot(
+        string File,
+        string Provenance,
+        int Page,
+        string Snippet);
 
 }
