@@ -121,6 +121,7 @@ public sealed partial class CharacterOverviewPresenter : ICharacterOverviewPrese
     private void Publish(CharacterOverviewState state)
     {
         State = state;
+        SyncRosterWatchRuntime(state);
         _shellPresenter?.SyncOverviewFeedback(CreateShellOverviewFeedback(state));
         StateChanged?.Invoke(this, EventArgs.Empty);
     }

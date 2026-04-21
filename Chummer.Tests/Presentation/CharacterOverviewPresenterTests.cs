@@ -3,6 +3,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System;
 using System.Text;
@@ -985,6 +986,51 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task ExecuteCommandAsync_character_roster_rebuilds_when_watch_folder_changes()
+    {
+        string rosterPath = Path.Combine(Path.GetTempPath(), $"chummer-roster-presenter-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(rosterPath);
+        DesktopPreferenceState originalPreferences = DesktopPreferenceStateRuntime.Current;
+        DesktopPreferenceStateRuntime.SetCurrent(originalPreferences with
+        {
+            CharacterRosterPath = rosterPath
+        });
+
+        try
+        {
+            var client = new FakeChummerClient();
+            client.SeedWorkspace("ws-legacy-1", "Legacy One", "L1", DateTimeOffset.UtcNow.AddMinutes(-10), RulesetDefaults.Sr5);
+            var presenter = new CharacterOverviewPresenter(client);
+
+            await presenter.InitializeAsync(CancellationToken.None);
+            await presenter.ExecuteCommandAsync("character_roster", CancellationToken.None);
+
+            Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterWatchedCount"));
+
+            File.WriteAllText(Path.Combine(rosterPath, "L1.chum5"), "runner");
+
+            await WaitUntilAsync(
+                () => presenter.State.ActiveDialog is not null
+                    && string.Equals(presenter.State.ActiveDialog.Id, "dialog.character_roster", StringComparison.Ordinal)
+                    && string.Equals(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog, "rosterWatchedCount"), "1", StringComparison.Ordinal)
+                    && string.Equals(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog, "rosterSelectedWatchFile"), "L1.chum5", StringComparison.Ordinal),
+                timeout: TimeSpan.FromSeconds(3));
+
+            Assert.AreEqual("1", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterWatchedCount"));
+            Assert.AreEqual("L1.chum5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterSelectedWatchFile"));
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterWatchFolderStatus"), "FileSystemWatcher active");
+        }
+        finally
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(originalPreferences);
+            if (Directory.Exists(rosterPath))
+            {
+                Directory.Delete(rosterPath, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
     public async Task ExecuteWorkspaceActionAsync_summary_sets_active_summary_payload()
     {
         var client = new FakeChummerClient();
@@ -1156,6 +1202,22 @@ public class CharacterOverviewPresenterTests
                     StringValue: $"{expression} => 13"),
                 Diagnostics: []));
         }
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan timeout)
+    {
+        DateTimeOffset deadline = DateTimeOffset.UtcNow + timeout;
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (predicate())
+            {
+                return;
+            }
+
+            await Task.Delay(50);
+        }
+
+        Assert.Fail("Timed out waiting for the expected condition.");
     }
 
     private sealed class FakeChummerClient : IChummerClient
