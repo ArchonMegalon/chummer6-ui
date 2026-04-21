@@ -1,5 +1,6 @@
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
 using System.Globalization;
 using System.Text;
@@ -135,225 +136,225 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.ui.create_entry", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string entryName = ReadDialogValue(dialog, "uiCreateEntryName", "New entry");
-            PublishDialogNotice(context, $"Entry '{entryName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Entry '{entryName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.create_entry", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
-            PublishDialogAddMore(context, dialog, "Entry added. Editor remains open for another entry.", "uiCreateEntryName");
+            PublishRulesetAwareDialogAddMore(context, dialog, "Entry added. Editor remains open for another entry.", "uiCreateEntryName");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.edit_entry", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
         {
             string entryName = ReadDialogValue(dialog, "uiEditEntryName", "Current Entry");
-            PublishDialogNotice(context, $"Entry renamed to '{entryName}'.");
+            PublishRulesetAwareDialogNotice(context, $"Entry renamed to '{entryName}'.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.delete_entry", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
         {
-            PublishDialogNotice(context, "Entry deleted.");
+            PublishRulesetAwareDialogNotice(context, "Entry deleted.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.gear_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string gearName = ReadDialogValue(dialog, "uiGearName", "Ares Predator");
-            PublishDialogNotice(context, $"Gear '{gearName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Gear '{gearName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.gear_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string gearName = ReadDialogValue(dialog, "uiGearName", "Ares Predator");
-            PublishDialogAddMore(context, dialog, $"Gear '{gearName}' added. Dialog remains open for another item.", "uiGearQuantity", "uiGearMarkup", "uiGearFreeItem");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Gear '{gearName}' added. Dialog remains open for another item.", "uiGearQuantity", "uiGearMarkup", "uiGearFreeItem");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.gear_edit", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
         {
             string gearName = ReadDialogValue(dialog, "uiGearEditName", "Selected Gear");
-            PublishDialogNotice(context, $"Gear renamed to '{gearName}'.");
+            PublishRulesetAwareDialogNotice(context, $"Gear renamed to '{gearName}'.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.gear_delete", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
         {
-            PublishDialogNotice(context, "Gear deleted.");
+            PublishRulesetAwareDialogNotice(context, "Gear deleted.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.cyberware_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string cyberwareName = ReadDialogValue(dialog, "uiCyberwareName", "Wired Reflexes 2");
-            PublishDialogNotice(context, $"Cyberware '{cyberwareName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Cyberware '{cyberwareName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.cyberware_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string cyberwareName = ReadDialogValue(dialog, "uiCyberwareName", "Wired Reflexes 2");
-            PublishDialogAddMore(context, dialog, $"Cyberware '{cyberwareName}' added. Dialog remains open for another implant.", "uiCyberwareRating", "uiCyberwareMarkup", "uiCyberwareDiscount", "uiCyberwareBlackMarketDiscount");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Cyberware '{cyberwareName}' added. Dialog remains open for another implant.", "uiCyberwareRating", "uiCyberwareMarkup", "uiCyberwareDiscount", "uiCyberwareBlackMarketDiscount");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.magic_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string magicName = ReadDialogValue(dialog, "uiMagicName", "Spell or Power");
-            PublishDialogNotice(context, $"Spell/power '{magicName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Spell/power '{magicName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.magic_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string magicName = ReadDialogValue(dialog, "uiMagicName", "Spell or Power");
-            PublishDialogAddMore(context, dialog, $"Spell/power '{magicName}' added. Dialog remains open for another selection.", "uiMagicLevel");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Spell/power '{magicName}' added. Dialog remains open for another selection.", "uiMagicLevel");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.spell_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string spellName = ReadDialogValue(dialog, "uiSpellName", "Stunbolt");
-            PublishDialogNotice(context, $"Spell '{spellName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Spell '{spellName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.spell_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string spellName = ReadDialogValue(dialog, "uiSpellName", "Stunbolt");
-            PublishDialogAddMore(context, dialog, $"Spell '{spellName}' added. Dialog remains open for another spell.", "uiSpellExtendedOnly");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Spell '{spellName}' added. Dialog remains open for another spell.", "uiSpellExtendedOnly");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.magic_delete", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
         {
-            PublishDialogNotice(context, "Spell/power deleted.");
+            PublishRulesetAwareDialogNotice(context, "Spell/power deleted.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.skill_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string skillName = ReadDialogValue(dialog, "uiSkillName", "Perception");
-            PublishDialogNotice(context, $"Skill '{skillName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Skill '{skillName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.skill_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string skillName = ReadDialogValue(dialog, "uiSkillName", "Perception");
-            PublishDialogAddMore(context, dialog, $"Skill '{skillName}' added. Dialog remains open for another skill.", "uiSkillRating");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Skill '{skillName}' added. Dialog remains open for another skill.", "uiSkillRating");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.skill_specialize", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
         {
             string specialization = ReadDialogValue(dialog, "uiSkillSpec", "Visual");
-            PublishDialogNotice(context, $"Skill specialization set to '{specialization}'.");
+            PublishRulesetAwareDialogNotice(context, $"Skill specialization set to '{specialization}'.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.skill_remove", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
         {
-            PublishDialogNotice(context, "Skill removed.");
+            PublishRulesetAwareDialogNotice(context, "Skill removed.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.combat_add_weapon", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string weaponName = ReadDialogValue(dialog, "uiWeaponName", "Colt M23");
-            PublishDialogNotice(context, $"Weapon '{weaponName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Weapon '{weaponName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.combat_add_weapon", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string weaponName = ReadDialogValue(dialog, "uiWeaponName", "Colt M23");
-            PublishDialogAddMore(context, dialog, $"Weapon '{weaponName}' added. Dialog remains open for another weapon.", "uiWeaponMarkup", "uiWeaponFreeItem", "uiWeaponBlackMarketDiscount");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Weapon '{weaponName}' added. Dialog remains open for another weapon.", "uiWeaponMarkup", "uiWeaponFreeItem", "uiWeaponBlackMarketDiscount");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.combat_add_armor", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string armorName = ReadDialogValue(dialog, "uiArmorName", "Armor Jacket");
-            PublishDialogNotice(context, $"Armor '{armorName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Armor '{armorName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.combat_add_armor", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string armorName = ReadDialogValue(dialog, "uiArmorName", "Armor Jacket");
-            PublishDialogAddMore(context, dialog, $"Armor '{armorName}' added. Dialog remains open for another armor item.", "uiArmorMarkup", "uiArmorFreeItem");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Armor '{armorName}' added. Dialog remains open for another armor item.", "uiArmorMarkup", "uiArmorFreeItem");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.contact_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string contactName = ReadDialogValue(dialog, "uiContactName", "Contact Name");
-            PublishDialogNotice(context, $"Contact '{contactName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Contact '{contactName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.contact_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string contactName = ReadDialogValue(dialog, "uiContactName", "Contact Name");
-            PublishDialogAddMore(context, dialog, $"Contact '{contactName}' added. Dialog remains open for another contact.", "uiContactName", "uiContactConnection", "uiContactLoyalty");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Contact '{contactName}' added. Dialog remains open for another contact.", "uiContactName", "uiContactConnection", "uiContactLoyalty");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.matrix_program_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string programName = ReadDialogValue(dialog, "uiMatrixProgramName", "Armor");
-            PublishDialogNotice(context, $"Program '{programName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Program '{programName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.matrix_program_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string programName = ReadDialogValue(dialog, "uiMatrixProgramName", "Armor");
-            PublishDialogAddMore(context, dialog, $"Program '{programName}' added. Dialog remains open for another matrix entry.", "uiMatrixProgramShowDongles");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Program '{programName}' added. Dialog remains open for another matrix entry.", "uiMatrixProgramShowDongles");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.vehicle_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string vehicleName = ReadDialogValue(dialog, "uiVehicleName", "Hyundai Shin-Hyung");
-            PublishDialogNotice(context, $"Vehicle '{vehicleName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Vehicle '{vehicleName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.vehicle_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string vehicleName = ReadDialogValue(dialog, "uiVehicleName", "Hyundai Shin-Hyung");
-            PublishDialogAddMore(context, dialog, $"Vehicle '{vehicleName}' added. Dialog remains open for another entry.", "uiVehicleShowDrones");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Vehicle '{vehicleName}' added. Dialog remains open for another entry.", "uiVehicleShowDrones");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.quality_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string qualityName = ReadDialogValue(dialog, "uiQualityName", "First Impression");
-            PublishDialogNotice(context, $"Quality '{qualityName}' added.");
+            PublishRulesetAwareDialogNotice(context, $"Quality '{qualityName}' added.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.quality_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string qualityName = ReadDialogValue(dialog, "uiQualityName", "First Impression");
-            PublishDialogAddMore(context, dialog, $"Quality '{qualityName}' added. Dialog remains open for another quality.", "uiQualityMetagenicOnly");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Quality '{qualityName}' added. Dialog remains open for another quality.", "uiQualityMetagenicOnly");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.contact_edit", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
         {
             string contactName = ReadDialogValue(dialog, "uiContactEditName", "Selected Contact");
-            PublishDialogNotice(context, $"Contact renamed to '{contactName}'.");
+            PublishRulesetAwareDialogNotice(context, $"Contact renamed to '{contactName}'.");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.contact_remove", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
         {
-            PublishDialogNotice(context, "Contact removed.");
+            PublishRulesetAwareDialogNotice(context, "Contact removed.");
             return;
         }
 
@@ -361,7 +362,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             string connection = DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnection") ?? "0";
             string loyalty = DesktopDialogFieldValueParser.GetValue(dialog, "uiContactLoyalty") ?? "0";
-            PublishDialogNotice(context, $"Contact connection/loyalty applied ({connection}/{loyalty}).");
+            PublishRulesetAwareDialogNotice(context, $"Contact connection/loyalty applied ({connection}/{loyalty}).");
             return;
         }
 
@@ -764,6 +765,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
         });
     }
 
+    private static void PublishRulesetAwareDialogNotice(
+        DialogCoordinationContext context,
+        string notice,
+        DesktopPreferenceState? preferences = null)
+        => PublishDialogNotice(context, RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(context.State), notice), preferences);
+
     private static void PublishDialogAddMore(
         DialogCoordinationContext context,
         DesktopDialogState dialog,
@@ -788,6 +795,39 @@ public sealed class DialogCoordinator : IDialogCoordinator
             Error = null,
             Notice = notice
         });
+    }
+
+    private static void PublishRulesetAwareDialogAddMore(
+        DialogCoordinationContext context,
+        DesktopDialogState dialog,
+        string notice,
+        params string[] fieldIdsToReset)
+        => PublishDialogAddMore(
+            context,
+            dialog,
+            RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(context.State), notice),
+            fieldIdsToReset);
+
+    private static string? ResolveContextRulesetId(CharacterOverviewState state)
+    {
+        if (state.WorkspaceId is not null)
+        {
+            string? activeWorkspaceRulesetId = state.OpenWorkspaces
+                .Where(workspace => string.Equals(workspace.Id.Value, state.WorkspaceId.Value.Value, StringComparison.Ordinal))
+                .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+                .FirstOrDefault(rulesetId => !string.IsNullOrWhiteSpace(rulesetId));
+
+            if (!string.IsNullOrWhiteSpace(activeWorkspaceRulesetId))
+            {
+                return activeWorkspaceRulesetId;
+            }
+        }
+
+        return state.OpenWorkspaces
+            .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+            .Concat(state.Commands.Select(command => RulesetDefaults.NormalizeOptional(command.RulesetId)))
+            .Concat(state.NavigationTabs.Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId)))
+            .FirstOrDefault(rulesetId => !string.IsNullOrWhiteSpace(rulesetId));
     }
 
     private static string ReadDialogValue(

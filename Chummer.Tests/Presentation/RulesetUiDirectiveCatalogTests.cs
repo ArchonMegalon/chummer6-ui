@@ -194,4 +194,21 @@ public sealed class RulesetUiDirectiveCatalogTests
         Assert.AreEqual("Validation", sr6Workflow);
         Assert.AreEqual("SR6 Matrix Action", preservedWorkflow);
     }
+
+    [TestMethod]
+    public void FormatDialogNotice_applies_ruleset_specific_dialog_prefixes()
+    {
+        Assert.AreEqual(
+            "SR4 intake: Gear 'Ares Alpha' added.",
+            RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr4, "Gear 'Ares Alpha' added."));
+        Assert.AreEqual(
+            "SR5 editor: Cyberware 'Wired Reflexes 2' added.",
+            RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr5, "Cyberware 'Wired Reflexes 2' added."));
+        Assert.AreEqual(
+            "SR6 guided setup: Program 'Armor' added.",
+            RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr6, "Program 'Armor' added."));
+        Assert.AreEqual(
+            "Generic notice.",
+            RulesetUiDirectiveCatalog.FormatDialogNotice("shared", "Generic notice."));
+    }
 }

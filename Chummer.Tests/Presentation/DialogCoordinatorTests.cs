@@ -382,6 +382,35 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_add_more_gear_uses_sr4_authored_notice_when_state_is_sr4()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default,
+            WorkspaceId = new CharacterWorkspaceId("ws-sr4"),
+            OpenWorkspaces =
+            [
+                new OpenWorkspaceState(new CharacterWorkspaceId("ws-sr4"), "Nyx", "NYX", DateTimeOffset.Parse("2026-04-21T08:00:00+00:00"), RulesetDefaults.Sr4, true)
+            ],
+            ActiveDialog = factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default)
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("add_more", context, CancellationToken.None);
+
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR4 intake:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Gear 'Ares Predator V' added.");
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_add_more_cyberware_keeps_dialog_open_and_rebuilds_preview()
     {
         DialogCoordinator coordinator = new();
@@ -461,6 +490,35 @@ public class DialogCoordinatorTests
         Assert.AreEqual("sr6", preferredRulesetId);
         Assert.IsNull(published.ActiveDialog);
         Assert.AreEqual("Preferred ruleset set to 'sr6'.", published.Notice);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_add_matrix_program_uses_sr6_authored_notice_when_state_is_sr6()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default,
+            WorkspaceId = new CharacterWorkspaceId("ws-sr6"),
+            OpenWorkspaces =
+            [
+                new OpenWorkspaceState(new CharacterWorkspaceId("ws-sr6"), "Apex", "APX", DateTimeOffset.Parse("2026-04-21T08:05:00+00:00"), RulesetDefaults.Sr6, true)
+            ],
+            ActiveDialog = factory.CreateUiControlDialog("matrix_program_add", DesktopPreferenceState.Default)
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("add", context, CancellationToken.None);
+
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 guided setup:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Program 'Armor' added.");
     }
 
     [TestMethod]
