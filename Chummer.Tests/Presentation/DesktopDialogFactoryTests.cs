@@ -1350,6 +1350,76 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateUiControlDialog_delete_entry_uses_legacy_delete_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("delete_entry", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.delete_entry", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Current Entry");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Next Entry");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Focus | selection moves to adjacent entry");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Re-open Add Entry");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_drug_delete_uses_legacy_delete_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("drug_delete", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.drug_delete", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Jazz");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Kamikaze");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Crash | Stun + fatigue");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to drugs tab");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_magic_delete_uses_legacy_delete_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("magic_delete", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.magic_delete", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Stunbolt");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Increase Reflexes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Drain | F-3");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to magic tab");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_contact_remove_uses_legacy_delete_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("contact_remove", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.contact_remove", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Mr. Johnson");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Nyx");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Connection / Loyalty | 5 / 3");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to contacts tab");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_quality_delete_uses_legacy_delete_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("quality_delete", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.quality_delete", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "First Impression");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Distinctive Style");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Karma | 11");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to qualities tab");
+    }
+
+    [TestMethod]
     public void CreateUiControlDialog_all_catalog_controls_use_dedicated_dialog_shapes()
     {
         DesktopDialogFactory factory = new();
