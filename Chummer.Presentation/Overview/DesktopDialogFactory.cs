@@ -713,7 +713,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static DesktopDialogField BuildSelectionSectionsField(string id)
     {
-        string sections = "Browse" + Environment.NewLine + "Details" + Environment.NewLine + "Notes";
+        string sections = "Browse" + Environment.NewLine + "Filters" + Environment.NewLine + "Details" + Environment.NewLine + "Notes";
 
         return new DesktopDialogField(
             id,
@@ -723,6 +723,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             IsReadOnly: true,
             IsMultiline: true,
             VisualKind: DesktopDialogFieldVisualKinds.Tabs);
+    }
+
+    private static DesktopDialogField BuildFilterToggleField(string id, string label, bool value)
+    {
+        string normalized = value ? "true" : "false";
+        return new DesktopDialogField(id, label, normalized, normalized, InputType: "checkbox");
     }
 
     private static DesktopDialogField BuildSelectionTreeField(string id, string label, string tree)
@@ -791,13 +797,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Cyberarm Basic · Capacity shell · Essence 1.00";
         string selectionDetails = BuildGridValue(
             ("Selected", "Wired Reflexes 2"),
+            ("Grade", "Standard"),
             ("Availability", "12R"),
             ("Cost", "¥149,000"),
             ("Essence", "3.00"),
-            ("Capacity", "n/a"));
+            ("Capacity", "n/a"),
+            ("Book", "Core Rulebook"));
         string notes =
             "Grade modifiers, essence/cost deltas, and source details are surfaced here before the implant is added." + Environment.NewLine +
-            "Modular limb add-ons and mount payloads still follow the runner detail tabs after selection.";
+            "Grade, book, and availability filters stay visible like the old selection form while Add & More remains available.";
 
         return
         [
@@ -805,9 +813,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiCyberwareCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiCyberwareSearch", "Search", string.Empty, "Search cyberware"),
             new DesktopDialogField("uiCyberwareCategory", "Category", "Bodyware", "Bodyware"),
+            new DesktopDialogField("uiCyberwareBookFilter", "Data File", "Core Rulebook", "Core Rulebook"),
             new DesktopDialogField("uiCyberwareName", "Cyberware", "Wired Reflexes 2", "Wired Reflexes 2"),
             new DesktopDialogField("uiCyberwareCandidateList", "Available Cyberware", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiCyberwareGrade", "Grade", "Standard", "Standard"),
+            BuildFilterToggleField("uiCyberwareHideBannedGrades", "Hide Banned Grades", true),
+            BuildFilterToggleField("uiCyberwareHideOverAvailLimit", "Hide over Availability", true),
+            BuildFilterToggleField("uiCyberwarePrototypeTranshuman", "Prototype Transhuman", false),
+            BuildFilterToggleField("uiCyberwareBlackMarketDiscount", "Black Market Discount", false),
             new DesktopDialogField("uiCyberwareSlot", "Location", "Body", "Body"),
             new DesktopDialogField("uiCyberwareRating", "Rating", "2", "2", InputType: "number"),
             new DesktopDialogField("uiCyberwareMarkup", "Markup %", "0", "0", InputType: "number"),
@@ -864,7 +877,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Selected", "Ares Predator V"),
             ("Category", "Firearms"),
             ("Availability", "5R"),
-            ("Cost", "¥725"));
+            ("Cost", "¥725"),
+            ("Book", "Core Rulebook"));
 
         return
         [
@@ -872,14 +886,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiGearCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiGearSearch", "Search", string.Empty, "Search gear"),
             new DesktopDialogField("uiGearCategory", "Category", "All", "All"),
+            new DesktopDialogField("uiGearBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiGearName", "Gear Name", "Ares Predator V", "Ares Predator V"),
             new DesktopDialogField("uiGearCandidateList", "Available Gear", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            BuildFilterToggleField("uiGearHideOverAvailLimit", "Hide over Availability", true),
+            BuildFilterToggleField("uiGearBlackMarketDiscount", "Black Market Discount", false),
+            BuildFilterToggleField("uiGearFreeItem", "Free Item", false),
             new DesktopDialogField("uiGearRating", "Rating", "0", "0", InputType: "number"),
             new DesktopDialogField("uiGearQuantity", "Quantity", "1", "1", InputType: "number"),
+            new DesktopDialogField("uiGearMarkup", "Markup %", "0", "0", InputType: "number"),
             new DesktopDialogField("uiGearCost", "Cost", "725", "725", IsReadOnly: true),
             new DesktopDialogField("uiGearSource", "Source", "Core Rulebook p. 424", "Core Rulebook p. 424", IsReadOnly: true),
             new DesktopDialogField("uiGearSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiGearNotes", "Notes", "Use gear details to confirm legality, source, and rating before adding.", "Use gear details to confirm legality, source, and rating before adding.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiGearNotes", "Notes", "Use gear details to confirm legality, source, rating, and discount posture before adding.", "Use gear details to confirm legality, source, rating, and discount posture before adding.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -959,7 +978,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Selected", "Stunbolt"),
             ("Category", "Combat"),
             ("Type", "Mana"),
-            ("Drain", "F-3"));
+            ("Drain", "F-3"),
+            ("Book", "Core Rulebook"));
 
         return
         [
@@ -967,12 +987,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiSpellCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiSpellSearch", "Search", string.Empty, "Search spells"),
             new DesktopDialogField("uiSpellCategoryFilter", "Category Filter", "All", "All"),
+            new DesktopDialogField("uiSpellBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiSpellName", "Spell", "Stunbolt", "Stunbolt"),
             new DesktopDialogField("uiSpellCandidateList", "Available Spells", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            BuildFilterToggleField("uiSpellExtendedOnly", "Extended Catalog", true),
             new DesktopDialogField("uiSpellCategory", "Category", "Combat", "Combat"),
             new DesktopDialogField("uiSpellSource", "Source", "Core Rulebook p. 288", "Core Rulebook p. 288", IsReadOnly: true),
             new DesktopDialogField("uiSpellSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSpellNotes", "Notes", "Spell source, category, and drain remain visible through confirmation.", "Spell source, category, and drain remain visible through confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiSpellNotes", "Notes", "Spell source, category, drain, and catalog scope remain visible through confirmation.", "Spell source, category, drain, and catalog scope remain visible through confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1099,19 +1121,23 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Selected", "Armor"),
             ("Slot", "Common"),
             ("Cost", "¥600"),
-            ("Source", "Data Trails p. 60"));
+            ("Source", "Data Trails p. 60"),
+            ("Book", "Data Trails"));
 
         return
         [
             BuildSelectionSectionsField("uiMatrixProgramSections"),
             BuildSelectionTreeField("uiMatrixProgramCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiMatrixProgramSearch", "Search", string.Empty, "Search programs"),
+            new DesktopDialogField("uiMatrixProgramBookFilter", "Data File", "Data Trails", "Data Trails"),
             new DesktopDialogField("uiMatrixProgramName", "Program", "Armor", "Armor"),
             new DesktopDialogField("uiMatrixProgramCandidateList", "Available Programs", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            BuildFilterToggleField("uiMatrixProgramHideOverAvailLimit", "Hide over Availability", true),
+            BuildFilterToggleField("uiMatrixProgramShowDongles", "Show Dongles", true),
             new DesktopDialogField("uiMatrixProgramSlot", "Slot", "Common", "Common"),
             new DesktopDialogField("uiMatrixProgramSource", "Source", "Data Trails p. 60", "Data Trails p. 60", IsReadOnly: true),
             new DesktopDialogField("uiMatrixProgramSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiMatrixProgramNotes", "Notes", "Program slot and source remain visible before confirmation.", "Program slot and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiMatrixProgramNotes", "Notes", "Program slot, source, and matrix-category filters remain visible before confirmation.", "Program slot, source, and matrix-category filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1131,7 +1157,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Selected", "Perception"),
             ("Category", "Active Skill"),
             ("Attribute", "Intuition"),
-            ("Defaulting", "Yes"));
+            ("Defaulting", "Yes"),
+            ("Book", "Core Rulebook"));
 
         return
         [
@@ -1139,11 +1166,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiSkillCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiSkillSearch", "Search", string.Empty, "Search skills"),
             new DesktopDialogField("uiSkillCategory", "Category", "Active", "Active"),
+            new DesktopDialogField("uiSkillBookFilter", "Data File", "Core Rulebook", "Core Rulebook"),
             new DesktopDialogField("uiSkillName", "Skill", "Perception", "Perception"),
             new DesktopDialogField("uiSkillCandidateList", "Available Skills", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            BuildFilterToggleField("uiSkillShowOnlyUsable", "Show Usable Skills Only", true),
+            BuildFilterToggleField("uiSkillShowKnowledge", "Show Knowledge Skills", false),
             new DesktopDialogField("uiSkillRating", "Rating", "1", "1", InputType: "number"),
             new DesktopDialogField("uiSkillSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSkillNotes", "Notes", "Skill category, linked attribute, and defaulting posture remain visible before confirmation.", "Skill category, linked attribute, and defaulting posture remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiSkillNotes", "Notes", "Skill category, linked attribute, defaulting, and skill-family filters remain visible before confirmation.", "Skill category, linked attribute, defaulting, and skill-family filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1405,7 +1435,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Role", "Vehicle"),
             ("Handling", "4"),
             ("Armor", "8"),
-            ("Source", "Core Rulebook p. 465"));
+            ("Source", "Core Rulebook p. 465"),
+            ("Book", "Core Rulebook"));
 
         return
         [
@@ -1413,13 +1444,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiVehicleCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiVehicleSearch", "Search", string.Empty, "Search vehicles"),
             new DesktopDialogField("uiVehicleRole", "Role", "Vehicle", "Vehicle"),
+            new DesktopDialogField("uiVehicleBookFilter", "Data File", "Core Rulebook", "Core Rulebook"),
             new DesktopDialogField("uiVehicleName", "Vehicle", "Hyundai Shin-Hyung", "Hyundai Shin-Hyung"),
             new DesktopDialogField("uiVehicleCandidateList", "Available Vehicles", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            BuildFilterToggleField("uiVehicleShowDrones", "Show Drones", true),
+            BuildFilterToggleField("uiVehicleHideOverAvailLimit", "Hide over Availability", true),
             new DesktopDialogField("uiVehicleHandling", "Handling", "4", "4", InputType: "number"),
             new DesktopDialogField("uiVehicleCost", "Cost", "16000", "16000", IsReadOnly: true),
             new DesktopDialogField("uiVehicleSource", "Source", "Core Rulebook p. 465", "Core Rulebook p. 465", IsReadOnly: true),
             new DesktopDialogField("uiVehicleSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiVehicleNotes", "Notes", "Vehicle stats and source remain visible before the selection is confirmed.", "Vehicle stats and source remain visible before the selection is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiVehicleNotes", "Notes", "Vehicle stats, source, and vehicle/drone filter posture remain visible before the selection is confirmed.", "Vehicle stats, source, and vehicle/drone filter posture remain visible before the selection is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1554,7 +1588,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Selected", "First Impression"),
             ("Type", "Positive"),
             ("Karma", "11"),
-            ("Source", "Core Rulebook p. 73"));
+            ("Source", "Core Rulebook p. 73"),
+            ("Book", "Core Rulebook"));
 
         return
         [
@@ -1562,11 +1597,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiQualityCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiQualitySearch", "Search", string.Empty, "Search qualities"),
             new DesktopDialogField("uiQualityType", "Type", "Positive", "Positive"),
+            new DesktopDialogField("uiQualityBookFilter", "Data File", "Core Rulebook", "Core Rulebook"),
             new DesktopDialogField("uiQualityName", "Quality", "First Impression", "First Impression"),
             new DesktopDialogField("uiQualityCandidateList", "Available Qualities", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            BuildFilterToggleField("uiQualityMetagenicOnly", "Metagenic Only", false),
+            BuildFilterToggleField("uiQualityShowNegative", "Show Negative", true),
             new DesktopDialogField("uiQualityKarma", "Karma", "11", "11", IsReadOnly: true),
             new DesktopDialogField("uiQualitySelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiQualityNotes", "Notes", "Quality type, karma cost, and source remain visible before confirmation.", "Quality type, karma cost, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiQualityNotes", "Notes", "Quality type, karma cost, source, and metagenic filters remain visible before confirmation.", "Quality type, karma cost, source, and metagenic filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1587,7 +1625,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Damage", "7P"),
             ("AP", "-1"),
             ("Mode", "SA"),
-            ("Source", "Core Rulebook p. 424"));
+            ("Source", "Core Rulebook p. 424"),
+            ("Book", "Core Rulebook"));
 
         return
         [
@@ -1595,13 +1634,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiWeaponCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiWeaponSearch", "Search", string.Empty, "Search weapons"),
             new DesktopDialogField("uiWeaponCategory", "Category", "Firearms", "Firearms"),
+            new DesktopDialogField("uiWeaponBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiWeaponName", "Weapon", "Colt M23", "Colt M23"),
             new DesktopDialogField("uiWeaponCandidateList", "Available Weapons", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            BuildFilterToggleField("uiWeaponHideOverAvailLimit", "Hide over Availability", true),
+            BuildFilterToggleField("uiWeaponBlackMarketDiscount", "Black Market Discount", false),
+            BuildFilterToggleField("uiWeaponFreeItem", "Free Item", false),
             new DesktopDialogField("uiWeaponAccuracy", "Accuracy", "5", "5", IsReadOnly: true),
+            new DesktopDialogField("uiWeaponMarkup", "Markup %", "0", "0", InputType: "number"),
             new DesktopDialogField("uiWeaponCost", "Cost", "750", "750", IsReadOnly: true),
             new DesktopDialogField("uiWeaponSource", "Source", "Core Rulebook p. 424", "Core Rulebook p. 424", IsReadOnly: true),
             new DesktopDialogField("uiWeaponSelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiWeaponNotes", "Notes", "Damage, AP, firing mode, and source remain visible before confirmation.", "Damage, AP, firing mode, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiWeaponNotes", "Notes", "Damage, AP, firing mode, source, and pricing filters remain visible before confirmation.", "Damage, AP, firing mode, source, and pricing filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -1622,7 +1666,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Armor", "12"),
             ("Availability", "12"),
             ("Capacity", "n/a"),
-            ("Source", "Core Rulebook p. 436"));
+            ("Source", "Core Rulebook p. 436"),
+            ("Book", "Core Rulebook"));
 
         return
         [
@@ -1630,13 +1675,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionTreeField("uiArmorCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiArmorSearch", "Search", string.Empty, "Search armor"),
             new DesktopDialogField("uiArmorCategory", "Category", "Armor", "Armor"),
+            new DesktopDialogField("uiArmorBookFilter", "Data File", "All Books", "All Books"),
             new DesktopDialogField("uiArmorName", "Armor", "Armor Jacket", "Armor Jacket"),
             new DesktopDialogField("uiArmorCandidateList", "Available Armor", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            BuildFilterToggleField("uiArmorHideOverAvailLimit", "Hide over Availability", true),
+            BuildFilterToggleField("uiArmorFreeItem", "Free Item", false),
             new DesktopDialogField("uiArmorRating", "Armor", "12", "12", IsReadOnly: true),
+            new DesktopDialogField("uiArmorMarkup", "Markup %", "0", "0", InputType: "number"),
             new DesktopDialogField("uiArmorCost", "Cost", "1000", "1000", IsReadOnly: true),
             new DesktopDialogField("uiArmorSource", "Source", "Core Rulebook p. 436", "Core Rulebook p. 436", IsReadOnly: true),
             new DesktopDialogField("uiArmorSelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiArmorNotes", "Notes", "Armor rating, legality, and source remain visible before confirmation.", "Armor rating, legality, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiArmorNotes", "Notes", "Armor rating, legality, source, and pricing filters remain visible before confirmation.", "Armor rating, legality, source, and pricing filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
