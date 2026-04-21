@@ -247,8 +247,9 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "p. 20 · Reference notes stay in this pane");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultList"), "> p. 20 · Reference notes stay in this pane");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultList"), "books.xml");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Change data file filter");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Modify character setting");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Change data file | books.xml");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Switch sourcebook | CRB · Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Modify character setting | Character Settings");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceClickReminder"), "Click to open linked PDF at p. 20");
         Assert.AreEqual("/books/core-rulebook.pdf", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectedSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Data File | books.xml");
@@ -256,9 +257,10 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Source | CRB · Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Selected Result | Reference notes stay in this pane");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Data File | books.xml");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Activation | select row / open source");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Activation | double-click row / open source");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Source Link | pdf+url");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Select result to refresh notes");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Activate result | Reference notes stay in this pane");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Open page | 20");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Keep source and notes pinned on the right");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetInspector"), "Snippet Count | 16");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetPreview"), "Reference notes stay in this pane");
@@ -285,10 +287,10 @@ public class DesktopDialogFactoryTests
         CollectionAssert.AreEqual(
             new[] { "open_source", "switch_file", "switch_sourcebook", "edit_setting", "close" },
             dialog.Actions.Select(action => action.Id).ToArray());
-        Assert.AreEqual("Open Linked PDF", dialog.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Change Data File", dialog.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Switch Sourcebook", dialog.Actions.Single(action => string.Equals(action.Id, "switch_sourcebook", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Modify Setting", dialog.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Open PDF p. 20", dialog.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Change Data File (books.xml)", dialog.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Switch Sourcebook (CRB)", dialog.Actions.Single(action => string.Equals(action.Id, "switch_sourcebook", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Modify Setting (Character Settings)", dialog.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexLibraryNotes", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexImportNotes", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSr6Notes", StringComparison.Ordinal)).LayoutSlot);
