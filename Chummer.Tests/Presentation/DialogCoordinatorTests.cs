@@ -758,21 +758,23 @@ public class DialogCoordinatorTests
         Assert.AreEqual("Contact renamed to 'Nines'.", published.Notice);
     }
 
-    [TestMethod]
-    public async Task CoordinateAsync_delete_skill_remove_closes_dialog_with_notice()
+    [DataTestMethod]
+    [DataRow("delete_entry", "Entry 'Current Entry' removed.")]
+    [DataRow("gear_delete", "Gear 'Armor Jacket' removed.")]
+    [DataRow("cyberware_delete", "Cyberware 'Cybereyes Rating 4' removed.")]
+    [DataRow("drug_delete", "Drug 'Jazz' removed.")]
+    [DataRow("magic_delete", "Spell/power 'Stunbolt' removed.")]
+    [DataRow("skill_remove", "Skill 'Perception' removed.")]
+    [DataRow("vehicle_delete", "Vehicle 'GMC Roadmaster' removed.")]
+    [DataRow("contact_remove", "Contact 'Mr. Johnson' removed.")]
+    [DataRow("quality_delete", "Quality 'First Impression' removed.")]
+    public async Task CoordinateAsync_delete_legacy_utility_dialogs_close_with_targeted_notice(string controlId, string expectedNotice)
     {
         DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
-            ActiveDialog = new DesktopDialogState(
-                Id: "dialog.ui.skill_remove",
-                Title: "Remove Skill",
-                Message: null,
-                Fields: [],
-                Actions:
-                [
-                    new DesktopDialogAction("delete", "Delete", true)
-                ])
+            ActiveDialog = factory.CreateUiControlDialog(controlId, DesktopPreferenceState.Default)
         };
 
         DialogCoordinationContext context = new(
@@ -785,7 +787,7 @@ public class DialogCoordinatorTests
         await coordinator.CoordinateAsync("delete", context, CancellationToken.None);
 
         Assert.IsNull(published.ActiveDialog);
-        Assert.AreEqual("Skill removed.", published.Notice);
+        Assert.AreEqual(expectedNotice, published.Notice);
     }
 
     [TestMethod]

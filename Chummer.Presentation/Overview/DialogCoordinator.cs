@@ -174,6 +174,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (TryCoordinateLegacyDeleteAction(dialog, actionId, context))
+        {
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.open_notes", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
         {
             string notes = DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesEditor") ?? string.Empty;
@@ -204,12 +209,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (string.Equals(dialog.Id, "dialog.ui.delete_entry", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
-        {
-            PublishRulesetAwareDialogNotice(context, "Entry deleted.");
-            return;
-        }
-
         if (string.Equals(dialog.Id, "dialog.ui.gear_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string gearName = ReadDialogValue(dialog, "uiGearName", "Ares Predator");
@@ -228,12 +227,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             string gearName = ReadDialogValue(dialog, "uiGearEditName", "Selected Gear");
             PublishRulesetAwareDialogNotice(context, $"Gear renamed to '{gearName}'.");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.gear_delete", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
-        {
-            PublishRulesetAwareDialogNotice(context, "Gear deleted.");
             return;
         }
 
@@ -279,12 +272,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (string.Equals(dialog.Id, "dialog.ui.magic_delete", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
-        {
-            PublishRulesetAwareDialogNotice(context, "Spell/power deleted.");
-            return;
-        }
-
         if (string.Equals(dialog.Id, "dialog.ui.skill_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string skillName = ReadDialogValue(dialog, "uiSkillName", "Perception");
@@ -303,12 +290,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             string specialization = ReadDialogValue(dialog, "uiSkillSpec", "Visual");
             PublishRulesetAwareDialogNotice(context, $"Skill specialization set to '{specialization}'.");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.skill_remove", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
-        {
-            PublishRulesetAwareDialogNotice(context, "Skill removed.");
             return;
         }
 
@@ -400,12 +381,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             string contactName = ReadDialogValue(dialog, "uiContactEditName", "Selected Contact");
             PublishRulesetAwareDialogNotice(context, $"Contact renamed to '{contactName}'.");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.contact_remove", StringComparison.Ordinal) && string.Equals(actionId, "delete", StringComparison.Ordinal))
-        {
-            PublishRulesetAwareDialogNotice(context, "Contact removed.");
             return;
         }
 
@@ -858,6 +833,64 @@ public sealed class DialogCoordinator : IDialogCoordinator
             dialog,
             RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(context.State), notice),
             fieldIdsToReset);
+
+    private static bool TryCoordinateLegacyDeleteAction(
+        DesktopDialogState dialog,
+        string actionId,
+        DialogCoordinationContext context)
+    {
+        if (!string.Equals(actionId, "delete", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (!TryGetLegacyDeleteNotice(dialog, out string notice))
+        {
+            return false;
+        }
+
+        PublishRulesetAwareDialogNotice(context, notice);
+        return true;
+    }
+
+    private static bool TryGetLegacyDeleteNotice(DesktopDialogState dialog, out string notice)
+    {
+        string target = ReadDialogValue(dialog, "uiDeleteTarget", "Selected Entry");
+
+        switch (dialog.Id)
+        {
+            case "dialog.ui.delete_entry":
+                notice = $"Entry '{target}' removed.";
+                return true;
+            case "dialog.ui.gear_delete":
+                notice = $"Gear '{target}' removed.";
+                return true;
+            case "dialog.ui.cyberware_delete":
+                notice = $"Cyberware '{target}' removed.";
+                return true;
+            case "dialog.ui.drug_delete":
+                notice = $"Drug '{target}' removed.";
+                return true;
+            case "dialog.ui.magic_delete":
+                notice = $"Spell/power '{target}' removed.";
+                return true;
+            case "dialog.ui.skill_remove":
+                notice = $"Skill '{target}' removed.";
+                return true;
+            case "dialog.ui.vehicle_delete":
+                notice = $"Vehicle '{target}' removed.";
+                return true;
+            case "dialog.ui.contact_remove":
+                notice = $"Contact '{target}' removed.";
+                return true;
+            case "dialog.ui.quality_delete":
+                notice = $"Quality '{target}' removed.";
+                return true;
+            default:
+                notice = string.Empty;
+                return false;
+        }
+    }
 
     private static bool TryCoordinateLegacySelectionAction(
         DesktopDialogState dialog,
