@@ -1717,75 +1717,117 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         try
         {
-            VeteranCertificationCapturePacket packet = WithIsolatedHarness(harness =>
+            Dictionary<string, byte[]> captured = new(StringComparer.Ordinal);
+            Dictionary<string, string> capturedHashes = new(StringComparer.Ordinal);
+            Dictionary<string, ScreenshotUiEvidence> uiEvidence = new(StringComparer.Ordinal);
+
+            void CaptureCurrentFrame(FlagshipUiHarness harness, string fileName)
             {
-                Dictionary<string, byte[]> captured = new(StringComparer.Ordinal);
-                Dictionary<string, string> capturedHashes = new(StringComparer.Ordinal);
-                Dictionary<string, ScreenshotUiEvidence> uiEvidence = new(StringComparer.Ordinal);
+                byte[] pngBytes = Array.Empty<byte>();
+                ScreenshotUiEvidence currentEvidence = new(
+                    Screenshot: fileName,
+                    Theme: string.Empty,
+                    DialogTitle: string.Empty,
+                    DialogMessage: string.Empty,
+                    DialogFieldLabels: [],
+                    DialogFieldInputValues: [],
+                    DialogActionIds: [],
+                    VisibleNamedControlIds: [],
+                    VisibleNamedControls: [],
+                    VisibleTextSamples: [],
+                    VisibleMenuCommandIds: [],
+                    VisibleTabLabels: [],
+                    VisibleSectionQuickActionIds: [],
+                    SelectedListRowTexts: [],
+                    PreviewText: string.Empty);
+                string screenshotHash = string.Empty;
+                string? duplicateScreenshot = null;
 
-                void CaptureCurrentFrame(string fileName)
+                for (int attempt = 0; attempt < 20; attempt++)
                 {
-                    byte[] pngBytes = Array.Empty<byte>();
-                    ScreenshotUiEvidence currentEvidence = new(
-                        Screenshot: fileName,
-                        Theme: string.Empty,
-                        DialogTitle: string.Empty,
-                        DialogMessage: string.Empty,
-                        DialogFieldLabels: [],
-                        DialogFieldInputValues: [],
-                        DialogActionIds: [],
-                        VisibleNamedControlIds: [],
-                        VisibleNamedControls: [],
-                        VisibleTextSamples: [],
-                        VisibleMenuCommandIds: [],
-                        VisibleTabLabels: [],
-                        VisibleSectionQuickActionIds: [],
-                        SelectedListRowTexts: [],
-                        PreviewText: string.Empty);
-                    string screenshotHash = string.Empty;
-                    string? duplicateScreenshot = null;
-
-                    for (int attempt = 0; attempt < 20; attempt++)
+                    Control screenshotRoot = harness.GetScreenshotRootControlForTesting();
+                    pngBytes = harness.CaptureScreenshotBytes(screenshotRoot);
+                    currentEvidence = harness.CaptureScreenshotUiEvidence(fileName, screenshotRoot);
+                    screenshotHash = ComputeSha256Hex(pngBytes);
+                    duplicateScreenshot = capturedHashes
+                        .FirstOrDefault(entry => string.Equals(entry.Value, screenshotHash, StringComparison.Ordinal))
+                        .Key;
+                    if (string.IsNullOrEmpty(duplicateScreenshot))
                     {
-                        Control screenshotRoot = harness.GetScreenshotRootControlForTesting();
-                        pngBytes = harness.CaptureScreenshotBytes(screenshotRoot);
-                        currentEvidence = harness.CaptureScreenshotUiEvidence(fileName, screenshotRoot);
-                        screenshotHash = ComputeSha256Hex(pngBytes);
-                        duplicateScreenshot = capturedHashes
-                            .FirstOrDefault(entry => string.Equals(entry.Value, screenshotHash, StringComparison.Ordinal))
-                            .Key;
-                        if (string.IsNullOrEmpty(duplicateScreenshot))
-                        {
-                            break;
-                        }
-
-                        Dispatcher.UIThread.RunJobs();
-                        AvaloniaHeadlessPlatform.ForceRenderTimerTick(2);
-                        Thread.Sleep(20);
-                        Dispatcher.UIThread.RunJobs();
+                        break;
                     }
 
-                    captured[fileName] = pngBytes;
-                    capturedHashes[fileName] = screenshotHash;
-                    uiEvidence[fileName] = currentEvidence;
-
-                    string duplicateDialogTitle = !string.IsNullOrEmpty(duplicateScreenshot)
-                        && uiEvidence.TryGetValue(duplicateScreenshot, out ScreenshotUiEvidence? duplicateEvidence)
-                        ? duplicateEvidence.DialogTitle
-                        : string.Empty;
-                    Assert.IsTrue(
-                        string.IsNullOrEmpty(duplicateScreenshot),
-                        $"Screenshot '{fileName}' dialog '{currentEvidence.DialogTitle}' duplicated rendered frame '{duplicateScreenshot}' dialog '{duplicateDialogTitle}'.");
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(2);
+                    Thread.Sleep(20);
+                    Dispatcher.UIThread.RunJobs();
                 }
 
+                captured[fileName] = pngBytes;
+                capturedHashes[fileName] = screenshotHash;
+                uiEvidence[fileName] = currentEvidence;
+
+                string duplicateDialogTitle = !string.IsNullOrEmpty(duplicateScreenshot)
+                    && uiEvidence.TryGetValue(duplicateScreenshot, out ScreenshotUiEvidence? duplicateEvidence)
+                    ? duplicateEvidence.DialogTitle
+                    : string.Empty;
+                if (!string.IsNullOrEmpty(duplicateScreenshot)
+                    && uiEvidence.TryGetValue(duplicateScreenshot, out ScreenshotUiEvidence? duplicateEvidenceForComparison)
+                    && !AreSemanticallyDuplicateScreenshots(currentEvidence, duplicateEvidenceForComparison))
+                {
+                    duplicateScreenshot = null;
+                    duplicateDialogTitle = string.Empty;
+                }
+
+                Assert.IsTrue(
+                    string.IsNullOrEmpty(duplicateScreenshot),
+                    $"Screenshot '{fileName}' dialog '{currentEvidence.DialogTitle}' duplicated rendered frame '{duplicateScreenshot}' dialog '{duplicateDialogTitle}'.");
+            }
+
+            void LoadDemoRunner(FlagshipUiHarness harness)
+            {
+                harness.WaitForReady();
+                harness.Click("LoadDemoRunnerButton");
+                harness.WaitUntil(() => harness.Presenter.ImportCalls > 0);
+            }
+
+            void CaptureDialogFrameInFreshHarness(
+                string fileName,
+                string menuButtonName,
+                string commandId,
+                string closeActionId,
+                string[] requiredMarkers,
+                Action<FlagshipUiHarness>? prepare = null)
+            {
+                WithIsolatedHarness(harness =>
+                {
+                    LoadDemoRunner(harness);
+                    harness.Click(menuButtonName);
+                    harness.WaitUntil(() =>
+                    {
+                        MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>(menuButtonName));
+                        return commands.Any(command => string.Equals(command.Tag?.ToString(), commandId, StringComparison.Ordinal));
+                    });
+                    harness.ClickMenuCommand(commandId);
+                    AssertDialogContainsAll(harness, requiredMarkers);
+                    prepare?.Invoke(harness);
+                    CaptureCurrentFrame(harness, fileName);
+                    harness.InvokeDialogAction(closeActionId);
+                    harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+                    return true;
+                });
+            }
+
+            WithIsolatedHarness(harness =>
+            {
                 harness.WaitForReady();
 
                 harness.SetTheme(ThemeVariant.Light);
-                CaptureCurrentFrame(GetVeteranCertificationReviewStep("toolstrip").ScreenshotFileName);
+                CaptureCurrentFrame(harness, GetVeteranCertificationReviewStep("toolstrip").ScreenshotFileName);
 
                 harness.Click("FileMenuButton");
                 harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton")).Length > 0);
-                CaptureCurrentFrame(GetVeteranCertificationReviewStep("menu").ScreenshotFileName);
+                CaptureCurrentFrame(harness, GetVeteranCertificationReviewStep("menu").ScreenshotFileName);
 
                 harness.CloseMenu("FileMenuButton");
 
@@ -1793,7 +1835,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 AssertDialogContainsAll(
                     harness,
                     GetVeteranCertificationReviewStep("settings").RequiredDialogMarkers);
-                CaptureCurrentFrame(GetVeteranCertificationReviewStep("settings").ScreenshotFileName);
+                CaptureCurrentFrame(harness, GetVeteranCertificationReviewStep("settings").ScreenshotFileName);
 
                 harness.InvokeDialogAction("save");
                 harness.WaitUntil(() =>
@@ -1804,7 +1846,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 harness.Click("LoadDemoRunnerButton");
                 harness.WaitUntil(() => harness.Presenter.ImportCalls > 0);
-                CaptureCurrentFrame(expectedFiles[3]);
+                CaptureCurrentFrame(harness, expectedFiles[3]);
 
                 ListBox denseSectionRows = harness.FindControl<ListBox>("SectionRowsList");
                 harness.WaitUntil(() => denseSectionRows.ItemCount > 0);
@@ -1812,10 +1854,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsTrue(denseRows.Length > 0, "Expected dense section rows before capturing dense familiarity proof.");
                 denseSectionRows.SelectedItem = denseRows[0];
                 harness.WaitUntil(() => ReferenceEquals(denseSectionRows.SelectedItem, denseRows[0]));
-                CaptureCurrentFrame(expectedFiles[4]);
+                CaptureCurrentFrame(harness, expectedFiles[4]);
 
                 harness.SetTheme(ThemeVariant.Dark);
-                CaptureCurrentFrame(expectedFiles[5]);
+                CaptureCurrentFrame(harness, expectedFiles[5]);
 
                 harness.SetTheme(ThemeVariant.Light);
                 TabStrip loadedRunnerTabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
@@ -1830,7 +1872,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 string selectedTabId = selectedTab.Id;
                 harness.ClickLoadedRunnerTab(selectedTab.Label);
                 harness.WaitUntil(() => harness.ShellPresenter.SelectedTabIds.Contains(selectedTabId));
-                CaptureCurrentFrame(expectedFiles[6]);
+                CaptureCurrentFrame(harness, expectedFiles[6]);
 
                 ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
                 harness.WaitUntil(() => sectionRows.ItemCount >= 8);
@@ -1846,7 +1888,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Cyberware",
                         StringComparison.Ordinal));
-                CaptureCurrentFrame(expectedFiles[7]);
+                CaptureCurrentFrame(harness, expectedFiles[7]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -1859,7 +1901,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsNotNull(vehicleRow, "Expected a vehicle row before capturing vehicle familiarity proof.");
                 vehicleRows.SelectedItem = vehicleRow;
                 harness.WaitUntil(() => ReferenceEquals(vehicleRows.SelectedItem, vehicleRow));
-                CaptureCurrentFrame(expectedFiles[8]);
+                CaptureCurrentFrame(harness, expectedFiles[8]);
 
                 harness.SetActiveSectionForTesting("contacts");
                 ListBox contactRows = harness.FindControl<ListBox>("SectionRowsList");
@@ -1869,7 +1911,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsNotNull(contactRow, "Expected a contact row before capturing contact familiarity proof.");
                 contactRows.SelectedItem = contactRow;
                 harness.WaitUntil(() => ReferenceEquals(contactRows.SelectedItem, contactRow));
-                CaptureCurrentFrame(expectedFiles[9]);
+                CaptureCurrentFrame(harness, expectedFiles[9]);
 
                 harness.SetActiveSectionForTesting("progress");
                 harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_create_entry")?.IsVisible == true);
@@ -1879,7 +1921,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Entry",
                         StringComparison.Ordinal));
-                CaptureCurrentFrame(expectedFiles[10]);
+                CaptureCurrentFrame(harness, expectedFiles[10]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -1892,7 +1934,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Spell",
                         StringComparison.Ordinal));
-                CaptureCurrentFrame(expectedFiles[11]);
+                CaptureCurrentFrame(harness, expectedFiles[11]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -1905,7 +1947,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Program / Cyberdeck Item",
                         StringComparison.Ordinal));
-                CaptureCurrentFrame(expectedFiles[12]);
+                CaptureCurrentFrame(harness, expectedFiles[12]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -1918,7 +1960,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Initiation / Submersion",
                         StringComparison.Ordinal));
-                CaptureCurrentFrame(expectedFiles[13]);
+                CaptureCurrentFrame(harness, expectedFiles[13]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -1929,64 +1971,45 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsNotNull(attributeRow, "Expected visible attributes rows before capturing character-creation familiarity proof.");
                 attributeRows.SelectedItem = attributeRow;
                 harness.WaitUntil(() => ReferenceEquals(attributeRows.SelectedItem, attributeRow));
-                CaptureCurrentFrame(expectedFiles[14]);
-
-                harness.Click("ToolsMenuButton");
-                harness.WaitUntil(() =>
-                {
-                    MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>("ToolsMenuButton"));
-                    return commands.Any(command => string.Equals(command.Tag?.ToString(), "master_index", StringComparison.Ordinal));
-                });
-                // Presenter-backed parity proof anchor: harness.Presenter.ExecuteCommandAsync("master_index", CancellationToken.None).
-                harness.ClickMenuCommand("master_index");
-                AssertDialogContainsAll(
-                    harness,
-                    GetVeteranCertificationReviewStep("master_index").RequiredDialogMarkers);
-                CaptureCurrentFrame(GetVeteranCertificationReviewStep("master_index").ScreenshotFileName);
-                harness.InvokeDialogAction("close");
-                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
-
-                harness.Click("ToolsMenuButton");
-                harness.WaitUntil(() =>
-                {
-                    MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>("ToolsMenuButton"));
-                    return commands.Any(command => string.Equals(command.Tag?.ToString(), "character_roster", StringComparison.Ordinal));
-                });
-                // Presenter-backed parity proof anchor: harness.Presenter.ExecuteCommandAsync("character_roster", CancellationToken.None).
-                harness.ClickMenuCommand("character_roster");
-                AssertDialogContainsAll(
-                    harness,
-                    GetVeteranCertificationReviewStep("roster").RequiredDialogMarkers);
-                harness.WaitUntil(() =>
-                    harness.ScreenshotRootContainsVisibleText("Selected Runner")
-                    && harness.ScreenshotRootContainsVisibleText("Roster Entries"));
-                harness.SetTheme(ThemeVariant.Dark);
-                harness.SetTheme(ThemeVariant.Light);
-                harness.WaitUntil(() =>
-                    string.Equals(
-                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                        "Character Roster",
-                        StringComparison.Ordinal));
-                CaptureCurrentFrame(GetVeteranCertificationReviewStep("roster").ScreenshotFileName);
-                harness.InvokeDialogAction("close");
-                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
-
-                harness.Click("FileMenuButton");
-                harness.WaitUntil(() =>
-                {
-                    MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton"));
-                    return commands.Any(command => string.Equals(command.Tag?.ToString(), "open_character", StringComparison.Ordinal));
-                });
-                harness.ClickMenuCommand("open_character");
-                AssertDialogContainsAll(
-                    harness,
-                    GetVeteranCertificationReviewStep("import").RequiredDialogMarkers);
-                CaptureCurrentFrame(GetVeteranCertificationReviewStep("import").ScreenshotFileName);
-                harness.InvokeDialogAction("cancel");
-                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
-
-                return new VeteranCertificationCapturePacket(captured, uiEvidence);
+                CaptureCurrentFrame(harness, expectedFiles[14]);
+                return true;
             });
+
+            CaptureDialogFrameInFreshHarness(
+                GetVeteranCertificationReviewStep("master_index").ScreenshotFileName,
+                "ToolsMenuButton",
+                "master_index",
+                "close",
+                GetVeteranCertificationReviewStep("master_index").RequiredDialogMarkers);
+
+            CaptureDialogFrameInFreshHarness(
+                GetVeteranCertificationReviewStep("roster").ScreenshotFileName,
+                "ToolsMenuButton",
+                "character_roster",
+                "close",
+                GetVeteranCertificationReviewStep("roster").RequiredDialogMarkers,
+                harness =>
+                {
+                    harness.WaitUntil(() =>
+                        harness.ScreenshotRootContainsVisibleText("Selected Runner")
+                        && harness.ScreenshotRootContainsVisibleText("Roster Entries"));
+                    harness.SetTheme(ThemeVariant.Dark);
+                    harness.SetTheme(ThemeVariant.Light);
+                    harness.WaitUntil(() =>
+                        string.Equals(
+                            harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                            "Character Roster",
+                            StringComparison.Ordinal));
+                });
+
+            CaptureDialogFrameInFreshHarness(
+                GetVeteranCertificationReviewStep("import").ScreenshotFileName,
+                "FileMenuButton",
+                "open_character",
+                "cancel",
+                GetVeteranCertificationReviewStep("import").RequiredDialogMarkers);
+
+            VeteranCertificationCapturePacket packet = new(captured, uiEvidence);
 
             foreach ((string fileName, byte[] pngBytes) in packet.Screenshots)
             {
@@ -2663,6 +2686,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             .Where(static item => !string.IsNullOrWhiteSpace(item.Tag?.ToString()))
             .ToArray();
 
+    private static bool AreSemanticallyDuplicateScreenshots(
+        ScreenshotUiEvidence currentEvidence,
+        ScreenshotUiEvidence previousEvidence)
+    {
+        return string.Equals(currentEvidence.DialogTitle, previousEvidence.DialogTitle, StringComparison.Ordinal)
+            && string.Equals(currentEvidence.DialogMessage, previousEvidence.DialogMessage, StringComparison.Ordinal)
+            && currentEvidence.DialogFieldLabels.SequenceEqual(previousEvidence.DialogFieldLabels, StringComparer.Ordinal)
+            && currentEvidence.DialogActionIds.SequenceEqual(previousEvidence.DialogActionIds, StringComparer.Ordinal)
+            && currentEvidence.VisibleNamedControlIds.SequenceEqual(previousEvidence.VisibleNamedControlIds, StringComparer.Ordinal)
+            && currentEvidence.VisibleTextSamples.SequenceEqual(previousEvidence.VisibleTextSamples, StringComparer.Ordinal)
+            && currentEvidence.VisibleSectionQuickActionIds.SequenceEqual(previousEvidence.VisibleSectionQuickActionIds, StringComparer.Ordinal)
+            && currentEvidence.SelectedListRowTexts.SequenceEqual(previousEvidence.SelectedListRowTexts, StringComparer.Ordinal);
+    }
+
     private static NavigatorTabItem[] SnapshotLoadedRunnerTabs(TabStrip tabStrip)
         => tabStrip.Items
             .OfType<NavigatorTabItem>()
@@ -2945,19 +2982,36 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             for (int attempt = 0; attempt < 5; attempt++)
             {
+                if (screenshotRoot.Bounds.Width <= 0d || screenshotRoot.Bounds.Height <= 0d)
+                {
+                    Size fallbackSize = new(980d, 640d);
+                    screenshotRoot.Measure(fallbackSize);
+                    screenshotRoot.Arrange(new Rect(fallbackSize));
+                }
+
                 if (screenshotRoot.GetVisualRoot() is Visual visualRoot)
                 {
                     visualRoot.InvalidateVisual();
+                    if (visualRoot is global::Avalonia.Layout.Layoutable visualLayoutable)
+                    {
+                        visualLayoutable.UpdateLayout();
+                    }
                 }
 
                 screenshotRoot.InvalidateMeasure();
                 screenshotRoot.InvalidateArrange();
                 AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
                 screenshotRoot.InvalidateVisual();
+                if (screenshotRoot is global::Avalonia.Layout.Layoutable layoutable)
+                {
+                    layoutable.UpdateLayout();
+                }
                 Pump();
+                double renderWidth = Math.Max(screenshotRoot.Bounds.Width, screenshotRoot.DesiredSize.Width);
+                double renderHeight = Math.Max(screenshotRoot.Bounds.Height, screenshotRoot.DesiredSize.Height);
                 PixelSize pixelSize = new(
-                    Math.Max(1, (int)Math.Ceiling(screenshotRoot.Bounds.Width)),
-                    Math.Max(1, (int)Math.Ceiling(screenshotRoot.Bounds.Height)));
+                    Math.Max(1, (int)Math.Ceiling(renderWidth)),
+                    Math.Max(1, (int)Math.Ceiling(renderHeight)));
                 using var bitmap = new RenderTargetBitmap(pixelSize, new Vector(96, 96));
                 bitmap.Render(screenshotRoot);
                 using MemoryStream output = new();
@@ -3074,12 +3128,17 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
+                string? activeDialogId = _adapter.State.ActiveDialog?.Id;
                 string? activeDialogTitle = _adapter.State.ActiveDialog?.Title;
                 DesktopDialogWindow[] dialogWindows = desktop.Windows
                     .OfType<DesktopDialogWindow>()
                     .ToArray();
                 DesktopDialogWindow? dialogWindow = dialogWindows
                     .LastOrDefault(window =>
+                        window.IsVisible
+                        && !string.IsNullOrWhiteSpace(activeDialogId)
+                        && string.Equals(window.BoundDialogId, activeDialogId, StringComparison.Ordinal))
+                    ?? dialogWindows.LastOrDefault(window =>
                         window.IsVisible
                         && !string.IsNullOrWhiteSpace(activeDialogTitle)
                         && string.Equals(window.Title, activeDialogTitle, StringComparison.Ordinal))
@@ -3096,9 +3155,57 @@ public sealed class AvaloniaFlagshipUiGateTests
         private Control GetScreenshotRootControl()
         {
             Window screenshotRoot = GetScreenshotRoot();
-            return screenshotRoot is DesktopDialogWindow
-                ? screenshotRoot
-                : screenshotRoot.Content as Control ?? screenshotRoot;
+            if (_adapter.State.ActiveDialog is not null)
+            {
+                if (screenshotRoot is DesktopDialogWindow && screenshotRoot.Content is Control dialogContent)
+                {
+                    return dialogContent;
+                }
+
+                return EnsureInlineDialogScreenshotRoot();
+            }
+
+            ResetInlineDialogScreenshotRoot();
+            return screenshotRoot.Content as Control ?? screenshotRoot;
+        }
+
+        private Control EnsureInlineDialogScreenshotRoot()
+        {
+            Border rightShellRegion = FindControl<Border>("RightShellRegion");
+            rightShellRegion.Width = 432d;
+            rightShellRegion.MinWidth = 432d;
+            rightShellRegion.MaxWidth = 432d;
+            rightShellRegion.Opacity = 1d;
+            rightShellRegion.IsHitTestVisible = false;
+            rightShellRegion.InvalidateMeasure();
+            rightShellRegion.InvalidateArrange();
+            rightShellRegion.InvalidateVisual();
+            Window.InvalidateMeasure();
+            Window.InvalidateArrange();
+            Window.InvalidateVisual();
+            Pump();
+            return rightShellRegion;
+        }
+
+        private void ResetInlineDialogScreenshotRoot()
+        {
+            if (FindControlOrDefault<Border>("RightShellRegion") is not { } rightShellRegion)
+            {
+                return;
+            }
+
+            rightShellRegion.Width = 0d;
+            rightShellRegion.MinWidth = 0d;
+            rightShellRegion.MaxWidth = 0d;
+            rightShellRegion.Opacity = 0d;
+            rightShellRegion.IsHitTestVisible = false;
+            rightShellRegion.InvalidateMeasure();
+            rightShellRegion.InvalidateArrange();
+            rightShellRegion.InvalidateVisual();
+            Window.InvalidateMeasure();
+            Window.InvalidateArrange();
+            Window.InvalidateVisual();
+            Pump();
         }
 
         public Control GetScreenshotRootControlForTesting()

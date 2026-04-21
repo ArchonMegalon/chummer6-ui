@@ -473,6 +473,9 @@ public partial class DesktopDialogWindow : Window
         InvalidateMeasure();
         InvalidateArrange();
         InvalidateVisual();
+        _dialogFieldsPanel.UpdateLayout();
+        _dialogActionsPanel.UpdateLayout();
+        UpdateLayout();
     }
 
     private void ApplyDialogSizing(string? dialogId)
