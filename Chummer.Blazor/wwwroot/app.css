@@ -1,4 +1,6 @@
 :root {
+    --ui-kit-classic-font: "Trebuchet MS", "Verdana", "Geneva", Arial, sans-serif;
+    --ui-kit-mono-font: "Consolas", "Menlo", "Monaco", "Courier New", monospace;
     --ui-kit-shell-surface: #d4d0c8;
     --ui-kit-shell-surface-muted: #e8e4db;
     --ui-kit-shell-surface-emphasis: #f5f3ec;
@@ -13,8 +15,8 @@
 html, body {
     margin: 0;
     padding: 0;
-    font-family: "Tahoma", "Trebuchet MS", "Segoe UI", sans-serif;
-    font-size: 13px;
+    font-family: var(--ui-kit-classic-font);
+    font-size: 12px;
     background: var(--ui-kit-shell-surface);
     color: #111111;
 }
@@ -55,6 +57,7 @@ input,
 select,
 button {
     font: inherit;
+    font-family: var(--ui-kit-classic-font);
 }
 
 button {
@@ -81,6 +84,11 @@ button:disabled {
     gap: 0;
 }
 
+.desktop-shell.classic-desktop-shell {
+    background: var(--ui-kit-shell-surface);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
 .menu-shell {
     position: relative;
     z-index: 20;
@@ -98,6 +106,12 @@ button:disabled {
     min-height: 22px;
 }
 
+.menu-bar.classic-menu-bar {
+    background: linear-gradient(180deg, #e9e6dd 0%, #d4d0c8 100%);
+    border-color: var(--ui-kit-shell-border-strong);
+    min-height: 21px;
+}
+
 .menu-btn {
     border: 0;
     border-right: 1px solid transparent;
@@ -105,6 +119,11 @@ button:disabled {
     border-radius: 0;
     min-height: 20px;
     padding: 0.05rem 0.4rem;
+}
+
+.menu-btn.classic-menu-button {
+    min-height: 19px;
+    padding: 0.05rem 0.45rem;
 }
 
 .menu-btn.active {
@@ -126,6 +145,11 @@ button:disabled {
     box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.18);
 }
 
+.menu-dropdown.classic-menu-dropdown {
+    border-color: var(--ui-kit-shell-border-strong);
+    padding: 1px;
+}
+
 .menu-item {
     min-width: 12rem;
     text-align: left;
@@ -135,9 +159,13 @@ button:disabled {
     padding: 0.15rem 0.35rem;
 }
 
+.menu-item.classic-menu-item {
+    font-size: 12px;
+}
+
 .tool-strip {
     display: flex;
-    gap: 0.1rem;
+    gap: 0;
     flex-wrap: wrap;
     background: var(--ui-kit-shell-surface);
     border: 1px solid var(--ui-kit-shell-border);
@@ -147,10 +175,30 @@ button:disabled {
     min-height: 22px;
 }
 
+.tool-strip.classic-tool-strip {
+    background: linear-gradient(180deg, #e9e6dd 0%, #d4d0c8 100%);
+    border-color: var(--ui-kit-shell-border-strong);
+    padding: 0.05rem 0.12rem;
+}
+
+.tool-divider {
+    width: 1px;
+    height: 18px;
+    margin: 0.05rem 0.3rem;
+    background: #b7c2cf;
+    align-self: center;
+}
+
 .tool-btn {
     min-height: 20px;
     padding: 0.05rem 0.35rem;
     border-radius: 0;
+}
+
+.tool-btn.classic-tool-button {
+    min-height: 20px;
+    margin-right: 0.12rem;
+    padding: 0.05rem 0.38rem;
 }
 
 .tool-btn.selected {
@@ -217,6 +265,12 @@ button:disabled {
     padding: 0.05rem 0.15rem;
 }
 
+.workbench-tab-strip.classic-tab-strip {
+    background: #ece9d8;
+    border-color: var(--ui-kit-shell-border-strong);
+    padding: 0.08rem 0.15rem;
+}
+
 .workbench-summary-copy {
     display: none;
     min-width: 0;
@@ -267,6 +321,10 @@ button:disabled {
     white-space: nowrap;
 }
 
+.workbench-tab.classic-workbench-tab {
+    min-height: 20px;
+}
+
 .workbench-tab.active {
     background: var(--ui-kit-panel-surface);
     border-color: #1f4e8c;
@@ -307,6 +365,14 @@ button:disabled {
     padding: 0.18rem 0.25rem;
     border-radius: 0;
     box-shadow: none;
+}
+
+.classic-navigator,
+.classic-action-rail,
+.classic-flow-rail,
+.classic-section-preview,
+.classic-status-strip {
+    border-color: var(--ui-kit-shell-border-strong);
 }
 
 .flagship-marquee {
@@ -1104,6 +1170,7 @@ textarea:focus-visible {
     border-radius: 6px;
     padding: 0.75rem;
     font-size: 0.78rem;
+    font-family: var(--ui-kit-mono-font);
 }
 
 .section-preview > h2,
@@ -1450,6 +1517,10 @@ textarea:focus-visible {
     grid-template-rows: auto 1fr auto;
 }
 
+.desktop-dialog.classic-dialog {
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.22);
+}
+
 .dialog-titlebar {
     display: flex;
     justify-content: space-between;
@@ -1459,6 +1530,10 @@ textarea:focus-visible {
     padding: 0.18rem 0.35rem;
     font-weight: 600;
     border-bottom: 1px solid var(--ui-kit-shell-border-strong);
+}
+
+.dialog-titlebar.classic-dialog-titlebar {
+    background: linear-gradient(180deg, #e9e6dd 0%, #d4d0c8 100%);
 }
 
 .dialog-close {
@@ -1507,6 +1582,11 @@ textarea:focus-visible {
     overflow: auto;
 }
 
+.dialog-body.classic-dialog-grid {
+    padding: 0.3rem;
+    gap: 0.25rem 0.4rem;
+}
+
 .dialog-body label {
     margin: 0;
 }
@@ -1527,12 +1607,12 @@ textarea:focus-visible {
 
 .dialog-input--list {
     min-height: 12rem;
-    font-family: Consolas, Menlo, Monaco, monospace;
+    font-family: var(--ui-kit-mono-font);
 }
 
 .dialog-input--tree {
     min-height: 12rem;
-    font-family: Consolas, Menlo, Monaco, monospace;
+    font-family: var(--ui-kit-mono-font);
 }
 
 .dialog-input--grid {
@@ -1554,7 +1634,7 @@ textarea:focus-visible {
 .dialog-visual-pre {
     margin: 0;
     white-space: pre-wrap;
-    font-family: Consolas, Menlo, Monaco, monospace;
+    font-family: var(--ui-kit-mono-font);
 }
 
 .dialog-tab-chip {
@@ -1605,6 +1685,14 @@ textarea:focus-visible {
     justify-content: center;
     border: 1px solid var(--ui-kit-shell-border-strong);
     background: var(--ui-kit-shell-surface-muted);
+}
+
+.dialog-image-preview {
+    display: block;
+    max-width: 100%;
+    max-height: 11rem;
+    object-fit: contain;
+    image-rendering: auto;
 }
 
 .dialog-footer {

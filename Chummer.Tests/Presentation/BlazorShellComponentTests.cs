@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Bunit;
 using Chummer.Blazor.Components.Pages;
@@ -1758,6 +1759,53 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.Dialog, (DesktopDialogState?)null));
 
         Assert.AreEqual(string.Empty, cut.Markup.Trim());
+    }
+
+    [TestMethod]
+    public void DialogHost_renders_image_preview_for_image_visual()
+    {
+        string portraitPath = Path.Combine(Path.GetTempPath(), $"dialog-host-portrait-{Guid.NewGuid():N}.png");
+        File.WriteAllBytes(
+            portraitPath,
+            Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+iV2QAAAAASUVORK5CYII="));
+
+        try
+        {
+            DesktopDialogState dialog = new(
+                Id: "roster-dialog",
+                Title: "Character Roster",
+                Message: "Confirm roster state.",
+                Fields:
+                [
+                    new DesktopDialogField(
+                        "rosterMugshot",
+                        "Mugshot",
+                        $"Runner Portrait{Environment.NewLine}Portrait Source | {portraitPath}{Environment.NewLine}Portrait Match | watched runner sibling",
+                        "Runner Portrait",
+                        IsMultiline: true,
+                        IsReadOnly: true,
+                        VisualKind: DesktopDialogFieldVisualKinds.Image)
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("close", "Close", true)
+                ]);
+
+            using var context = new BunitContext();
+            IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
+                .Add(component => component.Dialog, dialog));
+
+            IElement preview = cut.Find(".dialog-image-preview");
+            StringAssert.StartsWith(preview.GetAttribute("src"), "data:image/png;base64,", StringComparison.Ordinal);
+            Assert.AreEqual("Runner Portrait", preview.GetAttribute("alt"));
+        }
+        finally
+        {
+            if (File.Exists(portraitPath))
+            {
+                File.Delete(portraitPath);
+            }
+        }
     }
 
     [TestMethod]

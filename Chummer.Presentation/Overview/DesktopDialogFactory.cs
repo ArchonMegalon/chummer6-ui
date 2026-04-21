@@ -709,7 +709,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ? "No runner selected."
             : $"Opened {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC · {(selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet")} · active ruleset {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)} · watch file {(selectedWatchedFile ?? "not matched")}";
         (string portraitCandidate, string portraitStatus, string portraitMatchSource) = ResolveRosterPortraitCandidate(rosterPath, selectedWatchedFile, selectedRunner, alias, name, workspace);
+        FileInfo? selectedWatchFileInfo = !string.IsNullOrWhiteSpace(selectedWatchedFile)
+            ? new FileInfo(Path.Combine(rosterPath, selectedWatchedFile))
+            : null;
+        if (selectedWatchFileInfo is { Exists: false })
+        {
+            selectedWatchFileInfo = null;
+        }
         FileInfo? portraitInfo = File.Exists(portraitCandidate) ? new FileInfo(portraitCandidate) : null;
+        if (selectedWatchFileInfo is not null)
+        {
+            selectedRunnerStatus += $" · watched {selectedWatchFileInfo.LastWriteTimeUtc:yyyy-MM-dd HH:mm} UTC · {selectedWatchFileInfo.Length.ToString(CultureInfo.InvariantCulture)} B";
+        }
         string selectionTrail = selectedRunner is null
             ? BuildGridValue(
                 ("Active Runner", $"{alias} · {name}"),
@@ -728,6 +739,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Watched Files", watchedCount.ToString(CultureInfo.InvariantCulture)),
             ("Saved Workspaces", savedCount.ToString(CultureInfo.InvariantCulture)),
             ("Selected Watch File", selectedWatchedFile ?? "not matched"),
+            ("Selected Updated", selectedWatchFileInfo is null ? "n/a" : $"{selectedWatchFileInfo.LastWriteTimeUtc:yyyy-MM-dd HH:mm} UTC"),
+            ("Selected Bytes", selectedWatchFileInfo?.Length.ToString(CultureInfo.InvariantCulture) ?? "n/a"),
             ("Portrait Match", portraitMatchSource),
             ("Scan Posture", !watchFolderConfigured ? "configure a roster folder first" : watchFolderExists ? "folder contents surfaced in roster tree" : "folder missing on disk"));
         string runnerCommands =

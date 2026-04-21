@@ -553,6 +553,8 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Include Subdirectories | Yes");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Watched Files | 2");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Selected Watch File | GST.chum5");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Selected Updated |");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Selected Bytes | 6");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Portrait Match | watched runner sibling");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterRunnerCommands"), "Open selected runner");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterRunnerCommands"), "Save runner to roster folder");
@@ -561,6 +563,8 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open matched portrait");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "active ruleset sr6");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "watch file GST.chum5");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "watched ");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "6 B");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerBackground"), "Dense-workbench veteran entry");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerBackground"), "Description:");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerNotes"), "Character Notes:");
