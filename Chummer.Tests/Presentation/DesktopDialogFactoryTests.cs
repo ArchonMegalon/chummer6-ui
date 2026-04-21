@@ -285,6 +285,9 @@ public class DesktopDialogFactoryTests
         CollectionAssert.AreEqual(
             new[] { "open_source", "switch_file", "edit_setting", "close" },
             dialog.Actions.Select(action => action.Id).ToArray());
+        Assert.AreEqual("Open Linked PDF", dialog.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Change Data File", dialog.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Modify Setting", dialog.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexLibraryNotes", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexImportNotes", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSr6Notes", StringComparison.Ordinal)).LayoutSlot);
@@ -343,8 +346,12 @@ public class DesktopDialogFactoryTests
             DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultList").Contains("p. 20", StringComparison.Ordinal),
             "Filtered result list should no longer contain the page 20 row.");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSnippetPreview"), "Indexed source detail remains on the right");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSourceCommands"), "Switch sourcebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSourceCommands"), "Switch sourcebook | CRB · Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultInspector"), "Activation | double-click row / open source");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultCommands"), "Activate result | Indexed source detail remains on the right");
+        Assert.AreEqual("Open PDF p. 21", rebuilt.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Change Data File (books.xml)", rebuilt.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Modify Setting (governed)", rebuilt.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -375,6 +382,9 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexDetails"), "Street Wyrd (SW)");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSourceClickReminder"), "No local PDF is attached");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexCatalogEntries"), "Street Wyrd [SW]");
+        Assert.AreEqual("Open Linked Source", rebuilt.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Change Data File (armor.xml)", rebuilt.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Modify Setting (governed)", rebuilt.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
