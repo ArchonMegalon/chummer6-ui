@@ -464,6 +464,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             UiScalePercent = DesktopDialogFieldValueParser.ParseInt(dialog, "globalUiScale", fallback.UiScalePercent),
             Theme = DesktopDialogFieldValueParser.GetValue(dialog, "globalTheme") ?? fallback.Theme,
             Language = DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage") ?? fallback.Language,
+            SheetLanguage = DesktopDialogFieldValueParser.GetValue(dialog, "globalSheetLanguage") ?? fallback.SheetLanguage,
             CompactMode = DesktopDialogFieldValueParser.ParseBool(dialog, "globalCompactMode", fallback.CompactMode),
             CharacterPriority = DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterPriority") ?? fallback.CharacterPriority,
             KarmaNuyenRatio = DesktopDialogFieldValueParser.ParseInt(dialog, "globalKarmaNuyenRatio", fallback.KarmaNuyenRatio),
@@ -581,18 +582,32 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string activePane)
     {
         string normalizedLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(language);
+        string normalizedSheetLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(string.IsNullOrWhiteSpace(preferences.SheetLanguage) ? normalizedLanguage : preferences.SheetLanguage);
         string pane = NormalizeGlobalSettingsPane(activePane);
         static string Marker(string targetPane, string activePaneId)
             => string.Equals(targetPane, activePaneId, StringComparison.Ordinal) ? "▶ " : string.Empty;
 
         string settingsTree =
-            "[Settings]" + Environment.NewLine +
-            $"{Marker("general", pane)}General{Environment.NewLine}" +
-            $"{Marker("sourcebooks", pane)}Sourcebooks{Environment.NewLine}" +
-            $"{Marker("updates", pane)}Updates{Environment.NewLine}" +
-            $"{Marker("paths", pane)}Data Paths";
+            "[Global Settings]" + Environment.NewLine +
+            $"├─ {Marker("general", pane)}General{Environment.NewLine}" +
+            $"│  ├─ Desktop{Environment.NewLine}" +
+            $"│  └─ Language{Environment.NewLine}" +
+            $"├─ {Marker("sourcebooks", pane)}Sourcebooks{Environment.NewLine}" +
+            $"│  └─ Build Defaults{Environment.NewLine}" +
+            $"├─ {Marker("updates", pane)}Updates{Environment.NewLine}" +
+            $"│  └─ Startup and Channel{Environment.NewLine}" +
+            $"└─ {Marker("paths", pane)}Data Paths{Environment.NewLine}" +
+            $"   └─ Roster and External Tools";
         string sections =
             $"General{Environment.NewLine}Sourcebooks{Environment.NewLine}Updates{Environment.NewLine}Data Paths";
+        string detailTabs = "Overview" + Environment.NewLine + "Controls" + Environment.NewLine + "Notes";
+        string paneHeader = pane switch
+        {
+            "sourcebooks" => "Sourcebooks / Build Defaults",
+            "updates" => "Updates / Startup",
+            "paths" => "Data Paths / External Tools",
+            _ => "General / Desktop Language"
+        };
 
         string settingsGrid = pane switch
         {
@@ -606,7 +621,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("Startup", preferences.StartupBehavior),
                 ("Update Channel", preferences.UpdateChannel),
                 ("Check on Launch", preferences.CheckForUpdatesOnLaunch ? "enabled" : "disabled"),
-                ("Visible Chrome", "compact desktop shell"),
+                ("Restart", "phase-1 language change applies on restart"),
                 ("Language", normalizedLanguage)),
             "paths" => BuildGridValue(
                 ("Character Roster Path", preferences.CharacterRosterPath),
@@ -617,9 +632,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             _ => BuildGridValue(
                 ("Theme", preferences.Theme),
                 ("Language", normalizedLanguage),
-                ("Sheet Language", normalizedLanguage),
+                ("Sheet Language", normalizedSheetLanguage),
                 ("Scale", $"{preferences.UiScalePercent}%"),
                 ("Compact Mode", preferences.CompactMode ? "on" : "off")),
+        };
+        string settingsWorkflows = pane switch
+        {
+            "sourcebooks" => "Adjust build defaults" + Environment.NewLine + "Review sourcebook posture" + Environment.NewLine + "Return to Master Index for toggles",
+            "updates" => "Choose startup behavior" + Environment.NewLine + "Set update channel" + Environment.NewLine + "Keep checks inside the desktop head",
+            "paths" => "Set roster path" + Environment.NewLine + "Choose PDF helper" + Environment.NewLine + "Keep export and print routes obvious",
+            _ => "Change theme and scale" + Environment.NewLine + "Set desktop language" + Environment.NewLine + "Set sheet language and compact mode"
         };
         string settingsSnippet = pane switch
         {
@@ -627,6 +649,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "updates" => "This pane should behave like the old utility settings form: startup and update behavior stay editable without leaving the desktop workbench or opening a browser detour.",
             "paths" => "Data paths and external helpers stay grouped here so roster/import/print workflows remain obvious and compact like the legacy utility surfaces.",
             _ => "This pane should behave like the old utility settings form: navigation stays on the left, current-pane facts stay visible on the right, and dense work continues without wasting space."
+        };
+        string restartPosture = pane switch
+        {
+            "updates" => "Update and startup edits apply immediately where possible; desktop language changes still call for a restart.",
+            _ => "Most values apply inside the current desktop session; language and some shell chrome changes still need a restart."
         };
 
         string generalSlot = string.Equals(pane, "general", StringComparison.Ordinal) ? DesktopDialogFieldLayoutSlots.Full : DesktopDialogFieldLayoutSlots.Hidden;
@@ -638,13 +665,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         [
             new DesktopDialogField("globalActivePane", "Active Pane", pane, "general", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("globalSettingsSections", "Sections", sections, "General", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("globalSettingsDetailTabs", "Pane Tabs", detailTabs, "Overview", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             new DesktopDialogField("globalSettingsTree", "Navigation", settingsTree, "[Settings]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("globalSettingsPropertyGrid", "Current Pane", settingsGrid, settingsGrid, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("globalCurrentPaneHeader", "Pane Header", paneHeader, paneHeader, IsReadOnly: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("globalCurrentPaneWorkflows", "Workflow Checklist", settingsWorkflows, settingsWorkflows, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
 
             new DesktopDialogField("globalTheme", localize("desktop.dialog.global_settings.field.theme"), preferences.Theme, "classic", LayoutSlot: generalSlot),
             new DesktopDialogField("globalUiScale", localize("desktop.dialog.global_settings.field.ui_scale"), preferences.UiScalePercent.ToString(), "100", InputType: "number", LayoutSlot: generalSlot),
             new DesktopDialogField("globalLanguage", localize("desktop.dialog.global_settings.field.language"), normalizedLanguage, DesktopLocalizationCatalog.DefaultLanguage, LayoutSlot: generalSlot),
-            new DesktopDialogField("globalSheetLanguage", "Sheet Language", normalizedLanguage, normalizedLanguage, LayoutSlot: generalSlot),
+            new DesktopDialogField("globalSheetLanguage", "Sheet Language", normalizedSheetLanguage, normalizedSheetLanguage, LayoutSlot: generalSlot),
             new DesktopDialogField("globalCompactMode", localize("desktop.dialog.global_settings.field.compact_mode"), preferences.CompactMode ? "true" : "false", "false", InputType: "checkbox", LayoutSlot: generalSlot),
 
             new DesktopDialogField("globalCharacterPriority", "Default Priority", preferences.CharacterPriority, DesktopPreferenceState.Default.CharacterPriority, LayoutSlot: sourcebooksSlot),
@@ -660,7 +690,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("globalPdfViewerPath", "PDF Viewer", preferences.PdfViewerPath, DesktopPreferenceState.Default.PdfViewerPath, LayoutSlot: pathsSlot),
             new DesktopDialogField("globalVisibilityPolicy", "Visible Heads", preferences.VisibleChromePolicy, DesktopPreferenceState.Default.VisibleChromePolicy, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: pathsSlot),
 
-            new DesktopDialogField("globalCurrentPaneNotes", "Current Pane Notes", settingsSnippet, settingsSnippet, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("globalCurrentPaneNotes", "Current Pane Notes", settingsSnippet, settingsSnippet, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("globalRestartPosture", "Restart Posture", restartPosture, restartPosture, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
