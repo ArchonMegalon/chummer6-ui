@@ -51,7 +51,7 @@ public static class RulesetUiDirectiveCatalog
     private static readonly RulesetUiDirective Sr4 = new(
         RulesetId: RulesetDefaults.Sr4,
         DisplayName: "Shadowrun 4",
-        PostureLabel: "import workbench",
+        PostureLabel: "import desk",
         FileExtension: ".chum4",
         HomeSpotlight: "SR4 opens to import intake, parity receipts, and character review before any full editor claim.",
         ResumeLaneSummary: "Resume the SR4 runner with codec proof, import receipts, and parity evidence visible.",
@@ -97,7 +97,7 @@ public static class RulesetUiDirectiveCatalog
     private static readonly RulesetUiDirective Sr6 = new(
         RulesetId: RulesetDefaults.Sr6,
         DisplayName: "Shadowrun 6",
-        PostureLabel: "guided workbench",
+        PostureLabel: "preview desk",
         FileExtension: ".chum6",
         HomeSpotlight: "SR6 opens to guided setup, starter kits, and explicit runtime honesty before parity claims.",
         ResumeLaneSummary: "Resume the SR6 runner with runtime honesty and starter-kit guidance visible.",
@@ -143,9 +143,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Desktop Summary · SR4 Import Workbench",
+            RulesetDefaults.Sr4 => "Desktop Summary · SR4 Import Desk",
             RulesetDefaults.Sr5 => "Desktop Summary · SR5 Editor",
-            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Guided Workbench",
+            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Preview Desk",
             _ => "Desktop Summary Header"
         };
     }
@@ -155,9 +155,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 import workbench",
+            RulesetDefaults.Sr4 => "SR4 import desk",
             RulesetDefaults.Sr5 => "SR5 main editor",
-            RulesetDefaults.Sr6 => "SR6 guided workbench",
+            RulesetDefaults.Sr6 => "SR6 preview desk",
             _ => "Desktop editor"
         };
     }
@@ -167,9 +167,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Shadowrun 4 character workbench",
+            RulesetDefaults.Sr4 => "Shadowrun 4 import character desk",
             RulesetDefaults.Sr5 => "Shadowrun 5 character editor",
-            RulesetDefaults.Sr6 => "Shadowrun 6 guided character workbench",
+            RulesetDefaults.Sr6 => "Shadowrun 6 preview character desk",
             _ => "Character editor"
         };
     }
@@ -210,9 +210,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Workbench Tabs",
+            RulesetDefaults.Sr4 => "SR4 Import Tabs",
             RulesetDefaults.Sr5 => "SR5 Editor Tabs",
-            RulesetDefaults.Sr6 => "SR6 Workbench Tabs",
+            RulesetDefaults.Sr6 => "SR6 Preview Tabs",
             _ => "Workspace Tabs"
         };
     }
@@ -222,9 +222,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Workbench Actions",
+            RulesetDefaults.Sr4 => "SR4 Import Actions",
             RulesetDefaults.Sr5 => "SR5 Editor Actions",
-            RulesetDefaults.Sr6 => "SR6 Workbench Actions",
+            RulesetDefaults.Sr6 => "SR6 Preview Actions",
             _ => "Section Actions"
         };
     }
@@ -234,9 +234,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Workbench Flows",
+            RulesetDefaults.Sr4 => "SR4 Import Flows",
             RulesetDefaults.Sr5 => "SR5 Editor Flows",
-            RulesetDefaults.Sr6 => "SR6 Workbench Flows",
+            RulesetDefaults.Sr6 => "SR6 Preview Flows",
             _ => "Workflow Surfaces"
         };
     }
@@ -316,9 +316,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Workbench Commands",
+            RulesetDefaults.Sr4 => "SR4 Import Commands",
             RulesetDefaults.Sr5 => "SR5 Editor Commands",
-            RulesetDefaults.Sr6 => "SR6 Workbench Commands",
+            RulesetDefaults.Sr6 => "SR6 Preview Commands",
             _ => "Commands"
         };
     }
@@ -328,9 +328,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "No SR4 workbench commands are currently available.",
+            RulesetDefaults.Sr4 => "No SR4 import-desk commands are currently available.",
             RulesetDefaults.Sr5 => "No SR5 editor commands are currently available.",
-            RulesetDefaults.Sr6 => "No SR6 workbench commands are currently available.",
+            RulesetDefaults.Sr6 => "No SR6 preview-desk commands are currently available.",
             _ => "No commands are currently available."
         };
     }
@@ -340,9 +340,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Workbench Result",
+            RulesetDefaults.Sr4 => "SR4 Import Result",
             RulesetDefaults.Sr5 => "SR5 Editor Result",
-            RulesetDefaults.Sr6 => "SR6 Workbench Result",
+            RulesetDefaults.Sr6 => "SR6 Preview Result",
             _ => "Result"
         };
     }
@@ -530,9 +530,9 @@ public static class RulesetUiDirectiveCatalog
 
         return Resolve(rulesetId).RulesetId switch
         {
-            RulesetDefaults.Sr4 => $"SR4 intake: {notice}",
+            RulesetDefaults.Sr4 => $"SR4 import desk: {notice}",
             RulesetDefaults.Sr5 => $"SR5 editor: {notice}",
-            RulesetDefaults.Sr6 => $"SR6 guided setup: {notice}",
+            RulesetDefaults.Sr6 => $"SR6 preview desk: {notice}",
             _ => notice
         };
     }

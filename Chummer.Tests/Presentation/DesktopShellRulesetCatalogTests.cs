@@ -46,9 +46,9 @@ public sealed class DesktopShellRulesetCatalogTests
     }
 
     [DataTestMethod]
-    [DataRow(RulesetDefaults.Sr4, "SR4 Roster", "Import SR4 Character File", "SR4 Workbench Result", "SR4 Workbench Commands")]
+    [DataRow(RulesetDefaults.Sr4, "SR4 Roster", "Import SR4 Character File", "SR4 Import Result", "SR4 Import Commands")]
     [DataRow(RulesetDefaults.Sr5, "SR5 Characters", "Import SR5 Character File", "SR5 Editor Result", "SR5 Editor Commands")]
-    [DataRow(RulesetDefaults.Sr6, "SR6 Roster", "Import SR6 Character File", "SR6 Workbench Result", "SR6 Workbench Commands")]
+    [DataRow(RulesetDefaults.Sr6, "SR6 Roster", "Import SR6 Character File", "SR6 Preview Result", "SR6 Preview Commands")]
     public void DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane(
         string rulesetId,
         string expectedDossiers,
@@ -216,7 +216,7 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.IsFalse(cut.Markup.Contains("Shadowrun 6 guided starter cockpit", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("SR6 home cockpit foregrounds starter kits", StringComparison.Ordinal));
             StringAssert.Contains(cut.Markup, "SR6 Roster");
-            StringAssert.Contains(cut.Markup, "SR6 Workbench Tabs");
+            StringAssert.Contains(cut.Markup, "SR6 Preview Tabs");
         });
     }
 
