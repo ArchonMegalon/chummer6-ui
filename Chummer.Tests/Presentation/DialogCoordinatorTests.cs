@@ -4,7 +4,9 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 using Chummer.Contracts.Rulesets;
+using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -730,5 +732,330 @@ public class DialogCoordinatorTests
 
         Assert.IsNull(published.ActiveDialog);
         Assert.AreEqual("Skill removed.", published.Notice);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_refresh_watch_folder_character_roster_creates_missing_folder_and_rebuilds_dialog()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        string rosterPath = Path.Combine(Path.GetTempPath(), $"chummer-roster-refresh-{Guid.NewGuid():N}");
+        CharacterWorkspaceId workspaceId = new("ghost-runner");
+        OpenWorkspaceState[] openWorkspaces =
+        [
+            new OpenWorkspaceState(workspaceId, "Ghost Runner", "GST", DateTimeOffset.Parse("2026-04-21T08:00:00+00:00"), RulesetDefaults.Sr5, true)
+        ];
+        DesktopPreferenceState preferences = DesktopPreferenceState.Default with
+        {
+            CharacterRosterPath = rosterPath
+        };
+
+        try
+        {
+            CharacterOverviewState published = CharacterOverviewState.Empty with
+            {
+                Profile = CreateProfile("Ghost Runner", "GST"),
+                Preferences = preferences,
+                WorkspaceId = workspaceId,
+                OpenWorkspaces = openWorkspaces,
+                ActiveDialog = factory.CreateCommandDialog(
+                    "character_roster",
+                    CreateProfile("Ghost Runner", "GST"),
+                    preferences,
+                    activeSectionJson: null,
+                    currentWorkspace: workspaceId,
+                    rulesetId: RulesetDefaults.Sr5,
+                    openWorkspaces: openWorkspaces)
+            };
+
+            DialogCoordinationContext context = new(
+                State: published,
+                Publish: state => published = state,
+                ImportAsync: static (_, _) => Task.CompletedTask,
+                UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+                GetState: () => published);
+
+            await coordinator.CoordinateAsync("refresh_watch_folder", context, CancellationToken.None);
+
+            Assert.IsTrue(Directory.Exists(rosterPath));
+            Assert.IsNotNull(published.ActiveDialog);
+            Assert.AreEqual("dialog.character_roster", published.ActiveDialog!.Id);
+            StringAssert.Contains(published.Notice ?? string.Empty, "created and refreshed");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "rosterWatchFolderStatus"), "Watcher | FileSystemWatcher active");
+        }
+        finally
+        {
+            if (Directory.Exists(rosterPath))
+            {
+                Directory.Delete(rosterPath, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_open_runner_character_roster_switches_workspace_and_closes_dialog()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterWorkspaceId workspaceOne = new("ghost-runner");
+        CharacterWorkspaceId workspaceTwo = new("apex-runner");
+        OpenWorkspaceState[] openWorkspaces =
+        [
+            new OpenWorkspaceState(workspaceOne, "Ghost Runner", "GST", DateTimeOffset.Parse("2026-04-21T08:00:00+00:00"), RulesetDefaults.Sr5, true),
+            new OpenWorkspaceState(workspaceTwo, "Apex", "APX", DateTimeOffset.Parse("2026-04-21T09:00:00+00:00"), RulesetDefaults.Sr6, true)
+        ];
+        DesktopDialogState rosterDialog = factory.CreateCommandDialog(
+            "character_roster",
+            CreateProfile("Ghost Runner", "GST"),
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: workspaceOne,
+            rulesetId: RulesetDefaults.Sr5,
+            openWorkspaces: openWorkspaces) with
+        {
+            Fields = factory.CreateCommandDialog(
+                    "character_roster",
+                    CreateProfile("Ghost Runner", "GST"),
+                    DesktopPreferenceState.Default,
+                    activeSectionJson: null,
+                    currentWorkspace: workspaceOne,
+                    rulesetId: RulesetDefaults.Sr5,
+                    openWorkspaces: openWorkspaces)
+                .Fields
+                .Select(field => field.Id switch
+                {
+                    "rosterSelectedRunnerId" => field with { Value = workspaceTwo.Value },
+                    "rosterSelectedRunnerAlias" => field with { Value = "APX" },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            WorkspaceId = workspaceOne,
+            OpenWorkspaces = openWorkspaces,
+            ActiveDialog = rosterDialog
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("open_runner", context, CancellationToken.None);
+
+        Assert.IsNull(published.ActiveDialog);
+        Assert.AreEqual(workspaceTwo, published.WorkspaceId);
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup workbench:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Runner 'APX' opened from roster.");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_open_watch_file_character_roster_keeps_dialog_open_with_notice()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        string rosterPath = Path.Combine(Path.GetTempPath(), $"chummer-roster-watch-{Guid.NewGuid():N}");
+        string nestedPath = Path.Combine(rosterPath, "campaign-a");
+        Directory.CreateDirectory(nestedPath);
+        File.WriteAllText(Path.Combine(nestedPath, "ghost-runner.chum5"), "runner");
+        CharacterWorkspaceId workspaceId = new("ghost-runner");
+        OpenWorkspaceState[] openWorkspaces =
+        [
+            new OpenWorkspaceState(workspaceId, "Ghost Runner", "GST", DateTimeOffset.Parse("2026-04-21T08:00:00+00:00"), RulesetDefaults.Sr5, true)
+        ];
+        DesktopPreferenceState preferences = DesktopPreferenceState.Default with
+        {
+            CharacterRosterPath = rosterPath
+        };
+
+        try
+        {
+            CharacterOverviewState published = CharacterOverviewState.Empty with
+            {
+                Profile = CreateProfile("Ghost Runner", "GST"),
+                Preferences = preferences,
+                WorkspaceId = workspaceId,
+                OpenWorkspaces = openWorkspaces,
+                ActiveDialog = factory.CreateCommandDialog(
+                    "character_roster",
+                    CreateProfile("Ghost Runner", "GST"),
+                    preferences,
+                    activeSectionJson: null,
+                    currentWorkspace: workspaceId,
+                    rulesetId: RulesetDefaults.Sr5,
+                    openWorkspaces: openWorkspaces)
+            };
+
+            DialogCoordinationContext context = new(
+                State: published,
+                Publish: state => published = state,
+                ImportAsync: static (_, _) => Task.CompletedTask,
+                UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+                GetState: () => published);
+
+            await coordinator.CoordinateAsync("open_watch_file", context, CancellationToken.None);
+
+            Assert.IsNotNull(published.ActiveDialog);
+            Assert.AreEqual("dialog.character_roster", published.ActiveDialog!.Id);
+            StringAssert.Contains(published.Notice ?? string.Empty, "campaign-a/ghost-runner.chum5");
+        }
+        finally
+        {
+            if (Directory.Exists(rosterPath))
+            {
+                Directory.Delete(rosterPath, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_open_roster_folder_character_roster_creates_folder_and_keeps_dialog_open()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        string rosterPath = Path.Combine(Path.GetTempPath(), $"chummer-roster-folder-{Guid.NewGuid():N}");
+        CharacterWorkspaceId workspaceId = new("ghost-runner");
+        OpenWorkspaceState[] openWorkspaces =
+        [
+            new OpenWorkspaceState(workspaceId, "Ghost Runner", "GST", DateTimeOffset.Parse("2026-04-21T08:00:00+00:00"), RulesetDefaults.Sr5, true)
+        ];
+        DesktopPreferenceState preferences = DesktopPreferenceState.Default with
+        {
+            CharacterRosterPath = rosterPath
+        };
+
+        try
+        {
+            CharacterOverviewState published = CharacterOverviewState.Empty with
+            {
+                Profile = CreateProfile("Ghost Runner", "GST"),
+                Preferences = preferences,
+                WorkspaceId = workspaceId,
+                OpenWorkspaces = openWorkspaces,
+                ActiveDialog = factory.CreateCommandDialog(
+                    "character_roster",
+                    CreateProfile("Ghost Runner", "GST"),
+                    preferences,
+                    activeSectionJson: null,
+                    currentWorkspace: workspaceId,
+                    rulesetId: RulesetDefaults.Sr5,
+                    openWorkspaces: openWorkspaces)
+            };
+
+            DialogCoordinationContext context = new(
+                State: published,
+                Publish: state => published = state,
+                ImportAsync: static (_, _) => Task.CompletedTask,
+                UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+                GetState: () => published);
+
+            await coordinator.CoordinateAsync("open_roster_folder", context, CancellationToken.None);
+
+            Assert.IsTrue(Directory.Exists(rosterPath));
+            Assert.IsNotNull(published.ActiveDialog);
+            StringAssert.Contains(published.Notice ?? string.Empty, "Roster folder created");
+        }
+        finally
+        {
+            if (Directory.Exists(rosterPath))
+            {
+                Directory.Delete(rosterPath, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_open_portrait_character_roster_keeps_dialog_open_with_notice()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        string rosterPath = Path.Combine(Path.GetTempPath(), $"chummer-roster-portrait-{Guid.NewGuid():N}");
+        string nestedPath = Path.Combine(rosterPath, "campaign-a");
+        Directory.CreateDirectory(nestedPath);
+        File.WriteAllText(Path.Combine(nestedPath, "ghost-runner.chum5"), "runner");
+        File.WriteAllText(Path.Combine(nestedPath, "ghost-runner.png"), "portrait");
+        CharacterWorkspaceId workspaceId = new("ghost-runner");
+        OpenWorkspaceState[] openWorkspaces =
+        [
+            new OpenWorkspaceState(workspaceId, "Ghost Runner", "GST", DateTimeOffset.Parse("2026-04-21T08:00:00+00:00"), RulesetDefaults.Sr5, true)
+        ];
+        DesktopPreferenceState preferences = DesktopPreferenceState.Default with
+        {
+            CharacterRosterPath = rosterPath
+        };
+
+        try
+        {
+            CharacterOverviewState published = CharacterOverviewState.Empty with
+            {
+                Profile = CreateProfile("Ghost Runner", "GST"),
+                Preferences = preferences,
+                WorkspaceId = workspaceId,
+                OpenWorkspaces = openWorkspaces,
+                ActiveDialog = factory.CreateCommandDialog(
+                    "character_roster",
+                    CreateProfile("Ghost Runner", "GST"),
+                    preferences,
+                    activeSectionJson: null,
+                    currentWorkspace: workspaceId,
+                    rulesetId: RulesetDefaults.Sr5,
+                    openWorkspaces: openWorkspaces)
+            };
+
+            DialogCoordinationContext context = new(
+                State: published,
+                Publish: state => published = state,
+                ImportAsync: static (_, _) => Task.CompletedTask,
+                UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+                GetState: () => published);
+
+            await coordinator.CoordinateAsync("open_portrait", context, CancellationToken.None);
+
+            Assert.IsNotNull(published.ActiveDialog);
+            Assert.AreEqual("dialog.character_roster", published.ActiveDialog!.Id);
+            StringAssert.Contains(published.Notice ?? string.Empty, "ghost-runner.png");
+        }
+        finally
+        {
+            if (Directory.Exists(rosterPath))
+            {
+                Directory.Delete(rosterPath, recursive: true);
+            }
+        }
+    }
+
+    private static CharacterProfileSection CreateProfile(string name, string alias)
+    {
+        return new CharacterProfileSection(
+            Name: name,
+            Alias: alias,
+            PlayerName: string.Empty,
+            Metatype: "Human",
+            Metavariant: string.Empty,
+            Sex: string.Empty,
+            Age: string.Empty,
+            Height: string.Empty,
+            Weight: string.Empty,
+            Hair: string.Empty,
+            Eyes: string.Empty,
+            Skin: string.Empty,
+            Concept: string.Empty,
+            Description: string.Empty,
+            Background: string.Empty,
+            CreatedVersion: string.Empty,
+            AppVersion: string.Empty,
+            BuildMethod: string.Empty,
+            GameplayOption: string.Empty,
+            Created: true,
+            Adept: false,
+            Magician: false,
+            Technomancer: false,
+            AI: false,
+            MainMugshotIndex: 0,
+            MugshotCount: 1);
     }
 }
