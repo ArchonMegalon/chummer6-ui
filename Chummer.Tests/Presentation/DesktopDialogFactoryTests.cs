@@ -1416,11 +1416,14 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("gear_delete", DesktopPreferenceState.Default);
 
         Assert.AreEqual("dialog.ui.gear_delete", dialog.Id);
+        Assert.AreEqual("Remove Armor Jacket", dialog.Title);
+        Assert.AreEqual("Remove Armor Jacket from the current gear list?", dialog.Message);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSections"), "Impact");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Armor Jacket");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "> Armor Jacket");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo Posture | re-add from gear selector");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to gear tab");
+        Assert.AreEqual("Remove Armor Jacket", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteNavigationTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteRecoveryCommands", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteImpact", StringComparison.Ordinal)).VisualKind);
@@ -1434,11 +1437,14 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("cyberware_delete", DesktopPreferenceState.Default);
 
         Assert.AreEqual("dialog.ui.cyberware_delete", dialog.Id);
+        Assert.AreEqual("Remove Cybereyes Rating 4", dialog.Title);
+        Assert.AreEqual("Remove Cybereyes Rating 4 from installed ware?", dialog.Message);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Cybereyes Rating 4");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Datajack");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Essence | 0.40");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo Posture | re-add from selector");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to cyberware tab");
+        Assert.AreEqual("Remove Cybereyes Rating 4", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1449,10 +1455,13 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("vehicle_delete", DesktopPreferenceState.Default);
 
         Assert.AreEqual("dialog.ui.vehicle_delete", dialog.Id);
+        Assert.AreEqual("Remove GMC Roadmaster", dialog.Title);
+        Assert.AreEqual("Remove GMC Roadmaster from the current garage?", dialog.Message);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "GMC Roadmaster");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "MCT Fly-Spy");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Seats | 6");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to vehicle tab");
+        Assert.AreEqual("Remove GMC Roadmaster", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1463,10 +1472,13 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("skill_remove", DesktopPreferenceState.Default);
 
         Assert.AreEqual("dialog.ui.skill_remove", dialog.Id);
+        Assert.AreEqual("Remove Perception", dialog.Title);
+        Assert.AreEqual("Remove Perception from the current skill list?", dialog.Message);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Perception");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Sneaking");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Linked Attribute | Intuition");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to skills tab");
+        Assert.AreEqual("Remove Perception", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1477,10 +1489,13 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("delete_entry", DesktopPreferenceState.Default);
 
         Assert.AreEqual("dialog.ui.delete_entry", dialog.Id);
+        Assert.AreEqual("Remove Current Entry", dialog.Title);
+        Assert.AreEqual("Remove Current Entry from the active list?", dialog.Message);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Current Entry");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Next Entry");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Focus | selection moves to adjacent entry");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Re-open Add Entry");
+        Assert.AreEqual("Remove Current Entry", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1491,10 +1506,13 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("drug_delete", DesktopPreferenceState.Default);
 
         Assert.AreEqual("dialog.ui.drug_delete", dialog.Id);
+        Assert.AreEqual("Remove Jazz", dialog.Title);
+        Assert.AreEqual("Remove Jazz from the current drug ledger?", dialog.Message);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Jazz");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Kamikaze");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Crash | Stun + fatigue");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to drugs tab");
+        Assert.AreEqual("Remove Jazz", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1505,10 +1523,13 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("magic_delete", DesktopPreferenceState.Default);
 
         Assert.AreEqual("dialog.ui.magic_delete", dialog.Id);
+        Assert.AreEqual("Remove Stunbolt", dialog.Title);
+        Assert.AreEqual("Remove Stunbolt from the current magic list?", dialog.Message);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Stunbolt");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Increase Reflexes");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Drain | F-3");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to magic tab");
+        Assert.AreEqual("Remove Stunbolt", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1519,10 +1540,13 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("contact_remove", DesktopPreferenceState.Default);
 
         Assert.AreEqual("dialog.ui.contact_remove", dialog.Id);
+        Assert.AreEqual("Remove Mr. Johnson", dialog.Title);
+        Assert.AreEqual("Remove Mr. Johnson from the current contact roster?", dialog.Message);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Mr. Johnson");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Nyx");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Connection / Loyalty | 5 / 3");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to contacts tab");
+        Assert.AreEqual("Remove Mr. Johnson", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1533,10 +1557,13 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("quality_delete", DesktopPreferenceState.Default);
 
         Assert.AreEqual("dialog.ui.quality_delete", dialog.Id);
+        Assert.AreEqual("Remove First Impression", dialog.Title);
+        Assert.AreEqual("Remove First Impression from the current quality list?", dialog.Message);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "First Impression");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Distinctive Style");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Karma | 11");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to qualities tab");
+        Assert.AreEqual("Remove First Impression", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]

@@ -3149,11 +3149,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "delete_entry" => new DesktopDialogState(
                 "dialog.ui.delete_entry",
-                "Delete Entry",
-                "Delete selected entry?",
+                "Remove Current Entry",
+                "Remove Current Entry from the active list?",
                 BuildEntryDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Current Entry", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "open_notes" => new DesktopDialogState(
@@ -3206,11 +3206,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "gear_delete" => new DesktopDialogState(
                 "dialog.ui.gear_delete",
-                "Delete Gear",
-                "Confirm removal of the selected gear item.",
+                "Remove Armor Jacket",
+                "Remove Armor Jacket from the current gear list?",
                 BuildGearDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Armor Jacket", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "gear_mount" => new DesktopDialogState(
@@ -3251,11 +3251,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "cyberware_delete" => new DesktopDialogState(
                 "dialog.ui.cyberware_delete",
-                "Remove Cyberware",
-                "Confirm removal of the selected implant.",
+                "Remove Cybereyes Rating 4",
+                "Remove Cybereyes Rating 4 from installed ware?",
                 BuildCyberwareDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Cybereyes Rating 4", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "drug_add" => new DesktopDialogState(
@@ -3266,11 +3266,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildAddAndMoreActions()),
             "drug_delete" => new DesktopDialogState(
                 "dialog.ui.drug_delete",
-                "Remove Drug",
-                "Confirm removal of the selected dose entry.",
+                "Remove Jazz",
+                "Remove Jazz from the current drug ledger?",
                 BuildDrugDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Jazz", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "magic_add" => new DesktopDialogState(
@@ -3281,11 +3281,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildAddAndMoreActions()),
             "magic_delete" => new DesktopDialogState(
                 "dialog.ui.magic_delete",
-                "Delete Spell/Power",
-                "Confirm removal of the selected magical entry.",
+                "Remove Stunbolt",
+                "Remove Stunbolt from the current magic list?",
                 BuildMagicDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Stunbolt", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "magic_bind" => new DesktopDialogState(
@@ -3368,11 +3368,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "skill_remove" => new DesktopDialogState(
                 "dialog.ui.skill_remove",
-                "Remove Skill",
-                "Confirm removal of the selected skill.",
+                "Remove Perception",
+                "Remove Perception from the current skill list?",
                 BuildSkillRemoveFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Perception", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "skill_group" => new DesktopDialogState(
@@ -3451,11 +3451,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "vehicle_delete" => new DesktopDialogState(
                 "dialog.ui.vehicle_delete",
-                "Remove Vehicle / Drone",
-                "Confirm removal of the selected vehicle or drone.",
+                "Remove GMC Roadmaster",
+                "Remove GMC Roadmaster from the current garage?",
                 BuildVehicleDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove GMC Roadmaster", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "vehicle_mod_add" => new DesktopDialogState(
@@ -3481,11 +3481,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "contact_remove" => new DesktopDialogState(
                 "dialog.ui.contact_remove",
-                "Remove Contact",
-                "Confirm removal of the selected contact.",
+                "Remove Mr. Johnson",
+                "Remove Mr. Johnson from the current contact roster?",
                 BuildContactRemoveFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Mr. Johnson", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "contact_connection" => new DesktopDialogState(
@@ -3505,11 +3505,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildAddAndMoreActions()),
             "quality_delete" => new DesktopDialogState(
                 "dialog.ui.quality_delete",
-                "Remove Quality",
-                "Confirm removal of the selected quality.",
+                "Remove First Impression",
+                "Remove First Impression from the current quality list?",
                 BuildQualityDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove First Impression", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             _ => throw new InvalidOperationException($"Known legacy UI control '{controlId}' is missing a dedicated dialog mapping.")
