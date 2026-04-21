@@ -36,12 +36,12 @@ public sealed class RulesetUiDirectiveCatalogTests
                 InstallState: ArtifactInstallStates.Available,
                 WarningCount: 0));
 
-        StringAssert.Contains(sr4, "import desk");
+        StringAssert.Contains(sr4, "import workbench");
         StringAssert.Contains(sr4, ".chum4");
         StringAssert.Contains(sr5, "main editor");
         StringAssert.Contains(sr5, ".chum5");
         StringAssert.Contains(sr5, "runtime/provider attention required");
-        StringAssert.Contains(sr6, "preview desk");
+        StringAssert.Contains(sr6, "setup workbench");
         StringAssert.Contains(sr6, ".chum6");
         StringAssert.Contains(sr6, "experimental-host honesty visible");
     }
@@ -67,7 +67,7 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr4Rules, "parity-gated");
         StringAssert.Contains(sr5BuildLab, "main desktop editor");
         StringAssert.Contains(sr5BuildLab, "campaign return");
-        StringAssert.Contains(sr6Rules, "preview-gated");
+        StringAssert.Contains(sr6Rules, "setup-gated");
         StringAssert.Contains(sr6Rules, "runtime warnings remain active");
     }
 
@@ -85,11 +85,11 @@ public sealed class RulesetUiDirectiveCatalogTests
             installState: ArtifactInstallStates.Installed);
 
         StringAssert.Contains(sr4, ".chum4");
-        StringAssert.Contains(sr4, "import desk");
+        StringAssert.Contains(sr4, "import workbench");
         StringAssert.Contains(sr5, ".chum5");
         StringAssert.Contains(sr5, "main editor");
         StringAssert.Contains(sr6, ".chum6");
-        StringAssert.Contains(sr6, "preview desk");
+        StringAssert.Contains(sr6, "setup workbench");
         StringAssert.Contains(sr6, "Seattle Nights");
     }
 
@@ -160,18 +160,18 @@ public sealed class RulesetUiDirectiveCatalogTests
         string sr6Workflow = RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(RulesetDefaults.Sr6, "tab-info.validate", "Refresh Summary");
         string preservedWorkflow = RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(RulesetDefaults.Sr6, "tab-info.validate", "SR6 Matrix Action");
 
-        Assert.AreEqual("SR4 import desk", sr4MarqueeEyebrow);
+        Assert.AreEqual("SR4 import workbench", sr4MarqueeEyebrow);
         Assert.AreEqual("Shadowrun 5 character editor", sr5MarqueeTitle);
-        Assert.AreEqual("SR6 preview desk", sr6MarqueeEyebrow);
-        Assert.AreEqual("Desktop Summary · SR4 Import Desk", sr4Summary);
+        Assert.AreEqual("SR6 setup workbench", sr6MarqueeEyebrow);
+        Assert.AreEqual("Desktop Summary · SR4 Import Workbench", sr4Summary);
         Assert.AreEqual("SR5 Characters", sr5Dossiers);
         Assert.AreEqual("No open SR6 character", sr6EmptyStrip);
         StringAssert.Contains(sr5StripTitle, "Shadowrun 5");
         StringAssert.Contains(sr5StripTitle, "main editor");
         StringAssert.Contains(sr5StripTitle, "unsaved");
-        Assert.AreEqual("SR4 Import Tabs", sr4Tabs);
+        Assert.AreEqual("SR4 Import Workbench Tabs", sr4Tabs);
         Assert.AreEqual("SR5 Editor Actions", sr5Actions);
-        Assert.AreEqual("SR6 Preview Flows", sr6Flows);
+        Assert.AreEqual("SR6 Setup Flows", sr6Flows);
         Assert.AreEqual("Import SR4 Character File", sr4Import);
         Assert.AreEqual(".chum5,.chum4,.chum6,.xml,text/xml,application/xml", sr5ImportAccept);
         StringAssert.Contains(sr6ImportHint, ".chum6");

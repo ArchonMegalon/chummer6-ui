@@ -51,7 +51,7 @@ public static class RulesetUiDirectiveCatalog
     private static readonly RulesetUiDirective Sr4 = new(
         RulesetId: RulesetDefaults.Sr4,
         DisplayName: "Shadowrun 4",
-        PostureLabel: "import desk",
+        PostureLabel: "import workbench",
         FileExtension: ".chum4",
         HomeSpotlight: "SR4 opens to import intake, parity receipts, and character review before any full editor claim.",
         ResumeLaneSummary: "Resume the SR4 runner with codec proof, import receipts, and parity evidence visible.",
@@ -97,7 +97,7 @@ public static class RulesetUiDirectiveCatalog
     private static readonly RulesetUiDirective Sr6 = new(
         RulesetId: RulesetDefaults.Sr6,
         DisplayName: "Shadowrun 6",
-        PostureLabel: "preview desk",
+        PostureLabel: "setup workbench",
         FileExtension: ".chum6",
         HomeSpotlight: "SR6 opens to guided setup, starter kits, and explicit runtime honesty before parity claims.",
         ResumeLaneSummary: "Resume the SR6 runner with runtime honesty and starter-kit guidance visible.",
@@ -107,14 +107,14 @@ public static class RulesetUiDirectiveCatalog
         NextActionPrefix: "SR6",
         DefaultSectionSummary: "SR6 stays guided-workbench first: curated starts are safe, but the experimental host still limits depth.",
         BuildLabSectionSummary: "SR6 build emphasizes curated setup, edge-first flows, and guided follow-through rather than claiming full parity.",
-        RulesSectionSummary: "SR6 rules and validation stay preview-gated until deterministic providers replace the experimental host.",
+        RulesSectionSummary: "SR6 rules and validation stay setup-gated until deterministic providers replace the experimental host.",
         UngroundedHomeSummary: "starter-kit proof, runtime honesty, and preview-safe guidance come before full parity claims.",
         PinnedRuntimeHomeSummary: "a guided-runtime fingerprint is pinned, but experimental-host honesty still gates trustworthy rules and workflow depth.",
-        GroundedHomeSummary: "guided workbench posture keeps curated setup and experimental-host honesty visible while deterministic providers are still landing.",
+        GroundedHomeSummary: "setup workbench posture keeps curated setup and experimental-host honesty visible while deterministic providers are still landing.",
         BuildExplainWatchouts:
         [
-            "SR6 remains preview-gated until deterministic providers replace the experimental host.",
-            "SR6 starter, rules, and export affordances should keep .chum6 guided-workbench posture explicit."
+            "SR6 remains setup-gated until deterministic providers replace the experimental host.",
+            "SR6 starter, rules, and export affordances should keep .chum6 setup-workbench posture explicit."
         ]);
 
     public static RulesetUiDirective Resolve(string? rulesetId)
@@ -143,9 +143,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Desktop Summary · SR4 Import Desk",
+            RulesetDefaults.Sr4 => "Desktop Summary · SR4 Import Workbench",
             RulesetDefaults.Sr5 => "Desktop Summary · SR5 Editor",
-            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Preview Desk",
+            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Setup Workbench",
             _ => "Desktop Summary Header"
         };
     }
@@ -155,9 +155,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 import desk",
+            RulesetDefaults.Sr4 => "SR4 import workbench",
             RulesetDefaults.Sr5 => "SR5 main editor",
-            RulesetDefaults.Sr6 => "SR6 preview desk",
+            RulesetDefaults.Sr6 => "SR6 setup workbench",
             _ => "Desktop editor"
         };
     }
@@ -167,9 +167,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Shadowrun 4 import character desk",
+            RulesetDefaults.Sr4 => "Shadowrun 4 import character workbench",
             RulesetDefaults.Sr5 => "Shadowrun 5 character editor",
-            RulesetDefaults.Sr6 => "Shadowrun 6 preview character desk",
+            RulesetDefaults.Sr6 => "Shadowrun 6 setup character workbench",
             _ => "Character editor"
         };
     }
@@ -210,9 +210,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Import Tabs",
+            RulesetDefaults.Sr4 => "SR4 Import Workbench Tabs",
             RulesetDefaults.Sr5 => "SR5 Editor Tabs",
-            RulesetDefaults.Sr6 => "SR6 Preview Tabs",
+            RulesetDefaults.Sr6 => "SR6 Setup Tabs",
             _ => "Workspace Tabs"
         };
     }
@@ -222,9 +222,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Import Actions",
+            RulesetDefaults.Sr4 => "SR4 Import Workbench Actions",
             RulesetDefaults.Sr5 => "SR5 Editor Actions",
-            RulesetDefaults.Sr6 => "SR6 Preview Actions",
+            RulesetDefaults.Sr6 => "SR6 Setup Actions",
             _ => "Section Actions"
         };
     }
@@ -234,9 +234,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Import Flows",
+            RulesetDefaults.Sr4 => "SR4 Import Workbench Flows",
             RulesetDefaults.Sr5 => "SR5 Editor Flows",
-            RulesetDefaults.Sr6 => "SR6 Preview Flows",
+            RulesetDefaults.Sr6 => "SR6 Setup Flows",
             _ => "Workflow Surfaces"
         };
     }
@@ -354,7 +354,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Shadowrun 4 stays in import workbench mode; keep codec and parity evidence explicit.",
             RulesetDefaults.Sr5 => "Shadowrun 5 stays on the main desktop editor; keep provider truth and .chum5 continuity explicit.",
-            RulesetDefaults.Sr6 => "Shadowrun 6 stays in guided workbench mode; keep starter-kit and runtime honesty explicit.",
+            RulesetDefaults.Sr6 => "Shadowrun 6 stays in setup workbench mode; keep starter-kit and runtime honesty explicit.",
             _ => "Shared shell posture is still unresolved; keep runtime and ruleset evidence explicit."
         };
     }
@@ -366,7 +366,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 workbench is ready; keep import and parity evidence explicit.",
             RulesetDefaults.Sr5 => "SR5 editor is ready; keep provider truth and .chum5 continuity explicit.",
-            RulesetDefaults.Sr6 => "SR6 guided workbench is ready; keep runtime honesty explicit.",
+            RulesetDefaults.Sr6 => "SR6 setup workbench is ready; keep runtime honesty explicit.",
             _ => "Ready."
         };
     }
