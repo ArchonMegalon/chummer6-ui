@@ -621,7 +621,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string selectedRunnerStatus = selectedRunner is null
             ? "No runner selected."
             : $"Opened {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC · {(selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet")} · active ruleset {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)} · watch file {(selectedWatchedFile ?? "not matched")}";
-        (string portraitCandidate, string portraitStatus) = ResolveRosterPortraitCandidate(rosterPath, selectedRunner, alias, name, workspace);
+        (string portraitCandidate, string portraitStatus, string portraitMatchSource) = ResolveRosterPortraitCandidate(rosterPath, selectedWatchedFile, selectedRunner, alias, name, workspace);
         FileInfo? portraitInfo = File.Exists(portraitCandidate) ? new FileInfo(portraitCandidate) : null;
         string selectionTrail = selectedRunner is null
             ? BuildGridValue(
@@ -641,6 +641,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Watched Files", watchedCount.ToString(CultureInfo.InvariantCulture)),
             ("Saved Workspaces", savedCount.ToString(CultureInfo.InvariantCulture)),
             ("Selected Watch File", selectedWatchedFile ?? "not matched"),
+            ("Portrait Match", portraitMatchSource),
             ("Scan Posture", !watchFolderConfigured ? "configure a roster folder first" : watchFolderExists ? "folder contents surfaced in roster tree" : "folder missing on disk"));
         string runnerCommands =
             "Open selected runner" + Environment.NewLine +
@@ -651,7 +652,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ? "Open roster folder" + Environment.NewLine +
                   "Refresh watched file list" + Environment.NewLine +
                   "Open selected watched runner" + Environment.NewLine +
-                  "Open portrait location"
+                  (portraitInfo is not null ? "Open matched portrait" : "Open portrait slot")
                 : "Open roster folder" + Environment.NewLine +
                   "Create roster folder" + Environment.NewLine +
                   "Refresh watched file list"
@@ -662,6 +663,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Runner Portrait" + Environment.NewLine +
             $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}" + Environment.NewLine +
             $"Portrait Source | {portraitCandidate}" + Environment.NewLine +
+            $"Portrait Match | {portraitMatchSource}" + Environment.NewLine +
             $"Portrait Status | {portraitStatus}" + Environment.NewLine +
             $"Portrait Bytes | {(portraitInfo is null ? "n/a" : portraitInfo.Length.ToString(CultureInfo.InvariantCulture))}" + Environment.NewLine +
             $"Portrait Updated | {(portraitInfo is null ? "n/a" : portraitInfo.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC")}";
@@ -690,8 +692,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ];
     }
 
-    private static (string Path, string Status) ResolveRosterPortraitCandidate(
+    private static (string Path, string Status, string MatchSource) ResolveRosterPortraitCandidate(
         string rosterPath,
+        string? selectedWatchedFile,
         OpenWorkspaceState? selectedRunner,
         string fallbackAlias,
         string fallbackName,
@@ -711,11 +714,29 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         if (string.IsNullOrWhiteSpace(rosterPath))
         {
-            return ($"{baseName}.png", "legacy portrait slot awaits a real image pipeline");
+            return ($"{baseName}.png", "legacy portrait slot awaits a real image pipeline", "generated fallback slot");
         }
 
         if (Directory.Exists(rosterPath))
         {
+            if (!string.IsNullOrWhiteSpace(selectedWatchedFile))
+            {
+                string watchedAbsolutePath = Path.Combine(rosterPath, selectedWatchedFile);
+                string watchedDirectory = Path.GetDirectoryName(watchedAbsolutePath) ?? rosterPath;
+                string watchedStem = Path.GetFileNameWithoutExtension(selectedWatchedFile);
+                if (!string.IsNullOrWhiteSpace(watchedStem))
+                {
+                    foreach (string extension in new[] { ".png", ".jpg", ".jpeg", ".webp" })
+                    {
+                        string candidate = Path.Combine(watchedDirectory, $"{watchedStem}{extension}");
+                        if (File.Exists(candidate))
+                        {
+                            return (candidate, "loaded from watched runner sibling", "watched runner sibling");
+                        }
+                    }
+                }
+            }
+
             foreach (string extension in new[] { ".png", ".jpg", ".jpeg", ".webp" })
             {
                 string? candidate = Directory
@@ -723,11 +744,22 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                     .FirstOrDefault();
                 if (!string.IsNullOrWhiteSpace(candidate))
-                    return (candidate, "loaded from watch folder");
+                    return (candidate, "loaded from watch folder", "alias/name search");
             }
         }
 
-        return (Path.Combine(rosterPath, $"{baseName}.png"), "legacy portrait slot awaits a real image pipeline");
+        if (!string.IsNullOrWhiteSpace(selectedWatchedFile))
+        {
+            string watchedAbsolutePath = Path.Combine(rosterPath, selectedWatchedFile);
+            string watchedDirectory = Path.GetDirectoryName(watchedAbsolutePath) ?? rosterPath;
+            string watchedStem = Path.GetFileNameWithoutExtension(selectedWatchedFile);
+            if (!string.IsNullOrWhiteSpace(watchedStem))
+            {
+                return (Path.Combine(watchedDirectory, $"{watchedStem}.png"), "watched runner portrait slot awaits a real image pipeline", "watched runner sibling");
+            }
+        }
+
+        return (Path.Combine(rosterPath, $"{baseName}.png"), "legacy portrait slot awaits a real image pipeline", "generated fallback slot");
     }
 
     private static string BuildRosterPortraitBaseName(string? alias, string? name)
