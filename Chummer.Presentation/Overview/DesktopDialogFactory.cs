@@ -531,14 +531,30 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ? $"[Open Characters]{Environment.NewLine}└─ {alias} · {name}"
             : $"[Open Characters]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}";
         string selectedRunnerSummary = selectedRunner is null
-            ? $"Runner | {alias} · {name}{Environment.NewLine}Workspace | {workspace}{Environment.NewLine}Save posture | no saved roster entry"
-            : $"Runner | {selectedRunner.Name} ({selectedRunner.Alias}){Environment.NewLine}Ruleset | {RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId}{Environment.NewLine}Workspace | {selectedRunner.Id.Value}{Environment.NewLine}Save posture | {(selectedRunner.HasSavedWorkspace ? "saved" : "unsaved")}{Environment.NewLine}Last opened | {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC";
+            ? BuildGridValue(
+                ("Character Name", name),
+                ("Alias", alias),
+                ("Player", "Local profile"),
+                ("Metatype", "Unavailable in roster summary"),
+                ("Career Karma", "Unavailable in roster summary"),
+                ("Essence", "Unavailable in roster summary"),
+                ("File Name", string.IsNullOrWhiteSpace(workspace) ? "(no workspace)" : workspace),
+                ("Settings File", "default roster setting"))
+            : BuildGridValue(
+                ("Character Name", selectedRunner.Name),
+                ("Alias", selectedRunner.Alias),
+                ("Player", "Local profile"),
+                ("Metatype", RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId),
+                ("Career Karma", selectedRunner.HasSavedWorkspace ? "Saved runner" : "Unsaved runner"),
+                ("Essence", "Unavailable in roster summary"),
+                ("File Name", selectedRunner.Id.Value),
+                ("Settings File", $"{(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)} roster setting"));
         string selectedRunnerBackground = selectedRunner is null
             ? "Background details appear after a runner is opened from the roster."
-            : $"Background: {selectedRunner.Name} is staged as the active roster runner.{Environment.NewLine}Concept: Dense-workbench veteran entry with compact desktop follow-through.{Environment.NewLine}Rules posture: {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)} is surfaced directly on the roster.";
+            : $"Description: {selectedRunner.Name} is staged as the active roster runner.{Environment.NewLine}Concept: Dense-workbench veteran entry with compact desktop follow-through.{Environment.NewLine}Background: {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)} is surfaced directly on the roster.";
         string selectedRunnerNotes = selectedRunner is null
             ? "Notes and session comments appear after a runner is opened from the roster."
-            : $"Notes: Keep the runner tabs for full editing; the roster stays dense-workbench friendly and navigation-first.{Environment.NewLine}Session: {(selectedRunner.HasSavedWorkspace ? "Saved workspace is present." : "Runner has not been saved yet.")}{Environment.NewLine}Watch posture: Current runner stays selected in the roster.";
+            : $"Character Notes: Keep the runner tabs for full editing; the roster stays dense-workbench friendly and navigation-first.{Environment.NewLine}Game Notes: {(selectedRunner.HasSavedWorkspace ? "Saved workspace is present." : "Runner has not been saved yet.")}{Environment.NewLine}Watch posture: Current runner stays selected in the roster.";
         string selectedRunnerStatus = selectedRunner is null
             ? "No runner selected."
             : $"Opened {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC · {(selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet")} · active ruleset {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)}";
@@ -546,7 +562,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             new DesktopDialogField("rosterSectionTabs", "Sections", "Roster" + Environment.NewLine + "Details" + Environment.NewLine + "Background" + Environment.NewLine + "Notes", "Roster", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("rosterDetailTabs", "Runner Pages", "Overview" + Environment.NewLine + "Background" + Environment.NewLine + "Notes", "Overview", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("rosterDetailTabs", "Runner Pages", "Description" + Environment.NewLine + "Concept" + Environment.NewLine + "Background" + Environment.NewLine + "Character Notes" + Environment.NewLine + "Game Notes", "Description", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
