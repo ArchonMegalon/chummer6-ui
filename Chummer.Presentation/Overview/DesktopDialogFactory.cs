@@ -6,6 +6,7 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Explain;
 using System.Globalization;
 using System.IO;
+using System.Text.Json;
 
 namespace Chummer.Presentation.Overview;
 
@@ -498,6 +499,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return dialog.Id switch
         {
+            "dialog.master_index" => RebuildMasterIndexDialog(dialog),
             "dialog.ui.cyberware_add" => RebuildCyberwareSelectionDialog(dialog),
             "dialog.ui.gear_add" => RebuildGearSelectionDialog(dialog),
             "dialog.ui.combat_add_weapon" => RebuildWeaponSelectionDialog(dialog),
@@ -3196,7 +3198,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogField("masterIndexSnippetInspector", "Snippet Inspector", "Snippet Count | 0" + Environment.NewLine + "Snippet Page | unavailable" + Environment.NewLine + "Snippet Provenance | unavailable" + Environment.NewLine + "Note Posture | right-pane legacy preview", "Snippet Count | 0", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField("masterIndexSourceClickReminder", "Linked Source", "No linked PDF is available for the current selection. Choose a result row to refresh source and notes.", "No linked PDF is available for the current selection.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
                 new DesktopDialogField("masterIndexNotesPane", "Notes", "Select a result row to inspect notes and linked source text on the right.", "Select a result row to inspect notes and linked source text on the right.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                new DesktopDialogField("masterIndexCharacterSetting", "Use Setting", "Use Setting | default" + Environment.NewLine + "Modify | Modify...", "Use Setting | default", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid)
+                new DesktopDialogField("masterIndexCharacterSetting", "Use Setting", "Use Setting | default" + Environment.NewLine + "Modify | Modify...", "Use Setting | default", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
+                new DesktopDialogField("masterIndexSnapshot", "Snapshot", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexActiveSourcebookId", "Active Sourcebook", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexActiveFile", "Active File", "All", "All", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexActiveResultKey", "Active Result", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
             ];
         }
 
@@ -3236,6 +3242,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         MasterIndexRuleSnippetEntry? selectedSnippet = selectedSourcebook.RuleSnippets.FirstOrDefault();
         MasterIndexFileEntry? selectedFile = ResolveMasterIndexSelectedFile(masterIndex.Files, selectedSnippet);
         string selectedFileName = selectedFile?.File ?? "All";
+        string snapshot = JsonSerializer.Serialize(CreateMasterIndexDialogSnapshot(masterIndex));
+        string activeResultKey = selectedSnippet is null
+            ? string.Empty
+            : BuildMasterIndexSnippetKey(selectedSnippet.Provenance, selectedSnippet.Page);
         string selectedFileSummary = selectedFile is null
             ? "All data files"
             : $"{selectedFile.File} · {selectedFile.ElementCount} indexed entries";
@@ -3350,6 +3360,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("masterIndexNotesPane", "Notes", libraryNotes + Environment.NewLine + Environment.NewLine + snippetPreview, libraryNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("masterIndexSelectedSource", "Source", selectedSource, selectedSource, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("masterIndexSourceSelectionSummary", "Source Selection Summary", sourcebookSelectionSummary, sourcebookSelectionSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("masterIndexSnapshot", "Snapshot", snapshot, snapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexActiveSourcebookId", "Active Sourcebook", selectedSourcebook.Id, selectedSourcebook.Id, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexActiveFile", "Active File", selectedFileName, selectedFileName, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexActiveResultKey", "Active Result", activeResultKey, activeResultKey, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexLibraryNotes", "Library Notes", libraryNotes, libraryNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexImportNotes", "Import Notes", importNotes, importNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexSr6Notes", "SR6 Notes", sr6Notes, sr6Notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -3387,6 +3401,173 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return fields;
     }
 
+    private static DesktopDialogState RebuildMasterIndexDialog(DesktopDialogState dialog)
+    {
+        string snapshotJson = DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnapshot") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(snapshotJson))
+            return dialog;
+
+        MasterIndexDialogSnapshot? snapshot = JsonSerializer.Deserialize<MasterIndexDialogSnapshot>(snapshotJson);
+        if (snapshot is null || snapshot.Sourcebooks.Count == 0)
+            return dialog;
+
+        string search = (DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSearch") ?? string.Empty).Trim();
+        string requestedSourcebookId = ResolveMasterIndexSelectedSourcebookId(
+            snapshot,
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexActiveSourcebookId"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCurrentSourcebook"));
+        string requestedFile = NormalizeMasterIndexActiveFile(
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexActiveFile"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"));
+
+        MasterIndexDialogSourcebookSnapshot selectedSourcebook = snapshot.Sourcebooks
+            .FirstOrDefault(sourcebook => string.Equals(sourcebook.Id, requestedSourcebookId, StringComparison.Ordinal))
+            ?? snapshot.Sourcebooks[0];
+
+        List<MasterIndexDialogSnippetSnapshot> filteredSnippets = selectedSourcebook.RuleSnippets
+            .Where(snippet => string.Equals(requestedFile, "All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(snippet.File, requestedFile, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(snippet.Provenance, requestedFile, StringComparison.OrdinalIgnoreCase))
+            .Where(snippet => string.IsNullOrWhiteSpace(search)
+                || snippet.Snippet.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || snippet.Provenance.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || selectedSourcebook.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || selectedSourcebook.Code.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || snippet.Page.ToString(CultureInfo.InvariantCulture).Contains(search, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(snippet => snippet.Page)
+            .ThenBy(snippet => snippet.Provenance, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        MasterIndexDialogSnippetSnapshot? selectedSnippet = ResolveMasterIndexSelectedSnippet(
+            filteredSnippets,
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexActiveResultKey"));
+        MasterIndexDialogFileSnapshot? selectedFile = ResolveMasterIndexSelectedFileSnapshot(
+            snapshot.Files,
+            requestedFile,
+            selectedSnippet);
+
+        string selectedFileName = selectedFile?.File ?? "All";
+        string selectedFileSummary = selectedFile is null
+            ? "All data files"
+            : $"{selectedFile.File} · {selectedFile.ElementCount} indexed entries";
+        string selectedResultLabel = selectedSnippet is null
+            ? "none"
+            : BuildMasterIndexSnippetLabel(selectedSnippet.Snippet);
+        string selectedSource = selectedSourcebook.LocalPdfPath
+            ?? selectedSourcebook.ReferenceUrl
+            ?? selectedSourcebook.ReferenceSnapshot
+            ?? "(no linked source)";
+        string sourceTree = "[Sourcebooks]" + Environment.NewLine + string.Join(
+            Environment.NewLine,
+            snapshot.Sourcebooks
+                .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(sourcebook => string.Equals(sourcebook.Id, selectedSourcebook.Id, StringComparison.Ordinal)
+                    ? $"> {sourcebook.Code} · {sourcebook.Name}"
+                    : $"├─ {sourcebook.Code} · {sourcebook.Name}"));
+        string fileSelection = BuildMasterIndexFileSelectionSnapshot(snapshot.Files, selectedFile);
+        string searchLine = string.IsNullOrWhiteSpace(search) ? "all rows" : search;
+        string catalogEntries = filteredSnippets.Count == 0
+            ? "[Current File]" + Environment.NewLine +
+              $"└─ {selectedFileName}" + Environment.NewLine +
+              "[Current Book]" + Environment.NewLine +
+              $"└─ {selectedSourcebook.Name} [{selectedSourcebook.Code}]"
+            : "[Current File]" + Environment.NewLine +
+              $"└─ {selectedFileName}" + Environment.NewLine +
+              "[Current Book]" + Environment.NewLine +
+              $"└─ {selectedSourcebook.Name} [{selectedSourcebook.Code}]" + Environment.NewLine +
+              string.Join(
+                  Environment.NewLine,
+                  filteredSnippets
+                      .Take(6)
+                      .Select((snippet, index) =>
+                          $"{(index == Math.Min(filteredSnippets.Count, 6) - 1 ? "   └─ " : "   ├─ ")}p. {snippet.Page} · {BuildMasterIndexSnippetLabel(snippet.Snippet)}"));
+        string resultList = filteredSnippets.Count == 0
+            ? "No indexed entries discovered."
+            : string.Join(
+                Environment.NewLine,
+                filteredSnippets
+                    .Take(8)
+                    .Select(snippet =>
+                        $"{(selectedSnippet is not null && string.Equals(BuildMasterIndexSnippetKey(snippet.File, snippet.Page), BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page), StringComparison.Ordinal) ? ">" : " ")} p. {snippet.Page} · {BuildMasterIndexSnippetLabel(snippet.Snippet)} · {snippet.Provenance}"));
+        string selectionTrail = NormalizeGridValue(BuildGridValue(
+            ("Data File", selectedFileName),
+            ("Search", searchLine),
+            ("Selected Result", selectedResultLabel),
+            ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")));
+        string sourceDetails = BuildGridValue(
+            ("Data File", selectedFileName),
+            ("Selected item", $"{selectedSourcebook.Name} ({selectedSourcebook.Code})"),
+            ("Source", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
+            ("Linked Source", selectedSource),
+            ("Open Action", string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "open snapshot/source" : "open linked PDF"),
+            ("Visible Results", filteredSnippets.Count.ToString(CultureInfo.InvariantCulture)));
+        string resultInspector = BuildGridValue(
+            ("Selected Result", selectedResultLabel),
+            ("Data File", selectedFileName),
+            ("Current Book", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
+            ("Linked Source", selectedSource),
+            ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"),
+            ("Activation", "double-click row / open source"),
+            ("Reference Posture", selectedSourcebook.ReferencePosture),
+            ("Use Setting", snapshot.SettingsLanePosture));
+        string sourceCommands =
+            "Change data file filter" + Environment.NewLine +
+            "Switch sourcebook" + Environment.NewLine +
+            "Modify character setting" + Environment.NewLine +
+            (string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "Open linked source snapshot" : "Open linked PDF");
+        string resultCommands =
+            "Select result to refresh notes" + Environment.NewLine +
+            "Double-click result to open source page" + Environment.NewLine +
+            "Keep source and notes pinned on the right";
+        string snippetPreview = selectedSnippet is null
+            ? "No governed rule snippets match the current data-file and search filters." + Environment.NewLine +
+              "Keep Source plus Notes pinned on the right while switching file, sourcebook, or result."
+            : $"Page {selectedSnippet.Page} · {selectedSnippet.Provenance}{Environment.NewLine}{selectedSnippet.Snippet}";
+        string snippetInspector = selectedSnippet is null
+            ? BuildGridValue(
+                ("Snippet Count", "0"),
+                ("Snippet Page", "unavailable"),
+                ("Snippet Provenance", "unavailable"),
+                ("Note Posture", "right-pane legacy preview"))
+            : BuildGridValue(
+                ("Snippet Count", filteredSnippets.Count.ToString(CultureInfo.InvariantCulture)),
+                ("Snippet Page", selectedSnippet.Page.ToString(CultureInfo.InvariantCulture)),
+                ("Snippet Provenance", selectedSnippet.Provenance),
+                ("Note Posture", "right-pane legacy preview"));
+        string sourceClickReminder = string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
+            ? "No local PDF is attached; switch sourcebook or keep the linked source visible while notes stay pinned on the right."
+            : $"<- Click to open linked PDF at p. {selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"}";
+        string searchHints =
+            $"Data File filters the list on the left. Search narrows the current file to {filteredSnippets.Count} visible rows, and selecting a row refreshes Source plus Notes on the right.";
+        string notesPane =
+            "Use Data File on the left, then switch sourcebook or result without losing the source/notes pane rhythm." +
+            Environment.NewLine + Environment.NewLine + snippetPreview;
+
+        return ReplaceDialogFields(
+            dialog,
+            ("masterIndexActiveSourcebookId", selectedSourcebook.Id, selectedSourcebook.Id),
+            ("masterIndexActiveFile", selectedFileName, selectedFileName),
+            ("masterIndexActiveResultKey", selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page), selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page)),
+            ("masterIndexCurrentSourcebook", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
+            ("masterIndexFileSelection", fileSelection, "All"),
+            ("masterIndexCurrentFile", selectedFileSummary, selectedFileSummary),
+            ("masterIndexSearchHints", searchHints, searchHints),
+            ("masterIndexSelectionTrail", selectionTrail, selectionTrail),
+            ("masterIndexSourceTree", sourceTree, "[Sourcebooks]"),
+            ("masterIndexCatalogEntries", catalogEntries, catalogEntries),
+            ("masterIndexSourceCommands", sourceCommands, sourceCommands),
+            ("masterIndexDetails", sourceDetails, sourceDetails),
+            ("masterIndexResultList", resultList, resultList),
+            ("masterIndexResultInspector", resultInspector, resultInspector),
+            ("masterIndexResultCommands", resultCommands, resultCommands),
+            ("masterIndexSnippetPreview", snippetPreview, snippetPreview),
+            ("masterIndexSnippetInspector", snippetInspector, snippetInspector),
+            ("masterIndexSourceClickReminder", sourceClickReminder, sourceClickReminder),
+            ("masterIndexNotesPane", notesPane, notesPane),
+            ("masterIndexSelectedSource", selectedSource, selectedSource));
+    }
+
     private static IReadOnlyList<DesktopDialogAction> BuildMasterIndexActions(MasterIndexResponse? masterIndex)
     {
         bool hasLinkedSource = masterIndex?.Sourcebooks.Any(sourcebook =>
@@ -3421,6 +3602,36 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return $"Chummer4 fixtures {masterIndex.LegacyChummer4FixtureCount}, Chummer5a fixtures {masterIndex.LegacyChummer5FixtureCount}, Hero Lab fixtures {masterIndex.HeroLabFixtureCount}, adjacent SR6 sources {masterIndex.AdjacentSr6OracleSourcesCovered}/{masterIndex.AdjacentSr6OracleSourcesExpected}.";
     }
 
+    private static MasterIndexDialogSnapshot CreateMasterIndexDialogSnapshot(MasterIndexResponse masterIndex)
+        => new(
+            masterIndex.SettingsLanePosture,
+            masterIndex.Files
+                .OrderBy(file => file.File, StringComparer.OrdinalIgnoreCase)
+                .Select(file => new MasterIndexDialogFileSnapshot(file.File, file.ElementCount))
+                .ToArray(),
+            masterIndex.Sourcebooks
+                .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(sourcebook => new MasterIndexDialogSourcebookSnapshot(
+                    sourcebook.Id,
+                    sourcebook.Code,
+                    sourcebook.Name,
+                    sourcebook.ReferencePosture,
+                    sourcebook.ReferenceSourcePosture,
+                    sourcebook.LocalPdfPath,
+                    sourcebook.ReferenceUrl,
+                    sourcebook.ReferenceSnapshot,
+                    sourcebook.RuleSnippets
+                        .OrderBy(snippet => snippet.Page)
+                        .ThenBy(snippet => snippet.Provenance, StringComparer.OrdinalIgnoreCase)
+                        .Select(snippet => new MasterIndexDialogSnippetSnapshot(
+                            snippet.Provenance,
+                            snippet.Provenance,
+                            snippet.Page,
+                            snippet.Snippet))
+                        .ToArray()))
+                .ToArray());
+
     private static MasterIndexFileEntry? ResolveMasterIndexSelectedFile(
         IReadOnlyList<MasterIndexFileEntry> files,
         MasterIndexRuleSnippetEntry? selectedSnippet)
@@ -3454,9 +3665,56 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return "All" + Environment.NewLine + string.Join(Environment.NewLine, lines);
     }
 
-    private static string BuildMasterIndexSnippetLabel(MasterIndexRuleSnippetEntry snippet)
+    private static MasterIndexDialogFileSnapshot? ResolveMasterIndexSelectedFileSnapshot(
+        IReadOnlyList<MasterIndexDialogFileSnapshot> files,
+        string? requestedFile,
+        MasterIndexDialogSnippetSnapshot? selectedSnippet)
     {
-        string normalized = string.Join(" ", snippet.Snippet
+        if (files.Count == 0)
+            return null;
+
+        if (!string.IsNullOrWhiteSpace(requestedFile)
+            && !string.Equals(requestedFile, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            MasterIndexDialogFileSnapshot? matchingRequestedFile = files.FirstOrDefault(file =>
+                string.Equals(file.File, requestedFile, StringComparison.OrdinalIgnoreCase));
+            if (matchingRequestedFile is not null)
+                return matchingRequestedFile;
+        }
+
+        if (selectedSnippet is not null)
+        {
+            MasterIndexDialogFileSnapshot? matchingSnippetFile = files.FirstOrDefault(file =>
+                string.Equals(file.File, selectedSnippet.File, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(file.File, selectedSnippet.Provenance, StringComparison.OrdinalIgnoreCase));
+            if (matchingSnippetFile is not null)
+                return matchingSnippetFile;
+        }
+
+        return files[0];
+    }
+
+    private static string BuildMasterIndexFileSelectionSnapshot(
+        IReadOnlyList<MasterIndexDialogFileSnapshot> files,
+        MasterIndexDialogFileSnapshot? selectedFile)
+    {
+        if (files.Count == 0)
+            return "All" + Environment.NewLine + "books.xml · 0 entries";
+
+        IEnumerable<string> lines = files
+            .OrderBy(file => file.File, StringComparer.OrdinalIgnoreCase)
+            .Select(file =>
+                $"{(selectedFile is not null && string.Equals(file.File, selectedFile.File, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {file.File} · {file.ElementCount} entries");
+
+        return "All" + Environment.NewLine + string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildMasterIndexSnippetLabel(MasterIndexRuleSnippetEntry snippet)
+        => BuildMasterIndexSnippetLabel(snippet.Snippet);
+
+    private static string BuildMasterIndexSnippetLabel(string snippetText)
+    {
+        string normalized = string.Join(" ", snippetText
             .Split([Environment.NewLine, "\r", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         if (normalized.Length <= 64)
         {
@@ -3464,6 +3722,67 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         }
 
         return normalized[..61].TrimEnd() + "...";
+    }
+
+    private static string BuildMasterIndexSnippetKey(string provenance, int page)
+        => $"{provenance}|{page}";
+
+    private static string NormalizeMasterIndexActiveFile(string? activeFile, string? fileSelectionField)
+    {
+        if (!string.IsNullOrWhiteSpace(activeFile))
+            return activeFile.Trim();
+
+        if (string.IsNullOrWhiteSpace(fileSelectionField))
+            return "All";
+
+        string firstLine = fileSelectionField
+            .Split([Environment.NewLine, "\r", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault() ?? "All";
+
+        if (string.Equals(firstLine, "All", StringComparison.OrdinalIgnoreCase))
+            return "All";
+
+        string normalized = firstLine.TrimStart('>', ' ').Trim();
+        int separatorIndex = normalized.IndexOf(" · ", StringComparison.Ordinal);
+        return separatorIndex >= 0 ? normalized[..separatorIndex] : normalized;
+    }
+
+    private static string ResolveMasterIndexSelectedSourcebookId(
+        MasterIndexDialogSnapshot snapshot,
+        string? requestedSourcebookId,
+        string? currentSourcebook)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedSourcebookId)
+            && snapshot.Sourcebooks.Any(sourcebook => string.Equals(sourcebook.Id, requestedSourcebookId, StringComparison.Ordinal)))
+        {
+            return requestedSourcebookId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(currentSourcebook))
+        {
+            MasterIndexDialogSourcebookSnapshot? matchingSourcebook = snapshot.Sourcebooks.FirstOrDefault(sourcebook =>
+                string.Equals($"{sourcebook.Code} · {sourcebook.Name}", currentSourcebook, StringComparison.Ordinal));
+            if (matchingSourcebook is not null)
+                return matchingSourcebook.Id;
+        }
+
+        return snapshot.Sourcebooks[0].Id;
+    }
+
+    private static MasterIndexDialogSnippetSnapshot? ResolveMasterIndexSelectedSnippet(
+        IReadOnlyList<MasterIndexDialogSnippetSnapshot> snippets,
+        string? requestedKey)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedKey))
+        {
+            MasterIndexDialogSnippetSnapshot? matchingSnippet = snippets.FirstOrDefault(snippet =>
+                string.Equals(BuildMasterIndexSnippetKey(snippet.File, snippet.Page), requestedKey, StringComparison.Ordinal)
+                || string.Equals(BuildMasterIndexSnippetKey(snippet.Provenance, snippet.Page), requestedKey, StringComparison.Ordinal));
+            if (matchingSnippet is not null)
+                return matchingSnippet;
+        }
+
+        return snippets.FirstOrDefault();
     }
 
     private static IEnumerable<DesktopDialogField> BuildSourcebookSelectionFields(IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
@@ -3503,4 +3822,30 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return kinds.Count == 0 ? "none" : string.Join("+", kinds);
     }
+
+    private sealed record MasterIndexDialogSnapshot(
+        string SettingsLanePosture,
+        IReadOnlyList<MasterIndexDialogFileSnapshot> Files,
+        IReadOnlyList<MasterIndexDialogSourcebookSnapshot> Sourcebooks);
+
+    private sealed record MasterIndexDialogFileSnapshot(
+        string File,
+        int ElementCount);
+
+    private sealed record MasterIndexDialogSourcebookSnapshot(
+        string Id,
+        string Code,
+        string Name,
+        string ReferencePosture,
+        string ReferenceSourcePosture,
+        string? LocalPdfPath,
+        string? ReferenceUrl,
+        string? ReferenceSnapshot,
+        IReadOnlyList<MasterIndexDialogSnippetSnapshot> RuleSnippets);
+
+    private sealed record MasterIndexDialogSnippetSnapshot(
+        string File,
+        string Provenance,
+        int Page,
+        string Snippet);
 }
