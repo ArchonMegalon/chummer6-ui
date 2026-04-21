@@ -540,8 +540,24 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ? DesktopPreferenceState.Default.CharacterRosterPath
             : preferences.CharacterRosterPath.Trim();
         bool watchFolderConfigured = !string.IsNullOrWhiteSpace(rosterPath);
+        bool watchFolderExists = watchFolderConfigured && Directory.Exists(rosterPath);
+        string[] watchedFiles = watchFolderExists
+            ? Directory.EnumerateFiles(rosterPath)
+                .Where(path =>
+                {
+                    string extension = Path.GetExtension(path);
+                    return string.Equals(extension, ".chum5", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".chum6", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase);
+                })
+                .Select(path => Path.GetFileName(path) ?? string.Empty)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : Array.Empty<string>();
         OpenWorkspaceState[] savedCandidates = ordered.Where(candidate => candidate.HasSavedWorkspace).ToArray();
-        int watchedCount = savedCandidates.Length;
+        int watchedCount = watchedFiles.Length;
         OpenWorkspaceState? selectedRunner = ordered.FirstOrDefault(candidate => currentWorkspace is not null
             && string.Equals(candidate.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal))
             ?? ordered.FirstOrDefault();
@@ -559,9 +575,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     $"{(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? ">" : " ")} {candidate.Alias} · {candidate.Name} · {(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)} · {(candidate.HasSavedWorkspace ? "saved" : "unsaved")} · opened {candidate.LastOpenedUtc:MM-dd HH:mm} UTC"));
         string watchFolderTree = !watchFolderConfigured
             ? "└─ not configured"
-            : savedCandidates.Length == 0
-                ? $"└─ {rosterPath}{Environment.NewLine}   └─ no saved runners staged yet"
-                : $"└─ {rosterPath}{Environment.NewLine}{string.Join(Environment.NewLine, savedCandidates.Select((candidate, index) => $"{(index == savedCandidates.Length - 1 ? "   └─ " : "   ├─ ")}{candidate.Alias} · {candidate.Name} · saved workspace"))}";
+            : !watchFolderExists
+                ? $"└─ {rosterPath}{Environment.NewLine}   └─ folder missing on disk"
+                : watchedFiles.Length == 0
+                    ? $"└─ {rosterPath}{Environment.NewLine}   └─ no runner files detected"
+                    : $"└─ {rosterPath}{Environment.NewLine}{string.Join(Environment.NewLine, watchedFiles.Select((fileName, index) => $"{(index == watchedFiles.Length - 1 ? "   └─ " : "   ├─ ")}{fileName}"))}";
         string rosterTree = ordered.Length == 0
             ? $"[Open Characters]{Environment.NewLine}└─ {alias} · {name}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}"
             : $"[Open Characters]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}";
@@ -593,7 +611,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string selectedRunnerStatus = selectedRunner is null
             ? "No runner selected."
             : $"Opened {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC · {(selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet")} · active ruleset {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)}";
-        string portraitCandidate = BuildRosterPortraitCandidatePath(rosterPath, selectedRunner, alias, name, workspace);
+        (string portraitCandidate, string portraitStatus) = ResolveRosterPortraitCandidate(rosterPath, selectedRunner, alias, name, workspace);
         string selectionTrail = selectedRunner is null
             ? BuildGridValue(
                 ("Active Runner", $"{alias} · {name}"),
@@ -605,18 +623,22 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"));
         string watchFolderStatus = BuildGridValue(
             ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"),
-            ("Watcher", watchFolderConfigured ? "configured via global settings" : "inactive"),
+            ("Watcher", !watchFolderConfigured ? "inactive" : watchFolderExists ? "live folder scan" : "configured via global settings"),
             ("Watched Files", watchedCount.ToString(CultureInfo.InvariantCulture)),
             ("Saved Workspaces", savedCount.ToString(CultureInfo.InvariantCulture)),
-            ("Scan Posture", watchFolderConfigured ? "manual refresh in this head" : "configure a roster folder first"));
+            ("Scan Posture", !watchFolderConfigured ? "configure a roster folder first" : watchFolderExists ? "folder contents surfaced in roster tree" : "folder missing on disk"));
         string runnerCommands =
             "Open selected runner" + Environment.NewLine +
             "Save selected runner" + Environment.NewLine +
             (selectedRunner?.HasSavedWorkspace == true ? "Open saved runner location" : "Save runner to roster folder");
         string watchFolderCommands = watchFolderConfigured
-            ? "Open roster folder" + Environment.NewLine +
-              "Refresh watched file list" + Environment.NewLine +
-              "Open selected saved runner"
+            ? watchFolderExists
+                ? "Open roster folder" + Environment.NewLine +
+                  "Refresh watched file list" + Environment.NewLine +
+                  "Open selected watched runner"
+                : "Open roster folder" + Environment.NewLine +
+                  "Create roster folder" + Environment.NewLine +
+                  "Refresh watched file list"
             : "Configure watch folder" + Environment.NewLine +
               "Scan watch folder now" + Environment.NewLine +
               "Open imported runner";
@@ -624,7 +646,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Runner Portrait" + Environment.NewLine +
             $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}" + Environment.NewLine +
             $"Portrait Source | {portraitCandidate}" + Environment.NewLine +
-            "Portrait Status | legacy portrait slot uses the configured roster path and awaits a real image pipeline.";
+            $"Portrait Status | {portraitStatus}";
 
         return
         [
@@ -650,7 +672,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ];
     }
 
-    private static string BuildRosterPortraitCandidatePath(
+    private static (string Path, string Status) ResolveRosterPortraitCandidate(
         string rosterPath,
         OpenWorkspaceState? selectedRunner,
         string fallbackAlias,
@@ -671,10 +693,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         if (string.IsNullOrWhiteSpace(rosterPath))
         {
-            return $"{baseName}.png";
+            return ($"{baseName}.png", "legacy portrait slot awaits a real image pipeline");
         }
 
-        return Path.Combine(rosterPath, $"{baseName}.png");
+        if (Directory.Exists(rosterPath))
+        {
+            foreach (string extension in new[] { ".png", ".jpg", ".jpeg", ".webp" })
+            {
+                string candidate = Path.Combine(rosterPath, $"{baseName}{extension}");
+                if (File.Exists(candidate))
+                    return (candidate, "loaded from watch folder");
+            }
+        }
+
+        return (Path.Combine(rosterPath, $"{baseName}.png"), "legacy portrait slot awaits a real image pipeline");
     }
 
     private static string BuildRosterPortraitBaseName(string? alias, string? name)
