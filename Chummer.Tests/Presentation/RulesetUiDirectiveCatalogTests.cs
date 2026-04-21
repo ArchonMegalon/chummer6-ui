@@ -36,12 +36,12 @@ public sealed class RulesetUiDirectiveCatalogTests
                 InstallState: ArtifactInstallStates.Available,
                 WarningCount: 0));
 
-        StringAssert.Contains(sr4, "import workbench");
+        StringAssert.Contains(sr4, "import desk");
         StringAssert.Contains(sr4, ".chum4");
         StringAssert.Contains(sr5, "main editor");
         StringAssert.Contains(sr5, ".chum5");
         StringAssert.Contains(sr5, "runtime/provider attention required");
-        StringAssert.Contains(sr6, "guided workbench");
+        StringAssert.Contains(sr6, "preview desk");
         StringAssert.Contains(sr6, ".chum6");
         StringAssert.Contains(sr6, "experimental-host honesty visible");
     }
@@ -85,11 +85,11 @@ public sealed class RulesetUiDirectiveCatalogTests
             installState: ArtifactInstallStates.Installed);
 
         StringAssert.Contains(sr4, ".chum4");
-        StringAssert.Contains(sr4, "import workbench");
+        StringAssert.Contains(sr4, "import desk");
         StringAssert.Contains(sr5, ".chum5");
         StringAssert.Contains(sr5, "main editor");
         StringAssert.Contains(sr6, ".chum6");
-        StringAssert.Contains(sr6, "guided workbench");
+        StringAssert.Contains(sr6, "preview desk");
         StringAssert.Contains(sr6, "Seattle Nights");
     }
 
@@ -160,25 +160,25 @@ public sealed class RulesetUiDirectiveCatalogTests
         string sr6Workflow = RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(RulesetDefaults.Sr6, "tab-info.validate", "Refresh Summary");
         string preservedWorkflow = RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(RulesetDefaults.Sr6, "tab-info.validate", "SR6 Matrix Action");
 
-        Assert.AreEqual("Oracle intake desk", sr4MarqueeEyebrow);
+        Assert.AreEqual("SR4 import desk", sr4MarqueeEyebrow);
         Assert.AreEqual("Shadowrun 5 character editor", sr5MarqueeTitle);
-        Assert.AreEqual("Starter and beta desk", sr6MarqueeEyebrow);
-        Assert.AreEqual("Desktop Summary · SR4 Import Workbench", sr4Summary);
+        Assert.AreEqual("SR6 preview desk", sr6MarqueeEyebrow);
+        Assert.AreEqual("Desktop Summary · SR4 Import Desk", sr4Summary);
         Assert.AreEqual("SR5 Characters", sr5Dossiers);
         Assert.AreEqual("No open SR6 character", sr6EmptyStrip);
         StringAssert.Contains(sr5StripTitle, "Shadowrun 5");
         StringAssert.Contains(sr5StripTitle, "main editor");
         StringAssert.Contains(sr5StripTitle, "unsaved");
-        Assert.AreEqual("SR4 Workbench Tabs", sr4Tabs);
+        Assert.AreEqual("SR4 Import Tabs", sr4Tabs);
         Assert.AreEqual("SR5 Editor Actions", sr5Actions);
-        Assert.AreEqual("SR6 Workbench Flows", sr6Flows);
+        Assert.AreEqual("SR6 Preview Flows", sr6Flows);
         Assert.AreEqual("Import SR4 Character File", sr4Import);
         Assert.AreEqual(".chum5,.chum4,.chum6,.xml,text/xml,application/xml", sr5ImportAccept);
         StringAssert.Contains(sr6ImportHint, ".chum6");
         Assert.AreEqual("SR4 Oracle Debug Import", sr4ImportDebug);
         Assert.AreEqual("Import SR6 Raw XML", sr6ImportAction);
-        Assert.AreEqual("SR4 Workbench Commands", sr4Commands);
-        Assert.AreEqual("No SR6 workbench commands are currently available.", sr6CommandHint);
+        Assert.AreEqual("SR4 Import Commands", sr4Commands);
+        Assert.AreEqual("No SR6 preview-desk commands are currently available.", sr6CommandHint);
         Assert.AreEqual("SR5 Editor Result", sr5Result);
         StringAssert.Contains(sr5ResultHint, ".chum5");
         StringAssert.Contains(sr4Ready, "import");
@@ -199,13 +199,13 @@ public sealed class RulesetUiDirectiveCatalogTests
     public void FormatDialogNotice_applies_ruleset_specific_dialog_prefixes()
     {
         Assert.AreEqual(
-            "SR4 intake: Gear 'Ares Alpha' added.",
+            "SR4 import desk: Gear 'Ares Alpha' added.",
             RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr4, "Gear 'Ares Alpha' added."));
         Assert.AreEqual(
             "SR5 editor: Cyberware 'Wired Reflexes 2' added.",
             RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr5, "Cyberware 'Wired Reflexes 2' added."));
         Assert.AreEqual(
-            "SR6 guided setup: Program 'Armor' added.",
+            "SR6 preview desk: Program 'Armor' added.",
             RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr6, "Program 'Armor' added."));
         Assert.AreEqual(
             "Generic notice.",
