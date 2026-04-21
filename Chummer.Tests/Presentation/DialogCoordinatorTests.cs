@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
+using Chummer.Contracts.Api;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
@@ -1067,21 +1068,21 @@ public class DialogCoordinatorTests
     public async Task CoordinateAsync_switch_sourcebook_master_index_keeps_dialog_open_with_notice()
     {
         DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
-            ActiveDialog = new DesktopDialogState(
-                Id: "dialog.master_index",
-                Title: "Master Index",
-                Message: null,
-                Fields:
-                [
-                    new DesktopDialogField("masterIndexCurrentSourcebook", "Selected Book", "Street Magic", "Street Magic"),
-                    new DesktopDialogField("masterIndexCurrentFile", "Current Data File", "spells.xml · 42 indexed entries", "spells.xml · 42 indexed entries")
-                ],
-                Actions:
-                [
-                    new DesktopDialogAction("switch_sourcebook", "Switch Sourcebook (SM)", true)
-                ])
+            ActiveDialog = WithFieldValues(
+                factory.CreateCommandDialog(
+                    "master_index",
+                    CreateProfile("Ghost Runner", "GST"),
+                    DesktopPreferenceState.Default,
+                    activeSectionJson: null,
+                    currentWorkspace: null,
+                    rulesetId: RulesetDefaults.Sr5,
+                    masterIndex: CreateMasterIndexResponse()),
+                ("masterIndexActiveFile", "weapons.xml"),
+                ("masterIndexCurrentFile", "weapons.xml · 27 indexed entries"),
+                ("masterIndexActiveResultKey", string.Empty))
         };
 
         DialogCoordinationContext context = new(
@@ -1095,7 +1096,45 @@ public class DialogCoordinatorTests
 
         Assert.IsNotNull(published.ActiveDialog);
         Assert.AreEqual("dialog.master_index", published.ActiveDialog!.Id);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Street Magic");
+        Assert.AreEqual("street-wyrd", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "masterIndexActiveSourcebookId"));
+        Assert.AreEqual("armor.xml", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "masterIndexActiveFile"));
+        Assert.AreEqual("SW · Street Wyrd", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "masterIndexCurrentSourcebook"));
+        Assert.AreEqual("Change Data File (armor.xml)", published.ActiveDialog.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
+        StringAssert.Contains(published.Notice ?? string.Empty, "Street Wyrd");
+        StringAssert.Contains(published.Notice ?? string.Empty, "armor.xml");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_switch_file_master_index_cycles_active_file_and_rebuilds_dialog()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = factory.CreateCommandDialog(
+                "master_index",
+                CreateProfile("Ghost Runner", "GST"),
+                DesktopPreferenceState.Default,
+                activeSectionJson: null,
+                currentWorkspace: null,
+                rulesetId: RulesetDefaults.Sr5,
+                masterIndex: CreateMasterIndexResponse())
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("switch_file", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("dialog.master_index", published.ActiveDialog!.Id);
+        Assert.AreEqual("weapons.xml", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "masterIndexActiveFile"));
+        Assert.AreEqual("Change Data File (weapons.xml)", published.ActiveDialog.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
+        StringAssert.Contains(published.Notice ?? string.Empty, "weapons.xml");
     }
 
     [TestMethod]
@@ -1166,5 +1205,142 @@ public class DialogCoordinatorTests
             AI: false,
             MainMugshotIndex: 0,
             MugshotCount: 1);
+    }
+
+    private static DesktopDialogState WithFieldValues(DesktopDialogState dialog, params (string FieldId, string Value)[] replacements)
+    {
+        return dialog with
+        {
+            Fields = dialog.Fields
+                .Select(field =>
+                {
+                    foreach ((string fieldId, string value) in replacements)
+                    {
+                        if (string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                        {
+                            return field with
+                            {
+                                Value = value,
+                                Placeholder = value
+                            };
+                        }
+                    }
+
+                    return field;
+                })
+                .ToArray()
+        };
+    }
+
+    private static MasterIndexResponse CreateMasterIndexResponse()
+    {
+        return new MasterIndexResponse(
+            Count: 4,
+            GeneratedUtc: DateTimeOffset.UtcNow,
+            Files:
+            [
+                new MasterIndexFileEntry("books.xml", "chummer", 42),
+                new MasterIndexFileEntry("weapons.xml", "chummer", 27),
+                new MasterIndexFileEntry("armor.xml", "chummer", 18)
+            ],
+            ReferenceLanePosture: "governed",
+            SourcebookCount: 12,
+            Sourcebooks:
+            [
+                new MasterIndexSourcebookEntry(
+                    Id: "core-rulebook",
+                    Code: "CRB",
+                    Name: "Core Rulebook",
+                    Permanent: true,
+                    ReferencePosture: "governed",
+                    RuleSnippetCount: 16,
+                    RuleSnippets:
+                    [
+                        new MasterIndexRuleSnippetEntry(
+                            Language: "en-us",
+                            Page: 20,
+                            Snippet: "Reference notes stay in this pane while the selected entry remains visible.",
+                            Provenance: "books.xml"),
+                        new MasterIndexRuleSnippetEntry(
+                            Language: "en-us",
+                            Page: 21,
+                            Snippet: "Indexed source detail remains on the right, matching the legacy utility posture.",
+                            Provenance: "books.xml")
+                    ],
+                    ReferenceSourcePosture: "governed",
+                    LocalPdfPath: "/books/core-rulebook.pdf",
+                    ReferenceUrl: "https://example.test/core-rulebook"),
+                new MasterIndexSourcebookEntry(
+                    Id: "street-wyrd",
+                    Code: "SW",
+                    Name: "Street Wyrd",
+                    Permanent: false,
+                    ReferencePosture: "stale",
+                    RuleSnippetCount: 6,
+                    RuleSnippets:
+                    [
+                        new MasterIndexRuleSnippetEntry(
+                            Language: "en-us",
+                            Page: 122,
+                            Snippet: "Street Wyrd armor-side note keeps the preview populated after switching books.",
+                            Provenance: "armor.xml")
+                    ],
+                    ReferenceSourcePosture: "stale",
+                    ReferenceSnapshot: "https://example.test/snapshots/street-wyrd")
+            ],
+            ReferenceCoveragePercent: 67,
+            SourcebooksWithSnippets: 8,
+            ReferenceSourceLanePosture: "governed",
+            SourcebooksWithGovernedReferenceSources: 9,
+            SourcebooksWithStaleReferenceSources: 2,
+            SourcebooksMissingReferenceSources: 1,
+            ReferenceSourceLaneReceipt: "all sourcebooks expose governed PDF/URL/site-snapshot references.",
+            SettingsLanePosture: "governed",
+            SettingsProfileCount: 6,
+            SettingsProfilesWithSourceToggles: 5,
+            DistinctSourcebookToggles: 24,
+            SourceToggleLanePosture: "governed",
+            SourceSelectionLaneReceipt: "sourcebook selection is governed by 24 toggles across 12 sourcebooks (67% coverage).",
+            SourcebookToggleCoveragePercent: 67,
+            CustomDataLanePosture: "partial",
+            CustomDataLaneReceipt: "custom-data lane is partial: 2 configured custom-data directories stay governed but not yet fully automated.",
+            CustomDataAuthoringLaneReceipt: "custom-data authoring is partial: 2 configured custom-data directories with stale overlay bridge posture.",
+            SettingsProfilesWithCustomDataDirectories: 2,
+            DistinctCustomDataDirectoryCount: 2,
+            XmlBridgePosture: "governed",
+            XmlBridgeLaneReceipt: "xml bridge is governed: 2 enabled data overlays expose XML payloads.",
+            EnabledDataOverlayCount: 2,
+            TranslatorLanePosture: "governed",
+            TranslatorLaneReceipt: "translator lane is governed: 6 translator corpus files and 3 enabled language overlays.",
+            TranslatorBridgePosture: "governed",
+            TranslatorLanguageCount: 6,
+            EnabledLanguageOverlayCount: 3,
+            OnlineStorageLanePosture: "partial",
+            OnlineStorageReceiptPosture: "stale",
+            OnlineStorageLaneReceipt: "online storage lane is partial: 1/2 continuity receipts are current with stale release proof on one required host lane.",
+            OnlineStorageReceiptsCovered: 1,
+            OnlineStorageReceiptsExpected: 2,
+            OnlineStorageCoveragePercent: 50,
+            ImportOracleLanePosture: "partial",
+            ImportOracleReceiptPosture: "stale",
+            LegacyChummer4FixtureCount: 18,
+            LegacyChummer5FixtureCount: 31,
+            HeroLabFixtureCount: 0,
+            AdjacentSr6OracleReceiptPosture: "partial",
+            AdjacentSr6OracleSourcesCovered: 1,
+            AdjacentSr6OracleSourcesExpected: 2,
+            ImportOracleSourcesCovered: 3,
+            ImportOracleSourcesExpected: 4,
+            ImportOracleCoveragePercent: 75,
+            ImportOracleMissingSources: ["Hero Lab"],
+            ImportOracleLaneReceipt: "import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.",
+            AdjacentSr6OracleLaneReceipt: "adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.",
+            Sr6SupplementLanePosture: "partial",
+            Sr6DesignerToolsPosture: "partial",
+            Sr6DesignerFamiliesAvailable: 4,
+            Sr6DesignerFamiliesExpected: 5,
+            HouseRuleLanePosture: "governed",
+            HouseRuleOverlayCount: 3,
+            Sr6SuccessorLaneReceipt: "sr6 successor lane is partial: supplement/governed designers/house-rule posture remains mixed.");
     }
 }
