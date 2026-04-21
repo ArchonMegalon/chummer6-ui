@@ -660,7 +660,7 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.cyberware_add", dialog.Id);
         Assert.AreEqual("Wired Reflexes 2", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareName"));
-        Assert.AreEqual("Show All", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategory"));
+        Assert.AreEqual("Bodyware", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategory"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSearchInCategoryOnly"));
         Assert.AreEqual("All Books", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareBookFilter"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSections"), "Browse");
@@ -676,8 +676,10 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareBrowseGrid"), "Name | Category | Avail | Cost");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareBrowseGrid"), "Cybereyes Rating 4 | Headware | 12 | ¥16,000");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionTrail"), "Category Path | Cyberware > Bodyware > Wired Reflexes");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryCommands"), "Move the tree without losing grade or availability posture");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareResultCommands"), "Use OK for one add or Add & More to keep the selector open");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareSelectionTrail"), "Search Scope | current category only");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryCommands"), "Category | Bodyware");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryCommands"), "Data File | Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareResultCommands"), "Review source, cost, and essence for Wired Reflexes 2");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareSelectionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareSelectionTrail", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareCategoryCommands", StringComparison.Ordinal)).VisualKind);
@@ -689,8 +691,8 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareFilterSummary"), "Category Path | Cyberware > Bodyware");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareLiveRecalc"), "Add Again | Stays open");
-        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add Wired Reflexes 2", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More Wired Reflexes 2", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -711,15 +713,17 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearDoItYourself"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionDetails"), "Category | Firearms");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionDetails"), "Book | Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryTree"), "Electronics");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryTree"), "Visual");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCandidateList"), "Armor Jacket");
-        Assert.AreEqual("Show All", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategory"));
+        Assert.AreEqual("Pistols", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategory"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSearchInCategoryOnly"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearBrowseGrid"), "Name | Category | Avail | Cost");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearBrowseGrid"), "Medkit Rating 6 | Medical | 8 | ¥1,500");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionTrail"), "Category Path | Gear > Pistols > Ares Predator V");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryCommands"), "Keep Do It Yourself and Stack visible while browsing");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearResultCommands"), "Keep markup, quantity, and source visible through confirmation");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionTrail"), "Search Scope | current category only");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryCommands"), "Category | Pistols");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryCommands"), "Stack | On");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearResultCommands"), "Review price, rating, and legality for Ares Predator V");
         Assert.AreEqual("Core Rulebook p. 424", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSource"));
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearSelectionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearSelectionTrail", StringComparison.Ordinal)).VisualKind);
@@ -732,8 +736,8 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearFilterSummary"), "Category Path | Gear > Pistols");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearLiveRecalc"), "Add Again | Stays open");
-        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add Ares Predator V", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More Ares Predator V", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1080,7 +1084,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Hyundai Shin-Hyung", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSections"), "Details");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSections"), "Filters");
-        Assert.AreEqual("Show All", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategory"));
+        Assert.AreEqual("Cars", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategory"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSearchInCategoryOnly"));
         Assert.AreEqual("All Books", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBookFilter"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleShowDrones"));
@@ -1096,9 +1100,11 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCandidateList"), "GMC Roadmaster");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSelectionTrail"), "Category Path | Vehicles > Cars > Hyundai Shin-Hyung");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBrowseGrid"), "Name | Category | Avail | Cost");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBrowseGrid"), "MCT Fly-Spy | Drones | 4 | ¥2,000");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryCommands"), "Keep used-vehicle and availability posture visible while browsing");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleResultCommands"), "Keep cost and used-vehicle posture visible through confirmation");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleBrowseGrid"), "Yamaha Growler | Bikes | 6 | ¥5,000");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSelectionTrail"), "Search Scope | current category only");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryCommands"), "Category | Cars");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryCommands"), "Show Drones | On");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleResultCommands"), "Review handling, armor, and source for Hyundai Shin-Hyung");
         Assert.AreEqual("Core Rulebook p. 465", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSource"));
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleSelectionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleSelectionTrail", StringComparison.Ordinal)).VisualKind);
@@ -1107,8 +1113,8 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add Hyundai Shin-Hyung", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More Hyundai Shin-Hyung", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1154,13 +1160,15 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionDetails"), "Book | Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryTree"), "Heavy Pistols");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponIncludedAccessories"), "Smartgun System");
-        Assert.AreEqual("Show All", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategory"));
+        Assert.AreEqual("Heavy Pistols", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategory"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSearchInCategoryOnly"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponBrowseGrid"), "Name | Category | Avail | Cost");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponBrowseGrid"), "Colt M23 | Heavy Pistols | 5R | ¥750");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionTrail"), "Category Path | Weapons > Heavy Pistols > Colt M23");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryCommands"), "Review accessories and ammo follow-through after choosing the base weapon");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponResultCommands"), "Use OK for one add or Add & More to keep the selector open");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionTrail"), "Search Scope | current category only");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryCommands"), "Category | Heavy Pistols");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryCommands"), "Data File | Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponResultCommands"), "Review damage, mode, and accessories for Colt M23");
         Assert.AreEqual("Core Rulebook p. 424", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCandidateList"), "Ares Alpha");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponSelectionDetails", StringComparison.Ordinal)).VisualKind);
@@ -1170,8 +1178,8 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add Colt M23", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More Colt M23", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1193,11 +1201,13 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionDetails"), "Availability | 12");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionDetails"), "Book | Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryTree"), "Clothing");
-        Assert.AreEqual("Show All", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategory"));
+        Assert.AreEqual("Armor", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategory"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSearchInCategoryOnly"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionTrail"), "Category Path | Armor > Armor > Armor Jacket");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryCommands"), "Review mods and accessories after selecting the base armor");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorResultCommands"), "Keep markup and capacity posture visible through confirmation");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionTrail"), "Search Scope | current category only");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryCommands"), "Category | Armor");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryCommands"), "Data File | Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorResultCommands"), "Review armor value and source for Armor Jacket");
         Assert.AreEqual("Core Rulebook p. 436", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCandidateList"), "Actioneer Business Clothes");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorSelectionDetails", StringComparison.Ordinal)).VisualKind);
@@ -1207,7 +1217,8 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiArmorSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add Armor Jacket", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More Armor Jacket", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1246,6 +1257,7 @@ public class DesktopDialogFactoryTests
         DesktopDialogFactory factory = new();
         DesktopDialogState dialog = WithFieldValues(
             factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default),
+            ("uiGearCategory", "Show All"),
             ("uiGearSearch", "medkit"),
             ("uiGearName", "Medkit Rating 6"),
             ("uiGearShowOnlyAffordItems", "true"));
@@ -1272,6 +1284,7 @@ public class DesktopDialogFactoryTests
         DesktopDialogFactory factory = new();
         DesktopDialogState dialog = WithFieldValues(
             factory.CreateUiControlDialog("combat_add_weapon", DesktopPreferenceState.Default),
+            ("uiWeaponCategory", "Show All"),
             ("uiWeaponSearch", "Defiance"),
             ("uiWeaponName", "Defiance T-250"),
             ("uiWeaponShowOnlyAffordItems", "true"));
@@ -1323,6 +1336,7 @@ public class DesktopDialogFactoryTests
         DesktopDialogFactory factory = new();
         DesktopDialogState dialog = WithFieldValues(
             factory.CreateUiControlDialog("vehicle_add", DesktopPreferenceState.Default),
+            ("uiVehicleCategory", "Show All"),
             ("uiVehicleSearch", "Fly-Spy"),
             ("uiVehicleName", "MCT Fly-Spy"),
             ("uiVehicleShowOnlyAffordItems", "true"),

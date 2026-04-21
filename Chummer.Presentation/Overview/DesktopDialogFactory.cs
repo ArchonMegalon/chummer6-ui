@@ -3189,12 +3189,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Source book, page, and reference posture are surfaced in the same compact utility rhythm as classic Chummer.",
                 BuildSourceDetailsFields(),
                 [new DesktopDialogAction("close", "Close", true)]),
-            "gear_add" => new DesktopDialogState(
-                "dialog.ui.gear_add",
-                "Add Gear",
-                "Browse the catalog, inspect source and cost, then confirm the selected gear item.",
-                BuildGearSelectionFields(),
-                BuildAddAndMoreActions()),
+            "gear_add" => RebuildGearSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.gear_add",
+                    "Add Gear",
+                    "Browse the catalog, inspect source and cost, then confirm the selected gear item.",
+                    BuildGearSelectionFields(),
+                    BuildAddAndMoreActions())),
             "gear_edit" => new DesktopDialogState(
                 "dialog.ui.gear_edit",
                 "Edit Gear",
@@ -3234,12 +3235,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Source references stay visible in a compact utility pane.",
                 BuildSourceDetailsFields(),
                 [new DesktopDialogAction("close", "Close", true)]),
-            "cyberware_add" => new DesktopDialogState(
-                "dialog.ui.cyberware_add",
-                "Add Cyberware",
-                "Search, filter, review source/cost/essence details, and confirm the selected implant.",
-                BuildCyberwareSelectionFields(),
-                BuildAddAndMoreActions()),
+            "cyberware_add" => RebuildCyberwareSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.cyberware_add",
+                    "Add Cyberware",
+                    "Search, filter, review source/cost/essence details, and confirm the selected implant.",
+                    BuildCyberwareSelectionFields(),
+                    BuildAddAndMoreActions())),
             "cyberware_edit" => new DesktopDialogState(
                 "dialog.ui.cyberware_edit",
                 "Edit Cyberware",
@@ -3390,18 +3392,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
-            "combat_add_weapon" => new DesktopDialogState(
-                "dialog.ui.combat_add_weapon",
-                "Add Weapon",
-                "Browse weapons, inspect combat stats and source, then confirm the selected weapon.",
-                BuildWeaponSelectionFields(),
-                BuildAddAndMoreActions()),
-            "combat_add_armor" => new DesktopDialogState(
-                "dialog.ui.combat_add_armor",
-                "Add Armor",
-                "Browse armor, inspect protection values and source, then confirm the selected armor.",
-                BuildArmorSelectionFields(),
-                BuildAddAndMoreActions()),
+            "combat_add_weapon" => RebuildWeaponSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.combat_add_weapon",
+                    "Add Weapon",
+                    "Browse weapons, inspect combat stats and source, then confirm the selected weapon.",
+                    BuildWeaponSelectionFields(),
+                    BuildAddAndMoreActions())),
+            "combat_add_armor" => RebuildArmorSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.combat_add_armor",
+                    "Add Armor",
+                    "Browse armor, inspect protection values and source, then confirm the selected armor.",
+                    BuildArmorSelectionFields(),
+                    BuildAddAndMoreActions())),
             "combat_reload" => new DesktopDialogState(
                 "dialog.ui.combat_reload",
                 "Reload Weapon",
@@ -3434,12 +3438,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
-            "vehicle_add" => new DesktopDialogState(
-                "dialog.ui.vehicle_add",
-                "Add Vehicle / Drone",
-                "Browse vehicles and drones, inspect stats and source, then confirm the selected entry.",
-                BuildVehicleSelectionFields(),
-                BuildAddAndMoreActions()),
+            "vehicle_add" => RebuildVehicleSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.vehicle_add",
+                    "Add Vehicle / Drone",
+                    "Browse vehicles and drones, inspect stats and source, then confirm the selected entry.",
+                    BuildVehicleSelectionFields(),
+                    BuildAddAndMoreActions())),
             "vehicle_edit" => new DesktopDialogState(
                 "dialog.ui.vehicle_edit",
                 "Edit Vehicle / Drone",
