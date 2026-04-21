@@ -2041,6 +2041,81 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ];
     }
 
+    private static IReadOnlyList<DesktopDialogField> BuildEntryDeleteFields()
+    {
+        return
+        [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Recovery"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", "[Current List]" + Environment.NewLine + "├─ Entry Group" + Environment.NewLine + "└─ > Current Entry", "[Current List]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Current List", "Previous Entry" + Environment.NewLine + "> Current Entry" + Environment.NewLine + "Next Entry", "Previous Entry", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteTarget", "Selected Item", "Current Entry", "Current Entry", IsReadOnly: true),
+            new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Group", "Entry Group"), ("Operation", "irreversible remove"), ("Source Posture", "current utility list"), ("Workbench", "current tab stays active")), "Group | Entry Group", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "active list only"), ("Undo Posture", "re-create manually from the same utility"), ("Neighbor Context", "surrounding entries remain visible"), ("Focus", "selection moves to adjacent entry")), "Removal Scope | active list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to current list" + Environment.NewLine + "Re-open Add Entry" + Environment.NewLine + "Review adjacent entries", "Return to current list", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected entry will be removed while the surrounding list stays visible in the same compact legacy utility posture.", "The selected entry will be removed while the surrounding list stays visible in the same compact legacy utility posture.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildDrugDeleteFields()
+    {
+        return
+        [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Recovery"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", "[Consumables]" + Environment.NewLine + "├─ Combat Drugs" + Environment.NewLine + "└─ > Jazz", "[Consumables]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Current Ledger", "Cram" + Environment.NewLine + "> Jazz" + Environment.NewLine + "Kamikaze", "Cram", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteTarget", "Selected Item", "Jazz", "Jazz", IsReadOnly: true),
+            new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Quantity", "1"), ("Speed", "1 Combat Turn"), ("Crash", "Stun + fatigue"), ("Source", "Core Rulebook p. 411")), "Quantity | 1", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner ledger only"), ("Crash Tracking", "manual review after remove"), ("Undo Posture", "re-add from drug selector"), ("Workbench", "drugs tab stays active")), "Removal Scope | runner ledger only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to drugs tab" + Environment.NewLine + "Re-open Add Drug" + Environment.NewLine + "Review crash and addiction notes", "Return to drugs tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected drug entry will be removed while quantity, crash posture, and nearby doses remain visible in the same utility flow.", "The selected drug entry will be removed while quantity, crash posture, and nearby doses remain visible in the same utility flow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildMagicDeleteFields()
+    {
+        return
+        [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Recovery"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", "[Magic]" + Environment.NewLine + "├─ Spells" + Environment.NewLine + "└─ > Stunbolt", "[Magic]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Current List", "Heal" + Environment.NewLine + "> Stunbolt" + Environment.NewLine + "Increase Reflexes", "Heal", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteTarget", "Selected Item", "Stunbolt", "Stunbolt", IsReadOnly: true),
+            new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Combat"), ("Drain", "F-3"), ("Type", "Mana"), ("Source", "Core Rulebook p. 288")), "Category | Combat", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "magic list only"), ("Drain Notes", "review current drain options"), ("Undo Posture", "re-learn from spell selector"), ("Workbench", "magic tab stays active")), "Removal Scope | magic list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to magic tab" + Environment.NewLine + "Re-open Add Spell / Power" + Environment.NewLine + "Review drain and category posture", "Return to magic tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected magical entry will be removed while category, drain, and neighboring spell context stay visible like the old utility flow.", "The selected magical entry will be removed while category, drain, and neighboring spell context stay visible like the old utility flow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildContactRemoveFields()
+    {
+        return
+        [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Recovery"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", "[Contacts]" + Environment.NewLine + "├─ Professional" + Environment.NewLine + "└─ > Mr. Johnson", "[Contacts]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Current Roster", "Cecilia Vargas" + Environment.NewLine + "> Mr. Johnson" + Environment.NewLine + "Nyx", "Cecilia Vargas", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteTarget", "Selected Item", "Mr. Johnson", "Mr. Johnson", IsReadOnly: true),
+            new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Role", "Fixer"), ("Connection / Loyalty", "5 / 3"), ("Location", "Seattle"), ("Notes", "Premium jobs")), "Role | Fixer", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "contact roster only"), ("Linked Notes", "manual review after remove"), ("Undo Posture", "re-add from contact dialog"), ("Workbench", "contacts tab stays active")), "Removal Scope | contact roster only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to contacts tab" + Environment.NewLine + "Re-open Add Contact" + Environment.NewLine + "Review nearby contact notes", "Return to contacts tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected contact will be removed while connection, loyalty, and surrounding roster context remain visible in the same utility pane.", "The selected contact will be removed while connection, loyalty, and surrounding roster context remain visible in the same utility pane.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildQualityDeleteFields()
+    {
+        return
+        [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Recovery"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", "[Qualities]" + Environment.NewLine + "├─ Positive" + Environment.NewLine + "└─ > First Impression", "[Qualities]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Current List", "Analytical Mind" + Environment.NewLine + "> First Impression" + Environment.NewLine + "Distinctive Style", "Analytical Mind", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteTarget", "Selected Item", "First Impression", "First Impression", IsReadOnly: true),
+            new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Type", "Positive"), ("Karma", "11"), ("Source", "Core Rulebook p. 73"), ("Tag", "Social")), "Type | Positive", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "quality list only"), ("Karma Posture", "recalculate after remove"), ("Undo Posture", "re-add from quality selector"), ("Workbench", "qualities tab stays active")), "Removal Scope | quality list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to qualities tab" + Environment.NewLine + "Re-open Add Quality" + Environment.NewLine + "Review karma totals and tags", "Return to qualities tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected quality will be removed while karma, source, and surrounding list context remain visible like the legacy utility posture.", "The selected quality will be removed while karma, source, and surrounding list context remain visible like the legacy utility posture.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
     private static IReadOnlyList<DesktopDialogField> BuildComplexFormSelectionFields()
     {
         string categoryTree =
@@ -2754,7 +2829,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.ui.delete_entry",
                 "Delete Entry",
                 "Delete selected entry?",
-                BuildActionReceiptFields("Delete Entry", "Selected entry: Current Entry" + Environment.NewLine + "Operation: irreversible remove from the active list", "The selected entry will be removed from the current list context."),
+                BuildEntryDeleteFields(),
                 [
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -2868,10 +2943,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.ui.drug_delete",
                 "Remove Drug",
                 "Confirm removal of the selected dose entry.",
-                BuildDeleteConfirmationFields(
-                    "Jazz",
-                    "Quantity: 1" + Environment.NewLine + "Speed: 1 Combat Turn" + Environment.NewLine + "Source: Core Rulebook p. 411",
-                    "The selected drug entry will be removed from the runner ledger."),
+                BuildDrugDeleteFields(),
                 [
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -2886,10 +2958,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.ui.magic_delete",
                 "Delete Spell/Power",
                 "Confirm removal of the selected magical entry.",
-                BuildDeleteConfirmationFields(
-                    "Stunbolt",
-                    "Category: Combat" + Environment.NewLine + "Drain: F-3" + Environment.NewLine + "Source: Core Rulebook p. 288",
-                    "The selected magical entry will be removed from the runner."),
+                BuildMagicDeleteFields(),
                 [
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -3075,10 +3144,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.ui.contact_remove",
                 "Remove Contact",
                 "Confirm removal of the selected contact.",
-                BuildDeleteConfirmationFields(
-                    "Mr. Johnson",
-                    "Role: Fixer" + Environment.NewLine + "Connection/Loyalty: 5 / 3" + Environment.NewLine + "Notes: Premium jobs",
-                    "The selected contact will be removed from the runner."),
+                BuildContactRemoveFields(),
                 [
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -3102,10 +3168,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.ui.quality_delete",
                 "Remove Quality",
                 "Confirm removal of the selected quality.",
-                BuildDeleteConfirmationFields(
-                    "First Impression",
-                    "Type: Positive" + Environment.NewLine + "Karma: 11" + Environment.NewLine + "Source: Core Rulebook p. 73",
-                    "The selected quality will be removed from the runner."),
+                BuildQualityDeleteFields(),
                 [
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
