@@ -317,6 +317,67 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void RebuildDynamicDialog_master_index_filters_results_from_search_state()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "master_index",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null,
+            masterIndex: CreateMasterIndexResponse());
+
+        DesktopDialogState rebuilt = RebuildDynamicDialog(WithFieldValues(
+            dialog,
+            ("masterIndexSearch", "Indexed"),
+            ("masterIndexActiveFile", "books.xml"),
+            ("masterIndexActiveResultKey", string.Empty)));
+
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSearchHints"), "1 visible rows");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSelectionTrail"), "Search | Indexed");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultList"), "> p. 21");
+        Assert.IsFalse(
+            DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultList").Contains("p. 20", StringComparison.Ordinal),
+            "Filtered result list should no longer contain the page 20 row.");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSnippetPreview"), "Indexed source detail remains on the right");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSourceCommands"), "Switch sourcebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultInspector"), "Activation | double-click row / open source");
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_master_index_switches_sourcebook_from_browser_state()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "master_index",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: null,
+            masterIndex: CreateMasterIndexResponse());
+
+        DesktopDialogState rebuilt = RebuildDynamicDialog(WithFieldValues(
+            dialog,
+            ("masterIndexActiveSourcebookId", "street-wyrd"),
+            ("masterIndexCurrentSourcebook", "SW · Street Wyrd"),
+            ("masterIndexActiveFile", "All"),
+            ("masterIndexActiveResultKey", string.Empty)));
+
+        Assert.AreEqual("SW · Street Wyrd", DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexCurrentSourcebook"));
+        Assert.AreEqual("street-wyrd", DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexActiveSourcebookId"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSourceTree"), "> SW · Street Wyrd");
+        Assert.AreEqual("No indexed entries discovered.", DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultList"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexDetails"), "Street Wyrd (SW)");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSourceClickReminder"), "No local PDF is attached");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexCatalogEntries"), "Street Wyrd [SW]");
+    }
+
+    [TestMethod]
     public void CreateCommandDialog_character_settings_surfaces_rules_environment_posture()
     {
         DesktopDialogFactory factory = new();
