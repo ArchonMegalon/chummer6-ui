@@ -599,11 +599,15 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Armor Jacket", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditSections"), "Details");
         Assert.AreEqual("Core Rulebook p. 437", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditContextTree"), "Armor Jacket");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditNeighborList"), "Actioneer Business Clothes");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditDetails"), "Availability | 12");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditLiveSummary"), "Total Cost | ¥1,000");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearEditCommands"), "Return to gear tabs");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearEditDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearEditLiveSummary", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearEditNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearEditContextTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearEditDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
     }
@@ -619,11 +623,15 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Cybereyes Rating 4", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditSections"), "Notes");
         Assert.AreEqual("Core Rulebook p. 455", DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditContextTree"), "Cybereyes Rating 4");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditNeighborList"), "Datajack");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditDetails"), "Essence | 0.40");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditLiveSummary"), "Recalculated Essence | 0.40");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditCommands"), "Return to cyberware tabs");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareEditDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareEditLiveSummary", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareEditNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareEditContextTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareEditDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
     }
@@ -956,11 +964,15 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("GMC Roadmaster", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditSections"), "Browse");
         Assert.AreEqual("Core Rulebook p. 466", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditSource"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditContextTree"), "GMC Roadmaster");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditNeighborList"), "MCT Fly-Spy");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditDetails"), "Seats | 6");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditLiveSummary"), "Damage Soak | 34");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleEditCommands"), "Return to vehicle tabs");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleEditDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleEditLiveSummary", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleEditNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleEditContextTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiVehicleEditDetails", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
     }
@@ -1205,11 +1217,54 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSections"), "Impact");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Armor Jacket");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "> Armor Jacket");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo Posture | re-add manually from the same utility family");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to the current workbench tab");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo Posture | re-add from gear selector");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to gear tab");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteNavigationTree", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteRecoveryCommands", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteImpact", StringComparison.Ordinal)).VisualKind);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_cyberware_delete_uses_legacy_delete_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("cyberware_delete", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.cyberware_delete", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Cybereyes Rating 4");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Datajack");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Essence | 0.40");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo Posture | re-add from selector");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to cyberware tab");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_vehicle_delete_uses_legacy_delete_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("vehicle_delete", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.vehicle_delete", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "GMC Roadmaster");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "MCT Fly-Spy");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Seats | 6");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to vehicle tab");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_skill_remove_uses_legacy_delete_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("skill_remove", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.skill_remove", dialog.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Perception");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Sneaking");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Linked Attribute | Intuition");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to skills tab");
     }
 
     [TestMethod]
