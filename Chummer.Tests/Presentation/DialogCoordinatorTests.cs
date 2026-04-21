@@ -1028,6 +1028,115 @@ public class DialogCoordinatorTests
         }
     }
 
+    [TestMethod]
+    public async Task CoordinateAsync_open_source_master_index_keeps_dialog_open_with_notice()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.master_index",
+                Title: "Master Index",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("masterIndexCurrentSourcebook", "Selected Book", "SR5 Core", "SR5 Core"),
+                    new DesktopDialogField("masterIndexSelectedSource", "Source", "/tmp/core.pdf", "/tmp/core.pdf")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("open_source", "Open Linked PDF", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("open_source", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("dialog.master_index", published.ActiveDialog!.Id);
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR5 Core");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_switch_sourcebook_master_index_keeps_dialog_open_with_notice()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.master_index",
+                Title: "Master Index",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("masterIndexCurrentSourcebook", "Selected Book", "Street Magic", "Street Magic"),
+                    new DesktopDialogField("masterIndexCurrentFile", "Current Data File", "spells.xml · 42 indexed entries", "spells.xml · 42 indexed entries")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("switch_sourcebook", "Switch Sourcebook (SM)", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("switch_sourcebook", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("dialog.master_index", published.ActiveDialog!.Id);
+        StringAssert.Contains(published.Notice ?? string.Empty, "Street Magic");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_edit_setting_master_index_opens_character_settings_dialog()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default with
+            {
+                CharacterPriority = "Karma"
+            },
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.master_index",
+                Title: "Master Index",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("masterIndexCurrentSourcebook", "Selected Book", "Core", "Core")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("edit_setting", "Modify Setting (Character Settings)", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("edit_setting", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("dialog.character_settings", published.ActiveDialog!.Id);
+        Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "characterPriority"));
+        Assert.AreEqual("Character Settings opened from Master Index.", published.Notice);
+    }
+
     private static CharacterProfileSection CreateProfile(string name, string alias)
     {
         return new CharacterProfileSection(

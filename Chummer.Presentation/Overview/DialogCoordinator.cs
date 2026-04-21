@@ -146,6 +146,34 @@ public sealed class DialogCoordinator : IDialogCoordinator
             }
         }
 
+        if (string.Equals(dialog.Id, "dialog.master_index", StringComparison.Ordinal))
+        {
+            switch (actionId)
+            {
+                case "open_source":
+                    PublishMasterIndexDialog(
+                        context,
+                        dialog,
+                        $"Linked source for '{ReadDialogValue(dialog, "masterIndexCurrentSourcebook", "current sourcebook")}' remains pinned on the right.");
+                    return;
+                case "switch_file":
+                    PublishMasterIndexDialog(
+                        context,
+                        dialog,
+                        $"Master Index file filter remains '{ReadDialogValue(dialog, "masterIndexCurrentFile", "All data files")}'.");
+                    return;
+                case "switch_sourcebook":
+                    PublishMasterIndexDialog(
+                        context,
+                        dialog,
+                        $"Master Index sourcebook remains '{ReadDialogValue(dialog, "masterIndexCurrentSourcebook", "current sourcebook")}'.");
+                    return;
+                case "edit_setting":
+                    OpenCharacterSettingsFromMasterIndex(context);
+                    return;
+            }
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.open_notes", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
         {
             string notes = DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesEditor") ?? string.Empty;
@@ -942,6 +970,42 @@ public sealed class DialogCoordinator : IDialogCoordinator
             ActiveDialog = rosterDialog,
             Error = null,
             Notice = notice
+        });
+    }
+
+    private static void PublishMasterIndexDialog(
+        DialogCoordinationContext context,
+        DesktopDialogState dialog,
+        string notice)
+    {
+        CharacterOverviewState state = context.GetState();
+        DesktopDialogState rebuiltDialog = DesktopDialogFactory.RebuildDynamicDialog(dialog, state.Preferences);
+        context.Publish(state with
+        {
+            ActiveDialog = rebuiltDialog,
+            Error = null,
+            Notice = notice
+        });
+    }
+
+    private static void OpenCharacterSettingsFromMasterIndex(DialogCoordinationContext context)
+    {
+        DesktopDialogFactory dialogFactory = new();
+        CharacterOverviewState state = context.GetState();
+        DesktopDialogState characterSettingsDialog = dialogFactory.CreateCommandDialog(
+            "character_settings",
+            state.Profile,
+            state.Preferences,
+            state.ActiveSectionJson,
+            state.WorkspaceId,
+            ResolveContextRulesetId(state),
+            openWorkspaces: state.OpenWorkspaces);
+
+        context.Publish(state with
+        {
+            ActiveDialog = characterSettingsDialog,
+            Error = null,
+            Notice = "Character Settings opened from Master Index."
         });
     }
 
