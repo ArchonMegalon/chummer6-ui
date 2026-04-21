@@ -521,6 +521,22 @@ public static class RulesetUiDirectiveCatalog
         return string.IsNullOrWhiteSpace(prefix) ? null : prefix;
     }
 
+    public static string FormatDialogNotice(string? rulesetId, string notice)
+    {
+        if (string.IsNullOrWhiteSpace(notice))
+        {
+            return notice;
+        }
+
+        return Resolve(rulesetId).RulesetId switch
+        {
+            RulesetDefaults.Sr4 => $"SR4 intake: {notice}",
+            RulesetDefaults.Sr5 => $"SR5 editor: {notice}",
+            RulesetDefaults.Sr6 => $"SR6 guided setup: {notice}",
+            _ => notice
+        };
+    }
+
     public static string FormatWorkflowSurfaceLabel(string? rulesetId, string? actionId, string fallbackLabel)
     {
         if (HasRulesetSpecificLabel(fallbackLabel))
