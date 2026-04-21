@@ -189,7 +189,7 @@ public sealed partial class CharacterOverviewPresenter
             return null;
         }
 
-        string? dialogPath = DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderPath");
+        string? dialogPath = DesktopDialogFieldValueParser.GetValue(dialog!, "rosterWatchFolderPath");
         string resolvedPath = string.IsNullOrWhiteSpace(dialogPath)
             ? state.Preferences.CharacterRosterPath
             : dialogPath.Trim();

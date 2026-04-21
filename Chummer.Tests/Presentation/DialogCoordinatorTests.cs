@@ -414,6 +414,59 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_focus_category_for_gear_add_toggles_to_selected_branch()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default,
+            ActiveDialog = factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default)
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("focus_category", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("Pistols", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearCategory"));
+        Assert.AreEqual("Show All Categories", published.ActiveDialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label);
+        StringAssert.Contains(published.Notice ?? string.Empty, "Pistols");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_toggle_search_scope_for_gear_add_rebuilds_dialog()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default,
+            ActiveDialog = factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default)
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("toggle_search_scope", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearSearchInCategoryOnly"));
+        Assert.AreEqual("Search Current Category", published.ActiveDialog.Actions.Single(action => string.Equals(action.Id, "toggle_search_scope", StringComparison.Ordinal)).Label);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearSelectionTrail"), "Search Scope | all categories");
+        StringAssert.Contains(published.Notice ?? string.Empty, "all categories");
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_add_more_cyberware_keeps_dialog_open_and_rebuilds_preview()
     {
         DialogCoordinator coordinator = new();
