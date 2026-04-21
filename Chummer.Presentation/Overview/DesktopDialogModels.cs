@@ -9,12 +9,29 @@ public sealed record DesktopDialogField(
     bool IsReadOnly = false,
     string InputType = "text",
     string VisualKind = DesktopDialogFieldVisualKinds.Default,
-    string LayoutSlot = DesktopDialogFieldLayoutSlots.Full);
+    string LayoutSlot = DesktopDialogFieldLayoutSlots.Full)
+{
+    public string AccessibleName => DesktopDialogAccessibility.BuildFieldAccessibleName(Label);
+    public string ToolTip => DesktopDialogAccessibility.BuildFieldToolTip(Label, Placeholder, Value);
+    public string HelpText => DesktopDialogAccessibility.BuildFieldHelpText(
+        Label,
+        Placeholder,
+        Value,
+        InputType,
+        IsReadOnly,
+        IsMultiline,
+        VisualKind);
+}
 
 public sealed record DesktopDialogAction(
     string Id,
     string Label,
-    bool IsPrimary = false);
+    bool IsPrimary = false)
+{
+    public string AccessibleName => DesktopDialogAccessibility.BuildActionAccessibleName(Label);
+    public string ToolTip => DesktopDialogAccessibility.BuildActionToolTip(Label);
+    public string HelpText => DesktopDialogAccessibility.BuildActionHelpText(Label, IsPrimary);
+}
 
 public sealed record DesktopDialogState(
     string Id,
@@ -41,4 +58,5 @@ public static class DesktopDialogFieldLayoutSlots
     public const string Full = "full";
     public const string Left = "left";
     public const string Right = "right";
+    public const string Hidden = "hidden";
 }

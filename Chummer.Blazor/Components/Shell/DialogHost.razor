@@ -6,7 +6,7 @@
 @if (Dialog is { } dialog)
 {
     <div id="dialogBackdrop" class="dialog-backdrop" @onclick="CloseAsync">
-        <div class="desktop-dialog"
+        <div class="desktop-dialog classic-dialog"
              @ref="_dialogRoot"
              role="@AccessibilityPrimitiveBoundary.DialogRole"
              aria-modal="true"
@@ -14,21 +14,31 @@
              aria-describedby="@AccessibilityPrimitiveBoundary.BuildDialogDescriptionId(dialog.Id)"
              tabindex="-1"
              @onclick:stopPropagation="true">
-            <div class="dialog-titlebar">
+            <div class="dialog-titlebar classic-dialog-titlebar">
                 <span id="dialogTitle">@dialog.Title</span>
-                <button id="dialogClose" class="dialog-close" @onclick="CloseAsync">X</button>
+                <button id="dialogClose"
+                        class="dialog-close classic-dialog-close"
+                        type="button"
+                        title="Close dialog"
+                        aria-label="Close dialog"
+                        aria-description="Close the current dialog."
+                        @onclick="CloseAsync">X</button>
             </div>
-            <div id="@AccessibilityPrimitiveBoundary.BuildDialogDescriptionId(dialog.Id)" class="dialog-body">
+            <div id="@AccessibilityPrimitiveBoundary.BuildDialogDescriptionId(dialog.Id)" class="dialog-body classic-dialog-grid">
                 @if (!string.IsNullOrWhiteSpace(dialog.Message))
                 {
                     <p class="dialog-note">@dialog.Message</p>
                 }
-                @foreach (DesktopDialogField field in dialog.Fields)
+                @foreach (DesktopDialogField field in dialog.Fields.Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal)))
                 {
-                    <label class="dialog-field @(string.Equals(field.InputType, "checkbox", StringComparison.Ordinal) ? "dialog-field--checkbox" : string.Empty) @(BuildDialogFieldLayoutClass(field)) @(BuildDialogFieldVisualClass(field))">
+                    <label class="dialog-field classic-dialog-field @(string.Equals(field.InputType, "checkbox", StringComparison.Ordinal) ? "dialog-field--checkbox" : string.Empty) @(BuildDialogFieldLayoutClass(field)) @(BuildDialogFieldVisualClass(field))"
+                           title="@field.ToolTip">
                         @if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
                         {
                             <input type="checkbox"
+                                   title="@field.ToolTip"
+                                   aria-label="@field.AccessibleName"
+                                   aria-description="@field.HelpText"
                                    checked="@IsDialogCheckboxChecked(field)"
                                    disabled="@field.IsReadOnly"
                                    @onchange="e => OnDialogCheckboxChangedAsync(field, e.Value)" />
@@ -39,7 +49,10 @@
                             <span class="dialog-label">@field.Label</span>
                             @if (field.IsReadOnly && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
                             {
-                                <div class="@BuildDialogVisualClass(field)">
+                                <div class="@BuildDialogVisualClass(field)"
+                                     title="@field.ToolTip"
+                                     aria-label="@field.AccessibleName"
+                                     aria-description="@field.HelpText">
                                     @if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tabs, StringComparison.Ordinal))
                                     {
                                         @foreach (string item in SplitVisualLines(field.Value))
@@ -82,6 +95,9 @@
                             else
                             {
                                 <textarea class="@BuildDialogInputClass(field)"
+                                          title="@field.ToolTip"
+                                          aria-label="@field.AccessibleName"
+                                          aria-description="@field.HelpText"
                                           value="@field.Value"
                                           placeholder="@field.Placeholder"
                                           readonly="@field.IsReadOnly"
@@ -92,6 +108,9 @@
                         {
                             <span class="dialog-label">@field.Label</span>
                             <input class="@BuildDialogInputClass(field)"
+                                   title="@field.ToolTip"
+                                   aria-label="@field.AccessibleName"
+                                   aria-description="@field.HelpText"
                                    type="@field.InputType"
                                    value="@field.Value"
                                    placeholder="@field.Placeholder"
@@ -101,10 +120,14 @@
                     </label>
                 }
             </div>
-            <div id="dialogFooter" class="dialog-footer">
+            <div id="dialogFooter" class="dialog-footer classic-dialog-footer">
                 @foreach (DesktopDialogAction action in dialog.Actions)
                 {
-                    <button class="action-btn @(action.IsPrimary ? "primary" : string.Empty)"
+                    <button class="action-btn classic-dialog-action @(action.IsPrimary ? "primary" : string.Empty)"
+                            type="button"
+                            title="@action.ToolTip"
+                            aria-label="@action.AccessibleName"
+                            aria-description="@action.HelpText"
                             @onclick="() => ExecuteDialogActionAsync(action.Id)">
                         @action.Label
                     </button>

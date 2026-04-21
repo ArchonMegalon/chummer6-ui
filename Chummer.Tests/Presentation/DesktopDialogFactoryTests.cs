@@ -106,7 +106,7 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.wiki", dialog.Id);
         Assert.AreEqual("Chummer Wiki", DesktopDialogFieldValueParser.GetValue(dialog, "uiLinkLabel"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiLinkDetails"), "Action: open in browser");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiLinkDetails"), "Action | open in browser");
     }
 
     [TestMethod]
@@ -141,8 +141,8 @@ public class DesktopDialogFactoryTests
             rulesetId: null);
 
         Assert.AreEqual("dialog.update", dialog.Id);
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateSections"), "Support");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateDetails"), "Support Path: /account/support");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateSections"), "Channel");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateDetails"), "Support Path | /account/support");
     }
 
     [TestMethod]
@@ -192,7 +192,7 @@ public class DesktopDialogFactoryTests
             masterIndex: CreateMasterIndexResponse());
 
         Assert.AreEqual("dialog.master_index", dialog.Id);
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSections"), "SR6 Successor");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSections"), "Options");
         Assert.AreEqual("CRB · Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCurrentSourcebook"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "Street Wyrd");
@@ -200,6 +200,9 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Reference posture | governed");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetPreview"), "No governed rule snippets");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Source toggles | governed");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexLibraryNotes"), "active books selected");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportNotes"), "Hero Lab");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6Notes"), "Designer tool coverage");
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)).LayoutSlot);
@@ -562,7 +565,7 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.contact_connection", dialog.Id);
         Assert.AreEqual("Mr. Johnson", DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnectionName"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnectionDetails"), "Current Connection/Loyalty: 5 / 3");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnectionDetails"), "Current Connection/Loyalty | 5 / 3");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactConnectionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiContactConnectionNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
@@ -863,6 +866,23 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Toggle Free/Paid", DesktopDialogFieldValueParser.GetValue(dialog, "uiActionLabel"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionSections"), "Receipt");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionNotes"), "Pricing state changes remain compact");
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_all_catalog_controls_use_dedicated_dialog_shapes()
+    {
+        DesktopDialogFactory factory = new();
+
+        foreach (string controlId in LegacyUiControlCatalog.All)
+        {
+            DesktopDialogState dialog = factory.CreateUiControlDialog(controlId, DesktopPreferenceState.Default);
+
+            Assert.AreEqual($"dialog.ui.{controlId}", dialog.Id, $"Unexpected dialog id for control '{controlId}'.");
+            Assert.AreNotEqual("dialog.ui.generic", dialog.Id, $"Control '{controlId}' fell back to the generic dialog.");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(dialog.Title), $"Control '{controlId}' must keep a dialog title.");
+            Assert.IsTrue(dialog.Fields.Count > 0, $"Control '{controlId}' must surface at least one dialog field.");
+            Assert.IsTrue(dialog.Actions.Count > 0, $"Control '{controlId}' must surface at least one dialog action.");
+        }
     }
 
     [TestMethod]
@@ -1187,9 +1207,13 @@ public class DesktopDialogFactoryTests
             SourceSelectionLaneReceipt: "sourcebook selection is governed by 24 toggles across 12 sourcebooks (67% coverage).",
             SourcebookToggleCoveragePercent: 67,
             CustomDataLanePosture: "partial",
+            CustomDataLaneReceipt: "custom-data lane is partial: 2 configured custom-data directories stay governed but not yet fully automated.",
             CustomDataAuthoringLaneReceipt: "custom-data authoring is partial: 2 configured custom-data directories with stale overlay bridge posture.",
+            SettingsProfilesWithCustomDataDirectories: 2,
+            DistinctCustomDataDirectoryCount: 2,
             XmlBridgePosture: "governed",
             XmlBridgeLaneReceipt: "xml bridge is governed: 2 enabled data overlays expose XML payloads.",
+            EnabledDataOverlayCount: 2,
             TranslatorLanePosture: "governed",
             TranslatorLaneReceipt: "translator lane is governed: 6 translator corpus files and 3 enabled language overlays.",
             TranslatorBridgePosture: "governed",

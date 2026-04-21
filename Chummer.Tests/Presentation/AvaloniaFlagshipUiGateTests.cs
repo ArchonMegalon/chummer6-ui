@@ -1679,7 +1679,6 @@ public sealed class AvaloniaFlagshipUiGateTests
     [TestMethod]
     public void Visual_review_evidence_is_published_for_light_and_dark_shell_states()
     {
-        ResetHeadlessSession();
         string screenshotDirectory = ResolveScreenshotDirectory();
         string screenshotEvidencePath = Path.Combine(screenshotDirectory, "SCREENSHOT_CONTROL_EVIDENCE.generated.json");
         if (Directory.Exists(screenshotDirectory))
@@ -1718,7 +1717,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         try
         {
-            VeteranCertificationCapturePacket packet = WithHarness(harness =>
+            VeteranCertificationCapturePacket packet = WithIsolatedHarness(harness =>
             {
                 Dictionary<string, byte[]> captured = new(StringComparer.Ordinal);
                 Dictionary<string, string> capturedHashes = new(StringComparer.Ordinal);
@@ -2040,6 +2039,27 @@ public sealed class AvaloniaFlagshipUiGateTests
             CancellationToken.None)
             .GetAwaiter()
             .GetResult();
+    }
+
+    private static TResult WithIsolatedHarness<TResult>(Func<FlagshipUiHarness, TResult> assertion)
+    {
+        HeadlessUnitTestSession? session = null;
+        try
+        {
+            session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
+            return session.Dispatch(() =>
+                {
+                    using FlagshipUiHarness harness = new();
+                    return assertion(harness);
+                },
+                CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+        }
+        finally
+        {
+            DisposeHeadlessSessionQuietly(session);
+        }
     }
 
     private static HeadlessUnitTestSession GetHeadlessSession()
@@ -2918,6 +2938,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             for (int attempt = 0; attempt < 5; attempt++)
             {
+                if (screenshotRoot.GetVisualRoot() is Visual visualRoot)
+                {
+                    visualRoot.InvalidateVisual();
+                }
+
                 screenshotRoot.InvalidateMeasure();
                 screenshotRoot.InvalidateArrange();
                 AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
@@ -3064,7 +3089,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         private Control GetScreenshotRootControl()
         {
             Window screenshotRoot = GetScreenshotRoot();
-            return screenshotRoot;
+            return screenshotRoot.Content as Control ?? screenshotRoot;
         }
 
         public Control GetScreenshotRootControlForTesting()

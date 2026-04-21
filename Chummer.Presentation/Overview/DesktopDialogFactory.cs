@@ -488,11 +488,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             new DesktopDialogField("rosterSectionTabs", "Sections", "Roster" + Environment.NewLine + "Runner" + Environment.NewLine + "Portrait" + Environment.NewLine + "Notes", "Roster", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true),
-            new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true),
-            new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true),
-            new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true),
-            new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true),
+            new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterMugshot", "Mugshot", "Runner Mugshot" + Environment.NewLine + $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}", "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterSelectedRunner", "Selected Runner", selectedRunnerSummary, selectedRunnerSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
@@ -551,7 +551,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("globalCharacterRosterPath", "Character Roster Path", rosterPath, rosterPath),
             new DesktopDialogField("globalPdfViewerPath", "PDF Viewer", pdfViewerPath, pdfViewerPath),
             new DesktopDialogField("globalCurrentPaneNotes", "Current Pane Notes", settingsSnippet, settingsSnippet, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("globalVisibilityPolicy", "Visible Heads", "Menu, toolstrip, dialogs, and status strip stay compact by default.", "Menu, toolstrip, dialogs, and status strip stay compact by default.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("globalVisibilityPolicy", "Visible Heads", "Menu, toolstrip, dialogs, and status strip stay compact by default.", "Menu, toolstrip, dialogs, and status strip stay compact by default.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
         ];
     }
 
@@ -1995,6 +1995,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"Source provenance | {selectedSourcebook.ReferenceSourcePosture}{Environment.NewLine}" +
             $"Snippet count | {selectedSourcebook.RuleSnippetCount}{Environment.NewLine}" +
             $"Route | {selectedSource}";
+        string libraryNotes =
+            $"{masterIndex.Sourcebooks.Count} active books selected. Reference links are available for most active books, and snippet coverage is {masterIndex.ReferenceCoveragePercent}%." + Environment.NewLine +
+            "Use the catalog tree on the left and keep the current book details visible on the right, like the old reference utility.";
+        string importNotes =
+            $"Import coverage is {importCoverage}. Covered sources stay in the current utility posture; missing source families: {missingImportSources}.";
+        string sr6Notes =
+            $"SR6 successor posture is {masterIndex.Sr6SupplementLanePosture}. Designer tool coverage is {sr6DesignerCoverage}, and house-rule overlays remain {masterIndex.HouseRuleLanePosture}.";
         string snippetPreview = selectedSourcebook.RuleSnippets.Count == 0
             ? "No governed rule snippets are currently attached to the selected source."
             : string.Join(
@@ -2009,44 +2016,47 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         List<DesktopDialogField> fields =
         [
-            new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true),
-            new DesktopDialogField("masterIndexSections", "Sections", "Catalog" + Environment.NewLine + "Sources" + Environment.NewLine + "Import" + Environment.NewLine + "SR6 Successor", "Catalog", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSections", "Sections", "Catalog" + Environment.NewLine + "Sources" + Environment.NewLine + "Options" + Environment.NewLine + "Import", "Catalog", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             new DesktopDialogField("masterIndexSearch", "Search", string.Empty, "Search terms"),
             new DesktopDialogField("masterIndexCurrentSourcebook", "Current File", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", IsReadOnly: true),
-            new DesktopDialogField("masterIndexCharacterSetting", "Character Setting", NormalizeGridValue(selectionProfile), NormalizeGridValue(selectionProfile), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
+            new DesktopDialogField("masterIndexCharacterSetting", "Options", NormalizeGridValue(selectionProfile), NormalizeGridValue(selectionProfile), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("masterIndexCatalogEntries", "Items", catalogEntries, catalogEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("masterIndexDetails", "Details", sourceDetails, sourceDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexSnippetPreview", "Snippet Preview", snippetPreview, snippetPreview, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("masterIndexSelectedSource", "Source", selectedSource, selectedSource, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexSourcebooks", "Sourcebooks", masterIndex.SourcebookCount.ToString(), "0", IsReadOnly: true),
-            new DesktopDialogField("masterIndexReferenceCoverage", "Snippet Coverage", $"{masterIndex.ReferenceCoveragePercent}% ({masterIndex.SourcebooksWithSnippets}/{masterIndex.SourcebookCount})", "0%", IsReadOnly: true),
-            new DesktopDialogField("masterIndexReferenceSources", "Reference Sources", referenceSources, referenceSources, IsReadOnly: true),
-            new DesktopDialogField("masterIndexReferenceSourceReceipt", "Reference Source Receipt", masterIndex.ReferenceSourceLaneReceipt, masterIndex.ReferenceSourceLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSettingsLane", "Settings Lane", masterIndex.SettingsLanePosture, masterIndex.SettingsLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSourceToggleLane", "Source Toggle Lane", masterIndex.SourceToggleLanePosture, masterIndex.SourceToggleLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSourceSelectionReceipt", "Source Selection Receipt", masterIndex.SourceSelectionLaneReceipt, masterIndex.SourceSelectionLaneReceipt, IsReadOnly: true),
+            new DesktopDialogField("masterIndexLibraryNotes", "Library Notes", libraryNotes, libraryNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("masterIndexImportNotes", "Import Notes", importNotes, importNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("masterIndexSr6Notes", "SR6 Notes", sr6Notes, sr6Notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("masterIndexSourcebooks", "Sourcebooks", masterIndex.SourcebookCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexReferenceCoverage", "Snippet Coverage", $"{masterIndex.ReferenceCoveragePercent}% ({masterIndex.SourcebooksWithSnippets}/{masterIndex.SourcebookCount})", "0%", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexReferenceSources", "Reference Sources", referenceSources, referenceSources, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexReferenceSourceReceipt", "Reference Source Receipt", masterIndex.ReferenceSourceLaneReceipt, masterIndex.ReferenceSourceLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSettingsLane", "Settings Lane", masterIndex.SettingsLanePosture, masterIndex.SettingsLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSourceToggleLane", "Source Toggle Lane", masterIndex.SourceToggleLanePosture, masterIndex.SourceToggleLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSourceSelectionReceipt", "Source Selection Receipt", masterIndex.SourceSelectionLaneReceipt, masterIndex.SourceSelectionLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexSourceSelectionSummary", "Source Selection Summary", sourcebookSelectionSummary, sourcebookSelectionSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexCustomDataLane", "Custom Data Lane", masterIndex.CustomDataLanePosture, masterIndex.CustomDataLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring Receipt", masterIndex.CustomDataAuthoringLaneReceipt, masterIndex.CustomDataAuthoringLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexXmlBridgeReceipt", "XML Bridge Receipt", masterIndex.XmlBridgeLaneReceipt, masterIndex.XmlBridgeLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexTranslatorLane", "Translator Lane", masterIndex.TranslatorLanePosture, masterIndex.TranslatorLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexTranslatorReceipt", "Translator Receipt", masterIndex.TranslatorLaneReceipt, masterIndex.TranslatorLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexImportOracleLane", "Import Oracle Lane", $"{masterIndex.ImportOracleLanePosture} ({importCoverage})", masterIndex.ImportOracleLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexImportOracleReceipt", "Import Oracle Receipt", masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexImportOracleMatrix", "Import Oracle Matrix", importOracleMatrix, importOracleMatrix, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexImportOracleMissingSources", "Import Oracle Missing Sources", missingImportSources, missingImportSources, IsReadOnly: true),
-            new DesktopDialogField("masterIndexAdjacentSr6OracleLane", "Adjacent SR6 Oracle Lane", $"{masterIndex.AdjacentSr6OracleReceiptPosture} ({adjacentOracleCoverage})", masterIndex.AdjacentSr6OracleReceiptPosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexAdjacentSr6OracleReceipt", "Adjacent SR6 Oracle Receipt", masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexOnlineStorageLane", "Online Storage Lane", $"{masterIndex.OnlineStorageLanePosture}/{masterIndex.OnlineStorageReceiptPosture} ({onlineStorageCoverage})", masterIndex.OnlineStorageLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexOnlineStorageCoverage", "Online Storage Coverage", onlineStorageCoverage, onlineStorageCoverage, IsReadOnly: true),
-            new DesktopDialogField("masterIndexOnlineStorageReceipt", "Online Storage Receipt", masterIndex.OnlineStorageLaneReceipt, masterIndex.OnlineStorageLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6SuccessorLane", "SR6 Successor Lane", sr6Successor, sr6Successor, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6SupplementLane", "SR6 Supplement Lane", masterIndex.Sr6SupplementLanePosture, masterIndex.Sr6SupplementLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6DesignerToolsLane", "SR6 Designer Tools Lane", masterIndex.Sr6DesignerToolsPosture, masterIndex.Sr6DesignerToolsPosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", sr6DesignerCoverage, sr6DesignerCoverage, IsReadOnly: true),
-            new DesktopDialogField("masterIndexHouseRuleLane", "House-Rule Lane", masterIndex.HouseRuleLanePosture, masterIndex.HouseRuleLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexHouseRuleOverlayCount", "House-Rule Overlay Count", masterIndex.HouseRuleOverlayCount.ToString(), "0", IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", masterIndex.Sr6SuccessorLaneReceipt, masterIndex.Sr6SuccessorLaneReceipt, IsReadOnly: true)
+            new DesktopDialogField("masterIndexCustomDataLane", "Custom Data Lane", masterIndex.CustomDataLanePosture, masterIndex.CustomDataLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring Receipt", masterIndex.CustomDataAuthoringLaneReceipt, masterIndex.CustomDataAuthoringLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexXmlBridgeReceipt", "XML Bridge Receipt", masterIndex.XmlBridgeLaneReceipt, masterIndex.XmlBridgeLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexTranslatorLane", "Translator Lane", masterIndex.TranslatorLanePosture, masterIndex.TranslatorLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexTranslatorReceipt", "Translator Receipt", masterIndex.TranslatorLaneReceipt, masterIndex.TranslatorLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexImportOracleLane", "Import Oracle Lane", $"{masterIndex.ImportOracleLanePosture} ({importCoverage})", masterIndex.ImportOracleLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexImportOracleReceipt", "Import Oracle Receipt", masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexImportOracleMatrix", "Import Oracle Matrix", importOracleMatrix, importOracleMatrix, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexImportOracleMissingSources", "Import Oracle Missing Sources", missingImportSources, missingImportSources, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexAdjacentSr6OracleLane", "Adjacent SR6 Oracle Lane", $"{masterIndex.AdjacentSr6OracleReceiptPosture} ({adjacentOracleCoverage})", masterIndex.AdjacentSr6OracleReceiptPosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexAdjacentSr6OracleReceipt", "Adjacent SR6 Oracle Receipt", masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexOnlineStorageLane", "Online Storage Lane", $"{masterIndex.OnlineStorageLanePosture}/{masterIndex.OnlineStorageReceiptPosture} ({onlineStorageCoverage})", masterIndex.OnlineStorageLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexOnlineStorageCoverage", "Online Storage Coverage", onlineStorageCoverage, onlineStorageCoverage, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexOnlineStorageReceipt", "Online Storage Receipt", masterIndex.OnlineStorageLaneReceipt, masterIndex.OnlineStorageLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6SuccessorLane", "SR6 Successor Lane", sr6Successor, sr6Successor, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6SupplementLane", "SR6 Supplement Lane", masterIndex.Sr6SupplementLanePosture, masterIndex.Sr6SupplementLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6DesignerToolsLane", "SR6 Designer Tools Lane", masterIndex.Sr6DesignerToolsPosture, masterIndex.Sr6DesignerToolsPosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", sr6DesignerCoverage, sr6DesignerCoverage, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexHouseRuleLane", "House-Rule Lane", masterIndex.HouseRuleLanePosture, masterIndex.HouseRuleLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexHouseRuleOverlayCount", "House-Rule Overlay Count", masterIndex.HouseRuleOverlayCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", masterIndex.Sr6SuccessorLaneReceipt, masterIndex.Sr6SuccessorLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
         ];
 
         fields.AddRange(BuildSourcebookSelectionFields(masterIndex.Sourcebooks));
@@ -2090,7 +2100,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 label,
                 value,
                 value,
-                IsReadOnly: true);
+                IsReadOnly: true,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden);
             index++;
         }
     }
