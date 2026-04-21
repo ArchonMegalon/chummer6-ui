@@ -181,7 +181,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "character_roster" => new DesktopDialogState(
                 "dialog.character_roster",
                 "Character Roster",
-                "Roster-first utility surface over the currently open runners. The default shell stays single-runner dense, while this dialog carries the multi-runner roster/details posture.",
+                "Open runners on the left, keep the selected runner summary on the right, and keep background plus notes compact underneath like the legacy roster utility.",
                 BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces),
                 [new DesktopDialogAction("close", "Close", true)]),
             "data_exporter" => new DesktopDialogState(
@@ -525,32 +525,37 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             : string.Join(
                 Environment.NewLine,
                 ordered.Select(candidate =>
-                    $"{(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? ">" : " ")} {candidate.Alias} · {candidate.Name} · {(candidate.HasSavedWorkspace ? "saved" : "unsaved")} · {(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}"));
+                    $"{(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? ">" : " ")} {candidate.Alias} · {candidate.Name} · {(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)} · {(candidate.HasSavedWorkspace ? "saved" : "unsaved")} · opened {candidate.LastOpenedUtc:MM-dd HH:mm} UTC"));
         string rosterTree = ordered.Length == 0
             ? $"[Open Characters]{Environment.NewLine}└─ {alias} · {name}"
-            : $"[Open Characters]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name}"))}";
+            : $"[Open Characters]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}";
         string selectedRunnerSummary = selectedRunner is null
             ? $"Runner | {alias} · {name}{Environment.NewLine}Workspace | {workspace}{Environment.NewLine}Save posture | no saved roster entry"
-            : $"Runner | {selectedRunner.Name} ({selectedRunner.Alias}){Environment.NewLine}Ruleset | {RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId}{Environment.NewLine}Workspace | {selectedRunner.Id.Value}{Environment.NewLine}Save posture | {(selectedRunner.HasSavedWorkspace ? "saved" : "unsaved")}";
+            : $"Runner | {selectedRunner.Name} ({selectedRunner.Alias}){Environment.NewLine}Ruleset | {RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId}{Environment.NewLine}Workspace | {selectedRunner.Id.Value}{Environment.NewLine}Save posture | {(selectedRunner.HasSavedWorkspace ? "saved" : "unsaved")}{Environment.NewLine}Last opened | {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC";
+        string selectedRunnerBackground = selectedRunner is null
+            ? "Background details appear after a runner is opened from the roster."
+            : $"Background: {selectedRunner.Name} is staged as the active roster runner.{Environment.NewLine}Concept: Dense-workbench veteran entry with compact desktop follow-through.{Environment.NewLine}Rules posture: {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)} is surfaced directly on the roster.";
         string selectedRunnerNotes = selectedRunner is null
-            ? "Bio/Concept/Background/Notes panes are empty until a runner is opened."
-            : $"Bio: {selectedRunner.Name} is ready for the dense workbench.{Environment.NewLine}Concept: Active roster runner in the current session.{Environment.NewLine}Notes: Use the runner tabs for full character editing; this roster stays compact and navigation-first.";
+            ? "Notes and session comments appear after a runner is opened from the roster."
+            : $"Notes: Keep the runner tabs for full editing; the roster stays dense-workbench friendly and navigation-first.{Environment.NewLine}Session: {(selectedRunner.HasSavedWorkspace ? "Saved workspace is present." : "Runner has not been saved yet.")}{Environment.NewLine}Watch posture: Current runner stays selected in the roster.";
         string selectedRunnerStatus = selectedRunner is null
             ? "No runner selected."
             : $"Opened {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC · {(selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet")} · active ruleset {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)}";
 
         return
         [
-            new DesktopDialogField("rosterSectionTabs", "Sections", "Roster" + Environment.NewLine + "Runner" + Environment.NewLine + "Portrait" + Environment.NewLine + "Notes", "Roster", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("rosterSectionTabs", "Sections", "Roster" + Environment.NewLine + "Details" + Environment.NewLine + "Background" + Environment.NewLine + "Notes", "Roster", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("rosterDetailTabs", "Runner Pages", "Overview" + Environment.NewLine + "Background" + Environment.NewLine + "Notes", "Overview", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("rosterMugshot", "Mugshot", "Runner Mugshot" + Environment.NewLine + $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}", "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterMugshot", "Mugshot", "Runner Mugshot" + Environment.NewLine + $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}" + Environment.NewLine + "Portrait lane stays compact until a real art pipeline is connected.", "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterSelectedRunner", "Selected Runner", selectedRunnerSummary, selectedRunnerSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterSelectedRunnerStatus", "Runner Status", selectedRunnerStatus, selectedRunnerStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("rosterSelectedRunnerBackground", "Background / Concept", selectedRunnerBackground, selectedRunnerBackground, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterSelectedRunnerNotes", "Bio / Concept / Notes", selectedRunnerNotes, selectedRunnerNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterEntries", "Roster Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List)
         ];
