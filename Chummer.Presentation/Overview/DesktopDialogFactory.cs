@@ -1647,6 +1647,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiCyberwareEditSections"),
+            new DesktopDialogField("uiCyberwareEditContextTree", "Navigation", "[Cyberware]" + Environment.NewLine + "├─ Headware" + Environment.NewLine + "└─ > Cybereyes Rating 4", "[Cyberware]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiCyberwareEditNeighborList", "Installed Ware", "Datajack" + Environment.NewLine + "> Cybereyes Rating 4" + Environment.NewLine + "Image Link", "Datajack", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiCyberwareEditName", "Cyberware", "Cybereyes Rating 4", "Cybereyes Rating 4"),
             new DesktopDialogField("uiCyberwareEditCategory", "Category", "Headware", "Headware", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareEditGrade", "Grade", "Standard", "Standard"),
@@ -1656,6 +1658,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiCyberwareEditSource", "Source", "Core Rulebook p. 455", "Core Rulebook p. 455", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareEditDetails", "Implant Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiCyberwareEditLiveSummary", "Live Summary", "Recalculated Cost | ¥16,000" + Environment.NewLine + "Recalculated Essence | 0.40" + Environment.NewLine + "Posture | legacy edit utility" + Environment.NewLine + "Follow-through | use implant tabs for payloads", "Recalculated Cost | ¥16,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiCyberwareEditCommands", "Command Posture", "Adjust grade, rating, or cost while details stay visible" + Environment.NewLine + "Keep implant list context visible" + Environment.NewLine + "Return to cyberware tabs for payload follow-through", "Adjust grade, rating, or cost while details stay visible", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiCyberwareEditNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1731,6 +1734,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiGearEditSections"),
+            new DesktopDialogField("uiGearEditContextTree", "Navigation", "[Inventory]" + Environment.NewLine + "├─ Armor" + Environment.NewLine + "└─ > Armor Jacket", "[Inventory]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiGearEditNeighborList", "Current List", "Armor Vest" + Environment.NewLine + "> Armor Jacket" + Environment.NewLine + "Actioneer Business Clothes", "Armor Vest", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiGearEditName", "Gear Name", "Armor Jacket", "Armor Jacket"),
             new DesktopDialogField("uiGearEditCategory", "Category", "Armor", "Armor", IsReadOnly: true),
             new DesktopDialogField("uiGearEditRating", "Rating", "0", "0", InputType: "number"),
@@ -1739,6 +1744,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiGearEditSource", "Source", "Core Rulebook p. 437", "Core Rulebook p. 437", IsReadOnly: true),
             new DesktopDialogField("uiGearEditDetails", "Item Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiGearEditLiveSummary", "Live Summary", "Total Cost | ¥1,000" + Environment.NewLine + "Wireless | n/a" + Environment.NewLine + "Legality | Restricted carry not required" + Environment.NewLine + "Posture | legacy edit utility", "Total Cost | ¥1,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiGearEditCommands", "Command Posture", "Adjust quantity, rating, or price while details stay visible" + Environment.NewLine + "Keep inventory list context visible" + Environment.NewLine + "Return to gear tabs for accessories and mounts", "Adjust quantity, rating, or price while details stay visible", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiGearEditNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -1902,6 +1908,66 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteImpact", "Impact", "Removal Scope | current runner only" + Environment.NewLine + "Undo Posture | re-add manually from the same utility family" + Environment.NewLine + "Neighbor Context | surrounding list remains in view", "Removal Scope | current runner only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", recoveryCommands, recoveryCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildGearDeleteFields()
+    {
+        return
+        [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Recovery"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", "[Inventory]" + Environment.NewLine + "├─ Armor" + Environment.NewLine + "└─ > Armor Jacket", "[Inventory]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Current List", "Armor Vest" + Environment.NewLine + "> Armor Jacket" + Environment.NewLine + "Actioneer Business Clothes", "Armor Vest", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteTarget", "Selected Item", "Armor Jacket", "Armor Jacket", IsReadOnly: true),
+            new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Armor"), ("Cost", "¥1000"), ("Source", "Core Rulebook p. 437"), ("Encumbrance", "none")), "Category | Armor", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner inventory only"), ("Armor Totals", "recalculate after remove"), ("Undo Posture", "re-add from gear selector"), ("Workbench", "inventory tab stays active")), "Removal Scope | runner inventory only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to gear tab" + Environment.NewLine + "Re-open Add Gear" + Environment.NewLine + "Review armor totals and mods", "Return to gear tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected item will be removed from the runner inventory while the current gear list remains visible in the same utility posture.", "The selected item will be removed from the runner inventory while the current gear list remains visible in the same utility posture.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildCyberwareDeleteFields()
+    {
+        return
+        [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Recovery"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", "[Cyberware]" + Environment.NewLine + "├─ Headware" + Environment.NewLine + "└─ > Cybereyes Rating 4", "[Cyberware]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Installed Ware", "Datajack" + Environment.NewLine + "> Cybereyes Rating 4" + Environment.NewLine + "Image Link", "Datajack", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteTarget", "Selected Item", "Cybereyes Rating 4", "Cybereyes Rating 4", IsReadOnly: true),
+            new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Headware"), ("Essence", "0.40"), ("Capacity", "16"), ("Source", "Core Rulebook p. 455")), "Category | Headware", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "installed ware only"), ("Essence Refund", "none"), ("Undo Posture", "re-add from selector"), ("Workbench", "cyberware tab stays active")), "Removal Scope | installed ware only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to cyberware tab" + Environment.NewLine + "Re-open Add Cyberware" + Environment.NewLine + "Review essence and capacity totals", "Return to cyberware tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected implant will be removed from the runner while essence and capacity posture stay explicit in the same utility pane.", "The selected implant will be removed from the runner while essence and capacity posture stay explicit in the same utility pane.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildVehicleDeleteFields()
+    {
+        return
+        [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Recovery"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", "[Vehicles]" + Environment.NewLine + "├─ Cars" + Environment.NewLine + "└─ > GMC Roadmaster", "[Vehicles]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Current Garage", "Hyundai Shin-Hyung" + Environment.NewLine + "> GMC Roadmaster" + Environment.NewLine + "MCT Fly-Spy", "Hyundai Shin-Hyung", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteTarget", "Selected Item", "GMC Roadmaster", "GMC Roadmaster", IsReadOnly: true),
+            new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Role", "Truck"), ("Armor", "16"), ("Seats", "6"), ("Source", "Core Rulebook p. 466")), "Role | Truck", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "garage only"), ("Mounted Gear", "review after remove"), ("Undo Posture", "re-add from vehicle selector"), ("Workbench", "vehicle tab stays active")), "Removal Scope | garage only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to vehicle tab" + Environment.NewLine + "Re-open Add Vehicle / Drone" + Environment.NewLine + "Review mods, mounts, and seats", "Return to vehicle tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected vehicle or drone will be removed while garage context remains visible for the next decision.", "The selected vehicle or drone will be removed while garage context remains visible for the next decision.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildSkillRemoveFields()
+    {
+        return
+        [
+            BuildUtilitySectionsField("uiDeleteSections", "Target", "Impact", "Recovery"),
+            new DesktopDialogField("uiDeleteNavigationTree", "Navigation", "[Skills]" + Environment.NewLine + "├─ Active" + Environment.NewLine + "└─ > Perception", "[Skills]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteNeighborList", "Current List", "Etiquette" + Environment.NewLine + "> Perception" + Environment.NewLine + "Sneaking", "Etiquette", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiDeleteTarget", "Selected Item", "Perception", "Perception", IsReadOnly: true),
+            new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Active Skill"), ("Rating", "6"), ("Linked Attribute", "Intuition"), ("Specialization", "Visual")), "Category | Active Skill", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "skill list only"), ("Derived Dice", "recalculate after remove"), ("Undo Posture", "re-add from skill selector"), ("Workbench", "skills tab stays active")), "Removal Scope | skill list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to skills tab" + Environment.NewLine + "Re-open Add Skill" + Environment.NewLine + "Review linked attribute totals", "Return to skills tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected skill will be removed while surrounding skill context remains visible like the old utility flow.", "The selected skill will be removed while surrounding skill context remains visible like the old utility flow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -2333,6 +2399,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiVehicleEditSections"),
+            new DesktopDialogField("uiVehicleEditContextTree", "Navigation", "[Vehicles]" + Environment.NewLine + "├─ Trucks" + Environment.NewLine + "└─ > GMC Roadmaster", "[Vehicles]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiVehicleEditNeighborList", "Current Garage", "Hyundai Shin-Hyung" + Environment.NewLine + "> GMC Roadmaster" + Environment.NewLine + "MCT Fly-Spy", "Hyundai Shin-Hyung", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiVehicleEditName", "Vehicle", "GMC Roadmaster", "GMC Roadmaster"),
             new DesktopDialogField("uiVehicleEditRole", "Role", "Truck", "Truck", IsReadOnly: true),
             new DesktopDialogField("uiVehicleEditHandling", "Handling", "3", "3", InputType: "number"),
@@ -2342,6 +2410,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleEditSource", "Source", "Core Rulebook p. 466", "Core Rulebook p. 466", IsReadOnly: true),
             new DesktopDialogField("uiVehicleEditDetails", "Vehicle Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiVehicleEditLiveSummary", "Live Summary", "Control Posture | manual + rigger ready" + Environment.NewLine + "Damage Soak | 34" + Environment.NewLine + "Seats | 6" + Environment.NewLine + "Posture | legacy edit utility", "Control Posture | manual + rigger ready", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiVehicleEditCommands", "Command Posture", "Adjust handling, speed, body, or armor while stats stay visible" + Environment.NewLine + "Keep garage list context visible" + Environment.NewLine + "Return to vehicle tabs for mounts and mods", "Adjust handling, speed, body, or armor while stats stay visible", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiVehicleEditNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -2668,10 +2737,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.ui.gear_delete",
                 "Delete Gear",
                 "Confirm removal of the selected gear item.",
-                BuildDeleteConfirmationFields(
-                    "Armor Jacket",
-                    "Category: Armor" + Environment.NewLine + "Cost: ¥1000" + Environment.NewLine + "Source: Core Rulebook p. 437",
-                    "The selected item will be removed from the runner inventory."),
+                BuildGearDeleteFields(),
                 [
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -2713,10 +2779,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.ui.cyberware_delete",
                 "Remove Cyberware",
                 "Confirm removal of the selected implant.",
-                BuildDeleteConfirmationFields(
-                    "Cybereyes Rating 4",
-                    "Category: Headware" + Environment.NewLine + "Essence: 0.40" + Environment.NewLine + "Source: Core Rulebook p. 455",
-                    "The selected implant will be removed from the runner."),
+                BuildCyberwareDeleteFields(),
                 [
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -2836,10 +2899,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.ui.skill_remove",
                 "Remove Skill",
                 "Confirm removal of the selected skill.",
-                BuildDeleteConfirmationFields(
-                    "Perception",
-                    "Category: Active Skill" + Environment.NewLine + "Rating: 6" + Environment.NewLine + "Linked Attribute: Intuition",
-                    "The selected skill will be removed from the runner."),
+                BuildSkillRemoveFields(),
                 [
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -2911,10 +2971,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.ui.vehicle_delete",
                 "Remove Vehicle / Drone",
                 "Confirm removal of the selected vehicle or drone.",
-                BuildDeleteConfirmationFields(
-                    "GMC Roadmaster",
-                    "Role: Truck" + Environment.NewLine + "Armor: 16" + Environment.NewLine + "Source: Core Rulebook p. 466",
-                    "The selected vehicle or drone will be removed from the runner."),
+                BuildVehicleDeleteFields(),
                 [
                     new DesktopDialogAction("delete", "Delete", true),
                     new DesktopDialogAction("cancel", "Cancel")
