@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 
 # Usage:
 # bash scripts/build-desktop-installer.sh <publish_dir> <app_key> <rid> <launch_target> [dist_dir] [version]
@@ -575,6 +575,7 @@ build_windows_installer() {
     -r "$RID" \
     --self-contained true \
     -p:PublishSingleFile=true \
+    -p:GenerateRuntimeConfigurationFiles=true \
     -p:PublishTrimmed=false \
     -p:EnableCompressionInSingleFile=true \
     -p:IncludeNativeLibrariesForSelfExtract=true \
