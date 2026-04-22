@@ -45,7 +45,9 @@ public static class BuildLabConceptIntakeProjector
         }
 
         BuildLabConceptIntakeProjection? projection = node.Deserialize<BuildLabConceptIntakeProjection>(SerializerOptions);
-        if (projection is null || string.IsNullOrWhiteSpace(projection.WorkspaceId))
+        if (projection is null
+            || string.IsNullOrWhiteSpace(projection.WorkspaceId)
+            || string.IsNullOrWhiteSpace(projection.WorkflowId))
         {
             return null;
         }
@@ -57,12 +59,12 @@ public static class BuildLabConceptIntakeProjector
             Summary: projection.Summary,
             RulesetId: projection.RulesetId,
             BuildMethod: projection.BuildMethod,
-            IntakeFields: projection.IntakeFields.ToArray(),
-            RoleBadges: projection.RoleBadges.ToArray(),
-            ConstraintBadges: projection.ConstraintBadges.ToArray(),
-            ProvenanceBadges: projection.ProvenanceBadges.ToArray(),
-            Variants: projection.Variants.ToArray(),
-            ProgressionTimelines: projection.ProgressionTimelines.ToArray(),
+            IntakeFields: projection.IntakeFields?.ToArray() ?? [],
+            RoleBadges: projection.RoleBadges?.ToArray() ?? [],
+            ConstraintBadges: projection.ConstraintBadges?.ToArray() ?? [],
+            ProvenanceBadges: projection.ProvenanceBadges?.ToArray() ?? [],
+            Variants: projection.Variants?.ToArray() ?? [],
+            ProgressionTimelines: projection.ProgressionTimelines?.ToArray() ?? [],
             ExportPayloads: projection.ExportPayloads?.ToArray() ?? [],
             ExportTargets: projection.ExportTargets?.ToArray() ?? [],
             Actions: projection.Actions?.ToArray() ?? [],

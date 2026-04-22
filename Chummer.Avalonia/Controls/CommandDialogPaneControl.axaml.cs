@@ -121,6 +121,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             Button button = new()
             {
+                Name = DesktopDialogAccessibility.BuildActionName(action.Id),
                 Content = action.Label,
                 Tag = action.Id,
                 MinWidth = 82,
@@ -182,10 +183,12 @@ public partial class CommandDialogPaneControl : UserControl
     {
         StackPanel row = new()
         {
+            Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
             Spacing = 4
         };
         TextBlock label = new()
         {
+            Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
             Text = field.Label,
             FontWeight = FontWeight.SemiBold
         };
@@ -193,6 +196,7 @@ public partial class CommandDialogPaneControl : UserControl
         row.Children.Add(label);
 
         Control fieldControl = CreateFieldControl(field);
+        fieldControl.Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id);
         ApplyAccessibility(fieldControl, field.AccessibleName, field.ToolTip, field.HelpText);
         row.Children.Add(fieldControl);
         return row;
@@ -204,6 +208,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             CheckBox checkBox = new()
             {
+                Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
                 IsChecked = ParseCheckbox(field.Value),
                 IsEnabled = !field.IsReadOnly
             };

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 echo "[B9] checking campaign journal continuity surface..."
 
 if [[ ! -f Chummer.Blazor/Components/Shared/CampaignJournalPanel.razor ]]; then
@@ -8,13 +11,13 @@ if [[ ! -f Chummer.Blazor/Components/Shared/CampaignJournalPanel.razor ]]; then
   exit 3
 fi
 
-if ! rg -q "JournalPanelProjection|Sections|Notes|LedgerEntries|TimelineEvents|JournalScopeKinds|TimelineEventKinds|LedgerEntryKinds" Chummer.Blazor/Components/Shared/CampaignJournalPanel.razor Chummer.Blazor/Components/Pages/Home.razor; then
+if ! rg -q "JournalPanelProjection|Sections|Notes|LedgerEntries|TimelineEvents|JournalScopeKinds|TimelineEventKinds|LedgerEntryKinds" Chummer.Blazor/Components/Shared/CampaignJournalPanel.razor Chummer.Blazor/Components/Pages/Showcase.razor; then
   echo "[B9] FAIL: campaign journal path is not contract-driven."
   exit 4
 fi
 
-if ! rg -q "CampaignJournalPanel" Chummer.Blazor/Components/Pages/Home.razor; then
-  echo "[B9] FAIL: campaign journal panel is not composed on the home surface."
+if ! rg -q "CampaignJournalPanel" Chummer.Blazor/Components/Pages/Showcase.razor; then
+  echo "[B9] FAIL: campaign journal panel is not composed on the showcase surface."
   exit 5
 fi
 

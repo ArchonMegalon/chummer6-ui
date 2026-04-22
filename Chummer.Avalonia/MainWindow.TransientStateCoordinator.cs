@@ -89,6 +89,9 @@ internal sealed class MainWindowTransientStateCoordinator
         _dialogWindow = null;
         return dialogWindow;
     }
+
+    internal DesktopDialogWindow? PeekDialogWindowForTesting()
+        => _dialogWindow;
 }
 
 internal sealed record MainWindowTransientDispatchSet(

@@ -60,7 +60,17 @@ test_text = read("Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs")
 feedback_text = read("feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md")
 
 reasons: list[str] = []
+feedback_reasons: list[str] = []
+density_token_reasons: list[str] = []
+layout_reasons: list[str] = []
+regression_test_reasons: list[str] = []
 evidence: dict[str, object] = {}
+
+
+def append_reason(message: str, *buckets: list[str]) -> None:
+    reasons.append(message)
+    for bucket in buckets:
+        bucket.append(message)
 
 frontier_ids = [1524553407, 3384607072, 1935838393, 3409035241]
 frontier_tasks = [
@@ -80,10 +90,13 @@ if not all(marker in feedback_text for marker in closed_feedback_markers):
     for task in frontier_tasks:
         feedback_marker = task.replace("Reduce: ", "")
         if task not in feedback_text and feedback_marker not in feedback_text:
-            reasons.append(f"Feedback source no longer contains expected frontier task or closed-evidence marker: {task}")
+            append_reason(
+                f"Feedback source no longer contains expected frontier task or closed-evidence marker: {task}",
+                feedback_reasons,
+            )
 
 if 'FluentTheme DensityStyle="Compact"' not in app_text:
-    reasons.append("Avalonia is not using Fluent compact density.")
+    append_reason("Avalonia is not using Fluent compact density.", density_token_reasons)
 
 numeric_limits = [
     ("Window", "FontSize", 13),
@@ -97,15 +110,18 @@ for selector, property_name, maximum in numeric_limits:
     value = numeric_style(app_text, selector, property_name)
     numeric_evidence[f"{selector}.{property_name}"] = value
     if value is None or value > maximum:
-        reasons.append(f"{selector} {property_name} must be <= {maximum}; found {value!r}.")
+        append_reason(f"{selector} {property_name} must be <= {maximum}; found {value!r}.", density_token_reasons)
 
 if style_value(app_text, "ListBoxItem", "Padding") != "3,1":
-    reasons.append("Dense rows must use ListBoxItem padding 3,1.")
+    append_reason("Dense rows must use ListBoxItem padding 3,1.", density_token_reasons)
 if style_value(app_text, "Button", "Padding") != "5,1":
-    reasons.append("Dense toolbar buttons must use Button padding 5,1.")
+    append_reason("Dense toolbar buttons must use Button padding 5,1.", density_token_reasons)
 
 if 'ColumnDefinitions="0,*,0"' not in main_window_text:
-    reasons.append("Flagship workbench must default to a center-first 0,*,0 desktop layout for the single-runner shell.")
+    append_reason(
+        "Flagship workbench must default to a center-first 0,*,0 desktop layout for the single-runner shell.",
+        layout_reasons,
+    )
 for token in [
     'x:Name="LeftNavigatorRegion"',
     'IsVisible="False"',
@@ -114,21 +130,21 @@ for token in [
     "new GridLength(0)",
 ]:
     if token not in (main_window_text + main_window_state_refresh_text):
-        reasons.append(f"Flagship workbench is missing required compact-layout token: {token}")
+        append_reason(f"Flagship workbench is missing required compact-layout token: {token}", layout_reasons)
 if 'x:Name="WorkspaceStripRegion"' in main_window_text:
-    reasons.append("Default flagship workbench must not restore a decorative workspace-strip row.")
+    append_reason("Default flagship workbench must not restore a decorative workspace-strip row.", layout_reasons)
 right_shell_index = main_window_text.find('x:Name="RightShellRegion"')
 right_shell = main_window_text[right_shell_index:right_shell_index + 500] if right_shell_index >= 0 else ""
 for token in ['Width="0"', 'MaxWidth="0"', 'Opacity="0"', 'IsHitTestVisible="False"']:
     if token not in right_shell:
-        reasons.append(f"Collapsed right shell is missing token {token}.")
+        append_reason(f"Collapsed right shell is missing token {token}.", layout_reasons)
 
 if 'Classes="shell-card"' in section_host_text:
-    reasons.append("Section host must use flat shell panels, not card styling, for form/workbench surfaces.")
+    append_reason("Section host must use flat shell panels, not card styling, for form/workbench surfaces.", layout_reasons)
 
 for forbidden in ["dashboard", "mainframe", "control center"]:
     if forbidden in (main_window_text + section_host_text + toolstrip_text).lower():
-        reasons.append(f"Decorative shell copy is still present in Avalonia workbench XAML: {forbidden}.")
+        append_reason(f"Decorative shell copy is still present in Avalonia workbench XAML: {forbidden}.", layout_reasons)
 
 required_tests = [
     "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
@@ -139,7 +155,7 @@ required_tests = [
 ]
 missing_tests = [name for name in required_tests if name not in test_text]
 if missing_tests:
-    reasons.append("Missing dense workbench regression tests: " + ", ".join(missing_tests))
+    append_reason("Missing dense workbench regression tests: " + ", ".join(missing_tests), regression_test_reasons)
 
 evidence.update(
     {
@@ -167,7 +183,36 @@ payload = {
     ),
     "frontierIdsClosed": frontier_ids,
     "reasons": reasons,
-    "evidence": evidence,
+    "feedbackClosureReview": {
+        "status": "pass" if not feedback_reasons else "fail",
+        "reasons": feedback_reasons,
+        "feedbackClosedEvidenceMarkers": closed_feedback_markers,
+    },
+    "densityTokenReview": {
+        "status": "pass" if not density_token_reasons else "fail",
+        "reasons": density_token_reasons,
+        "numericDensityTokens": numeric_evidence,
+        "listBoxItemPadding": style_value(app_text, "ListBoxItem", "Padding"),
+        "buttonPadding": style_value(app_text, "Button", "Padding"),
+        "usesCompactFluentDensity": 'FluentTheme DensityStyle="Compact"' in app_text,
+    },
+    "layoutPostureReview": {
+        "status": "pass" if not layout_reasons else "fail",
+        "reasons": layout_reasons,
+        "mainWindowLayout": "ColumnDefinitions=\"0,*,0\"" if 'ColumnDefinitions="0,*,0"' in main_window_text else "missing",
+        "usesFlatSectionPanels": 'Classes="shell-card"' not in section_host_text,
+        "collapsedRightShellTokens": ['Width="0"', 'MaxWidth="0"', 'Opacity="0"', 'IsHitTestVisible="False"'],
+    },
+    "regressionTestReview": {
+        "status": "pass" if not regression_test_reasons else "fail",
+        "reasons": regression_test_reasons,
+        "requiredTests": required_tests,
+    },
+    "evidence": {
+        **evidence,
+        "reasonCount": len(reasons),
+        "failureCount": len(reasons),
+    },
 }
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if reasons:

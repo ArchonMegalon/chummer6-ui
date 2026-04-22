@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-04-20T07:28:40Z",
-  "generated_at": "2026-04-20T07:28:40Z",
+  "generatedAt": "2026-04-22T14:12:14Z",
+  "generated_at": "2026-04-22T14:12:14Z",
   "contract_name": "chummer6-ui.proof_backed_quarantine_installer_promotion",
-  "downloadsDir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
-  "startupSmokeDir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke",
-  "releaseChannel": "preview",
+  "downloadsDir": "/tmp/tmp.tSRw5lfgqX",
+  "startupSmokeDir": "/tmp/tmp.vBZLfzIkX0",
+  "releaseChannel": "docker",
   "releaseVersion": "run-20260420-072339",
   "quarantineDirs": [
     "/docker/chummercomplete/chummer-presentation/.codex-studio/quarantine",
@@ -25,9 +25,9 @@
         "startup smoke artifactDigest does not match candidate bytes",
         "destination already exists with different bytes"
       ],
-      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.vBZLfzIkX0/startup-smoke-blazor-desktop-linux-x64.receipt.json",
       "candidateSha256": "b36624a7b8a5a1b4e06cac6ead3040d86db542dd8dfe5694252d3b5cc54e6f56",
-      "destinationPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
+      "destinationPath": "/tmp/tmp.tSRw5lfgqX/chummer-blazor-desktop-linux-x64-installer.deb",
       "destinationSha256": "755de1de2a11d363f5f127dd81d9a00a1f33d9b20f6e75adb569d1c97e3faa94"
     },
     {
@@ -42,9 +42,9 @@
         "startup smoke artifactDigest does not match candidate bytes",
         "destination already exists with different bytes"
       ],
-      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.vBZLfzIkX0/startup-smoke-blazor-desktop-linux-x64.receipt.json",
       "candidateSha256": "b36624a7b8a5a1b4e06cac6ead3040d86db542dd8dfe5694252d3b5cc54e6f56",
-      "destinationPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
+      "destinationPath": "/tmp/tmp.tSRw5lfgqX/chummer-blazor-desktop-linux-x64-installer.deb",
       "destinationSha256": "755de1de2a11d363f5f127dd81d9a00a1f33d9b20f6e75adb569d1c97e3faa94"
     }
   ]

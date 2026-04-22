@@ -124,6 +124,8 @@ payload = {
         "/account/work",
         "/account/support",
         "/contact",
+        "/downloads/install/avalonia-osx-arm64-installer",
+        "/downloads/install/avalonia-win-x64-installer",
     ],
 }
 with open(out_path, "w", encoding="utf-8") as handle:

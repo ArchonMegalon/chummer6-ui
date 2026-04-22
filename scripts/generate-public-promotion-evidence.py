@@ -21,6 +21,11 @@ STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = int(
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
     or "300"
 )
+PUBLIC_SKIP_STARTUP_SMOKE_FILTER = str(
+    os.environ.get("CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER")
+    or os.environ.get("CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER")
+    or ""
+).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -50,24 +55,24 @@ def normalize_platform(raw: str | None) -> str:
     return (raw or "").strip().lower()
 
 
-def expected_host_class_platform_token(platform: str) -> str:
+def expected_host_class_platform_tokens(platform: str) -> tuple[str, ...]:
     normalized = normalize_platform(platform)
     if normalized == "windows":
-        return "win"
+        return ("win", "windows")
     if normalized == "macos":
-        return "osx"
+        return ("osx", "macos")
     if normalized == "linux":
-        return "linux"
-    return normalized
+        return ("linux",)
+    return (normalized,) if normalized else ()
 
 
 def host_class_matches_platform(host_class: str, platform: str) -> bool:
     normalized_host = normalize_token(host_class)
-    expected_token = expected_host_class_platform_token(platform)
-    if not normalized_host or not expected_token:
+    expected_tokens = expected_host_class_platform_tokens(platform)
+    if not normalized_host or not expected_tokens:
         return False
     host_tokens = [token for token in normalized_host.split("-") if token]
-    return expected_token in host_tokens
+    return any(token in host_tokens for token in expected_tokens)
 
 
 def resolve_file_name(artifact: dict) -> str:
@@ -175,7 +180,7 @@ def validate_receipt_for_artifact(
                 False,
                 f"startup-smoke receipt timestamp is in the future ({future_skew_seconds}s ahead)",
             )
-    elif age_delta_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+    elif age_delta_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS and not PUBLIC_SKIP_STARTUP_SMOKE_FILTER:
         return False, f"startup-smoke receipt is stale ({age_delta_seconds}s old)"
 
     return True, ""

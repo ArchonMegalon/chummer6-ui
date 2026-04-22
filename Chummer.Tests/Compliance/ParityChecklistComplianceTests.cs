@@ -31,6 +31,10 @@ public sealed class ParityChecklistComplianceTests
 
         StringAssert.Contains(parityGeneratorText, "contains non-canonical alias for normalized catalog token");
         StringAssert.Contains(parityGeneratorText, "existing_token != token");
+        StringAssert.Contains(parityGeneratorText, "extract_switch_expression_body");
+        StringAssert.Contains(parityGeneratorText, "parse_switch_case_ids");
+        StringAssert.Contains(parityGeneratorText, "return commandId switch");
+        StringAssert.Contains(parityGeneratorText, "return controlId switch");
     }
 
     private static string FindPath(params string[] parts)

@@ -79,6 +79,11 @@ def write_receipt(path: Path, payload: dict[str, object]) -> None:
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def append_reason(message: str, bucket: list[str]) -> None:
+    reasons.append(message)
+    bucket.append(message)
+
+
 (
     receipt_path,
     legacy_frmcareer_designer_path,
@@ -106,6 +111,11 @@ def write_receipt(path: Path, payload: dict[str, object]) -> None:
 
 reasons: list[str] = []
 evidence: dict[str, object] = {}
+legacy_contract_reasons: list[str] = []
+avalonia_layout_reasons: list[str] = []
+blazor_layout_reasons: list[str] = []
+shared_catalog_reasons: list[str] = []
+release_wiring_reasons: list[str] = []
 
 required_paths = [
     receipt_path.parent,
@@ -172,18 +182,28 @@ legacy_toolbar_markers = ["tsMain.Items.AddRange", "tsbSave", "tsbPrint", "tsbCo
 legacy_tab_count = len(re.findall(r"tabCharacterTabs\.Controls\.Add\(", legacy_text))
 
 if not all(marker in legacy_text for marker in legacy_menu_markers):
-    reasons.append("Legacy frmCareer designer does not expose the expected File/Edit/Special menu anchors.")
+    append_reason(
+        "Legacy frmCareer designer does not expose the expected File/Edit/Special menu anchors.",
+        legacy_contract_reasons,
+    )
 if not all(marker in legacy_text for marker in legacy_toolbar_markers):
-    reasons.append("Legacy frmCareer designer does not expose the expected save/print/copy toolbar anchors.")
+    append_reason(
+        "Legacy frmCareer designer does not expose the expected save/print/copy toolbar anchors.",
+        legacy_contract_reasons,
+    )
 if legacy_tab_count < 19:
-    reasons.append(f"Legacy frmCareer designer tab count is unexpectedly low: {legacy_tab_count}.")
+    append_reason(
+        f"Legacy frmCareer designer tab count is unexpectedly low: {legacy_tab_count}.",
+        legacy_contract_reasons,
+    )
 
 menu_headers = re.findall(r'Header="([^"]+)"', menu_bar_text)
 expected_menu_headers = ["File", "Edit", "Special", "Tools", "Windows", "Help"]
 if menu_headers != expected_menu_headers:
-    reasons.append(
+    append_reason(
         "Avalonia shell menu order diverges from the classic desktop contract: "
-        + " -> ".join(menu_headers or ["<none>"])
+        + " -> ".join(menu_headers or ["<none>"]),
+        avalonia_layout_reasons,
     )
 
 button_names = [
@@ -205,7 +225,10 @@ for name in button_names:
     button_positions[name] = index
     if index < 0:
         button_visible[name] = False
-        reasons.append(f"Avalonia toolstrip is missing required button '{name}'.")
+        append_reason(
+            f"Avalonia toolstrip is missing required button '{name}'.",
+            avalonia_layout_reasons,
+        )
         continue
     button_end = toolstrip_text.find("/>", index)
     snippet = toolstrip_text[index:button_end if button_end > index else index + 160]
@@ -216,12 +239,13 @@ for name, position in sorted(button_positions.items(), key=lambda item: item[1])
     if position >= 0 and button_visible[name]:
         ordered_visible_buttons.append(name)
 if ordered_visible_buttons[:3] != ["SaveButton", "PrintButton", "CopyButton"]:
-    reasons.append(
+    append_reason(
         "Avalonia toolbar no longer starts with the classic save/print/copy rhythm: "
-        + ", ".join(ordered_visible_buttons[:6] or ["<none>"])
+        + ", ".join(ordered_visible_buttons[:6] or ["<none>"]),
+        avalonia_layout_reasons,
     )
 if button_visible.get("ImportRawButton", False):
-    reasons.append("Raw XML import is still visible on the primary Avalonia toolbar.")
+    append_reason("Raw XML import is still visible on the primary Avalonia toolbar.", avalonia_layout_reasons)
 
 required_toolstrip_codebehind_tokens = [
     'SetButtonLabel(PrintButton, "Print Character", "Print");',
@@ -231,21 +255,36 @@ required_toolstrip_codebehind_tokens = [
 ]
 for token in required_toolstrip_codebehind_tokens:
     if token not in toolstrip_codebehind_text:
-        reasons.append(f"Avalonia toolstrip code-behind is missing required parity token: {token}")
+        append_reason(
+            f"Avalonia toolstrip code-behind is missing required parity token: {token}",
+            avalonia_layout_reasons,
+        )
 
 if 'ColumnDefinitions="0,*,0"' not in main_window_text:
-    reasons.append("Avalonia main window must default to a center-first 0,*,0 content layout for the single-runner shell.")
+    append_reason(
+        "Avalonia main window must default to a center-first 0,*,0 content layout for the single-runner shell.",
+        avalonia_layout_reasons,
+    )
 if 'x:Name="LeftNavigatorRegion"' not in main_window_text or 'IsVisible="False"' not in main_window_text:
-    reasons.append("Avalonia main window must keep the workspace rail hidden in the default XAML posture.")
+    append_reason(
+        "Avalonia main window must keep the workspace rail hidden in the default XAML posture.",
+        avalonia_layout_reasons,
+    )
 for token in [
     "ApplyWorkbenchChromeVisibility(shellFrame);",
     "new GridLength(228)",
     "new GridLength(0)",
 ]:
     if token not in main_window_state_refresh_text:
-        reasons.append(f"Avalonia shell refresh is missing required conditional workspace-rail token: {token}")
+        append_reason(
+            f"Avalonia shell refresh is missing required conditional workspace-rail token: {token}",
+            avalonia_layout_reasons,
+        )
 if "ShowNavigatorPane: resolvedOpenWorkspaces.Length > 1" not in avalonia_projector_text:
-    reasons.append("Avalonia shell projector must only surface the navigator pane for multi-workspace sessions.")
+    append_reason(
+        "Avalonia shell projector must only surface the navigator pane for multi-workspace sessions.",
+        avalonia_layout_reasons,
+    )
 right_shell_index = main_window_text.find('x:Name="RightShellRegion"')
 right_shell_snippet = (
     main_window_text[right_shell_index:right_shell_index + 420]
@@ -261,9 +300,9 @@ required_collapsed_right_shell_tokens = [
     'ClipToBounds="True"',
 ]
 if right_shell_index < 0 or any(token not in right_shell_snippet for token in required_collapsed_right_shell_tokens):
-    reasons.append("Avalonia main window still exposes the right-side rail by default.")
+    append_reason("Avalonia main window still exposes the right-side rail by default.", avalonia_layout_reasons)
 if "DesktopHomeWindow.ShowIfNeededAsync(" in app_text:
-    reasons.append("Avalonia startup still reopens the desktop home cockpit.")
+    append_reason("Avalonia startup still reopens the desktop home cockpit.", avalonia_layout_reasons)
 
 required_event_tokens = [
     'ExecuteCommandAsync("print_character", CancellationToken.None)',
@@ -271,7 +310,10 @@ required_event_tokens = [
 ]
 for token in required_event_tokens:
     if token not in main_window_event_handlers_text:
-        reasons.append(f"Avalonia main window event routing is missing required parity command: {token}")
+        append_reason(
+            f"Avalonia main window event routing is missing required parity command: {token}",
+            avalonia_layout_reasons,
+        )
 
 required_binding_tokens = [
     "toolStrip.PrintRequested += onPrintRequested;",
@@ -279,7 +321,10 @@ required_binding_tokens = [
 ]
 for token in required_binding_tokens:
     if token not in main_window_control_binding_text:
-        reasons.append(f"Avalonia control binding is missing required parity hook: {token}")
+        append_reason(
+            f"Avalonia control binding is missing required parity hook: {token}",
+            avalonia_layout_reasons,
+        )
 
 required_section_tokens = [
     'x:Name="ClassicCharacterSheetBorder"',
@@ -287,7 +332,10 @@ required_section_tokens = [
 ]
 for token in required_section_tokens:
     if token not in section_host_text:
-        reasons.append(f"Section host is missing required classic density marker: {token}")
+        append_reason(
+            f"Section host is missing required classic density marker: {token}",
+            avalonia_layout_reasons,
+        )
 
 section_payload_index = section_host_text.find('Header="Section Payload"')
 section_payload_snippet = (
@@ -304,18 +352,27 @@ required_collapsed_section_payload_tokens = [
     'ClipToBounds="True"',
 ]
 if section_payload_index < 0 or any(token not in section_payload_snippet for token in required_collapsed_section_payload_tokens):
-    reasons.append('Section host is missing the zero-height "Section Payload" expander contract.')
+    append_reason(
+        'Section host is missing the zero-height "Section Payload" expander contract.',
+        avalonia_layout_reasons,
+    )
 
 raw_xml_index = section_host_text.find('Header="Raw XML Import"')
 if raw_xml_index < 0 or 'IsExpanded="False"' not in section_host_text[raw_xml_index:raw_xml_index + 160]:
-    reasons.append('Section host is missing the collapsed "Raw XML Import" expander contract.')
+    append_reason(
+        'Section host is missing the collapsed "Raw XML Import" expander contract.',
+        avalonia_layout_reasons,
+    )
 
 preferred_order_positions = {
     command: blazor_shell_text.find(f'"{command}"')
     for command in ["save_character", "print_character", "copy", "new_character", "open_character"]
 }
 if any(position < 0 for position in preferred_order_positions.values()):
-    reasons.append("Blazor desktop shell preferred toolstrip order is missing one or more required classic commands.")
+    append_reason(
+        "Blazor desktop shell preferred toolstrip order is missing one or more required classic commands.",
+        blazor_layout_reasons,
+    )
 elif not (
     preferred_order_positions["save_character"]
     < preferred_order_positions["print_character"]
@@ -323,7 +380,10 @@ elif not (
     < preferred_order_positions["new_character"]
     < preferred_order_positions["open_character"]
 ):
-    reasons.append("Blazor desktop shell toolstrip order diverges from the classic save/print/copy-first contract.")
+    append_reason(
+        "Blazor desktop shell toolstrip order diverges from the classic save/print/copy-first contract.",
+        blazor_layout_reasons,
+    )
 
 for token in [
     "@if (ShowLeftPane)",
@@ -331,13 +391,22 @@ for token in [
     "workspace-layout--without-left-pane",
 ]:
     if token not in blazor_shell_markup_text:
-        reasons.append(f"Blazor desktop shell markup is missing required compact-layout token: {token}")
+        append_reason(
+            f"Blazor desktop shell markup is missing required compact-layout token: {token}",
+            blazor_layout_reasons,
+        )
 if "_shellSurfaceState.OpenWorkspaces.Count > 1" not in blazor_shell_text:
-    reasons.append("Blazor desktop shell must only show the workspace rail for multi-workspace sessions.")
+    append_reason(
+        "Blazor desktop shell must only show the workspace rail for multi-workspace sessions.",
+        blazor_layout_reasons,
+    )
 if "grid-template-columns: 228px minmax(0, 1fr);" not in blazor_css_text or "grid-template-columns: minmax(0, 1fr);" not in blazor_css_text:
-    reasons.append("Blazor desktop shell CSS must support both compact single-runner and multi-workspace layouts.")
+    append_reason(
+        "Blazor desktop shell CSS must support both compact single-runner and multi-workspace layouts.",
+        blazor_layout_reasons,
+    )
 if ".right-pane {\n    display: none;" not in blazor_css_text and ".right-pane {\r\n    display: none;" not in blazor_css_text:
-    reasons.append("Blazor desktop shell still exposes the right-side rail.")
+    append_reason("Blazor desktop shell still exposes the right-side rail.", blazor_layout_reasons)
 
 resolver_tokens = [
     '["file", "edit", "special", "tools", "windows", "help"]',
@@ -347,7 +416,10 @@ resolver_tokens = [
 ]
 for token in resolver_tokens:
     if token not in resolver_text:
-        reasons.append(f"Shared shell catalog is missing required classic parity token: {token}")
+        append_reason(
+            f"Shared shell catalog is missing required classic parity token: {token}",
+            shared_catalog_reasons,
+        )
 
 project_tokens = [
     ("Avalonia", avalonia_project_text),
@@ -355,21 +427,56 @@ project_tokens = [
 ]
 for label, text in project_tokens:
     if "Samples/Legacy/Soma-Career.chum5" not in text or "<CopyToPublishDirectory>Always</CopyToPublishDirectory>" not in text:
-        reasons.append(f"{label} project is missing the published legacy demo runner sample.")
+        append_reason(
+            f"{label} project is missing the published legacy demo runner sample.",
+            shared_catalog_reasons,
+        )
 
 for script_label, script_text in [("release", release_gate_text), ("visual", visual_gate_text)]:
     if "chummer5a-layout-hard-gate.sh" not in script_text:
-        reasons.append(f"The {script_label} gate is not wired to the Chummer5a layout hard gate.")
+        append_reason(
+            f"The {script_label} gate is not wired to the Chummer5a layout hard gate.",
+            release_wiring_reasons,
+        )
 
 required_test_name = "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers"
 if required_test_name not in ui_gate_tests_text:
-    reasons.append("Avalonia flagship UI gate tests do not include the Chummer5a layout hard gate wiring proof.")
+    append_reason(
+        "Avalonia flagship UI gate tests do not include the Chummer5a layout hard gate wiring proof.",
+        release_wiring_reasons,
+    )
 for test_name in [
     "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
     "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",
 ]:
     if test_name not in desktop_shell_ruleset_tests_text:
-        reasons.append(f"Desktop shell ruleset tests are missing required layout proof: {test_name}")
+        append_reason(
+            f"Desktop shell ruleset tests are missing required layout proof: {test_name}",
+            release_wiring_reasons,
+        )
+
+reviews = {
+    "legacyBaselineReview": {
+        "status": "pass" if not legacy_contract_reasons else "fail",
+        "reasons": legacy_contract_reasons,
+    },
+    "avaloniaLayoutReview": {
+        "status": "pass" if not avalonia_layout_reasons else "fail",
+        "reasons": avalonia_layout_reasons,
+    },
+    "blazorLayoutReview": {
+        "status": "pass" if not blazor_layout_reasons else "fail",
+        "reasons": blazor_layout_reasons,
+    },
+    "sharedCatalogReview": {
+        "status": "pass" if not shared_catalog_reasons else "fail",
+        "reasons": shared_catalog_reasons,
+    },
+    "releaseWiringReview": {
+        "status": "pass" if not release_wiring_reasons else "fail",
+        "reasons": release_wiring_reasons,
+    },
+}
 
 evidence.update(
     {
@@ -392,6 +499,8 @@ evidence.update(
             and 'IsVisible="False"' in main_window_text
             and "_shellSurfaceState.OpenWorkspaces.Count > 1" in blazor_shell_text
         ),
+        "reasonCount": len(reasons),
+        "failureCount": len(reasons),
     }
 )
 
@@ -405,6 +514,7 @@ payload = {
         else "Chummer5a shell-layout parity still diverges from the hard-gated desktop contract."
     ),
     "reasons": reasons,
+    "reviews": reviews,
     "evidence": evidence,
 }
 

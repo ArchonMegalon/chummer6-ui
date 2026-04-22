@@ -111,6 +111,12 @@ internal static class MainWindowShellFrameProjector
             lines.Add($"Import watchout: {watchout}");
         }
 
+        lines.Add($"Import rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(portability.Receipt)}");
+        lines.Add($"Import environment before: {DesktopTrustReceiptText.BuildImportDiffBefore(portability.Receipt)}");
+        lines.Add($"Import environment after: {DesktopTrustReceiptText.BuildImportDiffAfter(portability.Receipt)}");
+        lines.Add($"Import explain receipt: {DesktopTrustReceiptText.BuildImportExplainReceipt(portability.Receipt)}");
+        lines.Add($"Support reuse: {DesktopTrustReceiptText.BuildImportSupportReuse(portability.Receipt)}");
+
         return string.Join(Environment.NewLine, lines);
     }
 

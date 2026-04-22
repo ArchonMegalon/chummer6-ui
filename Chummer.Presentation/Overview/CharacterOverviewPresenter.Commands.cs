@@ -110,8 +110,11 @@ public sealed partial class CharacterOverviewPresenter
             return;
         }
 
+        await EnsureNavigationContextAsync(ct);
+
+        IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
         string? rulesetId = ResolveWorkspaceRulesetId(currentWorkspace.Value);
-        NavigationTabDefinition? tab = State.NavigationTabs.FirstOrDefault(item => string.Equals(item.Id, tabId, StringComparison.Ordinal));
+        NavigationTabDefinition? tab = navigationTabs.FirstOrDefault(item => string.Equals(item.Id, tabId, StringComparison.Ordinal));
         if (tab is null && !string.IsNullOrWhiteSpace(rulesetId))
         {
             tab = _shellCatalogResolver.ResolveNavigationTabs(rulesetId)
@@ -144,25 +147,29 @@ public sealed partial class CharacterOverviewPresenter
 
     private string? ResolveWorkspaceRulesetId(CharacterWorkspaceId workspaceId)
     {
-        OpenWorkspaceState? workspace = State.OpenWorkspaces.FirstOrDefault(
+        IReadOnlyList<OpenWorkspaceState> openWorkspaces = State.OpenWorkspaces ?? [];
+        IReadOnlyList<AppCommandDefinition> commands = State.Commands ?? [];
+        IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
+
+        OpenWorkspaceState? workspace = openWorkspaces.FirstOrDefault(
             candidate => string.Equals(candidate.Id.Value, workspaceId.Value, StringComparison.Ordinal));
         string? workspaceRulesetId = RulesetDefaults.NormalizeOptional(workspace?.RulesetId);
         if (workspaceRulesetId is not null)
             return workspaceRulesetId;
 
-        string? openWorkspaceRulesetId = State.OpenWorkspaces
+        string? openWorkspaceRulesetId = openWorkspaces
             .Select(openWorkspace => RulesetDefaults.NormalizeOptional(openWorkspace.RulesetId))
             .FirstOrDefault(rulesetId => rulesetId is not null);
         if (openWorkspaceRulesetId is not null)
             return openWorkspaceRulesetId;
 
-        string? commandRulesetId = State.Commands
+        string? commandRulesetId = commands
             .Select(command => RulesetDefaults.NormalizeOptional(command.RulesetId))
             .FirstOrDefault(rulesetId => rulesetId is not null);
         if (commandRulesetId is not null)
             return commandRulesetId;
 
-        return State.NavigationTabs
+        return navigationTabs
             .Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId))
             .FirstOrDefault(rulesetId => rulesetId is not null);
     }

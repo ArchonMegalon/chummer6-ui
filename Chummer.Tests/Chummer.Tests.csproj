@@ -60,22 +60,36 @@
   <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true'">
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="CharacterSectionServiceTests.cs" />
-    <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
-    <Compile Include="Compliance\MigrationComplianceTests.cs" />
+    <Compile Include="Compliance\DelegateCommandRouteParityComplianceTests.cs" />
+	    <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
+	    <Compile Include="Compliance\GeneratedDialogElementParityComplianceTests.cs" />
+	    <Compile Include="Compliance\InteractiveControlInventoryComplianceTests.cs" />
+	    <Compile Include="Compliance\MigrationComplianceTests.cs" />
     <Compile Include="Compliance\Next90M103VeteranCertificationGuardTests.cs" />
     <Compile Include="Compliance\Next90M104ExplainReceiptsGuardTests.cs" />
     <Compile Include="Compliance\Next90M105PrimaryRouteDecisionGuardTests.cs" />
     <Compile Include="Compliance\Next90M105RestoreContinuityGuardTests.cs" />
+    <Compile Include="Compliance\SectionHostRulesetParityComplianceTests.cs" />
     <Compile Include="ExternalHostProofBlockersTests.cs" />
     <Compile Include="ServiceCollectionDesktopRuntimeExtensionsTests.cs" />
     <Compile Include="Presentation\FixtureBackedChummerClient.cs" />
     <Compile Include="Presentation\AvaloniaFlagshipUiGateTests.cs" />
     <Compile Include="Presentation\BlazorShellComponentTests.cs" />
+    <Compile Include="Presentation\CatalogOnlyRulesetShellCatalogResolverTests.cs" />
+    <Compile Include="Presentation\CharacterOverviewStateBridgeTests.cs" />
+    <Compile Include="Presentation\CharacterOverviewViewModelAdapterTests.cs" />
+    <Compile Include="Presentation\CharacterOverviewPresenterTests.cs" />
     <Compile Include="Presentation\CommandAvailabilityEvaluatorTests.cs" />
+    <Compile Include="Presentation\DialogCoordinatorTests.cs" />
+    <Compile Include="Presentation\DesktopDialogFactoryTests.cs" />
     <Compile Include="Presentation\DesktopShellRulesetCatalogTests.cs" />
     <Compile Include="Presentation\FakeWorkbenchCoachApiClient.cs" />
+    <Compile Include="Presentation\FakeCharacterOverviewPresenter.cs" />
     <Compile Include="Presentation\DesktopSupportDiagnosticsTextTests.cs" />
     <Compile Include="Presentation\DualHeadAcceptanceTests.cs" />
+    <Compile Include="Presentation\MainWindowShellFrameProjectorTests.cs" />
+    <Compile Include="Presentation\RulesetUiDirectiveCatalogTests.cs" />
+    <Compile Include="Presentation\SectionQuickActionCatalogTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">

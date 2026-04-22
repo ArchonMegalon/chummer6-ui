@@ -715,6 +715,87 @@ for relative_path, groups in SOURCE_MARKERS.items():
         }
     source_results[relative_path] = file_results
 
+registry_review_reasons = [check_name for check_name, passed in registry_checks.items() if not passed]
+queue_review_reasons = (
+    [f"fleet:{check_name}" for check_name, passed in queue_checks.items() if not passed]
+    + [f"design:{check_name}" for check_name, passed in design_queue_checks.items() if not passed]
+    + [f"mirror:{check_name}" for check_name, passed in queue_mirror_checks.items() if not passed]
+)
+proof_hygiene_review_reasons = (
+    [f"operator_helper:{check_name}" for check_name, passed in operator_helper_proof_checks.items() if not passed]
+    + [
+        f"proof_uniqueness:{check_name}"
+        for check_name in ["required_proof_lines_unique", "registry_proof_lines_unique", "queue_proof_lines_unique"]
+        if not proof_uniqueness_checks[check_name]
+    ]
+    + [
+        f"proof_scope:{relative_path}"
+        for relative_path, passed in proof_scope_checks["scoped_paths"].items()
+        if not passed
+    ]
+    + (
+        ["proof_scope:all_scoped_paths_allowed"]
+        if not proof_scope_checks["all_scoped_paths_allowed"]
+        else []
+    )
+    + [
+        f"canonical_scope:{block_name}:{relative_path}"
+        for block_name, scoped_paths in canonical_proof_scope_checks["blocks"].items()
+        for relative_path, passed in scoped_paths.items()
+        if not passed
+    ]
+    + (
+        ["canonical_scope:all_canonical_block_paths_allowed"]
+        if not canonical_proof_scope_checks["all_canonical_block_paths_allowed"]
+        else []
+    )
+)
+local_repo_review_reasons = (
+    (
+        ["landed_commit_cited_canonically"]
+        if not local_repo_checks["landed_commit_cited_canonically"]
+        else []
+    )
+    + (
+        ["all_proof_commits_have_canonical_citations"]
+        if not local_repo_checks["all_proof_commits_have_canonical_citations"]
+        else []
+    )
+    + [
+        f"proof_commit_citation:{commit}"
+        for commit, cited in local_repo_checks["proof_commits_have_canonical_citations"].items()
+        if not cited
+    ]
+)
+source_marker_review_reasons = [
+    f"{relative_path}:{group_name}"
+    for relative_path, file_results in source_results.items()
+    for group_name, group_result in file_results.items()
+    if str(group_result.get("status") or "").strip().lower() != "pass"
+]
+reviews = {
+    "registryClosureReview": {
+        "status": "pass" if not registry_review_reasons else "fail",
+        "reasons": registry_review_reasons,
+    },
+    "queueClosureReview": {
+        "status": "pass" if not queue_review_reasons else "fail",
+        "reasons": queue_review_reasons,
+    },
+    "proofHygieneReview": {
+        "status": "pass" if not proof_hygiene_review_reasons else "fail",
+        "reasons": proof_hygiene_review_reasons,
+    },
+    "localRepoCitationReview": {
+        "status": "pass" if not local_repo_review_reasons else "fail",
+        "reasons": local_repo_review_reasons,
+    },
+    "sourceMarkerReview": {
+        "status": "pass" if not source_marker_review_reasons else "fail",
+        "reasons": source_marker_review_reasons,
+    },
+}
+
 payload: dict[str, Any] = {
     "contract_name": "chummer6-ui.next90_m104_ui_explain_receipts",
     "generatedAt": now_iso(),
@@ -745,7 +826,9 @@ payload: dict[str, Any] = {
         "proofPathScopeChecks": proof_scope_checks,
         "canonicalProofPathScopeChecks": canonical_proof_scope_checks,
         "sourceResults": source_results,
+        "failureCount": len(reasons),
     },
+    "reviews": reviews,
     "unresolved": reasons,
 }
 

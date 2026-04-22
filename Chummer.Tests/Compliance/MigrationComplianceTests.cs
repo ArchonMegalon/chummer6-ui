@@ -3181,6 +3181,32 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Ui_design_mirror_hygiene_guard_keeps_latest_11708_repeat_wave_closed_in_worklist_truth()
+    {
+        string guardPath = FindPath("scripts", "ai", "milestones", "ui-design-mirror-hygiene-check.sh");
+        string guardText = File.ReadAllText(guardPath);
+        string worklistPath = FindPath("WORKLIST.md");
+        string worklistText = File.ReadAllText(worklistPath);
+
+        StringAssert.Contains(guardText, "latest_repeat_marker");
+        StringAssert.Contains(guardText, "latest_repeat_detail");
+        StringAssert.Contains(guardText, "feedback/2026-04-21-154433-audit-task-11708.md");
+        StringAssert.Contains(
+            guardText,
+            "WORKLIST.md must record the latest audit-task-11708 publication wave so repeated mirror-drift observations stay closed as bounded hygiene instead of becoming orphaned feedback.");
+
+        StringAssert.Contains(
+            worklistText,
+            "Auditor publication incorporation (2026-04-21 /fast system re-entry, latest 11708 wave):");
+        StringAssert.Contains(worklistText, "feedback/2026-04-21-154433-audit-task-11708.md");
+        StringAssert.Contains(worklistText, "3821 repeated observations");
+        StringAssert.Contains(
+            worklistText,
+            "/docker/chummercomplete/chummer-presentation/.codex-design/product/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml");
+        StringAssert.Contains(worklistText, "the live queue stays `items: []`");
+    }
+
+    [TestMethod]
     public void Package_plane_defaults_stay_explicit_and_repo_local_helpers_use_them()
     {
         string propsPath = FindPath("Directory.Build.props");
@@ -4110,8 +4136,17 @@ public class MigrationComplianceTests
         StringAssert.Contains(localizationGateText, "required_localization_domains");
         StringAssert.Contains(localizationGateText, "\"domain_coverage\"");
         StringAssert.Contains(localizationGateText, "\"locale_domain_coverage\"");
+        StringAssert.Contains(localizationGateText, "\"domain_evidence\"");
+        StringAssert.Contains(localizationGateText, "\"required_receipt_statuses\"");
         StringAssert.Contains(localizationGateText, "\"app_chrome\"");
         StringAssert.Contains(localizationGateText, "\"install_update_support\"");
+        StringAssert.Contains(localizationGateText, "\"evidence\": {");
+        StringAssert.Contains(localizationGateText, "\"blockingFindingCount\": len(blocking_findings)");
+        StringAssert.Contains(localizationGateText, "\"translationBacklogCount\": len(translation_backlog_findings)");
+        StringAssert.Contains(localizationGateText, "\"failureCount\": len(blocking_findings)");
+        StringAssert.Contains(localizationGateText, "localization_signoff: localization signoff smoke runner failed.");
+        Assert.IsFalse(localizationGateText.Contains("domain: \"pass\"", StringComparison.Ordinal),
+            "Localization release gate must derive per-domain coverage from catalog keys and supporting receipts instead of hardcoding pass.");
         Assert.IsFalse(localizationGateText.Contains("\"companion_runtime\"", StringComparison.Ordinal),
             "Localization release gate must stay aligned with the registry's current allowed localization domains.");
         StringAssert.Contains(localizationGateText, "signoff_retry_attempted=0");
@@ -4122,6 +4157,427 @@ public class MigrationComplianceTests
             "Localization release gate must run the signoff project with build enabled so runtimeconfig output is always present across compatibility-tree layouts.");
         Assert.IsFalse(localizationGateText.Contains("bash -lc", StringComparison.Ordinal),
             "Localization release gate must execute the signoff runner from repo_root directly so relative package-plane paths resolve deterministically.");
+    }
+
+    [TestMethod]
+    public void Localization_release_gate_receipt_aligns_failure_count_with_blocking_findings_and_signoff_state()
+    {
+        string receiptPath = FindPath(".codex-studio", "published", "UI_LOCALIZATION_RELEASE_GATE.generated.json");
+
+        using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        JsonElement root = receipt.RootElement;
+        JsonElement evidence = root.GetProperty("evidence");
+        JsonElement signoff = root.GetProperty("signoff_smoke_runner");
+        bool signoffPass = string.Equals(signoff.GetProperty("status").GetString(), "pass", StringComparison.Ordinal);
+        int expectedFailureCount = root.GetProperty("blocking_findings").GetArrayLength();
+
+        Assert.AreEqual(expectedFailureCount, evidence.GetProperty("blockingFindingCount").GetInt32());
+        Assert.AreEqual(expectedFailureCount, evidence.GetProperty("reasonCount").GetInt32());
+        Assert.AreEqual(expectedFailureCount, evidence.GetProperty("failureCount").GetInt32());
+        Assert.AreEqual(signoffPass ? "pass" : "fail", root.GetProperty("status").GetString());
+        if (!signoffPass)
+        {
+            StringAssert.Contains(root.GetRawText(), "localization_signoff: localization signoff smoke runner failed.");
+        }
+        Assert.IsTrue(evidence.GetProperty("translationBacklogCount").GetInt32() >= 0);
+    }
+
+    [TestMethod]
+    public void Dense_workbench_recovery_gate_derives_budget_layout_and_screenshot_subproofs()
+    {
+        string recoveryGatePath = FindPath("scripts", "ai", "milestones", "dense-workbench-recovery-gate.sh");
+        string recoveryGateText = File.ReadAllText(recoveryGatePath);
+
+        StringAssert.Contains(recoveryGateText, "budget_reasons");
+        StringAssert.Contains(recoveryGateText, "layout_reasons");
+        StringAssert.Contains(recoveryGateText, "screenshot_review_reasons");
+        StringAssert.Contains(recoveryGateText, "\"budgetReview\"");
+        StringAssert.Contains(recoveryGateText, "\"layoutChromeReview\"");
+        StringAssert.Contains(recoveryGateText, "\"screenshotBackedReview\"");
+        StringAssert.Contains(recoveryGateText, "\"evidence\": {");
+        StringAssert.Contains(recoveryGateText, "\"reasonCount\": len(reasons)");
+        StringAssert.Contains(recoveryGateText, "\"failureCount\": len(reasons)");
+        StringAssert.Contains(recoveryGateText, "\"status\": \"pass\" if not budget_reasons else \"fail\"");
+        StringAssert.Contains(recoveryGateText, "\"status\": \"pass\" if not layout_reasons else \"fail\"");
+        StringAssert.Contains(recoveryGateText, "\"status\": \"pass\" if not screenshot_review_reasons else \"fail\"");
+        StringAssert.Contains(recoveryGateText, "\"supportingReceiptStatuses\"");
+    }
+
+    [TestMethod]
+    public void Classic_dense_workbench_posture_gate_derives_feedback_density_layout_and_regression_subproofs()
+    {
+        string classicDenseGatePath = FindPath("scripts", "ai", "milestones", "classic-dense-workbench-posture-gate.sh");
+        string classicDenseGateText = File.ReadAllText(classicDenseGatePath);
+
+        StringAssert.Contains(classicDenseGateText, "feedback_reasons");
+        StringAssert.Contains(classicDenseGateText, "density_token_reasons");
+        StringAssert.Contains(classicDenseGateText, "layout_reasons");
+        StringAssert.Contains(classicDenseGateText, "regression_test_reasons");
+        StringAssert.Contains(classicDenseGateText, "\"feedbackClosureReview\"");
+        StringAssert.Contains(classicDenseGateText, "\"densityTokenReview\"");
+        StringAssert.Contains(classicDenseGateText, "\"layoutPostureReview\"");
+        StringAssert.Contains(classicDenseGateText, "\"regressionTestReview\"");
+        StringAssert.Contains(classicDenseGateText, "\"reasonCount\": len(reasons)");
+        StringAssert.Contains(classicDenseGateText, "\"failureCount\": len(reasons)");
+        StringAssert.Contains(classicDenseGateText, "\"status\": \"pass\" if not feedback_reasons else \"fail\"");
+        StringAssert.Contains(classicDenseGateText, "\"status\": \"pass\" if not density_token_reasons else \"fail\"");
+        StringAssert.Contains(classicDenseGateText, "\"status\": \"pass\" if not layout_reasons else \"fail\"");
+        StringAssert.Contains(classicDenseGateText, "\"status\": \"pass\" if not regression_test_reasons else \"fail\"");
+    }
+
+    [TestMethod]
+    public void Dense_workbench_receipts_record_zero_failure_count_when_their_subreviews_pass()
+    {
+        string recoveryReceiptPath = FindPath(".codex-studio", "published", "DENSE_WORKBENCH_RECOVERY_GATE.generated.json");
+        string classicReceiptPath = FindPath(".codex-studio", "published", "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json");
+
+        using JsonDocument recoveryReceipt = JsonDocument.Parse(File.ReadAllText(recoveryReceiptPath));
+        using JsonDocument classicReceipt = JsonDocument.Parse(File.ReadAllText(classicReceiptPath));
+
+        JsonElement recoveryRoot = recoveryReceipt.RootElement;
+        JsonElement classicRoot = classicReceipt.RootElement;
+        JsonElement recoveryEvidence = recoveryRoot.GetProperty("evidence");
+        JsonElement classicEvidence = classicRoot.GetProperty("evidence");
+
+        Assert.AreEqual("pass", recoveryRoot.GetProperty("status").GetString());
+        Assert.AreEqual("pass", classicRoot.GetProperty("status").GetString());
+        Assert.AreEqual(0, recoveryEvidence.GetProperty("reasonCount").GetInt32());
+        Assert.AreEqual(0, recoveryEvidence.GetProperty("failureCount").GetInt32());
+        Assert.AreEqual(0, classicEvidence.GetProperty("reasonCount").GetInt32());
+        Assert.AreEqual(0, classicEvidence.GetProperty("failureCount").GetInt32());
+        Assert.AreEqual("pass", recoveryRoot.GetProperty("budgetReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", recoveryRoot.GetProperty("layoutChromeReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", recoveryRoot.GetProperty("screenshotBackedReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", classicRoot.GetProperty("feedbackClosureReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", classicRoot.GetProperty("densityTokenReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", classicRoot.GetProperty("layoutPostureReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", classicRoot.GetProperty("regressionTestReview").GetProperty("status").GetString());
+    }
+
+    [TestMethod]
+    public void Veteran_task_time_gate_derives_feedback_source_route_task_and_screenshot_subproofs()
+    {
+        string veteranTaskTimeGatePath = FindPath("scripts", "ai", "milestones", "veteran-task-time-evidence-gate.sh");
+        string veteranTaskTimeGateText = File.ReadAllText(veteranTaskTimeGatePath);
+
+        StringAssert.Contains(veteranTaskTimeGateText, "feedback_reasons");
+        StringAssert.Contains(veteranTaskTimeGateText, "source_evidence_reasons");
+        StringAssert.Contains(veteranTaskTimeGateText, "flagship_route_reasons");
+        StringAssert.Contains(veteranTaskTimeGateText, "screenshot_review_reasons");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"feedbackClosureReview\"");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"sourceEvidenceReview\"");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"flagshipRouteReview\"");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"taskTimeCoverageReview\"");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"boundedBlazorFallbackEvidence\"");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"evidence\": {");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"reasonCount\": len(reasons)");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"failureCount\": len(reasons)");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"reasons\": blazor_fallback_reasons");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"status\": \"pass\" if not task_time_failing_jobs else \"fail\"");
+        StringAssert.Contains(veteranTaskTimeGateText, "\"status\": \"pass\" if not screenshot_review_reasons and not screenshot_review_failing_jobs else \"fail\"");
+        Assert.IsFalse(veteranTaskTimeGateText.Contains("\"status\": \"pass\" if not any(\"screenshot\" in reason for reason in reasons) else \"fail\"", StringComparison.Ordinal),
+            "Veteran task-time screenshot review must derive from dedicated screenshot proof buckets, not top-level reason text scanning.");
+    }
+
+    [TestMethod]
+    public void Veteran_task_time_receipt_records_zero_failure_count_when_reviews_pass()
+    {
+        string receiptPath = FindPath(".codex-studio", "published", "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json");
+
+        using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        JsonElement root = receipt.RootElement;
+        JsonElement evidence = root.GetProperty("evidence");
+
+        Assert.AreEqual("pass", root.GetProperty("status").GetString());
+        Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());
+        Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
+        Assert.AreEqual("pass", root.GetProperty("feedbackClosureReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("sourceEvidenceReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("flagshipRouteReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("taskTimeCoverageReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("boundedBlazorFallbackEvidence").GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("screenshotBackedReview").GetProperty("status").GetString());
+    }
+
+    [TestMethod]
+    public void Screenshot_review_gate_derives_feedback_receipt_asset_and_job_summary_subproofs()
+    {
+        string screenshotReviewGatePath = FindPath("scripts", "ai", "milestones", "chummer5a-screenshot-review-gate.sh");
+        string screenshotReviewGateText = File.ReadAllText(screenshotReviewGatePath);
+
+        StringAssert.Contains(screenshotReviewGateText, "feedback_reasons");
+        StringAssert.Contains(screenshotReviewGateText, "supporting_receipt_reasons");
+        StringAssert.Contains(screenshotReviewGateText, "screenshot_asset_reasons");
+        StringAssert.Contains(screenshotReviewGateText, "required_visual_review_keys");
+        StringAssert.Contains(screenshotReviewGateText, "missing_visual_review_keys");
+        StringAssert.Contains(screenshotReviewGateText, "failing_visual_review_keys");
+        StringAssert.Contains(screenshotReviewGateText, "visual_failure_count");
+        StringAssert.Contains(screenshotReviewGateText, "\"feedbackClosureReview\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"supportingReceiptReview\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"screenshotAssetReview\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"reviewJobsSummary\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"visualReviewStatuses\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"visualFailureCount\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"evidence\": {");
+        StringAssert.Contains(screenshotReviewGateText, "\"requiredVisualReviewKeys\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"missingVisualReviewKeys\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"failingVisualReviewKeys\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"failureCount\": len(reasons)");
+        StringAssert.Contains(screenshotReviewGateText, "\"status\": \"pass\" if not review_job_failing else \"fail\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"status\": \"pass\" if not screenshot_asset_reasons else \"fail\"");
+    }
+
+    [TestMethod]
+    public void Screenshot_review_gate_receipt_records_zero_failure_count_and_visual_review_alignment()
+    {
+        string receiptPath = FindPath(".codex-studio", "published", "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json");
+
+        using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        JsonElement root = receipt.RootElement;
+        JsonElement evidence = root.GetProperty("evidence");
+
+        Assert.AreEqual("pass", root.GetProperty("status").GetString());
+        Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());
+        Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
+        Assert.AreEqual(0, evidence.GetProperty("visualFailureCount").GetInt32());
+        Assert.AreEqual("pass", root.GetProperty("supportingReceiptReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("screenshotAssetReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("reviewJobsSummary").GetProperty("status").GetString());
+
+        string receiptText = root.GetRawText();
+        StringAssert.Contains(receiptText, "\"flagshipGateReview\": \"pass\"");
+        StringAssert.Contains(receiptText, "\"headProofReview\": \"pass\"");
+        StringAssert.Contains(receiptText, "\"interactionProofReview\": \"pass\"");
+        StringAssert.Contains(receiptText, "\"screenCaptureReview\": \"pass\"");
+        StringAssert.Contains(receiptText, "\"legacyFamiliarityReview\": \"pass\"");
+    }
+
+    [TestMethod]
+    public void Sr4_sr6_frontier_receipt_derives_release_workflow_ruleset_alignment_and_gate_subproofs()
+    {
+        string srFrontierScriptPath = FindPath("scripts", "ai", "milestones", "sr4-sr6-desktop-parity-frontier-receipt.sh");
+        string srFrontierScriptText = File.ReadAllText(srFrontierScriptPath);
+
+        StringAssert.Contains(srFrontierScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
+        StringAssert.Contains(srFrontierScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(srFrontierScriptText, "release_channel_reasons");
+        StringAssert.Contains(srFrontierScriptText, "workflow_receipt_reasons");
+        StringAssert.Contains(srFrontierScriptText, "workflow_coverage_reasons");
+        StringAssert.Contains(srFrontierScriptText, "ruleset_adaptation_reasons");
+        StringAssert.Contains(srFrontierScriptText, "channel_alignment_reasons");
+        StringAssert.Contains(srFrontierScriptText, "gate_execution_reasons");
+        StringAssert.Contains(srFrontierScriptText, "\"releaseChannelReview\"");
+        StringAssert.Contains(srFrontierScriptText, "\"workflowReceiptReview\"");
+        StringAssert.Contains(srFrontierScriptText, "\"workflowCoverageReview\"");
+        StringAssert.Contains(srFrontierScriptText, "\"rulesetAdaptationReview\"");
+        StringAssert.Contains(srFrontierScriptText, "\"channelAlignmentReview\"");
+        StringAssert.Contains(srFrontierScriptText, "\"gateExecutionReview\"");
+        StringAssert.Contains(srFrontierScriptText, "\"status\": \"pass\" if not release_channel_reasons else \"fail\"");
+        StringAssert.Contains(srFrontierScriptText, "\"status\": \"pass\" if not workflow_receipt_reasons else \"fail\"");
+        StringAssert.Contains(srFrontierScriptText, "\"status\": \"pass\" if not workflow_coverage_reasons else \"fail\"");
+        StringAssert.Contains(srFrontierScriptText, "\"status\": \"pass\" if not ruleset_adaptation_reasons else \"fail\"");
+        StringAssert.Contains(srFrontierScriptText, "\"status\": \"pass\" if not channel_alignment_reasons else \"fail\"");
+        StringAssert.Contains(srFrontierScriptText, "\"status\": \"pass\" if not gate_execution_reasons else \"fail\"");
+        StringAssert.Contains(srFrontierScriptText, "\"missingDirectives\": missing_directives");
+        StringAssert.Contains(srFrontierScriptText, "\"receiptReleaseChannelGeneratedAts\": receipt_release_channel_generated_ats");
+    }
+
+    [TestMethod]
+    public void Ruleset_ui_adaptation_guard_derives_directive_catalog_shell_test_and_release_channel_subproofs()
+    {
+        string rulesetAdaptationScriptPath = FindPath("scripts", "ai", "milestones", "ruleset-ui-adaptation-check.sh");
+        string rulesetAdaptationScriptText = File.ReadAllText(rulesetAdaptationScriptPath);
+
+        StringAssert.Contains(rulesetAdaptationScriptText, "directive_matrix_reasons_file");
+        StringAssert.Contains(rulesetAdaptationScriptText, "catalog_definition_reasons_file");
+        StringAssert.Contains(rulesetAdaptationScriptText, "shell_binding_reasons_file");
+        StringAssert.Contains(rulesetAdaptationScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
+        StringAssert.Contains(rulesetAdaptationScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(rulesetAdaptationScriptText, "unit_test_build_exit");
+        StringAssert.Contains(rulesetAdaptationScriptText, "signoff_test_build_exit");
+        StringAssert.Contains(rulesetAdaptationScriptText, "signoff_test_run_exit");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"directiveMatrixReview\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"catalogDefinitionReview\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"shellBindingReview\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"testExecutionReview\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"releaseChannelReview\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"status\": \"pass\" if not directive_matrix_reasons else \"fail\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"status\": \"pass\" if not catalog_definition_reasons else \"fail\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"status\": \"pass\" if not shell_binding_reasons else \"fail\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"status\": \"pass\" if not test_execution_reasons else \"fail\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "\"status\": \"pass\" if not release_channel_reasons else \"fail\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "payload[\"evidence\"][\"testExecutionAttempted\"] = execution_prerequisites_clean");
+    }
+
+    [TestMethod]
+    public void Chummer5a_workflow_parity_guard_derives_source_release_checklist_family_and_test_subproofs()
+    {
+        string chummer5aWorkflowParityScriptPath = FindPath("scripts", "ai", "milestones", "chummer5a-desktop-workflow-parity-check.sh");
+        string chummer5aWorkflowParityScriptText = File.ReadAllText(chummer5aWorkflowParityScriptPath);
+
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "source_artifact_reasons");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "release_channel_reasons");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "checklist_coverage_reasons");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "workflow_family_reasons");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "test_reference_reasons");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"sourceArtifactReview\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"releaseChannelReview\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"checklistCoverageReview\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"workflowFamilyReview\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"testReferenceReview\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"status\": \"pass\" if not source_artifact_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"status\": \"pass\" if not release_channel_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"status\": \"pass\" if not checklist_coverage_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"status\": \"pass\" if not workflow_family_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"status\": \"pass\" if not test_reference_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"sourceArtifactChecks\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "payload[\"evidence\"][\"failureCount\"] = len(payload[\"reasons\"])", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Sr4_workflow_parity_guard_derives_source_release_repo_family_test_receipt_and_materialization_subproofs()
+    {
+        string sr4WorkflowParityScriptPath = FindPath("scripts", "ai", "milestones", "sr4-desktop-workflow-parity-check.sh");
+        string sr4WorkflowParityScriptText = File.ReadAllText(sr4WorkflowParityScriptPath);
+
+        StringAssert.Contains(sr4WorkflowParityScriptText, "source_artifact_reasons");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "release_channel_reasons");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "source_repo_reasons");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "workflow_family_reasons");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "test_reference_reasons");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "parity_receipt_reasons");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "materialization_reasons");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"sourceArtifactReview\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"releaseChannelReview\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"sourceRepoReview\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"workflowFamilyReview\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"testReferenceReview\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"parityReceiptReview\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"materializationReview\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"status\": \"pass\" if not source_artifact_reasons else \"fail\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"status\": \"pass\" if not release_channel_reasons else \"fail\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"status\": \"pass\" if not source_repo_reasons else \"fail\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"status\": \"pass\" if not workflow_family_reasons else \"fail\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"status\": \"pass\" if not test_reference_reasons else \"fail\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"status\": \"pass\" if not parity_receipt_reasons else \"fail\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"status\": \"pass\" if not materialization_reasons else \"fail\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"sourceArtifactChecks\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "payload[\"evidence\"][\"failureCount\"] = len(payload[\"reasons\"])", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Sr6_workflow_parity_guard_derives_source_release_sr4_family_test_receipt_and_materialization_subproofs()
+    {
+        string sr6WorkflowParityScriptPath = FindPath("scripts", "ai", "milestones", "sr6-desktop-workflow-parity-check.sh");
+        string sr6WorkflowParityScriptText = File.ReadAllText(sr6WorkflowParityScriptPath);
+
+        StringAssert.Contains(sr6WorkflowParityScriptText, "source_artifact_reasons");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "release_channel_reasons");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "sr4_baseline_reasons");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "workflow_family_reasons");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "test_reference_reasons");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "parity_receipt_reasons");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "materialization_reasons");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"sourceArtifactReview\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"releaseChannelReview\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"sr4BaselineReview\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"workflowFamilyReview\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"testReferenceReview\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"parityReceiptReview\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"materializationReview\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"status\": \"pass\" if not source_artifact_reasons else \"fail\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"status\": \"pass\" if not release_channel_reasons else \"fail\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"status\": \"pass\" if not sr4_baseline_reasons else \"fail\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"status\": \"pass\" if not workflow_family_reasons else \"fail\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"status\": \"pass\" if not test_reference_reasons else \"fail\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"status\": \"pass\" if not parity_receipt_reasons else \"fail\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"status\": \"pass\" if not materialization_reasons else \"fail\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"sourceArtifactChecks\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "payload[\"evidence\"][\"failureCount\"] = len(payload[\"reasons\"])", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Chummer5a_layout_hard_gate_derives_legacy_avalonia_blazor_catalog_and_release_subproofs()
+    {
+        string chummer5aLayoutHardGatePath = FindPath("scripts", "ai", "milestones", "chummer5a-layout-hard-gate.sh");
+        string chummer5aLayoutHardGateText = File.ReadAllText(chummer5aLayoutHardGatePath);
+
+        StringAssert.Contains(chummer5aLayoutHardGateText, "legacy_contract_reasons");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "avalonia_layout_reasons");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "blazor_layout_reasons");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "shared_catalog_reasons");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "release_wiring_reasons");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"legacyBaselineReview\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"avaloniaLayoutReview\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"blazorLayoutReview\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"sharedCatalogReview\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"releaseWiringReview\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"status\": \"pass\" if not legacy_contract_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"status\": \"pass\" if not avalonia_layout_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"status\": \"pass\" if not blazor_layout_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"status\": \"pass\" if not shared_catalog_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"status\": \"pass\" if not release_wiring_reasons else \"fail\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"toolstripButtonVisibility\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"reasonCount\": len(reasons)", StringComparison.Ordinal);
+        StringAssert.Contains(chummer5aLayoutHardGateText, "\"failureCount\": len(reasons)", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Chummer5a_layout_hard_gate_receipt_records_zero_reason_and_failure_counts_when_reviews_pass()
+    {
+        string receiptPath = FindPath(".codex-studio", "published", "CHUMMER5A_LAYOUT_HARD_GATE.generated.json");
+
+        using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        JsonElement root = receipt.RootElement;
+        JsonElement evidence = root.GetProperty("evidence");
+        JsonElement reviews = root.GetProperty("reviews");
+
+        Assert.AreEqual("pass", root.GetProperty("status").GetString());
+        Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());
+        Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
+        Assert.AreEqual("pass", reviews.GetProperty("legacyBaselineReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("avaloniaLayoutReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("blazorLayoutReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("sharedCatalogReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("releaseWiringReview").GetProperty("status").GetString());
+    }
+
+    [TestMethod]
+    public void Desktop_visual_familiarity_exit_gate_derives_flagship_head_interaction_source_screenshot_and_legacy_reviews()
+    {
+        string visualGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
+        string visualGateScriptText = File.ReadAllText(visualGateScriptPath);
+
+        StringAssert.Contains(visualGateScriptText, "flagship_gate_review_start = len(reasons)");
+        StringAssert.Contains(visualGateScriptText, "head_proof_review_start = len(reasons)");
+        StringAssert.Contains(visualGateScriptText, "interaction_proof_review_start = len(reasons)");
+        StringAssert.Contains(visualGateScriptText, "source_anchor_review_start = len(reasons)");
+        StringAssert.Contains(visualGateScriptText, "screen_capture_review_start = len(reasons)");
+        StringAssert.Contains(visualGateScriptText, "legacy_familiarity_review_start = len(reasons)");
+        StringAssert.Contains(visualGateScriptText, "\"flagshipGateReview\"");
+        StringAssert.Contains(visualGateScriptText, "\"headProofReview\"");
+        StringAssert.Contains(visualGateScriptText, "\"interactionProofReview\"");
+        StringAssert.Contains(visualGateScriptText, "\"sourceAnchorReview\"");
+        StringAssert.Contains(visualGateScriptText, "\"screenCaptureReview\"");
+        StringAssert.Contains(visualGateScriptText, "\"legacyFamiliarityReview\"");
+        StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not flagship_gate_review_reasons else \"fail\"");
+        StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not head_proof_review_reasons else \"fail\"");
+        StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not interaction_proof_review_reasons else \"fail\"");
+        StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not source_anchor_review_reasons else \"fail\"");
+        StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not screen_capture_review_reasons else \"fail\"");
+        StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not legacy_familiarity_review_reasons else \"fail\"");
+        StringAssert.Contains(visualGateScriptText, "\"reasonCount\": len(flagship_gate_review_reasons)");
+        StringAssert.Contains(visualGateScriptText, "\"reasonCount\": len(screen_capture_review_reasons)");
+        StringAssert.Contains(visualGateScriptText, "\"requiredInteractionKeys\": required_legacy_interaction_keys");
+        StringAssert.Contains(visualGateScriptText, "\"requiredScreenshots\": required_screenshots");
+        StringAssert.Contains(visualGateScriptText, "\"workflowMarkers\": [");
+        StringAssert.Contains(visualGateScriptText, "payload[\"evidence\"][\"failureCount\"] = len(reasons)", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -4379,6 +4835,22 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "release_channel_age_seconds");
         StringAssert.Contains(workflowGateScriptText, "release channel receipt generatedAt is in the future");
         StringAssert.Contains(workflowGateScriptText, "release channel receipt is stale");
+        StringAssert.Contains(workflowGateScriptText, "upstream_receipt_review_reasons");
+        StringAssert.Contains(workflowGateScriptText, "release_channel_review_reasons");
+        StringAssert.Contains(workflowGateScriptText, "flagship_head_review_reasons");
+        StringAssert.Contains(workflowGateScriptText, "workflow_family_review_reasons");
+        StringAssert.Contains(workflowGateScriptText, "workflow_execution_review_reasons");
+        StringAssert.Contains(workflowGateScriptText, "\"upstreamReceiptReview\"");
+        StringAssert.Contains(workflowGateScriptText, "\"releaseChannelReview\"");
+        StringAssert.Contains(workflowGateScriptText, "\"flagshipHeadReview\"");
+        StringAssert.Contains(workflowGateScriptText, "\"workflowFamilyReview\"");
+        StringAssert.Contains(workflowGateScriptText, "\"workflowExecutionReview\"");
+        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not upstream_receipt_review_reasons else \"fail\"");
+        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not release_channel_review_reasons else \"fail\"");
+        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not flagship_head_review_reasons else \"fail\"");
+        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not workflow_family_review_reasons else \"fail\"");
+        StringAssert.Contains(workflowGateScriptText, "\"status\": \"pass\" if not workflow_execution_review_reasons else \"fail\"");
+        StringAssert.Contains(workflowGateScriptText, "payload[\"evidence\"][\"failureCount\"] = len(reasons)", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -5343,6 +5815,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "startup-smoke receipt timestamp is missing/invalid for promoted install medium");
         StringAssert.Contains(publisherText, "startup-smoke receipt timestamp is in the future for promoted install medium");
         StringAssert.Contains(publisherText, "startup-smoke receipt is stale for promoted install medium");
+        StringAssert.Contains(publisherText, "CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER");
+        StringAssert.Contains(publisherText, "and not PUBLIC_SKIP_STARTUP_SMOKE_FILTER");
         StringAssert.Contains(publisherText, "CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(publisherText, "CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(publisherText, "find \"$startup_smoke_deploy_dir\" -maxdepth 1 -type f -name \"startup-smoke-*.receipt.json\" -delete");

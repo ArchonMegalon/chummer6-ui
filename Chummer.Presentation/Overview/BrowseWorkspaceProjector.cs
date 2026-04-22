@@ -17,7 +17,11 @@ public static class BrowseWorkspaceProjector
             return null;
 
         SelectionDialogProjection? dialog = node.Deserialize<SelectionDialogProjection>(ProjectionSerializerOptions);
-        if (dialog is not null && !string.IsNullOrWhiteSpace(dialog.DialogId) && dialog.Workspace is not null)
+        if (dialog is not null
+            && !string.IsNullOrWhiteSpace(dialog.DialogId)
+            && dialog.Workspace is not null
+            && !string.IsNullOrWhiteSpace(dialog.Workspace.WorkflowId)
+            && dialog.Workspace.Results is not null)
         {
             return BuildState(
                 dialog.Workspace,
@@ -31,7 +35,10 @@ public static class BrowseWorkspaceProjector
         }
 
         BrowseWorkspaceProjection? workspace = node.Deserialize<BrowseWorkspaceProjection>(ProjectionSerializerOptions);
-        if (workspace is null || string.IsNullOrWhiteSpace(workspace.WorkspaceId))
+        if (workspace is null
+            || string.IsNullOrWhiteSpace(workspace.WorkspaceId)
+            || string.IsNullOrWhiteSpace(workspace.WorkflowId)
+            || workspace.Results is null)
             return null;
 
         return BuildState(
@@ -74,7 +81,7 @@ public static class BrowseWorkspaceProjector
             Presets: ProjectPresets(workspace.Results, previousState),
             Facets: ProjectFacets(workspace.Results),
             Results: ProjectResults(workspace.Results, activeResultIndex),
-            SelectedItems: workspace.SelectedItems.ToArray(),
+            SelectedItems: workspace.SelectedItems?.ToArray() ?? [],
             ActiveDetail: workspace.ActiveDetail,
             ActiveResultIndex: activeResultIndex,
             ActiveResultItemId: activeResultItemId,

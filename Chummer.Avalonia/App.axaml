@@ -74,10 +74,12 @@
     <Style Selector="Window">
       <Setter Property="Background" Value="{DynamicResource ChummerShellWindowBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="FontFamily" Value="Trebuchet MS,Verdana,Geneva,Arial" />
       <Setter Property="FontSize" Value="12" />
     </Style>
     <Style Selector="UserControl">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="FontFamily" Value="Trebuchet MS,Verdana,Geneva,Arial" />
     </Style>
     <Style Selector="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />

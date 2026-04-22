@@ -83,7 +83,7 @@ public static class RulesetUiDirectiveCatalog
         WorkspaceFollowThroughLabel: "Open SR5 character details",
         NextActionPrefix: "SR5",
         DefaultSectionSummary: "SR5 is the main desktop editor. Keep runtime and profile status visible instead of implying the deterministic host gap is already closed.",
-        BuildLabSectionSummary: "SR5 Build stays grounded in runtime and profile compatibility before apply, export, and campaign return.",
+        BuildLabSectionSummary: "SR5 Build stays grounded in the main desktop editor with runtime and profile compatibility visible before apply, export, and campaign return.",
         RulesSectionSummary: "SR5 rules and validation must surface provider-unavailable or rebind diagnostics honestly until the deterministic host is complete.",
         UngroundedHomeSummary: "the main editor still needs a grounded runtime fingerprint before build, explain, and support closure are trustworthy.",
         PinnedRuntimeHomeSummary: "a runtime fingerprint is pinned, but provider truth and refreshed rules sections still gate trustworthy editor claims.",

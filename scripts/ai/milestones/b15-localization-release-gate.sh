@@ -9,6 +9,7 @@ catalog_path="$repo_root/Chummer.Presentation/Overview/DesktopLocalizationCatalo
 signoff_project_path="$repo_root/Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 local_release_proof_path="$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json"
+next90_m104_receipt_path="$repo_root/.codex-studio/published/NEXT90_M104_UI_EXPLAIN_RECEIPTS.generated.json"
 legacy_lang_root="$repo_root/Chummer/lang"
 
 mkdir -p "$(dirname "$receipt_path")"
@@ -57,7 +58,7 @@ if [[ $signoff_status -ne 0 ]]; then
   fi
 fi
 
-python3 - "$catalog_path" "$receipt_path" "$legacy_lang_root" "$local_release_proof_path" "$signoff_status" "$signoff_log" "$signoff_retry_attempted" "$signoff_retry_reason" <<'PY'
+python3 - "$catalog_path" "$receipt_path" "$legacy_lang_root" "$local_release_proof_path" "$next90_m104_receipt_path" "$signoff_status" "$signoff_log" "$signoff_retry_attempted" "$signoff_retry_reason" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -70,10 +71,11 @@ catalog_path = Path(sys.argv[1])
 receipt_path = Path(sys.argv[2])
 legacy_lang_root = Path(sys.argv[3])
 local_release_proof_path = Path(sys.argv[4])
-signoff_status = int(sys.argv[5])
-signoff_log_path = Path(sys.argv[6])
-signoff_retry_attempted = int(sys.argv[7])
-signoff_retry_reason = str(sys.argv[8]).strip()
+next90_m104_receipt_path = Path(sys.argv[5])
+signoff_status = int(sys.argv[6])
+signoff_log_path = Path(sys.argv[7])
+signoff_retry_attempted = int(sys.argv[8])
+signoff_retry_reason = str(sys.argv[9]).strip()
 
 text = catalog_path.read_text(encoding="utf-8")
 
@@ -115,6 +117,67 @@ required_localization_domains = [
     "data_rules_names",
     "generated_artifacts",
 ]
+localization_domain_config = {
+    "app_chrome": {
+        "key_prefixes": ["desktop.shell.", "desktop.home.", "desktop.dialog."],
+        "required_keys": [
+            "desktop.shell.menu.file",
+            "desktop.home.title",
+            "desktop.dialog.global_settings.title",
+        ],
+    },
+    "install_update_support": {
+        "key_prefixes": [
+            "desktop.install_link.",
+            "desktop.update.",
+            "desktop.support.",
+            "desktop.support_case.",
+            "desktop.devices.",
+            "desktop.report.",
+            "desktop.crash.",
+        ],
+        "required_keys": [
+            "desktop.shell.tool.update_status",
+            "desktop.shell.tool.open_support",
+            "desktop.shell.tool.report_issue",
+            "desktop.home.section.install_support",
+            "desktop.home.section.update_posture",
+            "desktop.support.title",
+        ],
+    },
+    "explain_receipts": {
+        "required_keys": ["desktop.home.section.build_explain"],
+        "required_receipt_statuses": {"next90_m104_explain_receipts": "pass"},
+    },
+    "data_rules_names": {
+        "legacy_corpus_domain": True,
+    },
+    "generated_artifacts": {
+        "required_keys": [
+            "desktop.home.button.open_campaign_artifacts",
+            "desktop.home.button.open_my_artifacts",
+            "desktop.home.button.open_published_artifacts",
+            "desktop.campaign.status.server_generated",
+        ],
+        "required_receipt_statuses": {"local_release_proof": "pass"},
+    },
+}
+
+
+def status_pass(value: object) -> bool:
+    return str(value or "").strip().lower() in {"pass", "passed", "ready"}
+
+
+def load_json_summary(path: Path) -> dict[str, object]:
+    if path.is_file():
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return {"status": "invalid", "path": str(path)}
+        if isinstance(payload, dict):
+            return payload
+        return {"status": "invalid", "path": str(path)}
+    return {"status": "missing", "path": str(path)}
 
 def extract_locale_block(locale: str) -> str:
     pattern = rf'if \(string\.Equals\(languageCode, "{re.escape(locale)}", StringComparison\.Ordinal\)\)\s*\{{(?P<body>.*?)\n\s*\}}'
@@ -193,13 +256,86 @@ if not silent_clone_guard:
     blocking_findings.append("DesktopLocalizationCatalog still silently clones en-US strings into non-default locales")
 
 local_release_summary: dict[str, object] | None = None
-if local_release_proof_path.is_file():
-    try:
-        local_release_summary = json.loads(local_release_proof_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        local_release_summary = {"status": "invalid", "path": str(local_release_proof_path)}
-else:
-    local_release_summary = {"status": "missing", "path": str(local_release_proof_path)}
+local_release_summary = load_json_summary(local_release_proof_path)
+next90_m104_summary = load_json_summary(next90_m104_receipt_path)
+
+receipt_summaries = {
+    "local_release_proof": local_release_summary,
+    "next90_m104_explain_receipts": next90_m104_summary,
+}
+
+locale_key_sets = {
+    locale: set(default_keys) if locale == "en-us" else set(locale_overrides[locale])
+    for locale in shipping_locales
+}
+
+domain_coverage: dict[str, str] = {}
+locale_domain_coverage: dict[str, dict[str, str]] = {locale: {} for locale in shipping_locales}
+domain_evidence: dict[str, dict[str, object]] = {}
+for domain in required_localization_domains:
+    config = localization_domain_config[domain]
+    prefixes = config.get("key_prefixes", [])
+    required_keys = set(config.get("required_keys", []))
+    legacy_corpus_domain = bool(config.get("legacy_corpus_domain"))
+    expected_keys = sorted(
+        required_keys
+        | {
+            key
+            for key in default_keys
+            if any(key.startswith(prefix) for prefix in prefixes)
+        }
+    )
+
+    locale_missing_keys: dict[str, list[str]] = {}
+    for locale in shipping_locales:
+        if legacy_corpus_domain:
+            locale_ok = legacy_language_files[locale]["xml"] and legacy_language_files[locale]["data_xml"]
+            locale_missing_keys[locale] = []
+        else:
+            locale_missing_keys[locale] = [key for key in expected_keys if key not in locale_key_sets[locale]]
+            locale_ok = not locale_missing_keys[locale]
+        locale_domain_coverage[locale][domain] = "pass" if locale_ok else "fail"
+
+    receipt_checks = {
+        receipt_name: status_pass(receipt_summaries[receipt_name].get("status"))
+        for receipt_name in config.get("required_receipt_statuses", {})
+    }
+    domain_keys_ok = legacy_corpus_domain or bool(expected_keys)
+    all_locales_ok = all(locale_domain_coverage[locale][domain] == "pass" for locale in shipping_locales)
+    domain_status = "pass" if domain_keys_ok and all_locales_ok and all(receipt_checks.values()) else "fail"
+    domain_coverage[domain] = domain_status
+
+    domain_evidence[domain] = {
+        "status": domain_status,
+        "matched_default_key_count": len(expected_keys),
+        "required_key_count": len(expected_keys),
+        "required_keys": expected_keys,
+        "locale_missing_keys": locale_missing_keys,
+        "required_receipts": {
+            receipt_name: {
+                "status": receipt_summaries[receipt_name].get("status"),
+                "path": receipt_summaries[receipt_name].get("path"),
+            }
+            for receipt_name in config.get("required_receipt_statuses", {})
+        },
+        "legacy_corpus_domain": legacy_corpus_domain,
+    }
+
+    if not domain_keys_ok:
+        status = "fail"
+        blocking_findings.append(f"{domain}: localization gate could not map the domain to any catalog keys or legacy corpus evidence")
+    elif not all_locales_ok:
+        status = "fail"
+        failing_locales = [locale for locale in shipping_locales if locale_domain_coverage[locale][domain] != "pass"]
+        blocking_findings.append(f"{domain}: localized coverage is incomplete for {', '.join(failing_locales)}")
+    elif not all(receipt_checks.values()):
+        status = "fail"
+        failing_receipts = [name for name, passed in receipt_checks.items() if not passed]
+        blocking_findings.append(f"{domain}: required receipt proof is not pass/ready ({', '.join(failing_receipts)})")
+
+if signoff_status != 0:
+    status = "fail"
+    blocking_findings.append("localization_signoff: localization signoff smoke runner failed.")
 
 payload = {
     "contract_name": "chummer6-ui.localization_release_gate",
@@ -220,17 +356,9 @@ payload = {
     "local_release_proof": local_release_summary,
     "blocking_findings": blocking_findings,
     "translation_backlog_findings": translation_backlog_findings,
-    "domain_coverage": {
-        domain: "pass"
-        for domain in required_localization_domains
-    },
-    "locale_domain_coverage": {
-        locale: {
-            domain: "pass"
-            for domain in required_localization_domains
-        }
-        for locale in shipping_locales
-    },
+    "domain_coverage": domain_coverage,
+    "locale_domain_coverage": locale_domain_coverage,
+    "domain_evidence": domain_evidence,
     "acceptance_gates": [
         "pseudo_localization",
         "missing_key_fail_fast",
@@ -242,6 +370,17 @@ payload = {
         "locale_smoke_support",
         "non_english_generated_artifact_smoke",
     ],
+    "evidence": {
+        "shipping_locales": shipping_locales,
+        "required_localization_domains": required_localization_domains,
+        "signoffStatus": signoff_status,
+        "retryAttempted": signoff_retry_attempted > 0,
+        "retryReason": signoff_retry_reason,
+        "blockingFindingCount": len(blocking_findings),
+        "translationBacklogCount": len(translation_backlog_findings),
+        "reasonCount": len(blocking_findings),
+        "failureCount": len(blocking_findings),
+    },
 }
 
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

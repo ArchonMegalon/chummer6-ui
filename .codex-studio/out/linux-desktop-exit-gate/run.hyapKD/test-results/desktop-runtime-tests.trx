@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="98140e10-098f-4f17-8545-bd6431ffbcdd" name="@ubuntu 2026-04-21 17:40:42" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-04-21T17:40:42.4873081+02:00" queuing="2026-04-21T17:40:42.4873081+02:00" start="2026-04-21T17:40:41.8753906+02:00" finish="2026-04-21T17:40:43.5586861+02:00" />
+  <TestSettings name="default" id="600d7b5c-7c3e-4e44-9ddf-83cdfd7ccfb1">
+    <Deployment runDeploymentRoot="_ubuntu_2026-04-21_17_40_42" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="77d65ea4-9342-4055-b3c0-b0774777edc7" testId="19be8ad8-81c4-8806-9c96-23900b4b5c11" testName="CheckAndScheduleStartupUpdateAsync_no_matching_payload_surfaces_failure_reason" computerName="ubuntu" duration="00:00:00.0112777" startTime="2026-04-21T17:40:42.4390054+02:00" endTime="2026-04-21T17:40:42.4503946+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="77d65ea4-9342-4055-b3c0-b0774777edc7" />
+    <UnitTestResult executionId="911152c2-b005-4e72-93b6-f815d6e9733c" testId="1f774970-33b1-8681-8809-06deabc5a675" testName="CheckAndScheduleStartupUpdateAsync_download_failure_records_apply_failure" computerName="ubuntu" duration="00:00:01.0095151" startTime="2026-04-21T17:40:42.4504472+02:00" endTime="2026-04-21T17:40:43.4601065+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="911152c2-b005-4e72-93b6-f815d6e9733c" />
+    <UnitTestResult executionId="2177ebba-d2bb-4145-9591-9830429de4f9" testId="1879eb53-073d-8243-8635-e36db3675c6c" testName="CheckAndScheduleStartupUpdateAsync_returns_helper_unavailable_when_override_is_not_packaged_like" computerName="ubuntu" duration="00:00:00.0085436" startTime="2026-04-21T17:40:43.4748302+02:00" endTime="2026-04-21T17:40:43.4843261+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2177ebba-d2bb-4145-9591-9830429de4f9" />
+    <UnitTestResult executionId="1cc9ad2b-eee6-4f71-b4f6-10aae6438a72" testId="1469a691-ce74-8235-90a0-5fa1fc82ff28" testName="LoadOrCreateState_creates_default_preferences_when_missing" computerName="ubuntu" duration="00:00:00.0588081" startTime="2026-04-21T17:40:42.2714194+02:00" endTime="2026-04-21T17:40:42.3469612+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1cc9ad2b-eee6-4f71-b4f6-10aae6438a72">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.AreEqual failed. Expected:&lt;DesktopPreferenceState { UiScalePercent = 100, Theme = classic, Language = en-us, CompactMode = False, CharacterPriority = SumToTen, KarmaNuyenRatio = 2, HouseRulesEnabled = False, CharacterNotes = , StartupBehavior = Restore last roster on startup, UpdateChannel = Preview channel · check weekly, CheckForUpdatesOnLaunch = True, CharacterRosterPath = /Characters, PdfViewerPath = /usr/bin/default-pdf-viewer, VisibleChromePolicy = Menu, toolstrip, dialogs, and status strip stay compact by default., SheetLanguage =  }&gt;. Actual:&lt;DesktopPreferenceState { UiScalePercent = 100, Theme = classic, Language = en-us, CompactMode = False, CharacterPriority = SumToTen, KarmaNuyenRatio = 2, HouseRulesEnabled = False, CharacterNotes = , StartupBehavior = Restore last roster on startup, UpdateChannel = Preview channel · check weekly, CheckForUpdatesOnLaunch = True, CharacterRosterPath = /Characters, PdfViewerPath = /usr/bin/default-pdf-viewer, VisibleChromePolicy = Menu, toolstrip, dialogs, and status strip stay compact by default., SheetLanguage = en-us }&gt;. 'expected' expression: 'DesktopPreferenceState.Default', 'actual' expression: 'loaded'.</Message>
+          <StackTrace>   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowAssertAreEqualFailed(Object expected, Object actual, String userMessage) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 665
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, IEqualityComparer`1 comparer, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 492
+   at Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual[T](T expected, T actual, String message, String expectedExpression, String actualExpression) in /_/src/TestFramework/TestFramework/Assertions/Assert.AreEqual.cs:line 405
+   at Chummer.Tests.DesktopPreferenceRuntimeTests.LoadOrCreateState_creates_default_preferences_when_missing() in /docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Tests/DesktopPreferenceRuntimeTests.cs:line 21
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="d3056205-adf1-4e8a-a897-480d1f35d9c5" testId="109f1a4d-b589-8967-8f06-6ce331a551a6" testName="CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling" computerName="ubuntu" duration="00:00:00.0039959" startTime="2026-04-21T17:40:43.4602062+02:00" endTime="2026-04-21T17:40:43.4643287+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d3056205-adf1-4e8a-a897-480d1f35d9c5" />
+    <UnitTestResult executionId="9c68dee7-4075-430c-b2df-81d630896b34" testId="117172df-97a7-83d6-9256-ccb3329198da" testName="GetCurrentLanguage_prefers_explicit_override" computerName="ubuntu" duration="00:00:00.0001610" startTime="2026-04-21T17:40:42.3589070+02:00" endTime="2026-04-21T17:40:42.3594646+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9c68dee7-4075-430c-b2df-81d630896b34" />
+    <UnitTestResult executionId="30bde503-d724-4060-9ac7-197d8ea384f4" testId="152cdea9-34c3-831d-93c3-8b8505c9a1a3" testName="SaveState_roundtrips_normalized_preferences" computerName="ubuntu" duration="00:00:00.0076501" startTime="2026-04-21T17:40:42.3508163+02:00" endTime="2026-04-21T17:40:42.3586481+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="30bde503-d724-4060-9ac7-197d8ea384f4" />
+    <UnitTestResult executionId="71a514b9-dbc4-4f72-9545-749f9704a5ca" testId="1215c80c-5261-81d9-ad69-63dadd45ce96" testName="CheckAndScheduleStartupUpdateAsync_manifest_load_failed_records_retry_backoff" computerName="ubuntu" duration="00:00:00.0175878" startTime="2026-04-21T17:40:42.3915007+02:00" endTime="2026-04-21T17:40:42.4091983+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="71a514b9-dbc4-4f72-9545-749f9704a5ca" />
+    <UnitTestResult executionId="4c634630-1f54-4ae1-9377-d96bd99fa73f" testId="11509230-0550-8ee9-8ec6-b7d5c087f99f" testName="CheckAndScheduleStartupUpdateAsync_falls_back_between_matching_artifacts_on_failures" computerName="ubuntu" duration="00:00:00.0059661" startTime="2026-04-21T17:40:43.4686435+02:00" endTime="2026-04-21T17:40:43.4747452+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4c634630-1f54-4ae1-9377-d96bd99fa73f" />
+    <UnitTestResult executionId="420c8aa3-1042-4804-827f-696f42c0d1b8" testId="19b7273b-0d40-8596-9ef1-e4387de2f1eb" testName="TryHandleAsync_returns_one_and_writes_failure_packet_when_force_crash_is_enabled" computerName="ubuntu" duration="00:00:00.0074015" startTime="2026-04-21T17:40:42.3824010+02:00" endTime="2026-04-21T17:40:42.3898598+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="420c8aa3-1042-4804-827f-696f42c0d1b8">
+      <Output>
+        <StdErr>Startup smoke failed: Startup smoke forced a crash for OODA verification.
+Startup smoke failure packet: /tmp/chummer-ai/tmp/startup-smoke-failure-76626a10782a4388829b54ba75eca922.json</StdErr>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="c3d63da6-08c7-4f0c-8ba5-da970b3c4af8" testId="168e1dc7-4d14-8309-98f3-99da0d5953f9" testName="CheckAndScheduleStartupUpdateAsync_rejects_artifact_that_fails_checksum_validation" computerName="ubuntu" duration="00:00:00.0040580" startTime="2026-04-21T17:40:43.4643959+02:00" endTime="2026-04-21T17:40:43.4685528+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c3d63da6-08c7-4f0c-8ba5-da970b3c4af8" />
+    <UnitTestResult executionId="2a7fe4dd-6e48-4068-9eb2-93fea11a67ba" testId="143f2c74-33ba-840c-8f31-5ead458f2e53" testName="TryHandleAsync_returns_one_for_invalid_receipt_path_and_uses_explicit_failure_packet_fallback" computerName="ubuntu" duration="00:00:00.0015237" startTime="2026-04-21T17:40:42.3898948+02:00" endTime="2026-04-21T17:40:42.3914706+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2a7fe4dd-6e48-4068-9eb2-93fea11a67ba">
+      <Output>
+        <StdErr>Startup smoke failed: Startup smoke receipt path was invalid: 'receipt.json'.
+Startup smoke failure packet: /tmp/chummer-ai/tmp/startup-smoke-invalid-receipt-74c3edf77e2a4eaab5d90154319ca262.json</StdErr>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="cc8a5a12-c888-4995-9ab6-d318fb684248" testId="19b223ca-644e-8695-9435-b6df5d0c4664" testName="TryHandleAsync_writes_receipt_when_requested" computerName="ubuntu" duration="00:00:00.0133693" startTime="2026-04-21T17:40:42.3614209+02:00" endTime="2026-04-21T17:40:42.3759383+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cc8a5a12-c888-4995-9ab6-d318fb684248">
+      <Output>
+        <StdOut>startup smoke ready: head=avalonia platform=linux arch=x64 checkpoint=runtime_test_ready</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="3709802f-ac15-41e2-a31e-35ac52de4a3d" testId="10caa3ea-0e9c-80ab-a790-3249ad2096f0" testName="TryHandleAsync_returns_null_when_startup_smoke_switch_is_missing" computerName="ubuntu" duration="00:00:00.0017525" startTime="2026-04-21T17:40:42.3595256+02:00" endTime="2026-04-21T17:40:42.3614013+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3709802f-ac15-41e2-a31e-35ac52de4a3d" />
+    <UnitTestResult executionId="6a3fffcd-598a-4874-b881-5d5211090806" testId="19ddfdf6-ae58-8eae-8bb1-3b3d0acad5ad" testName="TryHandleAsync_prefers_explicit_release_channel_override_for_receipt_channel" computerName="ubuntu" duration="00:00:00.0061281" startTime="2026-04-21T17:40:42.3761308+02:00" endTime="2026-04-21T17:40:42.3823495+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6a3fffcd-598a-4874-b881-5d5211090806">
+      <Output>
+        <StdOut>startup smoke ready: head=avalonia platform=linux arch=x64 checkpoint=pre_ui_event_loop</StdOut>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="TryHandleAsync_returns_null_when_startup_smoke_switch_is_missing" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="10caa3ea-0e9c-80ab-a790-3249ad2096f0">
+      <Execution id="3709802f-ac15-41e2-a31e-35ac52de4a3d" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopStartupSmokeRuntimeTests" name="TryHandleAsync_returns_null_when_startup_smoke_switch_is_missing" />
+    </UnitTest>
+    <UnitTest name="GetCurrentLanguage_prefers_explicit_override" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="117172df-97a7-83d6-9256-ccb3329198da">
+      <Execution id="9c68dee7-4075-430c-b2df-81d630896b34" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopPreferenceRuntimeTests" name="GetCurrentLanguage_prefers_explicit_override" />
+    </UnitTest>
+    <UnitTest name="TryHandleAsync_returns_one_for_invalid_receipt_path_and_uses_explicit_failure_packet_fallback" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="143f2c74-33ba-840c-8f31-5ead458f2e53">
+      <Execution id="2a7fe4dd-6e48-4068-9eb2-93fea11a67ba" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopStartupSmokeRuntimeTests" name="TryHandleAsync_returns_one_for_invalid_receipt_path_and_uses_explicit_failure_packet_fallback" />
+    </UnitTest>
+    <UnitTest name="TryHandleAsync_prefers_explicit_release_channel_override_for_receipt_channel" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="19ddfdf6-ae58-8eae-8bb1-3b3d0acad5ad">
+      <Execution id="6a3fffcd-598a-4874-b881-5d5211090806" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopStartupSmokeRuntimeTests" name="TryHandleAsync_prefers_explicit_release_channel_override_for_receipt_channel" />
+    </UnitTest>
+    <UnitTest name="CheckAndScheduleStartupUpdateAsync_no_matching_payload_surfaces_failure_reason" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="19be8ad8-81c4-8806-9c96-23900b4b5c11">
+      <Execution id="77d65ea4-9342-4055-b3c0-b0774777edc7" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopUpdateRuntimeTests" name="CheckAndScheduleStartupUpdateAsync_no_matching_payload_surfaces_failure_reason" />
+    </UnitTest>
+    <UnitTest name="CheckAndScheduleStartupUpdateAsync_returns_helper_unavailable_when_override_is_not_packaged_like" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="1879eb53-073d-8243-8635-e36db3675c6c">
+      <Execution id="2177ebba-d2bb-4145-9591-9830429de4f9" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopUpdateRuntimeTests" name="CheckAndScheduleStartupUpdateAsync_returns_helper_unavailable_when_override_is_not_packaged_like" />
+    </UnitTest>
+    <UnitTest name="LoadOrCreateState_creates_default_preferences_when_missing" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="1469a691-ce74-8235-90a0-5fa1fc82ff28">
+      <Execution id="1cc9ad2b-eee6-4f71-b4f6-10aae6438a72" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopPreferenceRuntimeTests" name="LoadOrCreateState_creates_default_preferences_when_missing" />
+    </UnitTest>
+    <UnitTest name="TryHandleAsync_returns_one_and_writes_failure_packet_when_force_crash_is_enabled" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="19b7273b-0d40-8596-9ef1-e4387de2f1eb">
+      <Execution id="420c8aa3-1042-4804-827f-696f42c0d1b8" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopStartupSmokeRuntimeTests" name="TryHandleAsync_returns_one_and_writes_failure_packet_when_force_crash_is_enabled" />
+    </UnitTest>
+    <UnitTest name="CheckAndScheduleStartupUpdateAsync_falls_back_between_matching_artifacts_on_failures" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="11509230-0550-8ee9-8ec6-b7d5c087f99f">
+      <Execution id="4c634630-1f54-4ae1-9377-d96bd99fa73f" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopUpdateRuntimeTests" name="CheckAndScheduleStartupUpdateAsync_falls_back_between_matching_artifacts_on_failures" />
+    </UnitTest>
+    <UnitTest name="CheckAndScheduleStartupUpdateAsync_rejects_artifact_that_fails_checksum_validation" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="168e1dc7-4d14-8309-98f3-99da0d5953f9">
+      <Execution id="c3d63da6-08c7-4f0c-8ba5-da970b3c4af8" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopUpdateRuntimeTests" name="CheckAndScheduleStartupUpdateAsync_rejects_artifact_that_fails_checksum_validation" />
+    </UnitTest>
+    <UnitTest name="CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="109f1a4d-b589-8967-8f06-6ce331a551a6">
+      <Execution id="d3056205-adf1-4e8a-a897-480d1f35d9c5" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopUpdateRuntimeTests" name="CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling" />
+    </UnitTest>
+    <UnitTest name="CheckAndScheduleStartupUpdateAsync_download_failure_records_apply_failure" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="1f774970-33b1-8681-8809-06deabc5a675">
+      <Execution id="911152c2-b005-4e72-93b6-f815d6e9733c" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopUpdateRuntimeTests" name="CheckAndScheduleStartupUpdateAsync_download_failure_records_apply_failure" />
+    </UnitTest>
+    <UnitTest name="SaveState_roundtrips_normalized_preferences" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="152cdea9-34c3-831d-93c3-8b8505c9a1a3">
+      <Execution id="30bde503-d724-4060-9ac7-197d8ea384f4" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopPreferenceRuntimeTests" name="SaveState_roundtrips_normalized_preferences" />
+    </UnitTest>
+    <UnitTest name="CheckAndScheduleStartupUpdateAsync_manifest_load_failed_records_retry_backoff" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="1215c80c-5261-81d9-ad69-63dadd45ce96">
+      <Execution id="71a514b9-dbc4-4f72-9545-749f9704a5ca" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopUpdateRuntimeTests" name="CheckAndScheduleStartupUpdateAsync_manifest_load_failed_records_retry_backoff" />
+    </UnitTest>
+    <UnitTest name="TryHandleAsync_writes_receipt_when_requested" storage="/docker/chummercomplete/.linux-desktop-exit-gate-source.a302tg/chummer.desktop.runtime.tests/bin/release/net10.0/chummer.desktop.runtime.tests.dll" id="19b223ca-644e-8695-9435-b6df5d0c4664">
+      <Execution id="cc8a5a12-c888-4995-9ab6-d318fb684248" />
+      <TestMethod codeBase="/docker/chummercomplete/.linux-desktop-exit-gate-source.A302tG/Chummer.Desktop.Runtime.Tests/bin/Release/net10.0/Chummer.Desktop.Runtime.Tests.dll" adapterTypeName="executor://mstestadapter/v4" className="Chummer.Tests.DesktopStartupSmokeRuntimeTests" name="TryHandleAsync_writes_receipt_when_requested" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="19be8ad8-81c4-8806-9c96-23900b4b5c11" executionId="77d65ea4-9342-4055-b3c0-b0774777edc7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1f774970-33b1-8681-8809-06deabc5a675" executionId="911152c2-b005-4e72-93b6-f815d6e9733c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1879eb53-073d-8243-8635-e36db3675c6c" executionId="2177ebba-d2bb-4145-9591-9830429de4f9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1469a691-ce74-8235-90a0-5fa1fc82ff28" executionId="1cc9ad2b-eee6-4f71-b4f6-10aae6438a72" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="109f1a4d-b589-8967-8f06-6ce331a551a6" executionId="d3056205-adf1-4e8a-a897-480d1f35d9c5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="117172df-97a7-83d6-9256-ccb3329198da" executionId="9c68dee7-4075-430c-b2df-81d630896b34" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="152cdea9-34c3-831d-93c3-8b8505c9a1a3" executionId="30bde503-d724-4060-9ac7-197d8ea384f4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1215c80c-5261-81d9-ad69-63dadd45ce96" executionId="71a514b9-dbc4-4f72-9545-749f9704a5ca" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="11509230-0550-8ee9-8ec6-b7d5c087f99f" executionId="4c634630-1f54-4ae1-9377-d96bd99fa73f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19b7273b-0d40-8596-9ef1-e4387de2f1eb" executionId="420c8aa3-1042-4804-827f-696f42c0d1b8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="168e1dc7-4d14-8309-98f3-99da0d5953f9" executionId="c3d63da6-08c7-4f0c-8ba5-da970b3c4af8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="143f2c74-33ba-840c-8f31-5ead458f2e53" executionId="2a7fe4dd-6e48-4068-9eb2-93fea11a67ba" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19b223ca-644e-8695-9435-b6df5d0c4664" executionId="cc8a5a12-c888-4995-9ab6-d318fb684248" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="10caa3ea-0e9c-80ab-a790-3249ad2096f0" executionId="3709802f-ac15-41e2-a31e-35ac52de4a3d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19ddfdf6-ae58-8eae-8bb1-3b3d0acad5ad" executionId="6a3fffcd-598a-4874-b881-5d5211090806" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="15" executed="15" passed="14" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+</TestRun>

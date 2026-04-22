@@ -541,6 +541,16 @@ public sealed class Next90M103VeteranCertificationGuardTests
         StringAssert.Contains(receiptText, "\"authorityProofRepoRoot\"");
         StringAssert.Contains(receiptText, "\"standardVerifyChecks\"");
         StringAssert.Contains(receiptText, "\"standardVerifyEncodedBlockedActiveRunHelperHits\"");
+        StringAssert.Contains(receiptText, "\"visualFamiliarityStatus\"");
+        StringAssert.Contains(receiptText, "\"visualFamiliarityFailureCount\"");
+        StringAssert.Contains(receiptText, "\"visualFamiliarityReviewChecks\"");
+        StringAssert.Contains(receiptText, "\"visualFamiliarityReviewSummary\"");
+        StringAssert.Contains(receiptText, "\"screenshotControlEvidence\"");
+        StringAssert.Contains(receiptText, "\"screenshotControlEvidenceChecks\"");
+        StringAssert.Contains(receiptText, "\"screenshotControlEvidenceSummary\"");
+        StringAssert.Contains(receiptText, "\"visualDifferenceLedger\"");
+        StringAssert.Contains(receiptText, "\"visualDifferenceLedgerChecks\"");
+        StringAssert.Contains(receiptText, "\"visualDifferenceLedgerSummary\"");
 
         JsonElement surfaceResults = evidence.GetProperty("surfaceResults");
         JsonElement certificationMatrix = evidence.GetProperty("veteranCertificationMatrix");
@@ -629,6 +639,133 @@ public sealed class Next90M103VeteranCertificationGuardTests
         {
             Assert.IsTrue(property.Value.GetBoolean(), $"M103 review markdown check must remain true: {property.Name}");
         }
+        Assert.AreEqual("pass", evidence.GetProperty("visualFamiliarityStatus").GetString(), "M103 must bind to a passing visual familiarity receipt.");
+        Assert.AreEqual(0, evidence.GetProperty("visualFamiliarityFailureCount").GetInt32(), "M103 must bind to a zero-failure visual familiarity receipt.");
+        JsonElement visualFamiliarityReviewChecks = evidence.GetProperty("visualFamiliarityReviewChecks");
+        foreach (JsonProperty property in visualFamiliarityReviewChecks.EnumerateObject())
+        {
+            Assert.IsTrue(property.Value.GetBoolean(), $"M103 visual familiarity review check must remain true: {property.Name}");
+        }
+        JsonElement visualFamiliarityReviewSummary = evidence.GetProperty("visualFamiliarityReviewSummary");
+        CollectionAssert.AreEquivalent(
+            new[]
+            {
+                "flagshipGateReview",
+                "headProofReview",
+                "interactionProofReview",
+                "sourceAnchorReview",
+                "screenCaptureReview",
+                "legacyFamiliarityReview",
+            },
+            ReadStringArray(visualFamiliarityReviewSummary.GetProperty("requiredReviewKeys")),
+            "M103 must require the full visual familiarity review bucket set.");
+        Assert.AreEqual(0, visualFamiliarityReviewSummary.GetProperty("missingReviewKeys").GetArrayLength(), "M103 must not tolerate missing visual familiarity review buckets.");
+        Assert.AreEqual(0, visualFamiliarityReviewSummary.GetProperty("failingReviewKeys").GetArrayLength(), "M103 must not tolerate failing visual familiarity review buckets.");
+        Assert.AreEqual(0, visualFamiliarityReviewSummary.GetProperty("reviewReasonCountMismatches").GetArrayLength(), "M103 must not tolerate visual familiarity review reasonCount drift.");
+        JsonElement visualFamiliarityReviewReasonCounts = visualFamiliarityReviewSummary.GetProperty("reviewReasonCounts");
+        foreach (string reviewKey in new[]
+                 {
+                     "flagshipGateReview",
+                     "headProofReview",
+                     "interactionProofReview",
+                     "sourceAnchorReview",
+                     "screenCaptureReview",
+                     "legacyFamiliarityReview",
+                 })
+        {
+            Assert.AreEqual(0, visualFamiliarityReviewReasonCounts.GetProperty(reviewKey).GetInt32(), $"M103 visual familiarity review must stay clean: {reviewKey}");
+        }
+        string screenshotControlEvidencePath = evidence.GetProperty("screenshotControlEvidencePath").GetString() ?? string.Empty;
+        StringAssert.StartsWith(screenshotControlEvidencePath, repoRoot, StringComparison.Ordinal);
+        JsonElement screenshotControlEvidence = evidence.GetProperty("screenshotControlEvidence");
+        Assert.AreEqual(18, screenshotControlEvidence.GetArrayLength(), "M103 screenshot control evidence must cover every required screenshot frame/dialog.");
+        JsonElement screenshotControlEvidenceChecks = evidence.GetProperty("screenshotControlEvidenceChecks");
+        foreach (JsonProperty property in screenshotControlEvidenceChecks.EnumerateObject())
+        {
+            Assert.IsTrue(property.Value.GetBoolean(), $"M103 screenshot control evidence check must remain true: {property.Name}");
+        }
+        CollectionAssert.AreEquivalent(
+            ReadStringArray(evidence.GetProperty("visualFamiliarityRequiredScreenshots")),
+            screenshotControlEvidence.EnumerateArray()
+                .Select(entry => entry.GetProperty("screenshot").GetString() ?? string.Empty)
+                .ToArray(),
+            "M103 screenshot control evidence screenshot coverage must match the required screenshot pack exactly.");
+        foreach (JsonElement entry in screenshotControlEvidence.EnumerateArray())
+        {
+            Assert.IsFalse(string.IsNullOrWhiteSpace(entry.GetProperty("theme").GetString()), "M103 screenshot control evidence entries must capture the current theme.");
+            Assert.IsTrue(entry.GetProperty("visibleNamedControlIds").GetArrayLength() > 0, "M103 screenshot control evidence entries must capture visible named controls.");
+            Assert.IsTrue(entry.GetProperty("visibleNamedControls").GetArrayLength() > 0, "M103 screenshot control evidence entries must capture visible named control details.");
+            string? dialogTitle = entry.GetProperty("dialogTitle").GetString();
+            if (!string.IsNullOrWhiteSpace(dialogTitle)
+                && !string.Equals(dialogTitle, "(none)", StringComparison.Ordinal))
+            {
+                Assert.IsTrue(entry.GetProperty("dialogFieldIds").GetArrayLength() > 0, "M103 dialog screenshots must capture generated dialog field ids.");
+                Assert.IsTrue(entry.GetProperty("dialogFieldControlIds").GetArrayLength() > 0, "M103 dialog screenshots must capture generated dialog control ids.");
+                Assert.IsTrue(entry.GetProperty("dialogActionControlIds").GetArrayLength() > 0, "M103 dialog screenshots must capture generated dialog action control ids.");
+            }
+        }
+        string visualDifferenceLedgerPath = evidence.GetProperty("visualDifferenceLedgerPath").GetString() ?? string.Empty;
+        StringAssert.StartsWith(visualDifferenceLedgerPath, repoRoot, StringComparison.Ordinal);
+        CollectionAssert.AreEquivalent(
+            new[]
+            {
+                "01-initial-shell-light.png",
+                "02-menu-open-light.png",
+                "03-settings-open-light.png",
+                "04-loaded-runner-light.png",
+                "05-dense-section-light.png",
+                "06-dense-section-dark.png",
+                "07-loaded-runner-tabs-light.png",
+                "08-cyberware-dialog-light.png",
+                "09-vehicles-section-light.png",
+                "10-contacts-section-light.png",
+                "11-diary-dialog-light.png",
+                "12-magic-dialog-light.png",
+                "13-matrix-dialog-light.png",
+                "14-advancement-dialog-light.png",
+                "15-creation-section-light.png",
+                "16-master-index-dialog-light.png",
+                "17-character-roster-dialog-light.png",
+                "18-import-dialog-light.png",
+            },
+            ReadStringArray(evidence.GetProperty("visualFamiliarityRequiredScreenshots")),
+            "M103 visual difference ledger must bind to every required visual-familiarity screenshot.");
+        JsonElement visualDifferenceLedger = evidence.GetProperty("visualDifferenceLedger");
+        Assert.AreEqual(18, visualDifferenceLedger.GetArrayLength(), "M103 visual difference ledger must cover every required screenshot frame/dialog.");
+        JsonElement visualDifferenceLedgerChecks = evidence.GetProperty("visualDifferenceLedgerChecks");
+        foreach (JsonProperty property in visualDifferenceLedgerChecks.EnumerateObject())
+        {
+            Assert.IsTrue(property.Value.GetBoolean(), $"M103 visual difference ledger check must remain true: {property.Name}");
+        }
+        CollectionAssert.AreEquivalent(
+            ReadStringArray(evidence.GetProperty("visualFamiliarityRequiredScreenshots")),
+            visualDifferenceLedger.EnumerateArray()
+                .Select(entry => entry.GetProperty("screenshot").GetString() ?? string.Empty)
+                .ToArray(),
+            "M103 visual difference ledger screenshot coverage must match the required screenshot pack exactly.");
+        foreach (JsonElement entry in visualDifferenceLedger.EnumerateArray())
+        {
+            Assert.IsFalse(string.IsNullOrWhiteSpace(entry.GetProperty("surface").GetString()), "M103 visual difference ledger entries must name the surface.");
+            Assert.IsTrue(
+                new[] { "frame", "dialog" }.Contains(entry.GetProperty("surfaceKind").GetString()),
+                "M103 visual difference ledger entries must declare frame/dialog kind.");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(entry.GetProperty("parityIntent").GetString()), "M103 visual difference ledger entries must retain parity intent.");
+            JsonElement evidenceAnchors = entry.GetProperty("evidenceAnchors");
+            Assert.IsTrue(evidenceAnchors.GetArrayLength() >= 2, "M103 visual difference ledger entries must carry at least two evidence anchors.");
+            foreach (JsonElement evidenceAnchor in evidenceAnchors.EnumerateArray())
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(evidenceAnchor.GetString()), "M103 visual difference ledger evidence anchors must be non-empty.");
+            }
+            JsonElement differences = entry.GetProperty("differences");
+            Assert.IsTrue(differences.GetArrayLength() > 0, "M103 visual difference ledger entries must carry at least one difference.");
+            foreach (JsonElement difference in differences.EnumerateArray())
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(difference.GetProperty("uiElement").GetString()), "M103 visual difference rows must name the UI element.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(difference.GetProperty("legacyPosture").GetString()), "M103 visual difference rows must describe legacy posture.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(difference.GetProperty("currentPosture").GetString()), "M103 visual difference rows must describe current posture.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(difference.GetProperty("whyItDiffers").GetString()), "M103 visual difference rows must explain why the difference exists.");
+            }
+        }
         string reviewMarkdown = File.ReadAllText(reviewMarkdownPath);
         string screenshotDir = evidence.GetProperty("publishedScreenshotDir").GetString() ?? string.Empty;
         StringAssert.Contains(reviewMarkdown, "# Next90 M103 Veteran Certification Review");
@@ -636,10 +773,28 @@ public sealed class Next90M103VeteranCertificationGuardTests
         StringAssert.Contains(reviewMarkdown, $"Screenshot pack: `{screenshotDir}`");
         StringAssert.Contains(reviewMarkdown, $"Source repo: `{repoRoot}`");
         StringAssert.Contains(reviewMarkdown, "Authority proof repo: `/docker/chummercomplete/chummer6-ui-finish`");
+        StringAssert.Contains(reviewMarkdown, $"Screenshot control evidence: `{screenshotControlEvidencePath}`");
         StringAssert.Contains(reviewMarkdown, "| Surface | Parity Question | Promoted-Head Proof | Legacy Familiarity | Screenshot | Sample Colors | SHA-256 |");
+        StringAssert.Contains(reviewMarkdown, $"Difference ledger source: `{visualDifferenceLedgerPath}`");
+        StringAssert.Contains(reviewMarkdown, "## Audited UI Differences");
+        StringAssert.Contains(reviewMarkdown, "Observed named controls:");
+        StringAssert.Contains(reviewMarkdown, "Evidence anchors:");
+        StringAssert.Contains(reviewMarkdown, "Why it differs:");
         StringAssert.Contains(reviewMarkdown, "01-initial-shell-light.png");
         StringAssert.Contains(reviewMarkdown, "02-menu-open-light.png");
         StringAssert.Contains(reviewMarkdown, "03-settings-open-light.png");
+        StringAssert.Contains(reviewMarkdown, "04-loaded-runner-light.png");
+        StringAssert.Contains(reviewMarkdown, "05-dense-section-light.png");
+        StringAssert.Contains(reviewMarkdown, "06-dense-section-dark.png");
+        StringAssert.Contains(reviewMarkdown, "07-loaded-runner-tabs-light.png");
+        StringAssert.Contains(reviewMarkdown, "08-cyberware-dialog-light.png");
+        StringAssert.Contains(reviewMarkdown, "09-vehicles-section-light.png");
+        StringAssert.Contains(reviewMarkdown, "10-contacts-section-light.png");
+        StringAssert.Contains(reviewMarkdown, "11-diary-dialog-light.png");
+        StringAssert.Contains(reviewMarkdown, "12-magic-dialog-light.png");
+        StringAssert.Contains(reviewMarkdown, "13-matrix-dialog-light.png");
+        StringAssert.Contains(reviewMarkdown, "14-advancement-dialog-light.png");
+        StringAssert.Contains(reviewMarkdown, "15-creation-section-light.png");
         StringAssert.Contains(reviewMarkdown, "16-master-index-dialog-light.png");
         StringAssert.Contains(reviewMarkdown, "17-character-roster-dialog-light.png");
         StringAssert.Contains(reviewMarkdown, "18-import-dialog-light.png");

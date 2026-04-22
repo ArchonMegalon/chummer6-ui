@@ -1195,6 +1195,71 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_generated_dialog_controls_expose_stable_inventory_names()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("global_settings");
+            harness.WaitUntil(() =>
+                string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Global Settings",
+                    StringComparison.Ordinal));
+
+            DesktopDialogState dialog = harness.Presenter.State.ActiveDialog
+                ?? throw new AssertFailedException("Expected a generated dialog to be active.");
+            string[] expectedFieldIds = dialog.Fields
+                .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+                .Select(field => field.Id)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            string[] expectedActionControlIds = dialog.Actions
+                .Select(action => DesktopDialogAccessibility.BuildActionName(action.Id))
+                .ToArray();
+            ScreenshotUiEvidence evidence = harness.CaptureScreenshotUiEvidence("runtime-generated-dialog-names.png");
+
+            CollectionAssert.AreEquivalent(expectedFieldIds, evidence.DialogFieldIds);
+            CollectionAssert.AreEquivalent(expectedActionControlIds, evidence.DialogActionControlIds);
+            foreach (string fieldId in expectedFieldIds)
+            {
+                CollectionAssert.Contains(
+                    evidence.DialogFieldControlIds,
+                    DesktopDialogAccessibility.BuildFieldInputName(fieldId),
+                    $"Generated dialog field '{fieldId}' must expose a stable named input control.");
+            }
+
+            harness.InvokeDialogAction("save");
+            harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+        });
+    }
+
+    [TestMethod]
+    public void Active_dialog_screenshots_capture_the_modal_window_surface()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("global_settings");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.global_settings" });
+
+            Control screenshotRoot = harness.GetScreenshotRootControlForTesting();
+            Assert.IsInstanceOfType<DesktopDialogWindow>(screenshotRoot, "Active dialog screenshot capture must target the modal dialog window.");
+            Assert.IsTrue(screenshotRoot.Bounds.Width >= 700d, $"Modal screenshot root width must stay wide enough for veteran review, actual {screenshotRoot.Bounds.Width}.");
+            Assert.IsTrue(
+                harness.FindControlOnScreenshotRootOrDefault<Panel>("DialogActionsPanel") is { IsVisible: true },
+                "Modal screenshot capture must include the windowed dialog action panel.");
+            Assert.IsNull(
+                harness.FindControlOnScreenshotRootOrDefault<Control>("CommandDialogPaneControl"),
+                "Modal screenshot capture must not fall back to the inline command dialog pane.");
+
+            using Bitmap compositeScreenshot = new(new MemoryStream(harness.CaptureScreenshotBytes()));
+            Assert.IsTrue(
+                compositeScreenshot.PixelSize.Width >= 1280 && compositeScreenshot.PixelSize.Height >= 800,
+                $"Active dialog screenshots must preserve full desktop review dimensions, actual {compositeScreenshot.PixelSize.Width}x{compositeScreenshot.PixelSize.Height}.");
+        });
+    }
+
+    [TestMethod]
     public void Keyboard_shortcuts_resolve_to_the_same_shell_commands()
     {
         WithHarness(harness =>
@@ -1726,15 +1791,18 @@ public sealed class AvaloniaFlagshipUiGateTests
                 byte[] pngBytes = Array.Empty<byte>();
                 ScreenshotUiEvidence currentEvidence = new(
                     Screenshot: fileName,
-                    Theme: string.Empty,
-                    DialogTitle: string.Empty,
-                    DialogMessage: string.Empty,
-                    DialogFieldLabels: [],
-                    DialogFieldInputValues: [],
-                    DialogActionIds: [],
-                    VisibleNamedControlIds: [],
-                    VisibleNamedControls: [],
-                    VisibleTextSamples: [],
+                Theme: string.Empty,
+                DialogTitle: string.Empty,
+                DialogMessage: string.Empty,
+                DialogFieldLabels: [],
+                DialogFieldIds: [],
+                DialogFieldControlIds: [],
+                DialogFieldInputValues: [],
+                DialogActionIds: [],
+                DialogActionControlIds: [],
+                VisibleNamedControlIds: [],
+                VisibleNamedControls: [],
+                VisibleTextSamples: [],
                     VisibleMenuCommandIds: [],
                     VisibleTabLabels: [],
                     VisibleSectionQuickActionIds: [],
@@ -2381,6 +2449,37 @@ public sealed class AvaloniaFlagshipUiGateTests
             .OrderBy(static value => value, StringComparer.Ordinal)
             .ToArray();
 
+    private static string[] CaptureNamedControlIdsWithPrefixes(Control root, params string[] prefixes)
+        => root.GetVisualDescendants()
+            .OfType<Control>()
+            .Where(control =>
+                control.IsVisible
+                && control.Bounds.Width > 0d
+                && control.Bounds.Height > 0d
+                && !string.IsNullOrWhiteSpace(control.Name)
+                && prefixes.Any(prefix => control.Name!.StartsWith(prefix, StringComparison.Ordinal)))
+            .Select(control => control.Name!)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+
+    private static string[] CaptureNamedControlSuffixes(Control root, params string[] prefixes)
+        => root.GetVisualDescendants()
+            .OfType<Control>()
+            .Where(control =>
+                control.IsVisible
+                && control.Bounds.Width > 0d
+                && control.Bounds.Height > 0d
+                && !string.IsNullOrWhiteSpace(control.Name))
+            .Select(control => control.Name!)
+            .SelectMany(name => prefixes
+                .Where(prefix => name.StartsWith(prefix, StringComparison.Ordinal))
+                .Select(prefix => name[prefix.Length..]))
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+
     private static VisibleNamedControlEvidence[] CaptureVisibleNamedControls(Control root)
         => root.GetVisualDescendants()
             .OfType<Control>()
@@ -2424,8 +2523,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         string DialogTitle,
         string DialogMessage,
         string[] DialogFieldLabels,
+        string[] DialogFieldIds,
+        string[] DialogFieldControlIds,
         string[] DialogFieldInputValues,
         string[] DialogActionIds,
+        string[] DialogActionControlIds,
         string[] VisibleNamedControlIds,
         VisibleNamedControlEvidence[] VisibleNamedControls,
         string[] VisibleTextSamples,
@@ -2693,7 +2795,10 @@ public sealed class AvaloniaFlagshipUiGateTests
         return string.Equals(currentEvidence.DialogTitle, previousEvidence.DialogTitle, StringComparison.Ordinal)
             && string.Equals(currentEvidence.DialogMessage, previousEvidence.DialogMessage, StringComparison.Ordinal)
             && currentEvidence.DialogFieldLabels.SequenceEqual(previousEvidence.DialogFieldLabels, StringComparer.Ordinal)
+            && currentEvidence.DialogFieldIds.SequenceEqual(previousEvidence.DialogFieldIds, StringComparer.Ordinal)
+            && currentEvidence.DialogFieldControlIds.SequenceEqual(previousEvidence.DialogFieldControlIds, StringComparer.Ordinal)
             && currentEvidence.DialogActionIds.SequenceEqual(previousEvidence.DialogActionIds, StringComparer.Ordinal)
+            && currentEvidence.DialogActionControlIds.SequenceEqual(previousEvidence.DialogActionControlIds, StringComparer.Ordinal)
             && currentEvidence.VisibleNamedControlIds.SequenceEqual(previousEvidence.VisibleNamedControlIds, StringComparer.Ordinal)
             && currentEvidence.VisibleTextSamples.SequenceEqual(previousEvidence.VisibleTextSamples, StringComparer.Ordinal)
             && currentEvidence.VisibleSectionQuickActionIds.SequenceEqual(previousEvidence.VisibleSectionQuickActionIds, StringComparer.Ordinal)
@@ -2980,16 +3085,88 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public byte[] CaptureScreenshotBytes(Control screenshotRoot)
         {
+            if (_adapter.State.ActiveDialog is not null
+                && screenshotRoot is DesktopDialogWindow dialogWindow)
+            {
+                return CaptureDialogCompositeScreenshotBytes(dialogWindow);
+            }
+
+            using RenderTargetBitmap bitmap = RenderControlToBitmap(screenshotRoot, new Size(980d, 640d));
+            using MemoryStream output = new();
+            bitmap.Save(output);
+            if (output.Length > 0)
+            {
+                return output.ToArray();
+            }
+
+            throw new AssertFailedException("No rendered frame was available for screenshot capture.");
+        }
+
+        private byte[] CaptureDialogCompositeScreenshotBytes(DesktopDialogWindow dialogWindow)
+        {
+            Control ownerRoot = Window.Content as Control ?? Window;
+            using RenderTargetBitmap ownerBitmap = RenderControlToBitmap(ownerRoot, new Size(1440d, 960d));
+            using RenderTargetBitmap dialogBitmap = RenderControlToBitmap(
+                dialogWindow,
+                new Size(
+                    Math.Max(980d, Math.Max(dialogWindow.Bounds.Width, dialogWindow.Width)),
+                    Math.Max(640d, Math.Max(dialogWindow.Bounds.Height, dialogWindow.Height))));
+
+            double ownerWidth = ownerBitmap.PixelSize.Width;
+            double ownerHeight = ownerBitmap.PixelSize.Height;
+            double dialogWidth = dialogBitmap.PixelSize.Width;
+            double dialogHeight = dialogBitmap.PixelSize.Height;
+            double dialogOffsetX = Math.Max(0d, Math.Floor((ownerWidth - dialogWidth) / 2d));
+            double dialogOffsetY = Math.Max(0d, Math.Floor((ownerHeight - dialogHeight) / 2d));
+
+            Canvas compositeSurface = new()
+            {
+                Width = ownerWidth,
+                Height = ownerHeight
+            };
+            Image ownerImage = new()
+            {
+                Source = ownerBitmap,
+                Width = ownerWidth,
+                Height = ownerHeight,
+                Stretch = Stretch.Fill
+            };
+            Image dialogImage = new()
+            {
+                Source = dialogBitmap,
+                Width = dialogWidth,
+                Height = dialogHeight,
+                Stretch = Stretch.None
+            };
+            compositeSurface.Children.Add(ownerImage);
+            compositeSurface.Children.Add(dialogImage);
+            Canvas.SetLeft(dialogImage, dialogOffsetX);
+            Canvas.SetTop(dialogImage, dialogOffsetY);
+
+            using RenderTargetBitmap compositeBitmap = RenderControlToBitmap(
+                compositeSurface,
+                new Size(ownerWidth, ownerHeight));
+            using MemoryStream output = new();
+            compositeBitmap.Save(output);
+            if (output.Length > 0)
+            {
+                return output.ToArray();
+            }
+
+            throw new AssertFailedException("No rendered frame was available for composite dialog screenshot capture.");
+        }
+
+        private RenderTargetBitmap RenderControlToBitmap(Control control, Size fallbackSize)
+        {
             for (int attempt = 0; attempt < 5; attempt++)
             {
-                if (screenshotRoot.Bounds.Width <= 0d || screenshotRoot.Bounds.Height <= 0d)
+                if (control.Bounds.Width <= 0d || control.Bounds.Height <= 0d)
                 {
-                    Size fallbackSize = new(980d, 640d);
-                    screenshotRoot.Measure(fallbackSize);
-                    screenshotRoot.Arrange(new Rect(fallbackSize));
+                    control.Measure(fallbackSize);
+                    control.Arrange(new Rect(fallbackSize));
                 }
 
-                if (screenshotRoot.GetVisualRoot() is Visual visualRoot)
+                if (control.GetVisualRoot() is Visual visualRoot)
                 {
                     visualRoot.InvalidateVisual();
                     if (visualRoot is global::Avalonia.Layout.Layoutable visualLayoutable)
@@ -2998,31 +3175,31 @@ public sealed class AvaloniaFlagshipUiGateTests
                     }
                 }
 
-                screenshotRoot.InvalidateMeasure();
-                screenshotRoot.InvalidateArrange();
+                control.InvalidateMeasure();
+                control.InvalidateArrange();
                 AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
-                screenshotRoot.InvalidateVisual();
-                if (screenshotRoot is global::Avalonia.Layout.Layoutable layoutable)
+                control.InvalidateVisual();
+                if (control is global::Avalonia.Layout.Layoutable layoutable)
                 {
                     layoutable.UpdateLayout();
                 }
                 Pump();
-                double renderWidth = Math.Max(screenshotRoot.Bounds.Width, screenshotRoot.DesiredSize.Width);
-                double renderHeight = Math.Max(screenshotRoot.Bounds.Height, screenshotRoot.DesiredSize.Height);
+                double renderWidth = Math.Max(control.Bounds.Width, control.DesiredSize.Width);
+                double renderHeight = Math.Max(control.Bounds.Height, control.DesiredSize.Height);
                 PixelSize pixelSize = new(
                     Math.Max(1, (int)Math.Ceiling(renderWidth)),
                     Math.Max(1, (int)Math.Ceiling(renderHeight)));
-                using var bitmap = new RenderTargetBitmap(pixelSize, new Vector(96, 96));
-                bitmap.Render(screenshotRoot);
-                using MemoryStream output = new();
-                bitmap.Save(output);
-                if (output.Length > 0)
+                RenderTargetBitmap bitmap = new(pixelSize, new Vector(96, 96));
+                bitmap.Render(control);
+                if (pixelSize.Width > 0 && pixelSize.Height > 0)
                 {
-                    return output.ToArray();
+                    return bitmap;
                 }
+
+                bitmap.Dispose();
             }
 
-            throw new AssertFailedException("No rendered frame was available for screenshot capture.");
+            throw new AssertFailedException($"No rendered frame was available for screenshot capture of '{control.GetType().Name}'.");
         }
 
         public ScreenshotUiEvidence CaptureScreenshotUiEvidence(string screenshotFileName)
@@ -3087,6 +3264,19 @@ public sealed class AvaloniaFlagshipUiGateTests
                     .Distinct(StringComparer.Ordinal)
                     .ToArray()
                 : [];
+            string[] dialogFieldIds = dialogFieldsPanel is { IsVisible: true }
+                ? CaptureNamedControlSuffixes(
+                    dialogFieldsPanel,
+                    "DialogField_",
+                    "DialogFieldInput_")
+                : [];
+            string[] dialogFieldControlIds = dialogFieldsPanel is { IsVisible: true }
+                ? CaptureNamedControlIdsWithPrefixes(
+                    dialogFieldsPanel,
+                    "DialogField_",
+                    "DialogFieldLabel_",
+                    "DialogFieldInput_")
+                : [];
             string[] dialogFieldInputValues = dialogFieldsPanel is { IsVisible: true }
                 ? dialogFieldsPanel.GetVisualDescendants()
                     .OfType<TextBox>()
@@ -3105,6 +3295,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                     .Distinct(StringComparer.Ordinal)
                     .ToArray()
                 : [];
+            string[] dialogActionControlIds = dialogActionsPanel is { IsVisible: true }
+                ? CaptureNamedControlIdsWithPrefixes(dialogActionsPanel, "DialogAction_")
+                : [];
 
             return new ScreenshotUiEvidence(
                 Screenshot: screenshotFileName,
@@ -3112,8 +3305,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 DialogTitle: dialogTitle,
                 DialogMessage: dialogMessage,
                 DialogFieldLabels: dialogFieldLabels,
+                DialogFieldIds: dialogFieldIds,
+                DialogFieldControlIds: dialogFieldControlIds,
                 DialogFieldInputValues: dialogFieldInputValues,
                 DialogActionIds: dialogActionIds,
+                DialogActionControlIds: dialogActionControlIds,
                 VisibleNamedControlIds: visibleNamedControlIds,
                 VisibleNamedControls: visibleNamedControls,
                 VisibleTextSamples: visibleTextSamples,
@@ -3126,6 +3322,15 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         private Window GetScreenshotRoot()
         {
+            if (_adapter.State.ActiveDialog is not null
+                && Window.PeekDialogWindowForTesting() is { } ownedDialogWindow
+                && (ownedDialogWindow.IsVisible
+                    || ownedDialogWindow.Bounds.Width > 0d
+                    || ownedDialogWindow.DesiredSize.Width > 0d))
+            {
+                return ownedDialogWindow;
+            }
+
             if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 string? activeDialogId = _adapter.State.ActiveDialog?.Id;
@@ -3157,9 +3362,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             Window screenshotRoot = GetScreenshotRoot();
             if (_adapter.State.ActiveDialog is not null)
             {
-                if (screenshotRoot is DesktopDialogWindow && screenshotRoot.Content is Control dialogContent)
+                if (screenshotRoot is DesktopDialogWindow)
                 {
-                    return dialogContent;
+                    ResetInlineDialogScreenshotRoot();
+                    return screenshotRoot;
                 }
 
                 return EnsureInlineDialogScreenshotRoot();

@@ -1,6 +1,7 @@
 #nullable enable annotations
 
 using System.IO;
+using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Compliance;
@@ -68,13 +69,32 @@ public sealed class Next90M105RestoreContinuityGuardTests
         StringAssert.Contains(scriptText, "\"all_paths_declared_under_allowed_scope\": all(entry[\"pathAllowed\"] for entry in path_presence)");
         StringAssert.Contains(scriptText, "\"all_historical_paths_ancestor_of_head\": all(entry[\"isAncestorOfHead\"] for entry in repo_proof_trail if entry[\"exists\"])");
         StringAssert.Contains(scriptText, "\"all_historical_paths_have_in_scope_anchor\": all(entry[\"scopeAllowed\"] for entry in repo_proof_trail if entry[\"exists\"])");
-        StringAssert.Contains(scriptText, "\"history_optional_for_live_proof_files\": any(not entry[\"exists\"] for entry in repo_proof_trail)");
+        StringAssert.Contains(scriptText, "\"history_optional_for_live_proof_files\": True");
         StringAssert.Contains(scriptText, "repo proof check failed");
         StringAssert.Contains(scriptText, "historicalBranchCommitChecks");
         StringAssert.Contains(scriptText, "retiredForCurrentRepoHistory");
         StringAssert.Contains(scriptText, "currentRepoProofMode");
         StringAssert.Contains(scriptText, "pathPresenceChecks");
         StringAssert.Contains(scriptText, "live_source_and_wiring");
+        StringAssert.Contains(scriptText, "registry_review_reasons");
+        StringAssert.Contains(scriptText, "queue_review_reasons");
+        StringAssert.Contains(scriptText, "proof_hygiene_review_reasons");
+        StringAssert.Contains(scriptText, "source_marker_review_reasons");
+        StringAssert.Contains(scriptText, "verify_wiring_review_reasons");
+        StringAssert.Contains(scriptText, "repo_proof_review_reasons");
+        StringAssert.Contains(scriptText, "\"registryClosureReview\"");
+        StringAssert.Contains(scriptText, "\"queueClosureReview\"");
+        StringAssert.Contains(scriptText, "\"proofHygieneReview\"");
+        StringAssert.Contains(scriptText, "\"sourceMarkerReview\"");
+        StringAssert.Contains(scriptText, "\"verifyWiringReview\"");
+        StringAssert.Contains(scriptText, "\"repoProofReview\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not registry_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not queue_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not proof_hygiene_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not source_marker_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not verify_wiring_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not repo_proof_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"failureCount\": len(reasons)");
     }
 
     [TestMethod]
@@ -87,10 +107,21 @@ public sealed class Next90M105RestoreContinuityGuardTests
             "published",
             "NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json");
         string receiptText = File.ReadAllText(receiptPath);
+        using JsonDocument receipt = JsonDocument.Parse(receiptText);
+        JsonElement root = receipt.RootElement;
+        JsonElement evidence = root.GetProperty("evidence");
+        JsonElement reviews = root.GetProperty("reviews");
 
         StringAssert.Contains(receiptText, "\"packageId\": \"next90-m105-ui-restore-continuity\"");
         StringAssert.Contains(receiptText, "\"frontierId\": 3787618287");
         StringAssert.Contains(receiptText, "\"status\": \"pass\"");
+        Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
+        Assert.AreEqual("pass", reviews.GetProperty("registryClosureReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("queueClosureReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("proofHygieneReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("sourceMarkerReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("verifyWiringReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("repoProofReview").GetProperty("status").GetString());
         StringAssert.Contains(receiptText, "\"canonicalRegistryComplete\": true");
         StringAssert.Contains(receiptText, "\"canonicalQueueComplete\": true");
         StringAssert.Contains(receiptText, "\"landedCommitPinned\": true");

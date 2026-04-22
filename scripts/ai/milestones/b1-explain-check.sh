@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 echo "[B1] checking explain-everywhere localization renderer requirements..."
 
 if [[ ! -f Chummer.Presentation/Explain/RulesetExplainRenderer.cs ]]; then
@@ -13,7 +16,7 @@ if [[ ! -f Chummer.Blazor/Components/Shared/ExplainTracePanel.razor ]]; then
   exit 3
 fi
 
-if ! rg -q "RulesetExplainRenderer|LocalizedRulesetExplainTrace|LocalizedRulesetExplainProvider" Chummer.Blazor/Components/Shared/ExplainTracePanel.razor Chummer.Presentation/Explain/RulesetExplainRenderer.cs Chummer.Blazor/Components/Pages/Home.razor; then
+if ! rg -q "RulesetExplainRenderer|LocalizedRulesetExplainTrace|LocalizedRulesetExplainProvider" Chummer.Blazor/Components/Shared/ExplainTracePanel.razor Chummer.Presentation/Explain/RulesetExplainRenderer.cs Chummer.Blazor/Components/Pages/Showcase.razor; then
   echo "[B1] FAIL: explain renderer not wired into Blazor components."
   exit 4
 fi

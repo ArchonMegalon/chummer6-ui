@@ -1,5 +1,6 @@
 #nullable enable annotations
 
+using System;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Rulesets;
@@ -178,7 +179,7 @@ public sealed class RulesetUiDirectiveCatalogTests
         Assert.AreEqual("SR4 Oracle Debug Import", sr4ImportDebug);
         Assert.AreEqual("Import SR6 Raw XML", sr6ImportAction);
         Assert.AreEqual("SR4 Import Tools", sr4Commands);
-        Assert.AreEqual("No SR6 setup-workbench tools are currently available.", sr6CommandHint);
+        Assert.AreEqual("No SR6 setup tools are currently available.", sr6CommandHint);
         Assert.AreEqual("SR5 Editor Result", sr5Result);
         StringAssert.Contains(sr5ResultHint, ".chum5");
         StringAssert.Contains(sr4Ready, "import");

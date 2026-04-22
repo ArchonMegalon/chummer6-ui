@@ -4,7 +4,7 @@
 @using Chummer.Presentation.Overview
 @using Chummer.Presentation.Rulesets
 
-<section class="panel navigator" aria-label="@BuildOpenWorkspacesHeading()">
+<section class="panel navigator classic-navigator" aria-label="@BuildOpenWorkspacesHeading()">
     <h2 class="visually-hidden">@BuildOpenWorkspacesHeading()</h2>
     @if (OpenWorkspaces.Count == 0)
     {
@@ -26,7 +26,7 @@
                         workspace.HasSavedWorkspace);
                 }
                 <div class="navigator-row">
-                    <button class="command-button @(isActive ? "selected" : string.Empty)"
+                    <button class="command-button classic-navigator-button @(isActive ? "selected" : string.Empty)"
                             title="@workspace.Id.Value"
                             disabled="@IsBusy"
                             @onclick="() => OpenWorkspaceAsync(workspace.Id.Value)">

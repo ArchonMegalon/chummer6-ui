@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 echo "[B3] checking build lab UI contract posture..."
 
 if rg -q 'ProjectReference Include="..\\Chummer.Contracts\\Chummer.Contracts.csproj"' \
@@ -34,8 +37,8 @@ if rg -q "RunPlanner|TimelineRecommendation|Street mage with social focus" Chumm
   exit 6
 fi
 
-if ! rg -q "BuildLabPanel" Chummer.Blazor/Components/Pages/Home.razor; then
-  echo "[B3] FAIL: BuildLab panel is not present on the landing page composition."
+if ! rg -q "BuildLabPanel" Chummer.Blazor/Components/Pages/Showcase.razor; then
+  echo "[B3] FAIL: BuildLab panel is not present on the showcase composition."
   exit 7
 fi
 

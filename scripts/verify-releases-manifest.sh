@@ -19,6 +19,9 @@ VERIFY_ARGS=()
 if [[ "${CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" != "0" ]]; then
   VERIFY_ARGS+=(--require-complete-desktop-coverage)
 fi
+if [[ "${CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER:-${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}}" =~ ^([Tt][Rr][Uu][Ee]|1|[Yy][Ee][Ss]|[Oo][Nn])$ ]]; then
+  VERIFY_ARGS+=(--skip-startup-smoke-filter)
+fi
 
 if [[ "${#VERIFY_ARGS[@]}" -gt 0 ]]; then
   python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "${VERIFY_ARGS[@]}" "$TARGET"

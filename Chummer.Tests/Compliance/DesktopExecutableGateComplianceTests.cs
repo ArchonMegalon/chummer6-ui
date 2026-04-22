@@ -446,6 +446,41 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_derives_upstream_release_cross_gate_and_platform_reviews()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "upstream_receipt_review_start = len(reasons)");
+        StringAssert.Contains(scriptText, "release_channel_review_start = len(reasons)");
+        StringAssert.Contains(scriptText, "windows_platform_review_start = len(reasons)");
+        StringAssert.Contains(scriptText, "cross_gate_review_start = len(reasons)");
+        StringAssert.Contains(scriptText, "linux_platform_review_start = len(reasons)");
+        StringAssert.Contains(scriptText, "macos_platform_review_start = len(reasons)");
+        StringAssert.Contains(scriptText, "\"upstreamReceiptReview\"");
+        StringAssert.Contains(scriptText, "\"releaseChannelReview\"");
+        StringAssert.Contains(scriptText, "\"windowsPlatformReview\"");
+        StringAssert.Contains(scriptText, "\"crossGateReview\"");
+        StringAssert.Contains(scriptText, "\"linuxPlatformReview\"");
+        StringAssert.Contains(scriptText, "\"macosPlatformReview\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not upstream_receipt_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not release_channel_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not windows_platform_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not cross_gate_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not linux_platform_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not macos_platform_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"reasonCount\": len(upstream_receipt_review_reasons)");
+        StringAssert.Contains(scriptText, "\"reasonCount\": len(macos_platform_review_reasons)");
+        StringAssert.Contains(scriptText, "\"requiredReceipts\": [");
+        StringAssert.Contains(scriptText, "\"requiredPlatforms\": list(required_desktop_platforms)");
+        StringAssert.Contains(scriptText, "\"gateStatuses\": windows_statuses");
+        StringAssert.Contains(scriptText, "\"gateStatuses\": linux_statuses");
+        StringAssert.Contains(scriptText, "\"gateStatuses\": macos_statuses");
+        StringAssert.Contains(scriptText, "payload[\"evidence\"][\"failureCount\"] = len(reasons)", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
     public void Desktop_executable_gate_binds_visual_and_workflow_receipts_to_release_channel_identity()
     {
         string repoRoot = FindRepoRoot();

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T07:07:21.905793Z",
+  "generatedAt": "2026-04-22T04:15:08.804225Z",
   "contract_name": "chummer6-ui.classic_dense_workbench_posture_gate",
   "status": "pass",
   "summary": "Classic dense Avalonia workbench posture is default and the first false-complete frontier slice is closed.",
@@ -10,6 +10,53 @@
     3409035241
   ],
   "reasons": [],
+  "feedbackClosureReview": {
+    "status": "pass",
+    "reasons": [],
+    "feedbackClosedEvidenceMarkers": [
+      "This note is historical input, not an active queue source.",
+      "false-complete recovery pass closed the work through repo-local executable",
+      "WL-220",
+      "Classic dense workbench posture is covered by `scripts/ai/milestones/classic-dense-workbench-posture-gate.sh`"
+    ]
+  },
+  "densityTokenReview": {
+    "status": "pass",
+    "reasons": [],
+    "numericDensityTokens": {
+      "Window.FontSize": 12.0,
+      "TextBlock.shell-title.FontSize": 22.0,
+      "TextBlock.shell-section-title.FontSize": 11.0,
+      "TextBlock.shell-metric-value.FontSize": 15.0,
+      "Button.menu-button.MinHeight": 24.0
+    },
+    "listBoxItemPadding": "3,1",
+    "buttonPadding": "5,1",
+    "usesCompactFluentDensity": true
+  },
+  "layoutPostureReview": {
+    "status": "pass",
+    "reasons": [],
+    "mainWindowLayout": "ColumnDefinitions=\"0,*,0\"",
+    "usesFlatSectionPanels": true,
+    "collapsedRightShellTokens": [
+      "Width=\"0\"",
+      "MaxWidth=\"0\"",
+      "Opacity=\"0\"",
+      "IsHitTestVisible=\"False\""
+    ]
+  },
+  "regressionTestReview": {
+    "status": "pass",
+    "reasons": [],
+    "requiredTests": [
+      "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
+      "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
+      "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
+      "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
+      "Character_creation_preserves_familiar_dense_builder_rhythm"
+    ]
+  },
   "evidence": {
     "frontierIdsClosed": [
       1524553407,
@@ -47,6 +94,8 @@
       "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
       "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
       "Character_creation_preserves_familiar_dense_builder_rhythm"
-    ]
+    ],
+    "reasonCount": 0,
+    "failureCount": 0
   }
 }

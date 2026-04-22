@@ -105,6 +105,7 @@
       "operator&#32;telemetry",
       "active&#45;run&#32;helper"
     ],
+    "failureCount": 0,
     "frontierId": 3352869062,
     "landedCommit": "63f57d62",
     "localRepoChecks": {
@@ -478,37 +479,37 @@
         "avalonia_build_blocker_receipts": {
           "markers": [
             {
-              "line": 397,
+              "line": 396,
               "marker": "Build blocker receipt:",
               "present": true
             },
             {
-              "line": 399,
+              "line": 398,
               "marker": "Rule environment:",
               "present": true
             },
             {
-              "line": 401,
+              "line": 400,
               "marker": "Before:",
               "present": true
             },
             {
-              "line": 402,
+              "line": 401,
               "marker": "After:",
               "present": true
             },
             {
-              "line": 400,
+              "line": 399,
               "marker": "BuildBuildBlockerBefore(buildLab)",
               "present": true
             },
             {
-              "line": 400,
+              "line": 399,
               "marker": "BuildBuildBlockerAfter(buildLab)",
               "present": true
             },
             {
-              "line": 403,
+              "line": 402,
               "marker": "BuildBuildBlockerSupport(buildLab)",
               "present": true
             }
@@ -641,27 +642,27 @@
         "avalonia_import_receipt_surface": {
           "markers": [
             {
-              "line": 107,
+              "line": 114,
               "marker": "Import rule environment:",
               "present": true
             },
             {
-              "line": 108,
+              "line": 115,
               "marker": "Import environment before:",
               "present": true
             },
             {
-              "line": 109,
+              "line": 116,
               "marker": "Import environment after:",
               "present": true
             },
             {
-              "line": 110,
+              "line": 117,
               "marker": "Import explain receipt:",
               "present": true
             },
             {
-              "line": 112,
+              "line": 118,
               "marker": "Support reuse:",
               "present": true
             }
@@ -674,17 +675,17 @@
         "blazor_dialog_surface": {
           "markers": [
             {
-              "line": 27,
+              "line": 138,
               "marker": "data-dialog-explain-receipt",
               "present": true
             },
             {
-              "line": 33,
+              "line": 140,
               "marker": "DialogTrustReceiptText.BuildDialogBefore(dialog)",
               "present": true
             },
             {
-              "line": 35,
+              "line": 142,
               "marker": "DialogTrustReceiptText.BuildDialogExplainReceipt(dialog)",
               "present": true
             }
@@ -773,7 +774,7 @@
         "m104_guard_project_wiring": {
           "markers": [
             {
-              "line": 66,
+              "line": 69,
               "marker": "Compliance\\Next90M104ExplainReceiptsGuardTests.cs",
               "present": true
             }
@@ -791,17 +792,17 @@
               "present": true
             },
             {
-              "line": 157,
+              "line": 173,
               "marker": "M104_explain_receipts_receipt_proves_desktop_trust_surfaces_are_closed_in_repo_local_state",
               "present": true
             },
             {
-              "line": 148,
+              "line": 164,
               "marker": "M104_explain_receipts_guard_is_wired_into_compliance_test_project",
               "present": true
             },
             {
-              "line": 149,
+              "line": 165,
               "marker": "M104_explain_receipts_guard_is_wired_into_standard_ai_verify",
               "present": true
             },
@@ -1122,22 +1123,22 @@
         "blazor_build_receipt_test": {
           "markers": [
             {
-              "line": 825,
+              "line": 854,
               "marker": "Build blocker receipt",
               "present": true
             },
             {
-              "line": 366,
+              "line": 395,
               "marker": "Rule environment",
               "present": true
             },
             {
-              "line": 778,
+              "line": 807,
               "marker": "One quick-action binding still needs review.",
               "present": true
             },
             {
-              "line": 831,
+              "line": 860,
               "marker": "[data-build-blocker-explain-receipt]",
               "present": true
             }
@@ -1148,32 +1149,32 @@
         "blazor_import_receipt_test": {
           "markers": [
             {
-              "line": 334,
+              "line": 363,
               "marker": "ImportPanel_renders_ruleset_specific_copy_and_accepts_all_native_formats",
               "present": true
             },
             {
-              "line": 367,
+              "line": 396,
               "marker": "chummer.portable-dossier.v1; compatible-with-warnings; inspect-only; payload abcdef1234567890.",
               "present": true
             },
             {
-              "line": 346,
+              "line": 375,
               "marker": "Imported Runner Blue into sr4 with a bounded source toggle change.",
               "present": true
             },
             {
-              "line": 350,
+              "line": 379,
               "marker": "Review the before-after environment diff before campaign handoff.",
               "present": true
             },
             {
-              "line": 375,
+              "line": 404,
               "marker": "Support can cite payload abcdef1234567890 with compatible-with-warnings compatibility.",
               "present": true
             },
             {
-              "line": 357,
+              "line": 386,
               "marker": "Street Magic source toggle changed during import.",
               "present": true
             }
@@ -1186,12 +1187,12 @@
         "m104_standard_verify_wiring": {
           "markers": [
             {
-              "line": 937,
+              "line": 952,
               "marker": "checking next-90 M104 desktop explain receipt guard",
               "present": true
             },
             {
-              "line": 938,
+              "line": 953,
               "marker": "bash scripts/ai/milestones/next90-m104-ui-explain-receipts-check.sh",
               "present": true
             }
@@ -1203,7 +1204,29 @@
     },
     "wave": "W7"
   },
-  "generatedAt": "2026-04-18T19:56:23Z",
+  "generatedAt": "2026-04-21T21:02:56Z",
+  "reviews": {
+    "localRepoCitationReview": {
+      "reasons": [],
+      "status": "pass"
+    },
+    "proofHygieneReview": {
+      "reasons": [],
+      "status": "pass"
+    },
+    "queueClosureReview": {
+      "reasons": [],
+      "status": "pass"
+    },
+    "registryClosureReview": {
+      "reasons": [],
+      "status": "pass"
+    },
+    "sourceMarkerReview": {
+      "reasons": [],
+      "status": "pass"
+    }
+  },
   "status": "pass",
   "unresolved": []
 }

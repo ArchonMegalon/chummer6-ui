@@ -1,0 +1,690 @@
+{
+  "generatedAt": "2026-04-21T20:59:01.126214Z",
+  "contract_name": "chummer6-ui.delegate_command_route_parity",
+  "status": "pass",
+  "summary": "Delegate and command-route parity is fail-closing, test-executed, and wired into standard verification.",
+  "reasons": [],
+  "evidence": {
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DELEGATE_COMMAND_ROUTE_PARITY.generated.json",
+    "sourcePaths": {
+      "contract": "Chummer.Presentation/Overview/ICharacterOverviewPresenter.cs",
+      "bridge_source": "Chummer.Blazor/CharacterOverviewStateBridge.cs",
+      "adapter_source": "Chummer.Avalonia/CharacterOverviewViewModelAdapter.cs",
+      "bridge_tests": "Chummer.Tests/Presentation/CharacterOverviewStateBridgeTests.cs",
+      "adapter_tests": "Chummer.Tests/Presentation/CharacterOverviewViewModelAdapterTests.cs",
+      "presenter_commands": "Chummer.Presentation/Overview/CharacterOverviewPresenter.Commands.cs",
+      "presenter_dialogs": "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs",
+      "presenter_tests": "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+      "dialog_coordinator_tests": "Chummer.Tests/Presentation/DialogCoordinatorTests.cs",
+      "dual_head_tests": "Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+      "verify_script": "scripts/ai/verify.sh",
+      "compliance_tests": "Chummer.Tests/Compliance/DelegateCommandRouteParityComplianceTests.cs"
+    },
+    "expectedContractMethods": [
+      "InitializeAsync",
+      "ImportAsync",
+      "LoadAsync",
+      "SwitchWorkspaceAsync",
+      "CloseWorkspaceAsync",
+      "ExecuteCommandAsync",
+      "HandleUiControlAsync",
+      "ExecuteWorkspaceActionAsync",
+      "UpdateDialogFieldAsync",
+      "ExecuteDialogActionAsync",
+      "CloseDialogAsync",
+      "SelectTabAsync",
+      "UpdateMetadataAsync",
+      "SaveAsync"
+    ],
+    "bridgeEventTests": [
+      "State_change_publishes_new_snapshot_to_callback",
+      "Dispose_unsubscribes_from_presenter_events"
+    ],
+    "adapterEventTests": [
+      "Updated_event_is_raised_when_presenter_state_changes",
+      "Dispose_unsubscribes_from_presenter_events"
+    ],
+    "presenterRouteMarkers": {
+      "command_dispatcher": {
+        "marker": "_commandDispatcher.DispatchAsync(commandId, context, ct);",
+        "found": true
+      },
+      "dialog_coordinator": {
+        "marker": "_dialogCoordinator.CoordinateAsync(actionId, context, ct);",
+        "found": true
+      },
+      "ui_control_dialog_factory": {
+        "marker": "ActiveDialog = _dialogFactory.CreateUiControlDialog(controlId, State.Preferences)",
+        "found": true
+      },
+      "dynamic_dialog_rebuild": {
+        "marker": "updatedDialog = DesktopDialogFactory.RebuildDynamicDialog(updatedDialog, State.Preferences);",
+        "found": true
+      },
+      "workspace_command_relay": {
+        "marker": "await ExecuteCommandAsync(action.TargetId, ct);",
+        "found": true
+      },
+      "select_tab_default_action_relay": {
+        "marker": "await ExecuteWorkspaceActionAsync(defaultAction, ct);",
+        "found": true
+      }
+    },
+    "presenterRouteTests": {
+      "ExecuteCommandAsync_all_catalog_commands_are_handled": true,
+      "HandleUiControlAsync_all_catalog_controls_are_non_generic": true,
+      "ExecuteDialogActionAsync_import_imports_workspace_from_open_character_dialog": true,
+      "ExecuteDialogActionAsync_apply_ruleset_calls_shell_presenter_and_closes_dialog": true,
+      "ExecuteWorkspaceActionAsync_summary_sets_active_summary_payload": true,
+      "ExecuteWorkspaceActionAsync_metadata_applies_profile_updates_from_dialog": true,
+      "ExecuteDialogActionAsync_roll_updates_dice_dialog_result_field": true,
+      "ExecuteDialogActionAsync_save_global_settings_updates_preferences": true,
+      "SelectTabAsync_loads_active_section_preview_after_workspace_load": true,
+      "SwitchWorkspaceAsync_restores_workspace_specific_tab_and_section_context": true,
+      "CloseWorkspaceAsync_closes_active_workspace_and_switches_to_recent_workspace": true
+    },
+    "dialogCoordinatorTests": {
+      "CoordinateAsync_save_global_settings_updates_preferences_and_closes_dialog": true,
+      "CoordinateAsync_apply_metadata_calls_update_delegate_and_closes_dialog_on_success": true,
+      "CoordinateAsync_roll_adds_result_field_to_dice_dialog": true,
+      "CoordinateAsync_derive_initiative_updates_preview_without_closing_dialog": true,
+      "CoordinateAsync_import_imports_workspace_and_closes_dialog_on_success": true,
+      "CoordinateAsync_apply_ruleset_calls_delegate_and_closes_dialog_on_success": true,
+      "CoordinateAsync_add_more_gear_keeps_dialog_open_and_rebuilds_preview": true,
+      "CoordinateAsync_add_more_gear_uses_sr4_authored_notice_when_state_is_sr4": true,
+      "CoordinateAsync_add_matrix_program_uses_sr6_authored_notice_when_state_is_sr6": true,
+      "CoordinateAsync_open_runner_character_roster_switches_workspace_and_closes_dialog": true,
+      "CoordinateAsync_switch_file_master_index_cycles_active_file_and_rebuilds_dialog": true
+    },
+    "dualHeadParityTests": {
+      "Avalonia_and_Blazor_command_dispatch_save_character_matches": true,
+      "Avalonia_and_Blazor_command_dialog_dispatch_matches": true,
+      "Avalonia_and_Blazor_dialog_field_updates_match": true,
+      "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity": true,
+      "Avalonia_and_Blazor_workspace_action_summary_matches": true,
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts": true,
+      "Avalonia_and_Blazor_non_dialog_shared_commands_preserve_matching_state_transitions": true,
+      "Avalonia_and_Blazor_shell_surfaces_expose_identical_ids": true
+    },
+    "bridgeForwarders": {
+      "InitializeAsync": {
+        "forwarderMarker": "return _presenter.InitializeAsync(ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "ImportAsync": {
+        "forwarderMarker": "return _presenter.ImportAsync(",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "LoadAsync": {
+        "forwarderMarker": "return _presenter.LoadAsync(workspaceId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "SwitchWorkspaceAsync": {
+        "forwarderMarker": "return _presenter.SwitchWorkspaceAsync(workspaceId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "CloseWorkspaceAsync": {
+        "forwarderMarker": "return _presenter.CloseWorkspaceAsync(workspaceId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "ExecuteCommandAsync": {
+        "forwarderMarker": "return _presenter.ExecuteCommandAsync(commandId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "HandleUiControlAsync": {
+        "forwarderMarker": "return _presenter.HandleUiControlAsync(controlId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "ExecuteWorkspaceActionAsync": {
+        "forwarderMarker": "return _presenter.ExecuteWorkspaceActionAsync(action, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "UpdateDialogFieldAsync": {
+        "forwarderMarker": "return _presenter.UpdateDialogFieldAsync(fieldId, value, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "ExecuteDialogActionAsync": {
+        "forwarderMarker": "return _presenter.ExecuteDialogActionAsync(actionId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "CloseDialogAsync": {
+        "forwarderMarker": "return _presenter.CloseDialogAsync(ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "SelectTabAsync": {
+        "forwarderMarker": "return _presenter.SelectTabAsync(tabId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "UpdateMetadataAsync": {
+        "forwarderMarker": "return _presenter.UpdateMetadataAsync(command, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "SaveAsync": {
+        "forwarderMarker": "return _presenter.SaveAsync(ct);",
+        "forwarderFound": true,
+        "testFound": true
+      }
+    },
+    "adapterForwarders": {
+      "InitializeAsync": {
+        "forwarderMarker": "return _presenter.InitializeAsync(ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "ImportAsync": {
+        "forwarderMarker": "return _presenter.ImportAsync(",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "LoadAsync": {
+        "forwarderMarker": "return _presenter.LoadAsync(workspaceId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "SwitchWorkspaceAsync": {
+        "forwarderMarker": "return _presenter.SwitchWorkspaceAsync(workspaceId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "CloseWorkspaceAsync": {
+        "forwarderMarker": "return _presenter.CloseWorkspaceAsync(workspaceId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "ExecuteCommandAsync": {
+        "forwarderMarker": "return _presenter.ExecuteCommandAsync(commandId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "HandleUiControlAsync": {
+        "forwarderMarker": "return _presenter.HandleUiControlAsync(controlId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "ExecuteWorkspaceActionAsync": {
+        "forwarderMarker": "return _presenter.ExecuteWorkspaceActionAsync(action, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "UpdateDialogFieldAsync": {
+        "forwarderMarker": "return _presenter.UpdateDialogFieldAsync(fieldId, value, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "ExecuteDialogActionAsync": {
+        "forwarderMarker": "return _presenter.ExecuteDialogActionAsync(actionId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "CloseDialogAsync": {
+        "forwarderMarker": "return _presenter.CloseDialogAsync(ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "SelectTabAsync": {
+        "forwarderMarker": "return _presenter.SelectTabAsync(tabId, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "UpdateMetadataAsync": {
+        "forwarderMarker": "return _presenter.UpdateMetadataAsync(command, ct);",
+        "forwarderFound": true,
+        "testFound": true
+      },
+      "SaveAsync": {
+        "forwarderMarker": "return _presenter.SaveAsync(ct);",
+        "forwarderFound": true,
+        "testFound": true
+      }
+    },
+    "missingFiles": [],
+    "contractMethodsFound": [
+      "InitializeAsync",
+      "ImportAsync",
+      "LoadAsync",
+      "SwitchWorkspaceAsync",
+      "CloseWorkspaceAsync",
+      "ExecuteCommandAsync",
+      "HandleUiControlAsync",
+      "ExecuteWorkspaceActionAsync",
+      "UpdateDialogFieldAsync",
+      "ExecuteDialogActionAsync",
+      "CloseDialogAsync",
+      "SelectTabAsync",
+      "UpdateMetadataAsync",
+      "SaveAsync"
+    ],
+    "contractMethodCount": 14,
+    "bridgeMethodCount": 14,
+    "adapterMethodCount": 14,
+    "bridgeMethodsFound": [
+      "InitializeAsync",
+      "LoadAsync",
+      "SwitchWorkspaceAsync",
+      "CloseWorkspaceAsync",
+      "ExecuteCommandAsync",
+      "HandleUiControlAsync",
+      "ExecuteWorkspaceActionAsync",
+      "UpdateDialogFieldAsync",
+      "ExecuteDialogActionAsync",
+      "CloseDialogAsync",
+      "SelectTabAsync",
+      "UpdateMetadataAsync",
+      "SaveAsync",
+      "ImportAsync"
+    ],
+    "adapterMethodsFound": [
+      "InitializeAsync",
+      "LoadAsync",
+      "SwitchWorkspaceAsync",
+      "CloseWorkspaceAsync",
+      "ExecuteCommandAsync",
+      "HandleUiControlAsync",
+      "ExecuteWorkspaceActionAsync",
+      "UpdateDialogFieldAsync",
+      "ExecuteDialogActionAsync",
+      "CloseDialogAsync",
+      "SelectTabAsync",
+      "UpdateMetadataAsync",
+      "SaveAsync",
+      "ImportAsync"
+    ],
+    "bridgeMissingMethods": [],
+    "bridgeExtraMethods": [],
+    "adapterMissingMethods": [],
+    "adapterExtraMethods": [],
+    "bridgeLifecycleEventMissing": [],
+    "adapterLifecycleEventMissing": [],
+    "wiredIntoStandardVerify": true,
+    "verifyMarker": "checking delegate and command-route parity guard",
+    "verifyInvocation": "bash scripts/ai/milestones/delegate-command-route-parity-check.sh",
+    "testCommands": [
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~delegates_to_presenter",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~State_change_publishes_new_snapshot_to_callback",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~Updated_event_is_raised_when_presenter_state_changes",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~Dispose_unsubscribes_from_presenter_events",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~CoordinateAsync_",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~ExecuteCommandAsync_all_catalog_commands_are_handled",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~HandleUiControlAsync_all_catalog_controls_are_non_generic",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~ExecuteDialogActionAsync_",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~ExecuteWorkspaceActionAsync_",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~SelectTabAsync_loads_active_section_preview_after_workspace_load",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~SwitchWorkspaceAsync_restores_workspace_specific_tab_and_section_context",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~CloseWorkspaceAsync_closes_active_workspace_and_switches_to_recent_workspace",
+        "-v",
+        "minimal"
+      ],
+      [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--filter",
+        "Name~Avalonia_and_Blazor_",
+        "-v",
+        "minimal"
+      ]
+    ],
+    "testProject": "Chummer.Tests/Chummer.Tests.csproj",
+    "buildCommand": [
+      "bash",
+      "scripts/ai/with-package-plane.sh",
+      "build",
+      "Chummer.Tests/Chummer.Tests.csproj",
+      "--nologo",
+      "--verbosity",
+      "quiet",
+      "--ignore-failed-sources",
+      "-p:NuGetAudit=false"
+    ],
+    "buildExitCode": 0,
+    "buildOutputTail": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs(1089,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs(1096,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(2310,9): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(139,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(147,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(155,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1922,17): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(2113,13): warning MSTEST0037: Use 'Assert.IsGreaterThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(2117,9): warning MSTEST0037: Use 'Assert.IsGreaterThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(175,13): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(176,13): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(3175,9): warning MSTEST0037: Use 'Assert.IsLessThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(3178,9): warning MSTEST0037: Use 'Assert.IsLessThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(210,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(260,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(261,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3616,21): warning CA1822: Member 'WaitUntil' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(353,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(354,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(439,13): warning MSTEST0037: Use 'Assert.HasCount' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(440,13): warning MSTEST0037: Use 'Assert.HasCount' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/GeneratedDialogElementParityComplianceTests.cs(72,9): warning MSTEST0037: Use 'Assert.IsGreaterThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(288,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(442,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(48,6): warning MSTEST0044: 'DataTestMethod' is obsolete. Use 'TestMethod' instead. (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0044) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DialogCoordinatorTests.cs(762,6): warning MSTEST0044: 'DataTestMethod' is obsolete. Use 'TestMethod' instead. (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0044) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(592,17): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(96,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(97,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3159,36): warning CA1822: Member 'RenderControlToBitmap' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3208,37): warning CA1822: Member 'CaptureScreenshotUiEvidence' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3456,21): warning CA1822: Member 'WaitUntil' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3378,25): warning CA1859: Change return type of method 'EnsureInlineDialogScreenshotRoot' from 'Avalonia.Controls.Control' to 'Avalonia.Controls.Border' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1632,13): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1633,13): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(2085,9): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(2086,9): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n    88 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:15.33",
+    "testResults": [
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~delegates_to_presenter",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:    28, Skipped:     0, Total:    28, Duration: 68 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~State_change_publishes_new_snapshot_to_callback",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 31 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~Updated_event_is_raised_when_presenter_state_changes",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 24 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~Dispose_unsubscribes_from_presenter_events",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 26 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~CoordinateAsync_",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:    39, Skipped:     0, Total:    39, Duration: 282 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~ExecuteCommandAsync_all_catalog_commands_are_handled",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 162 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~HandleUiControlAsync_all_catalog_controls_are_non_generic",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 83 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~ExecuteDialogActionAsync_",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     6, Skipped:     0, Total:     6, Duration: 142 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~ExecuteWorkspaceActionAsync_",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     5, Skipped:     0, Total:     5, Duration: 143 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~SelectTabAsync_loads_active_section_preview_after_workspace_load",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 105 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~SwitchWorkspaceAsync_restores_workspace_specific_tab_and_section_context",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 98 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~CloseWorkspaceAsync_closes_active_workspace_and_switches_to_recent_workspace",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 106 ms - Chummer.Tests.dll (net10.0)"
+      },
+      {
+        "command": [
+          "bash",
+          "scripts/ai/test.sh",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--filter",
+          "Name~Avalonia_and_Blazor_",
+          "-v",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:    33, Skipped:     0, Total:    33, Duration: 6 s - Chummer.Tests.dll (net10.0)"
+      }
+    ],
+    "reasonCount": 0,
+    "failureCount": 0
+  },
+  "reviews": {
+    "contractSurfaceReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "bridgeAdapterReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "lifecycleEventReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "presenterRouteReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "dualHeadParityReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "verifyWiringReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "executionReview": {
+      "status": "pass",
+      "reasons": []
+    }
+  }
+}

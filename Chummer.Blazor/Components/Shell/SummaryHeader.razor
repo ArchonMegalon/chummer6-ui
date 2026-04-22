@@ -4,7 +4,7 @@
 @using Chummer.Presentation.Rulesets
 @using Chummer.Presentation.Shell
 
-<section class="workbench-tab-strip panel" aria-label="@BuildNavigationTabsHeading()">
+<section class="workbench-tab-strip panel classic-tab-strip" aria-label="@BuildNavigationTabsHeading()">
     <div class="tab-strip-buttons"
          role="tablist"
          aria-label="@BuildNavigationTabsHeading()">
@@ -12,7 +12,7 @@
         {
             bool enabled = IsNavigationTabEnabled(tab);
             bool active = string.Equals(ActiveTabId, tab.Id, StringComparison.Ordinal);
-            <button class="workbench-tab @(active ? "active" : string.Empty)"
+            <button class="workbench-tab classic-workbench-tab @(active ? "active" : string.Empty)"
                     id="@tab.Id"
                     type="button"
                     role="tab"

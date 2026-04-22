@@ -1124,7 +1124,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     }
 
     private static string FormatNuyen(decimal value)
-        => string.Create(CultureInfo.InvariantCulture, $"¥{decimal.Round(value, 0):N0}");
+        => string.Create(
+            CultureInfo.InvariantCulture,
+            $"¥{decimal.Round(value, 0, MidpointRounding.AwayFromZero):N0}");
 
     private static decimal ResolveGradeCostMultiplier(string grade)
         => grade.Trim().ToLowerInvariant() switch

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T07:07:21.996354Z",
+  "generatedAt": "2026-04-22T01:14:18.995808Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, and settings.",
@@ -14,6 +14,71 @@
     "/docker/chummercomplete/chummer-presentation/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
     "/docker/chummercomplete/chummer-presentation/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
   ],
+  "feedbackClosureReview": {
+    "status": "pass",
+    "reasons": [],
+    "feedbackSources": [
+      "/docker/chummercomplete/chummer-presentation/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
+      "/docker/chummercomplete/chummer-presentation/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
+    ]
+  },
+  "supportingReceiptReview": {
+    "status": "pass",
+    "reasons": [],
+    "receiptStatuses": {
+      "visualFamiliarityGate": "pass",
+      "flagshipGate": "pass"
+    },
+    "visualReviewStatuses": {
+      "flagshipGateReview": "pass",
+      "headProofReview": "pass",
+      "interactionProofReview": "pass",
+      "sourceAnchorReview": "pass",
+      "screenCaptureReview": "pass",
+      "legacyFamiliarityReview": "pass"
+    },
+    "visualFailureCount": 0
+  },
+  "screenshotAssetReview": {
+    "status": "pass",
+    "reasons": [],
+    "requiredScreenshots": [
+      "01-initial-shell-light.png",
+      "02-menu-open-light.png",
+      "03-settings-open-light.png",
+      "04-loaded-runner-light.png",
+      "05-dense-section-light.png",
+      "06-dense-section-dark.png",
+      "07-loaded-runner-tabs-light.png",
+      "08-cyberware-dialog-light.png",
+      "09-vehicles-section-light.png",
+      "10-contacts-section-light.png",
+      "11-diary-dialog-light.png",
+      "12-magic-dialog-light.png",
+      "13-matrix-dialog-light.png",
+      "14-advancement-dialog-light.png",
+      "15-creation-section-light.png",
+      "16-master-index-dialog-light.png",
+      "17-character-roster-dialog-light.png",
+      "18-import-dialog-light.png"
+    ],
+    "missingScreenshots": [],
+    "invalidScreenshots": [],
+    "undersizedScreenshots": [],
+    "staleScreenshots": [],
+    "screenshotsOlderThanFlagshipReceipt": [],
+    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots"
+  },
+  "reviewJobsSummary": {
+    "status": "pass",
+    "failingJobs": [],
+    "reviewedJobs": [
+      "dense_builder",
+      "master_index",
+      "roster",
+      "settings"
+    ]
+  },
   "supportingReceipts": {
     "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
     "flagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
@@ -77,5 +142,36 @@
       ],
       "reasons": []
     }
+  },
+  "evidence": {
+    "feedbackSources": [
+      "/docker/chummercomplete/chummer-presentation/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
+      "/docker/chummercomplete/chummer-presentation/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
+    ],
+    "supportingReceipts": {
+      "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+      "flagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+    },
+    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "requiredVisualReviewKeys": [
+      "flagshipGateReview",
+      "headProofReview",
+      "interactionProofReview",
+      "sourceAnchorReview",
+      "screenCaptureReview",
+      "legacyFamiliarityReview"
+    ],
+    "missingVisualReviewKeys": [],
+    "failingVisualReviewKeys": [],
+    "visualFailureCount": 0,
+    "reviewedJobs": [
+      "dense_builder",
+      "master_index",
+      "roster",
+      "settings"
+    ],
+    "failingJobs": [],
+    "reasonCount": 0,
+    "failureCount": 0
   }
 }

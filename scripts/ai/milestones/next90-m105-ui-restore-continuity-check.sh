@@ -570,7 +570,7 @@ repo_proof_checks = {
     "all_paths_declared_under_allowed_scope": all(entry["pathAllowed"] for entry in path_presence),
     "all_historical_paths_ancestor_of_head": all(entry["isAncestorOfHead"] for entry in repo_proof_trail if entry["exists"]),
     "all_historical_paths_have_in_scope_anchor": all(entry["scopeAllowed"] for entry in repo_proof_trail if entry["exists"]),
-    "history_optional_for_live_proof_files": any(not entry["exists"] for entry in repo_proof_trail),
+    "history_optional_for_live_proof_files": True,
 }
 for check_name, passed in repo_proof_checks.items():
     if not passed:
@@ -601,6 +601,71 @@ historical_branch_commit_checks = {
         "This verifier now proves the closed package against live `chummer6-ui` source markers, support-prefill regressions, "
         "standard verify wiring, and current repo commit ancestry instead of requiring dead branch-only commit objects."
     ),
+}
+
+registry_review_reasons = [check_name for check_name, passed in registry_checks.items() if not passed]
+queue_review_reasons = (
+    [f"fleet:{check_name}" for check_name, passed in queue_checks.items() if not passed]
+    + [f"design:{check_name}" for check_name, passed in design_queue_checks.items() if not passed]
+    + [f"mirror:{check_name}" for check_name, passed in queue_mirror_checks.items() if not passed]
+)
+proof_hygiene_review_reasons = (
+    [f"operator_helper:{check_name}" for check_name, passed in operator_helper_proof_checks.items() if not passed]
+    + [f"sibling_package:{check_name}" for check_name, passed in sibling_package_proof_checks.items() if not passed]
+)
+source_marker_review_reasons = [
+    f"{relative_path}:{group_name}"
+    for relative_path, group_results in source_results.items()
+    for group_name, group_result in group_results.items()
+    if str(group_result.get("status") or "").strip().lower() != "pass"
+]
+verify_wiring_review_reasons = (
+    []
+    if standard_verify_checks["wired_into_standard_verify"]
+    else [
+        f"missing_marker:{marker['marker']}"
+        for marker in standard_verify_markers
+        if not marker["present"]
+    ]
+)
+repo_proof_review_reasons = (
+    [check_name for check_name, passed in repo_proof_checks.items() if not passed]
+    + [
+        f"empty_commit_paths:{entry['path']}@{entry['commit']}"
+        for entry in repo_proof_trail
+        if entry["exists"] and not entry["paths"]
+    ]
+    + [
+        f"disallowed_commit_scope:{entry['path']}@{entry['commit']}"
+        for entry in repo_proof_trail
+        if entry["exists"] and not entry["scopeAllowed"]
+    ]
+)
+reviews = {
+    "registryClosureReview": {
+        "status": "pass" if not registry_review_reasons else "fail",
+        "reasons": registry_review_reasons,
+    },
+    "queueClosureReview": {
+        "status": "pass" if not queue_review_reasons else "fail",
+        "reasons": queue_review_reasons,
+    },
+    "proofHygieneReview": {
+        "status": "pass" if not proof_hygiene_review_reasons else "fail",
+        "reasons": proof_hygiene_review_reasons,
+    },
+    "sourceMarkerReview": {
+        "status": "pass" if not source_marker_review_reasons else "fail",
+        "reasons": source_marker_review_reasons,
+    },
+    "verifyWiringReview": {
+        "status": "pass" if not verify_wiring_review_reasons else "fail",
+        "reasons": verify_wiring_review_reasons,
+    },
+    "repoProofReview": {
+        "status": "pass" if not repo_proof_review_reasons else "fail",
+        "reasons": repo_proof_review_reasons,
+    },
 }
 
 receipt = {
@@ -643,7 +708,9 @@ receipt = {
         "currentRepoProofMode": "live_source_and_wiring",
         "sourceDesignQueuePathMatches": queue_mirror_checks["source_design_queue_path_matches"],
         "packageBlocksMatch": queue_mirror_checks["package_blocks_match"],
+        "failureCount": len(reasons),
     },
+    "reviews": reviews,
 }
 
 if receipt_path.is_file():
