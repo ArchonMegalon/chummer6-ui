@@ -6041,6 +6041,22 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_installer_script_fail_closes_placeholder_release_versions_and_public_symbol_leaks()
+    {
+        string installerScriptPath = FindPath("scripts", "build-desktop-installer.sh");
+        string installerScriptText = File.ReadAllText(installerScriptPath);
+
+        StringAssert.Contains(installerScriptText, "require_publishable_release_version()");
+        StringAssert.Contains(installerScriptText, "CHUMMER_ALLOW_LOCAL_RELEASE_VERSION");
+        StringAssert.Contains(installerScriptText, "run-local-rebuild");
+        StringAssert.Contains(installerScriptText, "Refusing to package public desktop artifacts with placeholder release version");
+        StringAssert.Contains(installerScriptText, "prune_release_symbols()");
+        StringAssert.Contains(installerScriptText, "CHUMMER_RELEASE_INCLUDE_PDBS");
+        StringAssert.Contains(installerScriptText, "find \"$PUBLISH_DIR\" -type f -name '*.pdb' -print0");
+        StringAssert.Contains(installerScriptText, "pruned $removed public release symbol file(s)");
+    }
+
+    [TestMethod]
     public void Docker_architecture_guardrails_workflow_validates_compose_and_portal_formatting()
     {
         string guardrailsWorkflowPath = FindPath(".github", "workflows", "docker-architecture-guardrails.yml");

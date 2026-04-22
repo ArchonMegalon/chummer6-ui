@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
@@ -467,6 +469,59 @@ public sealed class DesktopInstallLinkingRuntimeTests
         {
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", previousCallbackUri);
+        }
+    }
+
+    [TestMethod]
+    public void LoadOrCreateState_persists_private_key_outside_state_json_on_windows()
+    {
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string tempRoot = Path.Combine(Path.GetTempPath(), "desktop-install-linking-state-store-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+
+            DesktopInstallLinkingState state = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            string platform = OperatingSystem.IsWindows()
+                ? "windows"
+                : OperatingSystem.IsMacOS()
+                    ? "macos"
+                    : OperatingSystem.IsLinux()
+                        ? "linux"
+                        : "unknown";
+            string arch = RuntimeInformation.OSArchitecture switch
+            {
+                Architecture.X64 => "x64",
+                Architecture.X86 => "x86",
+                Architecture.Arm64 => "arm64",
+                Architecture.Arm => "arm",
+                _ => RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant()
+            };
+
+            string installRoot = Path.Combine(tempRoot, "Chummer6", "install-linking", "avalonia", platform, arch);
+            string statePath = Path.Combine(installRoot, "state.json");
+            string protectedKeyPath = Path.Combine(installRoot, "private-key.protected");
+            Assert.IsTrue(File.Exists(statePath), "Install-linking state should be persisted after the first load.");
+
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(statePath));
+            string? persistedPrivateKey = document.RootElement.GetProperty("privateKey").GetString();
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.IsTrue(string.IsNullOrWhiteSpace(persistedPrivateKey), "Windows state.json should not persist the install-link private key in plaintext.");
+                Assert.IsTrue(File.Exists(protectedKeyPath), "Windows installs should persist the private key in the DPAPI-backed sidecar.");
+            }
+            else
+            {
+                Assert.AreEqual(state.PrivateKey, persistedPrivateKey, "Non-Windows installs should continue to persist the key inline until an OS-backed store exists.");
+            }
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
         }
     }
 
