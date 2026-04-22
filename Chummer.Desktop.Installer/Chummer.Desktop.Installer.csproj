@@ -20,6 +20,7 @@
     <ChummerInstallerPublisher Condition="'$(ChummerInstallerPublisher)' == ''">ArchonMegalon</ChummerInstallerPublisher>
     <ChummerInstallerShortcutName Condition="'$(ChummerInstallerShortcutName)' == ''">Chummer6</ChummerInstallerShortcutName>
     <ChummerInstallerOutputName Condition="'$(ChummerInstallerOutputName)' == ''">Chummer6Installer</ChummerInstallerOutputName>
+    <ChummerInstallerHeadsJsonBase64 Condition="'$(ChummerInstallerHeadsJsonBase64)' == ''"></ChummerInstallerHeadsJsonBase64>
     <ChummerInstallerPayloadResourceName Condition="'$(ChummerInstallerPayloadResourceName)' == ''">ChummerInstaller.Payload.zip</ChummerInstallerPayloadResourceName>
     <ChummerInstallerPayloadRequired Condition="'$(ChummerInstallerPayloadRequired)' == ''">true</ChummerInstallerPayloadRequired>
     <ChummerInstallerEmbedPayload Condition="'$(ChummerInstallerEmbedPayload)' == ''">true</ChummerInstallerEmbedPayload>
@@ -75,6 +76,10 @@
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>ChummerInstallerOutputName</_Parameter1>
       <_Parameter2>$(ChummerInstallerOutputName)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerInstallerHeadsJsonBase64</_Parameter1>
+      <_Parameter2>$(ChummerInstallerHeadsJsonBase64)</_Parameter2>
     </AssemblyAttribute>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>ChummerInstallerPayloadResourceName</_Parameter1>

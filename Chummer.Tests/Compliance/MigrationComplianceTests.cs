@@ -3477,6 +3477,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(
             workflowText,
             "app: blazor-desktop\n            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\n            os: macos-latest\n            rid: osx-arm64");
+        StringAssert.Contains(workflowText, "name: Publish secondary Windows desktop head");
+        StringAssert.Contains(workflowText, "out/blazor-desktop/${{ matrix.rid }}");
+        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_KEY");
+        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_PUBLISH_DIR");
+        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET");
+        StringAssert.Contains(workflowText, "CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS");
+        StringAssert.Contains(workflowText, "avalonia/Chummer.Avalonia.exe;blazor-desktop/Chummer.Blazor.Desktop.exe");
         StringAssert.Contains(workflowText, "installer_ext: dmg");
         StringAssert.Contains(workflowText, "name: Startup smoke");
         StringAssert.Contains(workflowText, "bash scripts/run-desktop-startup-smoke.sh");
@@ -3523,6 +3530,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "deploy_portal_downloads");
         StringAssert.Contains(workflowText, "deploy-downloads");
         StringAssert.Contains(workflowText, "deploy-downloads-object-storage");
+        StringAssert.Contains(startupSmokeScriptText, "CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS");
+        StringAssert.Contains(startupSmokeScriptText, "Missing required installed path(s) after Windows smoke install:");
+        StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
+        StringAssert.Contains(verifyScriptText, "--skip-startup-smoke-filter");
         StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED");

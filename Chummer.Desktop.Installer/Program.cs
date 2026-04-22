@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Win32;
 
 namespace Chummer.Desktop.Installer;
@@ -67,7 +68,7 @@ internal static class Program
     {
         string targetDir = InstallPayload(metadata, metadata.InstallDirectory, payloadPathOverride);
         string installedInstallerPath = Path.Combine(targetDir, metadata.InstallerOutputName + ".exe");
-        string launchPath = Path.Combine(targetDir, metadata.LaunchExecutable);
+        string launchPath = metadata.PrimaryHead.ResolveLaunchPath(targetDir);
         File.Copy(Environment.ProcessPath!, installedInstallerPath, overwrite: true);
 
         if (!string.IsNullOrWhiteSpace(claimCode))
@@ -75,8 +76,13 @@ internal static class Program
             StagePendingClaimCode(metadata, claimCode);
         }
 
-        CreateShortcut(metadata.ShortcutPath, launchPath, metadata.DisplayName);
-        CreateShortcut(metadata.DesktopShortcutPath, launchPath, metadata.DisplayName);
+        foreach (InstalledHeadMetadata head in metadata.InstalledHeads)
+        {
+            string headLaunchPath = head.ResolveLaunchPath(targetDir);
+            CreateShortcut(head.StartMenuShortcutPath, headLaunchPath, head.DisplayName);
+            CreateShortcut(head.DesktopShortcutPath, headLaunchPath, head.DisplayName);
+        }
+
         RegisterUninstall(metadata, installedInstallerPath);
 
         DialogResult launch = MessageBox.Show(
@@ -94,8 +100,12 @@ internal static class Program
 
     private static int Uninstall(InstallerMetadata metadata)
     {
-        RemoveShortcut(metadata.ShortcutPath);
-        RemoveShortcut(metadata.DesktopShortcutPath);
+        foreach (InstalledHeadMetadata head in metadata.InstalledHeads)
+        {
+            RemoveShortcut(head.StartMenuShortcutPath);
+            RemoveShortcut(head.DesktopShortcutPath);
+        }
+
         UnregisterUninstall(metadata);
         ScheduleDirectoryRemoval(metadata.InstallDirectory);
         MessageBox.Show(
@@ -125,8 +135,23 @@ internal static class Program
         try
         {
             ExtractPayload(tempExtractDir, payloadPathOverride);
-            string payloadRoot = FindPayloadRoot(tempExtractDir, metadata.LaunchExecutable);
-            EnsureLaunchExecutableInRoot(payloadRoot, metadata.LaunchExecutable);
+
+            if (metadata.UsesBundledLayout)
+            {
+                EnsureBundledLaunchExecutables(tempExtractDir, metadata.InstalledHeads);
+
+                if (Directory.Exists(targetDir))
+                {
+                    TryDeleteDirectory(targetDir);
+                }
+
+                Directory.CreateDirectory(targetDir);
+                CopyDirectory(tempExtractDir, targetDir);
+                return targetDir;
+            }
+
+            string payloadRoot = FindPayloadRoot(tempExtractDir, metadata.PrimaryHead.LaunchExecutable);
+            EnsureLaunchExecutableInRoot(payloadRoot, metadata.PrimaryHead.LaunchExecutable);
 
             if (Directory.Exists(targetDir))
             {
@@ -595,6 +620,26 @@ internal static class Program
         }
     }
 
+    private static void EnsureBundledLaunchExecutables(string payloadRoot, IReadOnlyList<InstalledHeadMetadata> heads)
+    {
+        foreach (InstalledHeadMetadata head in heads)
+        {
+            string launchPath = head.ResolveLaunchPath(payloadRoot);
+            if (File.Exists(launchPath))
+            {
+                continue;
+            }
+
+            string rootHint = string.IsNullOrWhiteSpace(head.RelativeRoot)
+                ? payloadRoot
+                : Path.Combine(payloadRoot, head.RelativeRoot);
+            string topEntries = SummarizePayloadEntries(rootHint);
+            throw new InvalidOperationException(
+                $"The bundled desktop payload did not contain '{head.LaunchExecutable}' for head '{head.HeadId}'. " +
+                $"Expected '{launchPath}'. Payload sample: {topEntries}");
+        }
+    }
+
     private static string? FindPayloadResource(Assembly assembly)
     {
         string[] resourceNames = assembly.GetManifestResourceNames();
@@ -731,11 +776,11 @@ internal static class Program
 
     private static void LaunchInstalledApp(InstallerMetadata metadata, string? claimCode)
     {
-        string target = Path.Combine(metadata.InstallDirectory, metadata.LaunchExecutable);
+        string target = metadata.PrimaryHead.ResolveLaunchPath(metadata.InstallDirectory);
         ProcessStartInfo startInfo = new()
         {
             FileName = target,
-            WorkingDirectory = metadata.InstallDirectory,
+            WorkingDirectory = Path.GetDirectoryName(target) ?? metadata.InstallDirectory,
             UseShellExecute = true,
         };
 
@@ -756,16 +801,19 @@ internal static class Program
             return;
         }
 
-        string pendingPath = GetPendingClaimCodePath(metadata);
-        Directory.CreateDirectory(Path.GetDirectoryName(pendingPath)!);
-        File.WriteAllText(pendingPath, normalizedClaimCode, Encoding.UTF8);
+        foreach (InstalledHeadMetadata head in metadata.InstalledHeads)
+        {
+            string pendingPath = GetPendingClaimCodePath(head.HeadId);
+            Directory.CreateDirectory(Path.GetDirectoryName(pendingPath)!);
+            File.WriteAllText(pendingPath, normalizedClaimCode, Encoding.UTF8);
+        }
     }
 
-    private static string GetPendingClaimCodePath(InstallerMetadata metadata)
+    private static string GetPendingClaimCodePath(string headId)
         => Path.Combine(
             ResolveDesktopStateRoot(),
             "install-linking",
-            metadata.HeadId,
+            headId,
             "windows",
             NormalizeArchitecture(RuntimeInformation.OSArchitecture),
             PendingClaimCodeFileName);
@@ -847,7 +895,7 @@ internal static class Program
 
     private static void RegisterUninstall(InstallerMetadata metadata, string installerPath)
     {
-        string launchPath = Path.Combine(metadata.InstallDirectory, metadata.LaunchExecutable);
+        string launchPath = metadata.PrimaryHead.ResolveLaunchPath(metadata.InstallDirectory);
         using RegistryKey key = Registry.CurrentUser.CreateSubKey(metadata.UninstallRegistryKeyPath, writable: true)
             ?? throw new InvalidOperationException("Could not create uninstall registry entry.");
         key.SetValue("DisplayName", metadata.DisplayName);
@@ -934,8 +982,12 @@ internal static class Program
         string Version,
         string Publisher,
         string ShortcutName,
-        string InstallerOutputName)
+        string InstallerOutputName,
+        IReadOnlyList<InstalledHeadMetadata> InstalledHeads)
     {
+        public InstalledHeadMetadata PrimaryHead => InstalledHeads[0];
+        public bool UsesBundledLayout => InstalledHeads.Any(head => !string.IsNullOrWhiteSpace(head.RelativeRoot));
+
         public string InstallDirectory =>
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -943,42 +995,94 @@ internal static class Program
                 "Chummer6",
                 InstallDirName);
 
-        public string ShortcutPath =>
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
-                "Programs",
-                $"{ShortcutName}.lnk");
-
-        public string DesktopShortcutPath =>
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-                $"{ShortcutName}.lnk");
-
         public string UninstallRegistryKeyPath => $@"Software\Microsoft\Windows\CurrentVersion\Uninstall\Chummer6.{AppId}";
 
         public static InstallerMetadata Load()
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
-            string Read(string key, string fallback)
+            string? ReadOptional(string key)
             {
                 return assembly
-                           .GetCustomAttributes<AssemblyMetadataAttribute>()
-                           .FirstOrDefault(attr => string.Equals(attr.Key, key, StringComparison.Ordinal))?
-                           .Value
-                       ?? fallback;
+                    .GetCustomAttributes<AssemblyMetadataAttribute>()
+                    .FirstOrDefault(attr => string.Equals(attr.Key, key, StringComparison.Ordinal))?
+                    .Value;
             }
 
+            string Read(string key, string fallback)
+                => ReadOptional(key) ?? fallback;
+
             string appId = Read("ChummerAppId", "avalonia");
+            string headId = Read("ChummerHeadId", ResolveHeadId(appId));
+            string displayName = Read("ChummerDisplayName", "Chummer6");
+            string launchExecutable = Read("ChummerLaunchExecutable", "Chummer.Avalonia.exe");
+            string shortcutName = Read("ChummerShortcutName", "Chummer6");
             return new InstallerMetadata(
                 AppId: appId,
-                HeadId: Read("ChummerHeadId", ResolveHeadId(appId)),
-                DisplayName: Read("ChummerDisplayName", "Chummer6"),
+                HeadId: headId,
+                DisplayName: displayName,
                 InstallDirName: Read("ChummerInstallDirName", "Chummer6"),
-                LaunchExecutable: Read("ChummerLaunchExecutable", "Chummer.Avalonia.exe"),
+                LaunchExecutable: launchExecutable,
                 Version: Read("ChummerVersion", "unpublished"),
                 Publisher: Read("ChummerPublisher", "ArchonMegalon"),
-                ShortcutName: Read("ChummerShortcutName", "Chummer6"),
-                InstallerOutputName: Read("ChummerInstallerOutputName", "Chummer6Installer"));
+                ShortcutName: shortcutName,
+                InstallerOutputName: Read("ChummerInstallerOutputName", "Chummer6Installer"),
+                InstalledHeads: ReadInstalledHeads(
+                    ReadOptional("ChummerInstallerHeadsJsonBase64"),
+                    headId,
+                    displayName,
+                    launchExecutable,
+                    shortcutName));
+        }
+
+        private static IReadOnlyList<InstalledHeadMetadata> ReadInstalledHeads(
+            string? encodedHeads,
+            string fallbackHeadId,
+            string fallbackDisplayName,
+            string fallbackLaunchExecutable,
+            string fallbackShortcutName)
+        {
+            if (!string.IsNullOrWhiteSpace(encodedHeads))
+            {
+                try
+                {
+                    byte[] payloadBytes = Convert.FromBase64String(encodedHeads);
+                    InstalledHeadDescriptor[]? descriptors = JsonSerializer.Deserialize<InstalledHeadDescriptor[]>(payloadBytes);
+                    if (descriptors is { Length: > 0 })
+                    {
+                        InstalledHeadMetadata[] heads = descriptors
+                            .Where(static descriptor =>
+                                !string.IsNullOrWhiteSpace(descriptor.HeadId)
+                                && !string.IsNullOrWhiteSpace(descriptor.LaunchExecutable)
+                                && !string.IsNullOrWhiteSpace(descriptor.ShortcutName))
+                            .Select(descriptor => new InstalledHeadMetadata(
+                                HeadId: descriptor.HeadId!.Trim(),
+                                DisplayName: string.IsNullOrWhiteSpace(descriptor.DisplayName) ? descriptor.HeadId!.Trim() : descriptor.DisplayName.Trim(),
+                                LaunchExecutable: descriptor.LaunchExecutable!.Trim(),
+                                ShortcutName: descriptor.ShortcutName!.Trim(),
+                                RelativeRoot: (descriptor.RelativeRoot ?? string.Empty).Trim()))
+                            .ToArray();
+
+                        if (heads.Length > 0)
+                        {
+                            return heads;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("Installer head metadata was malformed.", ex);
+                }
+            }
+
+            return
+            [
+                new InstalledHeadMetadata(
+                    HeadId: fallbackHeadId,
+                    DisplayName: fallbackDisplayName,
+                    LaunchExecutable: fallbackLaunchExecutable,
+                    ShortcutName: fallbackShortcutName,
+                    RelativeRoot: string.Empty)
+            ];
         }
 
         private static string ResolveHeadId(string appId)
@@ -996,4 +1100,35 @@ internal static class Program
             return string.IsNullOrWhiteSpace(appId) ? "avalonia" : appId.Trim();
         }
     }
+
+    private sealed record InstalledHeadMetadata(
+        string HeadId,
+        string DisplayName,
+        string LaunchExecutable,
+        string ShortcutName,
+        string RelativeRoot)
+    {
+        public string StartMenuShortcutPath =>
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
+                "Programs",
+                $"{ShortcutName}.lnk");
+
+        public string DesktopShortcutPath =>
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                $"{ShortcutName}.lnk");
+
+        public string ResolveLaunchPath(string installDirectory)
+            => string.IsNullOrWhiteSpace(RelativeRoot)
+                ? Path.Combine(installDirectory, LaunchExecutable)
+                : Path.Combine(installDirectory, RelativeRoot, LaunchExecutable);
+    }
+
+    private sealed record InstalledHeadDescriptor(
+        string? HeadId,
+        string? DisplayName,
+        string? LaunchExecutable,
+        string? ShortcutName,
+        string? RelativeRoot);
 }

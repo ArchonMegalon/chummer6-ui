@@ -10,6 +10,7 @@ canonical_presentation_root="${CHUMMER_CANONICAL_PRESENTATION_ROOT:-/docker/chum
 menu_bar_axaml_path="$repo_root/Chummer.Avalonia/Controls/ShellMenuBarControl.axaml"
 toolstrip_axaml_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml"
 toolstrip_codebehind_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"
+summary_header_codebehind_path="$repo_root/Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs"
 section_host_axaml_path="$repo_root/Chummer.Avalonia/Controls/SectionHostControl.axaml"
 main_window_axaml_path="$repo_root/Chummer.Avalonia/MainWindow.axaml"
 main_window_state_refresh_path="$repo_root/Chummer.Avalonia/MainWindow.StateRefresh.cs"
@@ -41,6 +42,7 @@ python3 - <<'PY' \
   "$menu_bar_axaml_path" \
   "$toolstrip_axaml_path" \
   "$toolstrip_codebehind_path" \
+  "$summary_header_codebehind_path" \
   "$section_host_axaml_path" \
   "$main_window_axaml_path" \
   "$main_window_state_refresh_path" \
@@ -90,6 +92,7 @@ def append_reason(message: str, bucket: list[str]) -> None:
     menu_bar_axaml_path,
     toolstrip_axaml_path,
     toolstrip_codebehind_path,
+    summary_header_codebehind_path,
     section_host_axaml_path,
     main_window_axaml_path,
     main_window_state_refresh_path,
@@ -107,7 +110,7 @@ def append_reason(message: str, bucket: list[str]) -> None:
     visual_gate_path,
     ui_gate_tests_path,
     desktop_shell_ruleset_tests_path,
-) = [Path(value) for value in sys.argv[1:23]]
+) = [Path(value) for value in sys.argv[1:24]]
 
 reasons: list[str] = []
 evidence: dict[str, object] = {}
@@ -123,6 +126,7 @@ required_paths = [
     menu_bar_axaml_path,
     toolstrip_axaml_path,
     toolstrip_codebehind_path,
+    summary_header_codebehind_path,
     section_host_axaml_path,
     main_window_axaml_path,
     main_window_state_refresh_path,
@@ -159,6 +163,7 @@ legacy_text = read_text(legacy_frmcareer_designer_path)
 menu_bar_text = read_text(menu_bar_axaml_path)
 toolstrip_text = read_text(toolstrip_axaml_path)
 toolstrip_codebehind_text = read_text(toolstrip_codebehind_path)
+summary_header_codebehind_text = read_text(summary_header_codebehind_path)
 section_host_text = read_text(section_host_axaml_path)
 main_window_text = read_text(main_window_axaml_path)
 main_window_state_refresh_text = read_text(main_window_state_refresh_path)
@@ -280,9 +285,14 @@ for token in [
             f"Avalonia shell refresh is missing required conditional workspace-rail token: {token}",
             avalonia_layout_reasons,
         )
-if "ShowNavigatorPane: resolvedOpenWorkspaces.Length > 1" not in avalonia_projector_text:
+if "ShowNavigatorPane: false" not in avalonia_projector_text:
     append_reason(
-        "Avalonia shell projector must only surface the navigator pane for multi-workspace sessions.",
+        "Avalonia shell projector must keep the extra left navigator pane out of the primary Chummer5a-style workbench.",
+        avalonia_layout_reasons,
+    )
+if "return [];" not in avalonia_projector_text:
+    append_reason(
+        "Avalonia shell still exposes section quick-action chrome that Chummer5a never had.",
         avalonia_layout_reasons,
     )
 right_shell_index = main_window_text.find('x:Name="RightShellRegion"')
@@ -303,6 +313,11 @@ if right_shell_index < 0 or any(token not in right_shell_snippet for token in re
     append_reason("Avalonia main window still exposes the right-side rail by default.", avalonia_layout_reasons)
 if "DesktopHomeWindow.ShowIfNeededAsync(" in app_text:
     append_reason("Avalonia startup still reopens the desktop home cockpit.", avalonia_layout_reasons)
+if "RestoreContinuityStatusBorder.IsVisible = false;" not in summary_header_codebehind_text:
+    append_reason(
+        "Avalonia summary header still leaves restore-continuity chrome available in the persistent workbench tab rail.",
+        avalonia_layout_reasons,
+    )
 
 required_event_tokens = [
     'ExecuteCommandAsync("print_character", CancellationToken.None)',
