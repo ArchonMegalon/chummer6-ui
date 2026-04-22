@@ -1,6 +1,7 @@
 using System.Net.Mime;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -62,6 +63,7 @@ public static class DesktopInstallLinkingRuntime
     private const string StateRootDirectoryName = "install-linking";
     private const string PendingClaimCodeFileName = "pending-claim-code.txt";
     private const string PendingInstallLinkCallbackFileName = "pending-install-link-callback.txt";
+    private const string ProtectedPrivateKeyFileName = "private-key.protected";
     private const string GuestStatus = "guest";
     private const string ClaimedStatus = "claimed";
 
@@ -148,12 +150,19 @@ public static class DesktopInstallLinkingRuntime
         DesktopRuntimeReleaseMetadata release = DesktopRuntimeReleaseMetadata.Load(headId);
         DesktopRuntimePlatformIdentity identity = DesktopRuntimePlatformIdentity.Current();
         DesktopInstallLinkingPaths paths = DesktopInstallLinkingPaths.Create(headId, identity);
-        DesktopInstallLinkingState? state = DesktopInstallLinkingStateStore.Load(paths.StateFilePath);
+        DesktopInstallLinkingState? state = DesktopInstallLinkingStateStore.Load(paths);
         if (state is null)
         {
             state = CreateInitialState(release, identity, DateTimeOffset.UtcNow);
             SaveState(state);
             return state;
+        }
+
+        if (ShouldProtectPrivateKeyAtRest()
+            && !string.IsNullOrWhiteSpace(state.PrivateKey)
+            && DesktopInstallLinkingStateStore.ShouldMigratePlaintextPrivateKey(paths))
+        {
+            DesktopInstallLinkingStateStore.Save(paths, state);
         }
 
         if (string.IsNullOrWhiteSpace(state.PublicKey) || string.IsNullOrWhiteSpace(state.PrivateKey))
@@ -796,7 +805,7 @@ public static class DesktopInstallLinkingRuntime
         DesktopInstallLinkingPaths paths = DesktopInstallLinkingPaths.Create(
             state.HeadId,
             new DesktopRuntimePlatformIdentity(state.Platform, state.Arch));
-        DesktopInstallLinkingStateStore.Save(paths.StateFilePath, state);
+        DesktopInstallLinkingStateStore.Save(paths, state);
     }
 
     private static string? ExtractStartupBrowserCallbackCode(IReadOnlyList<string> args, DesktopInstallLinkingState state)
@@ -1676,7 +1685,9 @@ public static class DesktopInstallLinkingRuntime
             };
     }
 
-    private sealed record DesktopInstallLinkingPaths(string StateFilePath)
+    private sealed record DesktopInstallLinkingPaths(
+        string StateFilePath,
+        string ProtectedPrivateKeyFilePath)
     {
         public static DesktopInstallLinkingPaths Create(string headId, DesktopRuntimePlatformIdentity identity)
         {
@@ -1686,7 +1697,9 @@ public static class DesktopInstallLinkingRuntime
                 headId,
                 identity.Platform,
                 identity.Arch);
-            return new DesktopInstallLinkingPaths(Path.Combine(root, "state.json"));
+            return new DesktopInstallLinkingPaths(
+                StateFilePath: Path.Combine(root, "state.json"),
+                ProtectedPrivateKeyFilePath: Path.Combine(root, ProtectedPrivateKeyFileName));
         }
     }
 
@@ -1697,20 +1710,139 @@ public static class DesktopInstallLinkingRuntime
 
     private static class DesktopInstallLinkingStateStore
     {
-        public static DesktopInstallLinkingState? Load(string path)
+        public static DesktopInstallLinkingState? Load(DesktopInstallLinkingPaths paths)
         {
-            if (!File.Exists(path))
+            if (!File.Exists(paths.StateFilePath))
             {
                 return null;
             }
 
-            return JsonSerializer.Deserialize<DesktopInstallLinkingState>(File.ReadAllText(path, Encoding.UTF8), JsonOptions);
+            DesktopInstallLinkingState? state = JsonSerializer.Deserialize<DesktopInstallLinkingState>(
+                File.ReadAllText(paths.StateFilePath, Encoding.UTF8),
+                JsonOptions);
+            if (state is null)
+            {
+                return null;
+            }
+
+            if (!ShouldProtectPrivateKeyAtRest() || !string.IsNullOrWhiteSpace(state.PrivateKey))
+            {
+                return state;
+            }
+
+            string? privateKey = LoadProtectedPrivateKey(paths, state.InstallationId);
+            return string.IsNullOrWhiteSpace(privateKey)
+                ? state
+                : state with { PrivateKey = privateKey };
         }
 
-        public static void Save(string path, DesktopInstallLinkingState state)
+        public static void Save(DesktopInstallLinkingPaths paths, DesktopInstallLinkingState state)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, JsonSerializer.Serialize(state, JsonOptions), Encoding.UTF8);
+            Directory.CreateDirectory(Path.GetDirectoryName(paths.StateFilePath)!);
+            if (!ShouldProtectPrivateKeyAtRest())
+            {
+                TryDeleteProtectedPrivateKey(paths);
+                File.WriteAllText(paths.StateFilePath, JsonSerializer.Serialize(state, JsonOptions), Encoding.UTF8);
+                return;
+            }
+
+            SaveProtectedPrivateKey(paths, state);
+            DesktopInstallLinkingState persisted = state with { PrivateKey = string.Empty };
+            File.WriteAllText(paths.StateFilePath, JsonSerializer.Serialize(persisted, JsonOptions), Encoding.UTF8);
         }
+
+        public static bool ShouldMigratePlaintextPrivateKey(DesktopInstallLinkingPaths paths)
+        {
+            if (!File.Exists(paths.StateFilePath))
+            {
+                return false;
+            }
+
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(File.ReadAllText(paths.StateFilePath, Encoding.UTF8));
+                if (!document.RootElement.TryGetProperty("privateKey", out JsonElement privateKeyElement))
+                {
+                    return !File.Exists(paths.ProtectedPrivateKeyFilePath);
+                }
+
+                string? persistedPrivateKey = privateKeyElement.ValueKind == JsonValueKind.String
+                    ? privateKeyElement.GetString()
+                    : null;
+                return !string.IsNullOrWhiteSpace(persistedPrivateKey)
+                    || !File.Exists(paths.ProtectedPrivateKeyFilePath);
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        [SupportedOSPlatform("windows")]
+        private static string? LoadProtectedPrivateKey(DesktopInstallLinkingPaths paths, string installationId)
+        {
+            if (!File.Exists(paths.ProtectedPrivateKeyFilePath))
+            {
+                return null;
+            }
+
+            try
+            {
+                byte[] protectedBytes = File.ReadAllBytes(paths.ProtectedPrivateKeyFilePath);
+                byte[] privateKeyBytes = ProtectedData.Unprotect(
+                    protectedBytes,
+                    BuildProtectionEntropy(installationId),
+                    DataProtectionScope.CurrentUser);
+                return Encoding.UTF8.GetString(privateKeyBytes);
+            }
+            catch (CryptographicException)
+            {
+                return null;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
+        }
+
+        [SupportedOSPlatform("windows")]
+        private static void SaveProtectedPrivateKey(DesktopInstallLinkingPaths paths, DesktopInstallLinkingState state)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(paths.ProtectedPrivateKeyFilePath)!);
+            byte[] privateKeyBytes = Encoding.UTF8.GetBytes(state.PrivateKey);
+            byte[] protectedBytes = ProtectedData.Protect(
+                privateKeyBytes,
+                BuildProtectionEntropy(state.InstallationId),
+                DataProtectionScope.CurrentUser);
+            File.WriteAllBytes(paths.ProtectedPrivateKeyFilePath, protectedBytes);
+        }
+
+        private static void TryDeleteProtectedPrivateKey(DesktopInstallLinkingPaths paths)
+        {
+            try
+            {
+                if (File.Exists(paths.ProtectedPrivateKeyFilePath))
+                {
+                    File.Delete(paths.ProtectedPrivateKeyFilePath);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private static byte[] BuildProtectionEntropy(string installationId)
+            => Encoding.UTF8.GetBytes($"chummer6.install-linking.private-key:{installationId}");
     }
+
+    [SupportedOSPlatformGuard("windows")]
+    private static bool ShouldProtectPrivateKeyAtRest()
+        => OperatingSystem.IsWindows();
 }

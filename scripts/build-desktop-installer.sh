@@ -24,6 +24,59 @@ LAUNCH_TARGET="${4:?launch target name is required}"
 DIST_DIR="${5:-$REPO_ROOT/dist}"
 VERSION="${6:-local}"
 
+env_truthy() {
+  local value
+  value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+normalize_release_version() {
+  local value
+  value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+is_placeholder_release_version() {
+  case "$(normalize_release_version "$1")" in
+    ""|local|local-rebuild|run-local|run-local-rebuild|unpublished)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+require_publishable_release_version() {
+  if env_truthy "${CHUMMER_ALLOW_LOCAL_RELEASE_VERSION:-0}"; then
+    return 0
+  fi
+
+  if is_placeholder_release_version "$VERSION"; then
+    echo "Refusing to package public desktop artifacts with placeholder release version '$VERSION'." >&2
+    echo "Set a real release identifier or export CHUMMER_ALLOW_LOCAL_RELEASE_VERSION=1 for deliberate local-only packaging." >&2
+    exit 1
+  fi
+}
+
+prune_release_symbols() {
+  if env_truthy "${CHUMMER_RELEASE_INCLUDE_PDBS:-0}"; then
+    return 0
+  fi
+
+  local removed=0
+  while IFS= read -r -d '' pdb_path; do
+    rm -f "$pdb_path"
+    removed=$((removed + 1))
+  done < <(find "$PUBLISH_DIR" -type f -name '*.pdb' -print0)
+
+  if (( removed > 0 )); then
+    echo "pruned $removed public release symbol file(s) from $PUBLISH_DIR" >&2
+  fi
+}
+
 abspath() {
   python3 - "$1" <<'PY'
 from pathlib import Path
@@ -486,16 +539,22 @@ EOF
 case "$RID" in
   win-*)
     bundle_demo_character_fixture
+    require_publishable_release_version
+    prune_release_symbols
     build_portable_artifacts
     build_windows_installer
     ;;
   linux-*)
     bundle_demo_character_fixture
+    require_publishable_release_version
+    prune_release_symbols
     build_portable_artifacts
     build_linux_installer
     ;;
   osx-*)
     bundle_demo_character_fixture
+    require_publishable_release_version
+    prune_release_symbols
     build_portable_artifacts
     build_macos_installer
     ;;
