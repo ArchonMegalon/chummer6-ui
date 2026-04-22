@@ -132,6 +132,18 @@
                     </label>
                 }
             </div>
+            @if (DialogTrustReceiptText.HasDialogTrustReceipt(dialog))
+            {
+                @* m104: blazor_dialog_surface *@
+                <section class="dialog-note dialog-explain-receipt" data-dialog-explain-receipt>
+                    <dl class="build-lab-decision-grid">
+                        <div><dt>Before</dt><dd>@DialogTrustReceiptText.BuildDialogBefore(dialog)</dd></div>
+                        <div><dt>After</dt><dd>@DialogTrustReceiptText.BuildDialogAfter(dialog)</dd></div>
+                        <div><dt>Explain receipt</dt><dd>@DialogTrustReceiptText.BuildDialogExplainReceipt(dialog)</dd></div>
+                        <div><dt>Support reuse</dt><dd>@DialogTrustReceiptText.BuildDialogSupportReuse(dialog)</dd></div>
+                    </dl>
+                </section>
+            }
             <div id="dialogFooter" class="dialog-footer classic-dialog-footer">
                 @foreach (DesktopDialogAction action in dialog.Actions)
                 {

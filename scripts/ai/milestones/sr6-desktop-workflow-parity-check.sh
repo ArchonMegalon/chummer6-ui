@@ -30,6 +30,7 @@ python3 - <<'PY' "$repo_root" "$receipt_path" "$ledger_path" "$sr4_receipt_path"
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,10 +42,23 @@ execution_exit = int(sys.argv[8])
 verification_exit = int(sys.argv[9])
 materializer_exit = int(sys.argv[10])
 release_channel_path = Path(sys.argv[11])
+RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS") or "86400"
+)
+RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
 
 
 def normalize(value: object) -> str:
     return str(value or "").strip().lower()
+
+
+def status_ok(value: object) -> bool:
+    return normalize(value) in {"pass", "passed", "ready"}
 
 
 def parse_iso(value: object) -> datetime | None:
@@ -60,6 +74,8 @@ def parse_iso(value: object) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
+
+
 required_family_ids = [
     "create-open-import-save-save-as-print-export",
     "metatype-priorities-karma-entry",
@@ -80,13 +96,51 @@ payload = {
     "status": "fail",
     "summary": "SR6 desktop workflow carry-forward parity is not yet exhaustively proven.",
     "reasons": [],
-    "evidence": {},
+    "evidence": {
+        "releaseChannelPath": str(release_channel_path),
+        "releaseChannelExists": release_channel_path.is_file(),
+        "ledgerPath": str(ledger_path),
+        "sr4ReceiptPath": str(sr4_receipt_path),
+        "dualHeadTestsPath": str(dual_head_tests_path),
+        "complianceTestsPath": str(compliance_tests_path),
+        "uiGateTestsPath": str(ui_gate_tests_path),
+        "releaseChannelMaxAgeSeconds": RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS,
+        "releaseChannelMaxFutureSkewSeconds": RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS,
+        "executionExit": execution_exit,
+        "verificationExit": verification_exit,
+        "materializerExit": materializer_exit,
+    },
 }
 
-if not ledger_path.is_file():
-    payload["reasons"].append(f"Missing SR6 workflow parity ledger: {ledger_path}")
-    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    raise SystemExit(43)
+source_artifact_reasons: list[str] = []
+release_channel_reasons: list[str] = []
+sr4_baseline_reasons: list[str] = []
+workflow_family_reasons: list[str] = []
+test_reference_reasons: list[str] = []
+parity_receipt_reasons: list[str] = []
+materialization_reasons: list[str] = []
+
+
+def append_reason(message: str, *buckets: list[str]) -> None:
+    if message not in payload["reasons"]:
+        payload["reasons"].append(message)
+    for bucket in buckets:
+        if message not in bucket:
+            bucket.append(message)
+
+
+def require_file(path: Path, label: str) -> bool:
+    if path.is_file():
+        return True
+    append_reason(f"{label} is missing: {path}", source_artifact_reasons)
+    return False
+
+
+ledger_exists = require_file(ledger_path, "SR6 workflow parity ledger")
+sr4_receipt_exists = require_file(sr4_receipt_path, "SR4 workflow parity receipt")
+dual_head_tests_exist = require_file(dual_head_tests_path, "Dual-head acceptance tests")
+compliance_tests_exist = require_file(compliance_tests_path, "Migration compliance tests")
+ui_gate_tests_exist = require_file(ui_gate_tests_path, "Flagship UI gate tests")
 
 release_channel = {}
 if release_channel_path.is_file():
@@ -108,25 +162,48 @@ for key in ("generatedAt", "generated_at"):
         release_channel_generated_at = parse_iso(release_channel_generated_at_raw)
         break
 
+release_channel_age_seconds = None
+release_channel_future_skew_seconds = None
 if not release_channel_path.is_file():
-    payload["reasons"].append(f"Release channel receipt is missing: {release_channel_path}")
+    append_reason(f"Release channel receipt is missing: {release_channel_path}", release_channel_reasons)
 elif not isinstance(release_channel, dict) or not release_channel:
-    payload["reasons"].append(
+    append_reason(
         f"Release channel receipt is unreadable or not a JSON object: {release_channel_path}"
+        , release_channel_reasons
     )
 if not release_channel_channel_id:
-    payload["reasons"].append("Release channel receipt is missing channelId/channel.")
+    append_reason("Release channel receipt is missing channelId/channel.", release_channel_reasons)
 if not release_channel_generated_at_raw or release_channel_generated_at is None:
-    payload["reasons"].append(
+    append_reason(
         "Release channel receipt is missing a valid generatedAt/generated_at timestamp."
+        , release_channel_reasons
     )
+else:
+    now = datetime.now(timezone.utc)
+    release_channel_delta_seconds = (now - release_channel_generated_at).total_seconds()
+    release_channel_age_seconds = int(max(release_channel_delta_seconds, 0))
+    release_channel_future_skew_seconds = int(max(-release_channel_delta_seconds, 0))
+    if release_channel_future_skew_seconds > RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS:
+        append_reason(
+            f"Release channel receipt generatedAt is in the future by {release_channel_future_skew_seconds} seconds.",
+            release_channel_reasons,
+        )
+    if release_channel_age_seconds > RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS:
+        append_reason(
+            f"Release channel receipt is stale ({release_channel_age_seconds} seconds old).",
+            release_channel_reasons,
+        )
 
-ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+ledger = json.loads(ledger_path.read_text(encoding="utf-8")) if ledger_exists else {}
 families = {str(item.get("id") or "").strip(): item for item in (ledger.get("requiredFamilies") or []) if isinstance(item, dict)}
 test_corpus = "\n".join(
     path.read_text(encoding="utf-8")
-    for path in [dual_head_tests_path, compliance_tests_path, ui_gate_tests_path]
-    if path.is_file()
+    for path, exists in [
+        (dual_head_tests_path, dual_head_tests_exist),
+        (compliance_tests_path, compliance_tests_exist),
+        (ui_gate_tests_path, ui_gate_tests_exist),
+    ]
+    if exists
 )
 
 missing_family_ids = [family_id for family_id in required_family_ids if family_id not in families]
@@ -205,84 +282,211 @@ for family_id in required_family_ids:
         failing_parity_receipts[family_id] = receipt_failures
 
 if missing_family_ids:
-    payload["reasons"].append("SR6 workflow parity ledger is missing required families: " + ", ".join(missing_family_ids))
+    append_reason(
+        "SR6 workflow parity ledger is missing required families: " + ", ".join(missing_family_ids),
+        workflow_family_reasons,
+    )
 if non_ready_family_ids:
-    payload["reasons"].append(
+    append_reason(
         "SR6 workflow parity ledger has unresolved families: "
         + ", ".join(f"{family_id}={families[family_id].get('status', 'missing')}" for family_id in non_ready_family_ids)
+        , workflow_family_reasons
     )
 
-if not sr4_receipt_path.is_file():
-    payload["reasons"].append(f"SR4 parity receipt is missing: {sr4_receipt_path}")
+sr4_receipt_channel_id = ""
+sr4_receipt_generated_at_raw = ""
+sr4_receipt_generated_at = None
+if not sr4_receipt_exists:
+    append_reason(f"SR4 parity receipt is missing: {sr4_receipt_path}", sr4_baseline_reasons)
 else:
     sr4_receipt = json.loads(sr4_receipt_path.read_text(encoding="utf-8"))
-    if str(sr4_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
-        payload["reasons"].append("SR4 desktop workflow parity must pass before SR6 carry-forward parity can close.")
-    sr4_channel_id = normalize(sr4_receipt.get("channelId") or sr4_receipt.get("channel"))
-    if not sr4_channel_id:
-        payload["reasons"].append("SR4 desktop workflow parity receipt is missing channelId/channel.")
-    elif release_channel_channel_id and sr4_channel_id != release_channel_channel_id:
-        payload["reasons"].append("SR4 desktop workflow parity receipt channelId does not match release channel.")
+    if not status_ok(sr4_receipt.get("status")):
+        append_reason("SR4 desktop workflow parity must pass before SR6 carry-forward parity can close.", sr4_baseline_reasons)
+    sr4_receipt_channel_id = normalize(sr4_receipt.get("channelId") or sr4_receipt.get("channel"))
+    if not sr4_receipt_channel_id:
+        append_reason("SR4 desktop workflow parity receipt is missing channelId/channel.", sr4_baseline_reasons)
+    elif release_channel_channel_id and sr4_receipt_channel_id != release_channel_channel_id:
+        append_reason("SR4 desktop workflow parity receipt channelId does not match release channel.", sr4_baseline_reasons)
+    for key in ("generatedAt", "generated_at"):
+        if key in sr4_receipt:
+            sr4_receipt_generated_at_raw = str(sr4_receipt.get(key) or "").strip()
+            sr4_receipt_generated_at = parse_iso(sr4_receipt_generated_at_raw)
+            break
+    if not sr4_receipt_generated_at_raw or sr4_receipt_generated_at is None:
+        append_reason("SR4 desktop workflow parity receipt is missing a valid generatedAt/generated_at timestamp.", sr4_baseline_reasons)
+    elif release_channel_generated_at is not None and sr4_receipt_generated_at < release_channel_generated_at:
+        append_reason("SR4 desktop workflow parity receipt predates the release channel generatedAt timestamp.", sr4_baseline_reasons)
 if missing_test_refs:
-    payload["reasons"].append(
+    append_reason(
         "SR6 workflow parity ledger references missing executable tests: "
         + ", ".join(f"{family_id}: {', '.join(names)}" for family_id, names in sorted(missing_test_refs.items()))
+        , test_reference_reasons
     )
 if missing_parity_receipts:
-    payload["reasons"].append(
+    append_reason(
         "SR6 workflow parity ledger is missing edition-specific parity receipts: "
         + ", ".join(f"{family_id}: {', '.join(names)}" for family_id, names in sorted(missing_parity_receipts.items()))
+        , parity_receipt_reasons
     )
 if failing_parity_receipts:
     external_only_fail = (
         len(external_only_failing_parity_receipts) == len(failing_parity_receipts)
     )
     if external_only_fail:
-        payload["reasons"].append(
+        append_reason(
             "SR6 workflow parity receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
             "(external blocker: missing_api_surface_contract): "
             + ", ".join(
                 f"{family_id}: {', '.join(names)}"
                 for family_id, names in sorted(failing_parity_receipts.items())
             )
+            , parity_receipt_reasons
         )
     else:
-        payload["reasons"].append(
+        append_reason(
             "SR6 workflow parity receipts are missing or not passing: "
             + ", ".join(
                 f"{family_id}: {', '.join(names)}"
                 for family_id, names in sorted(failing_parity_receipts.items())
             )
+            , parity_receipt_reasons
         )
 if materializer_exit not in {0, 43}:
-    payload["reasons"].append(f"SR6 family receipt materialization exited unexpectedly: {materializer_exit}")
+    append_reason(
+        f"SR6 family receipt materialization exited unexpectedly: {materializer_exit}",
+        materialization_reasons,
+    )
 if verification_exit not in {0, 43}:
-    payload["reasons"].append(f"SR6 verification receipt materialization exited unexpectedly: {verification_exit}")
+    append_reason(
+        f"SR6 verification receipt materialization exited unexpectedly: {verification_exit}",
+        materialization_reasons,
+    )
 if execution_exit not in {0, 43}:
-    payload["reasons"].append(f"SR6 execution receipt materialization exited unexpectedly: {execution_exit}")
+    append_reason(
+        f"SR6 execution receipt materialization exited unexpectedly: {execution_exit}",
+        materialization_reasons,
+    )
 
 if not payload["reasons"]:
     payload["status"] = "pass"
-    payload["summary"] = "SR6 desktop workflow carry-forward parity is explicitly proven."
+    payload["summary"] = (
+        "SR6 desktop workflow carry-forward parity is explicitly proven across source artifacts, release-channel identity, "
+        "SR4 baseline proof, workflow-family readiness, executable test references, receipt proof, and materialization."
+    )
 
 payload["channelId"] = release_channel_channel_id
-payload["evidence"] = {
-    "releaseChannelPath": str(release_channel_path),
-    "releaseChannelExists": release_channel_path.is_file(),
-    "releaseChannelChannelId": release_channel_channel_id,
-    "releaseChannelGeneratedAt": release_channel_generated_at_raw,
-    "ledgerPath": str(ledger_path),
-    "sr4ReceiptPath": str(sr4_receipt_path),
+payload["evidence"]["releaseChannelChannelId"] = release_channel_channel_id
+payload["evidence"]["releaseChannelGeneratedAt"] = release_channel_generated_at_raw
+payload["evidence"]["releaseChannelAgeSeconds"] = release_channel_age_seconds
+payload["evidence"]["releaseChannelFutureSkewSeconds"] = release_channel_future_skew_seconds
+payload["evidence"]["requiredFamilyCount"] = len(required_family_ids)
+payload["evidence"]["ledgerFamilyCount"] = len(families)
+payload["evidence"]["missingFamilyIds"] = missing_family_ids
+payload["evidence"]["nonReadyFamilyIds"] = non_ready_family_ids
+payload["evidence"]["missingTestRefs"] = missing_test_refs
+payload["evidence"]["missingParityReceipts"] = missing_parity_receipts
+payload["evidence"]["failingParityReceipts"] = failing_parity_receipts
+payload["evidence"]["failingParityReceiptsExternalOnly"] = (
+    len(external_only_failing_parity_receipts) == len(failing_parity_receipts)
+    and bool(failing_parity_receipts)
+)
+payload["evidence"]["failingParityReceiptsExternal"] = external_only_failing_parity_receipts
+payload["evidence"]["sourceArtifactChecks"] = {
+    "ledger": ledger_exists,
+    "sr4Receipt": sr4_receipt_exists,
+    "dualHeadTests": dual_head_tests_exist,
+    "complianceTests": compliance_tests_exist,
+    "uiGateTests": ui_gate_tests_exist,
+}
+payload["evidence"]["sr4ReceiptChannelId"] = sr4_receipt_channel_id
+payload["evidence"]["sr4ReceiptGeneratedAt"] = sr4_receipt_generated_at_raw
+payload["evidence"]["failureCount"] = len(payload["reasons"])
+
+payload["sourceArtifactReview"] = {
+    "status": "pass" if not source_artifact_reasons else "fail",
+    "summary": (
+        "SR6 ledger, SR4 baseline receipt, and executable test sources are present."
+        if not source_artifact_reasons
+        else "One or more SR6 ledger, SR4 baseline, or executable test sources are missing."
+    ),
+    "reasons": source_artifact_reasons,
+    "checks": payload["evidence"]["sourceArtifactChecks"],
+}
+payload["releaseChannelReview"] = {
+    "status": "pass" if not release_channel_reasons else "fail",
+    "summary": (
+        "SR6 workflow parity proof is aligned to a current release-channel identity."
+        if not release_channel_reasons
+        else "SR6 workflow parity proof is missing or drifting from release-channel identity."
+    ),
+    "reasons": release_channel_reasons,
+    "path": str(release_channel_path),
+    "channelId": release_channel_channel_id,
+    "generatedAt": release_channel_generated_at_raw,
+    "ageSeconds": release_channel_age_seconds,
+    "futureSkewSeconds": release_channel_future_skew_seconds,
+    "maxAgeSeconds": RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS,
+    "maxFutureSkewSeconds": RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS,
+}
+payload["sr4BaselineReview"] = {
+    "status": "pass" if not sr4_baseline_reasons else "fail",
+    "summary": (
+        "SR4 baseline workflow parity proof is present and aligned for SR6 carry-forward closure."
+        if not sr4_baseline_reasons
+        else "SR4 baseline workflow parity proof is missing, stale, or misaligned for SR6 carry-forward closure."
+    ),
+    "reasons": sr4_baseline_reasons,
+    "path": str(sr4_receipt_path),
+    "channelId": sr4_receipt_channel_id,
+    "generatedAt": sr4_receipt_generated_at_raw,
+}
+payload["workflowFamilyReview"] = {
+    "status": "pass" if not workflow_family_reasons else "fail",
+    "summary": (
+        "All required SR6 workflow families are present and ready."
+        if not workflow_family_reasons
+        else "One or more required SR6 workflow families are missing or non-ready."
+    ),
+    "reasons": workflow_family_reasons,
+    "requiredFamilyCount": len(required_family_ids),
+    "ledgerFamilyCount": len(families),
     "missingFamilyIds": missing_family_ids,
     "nonReadyFamilyIds": non_ready_family_ids,
+}
+payload["testReferenceReview"] = {
+    "status": "pass" if not test_reference_reasons else "fail",
+    "summary": (
+        "SR6 workflow parity audit tests resolve to executable test sources."
+        if not test_reference_reasons
+        else "SR6 workflow parity ledger still references missing executable tests."
+    ),
+    "reasons": test_reference_reasons,
     "missingTestRefs": missing_test_refs,
+}
+payload["parityReceiptReview"] = {
+    "status": "pass" if not parity_receipt_reasons else "fail",
+    "summary": (
+        "SR6 family-specific carry-forward receipts are present and passing."
+        if not parity_receipt_reasons
+        else "SR6 family-specific carry-forward receipts are missing, failing, or externally blocked."
+    ),
+    "reasons": parity_receipt_reasons,
     "missingParityReceipts": missing_parity_receipts,
     "failingParityReceipts": failing_parity_receipts,
-    "failingParityReceiptsExternalOnly": (
-        len(external_only_failing_parity_receipts) == len(failing_parity_receipts)
-        and bool(failing_parity_receipts)
-    ),
+    "failingParityReceiptsExternalOnly": payload["evidence"]["failingParityReceiptsExternalOnly"],
     "failingParityReceiptsExternal": external_only_failing_parity_receipts,
+}
+payload["materializationReview"] = {
+    "status": "pass" if not materialization_reasons else "fail",
+    "summary": (
+        "SR6 family execution, verification, and receipt materializers exited within allowed bounds."
+        if not materialization_reasons
+        else "One or more SR6 family materializers exited unexpectedly."
+    ),
+    "reasons": materialization_reasons,
+    "executionExit": execution_exit,
+    "verificationExit": verification_exit,
+    "materializerExit": materializer_exit,
 }
 
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

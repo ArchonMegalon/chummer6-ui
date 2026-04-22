@@ -1,0 +1,11 @@
+# GitHub Codex Review
+
+PR: local://ui
+
+Findings:
+- [high] .codex-design/product/README.md [contracts] mirror-drift-still-present
+Running `bash scripts/ai/milestones/ui-design-mirror-hygiene-check.sh` on this branch fails immediately with `[UI-DESIGN-MIRROR] FAIL: product mirror drift for README.md relative to products/chummer/README.md.`; A direct manifest-based compare against `/docker/chummercomplete/chummer-design/products/chummer/sync/sync-manifest.yaml` reports `drift_count 4`, exactly on `README.md`, `WEEKLY_PRODUCT_PULSE.generated.json`, `NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml`, and `NEXT_90_DAY_QUEUE_STAGING.generated.yaml`.; Example diff: `.codex-design/product/README.md` diverges from `/docker/chummercomplete/chummer-design/products/chummer/README.md` by dropping canonical future-lane entries, so the local mirror is still stale instead of repaired.
+Expected fix: Resync the four drifted mirror files from the canonical design repo so the local `.codex-design` bundle matches the manifest-defined source exactly and the mirror hygiene check passes.
+- [high] .codex-studio/published/QUEUE.generated.yaml [state] queue-worklist-mirror-contract-conflict
+`.codex-studio/published/QUEUE.generated.yaml:3-17` reopens `audit-task-11708` as a live queue item, but `WORKLIST.md:52` still marks `WL-214` done and `WORKLIST.md:67-68` still says the latest 11708 wave stayed closed with `items: []`.; The queued slice uses noncanonical `source_items` pointing at `/docker/chummercomplete/chummer-presentation/.codex-design/...` (`QUEUE.generated.yaml:9-13`), while `ui-design-mirror-hygiene-check.sh:127-151` explicitly requires canonical design-repo sources under `/docker/chummercomplete/chummer-design/...`.; Even after the byte-for-byte mirror drift is fixed, the same guard will still fail because `ui-design-mirror-hygiene-check.sh:153-156` rejects a published `audit-task-11708` item when `WL-214` remains closed and not marked active.
+Expected fix: Make the state model consistent: either reopen the mirror slice in `WORKLIST.md` and update the hygiene contract to accept the new bounded queue item, or keep WL-214 closed and remove the reopened queue entry; in either case, use canonical design-repo `source_items` and record the latest 2026-04-22 publication wave explicitly.

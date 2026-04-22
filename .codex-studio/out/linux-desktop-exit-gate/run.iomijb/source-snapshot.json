@@ -1,8 +1,0 @@
-{
-  "mode": "filesystem_copy",
-  "repo_root": "/docker/chummercomplete/chummer-presentation",
-  "snapshot_root": "/docker/chummercomplete/.linux-desktop-exit-gate-source.S4qqrY",
-  "entries_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/linux-desktop-exit-gate/run.iomijb/source-snapshot.entries.txt",
-  "entry_count": 466,
-  "worktree_sha256": "07cbb40dd5f068d1afcc9796585732c2216b7c526ce7b02469d435362e24c00f"
-}

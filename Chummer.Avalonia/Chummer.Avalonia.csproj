@@ -66,5 +66,8 @@
       <_Parameter1>ChummerDesktopReleaseChannel</_Parameter1>
       <_Parameter2>$(ChummerDesktopReleaseChannel)</_Parameter2>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Chummer.Tests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 </Project>

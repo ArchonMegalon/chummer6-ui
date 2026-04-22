@@ -2,11 +2,17 @@
 @using Chummer.Contracts.Presentation
 @using Chummer.Presentation.UiKit
 
-<div class="tool-strip">
-    @foreach (AppCommandDefinition command in Commands)
+<div class="tool-strip classic-tool-strip" role="toolbar" aria-label="Workbench actions">
+    @for (int index = 0; index < Commands.Count; index++)
     {
+        AppCommandDefinition command = Commands[index];
         bool enabled = IsCommandEnabled(command);
-        <button class="tool-btn @(string.Equals(LastCommandId, command.Id, StringComparison.Ordinal) ? "selected" : string.Empty)"
+        @if (ShouldRenderDividerBefore(index))
+        {
+            <span class="tool-divider" aria-hidden="true"></span>
+        }
+
+        <button class="tool-btn classic-tool-button @(string.Equals(LastCommandId, command.Id, StringComparison.Ordinal) ? "selected" : string.Empty)"
                 title="@ShellChromeBoundary.FormatCommandLabel(command.Id)"
                 disabled="@(!enabled || IsBusy)"
                 @onclick="() => ExecuteCommandAsync(command.Id)">
@@ -37,6 +43,15 @@
     private Task ExecuteCommandAsync(string commandId)
     {
         return ExecuteCommandRequested.InvokeAsync(commandId);
+    }
+
+    private bool ShouldRenderDividerBefore(int index)
+    {
+        if (index <= 0 || index >= Commands.Count)
+            return false;
+
+        return string.Equals(Commands[index - 1].Id, "copy", StringComparison.Ordinal)
+            && string.Equals(Commands[index].Id, "new_character", StringComparison.Ordinal);
     }
 
     private static string FormatToolStripLabel(string commandId)

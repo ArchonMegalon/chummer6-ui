@@ -21,6 +21,52 @@ published_screenshot_review_markdown_path="$repo_root/.codex-studio/published/NE
 legacy_chummer5a_root="${CHUMMER5A_ROOT:-/docker/chummer5a}"
 
 mkdir -p "$(dirname "$receipt_path")"
+mkdir -p "$published_screenshot_dir"
+
+if ! python3 - <<'PY' "$repo_root" "$published_screenshot_dir"
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+repo_root = Path(sys.argv[1])
+screenshot_dir = Path(sys.argv[2])
+flagship_gate_path = repo_root / ".codex-studio" / "published" / "UI_FLAGSHIP_RELEASE_GATE.generated.json"
+visual_gate_path = repo_root / ".codex-studio" / "published" / "DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+control_evidence_path = screenshot_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
+
+def load_status(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return ""
+    return str(payload.get("status") or "").strip().lower()
+
+def is_pass_status(value: str) -> bool:
+    return value in {"pass", "passed", "ready"}
+
+png_paths = sorted(screenshot_dir.glob("*.png"))
+if len(png_paths) != 18:
+    raise SystemExit(1)
+if not control_evidence_path.is_file():
+    raise SystemExit(1)
+try:
+    control_payload = json.loads(control_evidence_path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+if not isinstance(control_payload.get("entries"), list) or len(control_payload["entries"]) != 18:
+    raise SystemExit(1)
+if not is_pass_status(load_status(flagship_gate_path)):
+    raise SystemExit(1)
+if not is_pass_status(load_status(visual_gate_path)):
+    raise SystemExit(1)
+PY
+then
+  bash "$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh" >/dev/null
+fi
 
 python3 - <<'PY' "$registry_path" "$queue_path" "$design_queue_path" "$receipt_path" "$release_channel_path" "$test_path" "$compliance_guard_path" "$verify_script_path" "$toolstrip_path" "$menu_path" "$event_handlers_path" "$published_screenshot_dir" "$published_screenshot_review_markdown_path" "$legacy_chummer5a_root" "$repo_root" "$authority_repo_root"
 from __future__ import annotations
@@ -242,7 +288,7 @@ REQUIRED_SURFACE_EVIDENCE = {
         "source_markers": ["FileMenuButton", "ToolsMenuButton"],
         "capture_markers": [
             'harness.Click("FileMenuButton")',
-            'captured[GetVeteranCertificationReviewStep("menu").ScreenshotFileName] = harness.CaptureScreenshotBytes()',
+            'CaptureCurrentFrame(harness, GetVeteranCertificationReviewStep("menu").ScreenshotFileName);',
         ],
         "source_file_markers": [
             {"file": "menu", "markers": ["FileMenuButton", "ToolsMenuButton", 'Tag="file"', 'Header="Tools"']},
@@ -262,7 +308,7 @@ REQUIRED_SURFACE_EVIDENCE = {
         "source_markers": ["Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions"],
         "capture_markers": [
             "harness.SetTheme(ThemeVariant.Light)",
-            'captured[GetVeteranCertificationReviewStep("toolstrip").ScreenshotFileName] = harness.CaptureScreenshotBytes()',
+            'CaptureCurrentFrame(harness, GetVeteranCertificationReviewStep("toolstrip").ScreenshotFileName);',
         ],
         "control_markers": ["DesktopHomeButton", "ImportFileButton", "SettingsButton", "ImportRawButton"],
         "source_file_markers": [
@@ -282,13 +328,14 @@ REQUIRED_SURFACE_EVIDENCE = {
     "roster": {
         "source_markers": ["character_roster", "Character Roster"],
         "capture_markers": [
-            'harness.Click("ToolsMenuButton")',
-            'harness.ClickMenuCommand("character_roster")',
-            'harness.Presenter.ExecuteCommandAsync("character_roster"',
+            'CaptureDialogFrameInFreshHarness(',
+            'GetVeteranCertificationReviewStep("roster").ScreenshotFileName,',
+            '"ToolsMenuButton",',
+            '"character_roster",',
             '"Character Roster"',
             "AssertDialogContainsAll(",
             'GetVeteranCertificationReviewStep("roster").RequiredDialogMarkers',
-            'captured[GetVeteranCertificationReviewStep("roster").ScreenshotFileName]',
+            "CaptureCurrentFrame(harness, fileName);",
         ],
         "source_file_markers": [
             {
@@ -307,13 +354,14 @@ REQUIRED_SURFACE_EVIDENCE = {
     "master_index": {
         "source_markers": ["master_index", "Master Index"],
         "capture_markers": [
-            'harness.Click("ToolsMenuButton")',
-            'harness.ClickMenuCommand("master_index")',
-            'harness.Presenter.ExecuteCommandAsync("master_index"',
+            'CaptureDialogFrameInFreshHarness(',
+            'GetVeteranCertificationReviewStep("master_index").ScreenshotFileName,',
+            '"ToolsMenuButton",',
+            '"master_index",',
             '"Master Index"',
             "AssertDialogContainsAll(",
             'GetVeteranCertificationReviewStep("master_index").RequiredDialogMarkers',
-            'captured[GetVeteranCertificationReviewStep("master_index").ScreenshotFileName]',
+            "CaptureCurrentFrame(harness, fileName);",
         ],
         "source_file_markers": [
             {
@@ -335,7 +383,7 @@ REQUIRED_SURFACE_EVIDENCE = {
             "harness.PressKey(Key.G, RawInputModifiers.Control)",
             "AssertDialogContainsAll(",
             'GetVeteranCertificationReviewStep("settings").RequiredDialogMarkers',
-            'captured[GetVeteranCertificationReviewStep("settings").ScreenshotFileName]',
+            'CaptureCurrentFrame(harness, GetVeteranCertificationReviewStep("settings").ScreenshotFileName);',
         ],
         "source_file_markers": [
             {"file": "toolstrip", "markers": ["SettingsButton", "SettingsButton_OnClick"]},
@@ -358,8 +406,11 @@ REQUIRED_SURFACE_EVIDENCE = {
             "harness.Presenter.ImportCalls > 0",
             'harness.Click("FileMenuButton")',
             'harness.ClickMenuCommand("open_character")',
+            'CaptureDialogFrameInFreshHarness(',
+            'GetVeteranCertificationReviewStep("import").ScreenshotFileName,',
             '"Open Character"',
-            'captured[GetVeteranCertificationReviewStep("import").ScreenshotFileName]',
+            "AssertDialogContainsAll(",
+            "CaptureCurrentFrame(harness, fileName);",
         ],
         "control_markers": ["ImportFileButton", "ImportRawButton"],
         "source_file_markers": [
@@ -529,6 +580,21 @@ def scalar_text(value: Any) -> str:
     return str(value).strip()
 
 
+def is_pass_status(value: str) -> bool:
+    return scalar_text(value).lower() in {"pass", "passed", "ready"}
+
+
+def normalized_unique_strings(values: Any) -> list[str]:
+    normalized: list[str] = []
+    if not isinstance(values, list):
+        return normalized
+    for value in values:
+        text = scalar_text(value)
+        if text and text not in normalized:
+            normalized.append(text)
+    return normalized
+
+
 def parse_simple_yaml_items(text: str) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
@@ -656,6 +722,11 @@ def extract_registry_milestone_103(text: str) -> dict[str, Any]:
             end = index
             break
     block = "\n".join(lines[start:end])
+    milestone_status_line = ""
+    for index in range(start + 1, end):
+        if lines[index].startswith("    status: "):
+            milestone_status_line = lines[index].strip()
+            break
     task_start = None
     for index in range(start, end):
         if lines[index].strip() == "- id: 103.2":
@@ -671,7 +742,7 @@ def extract_registry_milestone_103(text: str) -> dict[str, Any]:
         task_block = "\n".join(lines[task_start:task_end])
     return {
         "has_milestone": True,
-        "status_in_progress": "status: in_progress" in block,
+        "status_complete": milestone_status_line == "status: complete",
         "wave_w7": "wave: W7" in block,
         "depends_101": "- 101" in block,
         "depends_102": "- 102" in block,
@@ -974,6 +1045,9 @@ evidence: dict[str, Any] = {
     "noReopenPosture": EXPECTED_NO_REOPEN_POSTURE,
 }
 
+visual_familiarity_receipt_path = source_repo_root / ".codex-studio" / "published" / "DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+visual_difference_ledger_path = source_repo_root / "docs" / "CHUMMER5A_VISUAL_DIFFERENCE_LEDGER.json"
+
 git_evidence: dict[str, Any] = {
     "expectedLandedCommit": EXPECTED_LANDED_COMMIT,
     "checkedAgainstRef": "HEAD",
@@ -1019,6 +1093,87 @@ queue_text = read_text(queue_path, reasons)
 design_queue_text = read_text(design_queue_path, reasons)
 registry_task_103_2_text = extract_registry_task_103_2_text(registry_text)
 release_channel = load_json_object(release_channel_path, reasons)
+visual_familiarity_receipt = load_json_object(visual_familiarity_receipt_path, reasons)
+screenshot_control_evidence_path = screenshot_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
+screenshot_control_evidence_source = load_json_object(screenshot_control_evidence_path, reasons)
+visual_familiarity_status = scalar_text(visual_familiarity_receipt.get("status")).lower()
+if not is_pass_status(visual_familiarity_status):
+    reasons.append(
+        f"Desktop visual familiarity receipt must be passing for M103 certification truth: {visual_familiarity_receipt_path}."
+    )
+visual_familiarity_evidence = visual_familiarity_receipt.get("evidence")
+if not isinstance(visual_familiarity_evidence, dict):
+    visual_familiarity_evidence = {}
+    reasons.append(
+        f"Desktop visual familiarity receipt must expose an evidence object: {visual_familiarity_receipt_path}."
+    )
+visual_familiarity_reviews = visual_familiarity_receipt.get("reviews")
+if not isinstance(visual_familiarity_reviews, dict):
+    visual_familiarity_reviews = {}
+    reasons.append(
+        f"Desktop visual familiarity receipt must expose review buckets for M103 certification truth: {visual_familiarity_receipt_path}."
+    )
+required_visual_familiarity_review_keys = [
+    "flagshipGateReview",
+    "headProofReview",
+    "interactionProofReview",
+    "sourceAnchorReview",
+    "screenCaptureReview",
+    "legacyFamiliarityReview",
+]
+visual_familiarity_missing_review_keys = [
+    key for key in required_visual_familiarity_review_keys
+    if key not in visual_familiarity_reviews
+]
+if visual_familiarity_missing_review_keys:
+    reasons.append(
+        "Desktop visual familiarity receipt is missing required review buckets for M103 certification truth: "
+        + ", ".join(visual_familiarity_missing_review_keys)
+        + "."
+    )
+visual_familiarity_failing_review_keys: list[str] = []
+visual_familiarity_review_reason_count_mismatches: list[str] = []
+visual_familiarity_review_reason_counts: dict[str, int | None] = {}
+for review_key in required_visual_familiarity_review_keys:
+    raw_review = visual_familiarity_reviews.get(review_key)
+    if not isinstance(raw_review, dict):
+        continue
+    review_status = scalar_text(raw_review.get("status")).lower()
+    review_reasons = raw_review.get("reasons")
+    review_reason_count = raw_review.get("reasonCount")
+    visual_familiarity_review_reason_counts[review_key] = (
+        review_reason_count if isinstance(review_reason_count, int) else None
+    )
+    if not is_pass_status(review_status):
+        visual_familiarity_failing_review_keys.append(review_key)
+    if not isinstance(review_reasons, list):
+        visual_familiarity_review_reason_count_mismatches.append(review_key)
+        continue
+    if not isinstance(review_reason_count, int) or review_reason_count != len(review_reasons):
+        visual_familiarity_review_reason_count_mismatches.append(review_key)
+if visual_familiarity_failing_review_keys:
+    reasons.append(
+        "Desktop visual familiarity receipt review buckets are not all passing for M103 certification truth: "
+        + ", ".join(sorted(visual_familiarity_failing_review_keys))
+        + "."
+    )
+if visual_familiarity_review_reason_count_mismatches:
+    reasons.append(
+        "Desktop visual familiarity receipt review buckets have invalid reasonCount/reasons alignment for M103 certification truth: "
+        + ", ".join(sorted(visual_familiarity_review_reason_count_mismatches))
+        + "."
+    )
+visual_familiarity_failure_count = visual_familiarity_evidence.get("failureCount")
+visual_familiarity_failure_count_valid = isinstance(visual_familiarity_failure_count, int)
+if not visual_familiarity_failure_count_valid:
+    reasons.append(
+        f"Desktop visual familiarity receipt must expose evidence.failureCount as an integer: {visual_familiarity_receipt_path}."
+    )
+elif visual_familiarity_failure_count != 0:
+    reasons.append(
+        f"Desktop visual familiarity receipt evidence.failureCount must be 0 for M103 certification truth; got {visual_familiarity_failure_count}."
+    )
+visual_difference_ledger_source = load_json_object(visual_difference_ledger_path, reasons)
 test_text = read_text(test_path, reasons)
 compliance_guard_text = read_text(compliance_guard_path, reasons)
 verify_script_text = read_text(verify_script_path, reasons)
@@ -1036,6 +1191,376 @@ surface_source_paths = {
     "toolstrip": str(toolstrip_path),
     "menu": str(menu_path),
     "event_handlers": str(event_handlers_path),
+}
+required_visual_difference_screenshots = normalized_unique_strings(
+    visual_familiarity_evidence.get("required_screenshots")
+)
+raw_screenshot_control_entries = screenshot_control_evidence_source.get("entries")
+if not isinstance(raw_screenshot_control_entries, list):
+    reasons.append(
+        f"Screenshot control evidence must expose an entries array: {screenshot_control_evidence_path}."
+    )
+    raw_screenshot_control_entries = []
+screenshot_control_evidence: list[dict[str, Any]] = []
+screenshot_control_seen_screenshots: set[str] = set()
+screenshot_control_duplicate_screenshots: list[str] = []
+for entry_index, raw_entry in enumerate(raw_screenshot_control_entries, start=1):
+    if not isinstance(raw_entry, dict):
+        reasons.append(
+            f"Screenshot control evidence entry {entry_index} is not an object: {screenshot_control_evidence_path}."
+        )
+        continue
+    screenshot = scalar_text(raw_entry.get("screenshot"))
+    theme = scalar_text(raw_entry.get("theme"))
+    dialog_title = scalar_text(raw_entry.get("dialogTitle"))
+    dialog_message = scalar_text(raw_entry.get("dialogMessage"))
+    dialog_field_labels = normalized_unique_strings(raw_entry.get("dialogFieldLabels"))
+    dialog_field_ids = normalized_unique_strings(raw_entry.get("dialogFieldIds"))
+    dialog_field_control_ids = normalized_unique_strings(raw_entry.get("dialogFieldControlIds"))
+    dialog_field_input_values = normalized_unique_strings(raw_entry.get("dialogFieldInputValues"))
+    dialog_action_ids = normalized_unique_strings(raw_entry.get("dialogActionIds"))
+    dialog_action_control_ids = normalized_unique_strings(raw_entry.get("dialogActionControlIds"))
+    visible_named_control_ids = normalized_unique_strings(raw_entry.get("visibleNamedControlIds"))
+    visible_text_samples = normalized_unique_strings(raw_entry.get("visibleTextSamples"))
+    visible_menu_command_ids = normalized_unique_strings(raw_entry.get("visibleMenuCommandIds"))
+    visible_tab_labels = normalized_unique_strings(raw_entry.get("visibleTabLabels"))
+    visible_section_quick_action_ids = normalized_unique_strings(raw_entry.get("visibleSectionQuickActionIds"))
+    selected_list_row_texts = normalized_unique_strings(raw_entry.get("selectedListRowTexts"))
+    preview_text = scalar_text(raw_entry.get("previewText"))
+    raw_visible_named_controls = raw_entry.get("visibleNamedControls")
+    if not isinstance(raw_visible_named_controls, list):
+        raw_visible_named_controls = []
+    visible_named_controls: list[dict[str, Any]] = []
+    for control_index, raw_control in enumerate(raw_visible_named_controls, start=1):
+        if not isinstance(raw_control, dict):
+            reasons.append(
+                f"Screenshot control evidence entry {entry_index}.{control_index} has a non-object visibleNamedControls item for {screenshot or '<missing>'}."
+            )
+            continue
+        visible_named_controls.append(
+            {
+                "name": scalar_text(raw_control.get("name")),
+                "controlType": scalar_text(raw_control.get("controlType")),
+                "text": scalar_text(raw_control.get("text")),
+                "x": raw_control.get("x"),
+                "y": raw_control.get("y"),
+                "width": raw_control.get("width"),
+                "height": raw_control.get("height"),
+            }
+        )
+    if not screenshot:
+        reasons.append(f"Screenshot control evidence entry {entry_index} is missing screenshot.")
+    if screenshot in screenshot_control_seen_screenshots and screenshot not in screenshot_control_duplicate_screenshots:
+        screenshot_control_duplicate_screenshots.append(screenshot)
+    if screenshot:
+        screenshot_control_seen_screenshots.add(screenshot)
+    if not theme:
+        reasons.append(
+            f"Screenshot control evidence entry {entry_index} is missing theme for {screenshot or '<missing>'}."
+        )
+    if not visible_named_control_ids:
+        reasons.append(
+            f"Screenshot control evidence entry {entry_index} must carry visibleNamedControlIds for {screenshot or '<missing>'}."
+        )
+    if not visible_named_controls:
+        reasons.append(
+            f"Screenshot control evidence entry {entry_index} must carry visibleNamedControls for {screenshot or '<missing>'}."
+        )
+    is_dialog_capture = bool(dialog_title) and dialog_title != "(none)"
+    if is_dialog_capture and not dialog_field_ids:
+        reasons.append(
+            f"Screenshot control evidence entry {entry_index} must carry dialogFieldIds for dialog screenshot {screenshot or '<missing>'}."
+        )
+    if is_dialog_capture and not dialog_field_control_ids:
+        reasons.append(
+            f"Screenshot control evidence entry {entry_index} must carry dialogFieldControlIds for dialog screenshot {screenshot or '<missing>'}."
+        )
+    if is_dialog_capture and not dialog_action_control_ids:
+        reasons.append(
+            f"Screenshot control evidence entry {entry_index} must carry dialogActionControlIds for dialog screenshot {screenshot or '<missing>'}."
+        )
+    screenshot_control_evidence.append(
+        {
+            "screenshot": screenshot,
+            "theme": theme,
+            "dialogTitle": dialog_title,
+            "dialogMessage": dialog_message,
+            "dialogFieldLabels": dialog_field_labels,
+            "dialogFieldIds": dialog_field_ids,
+            "dialogFieldControlIds": dialog_field_control_ids,
+            "dialogFieldInputValues": dialog_field_input_values,
+            "dialogActionIds": dialog_action_ids,
+            "dialogActionControlIds": dialog_action_control_ids,
+            "visibleNamedControlIds": visible_named_control_ids,
+            "visibleNamedControls": visible_named_controls,
+            "visibleTextSamples": visible_text_samples,
+            "visibleMenuCommandIds": visible_menu_command_ids,
+            "visibleTabLabels": visible_tab_labels,
+            "visibleSectionQuickActionIds": visible_section_quick_action_ids,
+            "selectedListRowTexts": selected_list_row_texts,
+            "previewText": preview_text,
+        }
+    )
+screenshot_control_evidence_screenshots = [
+    entry.get("screenshot", "")
+    for entry in screenshot_control_evidence
+    if scalar_text(entry.get("screenshot"))
+]
+missing_screenshot_control_evidence = sorted(
+    set(required_visual_difference_screenshots) - set(screenshot_control_evidence_screenshots)
+)
+unexpected_screenshot_control_evidence = sorted(
+    set(screenshot_control_evidence_screenshots) - set(required_visual_difference_screenshots)
+)
+if missing_screenshot_control_evidence:
+    reasons.append(
+        "Screenshot control evidence is missing required screenshot coverage: "
+        + ", ".join(missing_screenshot_control_evidence)
+        + "."
+    )
+if unexpected_screenshot_control_evidence:
+    reasons.append(
+        "Screenshot control evidence contains screenshots outside DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE: "
+        + ", ".join(unexpected_screenshot_control_evidence)
+        + "."
+    )
+if screenshot_control_duplicate_screenshots:
+    reasons.append(
+        "Screenshot control evidence contains duplicate screenshot entries: "
+        + ", ".join(sorted(screenshot_control_duplicate_screenshots))
+        + "."
+    )
+screenshot_control_evidence_by_screenshot = {
+    scalar_text(entry.get("screenshot")): entry
+    for entry in screenshot_control_evidence
+    if scalar_text(entry.get("screenshot"))
+}
+raw_visual_difference_entries = visual_difference_ledger_source.get("entries")
+if not isinstance(raw_visual_difference_entries, list):
+    reasons.append(
+        f"Visual difference ledger must expose an entries array: {visual_difference_ledger_path}."
+    )
+    raw_visual_difference_entries = []
+visual_difference_ledger: list[dict[str, Any]] = []
+visual_difference_seen_screenshots: set[str] = set()
+visual_difference_duplicate_screenshots: list[str] = []
+for entry_index, raw_entry in enumerate(raw_visual_difference_entries, start=1):
+    if not isinstance(raw_entry, dict):
+        reasons.append(
+            f"Visual difference ledger entry {entry_index} is not an object: {visual_difference_ledger_path}."
+        )
+        continue
+    screenshot = scalar_text(raw_entry.get("screenshot"))
+    surface = scalar_text(raw_entry.get("surface"))
+    surface_kind = scalar_text(raw_entry.get("surfaceKind"))
+    legacy_reference = scalar_text(raw_entry.get("legacyReference"))
+    current_reference = scalar_text(raw_entry.get("currentReference"))
+    parity_intent = scalar_text(raw_entry.get("parityIntent"))
+    raw_evidence_anchors = raw_entry.get("evidenceAnchors")
+    if not isinstance(raw_evidence_anchors, list):
+        raw_evidence_anchors = []
+    evidence_anchors = normalized_unique_strings(raw_evidence_anchors)
+    if not screenshot:
+        reasons.append(f"Visual difference ledger entry {entry_index} is missing screenshot.")
+    if screenshot in visual_difference_seen_screenshots and screenshot not in visual_difference_duplicate_screenshots:
+        visual_difference_duplicate_screenshots.append(screenshot)
+    if screenshot:
+        visual_difference_seen_screenshots.add(screenshot)
+    if not surface:
+        reasons.append(f"Visual difference ledger entry {entry_index} is missing surface for {screenshot or '<missing>'}.")
+    if surface_kind not in {"frame", "dialog"}:
+        reasons.append(
+            f"Visual difference ledger entry {entry_index} has invalid surfaceKind {surface_kind!r} for {screenshot or '<missing>'}."
+        )
+    if not parity_intent:
+        reasons.append(
+            f"Visual difference ledger entry {entry_index} is missing parityIntent for {screenshot or '<missing>'}."
+        )
+    if not evidence_anchors:
+        reasons.append(
+            f"Visual difference ledger entry {entry_index} is missing evidenceAnchors for {screenshot or '<missing>'}."
+        )
+    elif len(evidence_anchors) < 2:
+        reasons.append(
+            f"Visual difference ledger entry {entry_index} must carry at least two evidenceAnchors for {screenshot or '<missing>'}."
+        )
+    differences = raw_entry.get("differences")
+    if not isinstance(differences, list) or not differences:
+        reasons.append(
+            f"Visual difference ledger entry {entry_index} must carry at least one difference for {screenshot or '<missing>'}."
+        )
+        differences = []
+    normalized_differences: list[dict[str, str]] = []
+    for difference_index, raw_difference in enumerate(differences, start=1):
+        if not isinstance(raw_difference, dict):
+            reasons.append(
+                f"Visual difference ledger difference {entry_index}.{difference_index} is not an object for {screenshot or '<missing>'}."
+            )
+            continue
+        ui_element = scalar_text(raw_difference.get("uiElement"))
+        category = scalar_text(raw_difference.get("category"))
+        legacy_posture = scalar_text(raw_difference.get("legacyPosture"))
+        current_posture = scalar_text(raw_difference.get("currentPosture"))
+        why_it_differs = scalar_text(raw_difference.get("whyItDiffers"))
+        if not ui_element:
+            reasons.append(
+                f"Visual difference ledger difference {entry_index}.{difference_index} is missing uiElement for {screenshot or '<missing>'}."
+            )
+        if not legacy_posture:
+            reasons.append(
+                f"Visual difference ledger difference {entry_index}.{difference_index} is missing legacyPosture for {screenshot or '<missing>'}."
+            )
+        if not current_posture:
+            reasons.append(
+                f"Visual difference ledger difference {entry_index}.{difference_index} is missing currentPosture for {screenshot or '<missing>'}."
+            )
+        if not why_it_differs:
+            reasons.append(
+                f"Visual difference ledger difference {entry_index}.{difference_index} is missing whyItDiffers for {screenshot or '<missing>'}."
+            )
+        normalized_differences.append(
+            {
+                "uiElement": ui_element,
+                "category": category,
+                "legacyPosture": legacy_posture,
+                "currentPosture": current_posture,
+                "whyItDiffers": why_it_differs,
+            }
+        )
+    visual_difference_ledger.append(
+        {
+            "screenshot": screenshot,
+            "surface": surface,
+            "surfaceKind": surface_kind,
+            "legacyReference": legacy_reference,
+            "currentReference": current_reference,
+            "parityIntent": parity_intent,
+            "evidenceAnchors": evidence_anchors,
+            "differences": normalized_differences,
+        }
+    )
+visual_difference_screenshots = [
+    entry.get("screenshot", "")
+    for entry in visual_difference_ledger
+    if scalar_text(entry.get("screenshot"))
+]
+missing_visual_difference_screenshots = sorted(
+    set(required_visual_difference_screenshots) - set(visual_difference_screenshots)
+)
+unexpected_visual_difference_screenshots = sorted(
+    set(visual_difference_screenshots) - set(required_visual_difference_screenshots)
+)
+if missing_visual_difference_screenshots:
+    reasons.append(
+        "Visual difference ledger is missing required screenshot coverage: "
+        + ", ".join(missing_visual_difference_screenshots)
+        + "."
+    )
+if unexpected_visual_difference_screenshots:
+    reasons.append(
+        "Visual difference ledger contains screenshots outside DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE: "
+        + ", ".join(unexpected_visual_difference_screenshots)
+        + "."
+    )
+if visual_difference_duplicate_screenshots:
+    reasons.append(
+        "Visual difference ledger contains duplicate screenshot entries: "
+        + ", ".join(sorted(visual_difference_duplicate_screenshots))
+        + "."
+    )
+visual_difference_count = sum(len(entry.get("differences", [])) for entry in visual_difference_ledger)
+visual_difference_evidence_anchor_count = sum(len(entry.get("evidenceAnchors", [])) for entry in visual_difference_ledger)
+screenshot_control_named_control_count = sum(len(entry.get("visibleNamedControlIds", [])) for entry in screenshot_control_evidence)
+screenshot_control_evidence_checks = {
+    "screenshot_control_evidence_file_present": screenshot_control_evidence_path.is_file(),
+    "screenshot_control_entries_present": bool(screenshot_control_evidence),
+    "every_required_screenshot_has_control_evidence": not missing_screenshot_control_evidence,
+    "control_evidence_entries_subset_of_required_screenshots": not unexpected_screenshot_control_evidence,
+    "control_evidence_entry_screenshots_unique": not screenshot_control_duplicate_screenshots,
+    "every_control_evidence_entry_has_theme": all(
+        scalar_text(entry.get("theme")) for entry in screenshot_control_evidence
+    ),
+    "every_control_evidence_entry_has_named_control_ids": all(
+        isinstance(entry.get("visibleNamedControlIds"), list) and bool(entry.get("visibleNamedControlIds"))
+        for entry in screenshot_control_evidence
+    ),
+    "every_control_evidence_entry_has_named_controls": all(
+        isinstance(entry.get("visibleNamedControls"), list) and bool(entry.get("visibleNamedControls"))
+        for entry in screenshot_control_evidence
+    ),
+    "every_dialog_control_evidence_entry_has_field_ids": all(
+        not scalar_text(entry.get("dialogTitle"))
+        or scalar_text(entry.get("dialogTitle")) == "(none)"
+        or (isinstance(entry.get("dialogFieldIds"), list) and bool(entry.get("dialogFieldIds")))
+        for entry in screenshot_control_evidence
+    ),
+    "every_dialog_control_evidence_entry_has_field_control_ids": all(
+        not scalar_text(entry.get("dialogTitle"))
+        or scalar_text(entry.get("dialogTitle")) == "(none)"
+        or (isinstance(entry.get("dialogFieldControlIds"), list) and bool(entry.get("dialogFieldControlIds")))
+        for entry in screenshot_control_evidence
+    ),
+    "every_dialog_control_evidence_entry_has_action_control_ids": all(
+        not scalar_text(entry.get("dialogTitle"))
+        or scalar_text(entry.get("dialogTitle")) == "(none)"
+        or (isinstance(entry.get("dialogActionControlIds"), list) and bool(entry.get("dialogActionControlIds")))
+        for entry in screenshot_control_evidence
+    ),
+    "every_difference_entry_has_control_evidence": all(
+        scalar_text(entry.get("screenshot")) in screenshot_control_evidence_by_screenshot
+        for entry in visual_difference_ledger
+    ),
+}
+visual_difference_ledger_checks = {
+    "ledger_file_present": visual_difference_ledger_path.is_file(),
+    "visual_familiarity_receipt_present": visual_familiarity_receipt_path.is_file(),
+    "visual_familiarity_required_screenshots_present": bool(required_visual_difference_screenshots),
+    "difference_entries_present": bool(visual_difference_ledger),
+    "every_required_screenshot_has_difference_entry": not missing_visual_difference_screenshots,
+    "difference_entries_subset_of_required_screenshots": not unexpected_visual_difference_screenshots,
+    "difference_entry_screenshots_unique": not visual_difference_duplicate_screenshots,
+    "every_difference_entry_has_surface": all(
+        scalar_text(entry.get("surface")) for entry in visual_difference_ledger
+    ),
+    "every_difference_entry_has_kind": all(
+        scalar_text(entry.get("surfaceKind")) in {"frame", "dialog"}
+        for entry in visual_difference_ledger
+    ),
+    "every_difference_entry_has_parity_intent": all(
+        scalar_text(entry.get("parityIntent")) for entry in visual_difference_ledger
+    ),
+    "every_difference_entry_has_evidence_anchors": all(
+        isinstance(entry.get("evidenceAnchors"), list) and bool(entry.get("evidenceAnchors"))
+        for entry in visual_difference_ledger
+    ),
+    "every_difference_entry_has_multiple_evidence_anchors": all(
+        len(entry.get("evidenceAnchors", [])) >= 2
+        for entry in visual_difference_ledger
+    ),
+    "every_difference_entry_has_differences": all(
+        isinstance(entry.get("differences"), list) and bool(entry.get("differences"))
+        for entry in visual_difference_ledger
+    ),
+    "every_difference_has_ui_element": all(
+        scalar_text(difference.get("uiElement"))
+        for entry in visual_difference_ledger
+        for difference in entry.get("differences", [])
+    ),
+    "every_difference_has_legacy_posture": all(
+        scalar_text(difference.get("legacyPosture"))
+        for entry in visual_difference_ledger
+        for difference in entry.get("differences", [])
+    ),
+    "every_difference_has_current_posture": all(
+        scalar_text(difference.get("currentPosture"))
+        for entry in visual_difference_ledger
+        for difference in entry.get("differences", [])
+    ),
+    "every_difference_has_reason": all(
+        scalar_text(difference.get("whyItDiffers"))
+        for entry in visual_difference_ledger
+        for difference in entry.get("differences", [])
+    ),
 }
 
 release_channel_status = scalar_text(release_channel.get("status")).lower()
@@ -1637,6 +2162,10 @@ required_compliance_guard_markers = [
     "operatorHelperProofChecks",
     "proofScopeChecks",
     "proofScopePathHits",
+    "screenshotControlEvidencePath",
+    "screenshotControlEvidence",
+    "screenshotControlEvidenceChecks",
+    "Observed named controls:",
     "veteranCertificationMatrix",
     "certificationMatrixRow",
     "chummer5aBaselineFile",
@@ -1687,6 +2216,50 @@ evidence["standardVerifyEncodedBlockedActiveRunHelperHits"] = standard_verify_en
 evidence["expectedProofRepoPrefix"] = EXPECTED_PROOF_REPO_PREFIX
 evidence["proofScopeChecks"] = proof_scope_checks
 evidence["proofScopePathHits"] = proof_scope_path_hits
+evidence["visualFamiliarityReceiptPath"] = str(visual_familiarity_receipt_path)
+evidence["visualFamiliarityStatus"] = visual_familiarity_status
+evidence["visualFamiliarityFailureCount"] = (
+    visual_familiarity_failure_count if visual_familiarity_failure_count_valid else None
+)
+evidence["visualFamiliarityReviewChecks"] = {
+    "receipt_status_pass": is_pass_status(visual_familiarity_status),
+    "review_buckets_present": not visual_familiarity_missing_review_keys,
+    "review_buckets_all_pass": not visual_familiarity_failing_review_keys,
+    "review_reason_counts_aligned": not visual_familiarity_review_reason_count_mismatches,
+    "failure_count_present": visual_familiarity_failure_count_valid,
+    "failure_count_zero": visual_familiarity_failure_count_valid and visual_familiarity_failure_count == 0,
+}
+evidence["visualFamiliarityReviewSummary"] = {
+    "requiredReviewKeys": required_visual_familiarity_review_keys,
+    "missingReviewKeys": visual_familiarity_missing_review_keys,
+    "failingReviewKeys": sorted(visual_familiarity_failing_review_keys),
+    "reviewReasonCountMismatches": sorted(visual_familiarity_review_reason_count_mismatches),
+    "reviewReasonCounts": visual_familiarity_review_reason_counts,
+}
+evidence["screenshotControlEvidencePath"] = str(screenshot_control_evidence_path)
+evidence["visualDifferenceLedgerPath"] = str(visual_difference_ledger_path)
+evidence["visualFamiliarityRequiredScreenshots"] = required_visual_difference_screenshots
+evidence["screenshotControlEvidence"] = screenshot_control_evidence
+evidence["screenshotControlEvidenceChecks"] = screenshot_control_evidence_checks
+evidence["screenshotControlEvidenceSummary"] = {
+    "requiredScreenshotCount": len(required_visual_difference_screenshots),
+    "entryCount": len(screenshot_control_evidence),
+    "namedControlCount": screenshot_control_named_control_count,
+    "missingRequiredScreenshots": missing_screenshot_control_evidence,
+    "unexpectedScreenshots": unexpected_screenshot_control_evidence,
+    "duplicateScreenshots": sorted(screenshot_control_duplicate_screenshots),
+}
+evidence["visualDifferenceLedger"] = visual_difference_ledger
+evidence["visualDifferenceLedgerChecks"] = visual_difference_ledger_checks
+evidence["visualDifferenceLedgerSummary"] = {
+    "requiredScreenshotCount": len(required_visual_difference_screenshots),
+    "entryCount": len(visual_difference_ledger),
+    "differenceCount": visual_difference_count,
+    "evidenceAnchorCount": visual_difference_evidence_anchor_count,
+    "missingRequiredScreenshots": missing_visual_difference_screenshots,
+    "unexpectedScreenshots": unexpected_visual_difference_screenshots,
+    "duplicateScreenshots": sorted(visual_difference_duplicate_screenshots),
+}
 evidence["toolstripSourceFile"] = str(toolstrip_path)
 evidence["menuSourceFile"] = str(menu_path)
 evidence["eventHandlersSourceFile"] = str(event_handlers_path)
@@ -1700,6 +2273,8 @@ review_rows: list[str] = [
     f"Screenshot pack: `{screenshot_dir}`",
     f"Source repo: `{source_repo_root}`",
     f"Authority proof repo: `{authority_repo_root}`",
+    f"Screenshot control evidence: `{screenshot_control_evidence_path}`",
+    f"Difference ledger source: `{visual_difference_ledger_path}`",
     "",
     "| Surface | Parity Question | Promoted-Head Proof | Legacy Familiarity | Screenshot | Sample Colors | SHA-256 |",
     "| --- | --- | --- | --- | --- | ---: | --- |",
@@ -1727,6 +2302,96 @@ for row in veteran_certification_matrix:
     review_rows.append(
         f"- `{row['surface']}`: `{screenshot_dir / row['screenshot']}`"
     )
+review_rows.extend(
+    [
+        "",
+        "## Audited UI Differences",
+        "",
+    ]
+)
+for entry in visual_difference_ledger:
+    screenshot_control_entry = screenshot_control_evidence_by_screenshot.get(entry["screenshot"], {})
+    review_rows.extend(
+        [
+            f"### {entry['screenshot']} (`{entry['surface']}`)",
+            "",
+            f"- Surface kind: {entry['surfaceKind']}",
+            f"- Parity intent: {entry['parityIntent']}",
+            f"- Legacy reference: `{entry['legacyReference']}`",
+            f"- Current reference: `{entry['currentReference']}`",
+        ]
+    )
+    review_rows.append(f"- Observed theme: {scalar_text(screenshot_control_entry.get('theme')) or '(missing)'}")
+    review_rows.append(
+        "- Observed named controls: "
+        + ", ".join(
+            f"`{value}`"
+            for value in screenshot_control_entry.get("visibleNamedControlIds", [])
+        )
+    )
+    if screenshot_control_entry.get("visibleMenuCommandIds"):
+        review_rows.append(
+            "- Observed menu commands: "
+            + ", ".join(
+                f"`{value}`"
+                for value in screenshot_control_entry.get("visibleMenuCommandIds", [])
+            )
+        )
+    if screenshot_control_entry.get("dialogFieldLabels"):
+        review_rows.append(
+            "- Observed dialog fields: "
+            + ", ".join(
+                f"`{value}`"
+                for value in screenshot_control_entry.get("dialogFieldLabels", [])
+            )
+        )
+    if screenshot_control_entry.get("dialogActionIds"):
+        review_rows.append(
+            "- Observed dialog actions: "
+            + ", ".join(
+                f"`{value}`"
+                for value in screenshot_control_entry.get("dialogActionIds", [])
+            )
+        )
+    if screenshot_control_entry.get("visibleSectionQuickActionIds"):
+        review_rows.append(
+            "- Observed quick actions: "
+            + ", ".join(
+                f"`{value}`"
+                for value in screenshot_control_entry.get("visibleSectionQuickActionIds", [])
+            )
+        )
+    if screenshot_control_entry.get("visibleTabLabels"):
+        review_rows.append(
+            "- Observed tab labels: "
+            + ", ".join(
+                f"`{value}`"
+                for value in screenshot_control_entry.get("visibleTabLabels", [])
+            )
+        )
+    if screenshot_control_entry.get("selectedListRowTexts"):
+        review_rows.append(
+            "- Observed selected rows: "
+            + ", ".join(
+                f"`{value}`"
+                for value in screenshot_control_entry.get("selectedListRowTexts", [])
+            )
+        )
+    if scalar_text(screenshot_control_entry.get("previewText")):
+        review_rows.append(f"- Observed preview text: `{scalar_text(screenshot_control_entry.get('previewText'))}`")
+    review_rows.append("- Evidence anchors:")
+    for anchor in entry.get("evidenceAnchors", []):
+        review_rows.append(f"- Anchor: {anchor}")
+    for difference in entry.get("differences", []):
+        review_rows.append(
+            "- `{uiElement}`: {currentPosture} Legacy posture: {legacyPosture} Why it differs: {whyItDiffers}".format(
+                uiElement=difference.get("uiElement", ""),
+                currentPosture=difference.get("currentPosture", ""),
+                legacyPosture=difference.get("legacyPosture", ""),
+                whyItDiffers=difference.get("whyItDiffers", ""),
+            )
+        )
+    review_rows.append("")
 review_markdown_text = "\n".join(review_rows) + "\n"
 screenshot_review_markdown_path.write_text(review_markdown_text, encoding="utf-8")
 
@@ -1736,6 +2401,8 @@ review_markdown_checks = {
     "screenshot_pack_bound": f"Screenshot pack: `{screenshot_dir}`" in review_markdown_text,
     "source_repo_bound": f"Source repo: `{source_repo_root}`" in review_markdown_text,
     "authority_repo_bound": f"Authority proof repo: `{authority_repo_root}`" in review_markdown_text,
+    "screenshot_control_evidence_bound": f"Screenshot control evidence: `{screenshot_control_evidence_path}`" in review_markdown_text,
+    "difference_ledger_source_bound": f"Difference ledger source: `{visual_difference_ledger_path}`" in review_markdown_text,
     "table_header_present": "| Surface | Parity Question | Promoted-Head Proof | Legacy Familiarity | Screenshot | Sample Colors | SHA-256 |" in review_markdown_text,
     "surface_row_count_matches": sum(
         1 for line in review_markdown_text.splitlines() if line.startswith("| ") and not line.startswith("| Surface ") and not line.startswith("| --- ")
@@ -1748,6 +2415,17 @@ review_markdown_checks = {
         f"- `{row['surface']}`: `{screenshot_dir / row['screenshot']}`" in review_markdown_text
         for row in veteran_certification_matrix
     ),
+    "visual_difference_section_present": "## Audited UI Differences" in review_markdown_text,
+    "visual_difference_heading_count_matches": sum(
+        1 for line in review_markdown_text.splitlines() if line.startswith("### ") and ".png" in line
+    ) == len(visual_difference_ledger),
+    "visual_difference_headings_present": all(
+        f"### {entry['screenshot']} (`{entry['surface']}`)" in review_markdown_text
+        for entry in visual_difference_ledger
+    ),
+    "observed_named_controls_present": review_markdown_text.count("Observed named controls:") == len(visual_difference_ledger),
+    "visual_difference_anchor_count_matches": review_markdown_text.count("Evidence anchors:") == len(visual_difference_ledger),
+    "visual_difference_reason_count_matches": review_markdown_text.count("Why it differs:") == visual_difference_count,
 }
 for key, passed in review_markdown_checks.items():
     if not passed:

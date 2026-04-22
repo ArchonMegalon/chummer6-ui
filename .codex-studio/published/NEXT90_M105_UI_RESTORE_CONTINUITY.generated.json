@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m105_ui_restore_continuity",
-  "generatedAt": "2026-04-19T04:32:09Z",
+  "generatedAt": "2026-04-21T21:04:01Z",
   "status": "pass",
   "reasons": [],
   "summary": "Next-90 milestone 105.2 keeps desktop restore continuation, stale-state visibility, and conflict-safe workspace choices visible on the Avalonia primary route.",
@@ -146,12 +146,12 @@
         {
           "marker": "checking next-90 M105 restore-continuity and conflict-safe desktop UX guard",
           "present": true,
-          "line": 940
+          "line": 955
         },
         {
           "marker": "bash scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh",
           "present": true,
-          "line": 941
+          "line": 956
         }
       ]
     },
@@ -168,9 +168,9 @@
         "path": "Chummer.Avalonia/DesktopHomeWindow.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "e7d34f23",
-        "subject": "Compact desktop install linking and home shell",
-        "sha": "e7d34f2311c983a73f1a83547765e0decedd82b7",
+        "commit": "25e20923",
+        "subject": "Push current ui snapshot with LFS binaries",
+        "sha": "25e2092303dd03902c04ac03eade271b47a099f8",
         "paths": [
           "Chummer.Avalonia/DesktopHomeWindow.cs"
         ],
@@ -182,9 +182,9 @@
         "path": "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "8b10754e",
-        "subject": "Tighten desktop jump window chrome",
-        "sha": "8b10754e46bdb44644dd6050e817c12a8896cbc0",
+        "commit": "07bcbbae",
+        "subject": "Align flagship desktop parity and publish Linux preview",
+        "sha": "07bcbbaebb2f73fec52af74949bd6f321482502b",
         "paths": [
           "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"
         ],
@@ -196,9 +196,9 @@
         "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
         "pathAllowed": true,
         "exists": true,
-        "commit": "55a44ddd",
-        "subject": "Checkpoint desktop parity and release workflow updates",
-        "sha": "55a44dddfff74aeb000492ee8e41ca42940009e1",
+        "commit": "a0402417",
+        "subject": "Tighten classic flagship UI parity",
+        "sha": "a04024170506041a6e1bea2df0e493e258d5688f",
         "paths": [
           "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml"
         ],
@@ -210,9 +210,9 @@
         "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "8981e368",
-        "subject": "Tighten flagship shell chrome and split blazor root",
-        "sha": "8981e368dff6e326e45ce60ff9572e3defe6e581",
+        "commit": "07bcbbae",
+        "subject": "Align flagship desktop parity and publish Linux preview",
+        "sha": "07bcbbaebb2f73fec52af74949bd6f321482502b",
         "paths": [
           "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs"
         ],
@@ -224,9 +224,9 @@
         "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "55a44ddd",
-        "subject": "Checkpoint desktop parity and release workflow updates",
-        "sha": "55a44dddfff74aeb000492ee8e41ca42940009e1",
+        "commit": "25e20923",
+        "subject": "Push current ui snapshot with LFS binaries",
+        "sha": "25e2092303dd03902c04ac03eade271b47a099f8",
         "paths": [
           "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs"
         ],
@@ -238,9 +238,9 @@
         "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "55a44ddd",
-        "subject": "Checkpoint desktop parity and release workflow updates",
-        "sha": "55a44dddfff74aeb000492ee8e41ca42940009e1",
+        "commit": "25e20923",
+        "subject": "Push current ui snapshot with LFS binaries",
+        "sha": "25e2092303dd03902c04ac03eade271b47a099f8",
         "paths": [
           "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
         ],
@@ -252,9 +252,9 @@
         "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "8981e368",
-        "subject": "Tighten flagship shell chrome and split blazor root",
-        "sha": "8981e368dff6e326e45ce60ff9572e3defe6e581",
+        "commit": "07bcbbae",
+        "subject": "Align flagship desktop parity and publish Linux preview",
+        "sha": "07bcbbaebb2f73fec52af74949bd6f321482502b",
         "paths": [
           "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
         ],
@@ -264,33 +264,39 @@
       },
       {
         "path": "Chummer.Tests/Compliance/Next90M105RestoreContinuityGuardTests.cs",
-        "exists": false,
-        "commit": "",
-        "subject": "",
-        "sha": "",
-        "paths": [],
         "pathAllowed": true,
-        "scopeAllowed": false,
-        "isAncestorOfHead": false
+        "exists": true,
+        "commit": "25e20923",
+        "subject": "Push current ui snapshot with LFS binaries",
+        "sha": "25e2092303dd03902c04ac03eade271b47a099f8",
+        "paths": [
+          "Chummer.Tests/Compliance/Next90M105RestoreContinuityGuardTests.cs"
+        ],
+        "scopeAllowed": true,
+        "disallowedPaths": [],
+        "isAncestorOfHead": true
       },
       {
         "path": "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh",
-        "exists": false,
-        "commit": "",
-        "subject": "",
-        "sha": "",
-        "paths": [],
         "pathAllowed": true,
-        "scopeAllowed": false,
-        "isAncestorOfHead": false
+        "exists": true,
+        "commit": "07bcbbae",
+        "subject": "Align flagship desktop parity and publish Linux preview",
+        "sha": "07bcbbaebb2f73fec52af74949bd6f321482502b",
+        "paths": [
+          "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh"
+        ],
+        "scopeAllowed": true,
+        "disallowedPaths": [],
+        "isAncestorOfHead": true
       },
       {
         "path": "scripts/ai/verify.sh",
         "pathAllowed": true,
         "exists": true,
-        "commit": "55a44ddd",
-        "subject": "Checkpoint desktop parity and release workflow updates",
-        "sha": "55a44dddfff74aeb000492ee8e41ca42940009e1",
+        "commit": "25e20923",
+        "subject": "Push current ui snapshot with LFS binaries",
+        "sha": "25e2092303dd03902c04ac03eade271b47a099f8",
         "paths": [
           "scripts/ai/verify.sh"
         ],
@@ -300,14 +306,17 @@
       },
       {
         "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
-        "exists": false,
-        "commit": "",
-        "subject": "",
-        "sha": "",
-        "paths": [],
         "pathAllowed": true,
-        "scopeAllowed": false,
-        "isAncestorOfHead": false
+        "exists": true,
+        "commit": "25e20923",
+        "subject": "Push current ui snapshot with LFS binaries",
+        "sha": "25e2092303dd03902c04ac03eade271b47a099f8",
+        "paths": [
+          ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
+        ],
+        "scopeAllowed": true,
+        "disallowedPaths": [],
+        "isAncestorOfHead": true
       }
     ],
     "pathPresenceChecks": [
@@ -384,32 +393,20 @@
       "has_relevant_changes": true,
       "changes": [
         {
-          "status": " M",
-          "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml"
+          "status": "D ",
+          "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
         },
         {
           "status": " M",
-          "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Avalonia/DesktopHomeWindow.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
+          "path": "Chummer.Tests/Compliance/Next90M105RestoreContinuityGuardTests.cs"
         },
         {
           "status": " M",
           "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
+        },
+        {
+          "status": " M",
+          "path": "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh"
         },
         {
           "status": " M",
@@ -418,18 +415,10 @@
         {
           "status": "??",
           "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
-        },
-        {
-          "status": "??",
-          "path": "Chummer.Tests/Compliance/Next90M105RestoreContinuityGuardTests.cs"
-        },
-        {
-          "status": "??",
-          "path": "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh"
         }
       ]
     },
-    "headCommit": "d09a5b5823daaf48ed2ff08cd5a4bfe2e664e798",
+    "headCommit": "eac884dd879f435ec90e4b0c0425c1be90bb0806",
     "landedCommit": "54c27661",
     "allowedPaths": [
       "Chummer.Avalonia",
@@ -535,17 +524,17 @@
             {
               "marker": "BuildRestoreContinuityChoiceSummary()",
               "present": true,
-              "line": 342
+              "line": 384
             },
             {
               "marker": "Restore choice: open the current campaign workspace",
               "present": true,
-              "line": 387
+              "line": 390
             },
             {
               "marker": "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)",
               "present": true,
-              "line": 615
+              "line": 618
             }
           ],
           "missingMarkers": []
@@ -556,7 +545,7 @@
             {
               "marker": "Stale state: server continuity is unavailable",
               "present": true,
-              "line": 404
+              "line": 407
             },
             {
               "marker": "ReadCampaignWorkspaceServerPlaneAsync",
@@ -577,7 +566,7 @@
             {
               "marker": "Conflict choices:",
               "present": true,
-              "line": 416
+              "line": 419
             },
             {
               "marker": "Review before continuing:",
@@ -587,12 +576,12 @@
             {
               "marker": "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())",
               "present": true,
-              "line": 622
+              "line": 625
             },
             {
               "marker": "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)",
               "present": true,
-              "line": 627
+              "line": 630
             }
           ],
           "missingMarkers": []
@@ -603,12 +592,12 @@
             {
               "marker": "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)",
               "present": true,
-              "line": 646
+              "line": 649
             },
             {
               "marker": "Support choice: open the tracked case",
               "present": true,
-              "line": 457
+              "line": 460
             }
           ],
           "missingMarkers": []
@@ -687,27 +676,27 @@
             {
               "marker": "BuildCampaignRestoreContinuitySummary()",
               "present": true,
-              "line": 890
+              "line": 891
             },
             {
               "marker": "BuildRestoreContinuityChoiceSummary()",
               "present": true,
-              "line": 891
+              "line": 892
             },
             {
               "marker": "Stale state: server continuity is unavailable",
               "present": true,
-              "line": 895
+              "line": 896
             },
             {
               "marker": "Conflict choices:",
               "present": true,
-              "line": 896
+              "line": 897
             },
             {
               "marker": "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())",
               "present": true,
-              "line": 806
+              "line": 807
             }
           ],
           "missingMarkers": []
@@ -758,47 +747,47 @@
             {
               "marker": "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement.",
               "present": true,
-              "line": 11
+              "line": 12
             },
             {
               "marker": "BuildRestoreContinuityDecisionSummary",
               "present": true,
-              "line": 97
+              "line": 99
             },
             {
               "marker": "Decision gate: Chummer will not replace local work automatically",
               "present": true,
-              "line": 170
+              "line": 172
             },
             {
               "marker": "restore-decision-keep-local-work",
               "present": true,
-              "line": 107
+              "line": 109
             },
             {
               "marker": "restore-decision-review-campaign-workspace",
               "present": true,
-              "line": 117
+              "line": 119
             },
             {
               "marker": "restore-decision-open-workspace-support",
               "present": true,
-              "line": 119
+              "line": 121
             },
             {
               "marker": "ToolTip.SetTip(KeepLocalWorkButton",
               "present": true,
-              "line": 108
+              "line": 110
             },
             {
               "marker": "ToolTip.SetTip(SaveLocalWorkButton",
               "present": true,
-              "line": 114
+              "line": 116
             },
             {
               "marker": "Save local work is unavailable because no dirty local workspace is active",
               "present": true,
-              "line": 13
+              "line": 14
             }
           ],
           "missingMarkers": []
@@ -822,7 +811,34 @@
     },
     "currentRepoProofMode": "live_source_and_wiring",
     "sourceDesignQueuePathMatches": true,
-    "packageBlocksMatch": true
+    "packageBlocksMatch": true,
+    "failureCount": 0
+  },
+  "reviews": {
+    "registryClosureReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "queueClosureReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "proofHygieneReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "sourceMarkerReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "verifyWiringReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "repoProofReview": {
+      "status": "pass",
+      "reasons": []
+    }
   },
   "unchangedExceptGeneratedAt": false
 }

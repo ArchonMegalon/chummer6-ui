@@ -145,6 +145,22 @@ public sealed class Next90M104ExplainReceiptsGuardTests
         StringAssert.Contains(scriptText, "registry_proof_lines_unique");
         StringAssert.Contains(scriptText, "queue_proof_lines_unique");
         StringAssert.Contains(scriptText, "proof uniqueness check failed");
+        StringAssert.Contains(scriptText, "registry_review_reasons");
+        StringAssert.Contains(scriptText, "queue_review_reasons");
+        StringAssert.Contains(scriptText, "proof_hygiene_review_reasons");
+        StringAssert.Contains(scriptText, "local_repo_review_reasons");
+        StringAssert.Contains(scriptText, "source_marker_review_reasons");
+        StringAssert.Contains(scriptText, "\"registryClosureReview\"");
+        StringAssert.Contains(scriptText, "\"queueClosureReview\"");
+        StringAssert.Contains(scriptText, "\"proofHygieneReview\"");
+        StringAssert.Contains(scriptText, "\"localRepoCitationReview\"");
+        StringAssert.Contains(scriptText, "\"sourceMarkerReview\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not registry_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not queue_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not proof_hygiene_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not local_repo_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"status\": \"pass\" if not source_marker_review_reasons else \"fail\"");
+        StringAssert.Contains(scriptText, "\"failureCount\": len(reasons)");
         StringAssert.Contains(scriptText, "M104_explain_receipts_guard_is_wired_into_compliance_test_project");
         StringAssert.Contains(scriptText, "M104_explain_receipts_guard_is_wired_into_standard_ai_verify");
         StringAssert.Contains(scriptText, "m104_standard_verify_wiring");
@@ -165,12 +181,19 @@ public sealed class Next90M104ExplainReceiptsGuardTests
         Assert.AreEqual(0, root.GetProperty("unresolved").GetArrayLength(), "M104 receipt must not surface unresolved drift when the live package repo matches canonical closure proof.");
 
         JsonElement evidence = root.GetProperty("evidence");
+        JsonElement reviews = root.GetProperty("reviews");
         Assert.AreEqual("next90-m104-ui-explain-receipts", evidence.GetProperty("packageId").GetString());
         Assert.AreEqual(3352869062, evidence.GetProperty("frontierId").GetInt64());
         Assert.AreEqual(104, evidence.GetProperty("milestoneId").GetInt32());
         Assert.AreEqual("63f57d62", evidence.GetProperty("landedCommit").GetString());
+        Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
         CollectionAssert.AreEquivalent(ExpectedSurfaces, ReadStringArray(evidence.GetProperty("ownedSurfaces")));
         CollectionAssert.AreEquivalent(ExpectedAllowedPaths, ReadStringArray(evidence.GetProperty("allowedPaths")));
+        Assert.AreEqual("pass", reviews.GetProperty("registryClosureReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("queueClosureReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("proofHygieneReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("localRepoCitationReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", reviews.GetProperty("sourceMarkerReview").GetProperty("status").GetString());
 
         JsonElement queueChecks = evidence.GetProperty("queueChecks");
         Assert.IsTrue(queueChecks.GetProperty("status_complete").GetBoolean(), "Queue row must remain closed.");

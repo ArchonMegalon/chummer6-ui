@@ -39,6 +39,9 @@ public sealed partial class CharacterOverviewPresenter
 
     private async Task<WorkspaceImportDocument> ResolveImportDocumentAsync(WorkspaceImportDocument document, CancellationToken ct)
     {
+        IReadOnlyList<OpenWorkspaceState> openWorkspaces = State.OpenWorkspaces ?? [];
+        IReadOnlyList<AppCommandDefinition> commands = State.Commands ?? [];
+        IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
         string? explicitRulesetId = RulesetDefaults.NormalizeOptional(document.RulesetId);
         if (explicitRulesetId is not null)
             return new WorkspaceImportDocument(document.Content, explicitRulesetId, document.Format);
@@ -50,18 +53,18 @@ public sealed partial class CharacterOverviewPresenter
         CharacterWorkspaceId? activeWorkspaceId = State.WorkspaceId;
         if (activeWorkspaceId is not null)
         {
-            OpenWorkspaceState? activeWorkspace = State.OpenWorkspaces.FirstOrDefault(
+            OpenWorkspaceState? activeWorkspace = openWorkspaces.FirstOrDefault(
                 workspace => string.Equals(workspace.Id.Value, activeWorkspaceId.Value.Value, StringComparison.Ordinal));
             string? activeWorkspaceRulesetId = RulesetDefaults.NormalizeOptional(activeWorkspace?.RulesetId);
             if (activeWorkspaceRulesetId is not null)
                 return new WorkspaceImportDocument(document.Content, activeWorkspaceRulesetId, document.Format);
         }
 
-        string? commandRulesetId = RulesetDefaults.NormalizeOptional(State.Commands.FirstOrDefault()?.RulesetId);
+        string? commandRulesetId = RulesetDefaults.NormalizeOptional(commands.FirstOrDefault()?.RulesetId);
         if (commandRulesetId is not null)
             return new WorkspaceImportDocument(document.Content, commandRulesetId, document.Format);
 
-        string? tabRulesetId = RulesetDefaults.NormalizeOptional(State.NavigationTabs.FirstOrDefault()?.RulesetId);
+        string? tabRulesetId = RulesetDefaults.NormalizeOptional(navigationTabs.FirstOrDefault()?.RulesetId);
         if (tabRulesetId is not null)
             return new WorkspaceImportDocument(document.Content, tabRulesetId, document.Format);
 
@@ -107,6 +110,29 @@ public sealed partial class CharacterOverviewPresenter
         return _workspaceOverviewLifecycleCoordinator.CurrentWorkspaceId ?? State.WorkspaceId;
     }
 
+    private async Task EnsureNavigationContextAsync(CancellationToken ct)
+    {
+        IReadOnlyList<AppCommandDefinition> commands = State.Commands ?? [];
+        IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
+        if (commands.Count > 0 && navigationTabs.Count > 0)
+        {
+            return;
+        }
+
+        string? rulesetId = ResolveCurrentWorkspaceId() is { } currentWorkspace
+            ? ResolveWorkspaceRulesetId(currentWorkspace)
+            : null;
+        ShellBootstrapData bootstrap = TryCreateBootstrapFromShellState(out ShellBootstrapData shellBootstrap)
+            ? shellBootstrap
+            : await _bootstrapDataProvider.GetAsync(rulesetId, ct);
+        Publish(State with
+        {
+            Error = null,
+            Commands = bootstrap.Commands ?? commands,
+            NavigationTabs = bootstrap.NavigationTabs ?? navigationTabs
+        });
+    }
+
     private async Task EnsureDefaultWorkspaceSurfaceAsync(CancellationToken ct)
     {
         if (ResolveCurrentWorkspaceId() is null || !string.IsNullOrWhiteSpace(State.ActiveSectionId))
@@ -114,12 +140,15 @@ public sealed partial class CharacterOverviewPresenter
             return;
         }
 
+        await EnsureNavigationContextAsync(ct);
+
+        IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
         string? defaultTabId = !string.IsNullOrWhiteSpace(State.ActiveTabId)
             ? State.ActiveTabId
-            : State.NavigationTabs
+            : navigationTabs
                 .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
                 ?.Id
-                ?? State.NavigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
+                ?? navigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
         if (string.IsNullOrWhiteSpace(defaultTabId))
         {
             return;

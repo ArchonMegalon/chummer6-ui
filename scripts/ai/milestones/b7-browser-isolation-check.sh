@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 echo "[B7] checking browser deployment signoff guardrails..."
 
 portal_base_url="${CHUMMER_PORTAL_SIGNOFF_BASE_URL:-http://chummer-portal:8080}"

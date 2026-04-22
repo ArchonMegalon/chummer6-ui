@@ -319,8 +319,14 @@ public sealed class CampaignSpineShowcaseComponentTests
     [TestMethod]
     public void Home_renders_build_lab_rules_and_creator_showcase_panels()
     {
+        Showcase_renders_build_lab_rules_and_creator_showcase_panels();
+    }
+
+    [TestMethod]
+    public void Showcase_renders_build_lab_rules_and_creator_showcase_panels()
+    {
         using var context = new BunitContext();
-        IRenderedComponent<Home> cut = context.Render<Home>();
+        IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         cut.WaitForAssertion(() =>
         {

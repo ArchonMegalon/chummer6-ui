@@ -240,7 +240,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.ui.cyberware_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string cyberwareName = ReadDialogValue(dialog, "uiCyberwareName", "Wired Reflexes 2");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Cyberware '{cyberwareName}' added. Dialog remains open for another implant.", "uiCyberwareRating", "uiCyberwareMarkup", "uiCyberwareDiscount", "uiCyberwareBlackMarketDiscount");
+            PublishRulesetAwareDialogAddMore(context, dialog, $"Cyberware '{cyberwareName}' added. Dialog remains open for another implant.", "uiCyberwareRating", "uiCyberwareMarkup", "uiCyberwareDiscount");
             return;
         }
 

@@ -10,6 +10,7 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Shell;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -224,7 +225,7 @@ public class DialogCoordinatorTests
     [TestMethod]
     public async Task CoordinateAsync_roll_adds_result_field_to_dice_dialog()
     {
-        DialogCoordinator coordinator = new();
+        DialogCoordinator coordinator = new(new SuccessfulDiceEvaluator());
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
             ActiveDialog = new DesktopDialogState(
@@ -291,7 +292,7 @@ public class DialogCoordinatorTests
 
         Assert.IsNotNull(published.ActiveDialog);
         Assert.AreEqual("dialog.dice_roller", published.ActiveDialog!.Id);
-        Assert.AreEqual("11 + 2d6 · pass 2 · range 12-22 · avg 17.0",
+        Assert.AreEqual("10 + 2d6 · pass 2 · range 12-22 · avg 17.0",
             DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "initiativePreview"));
         StringAssert.Contains(published.Notice ?? string.Empty, "threshold 4");
     }
@@ -409,7 +410,7 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("add_more", context, CancellationToken.None);
 
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR4 import workbench:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR4 import tools:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Gear 'Ares Predator V' added.");
     }
 
@@ -573,7 +574,7 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("add", context, CancellationToken.None);
 
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup workbench:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Program 'Armor' added.");
     }
 
@@ -905,7 +906,7 @@ public class DialogCoordinatorTests
 
         Assert.IsNull(published.ActiveDialog);
         Assert.AreEqual(workspaceTwo, published.WorkspaceId);
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup workbench:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Runner 'APX' opened from roster.");
     }
 
@@ -953,12 +954,20 @@ public class DialogCoordinatorTests
                 UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
                 GetState: () => published);
 
-        await coordinator.CoordinateAsync("open_watch_file", context, CancellationToken.None);
+            await coordinator.CoordinateAsync("open_watch_file", context, CancellationToken.None);
 
-        Assert.IsNotNull(published.ActiveDialog);
-        Assert.AreEqual("dialog.character_roster", published.ActiveDialog!.Id);
-        StringAssert.Contains(published.Notice ?? string.Empty, "already aligned");
-        StringAssert.Contains(published.Notice ?? string.Empty, "GST");
+            Assert.IsNotNull(published.ActiveDialog);
+            Assert.AreEqual("dialog.character_roster", published.ActiveDialog!.Id);
+            StringAssert.Contains(published.Notice ?? string.Empty, "already aligned");
+            StringAssert.Contains(published.Notice ?? string.Empty, "GST");
+        }
+        finally
+        {
+            if (Directory.Exists(rosterPath))
+            {
+                Directory.Delete(rosterPath, recursive: true);
+            }
+        }
     }
 
     [TestMethod]
@@ -1018,14 +1027,6 @@ public class DialogCoordinatorTests
             StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
             StringAssert.Contains(published.Notice ?? string.Empty, "Watched runner 'APX' opened from roster watch folder.");
         }
-        finally
-        {
-            if (Directory.Exists(rosterPath))
-            {
-                Directory.Delete(rosterPath, recursive: true);
-            }
-        }
-    }
         finally
         {
             if (Directory.Exists(rosterPath))
@@ -1464,5 +1465,26 @@ public class DialogCoordinatorTests
             HouseRuleLanePosture: "governed",
             HouseRuleOverlayCount: 3,
             Sr6SuccessorLaneReceipt: "sr6 successor lane is partial: supplement/governed designers/house-rule posture remains mixed.");
+    }
+
+    private sealed class SuccessfulDiceEvaluator : IEngineEvaluator
+    {
+        public ValueTask<RulesetCapabilityInvocationResult> InvokeAsync(
+            RulesetCapabilityInvocationRequest request,
+            CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            string expression = request.Arguments
+                .FirstOrDefault(argument => string.Equals(argument.Name, "expression", StringComparison.Ordinal))
+                ?.Value.StringValue
+                ?? "1d6";
+
+            return ValueTask.FromResult(new RulesetCapabilityInvocationResult(
+                Success: true,
+                Output: new RulesetCapabilityValue(
+                    Kind: RulesetCapabilityValueKinds.String,
+                    StringValue: $"{expression} => 13"),
+                Diagnostics: []));
+        }
     }
 }

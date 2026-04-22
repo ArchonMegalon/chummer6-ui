@@ -1,9 +1,31 @@
 {
-  "generatedAt": "2026-04-20T07:07:21.823646Z",
+  "generatedAt": "2026-04-22T04:35:13.566685Z",
   "contract_name": "chummer6-ui.chummer5a_layout_hard_gate",
   "status": "pass",
   "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
   "reasons": [],
+  "reviews": {
+    "legacyBaselineReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "avaloniaLayoutReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "blazorLayoutReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "sharedCatalogReview": {
+      "status": "pass",
+      "reasons": []
+    },
+    "releaseWiringReview": {
+      "status": "pass",
+      "reasons": []
+    }
+  },
   "evidence": {
     "legacyFrmCareerDesignerPath": "/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs",
     "legacyMenuMarkers": [
@@ -76,6 +98,8 @@
     "requiredTestName": "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers",
     "mainWindowDefaultContentColumns": "0,*,0",
     "blazorSupportsCompactSingleRunnerLayout": true,
-    "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": true
+    "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": true,
+    "reasonCount": 0,
+    "failureCount": 0
   }
 }

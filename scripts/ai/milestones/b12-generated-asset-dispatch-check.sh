@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 echo "[B12] checking generated-asset dispatch/review depth..."
 
 if [[ ! -f Chummer.Blazor/Components/Shared/GeneratedAssetReviewPanel.razor ]]; then
@@ -21,8 +24,8 @@ if ! rg -q "data-generated-portrait-forge|data-generated-portrait-forge-seed|dat
 fi
 
 if ! rg -q "GeneratedAssetActionKindDispatch|GeneratedAssetActionKindReview|GeneratedAssetActionKindRefreshDispatch|GeneratedAssetActionKindMarkCanonical|ApplyDispatchInvalidation|shadowfeedDispatchReceipt|portraitPromptSeed|portraitStyleOptions|canonicalAssetId|coachRouteClass|gpt-5.3-codex" \
-  Chummer.Blazor/Components/Pages/Home.razor; then
-  echo "[B12] FAIL: Blazor shared surface is missing portrait forge metadata/canonical action or dispatch/review lifecycle wiring."
+  Chummer.Blazor/Components/Pages/Showcase.razor; then
+  echo "[B12] FAIL: Blazor showcase surface is missing portrait forge metadata/canonical action or dispatch/review lifecycle wiring."
   exit 5
 fi
 

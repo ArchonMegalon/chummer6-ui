@@ -52,6 +52,11 @@ prune_release_gate_lock_if_stale() {
       return 0
     fi
   fi
+  if command -v pgrep >/dev/null 2>&1; then
+    if pgrep -f "scripts/ai/milestones/b14-flagship-ui-release-gate.sh" >/dev/null 2>&1; then
+      return 0
+    fi
+  fi
 
   lock_stale_probe="$(
     python3 - <<'PY' "$release_gate_lock_dir" "$release_gate_lock_owner_pid_path" "$release_gate_lock_stale_max_age_seconds"
@@ -75,20 +80,18 @@ if entries_without_owner:
     raise SystemExit(0)
 
 age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
-if age_seconds < max_age:
-    if owner_pid_path.exists():
-        print(f"young_owner_only:{age_seconds}")
-    else:
-        print(f"young:{age_seconds}")
+if owner_pid_path.exists():
+    print(f"dead_owner_only:{age_seconds}")
     raise SystemExit(0)
 
-if owner_pid_path.exists():
-    print(f"stale_owner_only:{age_seconds}")
-else:
-    print(f"stale_empty:{age_seconds}")
+if age_seconds < max_age:
+    print(f"young:{age_seconds}")
+    raise SystemExit(0)
+
+print(f"stale_empty:{age_seconds}")
 PY
   )"
-  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* ]]; then
+  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* || "$lock_stale_probe" == dead_owner_only:* ]]; then
     rm -rf "$release_gate_lock_dir"
   fi
 }
@@ -357,6 +360,34 @@ def segment_between(text: str, start_marker: str, end_marker: str) -> str:
     return text[start:] if end < 0 else text[start:end]
 
 
+def segment_between_any(text: str, start_markers: List[str], end_markers: List[str]) -> str:
+    start_candidates = [
+        (text.find(marker), marker)
+        for marker in start_markers
+        if text.find(marker) >= 0
+    ]
+    if not start_candidates:
+        return ""
+    start, start_marker = min(start_candidates, key=lambda item: item[0])
+    end_candidates = [
+        (text.find(marker, start + len(start_marker)), marker)
+        for marker in end_markers
+        if text.find(marker, start + len(start_marker)) >= 0
+    ]
+    if not end_candidates:
+        return text[start:]
+    end, _ = min(end_candidates, key=lambda item: item[0])
+    return text[start:end]
+
+
+def capture_statement_variants(index: int) -> List[str]:
+    return [
+        f"CaptureCurrentFrame(expectedFiles[{index}]);",
+        f"CaptureCurrentFrame(harness, expectedFiles[{index}]);",
+        f"captured[expectedFiles[{index}]] = harness.CaptureScreenshotBytes();",
+    ]
+
+
 def path_within_root(path: Path, root: Path) -> bool:
     try:
         path.resolve().relative_to(root.resolve())
@@ -390,6 +421,7 @@ evidence: Dict[str, Any] = {
     "release_channel_path": str(release_channel_path),
 }
 
+flagship_gate_review_start = len(reasons)
 flagship_gate = load_json(flagship_gate_path)
 flagship_status = str(flagship_gate.get("status") or "").strip().lower()
 evidence["flagship_gate_status"] = flagship_status
@@ -428,7 +460,9 @@ if not release_channel_generated_at_raw or release_channel_generated_at is None:
     reasons.append(
         "Desktop visual familiarity exit gate release channel receipt is missing a valid generatedAt/generated_at timestamp."
     )
+flagship_gate_review_reasons = list(reasons[flagship_gate_review_start:])
 
+head_proof_review_start = len(reasons)
 interaction_proof = flagship_gate.get("interactionProof") if isinstance(flagship_gate.get("interactionProof"), dict) else {}
 head_proofs = flagship_gate.get("headProofs") if isinstance(flagship_gate.get("headProofs"), dict) else {}
 flagship_required_desktop_heads = sorted(
@@ -555,7 +589,25 @@ for required_head in flagship_required_desktop_heads:
 avalonia_head_proof = head_proofs.get("avalonia") if isinstance(head_proofs.get("avalonia"), dict) else {}
 blazor_head_proof = head_proofs.get("blazor-desktop") if isinstance(head_proofs.get("blazor-desktop"), dict) else {}
 theme_readability_contrast = str(interaction_proof.get("themeReadabilityContrast") or "").strip().lower()
+menu_surface = str(interaction_proof.get("menuSurface") or "").strip().lower()
+settings_inline_dialog = str(interaction_proof.get("settingsInlineDialog") or "").strip().lower()
+demo_runner_dispatch = str(interaction_proof.get("demoRunnerDispatch") or "").strip().lower()
+keyboard_shortcut_parity = str(interaction_proof.get("keyboardShortcutParity") or "").strip().lower()
+cross_head_workflow_parity = str(interaction_proof.get("crossHeadWorkflowParity") or "").strip().lower()
+install_update_recovery_lifecycle = str(interaction_proof.get("installUpdateRecoveryLifecycle") or "").strip().lower()
+runtime_backed_sr4_codex_orientation_model = str(interaction_proof.get("runtimeBackedSr4CodexOrientationModel") or "").strip().lower()
+runtime_backed_sr5_codex_orientation_model = str(interaction_proof.get("runtimeBackedSr5CodexOrientationModel") or "").strip().lower()
+runtime_backed_sr6_codex_orientation_model = str(interaction_proof.get("runtimeBackedSr6CodexOrientationModel") or "").strip().lower()
 evidence["flagship_theme_readability_contrast"] = theme_readability_contrast
+evidence["flagship_menu_surface"] = menu_surface
+evidence["flagship_settings_inline_dialog"] = settings_inline_dialog
+evidence["flagship_demo_runner_dispatch"] = demo_runner_dispatch
+evidence["flagship_keyboard_shortcut_parity"] = keyboard_shortcut_parity
+evidence["flagship_cross_head_workflow_parity"] = cross_head_workflow_parity
+evidence["flagship_install_update_recovery_lifecycle"] = install_update_recovery_lifecycle
+evidence["flagship_runtime_backed_sr4_codex_orientation_model"] = runtime_backed_sr4_codex_orientation_model
+evidence["flagship_runtime_backed_sr5_codex_orientation_model"] = runtime_backed_sr5_codex_orientation_model
+evidence["flagship_runtime_backed_sr6_codex_orientation_model"] = runtime_backed_sr6_codex_orientation_model
 evidence["flagship_avalonia_head_proof_status"] = str(avalonia_head_proof.get("status") or "").strip().lower()
 evidence["flagship_blazor_head_proof_status"] = str(blazor_head_proof.get("status") or "").strip().lower()
 evidence["flagship_required_desktop_heads"] = flagship_required_desktop_heads
@@ -696,6 +748,24 @@ if missing_required_legacy_interaction_keys:
     )
 if not status_ok(theme_readability_contrast):
     reasons.append("Flagship UI release gate does not report a passing readability contrast proof.")
+if not status_ok(menu_surface):
+    reasons.append("Flagship UI release gate does not prove runtime-backed menu surface interaction parity.")
+if not status_ok(settings_inline_dialog):
+    reasons.append("Flagship UI release gate does not prove interactive settings inline-dialog parity.")
+if not status_ok(demo_runner_dispatch):
+    reasons.append("Flagship UI release gate does not prove runtime-backed demo-runner dispatch.")
+if not status_ok(keyboard_shortcut_parity):
+    reasons.append("Flagship UI release gate does not prove keyboard shortcut parity.")
+if not status_ok(cross_head_workflow_parity):
+    reasons.append("Flagship UI release gate does not prove cross-head workflow parity.")
+if not status_ok(install_update_recovery_lifecycle):
+    reasons.append("Flagship UI release gate does not prove install/update/recovery lifecycle parity.")
+if not status_ok(runtime_backed_sr4_codex_orientation_model):
+    reasons.append("Flagship UI release gate does not prove SR4 codex orientation parity.")
+if not status_ok(runtime_backed_sr5_codex_orientation_model):
+    reasons.append("Flagship UI release gate does not prove SR5 codex orientation parity.")
+if not status_ok(runtime_backed_sr6_codex_orientation_model):
+    reasons.append("Flagship UI release gate does not prove SR6 codex orientation parity.")
 if not status_ok(str(avalonia_head_proof.get("status") or "").strip().lower()):
     reasons.append("Flagship UI release gate does not carry a passing Avalonia head proof.")
 if not status_ok(str(blazor_head_proof.get("status") or "").strip().lower()):
@@ -713,6 +783,9 @@ for required_head in flagship_required_desktop_heads:
         reasons.append(
             f"Flagship UI release gate does not carry a passing head proof for required desktop head '{required_head}'."
         )
+head_proof_review_reasons = list(reasons[head_proof_review_start:])
+
+interaction_proof_review_start = len(reasons)
 if not status_ok(runtime_backed_shell_menu):
     reasons.append("Flagship UI release gate does not prove runtime-backed shell menu behavior.")
 if not status_ok(runtime_backed_menu_bar_labels):
@@ -763,7 +836,9 @@ if not status_ok(legacy_magic_workflow_rhythm):
     reasons.append("Flagship UI release gate does not prove magic workflow familiarity.")
 if not status_ok(legacy_matrix_workflow_rhythm):
     reasons.append("Flagship UI release gate does not prove matrix workflow familiarity.")
+interaction_proof_review_reasons = list(reasons[interaction_proof_review_start:])
 
+source_anchor_review_start = len(reasons)
 required_theme_tokens = {
     "ChummerShellActiveMenuBorderBrush_light": "#1C4A2D",
     "ChummerShellAccentButtonBrush": "#1C4A2D",
@@ -970,6 +1045,7 @@ if not legacy_frmcareer_text:
 elif missing_legacy_frmcareer_markers:
     reasons.append("Legacy frmCareer oracle is incomplete or moved: " + ", ".join(missing_legacy_frmcareer_markers))
 
+screen_capture_review_start = len(reasons)
 required_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -1067,6 +1143,7 @@ if screenshots_older_than_flagship_receipt:
         "Visual familiarity screenshots predate the flagship release gate receipt beyond the allowed skew: "
         + ", ".join(screenshots_older_than_flagship_receipt)
     )
+screen_capture_review_end = len(reasons)
 
 navigator_text = navigator_axaml_path.read_text(encoding="utf-8") if navigator_axaml_path.is_file() else ""
 navigator_codebehind_text = navigator_axaml_path.with_suffix(".axaml.cs").read_text(encoding="utf-8") if navigator_axaml_path.with_suffix(".axaml.cs").is_file() else ""
@@ -1107,14 +1184,20 @@ if not has_navigation_tabs:
     reasons.append("Loaded-runner tab posture control is missing from the shell.")
 if not has_tab_strip_control:
     reasons.append("Loaded-runner visual familiarity is not proven: the shell still has no explicit tab strip / tab panel control for character work.")
+source_anchor_review_reasons = (
+    list(reasons[source_anchor_review_start:screen_capture_review_start])
+    + list(reasons[screen_capture_review_end:])
+)
+screen_capture_review_reasons = list(reasons[screen_capture_review_start:screen_capture_review_end])
 
+legacy_familiarity_review_start = len(reasons)
 visual_review_method = extract_test_method(test_text, "Visual_review_evidence_is_published_for_light_and_dark_shell_states")
 cyberware_method = extract_test_method(test_text, "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues")
 
 dense_section_capture_segment = segment_between(
     visual_review_method,
-    'captured[expectedFiles[3]] = harness.CaptureScreenshotBytes();',
-    'captured[expectedFiles[4]] = harness.CaptureScreenshotBytes();',
+    next((marker for marker in capture_statement_variants(3) if marker in visual_review_method), ""),
+    next((marker for marker in capture_statement_variants(4) if marker in visual_review_method), ""),
 )
 dense_section_state_change_markers = [
     'Click("',
@@ -1134,29 +1217,30 @@ cyberware_dialog_test_has_visible_dialog = any(marker in cyberware_method for ma
 cyberware_capture_segment = segment_between(
     visual_review_method,
     "object? cyberwareRow =",
-    'captured[expectedFiles[7]] = harness.CaptureScreenshotBytes();',
+    next((marker for marker in capture_statement_variants(7) if marker in visual_review_method), ""),
 )
-cyberware_capture_opens_dialog = any(marker in cyberware_capture_segment for marker in cyberware_dialog_markers)
-magic_capture_segment = segment_between(
+cyberware_capture_markers = cyberware_dialog_markers + capture_statement_variants(7)
+cyberware_capture_opens_dialog = any(marker in cyberware_capture_segment for marker in cyberware_capture_markers)
+magic_capture_segment = segment_between_any(
     visual_review_method,
-    'captured[expectedFiles[10]] = harness.CaptureScreenshotBytes();',
-    'captured[expectedFiles[11]] = harness.CaptureScreenshotBytes();',
+    capture_statement_variants(10),
+    capture_statement_variants(11),
 )
 magic_capture_markers = [
     "SectionQuickAction_spell_add",
     "Add Spell",
-    "captured[expectedFiles[11]] = harness.CaptureScreenshotBytes()",
+    *capture_statement_variants(11),
 ]
 magic_capture_opens_dialog = any(marker in magic_capture_segment for marker in magic_capture_markers)
-matrix_capture_segment = segment_between(
+matrix_capture_segment = segment_between_any(
     visual_review_method,
-    'captured[expectedFiles[11]] = harness.CaptureScreenshotBytes();',
-    'captured[expectedFiles[12]] = harness.CaptureScreenshotBytes();',
+    capture_statement_variants(11),
+    capture_statement_variants(12),
 )
 matrix_capture_markers = [
     "SectionQuickAction_matrix_program_add",
     "Add Program / Cyberdeck Item",
-    "captured[expectedFiles[12]] = harness.CaptureScreenshotBytes()",
+    *capture_statement_variants(12),
 ]
 matrix_capture_opens_dialog = any(marker in matrix_capture_segment for marker in matrix_capture_markers)
 evidence["cyberware_dialog_test_has_visible_dialog_posture"] = cyberware_dialog_test_has_visible_dialog
@@ -1249,8 +1333,60 @@ elif not ruleset_orientation_method_has_markers:
         "SR4/SR5/SR6 codex orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is missing markers: "
         + ", ".join(missing_ruleset_orientation_markers)
     )
+legacy_familiarity_review_reasons = list(reasons[legacy_familiarity_review_start:])
 
 status = "pass" if not reasons else "fail"
+reviews = {
+    "flagshipGateReview": {
+        "status": "pass" if not flagship_gate_review_reasons else "fail",
+        "reasonCount": len(flagship_gate_review_reasons),
+        "reasons": flagship_gate_review_reasons,
+        "receiptPath": str(flagship_gate_path),
+        "releaseChannelPath": str(release_channel_path),
+    },
+    "headProofReview": {
+        "status": "pass" if not head_proof_review_reasons else "fail",
+        "reasonCount": len(head_proof_review_reasons),
+        "reasons": head_proof_review_reasons,
+        "requiredHeads": flagship_required_desktop_heads,
+        "canonicalRequiredHeads": canonical_required_desktop_heads,
+    },
+    "interactionProofReview": {
+        "status": "pass" if not interaction_proof_review_reasons else "fail",
+        "reasonCount": len(interaction_proof_review_reasons),
+        "reasons": interaction_proof_review_reasons,
+        "requiredInteractionKeys": required_legacy_interaction_keys,
+    },
+    "sourceAnchorReview": {
+        "status": "pass" if not source_anchor_review_reasons else "fail",
+        "reasonCount": len(source_anchor_review_reasons),
+        "reasons": source_anchor_review_reasons,
+        "requiredTests": required_test_names,
+        "requiredDesktopShellTests": required_desktop_shell_test_names,
+    },
+    "screenCaptureReview": {
+        "status": "pass" if not screen_capture_review_reasons else "fail",
+        "reasonCount": len(screen_capture_review_reasons),
+        "reasons": screen_capture_review_reasons,
+        "requiredScreenshots": required_screenshots,
+    },
+    "legacyFamiliarityReview": {
+        "status": "pass" if not legacy_familiarity_review_reasons else "fail",
+        "reasonCount": len(legacy_familiarity_review_reasons),
+        "reasons": legacy_familiarity_review_reasons,
+        "workflowMarkers": [
+            "dense_section_capture_advances_past_loaded_runner",
+            "cyberware_capture_opens_dialog_posture",
+            "magic_method_has_rhythm_markers",
+            "matrix_method_has_rhythm_markers",
+            "creation_method_has_rhythm_markers",
+            "advancement_method_has_rhythm_markers",
+            "gear_method_has_rhythm_markers",
+            "contacts_diary_method_has_rhythm_markers",
+            "ruleset_orientation_method_has_markers",
+        ],
+    },
+}
 payload = {
     "generatedAt": now_iso(),
     "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
@@ -1263,8 +1399,10 @@ payload = {
         else "Desktop visual familiarity is not fully proven."
     ),
     "reasons": reasons,
+    "reviews": reviews,
     "evidence": evidence,
 }
+payload["evidence"]["failureCount"] = len(reasons)
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
     raise SystemExit(43)

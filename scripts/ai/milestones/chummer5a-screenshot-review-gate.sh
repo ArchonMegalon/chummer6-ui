@@ -25,6 +25,10 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
 def load_json(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8-sig") as handle:
         payload = json.load(handle)
@@ -35,6 +39,12 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def status_pass(value: Any) -> bool:
     return str(value or "").strip().lower() in {"pass", "passed", "ready"}
+
+
+def append_reason(message: str, reasons: list[str], *buckets: list[str]) -> None:
+    reasons.append(message)
+    for bucket in buckets:
+        bucket.append(message)
 
 
 def write_receipt(payload: dict[str, Any]) -> None:
@@ -80,8 +90,13 @@ paths = {
     "visualGate": visual_gate_path,
     "flagshipGate": flagship_gate_path,
     "avaloniaFlagshipTests": avalonia_tests_path,
+    "feedbackPrimary": feedback_sources[0],
+    "feedbackPostFlagship": feedback_sources[1],
 }
 reasons: list[str] = []
+feedback_reasons: list[str] = []
+supporting_receipt_reasons: list[str] = []
+screenshot_asset_reasons: list[str] = []
 missing_paths = [name for name, path in paths.items() if not path.is_file()]
 if missing_paths:
     reasons.extend(f"Missing required evidence path: {paths[name]}" for name in missing_paths)
@@ -103,12 +118,82 @@ flagship_gate = load_json(flagship_gate_path)
 visual_evidence = visual_gate.get("evidence") or {}
 if not isinstance(visual_evidence, dict):
     visual_evidence = {}
-avalonia_tests_text = avalonia_tests_path.read_text(encoding="utf-8")
+visual_reviews = visual_gate.get("reviews") or {}
+if not isinstance(visual_reviews, dict):
+    visual_reviews = {}
+required_visual_review_keys = [
+    "flagshipGateReview",
+    "headProofReview",
+    "interactionProofReview",
+    "sourceAnchorReview",
+    "screenCaptureReview",
+    "legacyFamiliarityReview",
+]
+missing_visual_review_keys = [
+    key for key in required_visual_review_keys
+    if key not in visual_reviews
+]
+failing_visual_review_keys = [
+    key
+    for key in required_visual_review_keys
+    if isinstance(visual_reviews.get(key), dict)
+    and not status_pass(visual_reviews[key].get("status"))
+]
+visual_failure_count = visual_evidence.get("failureCount")
+avalonia_tests_text = read_text(avalonia_tests_path)
+primary_feedback_text = read_text(feedback_sources[0])
+post_flagship_feedback_text = read_text(feedback_sources[1])
+
+for marker in [
+    "Dense builder, master index, roster, settings, and import screenshot review are covered by `scripts/ai/milestones/chummer5a-screenshot-review-gate.sh`",
+    ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+]:
+    if marker not in primary_feedback_text:
+        append_reason(
+            f"{feedback_sources[0].relative_to(repo_root)} is missing required screenshot-review closure marker: {marker}",
+            reasons,
+            feedback_reasons,
+        )
+for marker in [
+    "Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, and import is covered by `scripts/ai/milestones/chummer5a-screenshot-review-gate.sh`.",
+]:
+    if marker not in post_flagship_feedback_text:
+        append_reason(
+            f"{feedback_sources[1].relative_to(repo_root)} is missing required screenshot-review closure marker: {marker}",
+            reasons,
+            feedback_reasons,
+        )
 
 if not status_pass(visual_gate.get("status")):
-    reasons.append("Desktop visual familiarity gate is not passing.")
+    append_reason("Desktop visual familiarity gate is not passing.", reasons, supporting_receipt_reasons)
 if not status_pass(flagship_gate.get("status")):
-    reasons.append("UI flagship release gate is not passing.")
+    append_reason("UI flagship release gate is not passing.", reasons, supporting_receipt_reasons)
+if missing_visual_review_keys:
+    append_reason(
+        "Desktop visual familiarity gate is missing required review buckets: "
+        + ", ".join(missing_visual_review_keys),
+        reasons,
+        supporting_receipt_reasons,
+    )
+if failing_visual_review_keys:
+    append_reason(
+        "Desktop visual familiarity gate review buckets are not all passing: "
+        + ", ".join(failing_visual_review_keys),
+        reasons,
+        supporting_receipt_reasons,
+    )
+if not isinstance(visual_failure_count, int):
+    append_reason(
+        "Desktop visual familiarity gate evidence.failureCount must be an integer.",
+        reasons,
+        supporting_receipt_reasons,
+    )
+elif visual_failure_count != 0:
+    append_reason(
+        f"Desktop visual familiarity gate evidence.failureCount must be 0, got {visual_failure_count}.",
+        reasons,
+        supporting_receipt_reasons,
+    )
 
 required_screenshots = set(visual_evidence.get("required_screenshots") or [])
 missing_screenshots = set(visual_evidence.get("missing_screenshots") or [])
@@ -119,7 +204,11 @@ older_than_receipt = visual_evidence.get("screenshots_older_than_flagship_receip
 screenshot_dir_raw = str(visual_evidence.get("screenshot_dir") or "").strip()
 screenshot_dir = Path(screenshot_dir_raw) if screenshot_dir_raw else None
 if screenshot_dir is None or not screenshot_dir.is_dir():
-    reasons.append("Desktop visual familiarity gate does not expose an on-disk screenshot directory.")
+    append_reason(
+        "Desktop visual familiarity gate does not expose an on-disk screenshot directory.",
+        reasons,
+        screenshot_asset_reasons,
+    )
 
 job_results: dict[str, dict[str, Any]] = {}
 for job_name, job in review_jobs.items():
@@ -153,12 +242,20 @@ for job_name, job in review_jobs.items():
     reasons.extend(f"{job_name}: {reason}" for reason in job_reasons)
 
 if stale_screenshots:
-    reasons.append("Desktop visual familiarity screenshots are stale: " + ", ".join(stale_screenshots))
-if older_than_receipt:
-    reasons.append(
-        "Desktop visual familiarity screenshots predate the flagship receipt beyond allowed skew: "
-        + ", ".join(older_than_receipt)
+    append_reason(
+        "Desktop visual familiarity screenshots are stale: " + ", ".join(stale_screenshots),
+        reasons,
+        screenshot_asset_reasons,
     )
+if older_than_receipt:
+    append_reason(
+        "Desktop visual familiarity screenshots predate the flagship receipt beyond allowed skew: "
+        + ", ".join(older_than_receipt),
+        reasons,
+        screenshot_asset_reasons,
+    )
+
+review_job_failing = sorted(job_name for job_name, job in job_results.items() if job["status"] != "pass")
 
 payload = {
     "generatedAt": now_iso(),
@@ -172,12 +269,66 @@ payload = {
     "reasons": reasons,
     "frontierIdsClosed": frontier_ids if not reasons else [],
     "feedbackSources": [str(path) for path in feedback_sources],
+    "feedbackClosureReview": {
+        "status": "pass" if not feedback_reasons else "fail",
+        "reasons": feedback_reasons,
+        "feedbackSources": [str(path) for path in feedback_sources],
+    },
+    "supportingReceiptReview": {
+        "status": "pass" if not supporting_receipt_reasons else "fail",
+        "reasons": supporting_receipt_reasons,
+        "receiptStatuses": {
+            "visualFamiliarityGate": visual_gate.get("status"),
+            "flagshipGate": flagship_gate.get("status"),
+        },
+        "visualReviewStatuses": {
+            key: (
+                visual_reviews.get(key, {}).get("status")
+                if isinstance(visual_reviews.get(key), dict)
+                else None
+            )
+            for key in required_visual_review_keys
+        },
+        "visualFailureCount": visual_failure_count if isinstance(visual_failure_count, int) else None,
+    },
+    "screenshotAssetReview": {
+        "status": "pass" if not screenshot_asset_reasons else "fail",
+        "reasons": screenshot_asset_reasons,
+        "requiredScreenshots": sorted(required_screenshots),
+        "missingScreenshots": sorted(missing_screenshots),
+        "invalidScreenshots": sorted(invalid_screenshots),
+        "undersizedScreenshots": sorted(undersized_screenshots),
+        "staleScreenshots": stale_screenshots,
+        "screenshotsOlderThanFlagshipReceipt": older_than_receipt,
+        "screenshotDirectory": screenshot_dir_raw,
+    },
+    "reviewJobsSummary": {
+        "status": "pass" if not review_job_failing else "fail",
+        "failingJobs": review_job_failing,
+        "reviewedJobs": sorted(review_jobs.keys()),
+    },
     "supportingReceipts": {
         "visualFamiliarityGate": str(visual_gate_path),
         "flagshipGate": str(flagship_gate_path),
     },
     "screenshotDirectory": screenshot_dir_raw,
     "reviewJobs": job_results,
+    "evidence": {
+        "feedbackSources": [str(path) for path in feedback_sources],
+        "supportingReceipts": {
+            "visualFamiliarityGate": str(visual_gate_path),
+            "flagshipGate": str(flagship_gate_path),
+        },
+        "screenshotDirectory": screenshot_dir_raw,
+        "requiredVisualReviewKeys": required_visual_review_keys,
+        "missingVisualReviewKeys": missing_visual_review_keys,
+        "failingVisualReviewKeys": failing_visual_review_keys,
+        "visualFailureCount": visual_failure_count if isinstance(visual_failure_count, int) else None,
+        "reviewedJobs": sorted(review_jobs.keys()),
+        "failingJobs": review_job_failing,
+        "reasonCount": len(reasons),
+        "failureCount": len(reasons),
+    },
 }
 write_receipt(payload)
 if reasons:

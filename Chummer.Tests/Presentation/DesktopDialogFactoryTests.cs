@@ -1635,6 +1635,45 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions()
+    {
+        DesktopDialogFactory factory = new();
+
+        foreach (string controlId in LegacyUiControlCatalog.All)
+        {
+            DesktopDialogState dialog = factory.CreateUiControlDialog(controlId, DesktopPreferenceState.Default);
+            AssertDialogShape(dialog, $"control '{controlId}'");
+        }
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions()
+    {
+        DesktopDialogFactory factory = new();
+
+        foreach (string commandId in AllFactoryMappedCommandIds)
+        {
+            DesktopDialogState dialog = CreateRepresentativeCommandDialog(factory, commandId);
+            AssertDialogShape(dialog, $"command '{commandId}'");
+        }
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions()
+    {
+        DesktopDialogFactory factory = new();
+
+        foreach (string dialogId in RebuildableDialogIds)
+        {
+            DesktopDialogState dialog = CreateRepresentativeRebuildableDialog(factory, dialogId);
+            DesktopDialogState rebuilt = RebuildDynamicDialog(dialog);
+
+            Assert.AreEqual(dialog.Id, rebuilt.Id, $"Rebuild should preserve dialog id for '{dialogId}'.");
+            AssertDialogShape(rebuilt, $"rebuildable dialog '{dialogId}'");
+        }
+    }
+
+    [TestMethod]
     public void DialogFieldValueParser_normalizes_and_parses_checkbox_values()
     {
         DesktopDialogField checkboxField = new(
@@ -2038,6 +2077,226 @@ public class DesktopDialogFactoryTests
                 .ToArray()
         };
     }
+
+    private static void AssertDialogShape(DesktopDialogState dialog, string surfaceId)
+    {
+        Assert.IsFalse(string.IsNullOrWhiteSpace(dialog.Id), $"{surfaceId} must keep a stable dialog id.");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(dialog.Title), $"{surfaceId} must keep a visible dialog title.");
+        Assert.IsTrue(dialog.Fields.Count > 0, $"{surfaceId} must surface at least one dialog field.");
+        Assert.IsTrue(dialog.Actions.Count > 0, $"{surfaceId} must surface at least one dialog action.");
+        Assert.IsFalse(dialog.Fields.Any(field => string.IsNullOrWhiteSpace(field.Id)), $"{surfaceId} must not emit unnamed dialog fields.");
+        Assert.IsFalse(dialog.Actions.Any(action => string.IsNullOrWhiteSpace(action.Id)), $"{surfaceId} must not emit unnamed dialog actions.");
+        Assert.AreEqual(
+            dialog.Fields.Count,
+            dialog.Fields.Select(field => field.Id).Distinct(StringComparer.Ordinal).Count(),
+            $"{surfaceId} must keep dialog field ids unique.");
+        Assert.AreEqual(
+            dialog.Actions.Count,
+            dialog.Actions.Select(action => action.Id).Distinct(StringComparer.Ordinal).Count(),
+            $"{surfaceId} must keep dialog action ids unique.");
+    }
+
+    private static DesktopDialogState CreateRepresentativeCommandDialog(DesktopDialogFactory factory, string commandId)
+    {
+        return factory.CreateCommandDialog(
+            commandId,
+            profile: CreateProfile("Ghost Runner", "GST"),
+            DesktopPreferenceState.Default with
+            {
+                CharacterNotes = "Representative parity notes",
+                CharacterRosterPath = "/Characters/GhostRunner"
+            },
+            activeSectionJson: "{ \"section\": \"overview\", \"state\": \"ready\" }",
+            currentWorkspace: new CharacterWorkspaceId("ws-2"),
+            rulesetId: RulesetDefaults.Sr6,
+            runtimeInspector: CreateRuntimeInspectorProjection(),
+            masterIndex: CreateMasterIndexResponse(),
+            translatorLanguages: new TranslatorLanguagesResponse(
+                Count: 2,
+                Languages:
+                [
+                    new TranslatorLanguageEntry("en-us", "English"),
+                    new TranslatorLanguageEntry("de-de", "Deutsch")
+                ],
+                TranslatorBridgePosture: "synced",
+                EnabledLanguageOverlayCount: 2),
+            openWorkspaces:
+            [
+                new OpenWorkspaceState(new CharacterWorkspaceId("ws-1"), "Apex", "APX", DateTimeOffset.Parse("2026-04-04T11:00:00+00:00"), RulesetDefaults.Sr5, true),
+                new OpenWorkspaceState(new CharacterWorkspaceId("ws-2"), "Ghost", "GST", DateTimeOffset.Parse("2026-04-04T12:00:00+00:00"), RulesetDefaults.Sr6, false)
+            ]);
+    }
+
+    private static DesktopDialogState CreateRepresentativeRebuildableDialog(DesktopDialogFactory factory, string dialogId)
+    {
+        return dialogId switch
+        {
+            "dialog.global_settings" => WithFieldValues(
+                CreateRepresentativeCommandDialog(factory, "global_settings"),
+                ("globalActivePane", "sourcebooks"),
+                ("globalLanguage", "fr-fr"),
+                ("globalSheetLanguage", "ja-jp")),
+            "dialog.master_index" => WithFieldValues(
+                CreateRepresentativeCommandDialog(factory, "master_index"),
+                ("masterIndexSearch", "adept"),
+                ("masterIndexSourcebook", "Street Grimoire")),
+            "dialog.ui.cyberware_add" => WithFieldValues(
+                factory.CreateUiControlDialog("cyberware_add", DesktopPreferenceState.Default),
+                ("uiCyberwareCategory", "Headware"),
+                ("uiCyberwareSearch", "eyes"),
+                ("uiCyberwareName", "Cybereyes Rating 4"),
+                ("uiCyberwareGrade", "Alpha"),
+                ("uiCyberwareBlackMarketDiscount", "true")),
+            "dialog.ui.gear_add" => WithFieldValues(
+                factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default),
+                ("uiGearCategory", "Show All"),
+                ("uiGearSearch", "medkit"),
+                ("uiGearName", "Medkit Rating 6"),
+                ("uiGearShowOnlyAffordItems", "true")),
+            "dialog.ui.combat_add_weapon" => WithFieldValues(
+                factory.CreateUiControlDialog("combat_add_weapon", DesktopPreferenceState.Default),
+                ("uiWeaponCategory", "Show All"),
+                ("uiWeaponSearch", "Defiance"),
+                ("uiWeaponName", "Defiance T-250"),
+                ("uiWeaponShowOnlyAffordItems", "true")),
+            "dialog.ui.combat_add_armor" => WithFieldValues(
+                factory.CreateUiControlDialog("combat_add_armor", DesktopPreferenceState.Default),
+                ("uiArmorCategory", "Shields"),
+                ("uiArmorSearch", "Ballistic"),
+                ("uiArmorName", "Ballistic Shield"),
+                ("uiArmorShowOnlyAffordItems", "true"),
+                ("uiArmorBlackMarketDiscount", "true")),
+            "dialog.ui.vehicle_add" => WithFieldValues(
+                factory.CreateUiControlDialog("vehicle_add", DesktopPreferenceState.Default),
+                ("uiVehicleCategory", "Show All"),
+                ("uiVehicleSearch", "Fly-Spy"),
+                ("uiVehicleName", "MCT Fly-Spy"),
+                ("uiVehicleShowOnlyAffordItems", "true"),
+                ("uiVehicleBlackMarketDiscount", "true"),
+                ("uiVehicleUsedVehicle", "true"),
+                ("uiVehicleUsedVehicleDiscount", "25.00")),
+            "dialog.ui.cyberware_edit" => WithFieldValues(
+                factory.CreateUiControlDialog("cyberware_edit", DesktopPreferenceState.Default),
+                ("uiCyberwareEditMarkup", "10"),
+                ("uiCyberwareEditNotes", "Representative edit posture")),
+            "dialog.ui.gear_edit" => WithFieldValues(
+                factory.CreateUiControlDialog("gear_edit", DesktopPreferenceState.Default),
+                ("uiGearMarkup", "5"),
+                ("uiGearEditNotes", "Representative edit posture")),
+            "dialog.ui.vehicle_edit" => WithFieldValues(
+                factory.CreateUiControlDialog("vehicle_edit", DesktopPreferenceState.Default),
+                ("uiVehicleCost", "215000"),
+                ("uiVehicleEditNotes", "Representative edit posture")),
+            _ => throw new InvalidOperationException($"Rebuild coverage is missing representative state for '{dialogId}'.")
+        };
+    }
+
+    private static RuntimeInspectorProjection CreateRuntimeInspectorProjection()
+    {
+        return new RuntimeInspectorProjection(
+            TargetKind: RuntimeInspectorTargetKinds.RuntimeLock,
+            TargetId: "official.sr5.core",
+            RuntimeLock: new ResolvedRuntimeLock(
+                RulesetId: RulesetDefaults.Sr5,
+                ContentBundles:
+                [
+                    new ContentBundleDescriptor("sr5.core.bundle", RulesetDefaults.Sr5, "1.0.0", "SR5 Core", "Core bundle", ["data/core.xml"])
+                ],
+                RulePacks:
+                [
+                    new ArtifactVersionReference("official.sr5.core", "1.0.0")
+                ],
+                ProviderBindings: new System.Collections.Generic.Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    [RulePackCapabilityIds.DeriveStat] = "official.sr5.core/derive.stat"
+                },
+                EngineApiVersion: "1.0.0",
+                RuntimeFingerprint: "sha256:sr5-runtime-fingerprint"),
+            Install: new ArtifactInstallState(ArtifactInstallStates.Available, RuntimeFingerprint: "sha256:sr5-runtime-fingerprint"),
+            ResolvedRulePacks:
+            [
+                new RuntimeInspectorRulePackEntry(
+                    new ArtifactVersionReference("official.sr5.core", "1.0.0"),
+                    "SR5 Core",
+                    ArtifactVisibilityModes.LocalOnly,
+                    ArtifactTrustTiers.Official,
+                    [RulePackCapabilityIds.DeriveStat],
+                    SourceKind: RegistryEntrySourceKinds.BuiltInCoreProfile)
+            ],
+            ProviderBindings:
+            [
+                new RuntimeInspectorProviderBinding(RulePackCapabilityIds.DeriveStat, "official.sr5.core/derive.stat", "official.sr5.core")
+            ],
+            CompatibilityDiagnostics:
+            [
+                new RuntimeLockCompatibilityDiagnostic(RuntimeLockCompatibilityStates.Compatible, "Compatible", RulesetDefaults.Sr5, "sha256:sr5-runtime-fingerprint")
+            ],
+            Warnings: [],
+            MigrationPreview:
+            [
+                new RuntimeMigrationPreviewItem(RuntimeMigrationPreviewChangeKinds.RulePackAdded, "Profile applies RulePack 'official.sr5.core@1.0.0'.")
+            ],
+            GeneratedAtUtc: DateTimeOffset.UtcNow,
+            ProfileSourceKind: RegistryEntrySourceKinds.BuiltInCoreProfile,
+            CapabilityDescriptors:
+            [
+                new RuntimeInspectorCapabilityDescriptorProjection(
+                    CapabilityId: RulePackCapabilityIds.DeriveStat,
+                    InvocationKind: RulesetCapabilityInvocationKinds.Rule,
+                    Title: "Derived Stat Evaluation",
+                    Explainable: true,
+                    SessionSafe: false,
+                    DefaultGasBudget: new RulesetGasBudget(2_000, 5_000, 4_194_304),
+                    MaximumGasBudget: new RulesetGasBudget(5_000, 10_000, 8_388_608),
+                    ProviderId: "official.sr5.core/derive.stat",
+                    PackId: "official.sr5.core")
+            ]);
+    }
+
+    private static readonly string[] AllFactoryMappedCommandIds =
+    [
+        "open_character",
+        "open_for_printing",
+        "open_for_export",
+        "print_setup",
+        "dice_roller",
+        "global_settings",
+        "switch_ruleset",
+        "character_settings",
+        "translator",
+        "xml_editor",
+        "master_index",
+        "character_roster",
+        "data_exporter",
+        "export_character",
+        "report_bug",
+        "about",
+        "hero_lab_importer",
+        "new_window",
+        "close_window",
+        "wiki",
+        "discord",
+        "revision_history",
+        "dumpshock",
+        "print_character",
+        "print_multiple",
+        "update",
+        OverviewCommandPolicy.RuntimeInspectorCommandId
+    ];
+
+    private static readonly string[] RebuildableDialogIds =
+    [
+        "dialog.global_settings",
+        "dialog.master_index",
+        "dialog.ui.cyberware_add",
+        "dialog.ui.gear_add",
+        "dialog.ui.combat_add_weapon",
+        "dialog.ui.combat_add_armor",
+        "dialog.ui.vehicle_add",
+        "dialog.ui.cyberware_edit",
+        "dialog.ui.gear_edit",
+        "dialog.ui.vehicle_edit"
+    ];
 
     private static DesktopDialogState RebuildDynamicDialog(DesktopDialogState dialog)
     {

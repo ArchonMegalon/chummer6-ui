@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T07:07:21.668524Z",
+  "generatedAt": "2026-04-21T20:38:32.853770Z",
   "status": "pass",
   "releaseGate": "b14-flagship-ui-release-gate",
   "desktopHead": "avalonia",
@@ -42,6 +42,7 @@
     "runtimeBackedTabPanelOnlyHeader": "pass",
     "runtimeBackedChromeEnabledAfterRunnerLoad": "pass",
     "runtimeBackedDemoRunnerImport": "pass",
+    "interactiveControlInventoryReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
     "fullInteractiveControlInventory": "pass",
     "mainWindowInteractionInventory": "pass",
     "runtimeBackedLegacyWorkbench": "pass",
@@ -222,92 +223,92 @@
       {
         "name": "01-initial-shell-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
-        "sizeBytes": 23917
+        "sizeBytes": 24296
       },
       {
         "name": "02-menu-open-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
-        "sizeBytes": 26513
+        "sizeBytes": 26177
       },
       {
         "name": "03-settings-open-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
-        "sizeBytes": 27830
+        "sizeBytes": 98225
       },
       {
         "name": "04-loaded-runner-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
-        "sizeBytes": 62661
+        "sizeBytes": 57575
       },
       {
         "name": "05-dense-section-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-        "sizeBytes": 62691
+        "sizeBytes": 57590
       },
       {
         "name": "06-dense-section-dark.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-        "sizeBytes": 58914
+        "sizeBytes": 54144
       },
       {
         "name": "07-loaded-runner-tabs-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
-        "sizeBytes": 62691
+        "sizeBytes": 57591
       },
       {
         "name": "08-cyberware-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
-        "sizeBytes": 64892
+        "sizeBytes": 130611
       },
       {
         "name": "09-vehicles-section-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
-        "sizeBytes": 47852
+        "sizeBytes": 39902
       },
       {
         "name": "10-contacts-section-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
-        "sizeBytes": 47708
+        "sizeBytes": 40650
       },
       {
         "name": "11-diary-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
-        "sizeBytes": 44706
+        "sizeBytes": 66885
       },
       {
         "name": "12-magic-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
-        "sizeBytes": 42740
+        "sizeBytes": 69823
       },
       {
         "name": "13-matrix-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
-        "sizeBytes": 47246
+        "sizeBytes": 78486
       },
       {
         "name": "14-advancement-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/14-advancement-dialog-light.png",
-        "sizeBytes": 45665
+        "sizeBytes": 67689
       },
       {
         "name": "15-creation-section-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
-        "sizeBytes": 41772
+        "sizeBytes": 34870
       },
       {
         "name": "16-master-index-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/16-master-index-dialog-light.png",
-        "sizeBytes": 43433
+        "sizeBytes": 91537
       },
       {
         "name": "17-character-roster-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/17-character-roster-dialog-light.png",
-        "sizeBytes": 43890
+        "sizeBytes": 101810
       },
       {
         "name": "18-import-dialog-light.png",
         "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png",
-        "sizeBytes": 42970
+        "sizeBytes": 66522
       }
     ]
   },
@@ -386,7 +387,13 @@
           "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
           "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
         ],
-        "proof": "File-menu open/import stays runtime-backed, exposes the import dialog template, and exercises dual-head import plus workspace switching."
+        "proof": "File-menu open/import stays runtime-backed, exposes the import dialog template, and exercises dual-head import plus workspace switching.",
+        "evidencePaths": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+          "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        ]
       },
       "save": {
         "status": "pass",
@@ -396,7 +403,11 @@
           "Avalonia_and_Blazor_command_dispatch_save_character_matches",
           "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches"
         ],
-        "proof": "Save is a first-class File/toolstrip command that marks workspaces saved and remains covered through dual-head dispatch plus import-switch-save flow."
+        "proof": "Save is a first-class File/toolstrip command that marks workspaces saved and remains covered through dual-head dispatch plus import-switch-save flow.",
+        "evidencePaths": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
+        ]
       },
       "settings": {
         "status": "pass",
@@ -406,14 +417,25 @@
           "Avalonia_and_Blazor_global_settings_save_updates_shared_preferences",
           "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions"
         ],
-        "proof": "Settings opens through the desktop command surface, saves preferences, and has screenshot-backed dialog evidence on the promoted Avalonia head."
+        "proof": "Settings opens through the desktop command surface, saves preferences, and has screenshot-backed dialog evidence on the promoted Avalonia head.",
+        "evidencePaths": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+          "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        ]
       },
       "sourcebooks": {
         "status": "pass",
         "tests": [
           "CreateCommandDialog_master_index_surfaces_sourcebook_and_parity_posture"
         ],
-        "proof": "Master index sourcebook posture exposes governed reference provenance, selection coverage, and sourcebook rows."
+        "proof": "Master index sourcebook posture exposes governed reference provenance, selection coverage, and sourcebook rows.",
+        "evidencePaths": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+          "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        ]
       },
       "translator_xml_custom_data": {
         "status": "pass",
@@ -423,7 +445,12 @@
           "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture",
           "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
         ],
-        "proof": "Translator and XML editor lanes now fail closed on governed translator posture, XML bridge posture, enabled overlay count, and custom-data directory posture instead of relying on generic dialog coverage."
+        "proof": "Translator and XML editor lanes now fail closed on governed translator posture, XML bridge posture, enabled overlay count, and custom-data directory posture instead of relying on generic dialog coverage.",
+        "evidencePaths": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs"
+        ]
       },
       "roster": {
         "status": "pass",
@@ -432,7 +459,13 @@
           "ExecuteCommandAsync_character_roster_opens_dialog_with_workspace_summary",
           "Character_roster_is_a_first_class_runtime_backed_workbench_route"
         ],
-        "proof": "Character roster is a runtime-backed Tools route with open-runner count, saved count, ruleset mix, active workspace, and roster entries."
+        "proof": "Character roster is a runtime-backed Tools route with open-runner count, saved count, ruleset mix, active workspace, and roster entries.",
+        "evidencePaths": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+          "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        ]
       },
       "print_export": {
         "status": "pass",
@@ -440,18 +473,23 @@
           "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts",
           "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches"
         ],
-        "proof": "Dual-head promoted workflow tests exercise matching download/export/print receipts and import-switch-save flow."
+        "proof": "Dual-head promoted workflow tests exercise matching download/export/print receipts and import-switch-save flow.",
+        "evidencePaths": [
+          "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
+        ]
       }
     },
     "boundedBlazorFallbackEvidence": {
       "status": "pass",
+      "reasons": [],
       "primaryHead": "avalonia",
       "desktopFallbackHeads": [
         "blazor-desktop"
       ],
       "fallbackHeadsExcludedFromPrimaryProof": [
         "blazor-desktop"
-      ]
+      ],
+      "fallbackRouteConflicts": []
     }
   },
   "chummer5aScreenshotReviewProof": {

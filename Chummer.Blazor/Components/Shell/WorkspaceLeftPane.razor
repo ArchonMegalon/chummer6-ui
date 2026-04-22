@@ -15,7 +15,7 @@
 
     @if (ShowSectionActions)
     {
-        <section class="panel section-actions" aria-label="@BuildSectionActionsHeading()">
+        <section class="panel section-actions classic-action-rail" aria-label="@BuildSectionActionsHeading()">
             <h2 class="visually-hidden">@BuildSectionActionsHeading()</h2>
             <div class="virtual-list action-grid">
                 @* <Virtualize Items="@ActiveWorkspaceActions" ItemsTagName="ul" ItemTagName="li"> *@
@@ -34,7 +34,7 @@
 
     @if (ShowWorkflowSurfaces)
     {
-        <section class="panel controls" aria-label="@BuildWorkflowSurfacesHeading()">
+        <section class="panel controls classic-flow-rail" aria-label="@BuildWorkflowSurfacesHeading()">
             <h2 class="visually-hidden">@BuildWorkflowSurfacesHeading()</h2>
             <div class="virtual-list mini-grid">
                 @* <Virtualize Items="@ActiveWorkflowSurfaceActions" ItemsTagName="ul" ItemTagName="li"> *@

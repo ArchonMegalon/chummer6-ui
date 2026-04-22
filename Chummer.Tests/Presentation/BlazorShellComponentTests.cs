@@ -1762,6 +1762,36 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void DialogHost_renders_explain_receipt_for_trust_dialogs()
+    {
+        DesktopDialogState dialog = new(
+            Id: "import-support",
+            Title: "Import support",
+            Message: "Review the support receipt before continuing.",
+            Fields:
+            [
+                new DesktopDialogField("environment", "Rule environment", "sr5; approved; payload sha256:abc123.", string.Empty, IsReadOnly: true),
+                new DesktopDialogField("before", "Before", "Incoming chum5 payload before workspace merge.", string.Empty, IsReadOnly: true),
+                new DesktopDialogField("after", "After", "Rebind gear plugins after import.", string.Empty, IsReadOnly: true),
+                new DesktopDialogField("receipt", "Explain receipt", "dialog/import-support", string.Empty, IsReadOnly: true),
+                new DesktopDialogField("support", "Support reuse", "Support can cite payload sha256:abc123.", string.Empty, IsReadOnly: true)
+            ],
+            Actions:
+            [
+                new DesktopDialogAction("continue", "Continue", true)
+            ]);
+
+        using var context = new BunitContext();
+        IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, dialog));
+
+        IElement explainReceipt = cut.Find("[data-dialog-explain-receipt]");
+        StringAssert.Contains(explainReceipt.TextContent, "Incoming chum5 payload before workspace merge.");
+        StringAssert.Contains(explainReceipt.TextContent, "dialog/import-support");
+        StringAssert.Contains(explainReceipt.TextContent, "Support can cite payload sha256:abc123.");
+    }
+
+    [TestMethod]
     public void DialogHost_renders_image_preview_for_image_visual()
     {
         string portraitPath = Path.Combine(Path.GetTempPath(), $"dialog-host-portrait-{Guid.NewGuid():N}.png");

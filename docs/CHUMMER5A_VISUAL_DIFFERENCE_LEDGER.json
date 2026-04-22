@@ -1,0 +1,765 @@
+{
+  "contractName": "chummer6-ui.chummer5a_visual_difference_ledger",
+  "scope": {
+    "promotedHead": "avalonia",
+    "promotedWindowsTuple": "avalonia:win-x64",
+    "platforms": [
+      "linux",
+      "macos",
+      "windows"
+    ],
+    "summary": "Audited, intentional UI differences for the promoted Avalonia desktop screenshot pack relative to legacy Chummer5a mental models."
+  },
+  "entries": [
+    {
+      "screenshot": "01-initial-shell-light.png",
+      "surface": "initial_shell",
+      "surfaceKind": "frame",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs",
+      "currentReference": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+      "parityIntent": "Workbench-first startup posture with visible menu, core toolbar actions, and no wasted first-paint chrome.",
+      "evidenceAnchors": [
+        "ShellMenuBarControl.axaml roots: FileMenuButton, EditMenuButton, SpecialMenuButton, ToolsMenuButton, WindowsMenuButton, HelpMenuButton.",
+        "ToolStripControl.axaml visible first-paint buttons: SaveButton, PrintButton, CopyButton, DesktopHomeButton, ImportFileButton, CloseWorkspaceButton, SettingsButton.",
+        "AvaloniaFlagshipUiGateTests.cs hides ImportRawButton, LoadDemoRunnerButton, CampaignWorkspaceButton, UpdateStatusButton, InstallLinkingButton, SupportButton, and ReportIssueButton on the default workbench.",
+        "AvaloniaFlagshipUiGateTests.cs keeps LeftNavigatorRegion, LoadedRunnerTabStripBorder, and RestoreContinuityStatusBorder collapsed before a runner is loaded."
+      ],
+      "differences": [
+        {
+          "uiElement": "ToolStripControl.SaveButton/PrintButton/CopyButton/DesktopHomeButton/ImportFileButton/CloseWorkspaceButton/SettingsButton",
+          "category": "toolbar_posture",
+          "legacyPosture": "Classic WinForms ToolStrip exposed New/Open/Save/Print/Copy as always-visible main-form actions tied to MDI-era chrome.",
+          "currentPosture": "The Avalonia startup strip keeps Save, Print, Copy, New, Open, Close, and Options as first-paint buttons inside a compact WrapPanel instead of duplicating the old ToolStrip widget stack.",
+          "whyItDiffers": "The user still gets one-click muscle memory for the first minute, but the promoted shell is tuned for a dense single-workbench layout rather than a literal WinForms clone."
+        },
+        {
+          "uiElement": "ToolStripControl.ImportRawButton/LoadDemoRunnerButton/CampaignWorkspaceButton/UpdateStatusButton/InstallLinkingButton/SupportButton/ReportIssueButton visibility",
+          "category": "chrome_budget",
+          "legacyPosture": "Legacy desktop utility affordances were spread across main-form chrome, menus, and detached helper flows.",
+          "currentPosture": "Those buttons still exist in the promoted head, but they stay hidden on the startup screenshot so the workbench does not burn first-paint width on demo, raw XML, campaign, update, linking, support, or bug chrome.",
+          "whyItDiffers": "The first screen is required to feel like Chummer's dense workbench, not a dashboard of secondary operations."
+        },
+        {
+          "uiElement": "MainWindow.LeftNavigatorRegion/SummaryHeaderControl.LoadedRunnerTabStripBorder/SummaryHeaderControl.RestoreContinuityStatusBorder",
+          "category": "startup_compaction",
+          "legacyPosture": "Chummer5a centered the first minute on the main form and did not spend initial vertical space on workspace rails, runner tabs, or recovery dossiers.",
+          "currentPosture": "The promoted shell mounts navigator, tab-strip, and restore controls in code but collapses them completely until a runner or recovery handoff makes them relevant.",
+          "whyItDiffers": "The modern shell needs those routes later, but startup parity is only credible if the dense workbench still owns the opening frame."
+        }
+      ]
+    },
+    {
+      "screenshot": "02-menu-open-light.png",
+      "surface": "menu_open",
+      "surfaceKind": "frame",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs",
+      "currentReference": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+      "parityIntent": "Top-level command geography remains recognizable to a veteran in the first minute.",
+      "evidenceAnchors": [
+        "ShellMenuBarControl.axaml declares FileMenuButton, EditMenuButton, SpecialMenuButton, ToolsMenuButton, WindowsMenuButton, and HelpMenuButton.",
+        "AvaloniaFlagshipUiGateTests.cs asserts ClassicMenuLabels exactly equal File, Edit, Special, Tools, Windows, Help.",
+        "AvaloniaFlagshipUiGateTests.cs requires FileMenuButton to surface open_character and save_character runtime commands.",
+        "CatalogOnlyRulesetShellCatalogResolver.cs and ShellChromeBoundary.cs bind current command ids open_character, global_settings, master_index, character_roster, and report_bug into the shell."
+      ],
+      "differences": [
+        {
+          "uiElement": "ShellMenuBarControl.FileMenuButton/EditMenuButton/SpecialMenuButton/ToolsMenuButton/WindowsMenuButton/HelpMenuButton",
+          "category": "menu_roots",
+          "legacyPosture": "WinForms MenuStrip roots used the familiar File/Edit/Special/Tools/Windows/Help geography with ampersand accelerators and legacy chrome.",
+          "currentPosture": "The promoted shell keeps the same six roots by id and label, but they render through Avalonia menu primitives and modern shell styling instead of classic WinForms paint.",
+          "whyItDiffers": "Veteran navigation landmarks must survive, but the promoted head is not required to reproduce the old rendering engine's exact typography and accelerator quirks."
+        },
+        {
+          "uiElement": "FileMenuButton -> open_character/save_character runtime commands",
+          "category": "runtime_backing",
+          "legacyPosture": "The legacy main form wired File/Open and File/Save directly to WinForms handlers.",
+          "currentPosture": "FileMenuButton now dispatches live command ids such as open_character and save_character through the promoted shell runtime instead of static form-event wiring.",
+          "whyItDiffers": "The new parity proof is only honest if the menu is backed by the current command pipeline rather than by a screenshot-only façade."
+        },
+        {
+          "uiElement": "EditMenuButton/SpecialMenuButton/WindowsMenuButton workspace scoping",
+          "category": "workspace_truth",
+          "legacyPosture": "Legacy menu geography was more static because the main form owned most command surfaces directly.",
+          "currentPosture": "The promoted shell keeps the familiar roots visible, but Edit and Special routes only expose live commands when the active workspace actually supports them and Windows no longer implies a full MDI manager.",
+          "whyItDiffers": "Current menus are required to stay truthful to the active workspace model instead of advertising dead or MDI-only paths."
+        }
+      ]
+    },
+    {
+      "screenshot": "03-settings-open-light.png",
+      "surface": "settings_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/EditGlobalSettings.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Global setup stays first-minute reachable and still reads like a serious desktop settings surface.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs opens the same dialog from SettingsButton and Ctrl+G -> global_settings.",
+        "CommandDialogPaneControl.axaml exposes DialogTitleText, DialogFieldsHost, and DialogActionsHost for the inline settings surface.",
+        "DesktopDialogFactory.BuildGlobalSettingsFields creates globalSettingsTree, globalSettingsPropertyGrid, globalCharacterRosterPath, and globalPdfViewerPath.",
+        "AvaloniaFlagshipUiGateTests.cs keeps FileMenuButton responsive while the Global Settings dialog is still mounted."
+      ],
+      "differences": [
+        {
+          "uiElement": "SettingsButton/Ctrl+G -> global_settings command route",
+          "category": "command_unification",
+          "legacyPosture": "Legacy settings were typically opened through dedicated menu or utility-form routes on the WinForms shell.",
+          "currentPosture": "The promoted shell routes both the toolbar button and the keyboard shortcut through the same global_settings command id and presenter path.",
+          "whyItDiffers": "Modern command routing must be consistent across toolbar, menu, and keyboard surfaces even when the visual destination remains recognizable."
+        },
+        {
+          "uiElement": "CommandDialogPaneControl.DialogTitleText/DialogFieldsHost/DialogActionsHost",
+          "category": "dialog_host",
+          "legacyPosture": "EditGlobalSettings was a standalone WinForms window with its own frame, button row, and modality behavior.",
+          "currentPosture": "Global Settings is rendered inside the shared shell dialog host with a common title band, field stack, and action bar instead of a separate utility window.",
+          "whyItDiffers": "The promoted head standardizes dialog hosting so settings, import, utility, and builder dialogs all behave consistently inside the desktop shell."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.globalSettingsTree/globalSettingsPropertyGrid/globalCharacterRosterPath/globalPdfViewerPath",
+          "category": "field_model",
+          "legacyPosture": "The old settings form used WinForms tabs and heterogeneous controls to distribute options across several pages.",
+          "currentPosture": "The new dialog makes the navigation tree, current-pane property grid, roster path, PDF viewer path, and compact-mode fields explicit in one shared field model.",
+          "whyItDiffers": "The settings content still follows the old mental model, but it is represented through a structured dialog field system that the current shell can verify and reuse."
+        }
+      ]
+    },
+    {
+      "screenshot": "04-loaded-runner-light.png",
+      "surface": "loaded_runner",
+      "surfaceKind": "frame",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs",
+      "currentReference": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+      "parityIntent": "A loaded runner still reads as a character-first workbench rather than a landing page or dashboard.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs loads the bundled Soma runner through LoadDemoRunnerButton and then captures 04-loaded-runner-light.png.",
+        "LoadedRunnerTabStripBorder becomes visible after import while LeftNavigatorRegion stays collapsed for the single-runner posture.",
+        "LoadedRunnerTabStrip keeps stable info/profile and gear landmarks in SnapshotLoadedRunnerTabs().",
+        "SectionRowsList is visible and SectionPreviewBox is non-empty before the loaded-runner screenshot is accepted."
+      ],
+      "differences": [
+        {
+          "uiElement": "SummaryHeaderControl.LoadedRunnerTabStripBorder/LoadedRunnerTabStrip",
+          "category": "runner_header",
+          "legacyPosture": "Chummer5a relied on frmCareer-era tab geography and form chrome to show that a runner was active.",
+          "currentPosture": "The promoted head uses a compact tab-strip card to expose the Runner/Profile/Gear landmarks inside the summary header instead of rebuilding legacy form tabs verbatim.",
+          "whyItDiffers": "The tab posture must still be obvious, but the current shell collapses everything that is not needed for a single loaded runner."
+        },
+        {
+          "uiElement": "MainWindow.LeftNavigatorRegion/WorkspaceStripRegion",
+          "category": "single_runner_compaction",
+          "legacyPosture": "Legacy navigation lived inside the main character form without a separate workspace rail concept.",
+          "currentPosture": "The promoted shell keeps workspace-rail plumbing out of sight for the default loaded-runner case and refuses to reserve width for an empty navigator strip.",
+          "whyItDiffers": "Single-runner parity is stronger when the workbench owns the available width instead of emulating multi-workspace chrome that is irrelevant in the screenshot."
+        },
+        {
+          "uiElement": "SectionHostControl.SectionRowsList/SectionPreviewBox",
+          "category": "dense_workbench",
+          "legacyPosture": "frmCareer showed dense browse-and-detail landmarks through WinForms tabs, lists, and property-style panes.",
+          "currentPosture": "The promoted shell keeps the same dense list-and-detail rhythm, but it expresses it through a structured row list and a preview payload pane that the tests can snapshot directly.",
+          "whyItDiffers": "The behavioral landmark is the browse/detail cadence, not the old control class names."
+        }
+      ]
+    },
+    {
+      "screenshot": "05-dense-section-light.png",
+      "surface": "dense_section_light",
+      "surfaceKind": "frame",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs",
+      "currentReference": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+      "parityIntent": "The light-theme dense builder keeps the same inspect, compare, and confirm rhythm without wasting space.",
+      "evidenceAnchors": [
+        "Character_creation_preserves_familiar_dense_builder_rhythm() requires ClassicCharacterSheetBorder to be visible.",
+        "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm() checks SectionRowsList rows gear.weapons[0] = Ares Alpha and gear.armor[0] = Armor Jacket.",
+        "SectionPreviewBox must contain combat/attributes payload markers before the dense screenshot is accepted.",
+        "NoticeBorder and NoticeText stay hidden so routine command noise does not consume visible workbench space."
+      ],
+      "differences": [
+        {
+          "uiElement": "SectionHostControl.ClassicCharacterSheetBorder/ClassicCharacterSummaryTitle/ClassicCharacterFactsPanel",
+          "category": "summary_band",
+          "legacyPosture": "frmCareer kept the runner summary woven into the character form rather than in detached cards or a landing dashboard.",
+          "currentPosture": "The promoted shell recreates that effect as a compact Runner Summary band inside SectionHostControl instead of copying the old form layout exactly.",
+          "whyItDiffers": "The familiarity target is a dense always-near summary, not a pixel match to every legacy panel edge."
+        },
+        {
+          "uiElement": "SectionHostControl.SectionRowsList",
+          "category": "list_rendering",
+          "legacyPosture": "Classic dense sections mixed WinForms lists, trees, and field groups to render gear and related rows.",
+          "currentPosture": "The Avalonia workbench renders rows as explicit DisplayPath/DisplayValue pairs such as gear.weapons[0] = Ares Alpha and gear.armor[0] = Armor Jacket.",
+          "whyItDiffers": "Path/value rows are more mechanically testable and still preserve the dense browse rhythm veterans expect."
+        },
+        {
+          "uiElement": "SectionHostControl.SectionPreviewBox",
+          "category": "detail_surface",
+          "legacyPosture": "Legacy detail panes were embedded in WinForms sublayouts and were not exposed as a structured payload surface.",
+          "currentPosture": "The promoted shell keeps a hidden-but-mounted preview payload box that contains section markers such as combat and attributes for the selected row.",
+          "whyItDiffers": "The current head needs a stable, inspectable detail surface while still presenting a visually dense workbench."
+        },
+        {
+          "uiElement": "SectionHostControl.NoticeBorder/NoticeText",
+          "category": "noise_suppression",
+          "legacyPosture": "Legacy utility noise typically stayed out of the central editing pane unless the user explicitly triggered an alert.",
+          "currentPosture": "Routine command-dispatch notices are deliberately suppressed on the dense screenshot instead of occupying visible shell chrome.",
+          "whyItDiffers": "A loud status banner would break the frmCareer-style serious-work posture more than any missing pixel-perfect border would."
+        }
+      ]
+    },
+    {
+      "screenshot": "06-dense-section-dark.png",
+      "surface": "dense_section_dark",
+      "surfaceKind": "frame",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs",
+      "currentReference": "Chummer.Avalonia/App.axaml",
+      "parityIntent": "Dark theme remains dense and readable without inheriting legacy dark-mode debt.",
+      "evidenceAnchors": [
+        "Theme_tokens_preserve_chummer5a_palette_and_readability() asserts ChummerShellActiveMenuBorderBrush and ChummerShellAccentButtonBrush equal #1C4A2D in light and dark palettes.",
+        "The same test asserts ChummerShellActiveMenuBackgroundBrush is #1C4A2D and ChummerShellActiveMenuBorderBrush is #90C39A in dark mode.",
+        "The dark-theme proof enforces >=12:1 foreground contrast and >=7:1 muted-foreground contrast on shell surfaces.",
+        "06-dense-section-dark.png is captured from the same SectionRowsList workbench after ThemeVariant.Dark is applied."
+      ],
+      "differences": [
+        {
+          "uiElement": "App.axaml ChummerShellActiveMenuBorderBrush/ChummerShellAccentButtonBrush/ChummerShellActiveMenuBackgroundBrush",
+          "category": "theme_tokens",
+          "legacyPosture": "Legacy dark mode was inconsistent and inherited WinForms-era palette constraints.",
+          "currentPosture": "The promoted shell uses explicit branded dark tokens such as #1C4A2D and #90C39A instead of whatever the host toolkit would otherwise default to.",
+          "whyItDiffers": "Dark mode is allowed to improve materially because the parity contract is about familiar work rhythm, not preserving poor legacy color behavior."
+        },
+        {
+          "uiElement": "App.axaml contrast budgets for ChummerShellForegroundBrush/MutedForegroundBrush/WarningBrush/DangerBrush",
+          "category": "accessibility",
+          "legacyPosture": "The old client did not enforce hard contrast budgets across every dark surface.",
+          "currentPosture": "The promoted head hard-gates foreground, muted, warning, and danger contrast ratios in dark mode before the screenshot pack is accepted.",
+          "whyItDiffers": "Readable dense work matters more than cloning legacy contrast mistakes."
+        },
+        {
+          "uiElement": "Dark-mode SectionRowsList and shell panel chrome",
+          "category": "shared_theming",
+          "legacyPosture": "Dark workbench surfaces came from ad hoc panel fills and WinForms border behavior.",
+          "currentPosture": "The same dense list/detail surface is recolored through shared shell brushes and panel classes rather than per-form overrides.",
+          "whyItDiffers": "The promoted desktop needs one consistent dark-theme system across all major surfaces."
+        }
+      ]
+    },
+    {
+      "screenshot": "07-loaded-runner-tabs-light.png",
+      "surface": "loaded_runner_tabs",
+      "surfaceKind": "frame",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs",
+      "currentReference": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
+      "parityIntent": "Visible tab posture survives without reintroducing full MDI chrome.",
+      "evidenceAnchors": [
+        "Loaded_runner_preserves_visible_character_tab_posture() requires LoadedRunnerTabStripBorder to be visible and to surface a Runner tab label.",
+        "Loaded_runner_header_stays_tab_panel_only_without_metric_cards() forbids NameValueText, AliasValueText, KarmaValueText, SkillsValueText, RuntimeValueText, and RuntimeInspectButton.",
+        "Desktop_shell_preserves_classic_dense_center_first_workbench_posture() requires WorkspaceStripRegion to stay absent and LeftNavigatorRegion width to collapse.",
+        "SnapshotLoadedRunnerTabs() is expected to contain info/profile and gear landmarks on the loaded runner."
+      ],
+      "differences": [
+        {
+          "uiElement": "SummaryHeaderControl.LoadedRunnerTabStripBorder/LoadedRunnerTabStrip",
+          "category": "tab_posture",
+          "legacyPosture": "Legacy runner context was expressed through frmCareer-era tabs and main-form chrome.",
+          "currentPosture": "The promoted head distills that into a dedicated tab-strip card instead of an MDI-style shell or a second workspace row.",
+          "whyItDiffers": "Visible runner tabs are required; full legacy window-management chrome is not."
+        },
+        {
+          "uiElement": "WorkspaceStripRegion/MainWindow.LeftNavigatorRegion",
+          "category": "chrome_recovery",
+          "legacyPosture": "There was no separate modern workspace strip to keep alive for inactive sessions.",
+          "currentPosture": "The promoted shell explicitly collapses workspace-strip and left-rail chrome when only one runner matters.",
+          "whyItDiffers": "The central workbench is more important than showcasing future multi-workspace affordances on this proof."
+        },
+        {
+          "uiElement": "NameValueText/AliasValueText/KarmaValueText/SkillsValueText/RuntimeValueText/RuntimeInspectButton",
+          "category": "metric_card_rejection",
+          "legacyPosture": "Legacy dense runner work did not stop above the workbench to read hero cards or metric dashboards.",
+          "currentPosture": "The promoted shell intentionally omits those card-style metrics from the header and leaves the header as tab chrome only.",
+          "whyItDiffers": "Any card stack here would feel less like Chummer5a than the absence of old border styling."
+        }
+      ]
+    },
+    {
+      "screenshot": "08-cyberware-dialog-light.png",
+      "surface": "cyberware_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/Selection Forms/SelectCyberware.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Cyberware selection keeps the familiar browse-detail-confirm posture while making implant costs and essence easier to audit.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs selects the row cyberware[0] = Wired Reflexes 2, confirms SectionPreviewBox contains essence 5.34, then clicks SectionQuickAction_cyberware_add.",
+        "DialogTitleText must equal Add Cyberware before 08-cyberware-dialog-light.png is captured.",
+        "DesktopDialogFactory.BuildCyberwareSelectionFields creates uiCyberwareCategoryTree, uiCyberwareCandidateList, uiCyberwareGrade, uiCyberwareEssence, uiCyberwareCost, uiCyberwareSource, and uiCyberwareSelectionDetails.",
+        "Cyberware dialogs expose add/add_more/cancel actions through BuildAddAndMoreActions()."
+      ],
+      "differences": [
+        {
+          "uiElement": "SectionQuickAction_cyberware_add -> dialog.ui.cyberware_add",
+          "category": "entry_route",
+          "legacyPosture": "Classic cyberware work launched from dedicated selector forms and context menus tied to legacy control trees.",
+          "currentPosture": "The promoted shell launches cyberware selection through a named section quick action anchored directly to the dense workbench row context.",
+          "whyItDiffers": "Quick actions keep the same user intent visible while fitting the shared section host model."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiCyberwareCategoryTree/uiCyberwareCandidateList",
+          "category": "browse_surface",
+          "legacyPosture": "Legacy dialogs relied on WinForms tree/list widgets and form-specific layout code for category browsing.",
+          "currentPosture": "The current dialog uses an explicit Navigation tree and Available Cyberware list field model with predictable ids and layout slots.",
+          "whyItDiffers": "The promoted shell needs selection dialogs that are both familiar to browse and mechanically testable across heads."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiCyberwareGrade/uiCyberwareSlot/uiCyberwareRating/uiCyberwareMarkup/uiCyberwareDiscount",
+          "category": "inline_editing",
+          "legacyPosture": "Legacy implant modifiers and grade choices were spread across dialog-specific widgets that varied by selection form.",
+          "currentPosture": "The current dialog exposes grade, slot, rating, markup, and discount in a single shared field stack around the selected implant.",
+          "whyItDiffers": "The new field model makes the cost and essence implications easier to audit without hiding them behind form-specific control arrangements."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiCyberwareEssence/uiCyberwareCost/uiCyberwareSource/uiCyberwareSelectionDetails + add/add_more/cancel",
+          "category": "confirmation_surface",
+          "legacyPosture": "Older confirmation posture depended on bespoke totals areas and legacy button rows.",
+          "currentPosture": "Essence, cost, source, and selection details remain visible beside a standardized add/add more/cancel action bar.",
+          "whyItDiffers": "The current desktop puts explainability and reversible action posture ahead of faithfully cloning the old layout skeleton."
+        }
+      ]
+    },
+    {
+      "screenshot": "09-vehicles-section-light.png",
+      "surface": "vehicles_section",
+      "surfaceKind": "frame",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs",
+      "currentReference": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+      "parityIntent": "Vehicles and drones stay dense, technical, and easy to re-find from the main workbench.",
+      "evidenceAnchors": [
+        "Non_classic_sections_surface_a_named_workbench_context_instead_of_an_untitled_row_dump() requires SectionContextTitleText to equal Vehicles and SectionContextSummaryText to mention Roadmaster.",
+        "09-vehicles-section-light.png is captured after selecting the row vehicles[0] = Roadmaster in SectionRowsList.",
+        "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm() opens SectionQuickAction_vehicle_add with title Add Vehicle / Drone and field Vehicle.",
+        "DesktopDialogFactory.BuildVehicleSelectionFields creates uiVehicleCategoryTree, uiVehicleCandidateList, uiVehicleHandling, uiVehicleCost, uiVehicleSource, and uiVehicleSelectionDetails."
+      ],
+      "differences": [
+        {
+          "uiElement": "SectionHostControl.SectionContextTitleText/SectionContextSummaryText",
+          "category": "section_identity",
+          "legacyPosture": "Vehicle work was often spread across dedicated forms or older nested layouts where the current context could be easy to lose.",
+          "currentPosture": "The promoted workbench adds an explicit Vehicles section header and summary line directly above the rows.",
+          "whyItDiffers": "Modern section context cues improve re-findability without changing the underlying builder rhythm."
+        },
+        {
+          "uiElement": "SectionHostControl.SectionRowsList row vehicles[0] = Roadmaster",
+          "category": "row_rendering",
+          "legacyPosture": "Legacy vehicle editors used form-specific grids and tab stacks for chassis state.",
+          "currentPosture": "Vehicle entries are rendered as dense path/value rows inside the same workbench list that drives the rest of the character builder.",
+          "whyItDiffers": "Keeping vehicles inside the shared row model reduces shell switching while still exposing the same dense editing cadence."
+        },
+        {
+          "uiElement": "SectionQuickAction_vehicle_add",
+          "category": "action_surface",
+          "legacyPosture": "Add Vehicle or Drone often launched from per-form buttons tied to legacy vehicle tabs.",
+          "currentPosture": "The promoted section exposes vehicle creation as a named quick action attached to the current section host instead of a detached form button.",
+          "whyItDiffers": "Quick actions make the launch point consistent across builder families."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiVehicleCategoryTree/uiVehicleCandidateList/uiVehicleHandling/uiVehicleSource",
+          "category": "selection_dialog",
+          "legacyPosture": "The legacy vehicle selector depended on form-specific tree and field arrangements.",
+          "currentPosture": "The current dialog keeps the same browse/detail/confirm loop, but it expresses navigation, candidate list, handling, cost, and source in a shared dialog field model.",
+          "whyItDiffers": "The shell can standardize the selection mechanics without erasing the vehicle-builder mental model."
+        }
+      ]
+    },
+    {
+      "screenshot": "10-contacts-section-light.png",
+      "surface": "contacts_section",
+      "surfaceKind": "frame",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs",
+      "currentReference": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+      "parityIntent": "Contacts stay first-class, contextual, and editable without sending the user to a separate dashboard.",
+      "evidenceAnchors": [
+        "10-contacts-section-light.png is captured after SetActiveSectionForTesting(\"contacts\") and selecting contacts[0] = Fixer in SectionRowsList.",
+        "SectionHostControl.axaml contains ContactGraphBorder, ContactNodeList, ContactFactionStatusBox, ContactHeatObligationBox, and ContactFavorRailBox for the contacts family.",
+        "Contacts_diary_and_support_routes_execute_with_public_path_visibility() opens contact_add with title Add Contact and required field Name.",
+        "DesktopDialogFactory.BuildContactAddFields creates uiContactName, uiContactRole, uiContactConnection, uiContactLoyalty, uiContactDetails, and uiContactNotes."
+      ],
+      "differences": [
+        {
+          "uiElement": "SectionHostControl.SectionRowsList row contacts[0] = Fixer",
+          "category": "list_context",
+          "legacyPosture": "Legacy contacts were edited through older field groups and control clusters separate from the main workbench narrative.",
+          "currentPosture": "The promoted shell keeps contacts in the same dense path/value row list used by other builder families, with the selected Fixer entry visible in-frame.",
+          "whyItDiffers": "The common row model improves re-findability and keeps contacts from feeling like a detached side utility."
+        },
+        {
+          "uiElement": "SectionHostControl.ContactGraphBorder/ContactNodeList/ContactFactionStatusBox/ContactHeatObligationBox/ContactFavorRailBox",
+          "category": "adjacent_context",
+          "legacyPosture": "Legacy contact editing focused on direct form fields and less on adjacent relationship context surfaces.",
+          "currentPosture": "The promoted contacts lane can surface relationship graph, faction status, heat or obligation, and favor-rail context inside the same section host.",
+          "whyItDiffers": "Contacts are more useful when the surrounding social context is visible where the user is already editing."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiContactName/uiContactRole/uiContactConnection/uiContactLoyalty",
+          "category": "edit_fields",
+          "legacyPosture": "Add Contact relied on legacy dialog controls arranged specifically for the old form stack.",
+          "currentPosture": "The current add-contact dialog keeps the same essential Name/Role/Connection/Loyalty fields but expresses them through the shared dialog field system.",
+          "whyItDiffers": "The shell can modernize how the fields are hosted without changing what a veteran needs to fill in."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiContactDetails/uiContactNotes",
+          "category": "summary_surface",
+          "legacyPosture": "Legacy contact dialogs offered less structured summary context around the selected role and connection state.",
+          "currentPosture": "The promoted dialog pairs the edit fields with a Contact Details grid and Notes snippet so the selected social posture stays visible through confirmation.",
+          "whyItDiffers": "Current parity prioritizes explicit context over reproducing the exact old arrangement of textboxes and labels."
+        }
+      ]
+    },
+    {
+      "screenshot": "11-diary-dialog-light.png",
+      "surface": "diary_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/Utility Forms/frmExpense.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Diary and progression-entry work stays compact, list-oriented, and tied to the active runner.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs captures 11-diary-dialog-light.png after clicking SectionQuickAction_create_entry in the progress section.",
+        "DialogTitleText must equal Add Entry and the required field label is Entry Name before the screenshot is accepted.",
+        "DesktopDialogFactory.BuildEntryEditorFields creates uiEntrySections, uiCreateEntryName, uiEntryDetails, and uiEntryNotes.",
+        "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm() requires SectionPreviewBox to contain diary and karma markers."
+      ],
+      "differences": [
+        {
+          "uiElement": "SectionQuickAction_create_entry -> dialog.ui.create_entry",
+          "category": "launch_route",
+          "legacyPosture": "Legacy diary and expense flows opened through utility windows and per-form commands.",
+          "currentPosture": "The promoted head launches diary entry creation from the progress section's quick-action strip so the action starts in the same dense work context.",
+          "whyItDiffers": "The shared section host is the new center of gravity for editing, even when the underlying mental model remains diary-first."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiEntrySections/uiCreateEntryName",
+          "category": "field_shape",
+          "legacyPosture": "The old flow used a standalone form with its own control arrangement for entry naming and details.",
+          "currentPosture": "The current dialog reduces that to an explicit Entry/Details/Notes section model plus a first-class Entry Name field.",
+          "whyItDiffers": "The dialog field contract is reused across the desktop shell, so the diary surface inherits that structure."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiEntryDetails/uiEntryNotes",
+          "category": "context_pane",
+          "legacyPosture": "Legacy entry utilities carried less structured inline explanation about current posture and list context.",
+          "currentPosture": "The promoted dialog keeps a Details grid and Notes snippet visible while the user creates the entry.",
+          "whyItDiffers": "Current parity favors explicit context and reversibility during edits."
+        },
+        {
+          "uiElement": "Dialog action ids add/add_more/cancel",
+          "category": "action_bar",
+          "legacyPosture": "Classic confirmation posture was expressed through dialog-specific button rows.",
+          "currentPosture": "The diary flow uses the shared add/add more/cancel action trio instead of custom button wiring.",
+          "whyItDiffers": "A common action contract makes shell behavior consistent across builder dialogs without changing the user's basic commit or cancel choices."
+        }
+      ]
+    },
+    {
+      "screenshot": "12-magic-dialog-light.png",
+      "surface": "magic_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Magic selection keeps obvious browse, inspect, and confirm landmarks while adapting to the current ruleset field model.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs captures 12-magic-dialog-light.png after clicking SectionQuickAction_spell_add and waiting for DialogTitleText = Add Spell.",
+        "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions() requires the field label Spell and the add action id.",
+        "DesktopDialogFactory.BuildSpellSelectionFields creates uiSpellCategoryTree, uiSpellCandidateList, uiSpellName, uiSpellSource, uiSpellSelectionDetails, and uiSpellNotes.",
+        "The same test family also exercises adept_power_add and initiation_add so the dialog contract is shared across magic-family routes."
+      ],
+      "differences": [
+        {
+          "uiElement": "SectionQuickAction_spell_add -> dialog.ui.spell_add",
+          "category": "launch_route",
+          "legacyPosture": "Legacy Add Spell flowed from frmCareer buttons and WinForms selector forms.",
+          "currentPosture": "The promoted shell launches Add Spell from a section quick action inside the dense workbench instead of a form-specific toolbar button.",
+          "whyItDiffers": "Magic actions are now routed through the shared section host so every builder family behaves consistently."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiSpellCategoryTree/uiSpellCandidateList",
+          "category": "browse_surface",
+          "legacyPosture": "The old selector used legacy tree and list controls shaped by the WinForms form designer.",
+          "currentPosture": "The current dialog exposes an explicit spell category tree and Available Spells list with stable field ids and layout slots.",
+          "whyItDiffers": "The selection landmarks stay recognizable, but the structure must fit the shared dialog system."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiSpellName/uiSpellCategory/uiSpellSource/uiSpellSelectionDetails",
+          "category": "selection_context",
+          "legacyPosture": "Legacy detail panels varied by form and did not share a common field contract across heads.",
+          "currentPosture": "The promoted dialog keeps Spell, Category, Source, and Selection Details visible in a single normalized field model.",
+          "whyItDiffers": "Current parity values testable structured context more than exact legacy control placement."
+        },
+        {
+          "uiElement": "Dialog action ids add/add_more/cancel",
+          "category": "confirmation",
+          "legacyPosture": "Classic spell dialogs had bespoke OK-style button rows.",
+          "currentPosture": "Add Spell uses the same add/add more/cancel action bar as other builder dialogs, even though the field content is magic-specific.",
+          "whyItDiffers": "The promoted shell standardizes action posture without erasing the spell-selection workflow."
+        }
+      ]
+    },
+    {
+      "screenshot": "13-matrix-dialog-light.png",
+      "surface": "matrix_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Matrix program selection stays technical and dense without leaving the main workbench shell model.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs captures 13-matrix-dialog-light.png after clicking SectionQuickAction_matrix_program_add and waiting for Add Program / Cyberdeck Item.",
+        "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions() requires field label Program and action id add.",
+        "DesktopDialogFactory.BuildMatrixProgramSelectionFields creates uiMatrixProgramCategoryTree, uiMatrixProgramCandidateList, uiMatrixProgramName, uiMatrixProgramSlot, uiMatrixProgramSource, and uiMatrixProgramSelectionDetails.",
+        "The surrounding complexforms section also exposes complex_form_add, proving the matrix family shares one current shell lane rather than separate legacy forms."
+      ],
+      "differences": [
+        {
+          "uiElement": "SectionQuickAction_matrix_program_add -> dialog.ui.matrix_program_add",
+          "category": "launch_route",
+          "legacyPosture": "Legacy matrix editing used form-specific selectors and menu/button launch points tied to older control stacks.",
+          "currentPosture": "The promoted shell exposes Add Program / Cyberdeck Item as a named quick action inside the current section host.",
+          "whyItDiffers": "The workbench is now responsible for launching matrix flows instead of scattering them across detached selectors."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiMatrixProgramCategoryTree/uiMatrixProgramCandidateList",
+          "category": "browse_surface",
+          "legacyPosture": "Older dialogs used legacy selector widgets to split programs, deck items, and dongles.",
+          "currentPosture": "The promoted dialog keeps the same distinction, but it expresses it through an explicit Navigation tree and Available Programs list.",
+          "whyItDiffers": "The shell can standardize the dialog framework while still preserving the technical browse posture."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiMatrixProgramName/uiMatrixProgramSlot/uiMatrixProgramSource/uiMatrixProgramSelectionDetails",
+          "category": "selection_context",
+          "legacyPosture": "Legacy detail panes were layout-specific and less uniform across matrix subflows.",
+          "currentPosture": "Program name, slot, source, and selection details remain visible as named fields inside the shared dialog contract.",
+          "whyItDiffers": "Matrix parity depends on visible slot and source context, not on keeping the old field arrangement byte-for-byte."
+        },
+        {
+          "uiElement": "Dialog action ids add/add_more/cancel",
+          "category": "confirmation",
+          "legacyPosture": "Legacy matrix selectors used custom button rows and form-event wiring.",
+          "currentPosture": "The promoted matrix dialog uses the same standardized add/add more/cancel action bar as the rest of the builder family.",
+          "whyItDiffers": "Consistent action posture across builders is a deliberate modern shell choice."
+        }
+      ]
+    },
+    {
+      "screenshot": "14-advancement-dialog-light.png",
+      "surface": "advancement_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Advancement stays tied to visible karma history and still makes grade or reward choices explicit before commit.",
+      "evidenceAnchors": [
+        "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm() requires progress[0] = First extraction · +2 karma in SectionRowsList and diary/karma markers in SectionPreviewBox.",
+        "AvaloniaFlagshipUiGateTests.cs captures 14-advancement-dialog-light.png after clicking SectionQuickAction_initiation_add and waiting for Add Initiation / Submersion.",
+        "The same test requires field label Grade and action id add.",
+        "DesktopDialogFactory.BuildInitiationSelectionFields creates uiInitiationTrack, uiInitiationGrade, uiInitiationCandidateList, uiInitiationReward, uiInitiationSelectionDetails, and uiInitiationNotes."
+      ],
+      "differences": [
+        {
+          "uiElement": "SectionRowsList progress[0] = First extraction · +2 karma / SectionPreviewBox diary+karma payload",
+          "category": "history_context",
+          "legacyPosture": "Legacy advancement cues were distributed across expense, karma, and character forms.",
+          "currentPosture": "The promoted workbench keeps the current progression row and diary or karma payload visible directly in the progress section before the dialog opens.",
+          "whyItDiffers": "Advancement parity is stronger when the running history remains visible in the same lane as the next action."
+        },
+        {
+          "uiElement": "SectionQuickAction_initiation_add -> dialog.ui.initiation_add",
+          "category": "launch_route",
+          "legacyPosture": "Initiation and submersion choices launched from legacy buttons and selector forms tied to older section layouts.",
+          "currentPosture": "The promoted head launches the initiation flow from the progress workbench through a named quick action.",
+          "whyItDiffers": "The quick-action model keeps advancement tools attached to the same dense editing lane."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.uiInitiationTrack/uiInitiationGrade/uiInitiationCandidateList/uiInitiationReward",
+          "category": "choice_surface",
+          "legacyPosture": "Legacy initiation dialogs used form-specific controls to mix track, grade, and reward selection.",
+          "currentPosture": "The current dialog exposes Track, Grade, Available Rewards, and Reward as normalized fields inside the shared dialog shell.",
+          "whyItDiffers": "The shell now needs a stable field contract across advancement flows while preserving the same user decisions."
+        },
+        {
+          "uiElement": "Dialog action ids add/add_more/cancel",
+          "category": "confirmation",
+          "legacyPosture": "Classic advancement flows depended on dialog-specific OK/Cancel rows.",
+          "currentPosture": "The promoted dialog uses the shared add/add more/cancel bar after keeping grade and metamagic or echo context visible.",
+          "whyItDiffers": "Standardized commit posture reduces shell variation without changing the core progression workflow."
+        }
+      ]
+    },
+    {
+      "screenshot": "15-creation-section-light.png",
+      "surface": "creation_section",
+      "surfaceKind": "frame",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/CharacterCreate.Designer.cs",
+      "currentReference": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+      "parityIntent": "Character creation still feels like a dense builder, not a wizard or marketing surface.",
+      "evidenceAnchors": [
+        "Character_creation_preserves_familiar_dense_builder_rhythm() requires ClassicCharacterSheetBorder to be visible in the creation-like surface.",
+        "The same test requires SectionRowsList to contain attributes.body = 5, attributes.agility = 7, and skills.firearms[0] = Automatics 6.",
+        "SectionPreviewBox must contain attributes and combat markers before the screenshot is accepted.",
+        "15-creation-section-light.png is captured after SetActiveSectionForTesting(\"attributes\") on the loaded-runner workbench, not from a detached wizard window."
+      ],
+      "differences": [
+        {
+          "uiElement": "SectionHostControl.SectionRowsList rows attributes.body/attributes.agility/skills.firearms[0]",
+          "category": "builder_rows",
+          "legacyPosture": "CharacterCreate used dedicated creation-form controls, pages, and widgets to expose attributes and skills.",
+          "currentPosture": "The promoted builder renders creation facts as dense path/value rows inside the same workbench row list used elsewhere.",
+          "whyItDiffers": "The dense builder feel survives even though the control implementation is unified with the rest of the current shell."
+        },
+        {
+          "uiElement": "SectionHostControl.ClassicCharacterSheetBorder",
+          "category": "summary_band",
+          "legacyPosture": "The old creation experience kept a compact runner summary close to the editing surface rather than delegating it to an external dashboard.",
+          "currentPosture": "The promoted creation surface uses the same Runner Summary band to keep the character sheet posture visible while editing attributes.",
+          "whyItDiffers": "One summary-band implementation is cheaper to maintain and still gives the user the same dense builder cue."
+        },
+        {
+          "uiElement": "SectionHostControl.SectionPreviewBox",
+          "category": "detail_surface",
+          "legacyPosture": "Legacy creation panes expressed detail context through form-specific fields and labels.",
+          "currentPosture": "The current builder keeps a structured preview payload with attributes and combat markers mounted alongside the dense list.",
+          "whyItDiffers": "The preview surface makes the current builder auditable without forcing a separate wizard step."
+        },
+        {
+          "uiElement": "Loaded-runner workbench hosting instead of a detached creation form",
+          "category": "shell_consolidation",
+          "legacyPosture": "Character creation lived in a separate dedicated WinForms experience.",
+          "currentPosture": "The promoted head hosts creation-like editing inside the same dense workbench shell and does not bounce the user into a separate wizard frame for this proof.",
+          "whyItDiffers": "The modern shell is intentionally consolidated, but it must still feel like a serious creation builder."
+        }
+      ]
+    },
+    {
+      "screenshot": "16-master-index-dialog-light.png",
+      "surface": "master_index_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/Utility Forms/MasterIndex.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Master Index remains a first-class searchable utility with stronger source provenance than the legacy form.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs opens ToolsMenuButton -> master_index and captures the dialog after AssertDialogContainsAll(..., [\"Master Index\"]).",
+        "DesktopDialogFactory.BuildMasterIndexFields creates masterIndexSections, masterIndexSearch, masterIndexCatalogEntries, masterIndexDetails, masterIndexSnippetPreview, and masterIndexSelectedSource.",
+        "The same field builder also creates masterIndexReferenceCoverage, masterIndexReferenceSources, and masterIndexReferenceSourceReceipt.",
+        "The dialog closes through the shared close action instead of a standalone utility-form frame."
+      ],
+      "differences": [
+        {
+          "uiElement": "ToolsMenuButton -> master_index / DialogTitleText = Master Index",
+          "category": "utility_route",
+          "legacyPosture": "Master Index was a named WinForms utility surfaced from the legacy tools lane.",
+          "currentPosture": "The promoted shell preserves the same named utility route, but it opens inside the shared dialog host rather than a separate form window.",
+          "whyItDiffers": "The route must stay familiar even though utility hosting is now standardized."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.masterIndexSections/masterIndexSearch/masterIndexCatalogEntries",
+          "category": "search_surface",
+          "legacyPosture": "Legacy Master Index centered on a dedicated utility form with its own search and result widgets.",
+          "currentPosture": "The promoted dialog keeps Sections, Search, and Items explicit as named fields inside the shared dialog contract.",
+          "whyItDiffers": "The shared dialog model gives the current shell stable, testable field ids instead of form-specific widget wiring."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.masterIndexDetails/masterIndexSnippetPreview/masterIndexSelectedSource",
+          "category": "reference_context",
+          "legacyPosture": "Legacy Master Index focused on local reference navigation and did not consistently surface snippet provenance in one normalized panel.",
+          "currentPosture": "The promoted dialog keeps Details, Snippet Preview, and Source visible together so the selected sourcebook's current provenance is explicit.",
+          "whyItDiffers": "Reference truth is now a governed product contract, not just a convenience utility."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.masterIndexReferenceCoverage/masterIndexReferenceSources/masterIndexReferenceSourceReceipt",
+          "category": "governance_fields",
+          "legacyPosture": "The old Master Index did not expose modern receipt-style coverage and source-governance fields.",
+          "currentPosture": "The promoted dialog surfaces snippet coverage, reference-source posture, and a reference-source receipt as first-class fields.",
+          "whyItDiffers": "The flagship desktop now has to prove source quality and provenance, not merely show that search results exist."
+        }
+      ]
+    },
+    {
+      "screenshot": "17-character-roster-dialog-light.png",
+      "surface": "character_roster_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Character Roster remains a named first-class utility for multi-runner context.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs opens ToolsMenuButton -> character_roster and captures the dialog after AssertDialogContainsAll(..., [\"Character Roster\"]).",
+        "DesktopDialogFactory.BuildRosterFields creates rosterTree, rosterEntries, rosterSelectedRunner, rosterMugshot, rosterSelectedRunnerStatus, and rosterSelectedRunnerNotes.",
+        "The same builder also creates rosterOpenCount, rosterSavedCount, rosterRulesetMix, and rosterActiveWorkspace.",
+        "The roster dialog closes through the shared close action instead of a separate utility window frame."
+      ],
+      "differences": [
+        {
+          "uiElement": "ToolsMenuButton -> character_roster / DialogTitleText = Character Roster",
+          "category": "utility_route",
+          "legacyPosture": "Character Roster was a standalone WinForms utility reachable from the legacy tools lane.",
+          "currentPosture": "The promoted shell keeps the named Character Roster route but hosts it inside the shared dialog layer.",
+          "whyItDiffers": "The route stays veteran-familiar while the window-hosting model is intentionally modernized."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.rosterTree/rosterEntries",
+          "category": "list_and_tree",
+          "legacyPosture": "Legacy roster views depended on utility-form trees and lists with form-specific layout rules.",
+          "currentPosture": "The promoted dialog renders Characters and Roster Entries as explicit shared fields, including open-runner ordering and save posture markers.",
+          "whyItDiffers": "The field contract is reusable across heads and lets the shell verify multi-runner state directly."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.rosterSelectedRunner/rosterMugshot/rosterSelectedRunnerStatus/rosterSelectedRunnerNotes",
+          "category": "detail_context",
+          "legacyPosture": "The old roster centered on the runner list and supporting form fields without the same normalized summary model.",
+          "currentPosture": "The current roster keeps selected-runner summary, mugshot placeholder, status snippet, and notes snippet visible in one standardized detail region.",
+          "whyItDiffers": "Current roster parity needs stronger explicit context about the selected runner and active workspace."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.rosterOpenCount/rosterSavedCount/rosterRulesetMix/rosterActiveWorkspace",
+          "category": "session_metrics",
+          "legacyPosture": "Legacy roster utilities did not expose modern session-level counts and ruleset-mix posture as first-class dialog fields.",
+          "currentPosture": "The promoted roster makes open runner count, saved workspace count, ruleset mix, and active workspace explicit at the top of the dialog.",
+          "whyItDiffers": "The current shell has to explain the session state around the roster, not only render the character list."
+        }
+      ]
+    },
+    {
+      "screenshot": "18-import-dialog-light.png",
+      "surface": "import_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Import still begins from File/Open posture while making current ruleset and payload expectations explicit.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs loads the demo runner, opens FileMenuButton, dispatches open_character, and then captures the dialog after AssertDialogContainsAll(..., [\"Open Character\"]).",
+        "DesktopDialogFactory.CreateOpenCharacterDialog creates importRulesetId and openCharacterXml fields with title Open Character and message Paste Chummer XML to import into a workspace.",
+        "The dialog exposes import/cancel actions through the shared dialog action model.",
+        "MainWindow.DesktopFileCoordinator.cs still carries the host-facing title Open Character File for the desktop file route."
+      ],
+      "differences": [
+        {
+          "uiElement": "FileMenuButton -> open_character after LoadDemoRunnerButton",
+          "category": "shell_entry",
+          "legacyPosture": "Veterans expect import to begin from the File/Open route on the main desktop shell.",
+          "currentPosture": "The promoted head keeps that exact shell entry, but it proves it through a runtime command id instead of a legacy form handler.",
+          "whyItDiffers": "The command pipeline changed, but the user's first step is intentionally still File/Open."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.importRulesetId/openCharacterXml",
+          "category": "import_fields",
+          "legacyPosture": "Legacy import flows relied on older file-picker or importer-specific forms without a normalized shared field contract.",
+          "currentPosture": "The promoted dialog makes Ruleset and Character XML explicit named fields inside the shell dialog model.",
+          "whyItDiffers": "The current desktop needs a consistent import surface that can be audited and reused across related routes."
+        },
+        {
+          "uiElement": "Dialog action ids import/cancel",
+          "category": "action_bar",
+          "legacyPosture": "Classic import dialogs used form-specific buttons and callback wiring.",
+          "currentPosture": "Import uses the shared dialog action model with an explicit import primary action and cancel secondary action.",
+          "whyItDiffers": "Unified action handling is a deliberate shell-level simplification, not a loss of import capability."
+        },
+        {
+          "uiElement": "MainWindow.DesktopFileCoordinator 'Open Character File' host route",
+          "category": "file_hosting",
+          "legacyPosture": "Legacy import blended desktop-file and importer behavior directly into WinForms main-form flows.",
+          "currentPosture": "The promoted shell keeps a host-facing Open Character File route while the in-shell dialog focuses on ruleset and payload review.",
+          "whyItDiffers": "Desktop file integration and in-shell import confirmation are intentionally separated in the current architecture."
+        }
+      ]
+    }
+  ]
+}

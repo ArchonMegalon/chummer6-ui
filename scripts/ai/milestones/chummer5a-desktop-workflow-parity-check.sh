@@ -27,6 +27,7 @@ python3 - <<'PY' "$receipt_path" "$ledger_path" "$oracle_path" "$checklist_path"
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -36,6 +37,15 @@ receipt_path, ledger_path, oracle_path, checklist_path, dual_head_tests_path, co
     Path(value) for value in sys.argv[1:8]
 ]
 release_channel_path = Path(sys.argv[8])
+RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS") or "86400"
+)
+RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS = int(
+    os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS")
+    or "300"
+)
 
 
 def normalize(value: object) -> str:
@@ -76,13 +86,48 @@ payload = {
     "status": "fail",
     "summary": "Chummer5a desktop workflow parity is not yet exhaustively proven.",
     "reasons": [],
-    "evidence": {},
+    "evidence": {
+        "releaseChannelPath": str(release_channel_path),
+        "releaseChannelExists": release_channel_path.is_file(),
+        "workflowLedgerPath": str(ledger_path),
+        "parityOraclePath": str(oracle_path),
+        "parityChecklistPath": str(checklist_path),
+        "dualHeadTestsPath": str(dual_head_tests_path),
+        "complianceTestsPath": str(compliance_tests_path),
+        "uiGateTestsPath": str(ui_gate_tests_path),
+        "releaseChannelMaxAgeSeconds": RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS,
+        "releaseChannelMaxFutureSkewSeconds": RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS,
+    },
 }
 
-if not ledger_path.is_file():
-    payload["reasons"].append(f"Workflow parity ledger is missing: {ledger_path}")
-    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    raise SystemExit(43)
+source_artifact_reasons: list[str] = []
+release_channel_reasons: list[str] = []
+checklist_coverage_reasons: list[str] = []
+workflow_family_reasons: list[str] = []
+test_reference_reasons: list[str] = []
+
+
+def append_reason(message: str, *buckets: list[str]) -> None:
+    if message not in payload["reasons"]:
+        payload["reasons"].append(message)
+    for bucket in buckets:
+        if message not in bucket:
+            bucket.append(message)
+
+
+def require_file(path: Path, label: str) -> bool:
+    if path.is_file():
+        return True
+    append_reason(f"{label} is missing: {path}", source_artifact_reasons)
+    return False
+
+
+ledger_exists = require_file(ledger_path, "Workflow parity ledger")
+oracle_exists = require_file(oracle_path, "Parity oracle")
+checklist_exists = require_file(checklist_path, "Parity checklist")
+dual_head_tests_exist = require_file(dual_head_tests_path, "Dual-head acceptance tests")
+compliance_tests_exist = require_file(compliance_tests_path, "Migration compliance tests")
+ui_gate_tests_exist = require_file(ui_gate_tests_path, "Flagship UI gate tests")
 
 release_channel = {}
 if release_channel_path.is_file():
@@ -104,26 +149,49 @@ for key in ("generatedAt", "generated_at"):
         release_channel_generated_at = parse_iso(release_channel_generated_at_raw)
         break
 
+release_channel_age_seconds = None
+release_channel_future_skew_seconds = None
 if not release_channel_path.is_file():
-    payload["reasons"].append(f"Release channel receipt is missing: {release_channel_path}")
+    append_reason(f"Release channel receipt is missing: {release_channel_path}", release_channel_reasons)
 elif not isinstance(release_channel, dict) or not release_channel:
-    payload["reasons"].append(
+    append_reason(
         f"Release channel receipt is unreadable or not a JSON object: {release_channel_path}"
+        , release_channel_reasons
     )
 if not release_channel_channel_id:
-    payload["reasons"].append("Release channel receipt is missing channelId/channel.")
+    append_reason("Release channel receipt is missing channelId/channel.", release_channel_reasons)
 if not release_channel_generated_at_raw or release_channel_generated_at is None:
-    payload["reasons"].append(
+    append_reason(
         "Release channel receipt is missing a valid generatedAt/generated_at timestamp."
+        , release_channel_reasons
     )
+else:
+    now = datetime.now(timezone.utc)
+    release_channel_delta_seconds = (now - release_channel_generated_at).total_seconds()
+    release_channel_age_seconds = int(max(release_channel_delta_seconds, 0))
+    release_channel_future_skew_seconds = int(max(-release_channel_delta_seconds, 0))
+    if release_channel_future_skew_seconds > RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS:
+        append_reason(
+            f"Release channel receipt generatedAt is in the future by {release_channel_future_skew_seconds} seconds.",
+            release_channel_reasons,
+        )
+    if release_channel_age_seconds > RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS:
+        append_reason(
+            f"Release channel receipt is stale ({release_channel_age_seconds} seconds old).",
+            release_channel_reasons,
+        )
 
-ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
-oracle = json.loads(oracle_path.read_text(encoding="utf-8"))
-checklist_text = checklist_path.read_text(encoding="utf-8") if checklist_path.is_file() else ""
+ledger = json.loads(ledger_path.read_text(encoding="utf-8")) if ledger_exists else {}
+oracle = json.loads(oracle_path.read_text(encoding="utf-8")) if oracle_exists else {}
+checklist_text = checklist_path.read_text(encoding="utf-8") if checklist_exists else ""
 test_corpus = "\n".join(
     path.read_text(encoding="utf-8")
-    for path in [dual_head_tests_path, compliance_tests_path, ui_gate_tests_path]
-    if path.is_file()
+    for path, exists in [
+        (dual_head_tests_path, dual_head_tests_exist),
+        (compliance_tests_path, compliance_tests_exist),
+        (ui_gate_tests_path, ui_gate_tests_exist),
+    ]
+    if exists
 )
 
 summary_match = re.search(
@@ -155,41 +223,120 @@ for family_id in required_family_ids:
         missing_test_refs[family_id] = unresolved
 
 if tabs_missing:
-    payload["reasons"].append(f"Parity checklist still has {tabs_missing} tab entries missing in catalog coverage.")
+    append_reason(
+        f"Parity checklist still has {tabs_missing} tab entries missing in catalog coverage.",
+        checklist_coverage_reasons,
+    )
 if workspace_missing:
-    payload["reasons"].append(f"Parity checklist still has {workspace_missing} workspace action entries missing in catalog coverage.")
+    append_reason(
+        f"Parity checklist still has {workspace_missing} workspace action entries missing in catalog coverage.",
+        checklist_coverage_reasons,
+    )
 if missing_family_ids:
-    payload["reasons"].append("Workflow parity ledger is missing required families: " + ", ".join(missing_family_ids))
+    append_reason(
+        "Workflow parity ledger is missing required families: " + ", ".join(missing_family_ids),
+        workflow_family_reasons,
+    )
 if non_ready_family_ids:
-    payload["reasons"].append(
+    append_reason(
         "Workflow parity ledger has unresolved families: "
         + ", ".join(f"{family_id}={families[family_id].get('status', 'missing')}" for family_id in non_ready_family_ids)
+        , workflow_family_reasons
     )
 if missing_test_refs:
-    payload["reasons"].append(
+    append_reason(
         "Workflow parity ledger references missing executable tests: "
         + ", ".join(f"{family_id}: {', '.join(names)}" for family_id, names in sorted(missing_test_refs.items()))
+        , test_reference_reasons
     )
 
 if not payload["reasons"]:
     payload["status"] = "pass"
-    payload["summary"] = "Chummer5a desktop workflow parity is explicitly proven across the promoted head."
+    payload["summary"] = (
+        "Chummer5a desktop workflow parity is explicitly proven across source artifacts, release-channel identity, "
+        "catalog coverage, workflow-family readiness, and executable test references."
+    )
 
 payload["channelId"] = release_channel_channel_id
-payload["evidence"] = {
-    "releaseChannelPath": str(release_channel_path),
-    "releaseChannelExists": release_channel_path.is_file(),
-    "releaseChannelChannelId": release_channel_channel_id,
-    "releaseChannelGeneratedAt": release_channel_generated_at_raw,
-    "workflowLedgerPath": str(ledger_path),
-    "parityOraclePath": str(oracle_path),
-    "parityChecklistPath": str(checklist_path),
+payload["evidence"]["releaseChannelChannelId"] = release_channel_channel_id
+payload["evidence"]["releaseChannelGeneratedAt"] = release_channel_generated_at_raw
+payload["evidence"]["releaseChannelAgeSeconds"] = release_channel_age_seconds
+payload["evidence"]["releaseChannelFutureSkewSeconds"] = release_channel_future_skew_seconds
+payload["evidence"]["requiredFamilyCount"] = len(required_family_ids)
+payload["evidence"]["ledgerFamilyCount"] = len(families)
+payload["evidence"]["missingFamilyIds"] = missing_family_ids
+payload["evidence"]["nonReadyFamilyIds"] = non_ready_family_ids
+payload["evidence"]["tabsMissingInCatalog"] = tabs_missing
+payload["evidence"]["workspaceActionsMissingInCatalog"] = workspace_missing
+payload["evidence"]["missingTestRefs"] = missing_test_refs
+payload["evidence"]["sourceArtifactChecks"] = {
+    "workflowLedger": ledger_exists,
+    "parityOracle": oracle_exists,
+    "parityChecklist": checklist_exists,
+    "dualHeadTests": dual_head_tests_exist,
+    "complianceTests": compliance_tests_exist,
+    "uiGateTests": ui_gate_tests_exist,
+}
+payload["evidence"]["failureCount"] = len(payload["reasons"])
+
+payload["sourceArtifactReview"] = {
+    "status": "pass" if not source_artifact_reasons else "fail",
+    "summary": (
+        "Ledger, oracle, checklist, and executable test sources are present for Chummer5a workflow parity."
+        if not source_artifact_reasons
+        else "One or more Chummer5a workflow parity source artifacts are missing."
+    ),
+    "reasons": source_artifact_reasons,
+    "checks": payload["evidence"]["sourceArtifactChecks"],
+}
+payload["releaseChannelReview"] = {
+    "status": "pass" if not release_channel_reasons else "fail",
+    "summary": (
+        "Chummer5a workflow parity proof is aligned to a current release-channel identity."
+        if not release_channel_reasons
+        else "Chummer5a workflow parity proof is missing or drifting from release-channel identity."
+    ),
+    "reasons": release_channel_reasons,
+    "path": str(release_channel_path),
+    "channelId": release_channel_channel_id,
+    "generatedAt": release_channel_generated_at_raw,
+    "ageSeconds": release_channel_age_seconds,
+    "futureSkewSeconds": release_channel_future_skew_seconds,
+    "maxAgeSeconds": RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS,
+    "maxFutureSkewSeconds": RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS,
+}
+payload["checklistCoverageReview"] = {
+    "status": "pass" if not checklist_coverage_reasons else "fail",
+    "summary": (
+        "Parity checklist tab and workspace-action coverage is complete."
+        if not checklist_coverage_reasons
+        else "Parity checklist coverage still has missing tab or workspace-action entries."
+    ),
+    "reasons": checklist_coverage_reasons,
+    "tabsMissingInCatalog": tabs_missing,
+    "workspaceActionsMissingInCatalog": workspace_missing,
+}
+payload["workflowFamilyReview"] = {
+    "status": "pass" if not workflow_family_reasons else "fail",
+    "summary": (
+        "All required Chummer5a workflow families are present and ready."
+        if not workflow_family_reasons
+        else "One or more required Chummer5a workflow families are missing or non-ready."
+    ),
+    "reasons": workflow_family_reasons,
     "requiredFamilyCount": len(required_family_ids),
     "ledgerFamilyCount": len(families),
     "missingFamilyIds": missing_family_ids,
     "nonReadyFamilyIds": non_ready_family_ids,
-    "tabsMissingInCatalog": tabs_missing,
-    "workspaceActionsMissingInCatalog": workspace_missing,
+}
+payload["testReferenceReview"] = {
+    "status": "pass" if not test_reference_reasons else "fail",
+    "summary": (
+        "Workflow parity ledger audit tests resolve to executable test sources."
+        if not test_reference_reasons
+        else "Workflow parity ledger still references missing executable tests."
+    ),
+    "reasons": test_reference_reasons,
     "missingTestRefs": missing_test_refs,
 }
 

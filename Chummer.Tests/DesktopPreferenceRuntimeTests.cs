@@ -18,7 +18,7 @@ public sealed class DesktopPreferenceRuntimeTests
 
         DesktopPreferenceState loaded = DesktopPreferenceRuntime.LoadOrCreateState("avalonia");
 
-        Assert.AreEqual(DesktopPreferenceState.Default, loaded);
+        Assert.AreEqual(DesktopPreferenceStateRuntime.Normalize(DesktopPreferenceState.Default), loaded);
         Assert.IsTrue(File.Exists(scope.GetPreferenceStatePath("avalonia")));
     }
 
@@ -57,6 +57,7 @@ public sealed class DesktopPreferenceRuntimeTests
         Assert.AreEqual("/Tmp/Roster", loaded.CharacterRosterPath);
         Assert.AreEqual("/usr/bin/zathura", loaded.PdfViewerPath);
         Assert.AreEqual("Compact shell only", loaded.VisibleChromePolicy);
+        Assert.AreEqual("de-de", loaded.SheetLanguage);
     }
 
     [TestMethod]

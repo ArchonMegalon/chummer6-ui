@@ -136,6 +136,31 @@ public class CharacterOverviewStateBridgeTests
     }
 
     [TestMethod]
+    public async Task UpdateMetadataAsync_delegates_to_presenter()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var bridge = new CharacterOverviewStateBridge(presenter, _ => { });
+
+        UpdateWorkspaceMetadata command = new("Neo", "ONE", "Runner");
+        await bridge.UpdateMetadataAsync(command, CancellationToken.None);
+
+        Assert.AreEqual("Neo", presenter.UpdatedMetadata?.Name);
+        Assert.AreEqual("ONE", presenter.UpdatedMetadata?.Alias);
+        Assert.AreEqual("Runner", presenter.UpdatedMetadata?.Notes);
+    }
+
+    [TestMethod]
+    public async Task SaveAsync_delegates_to_presenter()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var bridge = new CharacterOverviewStateBridge(presenter, _ => { });
+
+        await bridge.SaveAsync(CancellationToken.None);
+
+        Assert.AreEqual(1, presenter.SaveCalls);
+    }
+
+    [TestMethod]
     public async Task CloseDialogAsync_delegates_to_presenter()
     {
         var presenter = new FakeCharacterOverviewPresenter();

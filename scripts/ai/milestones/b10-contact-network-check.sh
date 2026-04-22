@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 echo "[B10] checking contact network continuity surface..."
 
 if [[ ! -f Chummer.Blazor/Components/Shared/ContactNetworkPanel.razor ]]; then
@@ -8,13 +11,13 @@ if [[ ! -f Chummer.Blazor/Components/Shared/ContactNetworkPanel.razor ]]; then
   exit 3
 fi
 
-if ! rg -q "ContactRelationshipGraphState|ContactRelationshipGraphProjector|CharacterContactsSection|CharacterContactSummary" Chummer.Blazor/Components/Shared/ContactNetworkPanel.razor Chummer.Blazor/Components/Pages/Home.razor Chummer.Presentation/Overview/ContactRelationshipGraphState.cs; then
+if ! rg -q "ContactRelationshipGraphState|ContactRelationshipGraphProjector|CharacterContactsSection|CharacterContactSummary" Chummer.Blazor/Components/Shared/ContactNetworkPanel.razor Chummer.Blazor/Components/Pages/Showcase.razor Chummer.Presentation/Overview/ContactRelationshipGraphState.cs; then
   echo "[B10] FAIL: contact network surface is not driven by contact contracts."
   exit 4
 fi
 
-if ! rg -q "ContactNetworkPanel" Chummer.Blazor/Components/Pages/Home.razor; then
-  echo "[B10] FAIL: contact network panel is not composed on the home surface."
+if ! rg -q "ContactNetworkPanel" Chummer.Blazor/Components/Pages/Showcase.razor; then
+  echo "[B10] FAIL: contact network panel is not composed on the showcase surface."
   exit 5
 fi
 

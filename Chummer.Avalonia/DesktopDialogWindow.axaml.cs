@@ -126,6 +126,7 @@ public partial class DesktopDialogWindow : Window
         {
             CheckBox checkBox = new()
             {
+                Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
                 Content = field.Label,
                 IsChecked = ParseCheckbox(field.Value),
                 IsEnabled = !field.IsReadOnly
@@ -151,6 +152,7 @@ public partial class DesktopDialogWindow : Window
 
         Grid row = new()
         {
+            Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
             ColumnDefinitions = new ColumnDefinitions("156,*"),
             RowDefinitions = field.IsMultiline ? new RowDefinitions("Auto,Auto") : new RowDefinitions("Auto"),
             ColumnSpacing = 8,
@@ -159,6 +161,7 @@ public partial class DesktopDialogWindow : Window
 
         TextBlock label = new()
         {
+            Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
             Text = field.Label,
             VerticalAlignment = field.IsMultiline ? global::Avalonia.Layout.VerticalAlignment.Top : global::Avalonia.Layout.VerticalAlignment.Center,
             FontWeight = FontWeight.SemiBold
@@ -167,6 +170,7 @@ public partial class DesktopDialogWindow : Window
         row.Children.Add(label);
 
         Control fieldControl = CreateFieldControl(field);
+        fieldControl.Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id);
         ApplyAccessibility(fieldControl, field.AccessibleName, field.ToolTip, field.HelpText);
         Grid.SetColumn(fieldControl, field.IsMultiline ? 0 : 1);
         if (field.IsMultiline)
@@ -468,7 +472,9 @@ public partial class DesktopDialogWindow : Window
         {
             Button button = new()
             {
+                Name = DesktopDialogAccessibility.BuildActionName(action.Id),
                 Content = action.Label,
+                Tag = action.Id,
                 MinWidth = 82,
                 Classes = { "shell-action", action.IsPrimary ? "primary" : "quiet" }
             };

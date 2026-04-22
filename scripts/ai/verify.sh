@@ -92,8 +92,23 @@ bash scripts/ai/milestones/b11-npc-persona-studio-check.sh
 echo "[verify] checking UI milestone coverage registry guard..."
 bash scripts/ai/milestones/ui-milestone-coverage-check.sh
 
+echo "[verify] checking UI design mirror hygiene guard..."
+bash scripts/ai/milestones/ui-design-mirror-hygiene-check.sh
+
 echo "[verify] checking ruleset-specific workbench adaptation guard..."
 bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh
+
+echo "[verify] checking delegate and command-route parity guard..."
+bash scripts/ai/milestones/delegate-command-route-parity-check.sh
+
+echo "[verify] checking generated dialog element parity guard..."
+bash scripts/ai/milestones/generated-dialog-element-parity-check.sh
+
+echo "[verify] checking section host and ruleset parity guard..."
+bash scripts/ai/milestones/section-host-ruleset-parity-check.sh
+
+echo "[verify] checking standalone interactive control inventory guard..."
+bash scripts/ai/milestones/interactive-control-inventory-check.sh
 
 echo "[verify] checking ui-kit shell chrome guard..."
 bash scripts/ai/milestones/p5-ui-kit-shell-chrome-check.sh
@@ -954,8 +969,8 @@ echo "[verify] checking B9 campaign journal planner/calendar guard..."
 bash scripts/ai/milestones/b9-campaign-journal-check.sh
 
 if ! rg -n 'BuildLabHandoffPanel|RulesNavigatorPanel|CreatorPublicationPanel' \
-  Chummer.Blazor/Components/Pages/Home.razor >/dev/null; then
-  echo "[verify] FAIL: home surface must compose the Build Lab handoff, Rules Navigator, and creator publication panels."
+  Chummer.Blazor/Components/Pages/Showcase.razor >/dev/null; then
+  echo "[verify] FAIL: showcase surface must compose the Build Lab handoff, Rules Navigator, and creator publication panels."
   exit 17
 fi
 
@@ -967,7 +982,7 @@ if ! rg -n 'data-build-lab-handoff-showcase|data-rules-navigator-showcase|data-c
   exit 18
 fi
 
-if ! rg -n 'CampaignSpineShowcaseComponentTests|BuildLabHandoffPanel_renders_dossier_and_campaign_outputs|RulesNavigatorPanel_renders_grounded_answer_and_reuse_hints|CreatorPublicationPanel_renders_trusted_publication_posture|Home_renders_build_lab_rules_and_creator_showcase_panels' \
+if ! rg -n 'CampaignSpineShowcaseComponentTests|BuildLabHandoffPanel_renders_dossier_and_campaign_outputs|RulesNavigatorPanel_renders_grounded_answer_and_reuse_hints|CreatorPublicationPanel_renders_trusted_publication_posture|Home_renders_build_lab_rules_and_creator_showcase_panels|Showcase_renders_build_lab_rules_and_creator_showcase_panels' \
   Chummer.Tests/Presentation/CampaignSpineShowcaseComponentTests.cs >/dev/null; then
   echo "[verify] FAIL: campaign spine showcase component tests are missing."
   exit 19

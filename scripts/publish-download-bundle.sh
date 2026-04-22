@@ -14,6 +14,7 @@ MANIFEST_SOURCE="$BUNDLE_DIR/releases.json"
 FILES_SOURCE="$BUNDLE_DIR/files"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
 STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE:-$BUNDLE_DIR/startup-smoke}"
+PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}"
 
 to_bool() {
   local value
@@ -177,6 +178,9 @@ RELEASE_PUBLISHED_AT="$release_published_at" \
 SOURCE_MANIFEST_PATH="$MANIFEST_SOURCE" \
 RELEASE_PROOF_PATH="$RELEASE_PROOF_PATH" \
 STARTUP_SMOKE_DIR="$STARTUP_SMOKE_SOURCE" \
+CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}" \
+CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}" \
+CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
 bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 
 readarray -t promoted_file_names < <(python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" <<'PY'
@@ -245,6 +249,10 @@ STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = int(
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS")
     or "300"
 )
+PUBLIC_SKIP_STARTUP_SMOKE_FILTER = (
+    str(os.environ.get("CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER") or "").strip().lower()
+    in {"1", "true", "yes", "on"}
+)
 
 release_channel_path = Path(sys.argv[1])
 startup_smoke_root = Path(sys.argv[2])
@@ -259,23 +267,23 @@ seen: set[str] = set()
 def normalize(value: Any) -> str:
     return str(value or "").strip().lower()
 
-def expected_host_class_platform_token(platform: str) -> str:
+def expected_host_class_platform_tokens(platform: str) -> tuple[str, ...]:
     normalized = normalize(platform)
     if normalized == "windows":
-        return "win"
+        return ("win", "windows")
     if normalized == "macos":
-        return "osx"
+        return ("osx", "macos")
     if normalized == "linux":
-        return "linux"
-    return normalized
+        return ("linux",)
+    return (normalized,) if normalized else ()
 
 def host_class_matches_platform(host_class: str, platform: str) -> bool:
     normalized_host = normalize(host_class)
-    expected_token = expected_host_class_platform_token(platform)
-    if not normalized_host or not expected_token:
+    expected_tokens = expected_host_class_platform_tokens(platform)
+    if not normalized_host or not expected_tokens:
         return False
     host_tokens = [token for token in normalized_host.split("-") if token]
-    return expected_token in host_tokens
+    return any(token in host_tokens for token in expected_tokens)
 
 def rid_to_arch(rid: str) -> str:
     token = normalize(rid)
@@ -381,7 +389,7 @@ for artifact in artifacts:
                     "startup-smoke receipt timestamp is in the future for promoted install medium "
                     f"{head}/{platform}/{rid}: {future_skew_seconds}s ahead (max {STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS}s)."
                 )
-        elif age_delta_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+        elif age_delta_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS and not PUBLIC_SKIP_STARTUP_SMOKE_FILTER:
             errors.append(
                 "startup-smoke receipt is stale for promoted install medium "
                 f"{head}/{platform}/{rid}: {age_delta_seconds}s old (max {STARTUP_SMOKE_MAX_AGE_SECONDS}s)."
@@ -404,11 +412,130 @@ PY
   rm -f "$verified_startup_smoke_tmp"
 
   startup_smoke_deploy_dir="$DEPLOY_DIR/startup-smoke"
+  startup_smoke_stage_dir="$(mktemp -d)"
+  startup_smoke_deploy_dir_real="$(realpath -m "$startup_smoke_deploy_dir")"
+  deploy_files_dir_real="$(realpath -m "$DEPLOY_DIR/files")"
   mkdir -p "$startup_smoke_deploy_dir"
-  find "$startup_smoke_deploy_dir" -maxdepth 1 -type f -name "startup-smoke-*.receipt.json" -delete
-  for smoke_path in "${verified_startup_smoke_receipts[@]}"; do
-    cp "$smoke_path" "$startup_smoke_deploy_dir/$(basename "$smoke_path")"
-  done
+  startup_smoke_fallback_dir="$PORTAL_DOWNLOADS_DIR/startup-smoke"
+  run_services_startup_smoke_dir="$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads/startup-smoke"
+  python3 - "$startup_smoke_stage_dir" "$startup_smoke_deploy_dir_real" "$deploy_files_dir_real" "$release_channel" "$release_version" "$startup_smoke_fallback_dir" "$run_services_startup_smoke_dir" "${verified_startup_smoke_receipts[@]}" <<'PY'
+from __future__ import annotations
+
+import json
+import shutil
+import sys
+from pathlib import Path
+
+stage_root = Path(sys.argv[1])
+final_root = Path(sys.argv[2])
+files_root = Path(sys.argv[3])
+release_channel = str(sys.argv[4]).strip()
+release_version = str(sys.argv[5]).strip()
+fallback_roots = [Path(item) for item in sys.argv[6:8] if str(item).strip()]
+receipt_paths = [Path(item) for item in sys.argv[8:]]
+
+
+def resolve_companion(source_root: Path, value: object) -> Path | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+
+    token = Path(raw)
+    candidates: list[Path] = []
+    if token.is_absolute():
+        candidates.append(token)
+    else:
+        candidates.append(source_root / token)
+    candidates.append(source_root / token.name)
+    for fallback_root in fallback_roots:
+        candidates.append(fallback_root / token.name)
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        candidate = candidate.resolve(strict=False)
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def copy_companion(source_root: Path, value: object) -> str:
+    source_path = resolve_companion(source_root, value)
+    if source_path is None:
+        return ""
+
+    stage_path = stage_root / source_path.name
+    final_path = final_root / source_path.name
+    if source_path.resolve() != stage_path.resolve():
+        shutil.copy2(source_path, stage_path)
+    return str(final_path)
+
+
+def rewrite_install_verification(stage_verification_path: Path, source_root: Path) -> None:
+    payload = json.loads(stage_verification_path.read_text(encoding="utf-8-sig"))
+    for key in (
+        "dpkgLogPath",
+        "installedLaunchCapturePath",
+        "wrapperCapturePath",
+        "desktopEntryCapturePath",
+    ):
+        copied = copy_companion(source_root, payload.get(key))
+        if copied:
+            payload[key] = copied
+    stage_verification_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+for receipt_path in receipt_paths:
+    source_root = receipt_path.parent
+    payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+
+    if release_channel:
+        payload["channelId"] = release_channel
+        payload["channel"] = release_channel
+    if release_version:
+        payload["releaseVersion"] = release_version
+        payload["version"] = release_version
+
+    verification_dest = copy_companion(source_root, payload.get("artifactInstallVerificationPath"))
+    if verification_dest:
+        payload["artifactInstallVerificationPath"] = verification_dest
+        rewrite_install_verification(stage_root / Path(verification_dest).name, source_root)
+
+    for key in (
+        "artifactInstallDpkgLogPath",
+        "artifactInstallLaunchCapturePath",
+        "artifactInstallWrapperCapturePath",
+        "artifactInstallDesktopEntryCapturePath",
+    ):
+        copied = copy_companion(source_root, payload.get(key))
+        if copied:
+            payload[key] = copied
+
+    artifact_name = Path(str(payload.get("artifactPath") or "").strip()).name
+    if artifact_name:
+        published_artifact = files_root / artifact_name
+        if published_artifact.is_file():
+            payload["artifactPath"] = str(published_artifact)
+
+    (stage_root / receipt_path.name).write_text(
+        json.dumps(payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
+PY
+  find "$startup_smoke_deploy_dir" -maxdepth 1 -type f \( \
+    -name "startup-smoke-*.receipt.json" -o \
+    -name "install-verification-*.json" -o \
+    -name "dpkg-*.log" -o \
+    -name "installed-launch-*" -o \
+    -name "installed-wrapper-*" -o \
+    -name "installed-desktop-entry-*" \
+  \) -exec rm -f -- {} +
+  if find "$startup_smoke_stage_dir" -mindepth 1 -maxdepth 1 -type f | grep -q .; then
+    cp "$startup_smoke_stage_dir"/* "$startup_smoke_deploy_dir"/
+  fi
+  rm -rf "$startup_smoke_stage_dir"
 fi
 
 if to_bool "$DEPLOY_MODE"; then

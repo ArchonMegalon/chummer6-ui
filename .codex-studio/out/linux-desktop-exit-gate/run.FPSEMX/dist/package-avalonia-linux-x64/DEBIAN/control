@@ -1,9 +1,0 @@
-Package: chummer6-avalonia
-Version: 0~run-20260414-1836
-Section: games
-Priority: optional
-Architecture: amd64
-Maintainer: ArchonMegalon
-Description: Chummer6 Avalonia Desktop
- Installer package for the Chummer6 Avalonia Desktop head.
-Depends: libfontconfig1, libfreetype6, zlib1g

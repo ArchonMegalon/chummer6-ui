@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 echo "[B8] checking runtime inspector shared surface..."
 
 if [[ ! -f Chummer.Blazor/Components/Shared/RuntimeInspectorPanel.razor ]]; then
@@ -18,8 +21,8 @@ if ! rg -q "runtimeHubClientDiagnostics|Hub Client Diagnostics" Chummer.Presenta
   exit 6
 fi
 
-if ! rg -q "RuntimeInspectorPanel" Chummer.Blazor/Components/Pages/Home.razor; then
-  echo "[B8] FAIL: runtime inspector panel is not composed on the home surface."
+if ! rg -q "RuntimeInspectorPanel" Chummer.Blazor/Components/Pages/Showcase.razor; then
+  echo "[B8] FAIL: runtime inspector panel is not composed on the showcase surface."
   exit 5
 fi
 

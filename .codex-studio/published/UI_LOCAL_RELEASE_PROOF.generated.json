@@ -1,12 +1,12 @@
 {
   "contract_name": "chummer6-ui.local_release_proof",
-  "generated_at": "2026-04-14T21:32:52Z",
+  "generated_at": "2026-04-22T13:31:44Z",
   "status": "passed",
   "base_url": "http://127.0.0.1:8091",
   "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
   "playwright_timeout_seconds": 240,
   "edge_rebuild_skipped": true,
-  "route_probe_executed": false,
+  "route_probe_executed": true,
   "journeys_passed": [
     "install_claim_restore_continue",
     "build_explain_publish",
@@ -20,6 +20,8 @@
     "/home/work",
     "/account/work",
     "/account/support",
-    "/contact"
+    "/contact",
+    "/downloads/install/avalonia-osx-arm64-installer",
+    "/downloads/install/avalonia-win-x64-installer"
   ]
 }

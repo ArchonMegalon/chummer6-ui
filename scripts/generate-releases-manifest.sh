@@ -10,6 +10,8 @@ MANIFEST_PATH="${MANIFEST_PATH:-$REPO_ROOT/Docker/Downloads/releases.json}"
 PORTAL_MANIFEST_PATH="${PORTAL_MANIFEST_PATH:-$REPO_ROOT/Chummer.Portal/downloads/releases.json}"
 PORTAL_DOWNLOADS_DIR="${PORTAL_DOWNLOADS_DIR:-$REPO_ROOT/Chummer.Portal/downloads}"
 STARTUP_SMOKE_DIR="${STARTUP_SMOKE_DIR:-$(dirname "$DOWNLOADS_DIR")/startup-smoke}"
+STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}"
+PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}"
 RELEASE_VERSION="${RELEASE_VERSION:-unpublished}"
 RELEASE_CHANNEL="${RELEASE_CHANNEL:-docker}"
 RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
@@ -25,6 +27,13 @@ QUARANTINE_PROMOTION_EVIDENCE_PATH="${QUARANTINE_PROMOTION_EVIDENCE_PATH:-$REPO_
 SOURCE_MANIFEST_PATH="${SOURCE_MANIFEST_PATH:-}"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
 PREVIEW_INSTALL_ACCESS_CLASS="${CHUMMER_PREVIEW_INSTALL_ACCESS_CLASS:-}"
+EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}"
+
+to_bool() {
+  local value
+  value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
 
 resolve_path_allow_missing() {
   python3 - "$1" <<'PY'
@@ -89,13 +98,15 @@ resolve_release_proof_path() {
 sanitize_release_proof_payload() {
   local source_path="${1:-}"
   local output_path="${2:-}"
-  python3 - "$source_path" "$output_path" <<'PY'
+  local canonical_base_url="${3:-}"
+  python3 - "$source_path" "$output_path" "$canonical_base_url" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 source_path = Path(sys.argv[1])
 output_path = Path(sys.argv[2])
+canonical_base_url = str(sys.argv[3]).strip()
 payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
 if not isinstance(payload, dict):
     raise SystemExit(f"release proof payload must be a JSON object: {source_path}")
@@ -114,6 +125,9 @@ allowed = {
     "ui_localization_release_gate",
 }
 sanitized = {key: payload[key] for key in payload if key in allowed}
+if canonical_base_url:
+    sanitized["baseUrl"] = canonical_base_url
+    sanitized["base_url"] = canonical_base_url
 output_path.parent.mkdir(parents=True, exist_ok=True)
 output_path.write_text(json.dumps(sanitized, indent=2) + "\n", encoding="utf-8")
 PY
@@ -336,13 +350,10 @@ fi
 normalize_preview_install_access_classes() {
   local manifest_path="$1"
   local release_channel="$2"
-
-  if [[ "${release_channel,,}" != "preview" ]]; then
-    return 0
-  fi
+  : "$release_channel"
 
   if [[ -z "$PREVIEW_INSTALL_ACCESS_CLASS" ]]; then
-    PREVIEW_INSTALL_ACCESS_CLASS="open_public"
+    PREVIEW_INSTALL_ACCESS_CLASS="account_required"
   fi
 
   python3 - "$manifest_path" "$PREVIEW_INSTALL_ACCESS_CLASS" <<'PY'
@@ -353,7 +364,7 @@ import sys
 from pathlib import Path
 
 manifest_path = Path(sys.argv[1])
-access_class = str(sys.argv[2] or "open_public").strip().lower()
+access_class = str(sys.argv[2] or "account_required").strip().lower()
 if not access_class:
     raise SystemExit(0)
 
@@ -381,9 +392,46 @@ if changed:
 PY
 }
 
+sanitize_startup_smoke_dir() {
+  local source_dir="${1:-}"
+  local output_dir="${2:-}"
+  local release_channel="${3:-}"
+  local release_version="${4:-}"
+  python3 - "$source_dir" "$output_dir" "$release_channel" "$release_version" <<'PY'
+from __future__ import annotations
+
+import json
+import shutil
+import sys
+from pathlib import Path
+
+source_dir = Path(sys.argv[1])
+output_dir = Path(sys.argv[2])
+release_channel = str(sys.argv[3]).strip()
+release_version = str(sys.argv[4]).strip()
+
+output_dir.mkdir(parents=True, exist_ok=True)
+
+for path in sorted(source_dir.iterdir()):
+    if path.is_file():
+        shutil.copy2(path, output_dir / path.name)
+
+for receipt_path in sorted(output_dir.glob("startup-smoke-*.receipt.json")):
+    payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+    if release_channel:
+        payload["channelId"] = release_channel
+        payload["channel"] = release_channel
+    if release_version:
+        payload["releaseVersion"] = release_version
+        payload["version"] = release_version
+    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
 RELEASE_PROOF_PATH="$(resolve_release_proof_path "$RELEASE_PROOF_PATH")"
 SANITIZED_RELEASE_PROOF_PATH=""
 SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH=""
+SANITIZED_STARTUP_SMOKE_DIR=""
 cleanup_generate_release_manifest() {
   if [[ -n "$SANITIZED_RELEASE_PROOF_PATH" && -f "$SANITIZED_RELEASE_PROOF_PATH" ]]; then
     rm -f "$SANITIZED_RELEASE_PROOF_PATH"
@@ -391,11 +439,14 @@ cleanup_generate_release_manifest() {
   if [[ -n "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
     rm -f "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH"
   fi
+  if [[ -n "$SANITIZED_STARTUP_SMOKE_DIR" && -d "$SANITIZED_STARTUP_SMOKE_DIR" ]]; then
+    rm -rf "$SANITIZED_STARTUP_SMOKE_DIR"
+  fi
 }
 trap cleanup_generate_release_manifest EXIT
 if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
   SANITIZED_RELEASE_PROOF_PATH="$(mktemp)"
-  sanitize_release_proof_payload "$RELEASE_PROOF_PATH" "$SANITIZED_RELEASE_PROOF_PATH"
+  sanitize_release_proof_payload "$RELEASE_PROOF_PATH" "$SANITIZED_RELEASE_PROOF_PATH" "$EXTERNAL_PROOF_BASE_URL"
   RELEASE_PROOF_PATH="$SANITIZED_RELEASE_PROOF_PATH"
 fi
 if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
@@ -404,6 +455,15 @@ if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GA
     "$UI_LOCALIZATION_RELEASE_GATE_PATH" \
     "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH"
   UI_LOCALIZATION_RELEASE_GATE_PATH="$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH"
+fi
+if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
+  SANITIZED_STARTUP_SMOKE_DIR="$(mktemp -d)"
+  sanitize_startup_smoke_dir \
+    "$STARTUP_SMOKE_DIR" \
+    "$SANITIZED_STARTUP_SMOKE_DIR" \
+    "$RELEASE_CHANNEL" \
+    "$RELEASE_VERSION"
+  STARTUP_SMOKE_DIR="$SANITIZED_STARTUP_SMOKE_DIR"
 fi
 
 mkdir -p "$(dirname "$MANIFEST_PATH")"
@@ -451,6 +511,12 @@ if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -type f -name 'sta
     exit 1
   fi
   materialize_args+=(--startup-smoke-dir "$STARTUP_SMOKE_DIR")
+fi
+if [[ -n "$STARTUP_SMOKE_MAX_AGE_SECONDS" && "$materializer_help" == *"--startup-smoke-max-age-seconds"* ]]; then
+  materialize_args+=(--startup-smoke-max-age-seconds "$STARTUP_SMOKE_MAX_AGE_SECONDS")
+fi
+if to_bool "$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" && [[ "$materializer_help" == *"--skip-startup-smoke-filter"* ]]; then
+  materialize_args+=(--skip-startup-smoke-filter)
 fi
 
 python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" "${materialize_args[@]}" >/dev/null
@@ -554,6 +620,18 @@ manifest_path = Path(sys.argv[1]).resolve()
 normalize_release_channel_artifact_identity_fields(manifest_path)
 PY
 normalize_preview_install_access_classes "$CANONICAL_MANIFEST_PATH" "$RELEASE_CHANNEL"
+canonical_startup_smoke_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke"
+if [[ -d "$STARTUP_SMOKE_DIR" ]]; then
+  resolved_startup_smoke_dir="$(realpath "$STARTUP_SMOKE_DIR")"
+  resolved_canonical_startup_smoke_dir="$(realpath -m "$canonical_startup_smoke_dir")"
+  if [[ "$resolved_startup_smoke_dir" != "$resolved_canonical_startup_smoke_dir" ]]; then
+    mkdir -p "$canonical_startup_smoke_dir"
+    find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -exec rm -f -- {} +
+    if find "$STARTUP_SMOKE_DIR" -mindepth 1 -maxdepth 1 -type f | grep -q .; then
+      cp "$STARTUP_SMOKE_DIR"/* "$canonical_startup_smoke_dir"/
+    fi
+  fi
+fi
 python3 "$SCRIPT_DIR/materialize-external-host-proof-blockers.py" \
   --manifest "$CANONICAL_MANIFEST_PATH" \
   --downloads-dir "$DOWNLOADS_DIR" \

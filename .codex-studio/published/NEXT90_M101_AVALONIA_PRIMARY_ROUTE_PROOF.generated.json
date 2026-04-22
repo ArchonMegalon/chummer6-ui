@@ -1,6 +1,6 @@
 {
   "contractName": "chummer6-ui.avalonia_primary_route_proof",
-  "generatedAt": "2026-04-17T14:12:14Z",
+  "generatedAt": "2026-04-21T20:27:08Z",
   "status": "pass",
   "primaryHead": "avalonia",
   "requiredPlatforms": [
@@ -11,15 +11,15 @@
   "fallbackHeadsExcludedFromPrimaryProof": [
     "blazor-desktop"
   ],
-  "fallbackInstallArtifactCount": 1,
-  "fallbackReceiptCount": 1,
+  "fallbackInstallArtifactCount": 2,
+  "fallbackReceiptCount": 2,
   "platformProof": [
     {
       "platform": "linux",
       "head": "avalonia",
       "rid": "linux-x64",
       "artifactId": "avalonia-linux-x64-installer",
-      "artifactSha256": "4544ef844262d3381bc424105c4d67e95fa6f3c2541c1c79b00d0b4666a6198c",
+      "artifactSha256": "84d5c3a7065666286c5e3a5feccbc2ee3c04117cf5afaa116c09e1e2d9e44643",
       "status": "pass",
       "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
       "fallbackReceiptsAccepted": false,
@@ -30,7 +30,7 @@
       "head": "avalonia",
       "rid": "osx-arm64",
       "artifactId": "avalonia-osx-arm64-installer",
-      "artifactSha256": "424b3216afedf86347494eea985cc1e7ceca7cb8cbf7aff04a475456a15973f4",
+      "artifactSha256": "ca6c25f0cdaf48bddfe83e3e983ff87b8763d973e671100165248c9edcd044bd",
       "status": "pass",
       "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "fallbackReceiptsAccepted": false,

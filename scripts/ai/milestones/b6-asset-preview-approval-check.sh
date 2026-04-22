@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 echo "[B6] checking generated asset preview and approval workflow..."
 
 if [[ ! -f Chummer.Blazor/Components/Shared/GeneratedAssetReviewPanel.razor ]]; then
@@ -29,7 +32,7 @@ fi
 
 if ! rg -q "GeneratedAssetComparisonSlot|GeneratedAssetPreviewSection|GeneratedAssetComparisonRoles" \
   Chummer.Blazor/Components/Shared/GeneratedAssetReviewPanel.razor \
-  Chummer.Blazor/Components/Pages/Home.razor \
+  Chummer.Blazor/Components/Pages/Showcase.razor \
   Chummer.Tests/Presentation/BlazorShellComponentTests.cs; then
   echo "[B6] FAIL: generated-asset compare or dossier preview flows are not wired through the shared presentation seam."
   exit 6
@@ -43,13 +46,13 @@ fi
 
 if ! rg -q "data-generated-asset-video-viewer|data-generated-asset-video-card|Route recap clip|Sixth World News Card|GeneratedAssetPreviewKinds.Video" \
   Chummer.Blazor/Components/Shared/GeneratedAssetReviewPanel.razor \
-  Chummer.Blazor/Components/Pages/Home.razor; then
+  Chummer.Blazor/Components/Pages/Showcase.razor; then
   echo "[B6] FAIL: shared viewer is missing route-video recap/news card coverage."
   exit 9
 fi
 
-if ! rg -q "GeneratedAssetReviewPanel|GeneratedAssetProjection|OnAssetActionRequested" Chummer.Blazor/Components/Pages/Home.razor; then
-  echo "[B6] FAIL: generated-asset workflow not composed into shared surfaces."
+if ! rg -q "GeneratedAssetReviewPanel|GeneratedAssetProjection|OnAssetActionRequested" Chummer.Blazor/Components/Pages/Showcase.razor; then
+  echo "[B6] FAIL: generated-asset workflow not composed into the showcase surface."
   exit 8
 fi
 

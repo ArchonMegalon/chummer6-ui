@@ -98,25 +98,25 @@ if entries_without_owner:
     raise SystemExit(0)
 
 age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
-if age_seconds < max_age:
-    if owner_pid_path.exists():
-        print(f"young_owner_only:{age_seconds}")
-    else:
-        print(f"young:{age_seconds}")
+if owner_pid_path.exists():
+    print(f"dead_owner_only:{age_seconds}")
     raise SystemExit(0)
 
-if owner_pid_path.exists():
-    print(f"stale_owner_only:{age_seconds}")
-else:
-    print(f"stale_empty:{age_seconds}")
+if age_seconds < max_age:
+    print(f"young:{age_seconds}")
+    raise SystemExit(0)
+
+print(f"stale_empty:{age_seconds}")
 PY
   )"
-  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* ]]; then
+  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* || "$lock_stale_probe" == dead_owner_only:* ]]; then
     rm -rf "$release_gate_lock_dir"
     if [[ ! -d "$release_gate_lock_dir" ]]; then
       release_gate_lock_stale_removed=1
       stale_age_seconds="${lock_stale_probe#*:}"
-      if [[ "$lock_stale_probe" == stale_owner_only:* ]]; then
+      if [[ "$lock_stale_probe" == dead_owner_only:* ]]; then
+        release_gate_lock_stale_reason="dead_owner_only_lock_dir_removed_after_${stale_age_seconds}s_without_active_b14_process"
+      elif [[ "$lock_stale_probe" == stale_owner_only:* ]]; then
         release_gate_lock_stale_reason="stale_owner_only_lock_dir_removed_after_${stale_age_seconds}s_without_active_b14_process"
       else
         release_gate_lock_stale_reason="stale_empty_lock_dir_removed_after_${stale_age_seconds}s_without_active_b14_process"
@@ -3063,6 +3063,7 @@ evidence: Dict[str, Any] = {
     "release_gate_lock_dir": str(repo_root / ".codex-studio" / "locks" / "b14-flagship-ui-release-gate.lock"),
 }
 
+upstream_receipt_review_start = len(reasons)
 if release_gate_lock_blocked:
     reasons.append(
         "Flagship release gate lock remained active after wait window; executable gate skipped dependency rematerialization and fail-closes to prevent partial proof races."
@@ -3212,7 +3213,11 @@ else:
             "Desktop visual familiarity screenshot evidence is newer than the visual familiarity receipt generation time: "
             + ", ".join(screenshot_newer_than_receipt)
         )
+upstream_receipt_review_reasons = dedupe_preserve_order(
+    list(reasons[upstream_receipt_review_start:])
+)
 
+release_channel_review_start = len(reasons)
 raw_artifacts = release_channel.get("artifacts")
 artifacts: List[Dict[str, Any]] = []
 non_object_artifact_indexes: List[int] = []
@@ -4509,114 +4514,6 @@ validate_no_unpromoted_desktop_shelf_installers(
     reasons,
 )
 
-expected_windows_artifacts = filter_install_artifacts_to_required_tuples(
-    [
-        item
-        for item in desktop_install_artifacts
-        if normalize_token(item.get("platform")) == "windows"
-        and normalize_token(item.get("head"))
-        and normalize_token(item.get("rid"))
-    ],
-    tuple_coverage_required_platform_head_rid_tuples,
-)
-windows_artifacts_missing_rid_by_head = sorted(
-    {
-        normalize_token(item.get("head"))
-        for item in desktop_install_artifacts
-        if normalize_token(item.get("platform")) == "windows"
-        and normalize_token(item.get("head"))
-        and not normalize_token(item.get("rid"))
-    }
-)
-evidence["windows_artifacts_missing_rid_by_head"] = windows_artifacts_missing_rid_by_head
-for missing_rid_head in windows_artifacts_missing_rid_by_head:
-    reasons.append(
-        f"Release channel publishes Windows desktop media for head '{missing_rid_head}' without explicit head/rid tuple metadata."
-    )
-windows_artifact_map_by_tuple: Dict[tuple[str, str], Dict[str, Any]] = {
-    (
-        normalize_token(item.get("head")),
-        normalize_token(item.get("rid")),
-    ): item
-    for item in expected_windows_artifacts
-}
-required_windows_policy_tuples = sorted(
-    {
-        (head, rid)
-        for token in tuple_coverage_required_platform_head_rid_tuples
-        for head, rid, platform in [tuple(token.split(":", 2))]
-        if platform == "windows" and head and rid
-    }
-)
-windows_policy_tuples_missing_release_artifacts: List[str] = []
-for head, rid in required_windows_policy_tuples:
-    tuple_key = (head, rid)
-    if tuple_key in windows_artifact_map_by_tuple:
-        continue
-    windows_policy_tuples_missing_release_artifacts.append(f"{head}:{rid}")
-    expected_windows_artifacts.append(
-        {
-            "head": head,
-            "rid": rid,
-            "platform": "windows",
-            "kind": "installer",
-            "fileName": infer_installer_file_name(head, rid, "windows"),
-            "sha256": "",
-            "sizeBytes": 0,
-            "source": "required_tuple_policy_missing_release_artifact",
-        }
-    )
-promoted_windows_tuples = {
-    f"{normalize_token(item.get('head'))}:{normalize_token(item.get('rid'))}"
-    for item in expected_windows_artifacts
-}
-evidence["windows_heads_expected"] = [
-    {
-        "head": normalize_token(item.get("head")),
-        "rid": normalize_token(item.get("rid")),
-        "fileName": str(item.get("fileName") or "").strip(),
-    }
-    for item in expected_windows_artifacts
-]
-evidence["windows_policy_required_head_rid_tuples"] = [
-    f"{head}:{rid}" for head, rid in required_windows_policy_tuples
-]
-evidence["windows_policy_tuples_missing_release_artifacts"] = (
-    windows_policy_tuples_missing_release_artifacts
-)
-if not expected_windows_artifacts and platform_artifact_counts.get("windows", 0) > 0:
-    reasons.append("Release channel publishes Windows desktop media without explicit head/rid tuple metadata.")
-windows_statuses: Dict[str, str] = {}
-for expected_windows_artifact in expected_windows_artifacts:
-    expected_windows_head = normalize_token(expected_windows_artifact.get("head"))
-    expected_windows_rid = normalize_token(expected_windows_artifact.get("rid"))
-    gate_label = f"{expected_windows_head}:{expected_windows_rid}"
-    gate_path = windows_gate_path_for_head(
-        expected_windows_head,
-        expected_windows_rid,
-        receipt_path.parent,
-        windows_gate_path_default,
-    )
-    validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"windows_gate:{gate_label}")
-    reason_count_before = len(reasons)
-    validate_windows_gate(
-        gate_label,
-        gate_path,
-        load_json(gate_path),
-        expected_windows_artifact,
-        release_channel_channel_id,
-        release_channel_version,
-        release_channel_generated_at_raw,
-        desktop_files_root,
-        repo_root,
-        trusted_roots,
-        quarantine_roots,
-        evidence,
-        reasons,
-    )
-    windows_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
-evidence["windows_statuses"] = windows_statuses
-
 expected_linux_artifacts = filter_install_artifacts_to_required_tuples(
     [
         item
@@ -5209,7 +5106,123 @@ if (
     reasons.append(
         "Release channel supportabilityState cannot remain unpublished when required desktop tuple coverage is complete."
     )
+release_channel_review_reasons = dedupe_preserve_order(
+    list(reasons[release_channel_review_start:])
+)
 
+windows_platform_review_start = len(reasons)
+expected_windows_artifacts = filter_install_artifacts_to_required_tuples(
+    [
+        item
+        for item in desktop_install_artifacts
+        if normalize_token(item.get("platform")) == "windows"
+        and normalize_token(item.get("head"))
+        and normalize_token(item.get("rid"))
+    ],
+    tuple_coverage_required_platform_head_rid_tuples,
+)
+windows_artifacts_missing_rid_by_head = sorted(
+    {
+        normalize_token(item.get("head"))
+        for item in desktop_install_artifacts
+        if normalize_token(item.get("platform")) == "windows"
+        and normalize_token(item.get("head"))
+        and not normalize_token(item.get("rid"))
+    }
+)
+evidence["windows_artifacts_missing_rid_by_head"] = windows_artifacts_missing_rid_by_head
+for missing_rid_head in windows_artifacts_missing_rid_by_head:
+    reasons.append(
+        f"Release channel publishes Windows desktop media for head '{missing_rid_head}' without explicit head/rid tuple metadata."
+    )
+windows_artifact_map_by_tuple: Dict[tuple[str, str], Dict[str, Any]] = {
+    (
+        normalize_token(item.get("head")),
+        normalize_token(item.get("rid")),
+    ): item
+    for item in expected_windows_artifacts
+}
+required_windows_policy_tuples = sorted(
+    {
+        (head, rid)
+        for token in tuple_coverage_required_platform_head_rid_tuples
+        for head, rid, platform in [tuple(token.split(":", 2))]
+        if platform == "windows" and head and rid
+    }
+)
+windows_policy_tuples_missing_release_artifacts: List[str] = []
+for head, rid in required_windows_policy_tuples:
+    tuple_key = (head, rid)
+    if tuple_key in windows_artifact_map_by_tuple:
+        continue
+    windows_policy_tuples_missing_release_artifacts.append(f"{head}:{rid}")
+    expected_windows_artifacts.append(
+        {
+            "head": head,
+            "rid": rid,
+            "platform": "windows",
+            "kind": "installer",
+            "fileName": infer_installer_file_name(head, rid, "windows"),
+            "sha256": "",
+            "sizeBytes": 0,
+            "source": "required_tuple_policy_missing_release_artifact",
+        }
+    )
+promoted_windows_tuples = {
+    f"{normalize_token(item.get('head'))}:{normalize_token(item.get('rid'))}"
+    for item in expected_windows_artifacts
+}
+evidence["windows_heads_expected"] = [
+    {
+        "head": normalize_token(item.get("head")),
+        "rid": normalize_token(item.get("rid")),
+        "fileName": str(item.get("fileName") or "").strip(),
+    }
+    for item in expected_windows_artifacts
+]
+evidence["windows_policy_required_head_rid_tuples"] = [
+    f"{head}:{rid}" for head, rid in required_windows_policy_tuples
+]
+evidence["windows_policy_tuples_missing_release_artifacts"] = (
+    windows_policy_tuples_missing_release_artifacts
+)
+if not expected_windows_artifacts and platform_artifact_counts.get("windows", 0) > 0:
+    reasons.append("Release channel publishes Windows desktop media without explicit head/rid tuple metadata.")
+windows_statuses: Dict[str, str] = {}
+for expected_windows_artifact in expected_windows_artifacts:
+    expected_windows_head = normalize_token(expected_windows_artifact.get("head"))
+    expected_windows_rid = normalize_token(expected_windows_artifact.get("rid"))
+    gate_label = f"{expected_windows_head}:{expected_windows_rid}"
+    gate_path = windows_gate_path_for_head(
+        expected_windows_head,
+        expected_windows_rid,
+        receipt_path.parent,
+        windows_gate_path_default,
+    )
+    validate_receipt_path_scope(gate_path, repo_root, reasons, evidence, f"windows_gate:{gate_label}")
+    reason_count_before = len(reasons)
+    validate_windows_gate(
+        gate_label,
+        gate_path,
+        load_json(gate_path),
+        expected_windows_artifact,
+        release_channel_channel_id,
+        release_channel_version,
+        release_channel_generated_at_raw,
+        desktop_files_root,
+        repo_root,
+        trusted_roots,
+        quarantine_roots,
+        evidence,
+        reasons,
+    )
+    windows_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
+evidence["windows_statuses"] = windows_statuses
+windows_platform_review_reasons = dedupe_preserve_order(
+    list(reasons[windows_platform_review_start:])
+)
+
+cross_gate_review_start = len(reasons)
 visual_required_heads = normalize_required_token_list(
     visual_familiarity_evidence.get("flagship_required_desktop_heads"),
     "visual_familiarity.flagship_required_desktop_heads",
@@ -5692,6 +5705,10 @@ for promoted_head in heads_requiring_flagship_proof:
         reasons,
     )
 
+cross_gate_review_reasons = dedupe_preserve_order(
+    list(reasons[cross_gate_review_start:])
+)
+linux_platform_review_start = len(reasons)
 linux_statuses: Dict[str, str] = {}
 for expected_linux_artifact in expected_linux_artifacts:
     expected_linux_head = normalize_token(expected_linux_artifact.get("head"))
@@ -5724,7 +5741,11 @@ for expected_linux_artifact in expected_linux_artifacts:
     )
     linux_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
 evidence["linux_statuses"] = linux_statuses
+linux_platform_review_reasons = dedupe_preserve_order(
+    list(reasons[linux_platform_review_start:])
+)
 
+macos_platform_review_start = len(reasons)
 expected_macos_artifacts = filter_install_artifacts_to_required_tuples(
     [
         item for item in desktop_install_artifacts
@@ -5859,6 +5880,9 @@ for macos_artifact in expected_macos_artifacts:
     )
     macos_statuses[gate_label] = "pass" if len(reasons) == reason_count_before else "fail"
 evidence["macos_statuses"] = macos_statuses
+macos_platform_review_reasons = dedupe_preserve_order(
+    list(reasons[macos_platform_review_start:])
+)
 
 def missing_or_failing_keys_for_platform(
     statuses: Dict[str, str],
@@ -5916,6 +5940,49 @@ external_blocking_findings_count = len(external_blocking_findings)
 local_blocking_findings_count = len(local_blocking_findings)
 blocked_by_external_constraints_only = bool(external_blocking_findings) and not local_blocking_findings
 generated_at = now_iso()
+reviews = {
+    "upstreamReceiptReview": {
+        "status": "pass" if not upstream_receipt_review_reasons else "fail",
+        "reasonCount": len(upstream_receipt_review_reasons),
+        "reasons": upstream_receipt_review_reasons,
+        "requiredReceipts": [
+            str(flagship_gate_path),
+            str(visual_familiarity_gate_path),
+            str(workflow_execution_gate_path),
+        ],
+    },
+    "releaseChannelReview": {
+        "status": "pass" if not release_channel_review_reasons else "fail",
+        "reasonCount": len(release_channel_review_reasons),
+        "reasons": release_channel_review_reasons,
+        "requiredPlatforms": list(required_desktop_platforms),
+        "requiredHeads": heads_requiring_flagship_proof,
+    },
+    "windowsPlatformReview": {
+        "status": "pass" if not windows_platform_review_reasons else "fail",
+        "reasonCount": len(windows_platform_review_reasons),
+        "reasons": windows_platform_review_reasons,
+        "gateStatuses": windows_statuses,
+    },
+    "crossGateReview": {
+        "status": "pass" if not cross_gate_review_reasons else "fail",
+        "reasonCount": len(cross_gate_review_reasons),
+        "reasons": cross_gate_review_reasons,
+        "requiredHeadProofs": heads_requiring_flagship_proof,
+    },
+    "linuxPlatformReview": {
+        "status": "pass" if not linux_platform_review_reasons else "fail",
+        "reasonCount": len(linux_platform_review_reasons),
+        "reasons": linux_platform_review_reasons,
+        "gateStatuses": linux_statuses,
+    },
+    "macosPlatformReview": {
+        "status": "pass" if not macos_platform_review_reasons else "fail",
+        "reasonCount": len(macos_platform_review_reasons),
+        "reasons": macos_platform_review_reasons,
+        "gateStatuses": macos_statuses,
+    },
+}
 payload = {
     "generated_at": generated_at,
     "generatedAt": generated_at,
@@ -5943,8 +6010,10 @@ payload = {
     "local_blocking_findings_count": local_blocking_findings_count,
     "blockedByExternalConstraintsOnly": blocked_by_external_constraints_only,
     "blocked_by_external_constraints_only": blocked_by_external_constraints_only,
+    "reviews": reviews,
     "evidence": evidence,
 }
+payload["evidence"]["failureCount"] = len(reasons)
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
     print("[desktop-executable-exit-gate] FAIL", file=sys.stderr)

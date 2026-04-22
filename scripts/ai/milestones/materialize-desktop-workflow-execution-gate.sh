@@ -826,6 +826,103 @@ if legacy_execution_receipt_paths:
         + ", ".join(legacy_execution_receipt_paths)
     )
 
+upstream_receipt_review_reasons: List[str] = []
+for label in (
+    "chummer5a_workflow_parity",
+    "sr4_workflow_parity",
+    "sr6_workflow_parity",
+    "sr4_sr6_frontier",
+    "ruleset_ui_adaptation",
+    "ui_flagship_release_gate",
+):
+    if not status_ok(str(evidence.get(f"{label}_status") or "")):
+        upstream_receipt_review_reasons.append(f"{label}:status")
+    generated_at_raw = str(evidence.get(f"{label}_generated_at") or "").strip()
+    if not generated_at_raw:
+        upstream_receipt_review_reasons.append(f"{label}:generated_at")
+    age_seconds_value = evidence.get(f"{label}_age_seconds")
+    if isinstance(age_seconds_value, int) and age_seconds_value > DESKTOP_PROOF_MAX_AGE_SECONDS:
+        allow_stale_pass = label == "ui_flagship_release_gate" and status_ok(
+            str(evidence.get(f"{label}_status") or "")
+        )
+        if not allow_stale_pass:
+            upstream_receipt_review_reasons.append(f"{label}:stale")
+    future_skew_value = evidence.get(f"{label}_future_skew_seconds")
+    if isinstance(future_skew_value, int) and future_skew_value > DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:
+        upstream_receipt_review_reasons.append(f"{label}:future_skew")
+
+release_channel_review_reasons: List[str] = []
+if not release_channel_exists:
+    release_channel_review_reasons.append("release_channel:missing")
+if not release_channel_channel_id:
+    release_channel_review_reasons.append("release_channel:channel_id")
+if not release_channel_version:
+    release_channel_review_reasons.append("release_channel:version")
+if not release_channel_generated_at_raw or release_channel_generated_at is None:
+    release_channel_review_reasons.append("release_channel:generated_at")
+release_channel_age_value = evidence.get("release_channel_age_seconds")
+if isinstance(release_channel_age_value, int) and release_channel_age_value > DESKTOP_PROOF_MAX_AGE_SECONDS:
+    release_channel_review_reasons.append("release_channel:stale")
+release_channel_future_skew_value = evidence.get("release_channel_future_skew_seconds")
+if isinstance(release_channel_future_skew_value, int) and release_channel_future_skew_value > DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:
+    release_channel_review_reasons.append("release_channel:future_skew")
+for label, channel_id in receipt_channel_ids.items():
+    if not channel_id:
+        release_channel_review_reasons.append(f"{label}:channel_id")
+    elif release_channel_channel_id and channel_id != release_channel_channel_id:
+        release_channel_review_reasons.append(f"{label}:channel_alignment")
+
+flagship_head_review_reasons: List[str] = []
+for head in missing_canonical_required_desktop_heads:
+    flagship_head_review_reasons.append(f"missing_canonical_head:{head}")
+for head in required_desktop_heads:
+    if not status_ok(flagship_head_proof_statuses.get(head, "")):
+        flagship_head_review_reasons.append(f"{head}:status")
+    if not flagship_head_source_test_file_exists.get(head, False):
+        flagship_head_review_reasons.append(f"{head}:source_test_file_exists")
+    if not flagship_head_source_test_file_within_repo_root.get(head, False):
+        flagship_head_review_reasons.append(f"{head}:source_test_file_within_repo_root")
+    for marker in flagship_head_missing_contract_markers.get(head, []):
+        flagship_head_review_reasons.append(f"{head}:marker:{marker}")
+
+workflow_family_review_reasons: List[str] = []
+if checked_family_receipts == 0:
+    workflow_family_review_reasons.append("checked_family_receipts")
+workflow_family_review_reasons.extend(
+    [f"missing_required_family:{family_id}" for family_id in sorted(missing_required_family_ids)]
+)
+workflow_family_review_reasons.extend(
+    [f"not_ready_required_family:{family_id}" for family_id in sorted(not_ready_required_family_ids)]
+)
+workflow_family_review_reasons.extend(
+    [
+        f"missing_audit_tests:{edition}:{'|'.join(family_ids)}"
+        for edition, family_ids in sorted(missing_required_family_audit_tests.items())
+    ]
+)
+workflow_family_review_reasons.extend(
+    [f"missing_receipt:{entry}" for entry in sorted(missing_family_receipts)]
+)
+workflow_family_review_reasons.extend(
+    [f"failing_receipt:{entry}" for entry in sorted(failing_family_receipts)]
+)
+
+workflow_execution_review_reasons: List[str] = []
+if checked_execution_receipts == 0:
+    workflow_execution_review_reasons.append("checked_execution_receipts")
+workflow_execution_review_reasons.extend(
+    [f"missing_execution:{entry}" for entry in sorted(missing_execution_receipts)]
+)
+workflow_execution_review_reasons.extend(
+    [f"failing_execution:{entry}" for entry in sorted(failing_execution_receipts)]
+)
+workflow_execution_review_reasons.extend(
+    [f"weak_execution:{entry}" for entry in sorted(weak_execution_receipts)]
+)
+workflow_execution_review_reasons.extend(
+    [f"legacy_execution_path:{entry}" for entry in legacy_execution_receipt_paths]
+)
+
 status = "pass" if not reasons else "fail"
 payload = {
     "generatedAt": now_iso(),
@@ -839,8 +936,31 @@ payload = {
         else "Desktop workflow execution gate is not fully proven."
     ),
     "reasons": reasons,
+    "reviews": {
+        "upstreamReceiptReview": {
+            "status": "pass" if not upstream_receipt_review_reasons else "fail",
+            "reasons": upstream_receipt_review_reasons,
+        },
+        "releaseChannelReview": {
+            "status": "pass" if not release_channel_review_reasons else "fail",
+            "reasons": release_channel_review_reasons,
+        },
+        "flagshipHeadReview": {
+            "status": "pass" if not flagship_head_review_reasons else "fail",
+            "reasons": flagship_head_review_reasons,
+        },
+        "workflowFamilyReview": {
+            "status": "pass" if not workflow_family_review_reasons else "fail",
+            "reasons": workflow_family_review_reasons,
+        },
+        "workflowExecutionReview": {
+            "status": "pass" if not workflow_execution_review_reasons else "fail",
+            "reasons": workflow_execution_review_reasons,
+        },
+    },
     "evidence": evidence,
 }
+payload["evidence"]["failureCount"] = len(reasons)
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
     raise SystemExit(43)

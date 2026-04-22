@@ -152,4 +152,7 @@ public partial class MainWindow : Window
         _lifecycleCoordinator.Detach(_transientStateCoordinator.DetachDialogWindow());
         base.OnClosed(e);
     }
+
+    internal DesktopDialogWindow? PeekDialogWindowForTesting()
+        => _transientStateCoordinator.PeekDialogWindowForTesting();
 }

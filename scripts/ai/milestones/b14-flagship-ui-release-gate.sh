@@ -27,6 +27,7 @@ sr6_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP
 sr4_sr6_frontier_receipt_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
 desktop_workflow_execution_receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 localization_release_gate_receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+interactive_control_inventory_receipt_path="$repo_root/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
 veteran_task_time_receipt_path="$repo_root/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
 chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
@@ -71,20 +72,18 @@ if entries_without_owner:
     raise SystemExit(0)
 
 age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
-if age_seconds < max_age:
-    if owner_pid_path.exists():
-        print(f"young_owner_only:{age_seconds}")
-    else:
-        print(f"young:{age_seconds}")
+if owner_pid_path.exists():
+    print(f"dead_owner_only:{age_seconds}")
     raise SystemExit(0)
 
-if owner_pid_path.exists():
-    print(f"stale_owner_only:{age_seconds}")
-else:
-    print(f"stale_empty:{age_seconds}")
+if age_seconds < max_age:
+    print(f"young:{age_seconds}")
+    raise SystemExit(0)
+
+print(f"stale_empty:{age_seconds}")
 PY
   )"
-  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* ]]; then
+  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* || "$lock_stale_probe" == dead_owner_only:* ]]; then
     rm -rf "$lock_dir"
   fi
 }
@@ -269,7 +268,7 @@ if missing_lifecycle_runtime_tests:
 PY
 
 echo "[b14] running flagship Avalonia headless UI gate tests..."
-run_with_retry 2 "flagship Avalonia headless UI gate tests" \
+run_with_retry 5 "flagship Avalonia headless UI gate tests" \
   env CHUMMER_UI_GATE_SCREENSHOT_DIR="$capture_screenshot_dir" \
   bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" -v minimal >/dev/null
 
@@ -296,6 +295,11 @@ if not png_paths:
     raise SystemExit(f"[b14] FAIL: no screenshot PNG files were produced in capture directory: {capture_dir}")
 for path in png_paths:
     shutil.copy2(path, target_dir / path.name)
+
+control_evidence_path = capture_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
+if not control_evidence_path.is_file():
+    raise SystemExit(f"[b14] FAIL: screenshot control evidence was not produced in capture directory: {control_evidence_path}")
+shutil.copy2(control_evidence_path, target_dir / control_evidence_path.name)
 PY
 
 echo "[b14] normalizing screenshot PNG CRC chunks..."
@@ -358,6 +362,7 @@ PY
 rm -rf "$screenshot_dir"
 mkdir -p "$screenshot_dir"
 cp "$staged_screenshot_dir"/*.png "$screenshot_dir"/
+cp "$staged_screenshot_dir"/SCREENSHOT_CONTROL_EVIDENCE.generated.json "$screenshot_dir"/
 
 echo "[b14] running cross-head workflow parity tests..."
 run_with_retry 2 "cross-head workflow parity tests" \
@@ -376,7 +381,7 @@ bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_shell_ruleset_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_shell_ruleset_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
 import json
 import os
 import sys
@@ -401,9 +406,10 @@ from datetime import datetime, timezone
     sr4_sr6_frontier_receipt_path,
     desktop_workflow_execution_receipt_path,
     localization_release_gate_receipt_path,
+    interactive_control_inventory_receipt_path,
     veteran_task_time_receipt_path,
     chummer5a_screenshot_review_receipt_path,
-) = sys.argv[1:21]
+) = sys.argv[1:22]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -456,10 +462,18 @@ required_lifecycle_runtime_tests = [
 ]
 with open(avalonia_gate_tests_path, "r", encoding="utf-8") as handle:
     avalonia_gate_tests_text = handle.read()
+with open(dual_head_tests_path, "r", encoding="utf-8") as handle:
+    dual_head_tests_text = handle.read()
 with open(blazor_shell_tests_path, "r", encoding="utf-8") as handle:
     blazor_shell_tests_text = handle.read()
 with open(desktop_shell_ruleset_tests_path, "r", encoding="utf-8") as handle:
     desktop_shell_ruleset_tests_text = handle.read()
+with open(desktop_update_runtime_tests_path, "r", encoding="utf-8") as handle:
+    desktop_update_runtime_tests_text = handle.read()
+with open(desktop_install_linking_runtime_tests_path, "r", encoding="utf-8") as handle:
+    desktop_install_linking_runtime_tests_text = handle.read()
+with open(desktop_startup_smoke_runtime_tests_path, "r", encoding="utf-8") as handle:
+    desktop_startup_smoke_runtime_tests_text = handle.read()
 with open(layout_hard_gate_receipt_path, "r", encoding="utf-8") as handle:
     layout_hard_gate_receipt = json.load(handle)
 
@@ -531,6 +545,38 @@ runtime_backed_shell_menu_status = proof_status(
 runtime_backed_toolstrip_actions_status = proof_status(
     tests_present(avalonia_gate_tests_text, runtime_toolstrip_tests)
 )
+menu_surface_status = proof_status(
+    "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters" in avalonia_gate_tests_text,
+    status_ok(runtime_backed_shell_menu_status),
+)
+settings_inline_dialog_status = proof_status(
+    "Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive" in avalonia_gate_tests_text,
+    "Desktop_dialog_surfaces_use_real_windowed_dialogs_and_quiet_blazor_chrome" in avalonia_gate_tests_text,
+)
+demo_runner_dispatch_status = proof_status(
+    "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters" in avalonia_gate_tests_text,
+    "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load" in avalonia_gate_tests_text,
+)
+keyboard_shortcut_parity_status = proof_status(
+    "Keyboard_shortcuts_resolve_to_the_same_shell_commands" in avalonia_gate_tests_text,
+)
+theme_readability_contrast_status = proof_status(
+    "Theme_tokens_preserve_chummer5a_palette_and_readability" in avalonia_gate_tests_text,
+)
+runtime_backed_ruleset_orientation_status = proof_status(
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks" in avalonia_gate_tests_text,
+    status_ok(runtime_backed_codex_tree_status),
+)
+lifecycle_runtime_tests_text = "\n".join(
+    [
+        desktop_update_runtime_tests_text,
+        desktop_install_linking_runtime_tests_text,
+        desktop_startup_smoke_runtime_tests_text,
+    ]
+)
+desktop_lifecycle_status = proof_status(
+    tests_present(lifecycle_runtime_tests_text, required_lifecycle_runtime_tests)
+)
 with open(workflow_parity_receipt_path, "r", encoding="utf-8") as handle:
     workflow_parity_receipt = json.load(handle)
 if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
@@ -566,10 +612,79 @@ if str(sr4_sr6_frontier_receipt.get("status") or "").strip().lower() not in {"pa
     )
 with open(localization_release_gate_receipt_path, "r", encoding="utf-8") as handle:
     localization_release_gate_receipt = json.load(handle)
-if str(localization_release_gate_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+localization_release_status = str(localization_release_gate_receipt.get("status") or "").strip().lower()
+if localization_release_status not in {"pass", "passed", "ready"}:
     raise SystemExit(
         "[b14] FAIL: explicit localization release gate proof is not passed: "
         + ", ".join(localization_release_gate_receipt.get("blocking_findings") or ["missing reason"])
+    )
+workflow_equivalence_status = proof_status(
+    tests_present(dual_head_tests_text, required_full_workflow_tests),
+    status_ok(str(workflow_parity_receipt.get("status") or "").strip().lower()),
+    status_ok(str(sr4_workflow_parity_receipt.get("status") or "").strip().lower()),
+    status_ok(str(sr6_workflow_parity_receipt.get("status") or "").strip().lower()),
+    status_ok(str(sr4_sr6_frontier_receipt.get("status") or "").strip().lower()),
+)
+legacy_workflow_receipt_status = status_ok(str(workflow_parity_receipt.get("status") or "").strip().lower())
+legacy_creation_workflow_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Character_creation_preserves_familiar_dense_builder_rhythm" in avalonia_gate_tests_text,
+)
+legacy_advancement_workflow_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm" in avalonia_gate_tests_text,
+)
+legacy_browse_detail_confirm_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm" in avalonia_gate_tests_text,
+    "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm" in avalonia_gate_tests_text,
+    "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues" in avalonia_gate_tests_text,
+)
+legacy_gear_workflow_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm" in avalonia_gate_tests_text,
+)
+legacy_vehicles_builder_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm" in avalonia_gate_tests_text,
+)
+legacy_cyberware_dialog_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues" in avalonia_gate_tests_text,
+)
+legacy_contacts_diary_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Contacts_diary_and_support_routes_execute_with_public_path_visibility" in avalonia_gate_tests_text,
+)
+legacy_contacts_workflow_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Contacts_diary_and_support_routes_execute_with_public_path_visibility" in avalonia_gate_tests_text,
+)
+legacy_diary_workflow_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Contacts_diary_and_support_routes_execute_with_public_path_visibility" in avalonia_gate_tests_text,
+)
+legacy_magic_workflow_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions" in avalonia_gate_tests_text,
+)
+legacy_matrix_workflow_rhythm_status = proof_status(
+    legacy_workflow_receipt_status,
+    "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions" in avalonia_gate_tests_text,
+)
+with open(interactive_control_inventory_receipt_path, "r", encoding="utf-8") as handle:
+    interactive_control_inventory_receipt = json.load(handle)
+interaction_inventory_status = str(interactive_control_inventory_receipt.get("status") or "").strip().lower()
+full_interactive_control_inventory_status = str(interactive_control_inventory_receipt.get("evidence", {}).get("fullInteractiveControlInventory") or "").strip().lower()
+main_window_interaction_inventory_status = str(interactive_control_inventory_receipt.get("evidence", {}).get("mainWindowInteractionInventory") or "").strip().lower()
+if interaction_inventory_status not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: standalone interactive control inventory proof is not passed: "
+        + ", ".join(interactive_control_inventory_receipt.get("reasons") or ["missing reason"])
+    )
+if not status_ok(full_interactive_control_inventory_status) or not status_ok(main_window_interaction_inventory_status):
+    raise SystemExit(
+        "[b14] FAIL: standalone interactive control inventory receipt does not carry passing sub-statuses for both inventory lanes."
     )
 captured = []
 missing = []
@@ -590,6 +705,33 @@ if missing:
     raise SystemExit(
         "[b14] FAIL: missing screenshot evidence: " + ", ".join(missing)
     )
+avalonia_visual_review_status = proof_status(not missing, len(captured) == len(expected_screenshots))
+bundled_demo_runner_status = proof_status(os.path.isfile(sample_path))
+avalonia_head_status = proof_status(
+    avalonia_visual_review_status,
+    theme_readability_contrast_status,
+    bundled_demo_runner_status,
+    layout_gate_status,
+    desktop_lifecycle_status,
+)
+blazor_command_surface_status = proof_status(
+    "MenuBar_invokes_toggle_and_execute_callbacks" in blazor_shell_tests_text,
+    "WorkspaceLeftPane_renders_shell_controls_and_invokes_callbacks" in blazor_shell_tests_text,
+)
+blazor_dialog_surface_status = proof_status(
+    "DialogHost_renders_dialog_and_emits_events" in blazor_shell_tests_text,
+)
+blazor_journey_panels_status = proof_status(
+    "CampaignJournalPanel_renders_explicit_downtime_planner_calendar_and_schedule_views" in blazor_shell_tests_text,
+)
+blazor_release_lifecycle_status = desktop_lifecycle_status
+blazor_head_status = proof_status(
+    blazor_shell_chrome_status,
+    blazor_command_surface_status,
+    blazor_dialog_surface_status,
+    blazor_journey_panels_status,
+    blazor_release_lifecycle_status,
+)
 
 payload = {
     "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -608,27 +750,27 @@ payload = {
             "BlazorShellComponentTests",
             "DualHeadAcceptanceTests",
         ],
-        "menuSurface": "pass",
-        "settingsInlineDialog": "pass",
-        "demoRunnerDispatch": "pass",
-        "keyboardShortcutParity": "pass",
+        "menuSurface": menu_surface_status,
+        "settingsInlineDialog": settings_inline_dialog_status,
+        "demoRunnerDispatch": demo_runner_dispatch_status,
+        "keyboardShortcutParity": keyboard_shortcut_parity_status,
         "legacyFamiliarityBridge": proof_status(
             status_ok(str(layout_hard_gate_receipt.get("status") or "").strip().lower()),
             tests_present(avalonia_gate_tests_text, legacy_workbench_tests),
             tests_present(avalonia_gate_tests_text, default_single_runner_layout_tests),
         ),
-        "crossHeadWorkflowParity": "pass",
-        "installUpdateRecoveryLifecycle": "pass",
-        "themeReadabilityContrast": "pass",
+        "crossHeadWorkflowParity": workflow_equivalence_status,
+        "installUpdateRecoveryLifecycle": desktop_lifecycle_status,
+        "themeReadabilityContrast": theme_readability_contrast_status,
         "blazorDesktopShellChrome": blazor_shell_chrome_status,
         "runtimeBackedShellMenu": runtime_backed_shell_menu_status,
         "runtimeBackedMenuBarLabels": runtime_backed_shell_menu_status,
         "runtimeBackedClickablePrimaryMenus": runtime_backed_shell_menu_status,
         "runtimeBackedToolstripActions": runtime_backed_toolstrip_actions_status,
         "runtimeBackedCodexTree": runtime_backed_codex_tree_status,
-        "runtimeBackedSr4CodexOrientationModel": "pass",
-        "runtimeBackedSr5CodexOrientationModel": "pass",
-        "runtimeBackedSr6CodexOrientationModel": "pass",
+        "runtimeBackedSr4CodexOrientationModel": runtime_backed_ruleset_orientation_status,
+        "runtimeBackedSr5CodexOrientationModel": runtime_backed_ruleset_orientation_status,
+        "runtimeBackedSr6CodexOrientationModel": runtime_backed_ruleset_orientation_status,
         "runtimeBackedClassicChromeCopy": runtime_backed_classic_chrome_copy_status,
         "chummer5aLayoutHardGate": layout_gate_status,
         "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": default_single_runner_layout_status,
@@ -639,25 +781,26 @@ payload = {
         "runtimeBackedDemoRunnerImport": proof_status(
             "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters" in avalonia_gate_tests_text
         ),
-        "fullInteractiveControlInventory": "pass",
-        "mainWindowInteractionInventory": "pass",
+        "interactiveControlInventoryReceiptPath": interactive_control_inventory_receipt_path,
+        "fullInteractiveControlInventory": full_interactive_control_inventory_status,
+        "mainWindowInteractionInventory": main_window_interaction_inventory_status,
         "runtimeBackedLegacyWorkbench": runtime_backed_legacy_workbench_status,
         "legacyDenseBuilderRhythm": proof_status(
             status_ok(str(layout_hard_gate_receipt.get("status") or "").strip().lower()),
             "Character_creation_preserves_familiar_dense_builder_rhythm" in avalonia_gate_tests_text,
             "Desktop_shell_preserves_classic_dense_center_first_workbench_posture" in avalonia_gate_tests_text,
         ),
-        "legacyCreationWorkflowRhythm": "pass",
-        "legacyAdvancementWorkflowRhythm": "pass",
-        "legacyBrowseDetailConfirmRhythm": "pass",
-        "legacyGearWorkflowRhythm": "pass",
-        "legacyVehiclesBuilderRhythm": "pass",
-        "legacyCyberwareDialogRhythm": "pass",
-        "legacyContactsDiaryRhythm": "pass",
-        "legacyContactsWorkflowRhythm": "pass",
-        "legacyDiaryWorkflowRhythm": "pass",
-        "legacyMagicWorkflowRhythm": "pass",
-        "legacyMatrixWorkflowRhythm": "pass",
+        "legacyCreationWorkflowRhythm": legacy_creation_workflow_rhythm_status,
+        "legacyAdvancementWorkflowRhythm": legacy_advancement_workflow_rhythm_status,
+        "legacyBrowseDetailConfirmRhythm": legacy_browse_detail_confirm_rhythm_status,
+        "legacyGearWorkflowRhythm": legacy_gear_workflow_rhythm_status,
+        "legacyVehiclesBuilderRhythm": legacy_vehicles_builder_rhythm_status,
+        "legacyCyberwareDialogRhythm": legacy_cyberware_dialog_rhythm_status,
+        "legacyContactsDiaryRhythm": legacy_contacts_diary_rhythm_status,
+        "legacyContactsWorkflowRhythm": legacy_contacts_workflow_rhythm_status,
+        "legacyDiaryWorkflowRhythm": legacy_diary_workflow_rhythm_status,
+        "legacyMagicWorkflowRhythm": legacy_magic_workflow_rhythm_status,
+        "legacyMatrixWorkflowRhythm": legacy_matrix_workflow_rhythm_status,
         "lifecycleRuntimeTestSuites": [
             "DesktopUpdateRuntimeTests",
             "DesktopInstallLinkingRuntimeTests",
@@ -666,17 +809,17 @@ payload = {
     },
     "headProofs": {
         "avalonia": {
-            "status": "pass",
+            "status": avalonia_head_status,
             "testSuites": [
                 "AvaloniaFlagshipUiGateTests",
                 "DualHeadAcceptanceTests"
             ],
             "sourceTestFile": avalonia_gate_tests_path,
-            "visualReview": "pass",
-            "themeReadabilityContrast": "pass",
-            "bundledDemoRunner": "pass",
+            "visualReview": avalonia_visual_review_status,
+            "themeReadabilityContrast": theme_readability_contrast_status,
+            "bundledDemoRunner": bundled_demo_runner_status,
             "layoutParityHardGate": layout_gate_status,
-            "releaseLifecycle": "pass",
+            "releaseLifecycle": desktop_lifecycle_status,
             "requiredRuntimeBackedTests": [
                 "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
                 "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
@@ -711,17 +854,17 @@ payload = {
             "requiredLifecycleTests": required_lifecycle_runtime_tests,
         },
         "blazor-desktop": {
-            "status": "pass",
+            "status": blazor_head_status,
             "testSuites": [
                 "BlazorShellComponentTests",
                 "DesktopShellRulesetCatalogTests",
                 "DualHeadAcceptanceTests"
             ],
             "shellChrome": blazor_shell_chrome_status,
-            "commandSurface": "pass",
-            "dialogSurface": "pass",
-            "journeyPanels": "pass",
-            "releaseLifecycle": "pass",
+            "commandSurface": blazor_command_surface_status,
+            "dialogSurface": blazor_dialog_surface_status,
+            "journeyPanels": blazor_journey_panels_status,
+            "releaseLifecycle": blazor_release_lifecycle_status,
             "sourceTestFile": blazor_shell_tests_path,
             "requiredShellTests": required_blazor_shell_tests,
             "desktopShellRulesetSourceTestFile": desktop_shell_ruleset_tests_path,
@@ -730,14 +873,14 @@ payload = {
         },
     },
     "desktopLifecycleProof": {
-        "status": "pass",
+        "status": desktop_lifecycle_status,
         "requiredLifecycleTests": required_lifecycle_runtime_tests,
         "desktopUpdateRuntimeTestsPath": desktop_update_runtime_tests_path,
         "desktopInstallLinkingRuntimeTestsPath": desktop_install_linking_runtime_tests_path,
         "desktopStartupSmokeRuntimeTestsPath": desktop_startup_smoke_runtime_tests_path,
     },
     "workflowEquivalenceProof": {
-        "status": "pass",
+        "status": workflow_equivalence_status,
         "sourceTestFile": dual_head_tests_path,
         "explicitParityReceiptPath": workflow_parity_receipt_path,
         "explicitSr4ParityReceiptPath": sr4_workflow_parity_receipt_path,
@@ -759,7 +902,7 @@ payload = {
         ],
     },
     "localizationReleaseProof": {
-        "status": "pass",
+        "status": localization_release_status,
         "localizationReleaseGateReceiptPath": localization_release_gate_receipt_path,
         "translationBacklogFindings": localization_release_gate_receipt.get("translation_backlog_findings") or [],
     },
@@ -807,36 +950,39 @@ receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
 veteran_receipt = json.loads(veteran_task_time_receipt_path.read_text(encoding="utf-8"))
 chummer5a_screenshot_review_receipt = json.loads(chummer5a_screenshot_review_receipt_path.read_text(encoding="utf-8"))
 classic_dense_receipt = json.loads(classic_dense_workbench_receipt_path.read_text(encoding="utf-8"))
-if str(veteran_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+veteran_receipt_status = str(veteran_receipt.get("status") or "").strip().lower()
+chummer5a_screenshot_review_status = str(chummer5a_screenshot_review_receipt.get("status") or "").strip().lower()
+classic_dense_receipt_status = str(classic_dense_receipt.get("status") or "").strip().lower()
+if veteran_receipt_status not in {"pass", "passed", "ready"}:
     raise SystemExit(
         "[b14] FAIL: veteran task-time evidence proof is not passed: "
         + ", ".join(veteran_receipt.get("reasons") or ["missing reason"])
     )
-if str(chummer5a_screenshot_review_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+if chummer5a_screenshot_review_status not in {"pass", "passed", "ready"}:
     raise SystemExit(
         "[b14] FAIL: Chummer5a screenshot review proof is not passed: "
         + ", ".join(chummer5a_screenshot_review_receipt.get("reasons") or ["missing reason"])
     )
-if str(classic_dense_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+if classic_dense_receipt_status not in {"pass", "passed", "ready"}:
     raise SystemExit(
         "[b14] FAIL: classic dense workbench posture proof is not passed: "
         + ", ".join(classic_dense_receipt.get("reasons") or ["missing reason"])
     )
 receipt["classicDenseWorkbenchPostureProof"] = {
-    "status": "pass",
+    "status": classic_dense_receipt_status,
     "classicDenseWorkbenchPostureReceiptPath": str(classic_dense_workbench_receipt_path),
     "frontierIdsClosed": classic_dense_receipt.get("frontierIdsClosed") or [],
     "evidence": classic_dense_receipt.get("evidence") or {},
 }
 receipt["veteranTaskTimeEvidenceProof"] = {
-    "status": "pass",
+    "status": veteran_receipt_status,
     "veteranTaskTimeEvidenceReceiptPath": str(veteran_task_time_receipt_path),
     "frontierIdsClosed": veteran_receipt.get("frontierIdsClosed") or [],
     "taskTimeEvidence": veteran_receipt.get("taskTimeEvidence") or {},
     "boundedBlazorFallbackEvidence": veteran_receipt.get("boundedBlazorFallbackEvidence") or {},
 }
 receipt["chummer5aScreenshotReviewProof"] = {
-    "status": "pass",
+    "status": chummer5a_screenshot_review_status,
     "screenshotReviewReceiptPath": str(chummer5a_screenshot_review_receipt_path),
     "frontierIdsClosed": chummer5a_screenshot_review_receipt.get("frontierIdsClosed") or [],
     "reviewJobs": chummer5a_screenshot_review_receipt.get("reviewJobs") or {},

@@ -659,8 +659,8 @@ internal static class AccessibilitySignoffSmokeTests
 
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, campaignSummary, activeRuntime, runtimeInspector, buildPathCandidates);
         RequireContains(projection.NextSafeAction, "rebind the active profile");
-        RequireContains(projection.RulesetSpotlight, "home cockpit");
-        RequireContains(projection.RulesetSpotlight, "home");
+        RequireContains(projection.RulesetSpotlight, "guided setup");
+        RequireContains(projection.RulesetSpotlight, "runtime honesty");
         RequireContains(projection.ExplainFocus, "Explain focus:");
         RequireContains(projection.ExplainFocus, "Build path focus: Edge Runner Starter");
         RequireContains(projection.ExplainFocus, "Campaign handoff:");
@@ -670,7 +670,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireNotEmpty(projection.RulePosture, nameof(projection.RulePosture));
         if (projection.CompatibilityReceipts.Count < 2)
         {
-            throw new InvalidOperationException("Desktop build/explain projection should surface explicit compatibility receipts for the flagship home cockpit.");
+            throw new InvalidOperationException("Desktop build/explain projection should surface explicit compatibility receipts for the flagship build/explain surface.");
         }
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Compatibility receipt:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "profile rebind");
@@ -688,7 +688,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Publication receipt:");
         if (projection.BuildPathComparisons.Count < 2)
         {
-            throw new InvalidOperationException("Desktop build/explain projection should compare multiple grounded build paths in the flagship home cockpit.");
+            throw new InvalidOperationException("Desktop build/explain projection should compare multiple grounded build paths on the flagship build/explain surface.");
         }
         RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Edge Runner Starter");
         RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Street Sam Starter");
@@ -697,7 +697,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(projection.Summary, "Used, Prototype");
         if (projection.Watchouts.Count < 2)
         {
-            throw new InvalidOperationException("Desktop build/explain projection should surface multiple watchouts for the flagship home cockpit.");
+            throw new InvalidOperationException("Desktop build/explain projection should surface multiple watchouts on the flagship build/explain surface.");
         }
         RequireContains(string.Join("\n", projection.Watchouts), "campaign confirmation click");
     }
@@ -720,7 +720,8 @@ internal static class AccessibilitySignoffSmokeTests
                     Preview: null)
             ]);
         RequireContains(projection.NextSafeAction, "Create or import the first dossier");
-        RequireContains(projection.RulesetSpotlight, "SR5 home cockpit");
+        RequireContains(projection.RulesetSpotlight, "SR5 opens to the main character editor");
+        RequireContains(projection.RulesetSpotlight, "runtime and provider truth visible");
         RequireContains(projection.ExplainFocus, "Claim the install");
         RequireContains(projection.RuntimeHealthSummary, "no active runtime profile");
         RequireContains(projection.ReturnTarget, "No workspace return target");

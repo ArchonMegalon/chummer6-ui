@@ -2,6 +2,14 @@
 'use strict';
 
 const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'http://127.0.0.1:8091').replace(/\/$/, '');
+const portalPublicHost = process.env.CHUMMER_PORTAL_PUBLIC_HOST || 'chummer.run';
+const useForwardedPublicHeaders = /^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/i.test(baseUrl);
+const defaultHeaders = useForwardedPublicHeaders
+  ? {
+      Host: portalPublicHost,
+      'X-Forwarded-Proto': 'https'
+    }
+  : {};
 
 const requiredLandingLinks = [
   '/downloads',
@@ -17,15 +25,29 @@ const checks = [
     url: `${baseUrl}/`,
     assert: text =>
       text.includes('Chummer')
-      && text.includes('Install the current preview')
+      && text.includes('Create account to install')
       && requiredLandingLinks.every(link => text.includes(link))
   },
   {
     url: `${baseUrl}/downloads/`,
     assert: text =>
       text.includes('Install the current preview')
+      && text.includes('Install Chummer')
+      && text.includes('Main platform downloads')
       && text.includes('Chummer for Windows')
-      && text.includes('Recommended desktop build for Linux')
+      && text.includes('avalonia-win-x64-installer')
+      && !text.includes('Create account to get preview')
+  },
+  {
+    url: `${baseUrl}/downloads/`,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    },
+    assert: text =>
+      text.includes('Recommended for Windows')
+      && text.includes('Create account to install')
+      && text.includes('avalonia-win-x64-installer')
+      && !text.includes('Open Windows preview build')
   },
   {
     url: `${baseUrl}/downloads/releases.json`,
@@ -36,6 +58,47 @@ const checks = [
         && Array.isArray(payload?.downloads)
         && payload.downloads.length > 0;
     }
+  },
+  {
+    url: `${baseUrl}/downloads/install/avalonia-linux-x64-installer`,
+    redirect: 'manual',
+    assert: (_text, response) => {
+      const location = response.headers.get('location') || '';
+      return [301, 302, 303, 307, 308].includes(response.status)
+        && location.includes('/auth/google/start?next=')
+        && decodeURIComponent(location).includes('/downloads/install/avalonia-linux-x64-installer');
+    }
+  },
+  {
+    url: `${baseUrl}/downloads/install/avalonia-win-x64-installer`,
+    redirect: 'manual',
+    assert: (text, response) => {
+      const location = response.headers.get('location') || '';
+      return (
+        ([301, 302, 303, 307, 308].includes(response.status)
+          && location.includes('/auth/google/start?next=')
+          && decodeURIComponent(location).includes('/downloads/install/avalonia-win-x64-installer'))
+        || (response.status === 200
+          && text.includes('Start download again')
+          && (text.includes('setup .exe') || text.includes('default browser')))
+      );
+    }
+  },
+  {
+    url: `${baseUrl}/roadmap/shadowcasters-network`,
+    assert: text =>
+      text.includes('SHADOWCASTERS NETWORK')
+      && text.includes('Why this horizon matters now')
+      && text.includes('Need a decision instead?')
+      && text.includes('/roadmap/black-ledger')
+  },
+  {
+    url: `${baseUrl}/roadmap/black-ledger`,
+    assert: text =>
+      text.includes('BLACK LEDGER')
+      && text.includes('Why this horizon matters now')
+      && text.includes('Need a decision instead?')
+      && text.includes('/artifacts/replay-after-action')
   },
   {
     url: `${baseUrl}/contact`,
@@ -88,8 +151,8 @@ const checks = [
   {
     url: `${baseUrl}/coach/`,
     assert: (text, response) =>
-      /\/now\/?$/.test(response.url)
-      && text.includes('What Is Real Now')
+      /\/status\/?$/.test(response.url)
+      && text.includes('Status')
   }
 ];
 
@@ -97,11 +160,16 @@ const checks = [
   for (const check of checks) {
     const response = await fetch(check.url, {
       method: check.method ?? 'GET',
-      headers: check.headers,
-      body: check.body
+      headers: {
+        ...defaultHeaders,
+        ...(check.headers || {})
+      },
+      body: check.body,
+      redirect: check.redirect ?? 'follow'
     });
     const body = await response.text();
-    if (!response.ok) {
+    const statusAccepted = response.ok || [301, 302, 303, 307, 308].includes(response.status);
+    if (!statusAccepted) {
       throw new Error(`Portal check failed: ${check.url} -> HTTP ${response.status}`);
     }
 

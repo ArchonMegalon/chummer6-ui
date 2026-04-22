@@ -277,6 +277,7 @@
       "/docker/chummercomplete/chummer6-ui-finish commit c63379a3 pins M101 queue uniqueness proof floor.",
       "/docker/chummercomplete/chummer6-ui-finish commit c7b4a56f tightens M101 escaped helper proof guard.",
       "/docker/chummercomplete/chummer6-ui-finish commit c896be32 tightens M101 Avalonia route-truth artifact matching proof.",
+      "/docker/chummercomplete/chummer6-ui-finish commit c9c0d84f tightens the M101 closeout verifier to prove registry, queue, and release-channel authority together for the independent Avalonia primary route.",
       "/docker/chummercomplete/chummer6-ui-finish commit c9f49b5b tightens M101 closed-package proof so future shards verify the completed package instead of reopening the Avalonia primary-route slice.",
       "/docker/chummercomplete/chummer6-ui-finish commit cb1fe210 pins M101 receipt independence proof.",
       "/docker/chummercomplete/chummer6-ui-finish commit ccc77950 pins M101 artifact mutation proof floor.",
@@ -1902,7 +1903,7 @@
     "packageTitle": "Keep native-host release proof independent for the primary desktop head",
     "platformResults": {
       "linux": {
-        "artifactDigest": "sha256:4544ef844262d3381bc424105c4d67e95fa6f3c2541c1c79b00d0b4666a6198c",
+        "artifactDigest": "sha256:84d5c3a7065666286c5e3a5feccbc2ee3c04117cf5afaa116c09e1e2d9e44643",
         "artifactId": "avalonia-linux-x64-installer",
         "expectedPublicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
         "expectedRouteTupleId": "avalonia:linux:linux-x64",
@@ -1961,11 +1962,11 @@
         "status": "pass"
       },
       "macos": {
-        "artifactDigest": "sha256:424b3216afedf86347494eea985cc1e7ceca7cb8cbf7aff04a475456a15973f4",
+        "artifactDigest": "sha256:ca6c25f0cdaf48bddfe83e3e983ff87b8763d973e671100165248c9edcd044bd",
         "artifactId": "avalonia-osx-arm64-installer",
         "expectedPublicInstallRoute": "/downloads/install/avalonia-osx-arm64-installer",
         "expectedRouteTupleId": "avalonia:macos:osx-arm64",
-        "fallbackPromotionState": "proof_required",
+        "fallbackPromotionState": "promoted",
         "fallbackRouteRole": "fallback",
         "primaryPromotedHead": "avalonia",
         "primaryRouteTruthFallbackDistinctFieldHits": [],
@@ -1996,7 +1997,8 @@
           "primary_route_truth_updateEligibilityReason_present": true
         },
         "promotedHeads": [
-          "avalonia"
+          "avalonia",
+          "blazor-desktop"
         ],
         "proofHead": "avalonia",
         "publicInstallRoute": "/downloads/install/avalonia-osx-arm64-installer",
@@ -2309,6 +2311,7 @@
       "/docker/chummercomplete/chummer6-ui-finish commit c63379a3 pins M101 queue uniqueness proof floor.",
       "/docker/chummercomplete/chummer6-ui-finish commit c7b4a56f tightens M101 escaped helper proof guard.",
       "/docker/chummercomplete/chummer6-ui-finish commit c896be32 tightens M101 Avalonia route-truth artifact matching proof.",
+      "/docker/chummercomplete/chummer6-ui-finish commit c9c0d84f tightens the M101 closeout verifier to prove registry, queue, and release-channel authority together for the independent Avalonia primary route.",
       "/docker/chummercomplete/chummer6-ui-finish commit c9f49b5b tightens M101 closed-package proof so future shards verify the completed package instead of reopening the Avalonia primary-route slice.",
       "/docker/chummercomplete/chummer6-ui-finish commit cb1fe210 pins M101 receipt independence proof.",
       "/docker/chummercomplete/chummer6-ui-finish commit ccc77950 pins M101 artifact mutation proof floor.",
@@ -2440,7 +2443,7 @@
     "registryPath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelStatus": "published",
-    "releaseChannelVersion": "run-20260414-1836",
+    "releaseChannelVersion": "run-20260420-072339",
     "requiredDesktopHeads": [
       "avalonia"
     ],
@@ -2516,7 +2519,7 @@
     "verifyScriptPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh"
   },
   "frontierId": 2450443084,
-  "generatedAt": "2026-04-19T11:31:23Z",
+  "generatedAt": "2026-04-21T15:55:40Z",
   "landedCommit": "c9c0d84f",
   "milestoneId": 101,
   "ownedSurfaces": [

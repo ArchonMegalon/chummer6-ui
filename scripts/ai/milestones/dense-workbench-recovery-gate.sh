@@ -133,18 +133,44 @@ visual_gate = load_json(paths["visual_gate"])
 layout_gate = load_json(paths["layout_gate"])
 visual_evidence = visual_gate.get("evidence") if isinstance(visual_gate.get("evidence"), dict) else {}
 
+budget_reasons: list[str] = []
+layout_reasons: list[str] = []
+screenshot_review_reasons: list[str] = []
+
+
+def append_reason(message: str, *buckets: list[str]) -> None:
+    reasons.append(message)
+    for bucket in buckets:
+        bucket.append(message)
+
+
+def require_bucketed_token(label: str, text: str, token: str, *buckets: list[str]) -> None:
+    if token not in text:
+        append_reason(f"{label} is missing required token: {token}", *buckets)
+
 for token in [
     "This note is historical input, not an active queue source.",
     "Badge density, row-preserving padding, accessibility-without-roomy-chrome, and menu/toolstrip review are covered",
     "scripts/ai/milestones/dense-workbench-recovery-gate.sh",
     "scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
 ]:
-    require_token("feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md", feedback_text, token, reasons)
+    require_bucketed_token(
+        "feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
+        feedback_text,
+        token,
+        budget_reasons,
+        screenshot_review_reasons,
+    )
 for token in [
     "Avalonia primary-route proof stays independent from Blazor fallback proof",
     "Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, and import is covered",
 ]:
-    require_token("feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md", post_feedback_text, token, reasons)
+    require_bucketed_token(
+        "feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md",
+        post_feedback_text,
+        token,
+        screenshot_review_reasons,
+    )
 for token in [
     "shell_outer_margin_max: 8",
     "row_spacing_max: 6",
@@ -154,9 +180,9 @@ for token in [
     "dense_list_visible_row_min: 9",
     "header_to_content_ratio_max: 0.30",
 ]:
-    require_token("DENSE_WORKBENCH_BUDGET.yaml", dense_budget_text, token, reasons)
+    require_bucketed_token("DENSE_WORKBENCH_BUDGET.yaml", dense_budget_text, token, budget_reasons)
 for token in ["Immediate toolstrip", "Bottom status strip", "recover_section_rhythm"]:
-    require_token("VETERAN_FIRST_MINUTE_GATE.yaml", veteran_gate_text, token, reasons)
+    require_bucketed_token("VETERAN_FIRST_MINUTE_GATE.yaml", veteran_gate_text, token, budget_reasons, layout_reasons)
 
 budget_evidence: dict[str, Any] = {}
 button_min_height = parse_style_setter(app_text, "Button", "MinHeight")
@@ -193,27 +219,27 @@ budget_evidence.update(
 )
 
 if budget_evidence["fluentDensityStyle"] != "Compact":
-    reasons.append("Avalonia app is not using compact Fluent density.")
+    append_reason("Avalonia app is not using compact Fluent density.", budget_reasons)
 if button_min_height is None or int(button_min_height) > 32:
-    reasons.append(f"Button MinHeight exceeds compact budget or is missing: {button_min_height}.")
+    append_reason(f"Button MinHeight exceeds compact budget or is missing: {button_min_height}.", budget_reasons)
 if text_box_padding is None or text_box_padding[0] > 8 or text_box_padding[1] > 6:
-    reasons.append(f"TextBox padding exceeds dense input budget or is missing: {text_box_padding}.")
+    append_reason(f"TextBox padding exceeds dense input budget or is missing: {text_box_padding}.", budget_reasons)
 if card_padding is None or card_padding[0] > 10 or card_padding[1] > 10:
-    reasons.append(f"Card padding exceeds dense workbench budget or is missing: {card_padding}.")
+    append_reason(f"Card padding exceeds dense workbench budget or is missing: {card_padding}.", budget_reasons)
 if section_title_font_size is None or int(section_title_font_size) > 13:
-    reasons.append(f"Section header font is oversized or missing: {section_title_font_size}.")
+    append_reason(f"Section header font is oversized or missing: {section_title_font_size}.", budget_reasons)
 if toolstrip_item_height is None or toolstrip_item_height > 32:
-    reasons.append(f"Toolstrip item height exceeds compact button budget or is missing: {toolstrip_item_height}.")
+    append_reason(f"Toolstrip item height exceeds compact button budget or is missing: {toolstrip_item_height}.", budget_reasons)
 if section_rows_height_value is None or section_rows_height_value < 160:
-    reasons.append(f"Dense section rows list is too short for row-visibility proof: {section_rows_height_value}.")
+    append_reason(f"Dense section rows list is too short for row-visibility proof: {section_rows_height_value}.", budget_reasons)
 if budget_evidence["mainWindowContentColumns"] == "missing":
-    reasons.append("Main window does not keep the classic center-first 0,*,0 dense workbench posture.")
+    append_reason("Main window does not keep the classic center-first 0,*,0 dense workbench posture.", layout_reasons)
 if not budget_evidence["conditionalNavigatorCollapse"]:
-    reasons.append("Default shell does not collapse workspace chrome until a multi-workspace session exists.")
+    append_reason("Default shell does not collapse workspace chrome until a multi-workspace session exists.", layout_reasons)
 if not budget_evidence["rightRailCollapsed"]:
-    reasons.append("Default right rail does not surrender space back to the dense center pane.")
+    append_reason("Default right rail does not surrender space back to the dense center pane.", layout_reasons)
 if not budget_evidence["loadedRunnerTabStripPanel"]:
-    reasons.append("Loaded-runner tab strip posture is not present in the summary header.")
+    append_reason("Loaded-runner tab strip posture is not present in the summary header.", layout_reasons)
 
 for token in [
     'Classes="shell-toolstrip-band"',
@@ -224,17 +250,21 @@ for token in [
     'x:Name="ImportFileButton"',
     'x:Name="SettingsButton"',
 ]:
-    require_token("ToolStripControl.axaml", toolstrip_text, token, reasons)
+    require_bucketed_token("ToolStripControl.axaml", toolstrip_text, token, layout_reasons)
 for disallowed in ["shell-action-badge", "shell-action-caption", "Quick Actions", "Workbench State", "dashboard tile"]:
     if disallowed in toolstrip_text:
-        reasons.append(f"Toolstrip contains disallowed roomy/dashboard marker: {disallowed}")
+        append_reason(f"Toolstrip contains disallowed roomy/dashboard marker: {disallowed}", layout_reasons)
 
 for token in [
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
     "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
+    "Assert.IsFalse(leftNavigatorRegion.IsVisible",
+]:
+    require_bucketed_token("AvaloniaFlagshipUiGateTests.cs", test_text, token, layout_reasons)
+
+for token in [
     "Visual_review_evidence_is_published_for_light_and_dark_shell_states",
     "Assert.IsTrue(toolbarButtonHeights.All(height => height <= 40d)",
-    "Assert.IsFalse(leftNavigatorRegion.IsVisible",
     "Assert.IsTrue(menuBarRegion.Bounds.Height <= 72d",
     "Assert.IsTrue(statusStripRegion.Bounds.Height <= 72d",
     "02-menu-open-light.png",
@@ -242,15 +272,15 @@ for token in [
     "06-dense-section-dark.png",
     "08-cyberware-dialog-light.png",
 ]:
-    require_token("AvaloniaFlagshipUiGateTests.cs", test_text, token, reasons)
+    require_bucketed_token("AvaloniaFlagshipUiGateTests.cs", test_text, token, screenshot_review_reasons)
 
 if not status_pass(visual_gate.get("status")):
-    reasons.append("Desktop visual familiarity gate is not passing.")
+    append_reason("Desktop visual familiarity gate is not passing.", screenshot_review_reasons)
 if not status_pass(layout_gate.get("status")):
-    reasons.append("Chummer5a layout hard gate is not passing.")
+    append_reason("Chummer5a layout hard gate is not passing.", screenshot_review_reasons)
 for key in ["legacy_dense_builder_rhythm", "runtime_backed_toolstrip_actions", "runtime_backed_menu_bar_labels", "default_single_runner_keeps_workspace_chrome_collapsed"]:
     if not status_pass(visual_evidence.get(key)):
-        reasons.append(f"Desktop visual familiarity evidence does not pass {key}.")
+        append_reason(f"Desktop visual familiarity evidence does not pass {key}.", screenshot_review_reasons)
 required_screenshots = set(visual_evidence.get("required_screenshots") or [])
 for screenshot in [
     "02-menu-open-light.png",
@@ -259,7 +289,7 @@ for screenshot in [
     "08-cyberware-dialog-light.png",
 ]:
     if screenshot not in required_screenshots:
-        reasons.append(f"Desktop visual familiarity gate does not require screenshot review for {screenshot}.")
+        append_reason(f"Desktop visual familiarity gate does not require screenshot review for {screenshot}.", screenshot_review_reasons)
 
 payload = {
     "generatedAt": now_iso(),
@@ -279,8 +309,23 @@ payload = {
         "Make screenshot-based Chummer5a compare review mandatory for: dense builder",
     ],
     "budgetEvidence": budget_evidence,
+    "budgetReview": {
+        "status": "pass" if not budget_reasons else "fail",
+        "reasons": budget_reasons,
+        "denseBudgetPath": str(paths["dense_budget"]),
+        "veteranFirstMinutePath": str(paths["veteran_first_minute"]),
+    },
+    "layoutChromeReview": {
+        "status": "pass" if not layout_reasons else "fail",
+        "reasons": layout_reasons,
+        "mainWindowContentColumns": budget_evidence["mainWindowContentColumns"],
+        "conditionalNavigatorCollapse": budget_evidence["conditionalNavigatorCollapse"],
+        "rightRailCollapsed": budget_evidence["rightRailCollapsed"],
+        "loadedRunnerTabStripPanel": budget_evidence["loadedRunnerTabStripPanel"],
+    },
     "screenshotBackedReview": {
-        "status": "pass" if not reasons else "fail",
+        "status": "pass" if not screenshot_review_reasons else "fail",
+        "reasons": screenshot_review_reasons,
         "requiredScreenshots": sorted(required_screenshots),
         "menuAndToolstripScreenshots": ["02-menu-open-light.png"],
         "denseBuilderScreenshots": [
@@ -289,12 +334,32 @@ payload = {
             "08-cyberware-dialog-light.png",
         ],
         "screenshotDirectory": visual_evidence.get("screenshot_dir"),
+        "supportingReceiptStatuses": {
+            "desktopVisualFamiliarity": visual_gate.get("status"),
+            "chummer5aLayoutHardGate": layout_gate.get("status"),
+        },
     },
     "supportingReceipts": {
         "desktopVisualFamiliarity": str(paths["visual_gate"]),
         "chummer5aLayoutHardGate": str(paths["layout_gate"]),
     },
     "sourceEvidence": {name: str(path) for name, path in paths.items()},
+    "evidence": {
+        "supportingReceipts": {
+            "desktopVisualFamiliarity": str(paths["visual_gate"]),
+            "chummer5aLayoutHardGate": str(paths["layout_gate"]),
+        },
+        "sourceEvidence": {name: str(path) for name, path in paths.items()},
+        "frontierIdsClosed": [5179993690, 2518566268, 3639684992, 2282132892, 3782970110],
+        "backlogItemsClosed": [
+            "Reduce: padding that cuts visible rows",
+            "Keep accessibility first-class without equating accessibility to oversized roomy chrome.",
+            "Make screenshot-based Chummer5a compare review mandatory for: menu and toolstrip",
+            "Make screenshot-based Chummer5a compare review mandatory for: dense builder",
+        ],
+        "reasonCount": len(reasons),
+        "failureCount": len(reasons),
+    },
 }
 write_receipt(payload)
 if reasons:
