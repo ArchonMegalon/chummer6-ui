@@ -184,6 +184,20 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Avalonia_workbench_shell_removes_extra_non_chummer5a_chrome()
+    {
+        string projectorPath = ResolveSourceFile("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs");
+        string summaryHeaderPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "SummaryHeaderControl.axaml.cs");
+        string projectorText = File.ReadAllText(projectorPath);
+        string summaryHeaderText = File.ReadAllText(summaryHeaderPath);
+
+        StringAssert.Contains(projectorText, "ShowNavigatorPane: false");
+        StringAssert.Contains(projectorText, "return [];");
+        StringAssert.Contains(summaryHeaderText, "RestoreContinuityStatusBorder.IsVisible = false;");
+        StringAssert.Contains(summaryHeaderText, "RestoreContinuityActionPanel.IsVisible = false;");
+    }
+
+    [TestMethod]
     public void Bundled_demo_runner_fixture_is_published_for_both_desktop_heads()
     {
         string avaloniaProjectPath = ResolveSourceFile("Chummer.Avalonia", "Chummer.Avalonia.csproj");
@@ -289,7 +303,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(mainWindowStateRefreshText, "ApplyWorkbenchChromeVisibility(shellFrame);");
         StringAssert.Contains(mainWindowStateRefreshText, "new GridLength(228)");
         StringAssert.Contains(mainWindowStateRefreshText, "new GridLength(0)");
-        StringAssert.Contains(avaloniaProjectorText, "ShowNavigatorPane: resolvedOpenWorkspaces.Length > 1");
+        StringAssert.Contains(avaloniaProjectorText, "ShowNavigatorPane: false");
         StringAssert.Contains(navigatorPaneText, "x:Name=\"CodexHeadingText\"");
         StringAssert.Contains(navigatorPaneText, "IsVisible=\"False\"");
         StringAssert.Contains(sectionPaneText, "classic-summary-grid");

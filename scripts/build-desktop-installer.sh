@@ -108,6 +108,37 @@ esac
 
 mkdir -p "$DIST_DIR"
 
+resolve_head_display_name() {
+  case "$1" in
+    avalonia) echo "Chummer6 Avalonia Desktop" ;;
+    blazor-desktop) echo "Chummer6 Blazor Desktop" ;;
+    *)
+      echo "Unsupported app key: $1" >&2
+      exit 1
+      ;;
+  esac
+}
+
+resolve_head_shortcut_name() {
+  case "$1" in
+    avalonia) echo "Chummer6 Avalonia" ;;
+    blazor-desktop) echo "Chummer6 Blazor Desktop" ;;
+    *)
+      echo "Unsupported app key: $1" >&2
+      exit 1
+      ;;
+  esac
+}
+
+WINDOWS_SECONDARY_HEAD_KEY="${CHUMMER_WINDOWS_SECONDARY_HEAD_KEY:-}"
+WINDOWS_SECONDARY_HEAD_PUBLISH_DIR="${CHUMMER_WINDOWS_SECONDARY_HEAD_PUBLISH_DIR:-}"
+WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET="${CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET:-}"
+WINDOWS_SECONDARY_HEAD_RELATIVE_ROOT="${CHUMMER_WINDOWS_SECONDARY_HEAD_RELATIVE_ROOT:-$WINDOWS_SECONDARY_HEAD_KEY}"
+
+if [[ -n "$WINDOWS_SECONDARY_HEAD_PUBLISH_DIR" ]]; then
+  WINDOWS_SECONDARY_HEAD_PUBLISH_DIR="$(abspath "$WINDOWS_SECONDARY_HEAD_PUBLISH_DIR")"
+fi
+
 resolve_demo_character_source() {
   local configured="${CHUMMER_RELEASE_SAMPLE_SOURCE:-}"
   local fixture_root="${CHUMMER_LEGACY_FIXTURE_ROOT:-}"
@@ -172,7 +203,13 @@ EOF
 
 build_payload_zip() {
   local target="$1"
-  python3 - "$PUBLISH_DIR" "$target" <<'PY'
+  build_payload_zip_from_dir "$PUBLISH_DIR" "$target"
+}
+
+build_payload_zip_from_dir() {
+  local source_dir="$1"
+  local target="$2"
+  python3 - "$source_dir" "$target" <<'PY'
 import sys
 import zipfile
 from pathlib import Path
@@ -267,12 +304,18 @@ EOF
 }
 
 ensure_self_contained_publish() {
+  ensure_self_contained_publish_dir "$PUBLISH_DIR" "$LAUNCH_TARGET"
+}
+
+ensure_self_contained_publish_dir() {
+  local publish_dir="$1"
+  local launch_target="$2"
   local launch_stem
-  launch_stem="$LAUNCH_TARGET"
+  launch_stem="$launch_target"
   if [[ "$launch_stem" == *.exe ]]; then
     launch_stem="${launch_stem%.exe}"
   fi
-  local runtimeconfig_path="$PUBLISH_DIR/$launch_stem.runtimeconfig.json"
+  local runtimeconfig_path="$publish_dir/$launch_stem.runtimeconfig.json"
 
   if [[ ! -f "$runtimeconfig_path" ]]; then
     return 0
@@ -422,6 +465,63 @@ EOF
   echo "built installer $DIST_DIR/$installer_name"
 }
 
+build_installed_heads_json_base64() {
+  local primary_head_key="$1"
+  local primary_launch_target="$2"
+  local primary_relative_root="$3"
+  local secondary_head_key="${4:-}"
+  local secondary_launch_target="${5:-}"
+  local secondary_relative_root="${6:-}"
+
+  python3 - \
+    "$primary_head_key" \
+    "$primary_launch_target" \
+    "$primary_relative_root" \
+    "$secondary_head_key" \
+    "$secondary_launch_target" \
+    "$secondary_relative_root" <<'PY'
+import base64
+import json
+import sys
+
+primary_head_key, primary_launch_target, primary_relative_root, secondary_head_key, secondary_launch_target, secondary_relative_root = sys.argv[1:7]
+
+DISPLAY_NAMES = {
+    "avalonia": "Chummer6 Avalonia Desktop",
+    "blazor-desktop": "Chummer6 Blazor Desktop",
+}
+
+SHORTCUT_NAMES = {
+    "avalonia": "Chummer6 Avalonia",
+    "blazor-desktop": "Chummer6 Blazor Desktop",
+}
+
+heads = [
+    {
+        "headId": primary_head_key,
+        "displayName": DISPLAY_NAMES[primary_head_key],
+        "launchExecutable": primary_launch_target,
+        "shortcutName": SHORTCUT_NAMES[primary_head_key],
+        "relativeRoot": primary_relative_root,
+    }
+]
+
+if secondary_head_key:
+    heads.append(
+        {
+            "headId": secondary_head_key,
+            "displayName": DISPLAY_NAMES[secondary_head_key],
+            "launchExecutable": secondary_launch_target,
+            "shortcutName": SHORTCUT_NAMES[secondary_head_key],
+            "relativeRoot": secondary_relative_root,
+        }
+    )
+
+payload = json.dumps(heads, separators=(",", ":")).encode("utf-8")
+print(base64.b64encode(payload).decode("ascii"))
+PY
+}
+
 build_windows_installer() {
   ensure_self_contained_publish
 
@@ -429,8 +529,45 @@ build_windows_installer() {
   local payload_resource_name="ChummerInstaller.Payload.zip"
   local installer_name="chummer-$APP_KEY-$RID-installer.exe"
   local installer_out_dir="$DIST_DIR/installer-$APP_KEY-$RID"
+  local payload_source_dir="$PUBLISH_DIR"
+  local primary_relative_root=""
+  local secondary_head_key="$WINDOWS_SECONDARY_HEAD_KEY"
+  local secondary_publish_dir="$WINDOWS_SECONDARY_HEAD_PUBLISH_DIR"
+  local secondary_launch_target="$WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET"
+  local secondary_relative_root="$WINDOWS_SECONDARY_HEAD_RELATIVE_ROOT"
+  local installer_display_name="$APP_DISPLAY"
+  local installer_install_dir_name="$INSTALL_DIR_NAME-$RID"
+  local heads_json_base64=""
+  local stage_root=""
 
-  build_payload_zip "$payload_zip"
+  if [[ -n "$secondary_head_key" || -n "$secondary_publish_dir" || -n "$secondary_launch_target" ]]; then
+    if [[ -z "$secondary_head_key" || -z "$secondary_publish_dir" || -z "$secondary_launch_target" ]]; then
+      echo "Combined Windows installer packaging requires CHUMMER_WINDOWS_SECONDARY_HEAD_KEY, CHUMMER_WINDOWS_SECONDARY_HEAD_PUBLISH_DIR, and CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET together." >&2
+      exit 1
+    fi
+
+    ensure_self_contained_publish_dir "$secondary_publish_dir" "$secondary_launch_target"
+
+    primary_relative_root="$APP_KEY"
+    secondary_relative_root="${secondary_relative_root:-$secondary_head_key}"
+    installer_display_name="Chummer6 Desktop"
+    installer_install_dir_name="Desktop-$RID"
+    stage_root="$DIST_DIR/package-$APP_KEY-$RID"
+    rm -rf "$stage_root"
+    mkdir -p "$stage_root/$primary_relative_root" "$stage_root/$secondary_relative_root"
+    cp -a "$PUBLISH_DIR"/. "$stage_root/$primary_relative_root"/
+    cp -a "$secondary_publish_dir"/. "$stage_root/$secondary_relative_root"/
+    payload_source_dir="$stage_root"
+    heads_json_base64="$(build_installed_heads_json_base64 \
+      "$APP_KEY" \
+      "$LAUNCH_TARGET" \
+      "$primary_relative_root" \
+      "$secondary_head_key" \
+      "$secondary_launch_target" \
+      "$secondary_relative_root")"
+  fi
+
+  build_payload_zip_from_dir "$payload_source_dir" "$payload_zip"
 
   rm -rf "$installer_out_dir"
   "$REPO_ROOT/scripts/ai/with-package-plane.sh" publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
@@ -448,11 +585,12 @@ build_windows_installer() {
     -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
     -p:ChummerInstallerAppId="$APP_KEY-$RID" \
     -p:ChummerInstallerHeadId="$APP_KEY" \
-    -p:ChummerInstallerDisplayName="$APP_DISPLAY" \
-    -p:ChummerInstallerInstallDirName="$INSTALL_DIR_NAME-$RID" \
+    -p:ChummerInstallerDisplayName="$installer_display_name" \
+    -p:ChummerInstallerInstallDirName="$installer_install_dir_name" \
     -p:ChummerInstallerLaunchExecutable="$LAUNCH_TARGET" \
     -p:ChummerInstallerVersion="$VERSION" \
     -p:ChummerInstallerShortcutName="$SHORTCUT_NAME" \
+    -p:ChummerInstallerHeadsJsonBase64="$heads_json_base64" \
     -p:ChummerInstallerOutputName="Chummer6Installer-$APP_KEY-$RID" \
     -o "$installer_out_dir"
 
@@ -465,6 +603,9 @@ build_windows_installer() {
 
   cp "$installer_source" "$DIST_DIR/$installer_name"
   rm -f "$payload_zip"
+  if [[ -n "$stage_root" ]]; then
+    rm -rf "$stage_root"
+  fi
   echo "built installer $DIST_DIR/$installer_name"
 }
 

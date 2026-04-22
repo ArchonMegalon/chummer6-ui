@@ -262,6 +262,32 @@ jobs:
             -p:ChummerDesktopReleaseChannel="preview" \
             -o "$out_dir"
 
+      - name: Publish secondary Windows desktop head
+        if: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          out_dir="out/blazor-desktop/${{ matrix.rid }}"
+          release_version="run-${GITHUB_RUN_NUMBER:-local}"
+          dotnet publish "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj" \
+            -c Release \
+            -r "${{ matrix.rid }}" \
+            --self-contained true \
+            --no-restore \
+            -p:PublishSingleFile=true \
+            -p:PublishTrimmed=false \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:ChummerUseLocalCompatibilityTree=true \
+            -p:UseChummerEngineContractsLocalFeed=false \
+            -p:ChummerLocalContractsProject="${CHUMMER_LOCAL_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalCampaignContractsProject="${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalRunContractsProject="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalHubRegistryContractsProject="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" \
+            -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}" \
+            -p:ChummerDesktopReleaseVersion="$release_version" \
+            -p:ChummerDesktopReleaseChannel="preview" \
+            -o "$out_dir"
+
       - name: Preflight macOS packaging requirements
         if: ${{ startsWith(matrix.rid, 'osx-') }}
         shell: bash
@@ -274,6 +300,11 @@ jobs:
 
       - name: Package installer
         shell: bash
+        env:
+          CHUMMER_WINDOWS_SECONDARY_HEAD_KEY: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'blazor-desktop' || '' }}
+          CHUMMER_WINDOWS_SECONDARY_HEAD_PUBLISH_DIR: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && format('out/blazor-desktop/{0}', matrix.rid) || '' }}
+          CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'Chummer.Blazor.Desktop.exe' || '' }}
+          CHUMMER_WINDOWS_SECONDARY_HEAD_RELATIVE_ROOT: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'blazor-desktop' || '' }}
         run: |
           set -euo pipefail
           release_version="run-${GITHUB_RUN_NUMBER:-local}"
@@ -291,6 +322,7 @@ jobs:
           CHUMMER_DESKTOP_RELEASE_CHANNEL: preview
           CHUMMER_DESKTOP_RELEASE_VERSION: run-${GITHUB_RUN_NUMBER:-local}
           CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-${{ matrix.os }}
+          CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'avalonia/Chummer.Avalonia.exe;blazor-desktop/Chummer.Blazor.Desktop.exe' || '' }}
         run: |
           set -euo pipefail
           mkdir -p dist/startup-smoke

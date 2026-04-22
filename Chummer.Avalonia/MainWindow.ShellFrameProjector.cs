@@ -68,7 +68,7 @@ internal static class MainWindowShellFrameProjector
                 DowntimePlanner: BuildDowntimePlanner(state),
                 NpcPersonaStudio: state.ActiveNpcPersonaStudio),
             CommandDialogPaneState: ProjectCommandDialogState(state, commands, shellSurface.LastCommandId),
-            ShowNavigatorPane: resolvedOpenWorkspaces.Length > 1,
+            ShowNavigatorPane: false,
             NavigatorPaneState: new NavigatorPaneState(
                 OpenWorkspacesHeading: RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(shellSurface.ActiveRulesetId),
                 OpenWorkspaces: ProjectOpenWorkspaces(state, shellSurface),
@@ -343,9 +343,7 @@ internal static class MainWindowShellFrameProjector
 
     private static SectionQuickActionDisplayItem[] ProjectSectionQuickActions(string? rulesetId, string? sectionId)
     {
-        return SectionQuickActionCatalog.ForSection(rulesetId, sectionId)
-            .Select(action => new SectionQuickActionDisplayItem(action.ControlId, action.Label, action.IsPrimary))
-            .ToArray();
+        return [];
     }
 
     private static OpenWorkspaceState[] ResolveOpenWorkspaces(CharacterOverviewState overviewState, ShellSurfaceState shellSurface)

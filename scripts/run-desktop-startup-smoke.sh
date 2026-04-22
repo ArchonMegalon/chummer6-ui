@@ -152,6 +152,24 @@ run_windows_smoke() {
   local native_install_root
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
   "$ARTIFACT_PATH" --smoke-install "$native_install_root" >>"$LOG_PATH" 2>&1
+
+  local required_paths="${CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS:-}"
+  if [[ -n "$required_paths" ]]; then
+    local relative_path
+    local missing_paths=()
+    while IFS= read -r relative_path; do
+      [[ -n "$relative_path" ]] || continue
+      if [[ ! -f "$INSTALL_ROOT/$relative_path" ]]; then
+        missing_paths+=("$relative_path")
+      fi
+    done < <(printf '%s' "$required_paths" | tr ';' '\n')
+
+    if (( ${#missing_paths[@]} > 0 )); then
+      printf 'Missing required installed path(s) after Windows smoke install:%s\n' " ${missing_paths[*]}" >&2
+      return 1
+    fi
+  fi
+
   run_head_smoke "$INSTALL_ROOT/$LAUNCH_TARGET"
 }
 

@@ -88,42 +88,17 @@ public partial class SummaryHeaderControl : UserControl
         string? conflictChoiceSummary,
         bool canSaveLocalWorkBeforeRestore)
     {
-        RestoreContinuityStatusText.Text = restoreContinuitySummary ?? string.Empty;
-        StaleStateStatusText.Text = staleStateSummary ?? string.Empty;
-        ConflictChoiceStatusText.Text = conflictChoiceSummary ?? string.Empty;
-        RestoreContinuityStatusBorder.IsVisible =
-            !string.IsNullOrWhiteSpace(restoreContinuitySummary)
-            || !string.IsNullOrWhiteSpace(staleStateSummary)
-            || !string.IsNullOrWhiteSpace(conflictChoiceSummary);
-        RestoreContinuityActionPanel.IsVisible = RestoreContinuityStatusBorder.IsVisible;
-        RestoreContinuityDecisionText.Text = BuildRestoreContinuityDecisionSummary(canSaveLocalWorkBeforeRestore);
-        RestoreContinuityDecisionText.IsVisible = RestoreContinuityStatusBorder.IsVisible;
-        RestoreContinuityDecisionOrderText.Text = RestoreContinuityDecisionOrder;
-        RestoreContinuityDecisionOrderText.IsVisible = RestoreContinuityStatusBorder.IsVisible;
-        RestoreContinuityLocalAuthorityText.Text = RestoreContinuityLocalAuthority;
-        RestoreContinuityLocalAuthorityText.IsVisible = RestoreContinuityStatusBorder.IsVisible;
-        RestoreContinuityReplacementGuardText.Text = RestoreContinuityReplacementGuard;
-        RestoreContinuityReplacementGuardText.IsVisible = RestoreContinuityStatusBorder.IsVisible;
-        RestoreContinuitySupportHandoffText.Text = RestoreContinuitySupportHandoff;
-        RestoreContinuitySupportHandoffText.IsVisible = RestoreContinuityStatusBorder.IsVisible;
-        KeepLocalWorkButton.Tag = "restore-decision-keep-local-work";
-        ToolTip.SetTip(KeepLocalWorkButton, "Keep local work visible and do not apply a restore packet.");
-        SaveLocalWorkButton.IsEnabled = canSaveLocalWorkBeforeRestore;
-        SaveLocalWorkButton.Tag = "restore-decision-save-local-work";
-        AutomationProperties.SetHelpText(SaveLocalWorkButton, canSaveLocalWorkBeforeRestore
-            ? "Save the dirty local workspace before restore or conflict review."
-            : "No dirty local workspace is active, so there is nothing to save before review.");
-        ToolTip.SetTip(SaveLocalWorkButton, canSaveLocalWorkBeforeRestore
-            ? "Save the dirty local workspace before opening restore or conflict review."
-            : "No dirty local workspace is active, so there is nothing to save before review.");
-        ReviewCampaignWorkspaceButton.Tag = "restore-decision-review-campaign-workspace";
-        ToolTip.SetTip(ReviewCampaignWorkspaceButton, "Review campaign continuity, devices, and stale-state posture before accepting restore.");
-        OpenWorkspaceSupportButton.Tag = "restore-decision-open-workspace-support";
-        ToolTip.SetTip(OpenWorkspaceSupportButton, "Open workspace support with restore, stale-state, and conflict-choice context.");
-        RestoreContinuityActionStatusText.Text = canSaveLocalWorkBeforeRestore
-            ? SaveAvailableStatus
-            : SaveUnavailableStatus;
-        RestoreContinuityActionStatusText.IsVisible = RestoreContinuityStatusBorder.IsVisible;
+        RestoreContinuityStatusText.Text = string.Empty;
+        StaleStateStatusText.Text = string.Empty;
+        ConflictChoiceStatusText.Text = string.Empty;
+        RestoreContinuityStatusBorder.IsVisible = false;
+        RestoreContinuityActionPanel.IsVisible = false;
+        RestoreContinuityDecisionText.IsVisible = false;
+        RestoreContinuityDecisionOrderText.IsVisible = false;
+        RestoreContinuityLocalAuthorityText.IsVisible = false;
+        RestoreContinuityReplacementGuardText.IsVisible = false;
+        RestoreContinuitySupportHandoffText.IsVisible = false;
+        RestoreContinuityActionStatusText.IsVisible = false;
         ClearRestoreDecisionSelection();
     }
 

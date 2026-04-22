@@ -121,9 +121,9 @@ public static class DesktopInstallLinkingRuntime
             }
         }
 
-        bool shouldPrompt = !IsClaimed(state) && (state.LaunchCount == 1
-            || !string.IsNullOrWhiteSpace(startupBrowserCallbackCode)
-            || !string.IsNullOrWhiteSpace(startupClaimCode));
+        bool shouldPrompt = !IsClaimed(state)
+            && (!string.IsNullOrWhiteSpace(startupBrowserCallbackCode)
+                || !string.IsNullOrWhiteSpace(startupClaimCode));
         if (claimResult?.Succeeded == true)
         {
             shouldPrompt = false;
@@ -133,7 +133,7 @@ public static class DesktopInstallLinkingRuntime
             ? claimResult?.Succeeded == true ? "browser_callback_applied" : "browser_callback_present"
             : !string.IsNullOrWhiteSpace(startupClaimCode)
             ? claimResult?.Succeeded == true ? "claim_applied" : "claim_code_present"
-            : state.LaunchCount == 1 ? "first_launch" : "none";
+            : "none";
 
         return new DesktopInstallLinkingStartupContext(
             State: state,
