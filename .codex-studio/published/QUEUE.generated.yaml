@@ -1,28 +1,18 @@
 mode: append
 items:
-- title: Auto-detect and repair recurring `ui` mirror drift after 4730 repeated audit observations; keep one bounded queue slice for the affected local design mirror bundle instead of reopening one-off mirror refresh work.
-  task: Auto-detect and repair recurring `ui` mirror drift after 4730 repeated audit observations; keep one bounded queue slice for the affected local design mirror bundle instead of reopening one-off mirror refresh work.
+- title: Auto-detect and repair recurring `ui` mirror drift after 4766 repeated audit observations; keep one bounded queue slice for the affected local design mirror bundle instead of reopening one-off mirror refresh work.
+  task: Auto-detect and repair recurring `ui` mirror drift after 4766 repeated audit observations; keep one bounded queue slice for the affected local design mirror bundle instead of reopening one-off mirror refresh work.
   package_id: audit-task-11708
   source_ref: audit_task_candidates[11708]
   audit_finding_key: project.design_mirror_missing_or_stale
   audit_scope_id: ui
   source_items:
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/WORLD_STATE_AND_MISSION_MARKET_MODEL.md
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/WORLD_MAP_AND_INTEL_ECONOMY_MODEL.md
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/WORLD_CONTRACTS_RESERVED.md
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/INTEL_REPORTING_AND_LORE_CONTRIBUTION_POLICY.md
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/WORLD_INTEL_CONTRIBUTION_AND_REVIEW_POLICY.md
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/WORLD_TICK_OPERATOR_PROCESS.md
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/NEWSREEL_AND_CITY_TICKER_MODEL.md
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/BLACK_LEDGER_MAP_AND_NEWSREEL_WORKFLOWS.yaml
   - /docker/chummercomplete/chummer-presentation/.codex-design/product/README.md
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/WEEKLY_PRODUCT_PULSE.generated.json
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/METRICS_AND_SLOS.yaml
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/CAMPAIGN_AUTHORITY_AND_PERMISSIONS.md
+  - /docker/chummercomplete/chummer-presentation/.codex-design/product/VISION.md
   - /docker/chummercomplete/chummer-presentation/.codex-design/product/USER_JOURNEYS.md
   - /docker/chummercomplete/chummer-presentation/.codex-design/product/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml
   - /docker/chummercomplete/chummer-presentation/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml
-  - /docker/chummercomplete/chummer-presentation/.codex-design/product/CONTRACT_SETS.yaml
+  - /docker/chummercomplete/chummer-presentation/.codex-design/product/RELEASE_PIPELINE.md
   allowed_paths:
   - .codex-design
   owned_surfaces:
