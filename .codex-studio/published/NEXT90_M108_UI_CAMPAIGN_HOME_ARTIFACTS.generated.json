@@ -1,7 +1,7 @@
 {
   "contract_name": "chummer6-ui.next90_m108_ui_campaign_home_artifacts",
   "status": "pass",
-  "generatedAt": "2026-04-23T22:03:13Z",
+  "generatedAt": "2026-04-23T22:03:59Z",
   "summary": "M108 desktop campaign-home artifact launch is canonically closed and locally guarded against browser-ritual regressions.",
   "evidence": {
     "packageId": "next90-m108-ui-campaign-home-artifacts",
