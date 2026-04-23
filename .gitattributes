@@ -147,4 +147,5 @@
 .codex-studio/out/linux-desktop-exit-gate/run.0ePjNp/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin filter=lfs diff=lfs merge=lfs -text
 .codex-studio/out/linux-desktop-exit-gate/run.FPSEMX/dist/package-avalonia-linux-x64/opt/chummer6/avalonia-linux-x64/Chummer.Avalonia filter=lfs diff=lfs merge=lfs -text
 Chummer.Portal/downloads/files/chummer-avalonia-win-x64-installer.exe filter=lfs diff=lfs merge=lfs -text
+Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe filter=lfs diff=lfs merge=lfs -text
 Docker/Downloads/startup-smoke/installed-launch-blazor-desktop-linux-x64.bin filter=lfs diff=lfs merge=lfs -text

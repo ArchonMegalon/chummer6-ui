@@ -2990,8 +2990,7 @@ public class MigrationComplianceTests
             "characterPriority",
             "characterKarmaNuyen",
             "characterHouseRulesEnabled",
-            "characterNotes",
-            "diceExpression",
+            "diceMethod",
             "translatorSearch",
             "xmlEditorDialog",
             "dataExportPreview"
@@ -3569,6 +3568,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT");
         StringAssert.Contains(startupSmokeScriptText, "--smoke-install");
+        StringAssert.Contains(startupSmokeScriptText, "winepath -w \"$1\" | tr -d '\\r'");
+        StringAssert.Contains(startupSmokeScriptText, "run_with_optional_xvfb wine");
+        StringAssert.Contains(startupSmokeScriptText, "payload[\"artifactPath\"] = str(artifact_path)");
         StringAssert.Contains(startupSmokeScriptText, "hdiutil attach");
         StringAssert.Contains(startupSmokeScriptText, "--force-not-root");
         StringAssert.Contains(startupSmokeScriptText, "artifactInstallVerificationPath");
@@ -4769,6 +4771,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "expected_rid.startswith(\"win-\")");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT");
         StringAssert.Contains(windowsGateScriptText, "WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}\"");
+        StringAssert.Contains(windowsGateScriptText, "primary_shelf_candidates = [");
+        StringAssert.Contains(windowsGateScriptText, "installer_candidates = primary_shelf_candidates + override_candidates");
+        StringAssert.Contains(windowsGateScriptText, "windows_installer_override_ignored_for_promoted_shelf");
         StringAssert.Contains(windowsGateScriptText, "windows_installer_candidate_paths");
         StringAssert.Contains(windowsGateScriptText, "windows_installer_from_primary_shelf");
         StringAssert.Contains(windowsGateScriptText, "host_supports_windows_smoke");
@@ -6242,9 +6247,9 @@ public class MigrationComplianceTests
         Assert.IsFalse(codeText.Contains("private readonly CommandDialogPaneControl _commandDialogPane;", StringComparison.Ordinal));
         StringAssert.Contains(controlBindingText, "internal static class MainWindowControlBinder");
         StringAssert.Contains(controlBindingText, "toolStrip.ImportFileRequested +=");
+        StringAssert.Contains(controlBindingText, "toolStrip.OpenForPrintingRequested +=");
+        StringAssert.Contains(controlBindingText, "toolStrip.OpenForExportRequested +=");
         StringAssert.Contains(controlBindingText, "toolStrip.ImportRawRequested +=");
-        StringAssert.Contains(controlBindingText, "toolStrip.SaveRequested +=");
-        StringAssert.Contains(controlBindingText, "toolStrip.CloseWorkspaceRequested +=");
         StringAssert.Contains(controlBindingText, "menuBar.MenuSelected +=");
         StringAssert.Contains(controlBindingText, "navigatorPane.WorkspaceSelected +=");
         StringAssert.Contains(controlBindingText, "commandDialogPane.CommandSelected +=");
@@ -6270,7 +6275,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(workspaceStripCodeText, "public void SetState(WorkspaceStripState state)");
         StringAssert.Contains(workspaceStripCodeText, "SetWorkspaceText(state.WorkspaceText);");
         StringAssert.Contains(summaryHeaderCodeText, "public void SetState(SummaryHeaderState state)");
-        StringAssert.Contains(summaryHeaderCodeText, "SetNavigationTabs(state.NavigationTabsHeading, state.NavigationTabs, state.ActiveTabId);");
+        StringAssert.Contains(summaryHeaderCodeText, "IsVisible = false;");
+        StringAssert.Contains(summaryHeaderCodeText, "Height = 0d;");
         Assert.IsFalse(summaryHeaderCodeText.Contains("SetValues(", StringComparison.Ordinal));
         Assert.IsFalse(summaryHeaderCodeText.Contains("RuntimeInspectButton", StringComparison.Ordinal));
         StringAssert.Contains(statusStripCodeText, "public void SetState(StatusStripState state)");
@@ -6278,7 +6284,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(statusFormatterText, "public static class ShellStatusTextFormatter");
         StringAssert.Contains(statusFormatterText, "BuildActiveRuntimeSummary");
         StringAssert.Contains(statusFormatterText, "BuildComplianceState");
-        StringAssert.Contains(statusFormatterText, "Runtime: ");
+        StringAssert.Contains(statusFormatterText, "no active runtime profile");
         StringAssert.Contains(statusFormatterText, "TrimFingerprint");
         StringAssert.Contains(statusFormatterText, "Workflows:");
         StringAssert.Contains(sectionHostCodeText, "public void SetState(SectionHostState state)");
@@ -6329,8 +6335,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(xamlText, "<controls:StatusStripControl");
         Assert.IsFalse(xamlText.Contains("x:Name=\"WorkspaceStripControl\"", StringComparison.Ordinal));
         Assert.IsFalse(xamlText.Contains("<controls:WorkspaceStripControl", StringComparison.Ordinal));
-        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"LoadedRunnerTabStripBorder\"");
-        StringAssert.Contains(summaryHeaderXamlText, "x:Name=\"LoadedRunnerTabStrip\"");
+        StringAssert.Contains(summaryHeaderXamlText, "Height=\"0\"");
+        StringAssert.Contains(summaryHeaderXamlText, "IsVisible=\"False\"");
         Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeValueText", StringComparison.Ordinal));
         Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeInspectButton", StringComparison.Ordinal));
         Assert.IsFalse(summaryHeaderXamlText.Contains("NameValueText", StringComparison.Ordinal));
