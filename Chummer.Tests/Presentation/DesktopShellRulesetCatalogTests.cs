@@ -658,6 +658,8 @@ public sealed class DesktopShellRulesetCatalogTests
         public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
         public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
         public Task SaveAsync(CancellationToken ct) => Task.CompletedTask;
+        public Task ExportAsync(CancellationToken ct) => Task.CompletedTask;
+        public Task PrintAsync(CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class StaticShellPresenter : IShellPresenter

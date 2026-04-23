@@ -73,6 +73,7 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
 
         return state with
         {
+            IsBusy = shellState.IsBusy,
             OpenMenuId = shellState.OpenMenuId,
             Notice = shellState.Notice,
             Error = shellState.Error

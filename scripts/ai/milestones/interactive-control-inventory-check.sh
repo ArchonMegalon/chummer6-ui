@@ -24,7 +24,7 @@ STANDALONE_TEST_MARKERS = [
     "Standalone_toolstrip_buttons_raise_expected_events",
     "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
     "Standalone_workspace_strip_quick_start_button_raises_expected_event",
-    "Standalone_summary_header_tab_buttons_raise_expected_events",
+    "Standalone_summary_header_stays_hidden_for_strict_shell_parity",
     "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
     "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
     "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
@@ -40,7 +40,7 @@ STANDALONE_FILTER = (
     "Name~Standalone_toolstrip_buttons_raise_expected_events"
     "|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
     "|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event"
-    "|Name~Standalone_summary_header_tab_buttons_raise_expected_events"
+    "|Name~Standalone_summary_header_stays_hidden_for_strict_shell_parity"
     "|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events"
     "|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions"
     "|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available"
@@ -67,8 +67,6 @@ STANDALONE_SOURCE_MARKERS = {
     ],
     "shell_menu_axaml": [
         "FileMenuButton",
-        "EditMenuButton",
-        "SpecialMenuButton",
         "ToolsMenuButton",
         "WindowsMenuButton",
         "HelpMenuButton",
@@ -86,12 +84,14 @@ STANDALONE_SOURCE_MARKERS = {
         "LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);",
     ],
     "summary_header_axaml": [
-        "LoadedRunnerTabStripBorder",
-        "LoadedRunnerTabStrip",
+        'Height="0"',
+        'IsVisible="False"',
+        'IsHitTestVisible="False"',
     ],
     "summary_header_codebehind": [
-        "LoadedRunnerTabStrip_OnSelectionChanged",
-        "NavigationTabSelected?.Invoke(this, tab.Id);",
+        "Chummer5a parity posture",
+        "IsVisible = false;",
+        "Height = 0d;",
     ],
     "navigator_axaml": [
         "NavigatorTree",
@@ -218,8 +218,9 @@ verify_wiring_failures: list[str] = []
 execution_failures: list[str] = []
 
 
-def add_failure(message: str, bucket: list[str]) -> None:
-    bucket.append(message)
+def add_failure(message: str, *buckets: list[str]) -> None:
+    for bucket in buckets:
+        bucket.append(message)
     reasons.append(message)
 
 

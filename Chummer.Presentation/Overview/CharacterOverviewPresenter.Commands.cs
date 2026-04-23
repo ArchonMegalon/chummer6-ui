@@ -32,6 +32,7 @@ public sealed partial class CharacterOverviewPresenter
             SaveAsync: SaveAsync,
             DownloadAsync: DownloadAsync,
             PrintAsync: PrintAsync,
+            ImportAsync: ImportAsync,
             LoadAsync: LoadAsync,
             CreateResetState: CreateWorkspaceResetState,
             CloseAllAsync: CloseAllWorkspacesAsync,

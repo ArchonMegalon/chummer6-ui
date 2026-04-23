@@ -9,6 +9,7 @@ Use this review context in the mirrored `chummer6-ui` repo.
 - Flag direct play-shell ownership that should live in `chummer6-mobile` as P1.
 - Flag shared component changes that bypass `Chummer.Ui.Kit` package ownership as P1.
 - Flag workbench code that introduces offline ledger or sync-cache behavior as P1.
+- Flag campaign, control, or world DTOs copied into UI instead of consumed from their canonical packages as P1.
 
 ## Boundary check
 
@@ -25,6 +26,7 @@ Reject if the change:
 - creates a duplicate shared DTO family
 - uses ambiguous or legacy package names when canon is already defined
 - moves rules truth, explain traces, or runtime semantics into UI-owned code
+- redefines campaign, product-control, or world-state semantics instead of consuming `Chummer.Campaign.Contracts`, `Chummer.Control.Contracts`, or `Chummer.World.Contracts`
 
 ## Review summary
 

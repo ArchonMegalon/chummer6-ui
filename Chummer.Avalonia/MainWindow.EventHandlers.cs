@@ -27,23 +27,7 @@ public partial class MainWindow
 
     private async void ToolStrip_OnImportFileRequested(object? sender, EventArgs e)
     {
-        DesktopImportFileResult importFile = await MainWindowDesktopFileCoordinator.OpenImportFileAsync(
-            StorageProvider,
-            CancellationToken.None);
-        if (importFile.Outcome == DesktopFileOperationOutcome.Unavailable)
-        {
-            MainWindowFeedbackCoordinator.ShowImportFileUnavailable(_controls.ToolStrip);
-            return;
-        }
-
-        if (importFile.Outcome != DesktopFileOperationOutcome.Completed || importFile.Payload is null)
-        {
-            return;
-        }
-
-        await RunUiActionAsync(
-            () => _adapter.ImportAsync(importFile.Payload, CancellationToken.None),
-            "import character file");
+        await OpenCharacterFromFilePickerAsync(DesktopOpenCharacterMode.OpenOnly);
     }
 
     private async void ToolStrip_OnLoadDemoRunnerRequested(object? sender, EventArgs e)
@@ -90,7 +74,17 @@ public partial class MainWindow
     {
         await RunUiActionAsync(
             () => _interactionCoordinator.ExecuteCommandAsync("copy", CancellationToken.None),
-            "copy character data");
+            "copy workspace selection");
+    }
+
+    private async void ToolStrip_OnOpenForPrintingRequested(object? sender, EventArgs e)
+    {
+        await OpenCharacterFromFilePickerAsync(DesktopOpenCharacterMode.PrintAfterImport);
+    }
+
+    private async void ToolStrip_OnOpenForExportRequested(object? sender, EventArgs e)
+    {
+        await OpenCharacterFromFilePickerAsync(DesktopOpenCharacterMode.ExportAfterImport);
     }
 
     private async void ToolStrip_OnDesktopHomeRequested(object? sender, EventArgs e)
@@ -98,6 +92,13 @@ public partial class MainWindow
         await RunUiActionAsync(
             () => _interactionCoordinator.ExecuteCommandAsync("new_character", CancellationToken.None),
             "create new character");
+    }
+
+    private async void ToolStrip_OnCloseWorkspaceRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.ExecuteCommandAsync("close_window", CancellationToken.None),
+            "close workspace");
     }
 
     private async void ToolStrip_OnCampaignWorkspaceRequested(object? sender, EventArgs e)
@@ -164,19 +165,6 @@ public partial class MainWindow
                 MainWindowFeedbackCoordinator.ShowSettingsReviewed(_controls.ToolStrip);
             },
             "open global settings");
-    }
-
-    private async void ToolStrip_OnCloseWorkspaceRequested(object? sender, EventArgs e)
-    {
-        if (!_interactionCoordinator.TryGetActiveWorkspaceId(_adapter.State, out CharacterWorkspaceId activeWorkspaceId))
-        {
-            MainWindowFeedbackCoordinator.ShowNoActiveWorkspace(_controls.ToolStrip);
-            return;
-        }
-
-        await RunUiActionAsync(
-            () => _interactionCoordinator.CloseWorkspaceAsync(activeWorkspaceId, CancellationToken.None),
-            "close workspace");
     }
 
     private async void SummaryHeader_OnRuntimeInspectorRequested(object? sender, EventArgs e)
@@ -266,6 +254,11 @@ public partial class MainWindow
         }
 
         e.Handled = true;
+        if (await TryHandleMenuHostCommandAsync(commandId))
+        {
+            return;
+        }
+
         await RunUiActionAsync(
             () => _interactionCoordinator.ExecuteCommandAsync(commandId, CancellationToken.None),
             $"execute hotkey command '{commandId}'");

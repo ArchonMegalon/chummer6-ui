@@ -56,6 +56,9 @@ Primary consumption boundary:
 
 * `Chummer.Engine.Contracts`
 * `Chummer.Ui.Kit`
+* `Chummer.Campaign.Contracts` for campaign/workspace projections
+* `Chummer.Control.Contracts` for support and product-control projections
+* `Chummer.World.Contracts` for world-state and mission-market projections
 * `Chummer.Hub.Registry.Contracts` for published desktop release-head and update-feed DTOs
 
 ## Restore rule

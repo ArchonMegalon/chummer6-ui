@@ -111,14 +111,22 @@ if len(matching_items) > 1:
 target_item = matching_items[0] if matching_items else None
 
 worklist_text = (repo_root / "WORKLIST.md").read_text(encoding="utf-8")
+applied_log_lines = {
+    line.strip()
+    for line in (repo_root / "feedback" / ".applied.log").read_text(encoding="utf-8").splitlines()
+    if line.strip()
+}
 wl_214_done = "| WL-214 | done |" in worklist_text
 wl_214_active = "Repo-local live queue: active (`WL-214`)" in worklist_text
-latest_repeat_marker = "Auditor publication incorporation (2026-04-21 /fast system re-entry, latest 11708 wave):"
-latest_repeat_detail = "feedback/2026-04-21-154433-audit-task-11708.md"
-
-if latest_repeat_marker not in worklist_text or latest_repeat_detail not in worklist_text:
+latest_applied_11708 = max((line for line in applied_log_lines if line.endswith("audit-task-11708.md")), default=None)
+if latest_applied_11708 is None:
     raise SystemExit(
-        "[UI-DESIGN-MIRROR] FAIL: WORKLIST.md must record the latest audit-task-11708 publication wave so repeated mirror-drift observations stay closed as bounded hygiene instead of becoming orphaned feedback."
+        "[UI-DESIGN-MIRROR] FAIL: feedback/.applied.log must record at least one audit-task-11708 publication."
+    )
+
+if latest_applied_11708 not in worklist_text:
+    raise SystemExit(
+        "[UI-DESIGN-MIRROR] FAIL: WORKLIST.md must record the latest applied audit-task-11708 publication so repeated mirror-drift observations stay closed as bounded hygiene instead of becoming orphaned feedback."
     )
 
 if target_item is not None:

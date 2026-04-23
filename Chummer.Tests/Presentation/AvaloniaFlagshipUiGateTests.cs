@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
@@ -1171,6 +1172,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 SectionId: "profile",
                 NavigationTabs: tabs,
                 ActiveTabId: "tab-profile",
+                SectionActions: [],
+                ActiveActionId: null,
                 Notice: string.Empty,
                 PreviewJson: "{}",
                 Rows: [],
@@ -1189,6 +1192,47 @@ public sealed class AvaloniaFlagshipUiGateTests
             PumpStandaloneUi();
 
             CollectionAssert.AreEqual(new[] { "tab-gear" }, selectedTabs.ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_section_action_tab_buttons_raise_expected_events()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            List<string> selectedActions = [];
+            control.SectionActionSelected += (_, actionId) => selectedActions.Add(actionId);
+
+            NavigatorSectionActionItem[] actions =
+            [
+                new("tab-info.summary", "Character Summary", WorkspaceSurfaceActionKind.Summary),
+                new("tab-info.profile", "Character Card", WorkspaceSurfaceActionKind.Section),
+                new("tab-info.attributes", "Attributes", WorkspaceSurfaceActionKind.Section),
+            ];
+            control.SetState(new SectionHostState(
+                SectionId: "profile",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: actions,
+                ActiveActionId: "tab-info.summary",
+                Notice: string.Empty,
+                PreviewJson: "{}",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            TabStrip tabStrip = FindDescendant<TabStrip>(control, "SectionActionTabStrip");
+            tabStrip.SelectedItem = actions[1];
+            PumpStandaloneUi();
+
+            CollectionAssert.AreEqual(new[] { "tab-info.profile" }, selectedActions.ToArray());
         });
     }
 
@@ -1399,11 +1443,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 timeoutMs: 4000);
 
             harness.SetActiveSectionForTesting("spells");
-            Assert.IsFalse(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible,
-                "Strict Chummer5a shell parity keeps the synthetic quick-action band hidden.");
-            Assert.IsFalse(
+            Assert.IsTrue(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible,
+                "Runtime-backed section quick actions must stay visible once the section surface is real.");
+            Assert.IsTrue(
                 harness.FindControlOrDefault<Control>("SectionQuickAction_spell_add")?.IsVisible ?? false,
-                "Strict Chummer5a shell parity keeps the synthetic quick-action band hidden.");
+                "Runtime-backed section quick actions must expose a visible spell add affordance.");
             harness.OpenUiControl("spell_add");
             harness.WaitUntil(() =>
                 harness.Presenter.HandledUiControlIds.Contains("spell_add")
@@ -1411,6 +1455,45 @@ public sealed class AvaloniaFlagshipUiGateTests
                     harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                     "Add Spell",
                     StringComparison.Ordinal));
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_loaded_runner_section_action_strip_switches_info_subpanels_through_real_workspace_actions()
+    {
+        WithRuntimeLoadedRunnerHarness(harness =>
+        {
+            TabStrip loadedRunnerTabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
+            harness.WaitUntil(() => SnapshotLoadedRunnerTabs(loadedRunnerTabStrip).Length > 0);
+
+            NavigatorTabItem infoTab = SnapshotLoadedRunnerTabs(loadedRunnerTabStrip)
+                .First(tab => string.Equals(tab.Id, "tab-info", StringComparison.Ordinal));
+            loadedRunnerTabStrip.SelectedItem = infoTab;
+            harness.WaitUntil(() => string.Equals(harness.State.ActiveTabId, "tab-info", StringComparison.Ordinal));
+
+            Control sectionActionBorder = harness.FindControl<Control>("SectionActionTabStripBorder");
+            TabStrip sectionActionTabStrip = harness.FindControl<TabStrip>("SectionActionTabStrip");
+            harness.WaitUntil(() =>
+                sectionActionBorder.IsVisible
+                && sectionActionTabStrip.Items
+                    .OfType<NavigatorSectionActionItem>()
+                    .Any(item => string.Equals(item.Id, "tab-info.attributes", StringComparison.Ordinal)));
+
+            NavigatorSectionActionItem attributesAction = sectionActionTabStrip.Items
+                .OfType<NavigatorSectionActionItem>()
+                .First(item => string.Equals(item.Id, "tab-info.attributes", StringComparison.Ordinal));
+            sectionActionTabStrip.SelectedItem = attributesAction;
+
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveActionId, "tab-info.attributes", StringComparison.Ordinal)
+                && string.Equals(harness.State.ActiveSectionId, "attributes", StringComparison.Ordinal)
+                && !harness.State.IsBusy);
+
+            TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
+            harness.WaitUntil(() => (preview.Text ?? string.Empty).Contains("\"attributes\"", StringComparison.Ordinal));
+
+            StringAssert.Contains(preview.Text ?? string.Empty, "\"attributes\"");
+            StringAssert.Contains(preview.Text ?? string.Empty, "\"name\": \"BOD\"");
         });
     }
 
@@ -1622,6 +1705,45 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(
                 harness.Presenter.State.Session.OpenWorkspaces.Count > 0,
                 "New Character must create an open workspace entry after the starter import completes.");
+            StringAssert.Contains(harness.Presenter.LastImportedDocument!.Content, "<attributes>");
+            StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<newskills>");
+            StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<qualities>");
+            StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<contacts>");
+            StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<gears>");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_new_character_ruleset_selection_updates_created_workspace_request()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            ComboBox rulesetCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId"));
+            DesktopDialogFieldOption sr4Option = rulesetCombo.ItemsSource
+                .OfType<DesktopDialogFieldOption>()
+                .First(option => string.Equals(option.Value, RulesetDefaults.Sr4, StringComparison.Ordinal));
+            rulesetCombo.SelectedItem = sr4Option;
+
+            harness.WaitUntil(() =>
+                harness.Presenter.DialogFieldUpdates.Any(update =>
+                    string.Equals(update.FieldId, "newCharacterRulesetId", StringComparison.Ordinal)
+                    && string.Equals(update.Value, RulesetDefaults.Sr4, StringComparison.Ordinal))
+                && string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "newCharacterBuildMethod"),
+                    "BP",
+                    StringComparison.Ordinal));
+
+            harness.ClickDialogAction("create_character");
+            harness.WaitUntil(() => harness.Presenter.ImportCalls > 0 && harness.Presenter.LastImportedDocument is not null);
+
+            Assert.AreEqual(RulesetDefaults.Sr4, harness.Presenter.LastImportedDocument!.RulesetId);
+            StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<buildmethod>BP</buildmethod>");
+            StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<gameedition>SR4</gameedition>");
         });
     }
 
@@ -1869,7 +1991,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(toolTop.Y > menuTop.Y);
             Assert.IsTrue(contentTop.Y > toolTop.Y);
             Assert.IsTrue(statusTop.Y > contentTop.Y);
-            Assert.IsTrue(progressBar.Value >= 100d);
+            Assert.IsFalse(progressBar.IsVisible, "The idle shell must not pin a fake completed workbench meter.");
         });
     }
 
@@ -2001,7 +2123,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(harness.FindControl<Control>("MenuBarRegion").IsVisible);
             Assert.IsTrue(harness.FindControl<Control>("ToolStripRegion").IsVisible);
             Assert.IsTrue(harness.FindControl<Control>("StatusStripRegion").IsVisible);
-            Assert.IsTrue(harness.FindControl<ProgressBar>("WorkbenchProgressBar").IsVisible);
+            Assert.IsFalse(harness.FindControl<ProgressBar>("WorkbenchProgressBar").IsVisible);
             Assert.IsTrue(harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible);
 
             Control leftNavigatorRegion = harness.FindControl<Control>("LeftNavigatorRegion");
@@ -2050,6 +2172,27 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(
                 hasLegacyOrWorkflowSectionMarker,
                 "Legacy frmCareer parity requires preview payload landmarks that map sections/workflows to the visible workbench.");
+        });
+    }
+
+    [TestMethod]
+    public void Desktop_shell_status_strip_only_shows_busy_indicator_while_runtime_is_busy()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            ProgressBar progressBar = harness.FindControl<ProgressBar>("WorkbenchProgressBar");
+            Assert.IsFalse(progressBar.IsVisible, "Idle workbench chrome must stay quiet.");
+
+            harness.SetShellBusyForTesting(true);
+            harness.WaitUntil(() => progressBar.IsVisible && progressBar.IsIndeterminate);
+
+            Assert.IsTrue(progressBar.IsVisible);
+            Assert.IsTrue(progressBar.IsIndeterminate);
+
+            harness.SetShellBusyForTesting(false);
+            harness.WaitUntil(() => !progressBar.IsVisible);
         });
     }
 
@@ -2531,7 +2674,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsNotNull(cyberwareRow, "Expected a cyberware row before capturing cyberware familiarity proof.");
                 sectionRows.SelectedItem = cyberwareRow;
                 harness.WaitUntil(() => ReferenceEquals(sectionRows.SelectedItem, cyberwareRow));
-                Assert.IsFalse(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
+                Assert.IsTrue(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
                 harness.OpenUiControl("cyberware_add");
                 harness.WaitUntil(() =>
                     string.Equals(
@@ -2543,7 +2686,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 harness.SetActiveSectionForTesting("vehicles");
-                Assert.IsFalse(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
+                Assert.IsTrue(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
                 ListBox vehicleRows = harness.FindControl<ListBox>("SectionRowsList");
                 harness.WaitUntil(() => vehicleRows.ItemCount > 0);
                 object? vehicleRow = SnapshotListBoxItems(vehicleRows).FirstOrDefault(item =>
@@ -2576,7 +2719,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 harness.SetActiveSectionForTesting("spells");
-                Assert.IsFalse(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
+                Assert.IsTrue(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
                 harness.OpenUiControl("spell_add");
                 harness.WaitUntil(() =>
                     string.Equals(
@@ -2588,7 +2731,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 harness.SetActiveSectionForTesting("complexforms");
-                Assert.IsFalse(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
+                Assert.IsTrue(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
                 harness.OpenUiControl("matrix_program_add");
                 harness.WaitUntil(() =>
                     string.Equals(
@@ -2600,7 +2743,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 harness.SetActiveSectionForTesting("initiationgrades");
-                Assert.IsFalse(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
+                Assert.IsTrue(harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
                 harness.OpenUiControl("initiation_add");
                 harness.WaitUntil(() =>
                     string.Equals(
@@ -3185,6 +3328,13 @@ public sealed class AvaloniaFlagshipUiGateTests
         string requiredActionId)
     {
         harness.SetActiveSectionForTesting(sectionId);
+        string preview = harness.FindControlOrDefault<TextBox>("SectionPreviewBox")?.Text
+            ?? harness.Presenter.State.ActiveSectionJson
+            ?? string.Empty;
+        Assert.IsTrue(
+            preview.Contains(sectionId, StringComparison.OrdinalIgnoreCase),
+            $"Section preview should contain '{sectionId}' summary evidence before confirming the action.");
+
         harness.OpenUiControl(actionControlId);
         harness.WaitUntil(() =>
             string.Equals(
@@ -3196,11 +3346,6 @@ public sealed class AvaloniaFlagshipUiGateTests
         Assert.IsTrue(
             fieldLines.Any(line => line.Contains(requiredFieldLabel, StringComparison.Ordinal)),
             $"Dialog '{expectedTitle}' must expose a specific '{requiredFieldLabel}' field.");
-
-        string preview = harness.FindControl<TextBox>("SectionPreviewBox").Text ?? string.Empty;
-        Assert.IsTrue(
-            preview.Contains(sectionId, StringComparison.OrdinalIgnoreCase),
-            $"Section preview should contain '{sectionId}' summary evidence before confirming the action.");
 
         string[] actionIds = harness.DialogActionIds();
         CollectionAssert.Contains(actionIds, requiredActionId);
@@ -3436,14 +3581,20 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static WorkspaceService CreateWorkspaceService()
     {
+        ICharacterFileQueries fileQueries = new XmlCharacterFileQueries(new CharacterFileService());
+        ICharacterSectionQueries sectionQueries = new XmlCharacterSectionQueries(new CharacterSectionService());
+        ICharacterMetadataCommands metadataCommands = new XmlCharacterMetadataCommands(new CharacterFileService());
         IRulesetWorkspaceCodec[] codecs =
         [
             new Sr4WorkspaceCodec(),
             new Sr5WorkspaceCodec(
-                new XmlCharacterFileQueries(new CharacterFileService()),
-                new XmlCharacterSectionQueries(new CharacterSectionService()),
-                new XmlCharacterMetadataCommands(new CharacterFileService())),
-            new Sr6WorkspaceCodec()
+                fileQueries,
+                sectionQueries,
+                metadataCommands),
+            new Sr6WorkspaceCodec(
+                fileQueries,
+                sectionQueries,
+                metadataCommands)
         ];
         IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(codecs);
         return new WorkspaceService(
@@ -3508,6 +3659,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         public void SetActiveSectionForTesting(string sectionId)
         {
             _presenter.SetActiveSectionForTesting(sectionId);
+            Pump();
+        }
+
+        public void SetShellBusyForTesting(bool isBusy)
+        {
+            ShellPresenter.SetBusyForTesting(isBusy);
             Pump();
         }
 
@@ -4501,7 +4658,21 @@ public sealed class AvaloniaFlagshipUiGateTests
         public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct)
         {
             ExecutedWorkspaceActionIds.Add(action.Id);
-            return Task.CompletedTask;
+            if (_state.WorkspaceId is null)
+            {
+                Publish(_state with { Error = "No workspace loaded." });
+                return Task.CompletedTask;
+            }
+
+            return action.Kind switch
+            {
+                WorkspaceSurfaceActionKind.Section => ExecuteSectionWorkspaceActionAsync(action),
+                WorkspaceSurfaceActionKind.Summary => ExecuteSummaryWorkspaceActionAsync(action),
+                WorkspaceSurfaceActionKind.Validate => ExecuteValidateWorkspaceActionAsync(action),
+                WorkspaceSurfaceActionKind.Metadata => ExecuteMetadataWorkspaceActionAsync(action),
+                WorkspaceSurfaceActionKind.Command => ExecuteWorkspaceCommandAsync(action, ct),
+                _ => Task.CompletedTask
+            };
         }
 
         public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
@@ -4654,16 +4825,19 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             DialogFieldUpdates.Add(new DialogFieldValueChangedEventArgs(fieldId, value ?? string.Empty));
 
+            DesktopDialogState updatedDialog = dialog with
+            {
+                Fields = dialog.Fields
+                    .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
+                        ? field with { Value = DesktopDialogFieldValueParser.Normalize(field, value) }
+                        : field)
+                    .ToArray()
+            };
+            updatedDialog = RebuildDynamicDialog(updatedDialog);
+
             Publish(_state with
             {
-                ActiveDialog = dialog with
-                {
-                    Fields = dialog.Fields
-                        .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
-                            ? field with { Value = DesktopDialogFieldValueParser.Normalize(field, value) }
-                            : field)
-                        .ToArray()
-                }
+                ActiveDialog = updatedDialog
             });
 
             return Task.CompletedTask;
@@ -4895,6 +5069,17 @@ public sealed class AvaloniaFlagshipUiGateTests
                 $"<character><name>{name}</name><alias>{alias}</alias><metatype>Human</metatype><buildmethod>{buildMethod}</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion><karma>0</karma><nuyen>0</nuyen><created>True</created><gameedition>{edition}</gameedition></character>";
         }
 
+        private static DesktopDialogState RebuildDynamicDialog(DesktopDialogState dialog)
+        {
+            MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
+                "RebuildDynamicDialog",
+                BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException("RebuildDynamicDialog was not found.");
+
+            return (DesktopDialogState)(method.Invoke(null, [dialog, DesktopPreferenceState.Default])
+                ?? throw new InvalidOperationException("RebuildDynamicDialog returned null."));
+        }
+
         private static string? ReadWorkspaceField(string content, string fieldName)
         {
             try
@@ -4909,6 +5094,121 @@ public sealed class AvaloniaFlagshipUiGateTests
             }
         }
 
+        private Task ExecuteSectionWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action)
+        {
+            (string preview, SectionRowState[] rows) = BuildSectionFixture(action.TargetId);
+            UpdateActiveWorkspaceFixture(
+                fixture => fixture with
+                {
+                    SectionId = action.TargetId,
+                    SectionJson = preview,
+                    SectionRows = rows
+                },
+                (fixture, openWorkspaces) => ActivateWorkspaceState(
+                    fixture,
+                    openWorkspaces,
+                    notice: null,
+                    lastCommandId: _state.LastCommandId) with
+                {
+                    ActiveTabId = action.TabId,
+                    ActiveActionId = action.Id
+                });
+            return Task.CompletedTask;
+        }
+
+        private Task ExecuteSummaryWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action)
+        {
+            (string preview, SectionRowState[] rows) = BuildSummaryFixture();
+            UpdateActiveWorkspaceFixture(
+                fixture => fixture with
+                {
+                    SectionId = "summary",
+                    SectionJson = preview,
+                    SectionRows = rows
+                },
+                (fixture, openWorkspaces) => ActivateWorkspaceState(
+                    fixture,
+                    openWorkspaces,
+                    notice: null,
+                    lastCommandId: _state.LastCommandId) with
+                {
+                    ActiveTabId = action.TabId,
+                    ActiveActionId = action.Id,
+                    ActiveSectionId = "summary",
+                    ActiveSectionJson = preview,
+                    ActiveSectionRows = rows
+                });
+            return Task.CompletedTask;
+        }
+
+        private Task ExecuteValidateWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action)
+        {
+            (string preview, SectionRowState[] rows) = BuildValidationFixture();
+            UpdateActiveWorkspaceFixture(
+                fixture => fixture with
+                {
+                    SectionId = "validate",
+                    SectionJson = preview,
+                    SectionRows = rows
+                },
+                (fixture, openWorkspaces) => ActivateWorkspaceState(
+                    fixture,
+                    openWorkspaces,
+                    notice: null,
+                    lastCommandId: _state.LastCommandId) with
+                {
+                    ActiveTabId = action.TabId,
+                    ActiveActionId = action.Id,
+                    ActiveSectionId = "validate",
+                    ActiveSectionJson = preview,
+                    ActiveSectionRows = rows
+                });
+            return Task.CompletedTask;
+        }
+
+        private Task ExecuteMetadataWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action)
+        {
+            Publish(_state with
+            {
+                ActiveTabId = action.TabId,
+                ActiveActionId = action.Id,
+                ActiveDialog = _dialogFactory.CreateMetadataDialog(_state.Profile, _state.Preferences),
+                Error = null
+            });
+            return Task.CompletedTask;
+        }
+
+        private async Task ExecuteWorkspaceCommandAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct)
+        {
+            await ExecuteCommandAsync(action.TargetId, ct);
+            Publish(_state with
+            {
+                ActiveTabId = action.TabId,
+                ActiveActionId = action.Id,
+                Error = null
+            });
+        }
+
+        private void UpdateActiveWorkspaceFixture(
+            Func<WorkspaceFixtureState, WorkspaceFixtureState> mutateFixture,
+            Func<WorkspaceFixtureState, OpenWorkspaceState[], CharacterOverviewState> buildState)
+        {
+            if (_state.WorkspaceId is not { } workspaceId
+                || !_workspaceFixtures.TryGetValue(workspaceId.Value, out WorkspaceFixtureState? currentFixture))
+            {
+                return;
+            }
+
+            WorkspaceFixtureState nextFixture = mutateFixture(currentFixture);
+            _workspaceFixtures[workspaceId.Value] = nextFixture;
+            OpenWorkspaceState[] openWorkspaces = _state.OpenWorkspaces
+                .Select(workspace => string.Equals(workspace.Id.Value, workspaceId.Value, StringComparison.Ordinal)
+                    ? nextFixture.Workspace
+                    : workspace)
+                .ToArray();
+            Publish(buildState(nextFixture, openWorkspaces));
+        }
+
         private sealed record WorkspaceFixtureState(
             OpenWorkspaceState Workspace,
             CharacterProfileSection Profile,
@@ -4920,6 +5220,156 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             switch (sectionId)
             {
+                case "summary":
+                    return BuildSummaryFixture();
+                case "validate":
+                    return BuildValidationFixture();
+                case "profile":
+                    return (
+                        """
+{
+  "section": "profile",
+  "name": "Soma",
+  "alias": "Demo",
+  "metatype": "Human",
+  "concept": "Street Sam",
+  "buildMethod": "Priority",
+  "gameEdition": "SR5"
+}
+""",
+                        [
+                            new SectionRowState("name", "Soma"),
+                            new SectionRowState("alias", "Demo"),
+                            new SectionRowState("metatype", "Human"),
+                            new SectionRowState("concept", "Street Sam"),
+                            new SectionRowState("buildMethod", "Priority"),
+                            new SectionRowState("gameEdition", "SR5")
+                        ]);
+                case "rules":
+                    return (
+                        """
+{
+  "section": "rules",
+  "gameEdition": "SR5",
+  "settings": "Core + Street Grimoire",
+  "provider": "fixture-backed"
+}
+""",
+                        [
+                            new SectionRowState("gameEdition", "SR5"),
+                            new SectionRowState("settings", "Core + Street Grimoire"),
+                            new SectionRowState("provider", "fixture-backed")
+                        ]);
+                case "attributes":
+                    return (
+                        """
+{
+  "section": "attributes",
+  "attributes": [
+    { "name": "Body", "baseValue": 5, "totalValue": 5 },
+    { "name": "Agility", "baseValue": 7, "totalValue": 7 },
+    { "name": "Reaction", "baseValue": 6, "totalValue": 6 },
+    { "name": "Strength", "baseValue": 4, "totalValue": 4 },
+    { "name": "Willpower", "baseValue": 3, "totalValue": 3 },
+    { "name": "Logic", "baseValue": 3, "totalValue": 3 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("attributes[0]", "Body · Total 5"),
+                            new SectionRowState("attributes[1]", "Agility · Total 7"),
+                            new SectionRowState("attributes[2]", "Reaction · Total 6"),
+                            new SectionRowState("attributes[3]", "Strength · Total 4"),
+                            new SectionRowState("attributes[4]", "Willpower · Total 3"),
+                            new SectionRowState("attributes[5]", "Logic · Total 3")
+                        ]);
+                case "skills":
+                    return (
+                        """
+{
+  "section": "skills",
+  "skills": [
+    { "name": "Automatics", "rating": 6, "category": "Combat" },
+    { "name": "Sneaking", "rating": 5, "category": "Physical" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("skills[0]", "Automatics · Rating 6"),
+                            new SectionRowState("skills[1]", "Sneaking · Rating 5")
+                        ]);
+                case "qualities":
+                    return (
+                        """
+{
+  "section": "qualities",
+  "qualities": [
+    { "name": "Toughness", "category": "Positive", "bp": 9 },
+    { "name": "Distinctive Style", "category": "Negative", "bp": -5 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("qualities[0]", "Toughness · Positive"),
+                            new SectionRowState("qualities[1]", "Distinctive Style · Negative")
+                        ]);
+                case "gear":
+                case "inventory":
+                    return (
+                        """
+{
+  "section": "gear",
+  "gear": [
+    { "name": "Medkit", "rating": 6, "quantity": 1 },
+    { "name": "Fake SIN", "rating": 4, "quantity": 1 }
+  ],
+  "gearCount": 2
+}
+""",
+                        [
+                            new SectionRowState("gear[0]", "Medkit · Rating 6"),
+                            new SectionRowState("gear[1]", "Fake SIN · Rating 4")
+                        ]);
+                case "weapons":
+                    return (
+                        """
+{
+  "section": "weapons",
+  "weapons": [
+    { "name": "Ares Alpha", "damage": "11P", "ap": "-2", "mode": "SA/BF/FA" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("weapons[0]", "Ares Alpha · 11P AP -2")
+                        ]);
+                case "armors":
+                    return (
+                        """
+{
+  "section": "armors",
+  "armors": [
+    { "name": "Armor Jacket", "armor": 12, "cost": 1000 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("armors[0]", "Armor Jacket · Armor 12")
+                        ]);
+                case "cyberware":
+                case "cyberwares":
+                    return (
+                        """
+{
+  "section": "cyberwares",
+  "cyberwares": [
+    { "name": "Wired Reflexes 2", "essence": 2.4, "rating": 2, "grade": "Standard" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("cyberwares[0]", "Wired Reflexes 2 · Essence 2.4")
+                        ]);
                 case "drugs":
                     return (
                         """
@@ -5065,6 +5515,52 @@ public sealed class AvaloniaFlagshipUiGateTests
                         ]);
             }
         }
+
+        private static (string Preview, SectionRowState[] Rows) BuildSummaryFixture()
+        {
+            return (
+                """
+{
+  "section": "summary",
+  "name": "Soma",
+  "alias": "Demo",
+  "metatype": "Human",
+  "buildMethod": "Priority",
+  "karma": 13,
+  "nuyen": 8450,
+  "gearCount": 5,
+  "weaponCount": 1,
+  "armorCount": 1,
+  "cyberwareCount": 1
+}
+""",
+                [
+                    new SectionRowState("karma", "13"),
+                    new SectionRowState("nuyen", "8450"),
+                    new SectionRowState("gearCount", "5"),
+                    new SectionRowState("weaponCount", "1"),
+                    new SectionRowState("armorCount", "1"),
+                    new SectionRowState("cyberwareCount", "1")
+                ]);
+        }
+
+        private static (string Preview, SectionRowState[] Rows) BuildValidationFixture()
+        {
+            return (
+                """
+{
+  "section": "validate",
+  "isValid": true,
+  "warnings": [],
+  "errors": [],
+  "summary": "No validation issues were detected."
+}
+""",
+                [
+                    new SectionRowState("isValid", "true"),
+                    new SectionRowState("summary", "No validation issues were detected.")
+                ]);
+        }
     }
 
     private sealed class RecordingShellPresenter : IShellPresenter
@@ -5128,6 +5624,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             State = State with { ActiveWorkspaceId = activeWorkspaceId };
             StateChanged?.Invoke(this, EventArgs.Empty);
             return Task.CompletedTask;
+        }
+
+        public void SetBusyForTesting(bool isBusy)
+        {
+            State = State with { IsBusy = isBusy };
+            StateChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 

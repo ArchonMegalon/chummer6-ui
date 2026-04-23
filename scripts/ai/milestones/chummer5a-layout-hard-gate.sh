@@ -203,7 +203,7 @@ if legacy_tab_count < 19:
     )
 
 menu_headers = re.findall(r'Header="([^"]+)"', menu_bar_text)
-expected_menu_headers = ["File", "Edit", "Special", "Tools", "Windows", "Help"]
+expected_menu_headers = ["File", "Tools", "Windows", "Help"]
 if menu_headers != expected_menu_headers:
     append_reason(
         "Avalonia shell menu order diverges from the classic desktop contract: "
@@ -424,9 +424,8 @@ if ".right-pane {\n    display: none;" not in blazor_css_text and ".right-pane {
     append_reason("Blazor desktop shell still exposes the right-side rail.", blazor_layout_reasons)
 
 resolver_tokens = [
-    '["file", "edit", "special", "tools", "windows", "help"]',
+    '["file", "tools", "windows", "help"]',
     '["save_character", "print_character", "copy"]',
-    'Command("special", "command.special", "menu", false)',
     'Command("copy", "command.copy", "edit", true)',
 ]
 for token in resolver_tokens:

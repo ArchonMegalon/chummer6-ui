@@ -47,7 +47,7 @@ public class CommandAvailabilityEvaluatorTests
         AppCommandDefinition newCharacter = new("new_character", "New", "file", false, true, RulesetDefaults.Sr5);
         AppCommandDefinition openCharacter = new("open_character", "Open", "file", false, true, RulesetDefaults.Sr5);
         AppCommandDefinition globalSettings = new("global_settings", "Options", "tools", false, true, RulesetDefaults.Sr5);
-        AppCommandDefinition reportBug = new("report_bug", "Report Issue", "help", false, true, RulesetDefaults.Sr5);
+        AppCommandDefinition reportBug = new("report_bug", "Report Issue", "tools", false, true, RulesetDefaults.Sr5);
         AppCommandDefinition saveCharacter = new("save_character", "Save", "file", true, true, RulesetDefaults.Sr5);
 
         Assert.IsTrue(evaluator.IsCommandEnabled(newCharacter, state));

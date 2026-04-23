@@ -19,6 +19,16 @@ It should take the now-hard flagship bar and make it boring:
 10. measured product-governor cadence.
 
 The machine-readable control plane for this follow-on wave lives in `NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml`.
+The sharper product-centering overlay for this wave lives in `CONFIDENCE_READINESS_AND_CONTINUITY_GUIDE.md` and `CONFIDENCE_READINESS_AND_CONTINUITY_REGISTRY.yaml`.
+The loop-materialization overlay for this wave lives in `LIVING_CAMPAIGN_LOOP_MATERIALIZATION_GUIDE.md` and `LIVING_CAMPAIGN_LOOP_MATERIALIZATION_REGISTRY.yaml`.
+The named release-gated proof set for those loops lives in `LOST_POTENTIAL_MATERIALIZATION_WAVE.md` and `LOST_POTENTIAL_MATERIALIZATION_REGISTRY.yaml`.
+
+The user-facing test for whether this quarter is actually working is simpler:
+
+* confidence: numbers and legality stay inspectable
+* readiness: players and GMs know what to do next at the table
+* continuity: the campaign remembers what happened
+* consequence: approved world change talks back through receipts instead of hidden simulation
 
 ## Activation rule
 
@@ -37,9 +47,10 @@ Until then, this wave should shape follow-on work without preempting the current
 1. Productionize native-host desktop release and promotion first.
 2. Turn Chummer5a parity into oracle-backed release truth second.
 3. Make desktop-native trust, recovery, and workspace continuity boring third.
-4. Turn release, support, build, campaign, and runsite truth into first-party artifact bundles fourth.
-5. Pull the preserved Next Big Wins forward into a broader successor tranche for campaign operations, rules/build/exchange moat, creator/community publication, onboarding, and public launch health.
-6. Keep the product-governor loop measured and weekly instead of heroic and ad hoc.
+4. Materialize the small campaign loops users can feel immediately: action budgets, local source anchors, campaign adoption, runner goals, GM Runboard, prep packets, and one BLACK LEDGER consequence slice.
+5. Turn release, support, build, campaign, and runsite truth into first-party artifact bundles next.
+6. Pull the preserved Next Big Wins forward into a broader successor tranche for campaign operations, rules/build/exchange moat, creator/community publication, onboarding, and public launch health.
+7. Keep the product-governor loop measured and weekly instead of heroic and ad hoc.
 
 ## Wave 6 - make desktop promotion repeatable
 
@@ -104,6 +115,14 @@ Exit: campaign state covers session plan, run, recap, downtime, aftermath, heat,
 ### 113. Crew, roster, opposition packets, and GM prep library
 Owners: `chummer6-hub`, `chummer6-core`, `chummer6-ui`, `chummer6-media-factory`, `executive-assistant`
 Exit: GMs and organizers can move dossiers between rosters, campaigns, groups, and events while reusable opposition, scene, and prep packets stay governed, searchable, and artifact-ready.
+
+### 113A. Live action economy, source anchors, and GM Runboard
+Owners: `chummer6-core`, `chummer6-ui`, `chummer6-mobile`, `chummer6-hub`, `chummer6-design`
+Exit: a player and GM can complete one SR6 combat round with action-budget truth, explain receipts, local source-page anchors, and a live Runboard that keeps the session moving.
+
+### 113B. Campaign adoption, runner goals, and first BLACK LEDGER consequence
+Owners: `chummer6-hub`, `chummer6-ui`, `chummer6-mobile`, `chummer6-core`, `chummer6-media-factory`, `chummer6-design`
+Exit: an existing table can adopt current state, a runner can pin and update one goal after reward, and one GM-approved `ResolutionReport -> WorldTick -> player-safe news item` loop is live.
 
 ## Wave 12 - deepen the Build, Rules, and Exchange moat
 

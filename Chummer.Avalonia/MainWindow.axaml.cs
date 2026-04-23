@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Chummer.Contracts.Presentation;
@@ -77,12 +78,14 @@ public partial class MainWindow : Window
             coachSidecar: CoachSidecarControl,
             statusStrip: StatusStripControl,
             onImportFileRequested: ToolStrip_OnImportFileRequested,
+            onOpenForPrintingRequested: ToolStrip_OnOpenForPrintingRequested,
+            onOpenForExportRequested: ToolStrip_OnOpenForExportRequested,
             onImportRawRequested: ToolStrip_OnImportRawRequested,
             onSaveRequested: ToolStrip_OnSaveRequested,
             onPrintRequested: ToolStrip_OnPrintRequested,
             onCopyRequested: ToolStrip_OnCopyRequested,
-            onCloseWorkspaceRequested: ToolStrip_OnCloseWorkspaceRequested,
             onDesktopHomeRequested: ToolStrip_OnDesktopHomeRequested,
+            onCloseWorkspaceRequested: ToolStrip_OnCloseWorkspaceRequested,
             onCampaignWorkspaceRequested: ToolStrip_OnCampaignWorkspaceRequested,
             onUpdateStatusRequested: ToolStrip_OnUpdateStatusRequested,
             onInstallLinkingRequested: ToolStrip_OnInstallLinkingRequested,
@@ -151,6 +154,15 @@ public partial class MainWindow : Window
     {
         _lifecycleCoordinator.Detach(_transientStateCoordinator.DetachDialogWindow());
         base.OnClosed(e);
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (!e.Handled)
+        {
+            Window_OnKeyDown(this, e);
+        }
     }
 
     internal DesktopDialogWindow? PeekDialogWindowForTesting()

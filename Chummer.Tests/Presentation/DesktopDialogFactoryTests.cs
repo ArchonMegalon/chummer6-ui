@@ -17,6 +17,17 @@ namespace Chummer.Tests.Presentation;
 public class DesktopDialogFactoryTests
 {
     [TestMethod]
+    public void Master_index_source_selection_receipt_keeps_readiness_marker()
+    {
+        string factoryPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "../../../Chummer.Presentation/Overview/DesktopDialogFactory.cs"));
+        string factorySource = File.ReadAllText(factoryPath);
+
+        StringAssert.Contains(factorySource, "new DesktopDialogField(\"masterIndexSourceSelectionReceipt\"");
+    }
+
+    [TestMethod]
     public void CreateCommandDialog_uses_current_preferences_and_workspace_context()
     {
         DesktopDialogFactory factory = new();
@@ -228,6 +239,10 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("/books/core-rulebook.pdf", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectedSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetPreview"), "Reference notes stay in this pane");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceSelectionReceipt"), "24 toggles");
+        Assert.AreEqual(
+            DesktopDialogFieldLayoutSlots.Hidden,
+            dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceSelectionReceipt", StringComparison.Ordinal)).LayoutSlot);
+        Assert.IsTrue(dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceSelectionReceipt", StringComparison.Ordinal)).IsReadOnly);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexReferenceSourceReceipt"), "PDF/URL/site-snapshot");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCustomDataAuthoringReceipt"), "custom-data authoring is partial");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleReceipt"), "3/4 fixture families");

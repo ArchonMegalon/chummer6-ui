@@ -4,8 +4,10 @@ set -euo pipefail
 echo "[B13] checking post-B6 accessibility signoff guardrails..."
 
 test_project="Chummer.Tests/Chummer.Tests.csproj"
+test_dll="Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll"
 if [[ -f "Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj" ]]; then
   test_project="Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj"
+  test_dll="Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.Signoff.Tests.dll"
 fi
 runtime_tests_required="${CHUMMER_B13_TESTS_REQUIRED:-0}"
 
@@ -109,7 +111,7 @@ if [[ "$runtime_tests_required" == "1" ]]; then
   if ! bash -lc '
     set -euo pipefail
     scripts/ai/with-package-plane.sh build "'"$test_project"'" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false
-    scripts/ai/with-package-plane.sh run --project "'"$test_project"'" --no-build --nologo --verbosity quiet
+    dotnet "'"$test_dll"'"
   '; then
     echo "[B13] FAIL: required targeted smoke runner execution failed."
     exit 4
@@ -119,7 +121,7 @@ else
   bash -lc '
     set -euo pipefail
     scripts/ai/with-package-plane.sh build "'"$test_project"'" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false
-    scripts/ai/with-package-plane.sh run --project "'"$test_project"'" --no-build --nologo --verbosity quiet
+    dotnet "'"$test_dll"'"
   '
 fi
 

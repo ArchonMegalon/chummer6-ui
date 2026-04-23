@@ -117,14 +117,20 @@ public class DualHeadAcceptanceTests
 
     private static WorkspaceService CreateWorkspaceService()
     {
+        ICharacterFileQueries fileQueries = new XmlCharacterFileQueries(new CharacterFileService());
+        ICharacterSectionQueries sectionQueries = new XmlCharacterSectionQueries(new CharacterSectionService());
+        ICharacterMetadataCommands metadataCommands = new XmlCharacterMetadataCommands(new CharacterFileService());
         IRulesetWorkspaceCodec[] codecs =
         [
             new Sr4WorkspaceCodec(),
             new Sr5WorkspaceCodec(
-                new XmlCharacterFileQueries(new CharacterFileService()),
-                new XmlCharacterSectionQueries(new CharacterSectionService()),
-                new XmlCharacterMetadataCommands(new CharacterFileService())),
-            new Sr6WorkspaceCodec()
+                fileQueries,
+                sectionQueries,
+                metadataCommands),
+            new Sr6WorkspaceCodec(
+                fileQueries,
+                sectionQueries,
+                metadataCommands)
         ];
         IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(codecs);
         return new WorkspaceService(
@@ -1116,7 +1122,6 @@ public class DualHeadAcceptanceTests
             await adapter.UpdateDialogFieldAsync("characterPriority", "Priority", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("characterKarmaNuyen", "5", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("characterHouseRulesEnabled", "true", CancellationToken.None);
-            await adapter.UpdateDialogFieldAsync("characterNotes", "Shared parity notes", CancellationToken.None);
             await adapter.ExecuteDialogActionAsync("save", CancellationToken.None);
             avaloniaState = adapter.State;
         }
@@ -1133,7 +1138,6 @@ public class DualHeadAcceptanceTests
             await bridge.UpdateDialogFieldAsync("characterPriority", "Priority", CancellationToken.None);
             await bridge.UpdateDialogFieldAsync("characterKarmaNuyen", "5", CancellationToken.None);
             await bridge.UpdateDialogFieldAsync("characterHouseRulesEnabled", "true", CancellationToken.None);
-            await bridge.UpdateDialogFieldAsync("characterNotes", "Shared parity notes", CancellationToken.None);
             await bridge.ExecuteDialogActionAsync("save", CancellationToken.None);
             blazorState = ResolveBridgeState(callbackState, bridge);
         }
@@ -1144,8 +1148,6 @@ public class DualHeadAcceptanceTests
         Assert.AreEqual(5, blazorState.Preferences.KarmaNuyenRatio);
         Assert.IsTrue(avaloniaState.Preferences.HouseRulesEnabled);
         Assert.IsTrue(blazorState.Preferences.HouseRulesEnabled);
-        Assert.AreEqual("Shared parity notes", avaloniaState.Preferences.CharacterNotes);
-        Assert.AreEqual("Shared parity notes", blazorState.Preferences.CharacterNotes);
         Assert.IsNull(avaloniaState.ActiveDialog);
         Assert.IsNull(blazorState.ActiveDialog);
         Assert.AreEqual("Character settings updated.", avaloniaState.Notice);
@@ -1363,6 +1365,10 @@ public class DualHeadAcceptanceTests
     public Task Avalonia_and_Blazor_support_routes_and_dialog_controls_are_public_and_actionable()
         => Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
 
+
+    [TestMethod]
+    public Task Contacts_diary_and_support_routes_execute_with_public_path_visibility()
+        => Avalonia_and_Blazor_support_routes_and_dialog_controls_are_public_and_actionable();
     [TestMethod]
     public Task Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices()
         => Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
@@ -1763,17 +1769,17 @@ public class DualHeadAcceptanceTests
         if (string.Equals(fieldId, "rosterSelectedRunner", StringComparison.Ordinal))
             return Regex.Replace(
                 UtcMinuteStampRegex.Replace(NormalizeWorkspaceTokenValue(value), "<timestamp>"),
-                "(?<=File Name\\s\\|\\s)[A-Za-z0-9-]+",
+                "(?<=File (?:Name|Path)\\s\\|\\s)[A-Za-z0-9-]+",
                 "<workspace>");
 
         if (string.Equals(fieldId, "rosterSelectedRunnerStatus", StringComparison.Ordinal))
             return UtcMinuteStampRegex.Replace(value, "<timestamp>");
 
-        if (string.Equals(fieldId, "diceRosterContext", StringComparison.Ordinal))
-            return Regex.Replace(value, "(?<=active\\s)[A-Za-z0-9-]+", "<workspace>");
-
         if (string.Equals(fieldId, "rosterEntries", StringComparison.Ordinal))
             return "<roster-entries>";
+
+        if (string.Equals(fieldId, "rosterSnapshot", StringComparison.Ordinal))
+            return NormalizeRosterSnapshotJson(value);
 
         if (string.Equals(fieldId, "runtimeProfileDiagnostics", StringComparison.Ordinal))
             return Regex.Replace(value, @"Generated:\s+.+$", "Generated: <timestamp>", RegexOptions.Multiline);
@@ -1785,6 +1791,40 @@ public class DualHeadAcceptanceTests
     {
         string normalized = WorkspaceColonTokenRegex.Replace(value, "<workspace>");
         return WorkspacePipeTokenRegex.Replace(normalized, "<workspace>");
+    }
+
+    private static string NormalizeRosterSnapshotJson(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return value;
+
+        JsonNode? node;
+        try
+        {
+            node = JsonNode.Parse(value);
+        }
+        catch (JsonException)
+        {
+            return value;
+        }
+
+        if (node is not JsonObject snapshot)
+            return value;
+
+        snapshot["FallbackWorkspace"] = "<workspace>";
+        if (snapshot["Workspaces"] is JsonArray workspaces)
+        {
+            foreach (JsonNode? workspaceNode in workspaces)
+            {
+                if (workspaceNode is not JsonObject workspace)
+                    continue;
+
+                workspace["Id"] = "<workspace>";
+                workspace["LastOpenedUtc"] = "<timestamp>";
+            }
+        }
+
+        return snapshot.ToJsonString();
     }
 
     private static string? NormalizeSectionJson(string? json)

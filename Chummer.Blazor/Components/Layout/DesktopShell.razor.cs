@@ -16,8 +16,7 @@ public partial class DesktopShell : IDisposable
         "copy",
         "new_character",
         "open_character",
-        "close_window",
-        "global_settings"
+        "close_window"
     ];
 
     private CharacterOverviewStateBridge? _bridge;

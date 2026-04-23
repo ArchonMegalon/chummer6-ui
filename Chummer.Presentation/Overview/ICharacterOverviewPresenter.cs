@@ -36,4 +36,8 @@ public interface ICharacterOverviewPresenter
     Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct);
 
     Task SaveAsync(CancellationToken ct);
+
+    Task ExportAsync(CancellationToken ct);
+
+    Task PrintAsync(CancellationToken ct);
 }

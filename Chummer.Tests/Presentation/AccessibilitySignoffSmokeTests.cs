@@ -1342,11 +1342,11 @@ internal static class AccessibilitySignoffSmokeTests
 
         string menuBarMarkup = ReadSource("Chummer.Avalonia/Controls/ShellMenuBarControl.axaml");
         RequireContains(menuBarMarkup, "Tag=\"file\"");
-        RequireContains(menuBarMarkup, "Tag=\"edit\"");
-        RequireContains(menuBarMarkup, "Tag=\"special\"");
         RequireContains(menuBarMarkup, "Tag=\"tools\"");
         RequireContains(menuBarMarkup, "Tag=\"windows\"");
         RequireContains(menuBarMarkup, "Tag=\"help\"");
+        RequireDoesNotContain(menuBarMarkup, "Tag=\"edit\"");
+        RequireDoesNotContain(menuBarMarkup, "Tag=\"special\"");
         RequireDoesNotContain(menuBarMarkup, "Avalonia Head");
 
         string menuBarSource = ReadSource("Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs");

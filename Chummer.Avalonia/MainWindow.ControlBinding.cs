@@ -17,12 +17,14 @@ internal static class MainWindowControlBinder
         CoachSidecarControl coachSidecar,
         StatusStripControl statusStrip,
         EventHandler onImportFileRequested,
+        EventHandler onOpenForPrintingRequested,
+        EventHandler onOpenForExportRequested,
         EventHandler onImportRawRequested,
         EventHandler onSaveRequested,
         EventHandler onPrintRequested,
         EventHandler onCopyRequested,
-        EventHandler onCloseWorkspaceRequested,
         EventHandler onDesktopHomeRequested,
+        EventHandler onCloseWorkspaceRequested,
         EventHandler onCampaignWorkspaceRequested,
         EventHandler onUpdateStatusRequested,
         EventHandler onInstallLinkingRequested,
@@ -45,12 +47,14 @@ internal static class MainWindowControlBinder
         EventHandler<string> onMenuCommandSelected)
     {
         toolStrip.ImportFileRequested += onImportFileRequested;
+        toolStrip.OpenForPrintingRequested += onOpenForPrintingRequested;
+        toolStrip.OpenForExportRequested += onOpenForExportRequested;
         toolStrip.ImportRawRequested += onImportRawRequested;
         toolStrip.SaveRequested += onSaveRequested;
         toolStrip.PrintRequested += onPrintRequested;
         toolStrip.CopyRequested += onCopyRequested;
-        toolStrip.CloseWorkspaceRequested += onCloseWorkspaceRequested;
         toolStrip.DesktopHomeRequested += onDesktopHomeRequested;
+        toolStrip.CloseWorkspaceRequested += onCloseWorkspaceRequested;
         toolStrip.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
         toolStrip.UpdateStatusRequested += onUpdateStatusRequested;
         toolStrip.InstallLinkingRequested += onInstallLinkingRequested;
@@ -58,7 +62,6 @@ internal static class MainWindowControlBinder
         toolStrip.ReportIssueRequested += onReportIssueRequested;
         toolStrip.SettingsRequested += onSettingsRequested;
         toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
-        summaryHeader.NavigationTabSelected += onNavigationTabSelected;
         summaryHeader.KeepLocalWorkRequested += onKeepLocalWorkRequested;
         summaryHeader.SaveLocalWorkRequested += onSaveRequested;
         summaryHeader.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
@@ -68,6 +71,8 @@ internal static class MainWindowControlBinder
         navigatorPane.NavigationTabSelected += onNavigationTabSelected;
         navigatorPane.SectionActionSelected += onSectionActionSelected;
         navigatorPane.WorkflowSurfaceSelected += onWorkflowSurfaceSelected;
+        sectionHost.NavigationTabSelected += onNavigationTabSelected;
+        sectionHost.SectionActionSelected += onSectionActionSelected;
         sectionHost.QuickActionRequested += onSectionQuickActionRequested;
         coachSidecar.CopyLaunchRequested += onCoachLaunchCopyRequested;
         commandDialogPane.CommandSelected += onCommandSelected;

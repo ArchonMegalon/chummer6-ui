@@ -35,6 +35,8 @@ public sealed record ShellSurfaceState(
 
     public string? Error { get; init; }
 
+    public bool IsBusy { get; init; }
+
     public static ShellSurfaceState Empty { get; } = new(
         Commands: [],
         MenuRoots: [],

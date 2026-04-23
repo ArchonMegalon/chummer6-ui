@@ -1,82 +1,18 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:contracts="clr-namespace:Chummer.Avalonia.Controls"
              x:Class="Chummer.Avalonia.Controls.SummaryHeaderControl">
-  <StackPanel Spacing="2">
+  <Grid Height="0"
+        MinHeight="0"
+        MaxHeight="0"
+        IsVisible="False"
+        IsHitTestVisible="False">
     <Border x:Name="RestoreContinuityStatusBorder"
-            Classes="shell-card subtle"
-            Padding="8,6"
-            IsVisible="False">
-      <StackPanel Spacing="4">
-        <TextBlock Classes="shell-kicker"
-                   Text="Restore Continuity" />
-        <TextBlock x:Name="RestoreContinuityStatusText"
-                   Classes="shell-caption"
-                   TextWrapping="Wrap" />
-        <TextBlock x:Name="StaleStateStatusText"
-                   Classes="shell-caption"
-                   TextWrapping="Wrap" />
-        <TextBlock x:Name="ConflictChoiceStatusText"
-                   Classes="shell-caption"
-                   TextWrapping="Wrap" />
-        <TextBlock x:Name="RestoreContinuityDecisionText"
-                   Classes="shell-caption"
-                   TextWrapping="Wrap" />
-        <TextBlock x:Name="RestoreContinuityDecisionOrderText"
-                   Classes="shell-caption"
-                   TextWrapping="Wrap" />
-        <TextBlock x:Name="RestoreContinuityLocalAuthorityText"
-                   Classes="shell-caption"
-                   TextWrapping="Wrap" />
-        <TextBlock x:Name="RestoreContinuityReplacementGuardText"
-                   Classes="shell-caption"
-                   TextWrapping="Wrap" />
-        <TextBlock x:Name="RestoreContinuitySupportHandoffText"
-                   Classes="shell-caption"
-                   TextWrapping="Wrap" />
-        <WrapPanel x:Name="RestoreContinuityActionPanel"
-                   Orientation="Horizontal"
-                   IsVisible="False">
-          <Button x:Name="KeepLocalWorkButton"
-                  Classes="shell-action quiet"
-                  Content="Keep Local Work"
-                  Margin="0,2,4,0"
-                  Click="KeepLocalWorkButton_OnClick" />
-          <Button x:Name="SaveLocalWorkButton"
-                  Classes="shell-action"
-                  Content="Save Local Work"
-                  Margin="0,2,4,0"
-                  Click="SaveLocalWorkButton_OnClick" />
-          <Button x:Name="ReviewCampaignWorkspaceButton"
-                  Classes="shell-action quiet"
-                  Content="Review Campaign Workspace"
-                  Margin="0,2,4,0"
-                  Click="ReviewCampaignWorkspaceButton_OnClick" />
-          <Button x:Name="OpenWorkspaceSupportButton"
-                  Classes="shell-action quiet"
-                  Content="Workspace Support"
-                  Margin="0,2,4,0"
-                  Click="OpenWorkspaceSupportButton_OnClick" />
-        </WrapPanel>
-        <TextBlock x:Name="RestoreContinuityActionStatusText"
-                   Classes="shell-caption"
-                   TextWrapping="Wrap" />
-      </StackPanel>
-    </Border>
-
-    <Border x:Name="LoadedRunnerTabStripBorder"
-            Classes="shell-card subtle"
-            Padding="2,1"
-            IsVisible="False">
-      <TabStrip x:Name="LoadedRunnerTabStrip"
-                Classes="classic-tabs"
-                SelectionChanged="LoadedRunnerTabStrip_OnSelectionChanged">
-        <TabStrip.ItemTemplate>
-          <DataTemplate x:DataType="contracts:NavigatorTabItem">
-            <TextBlock Text="{Binding Label}" Classes="shell-tab-label" />
-          </DataTemplate>
-        </TabStrip.ItemTemplate>
-      </TabStrip>
-    </Border>
-  </StackPanel>
+            IsVisible="False"
+            Width="0"
+            Height="0" />
+    <StackPanel x:Name="RestoreContinuityActionPanel"
+                IsVisible="False"
+                Width="0"
+                Height="0" />
+  </Grid>
 </UserControl>

@@ -61,7 +61,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.status.service"] = "Service: {0}",
         ["desktop.shell.status.time"] = "Time: {0}",
         ["desktop.shell.status.time_placeholder"] = "Time: -",
-        ["desktop.shell.status.compliance_placeholder"] = "Compliance: shared presenter path",
+        ["desktop.shell.status.compliance_placeholder"] = "Ruleset: loading",
         ["desktop.shell.feedback.import_raw_required"] = "State: provide debug XML content before importing.",
         ["desktop.shell.feedback.import_file_unavailable"] = "State: file picker unavailable on this platform.",
         ["desktop.shell.feedback.import_file_cancelled"] = "State: {0} selection cancelled.",
@@ -469,7 +469,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.status.service"] = "Dienst: {0}";
             localized["desktop.shell.status.time"] = "Zeit: {0}";
             localized["desktop.shell.status.time_placeholder"] = "Zeit: -";
-            localized["desktop.shell.status.compliance_placeholder"] = "Compliance: gemeinsamer Presenter-Pfad";
+            localized["desktop.shell.status.compliance_placeholder"] = "Regelsatz: wird geladen";
             localized["desktop.shell.notice.download_unavailable"] = "Hinweis: Download angefordert, aber Dateispeichern ist auf dieser Plattform nicht verfugbar.";
             localized["desktop.shell.notice.download_cancelled"] = "Hinweis: Download abgebrochen.";
             localized["desktop.shell.notice.download_completed"] = "Hinweis: {0} heruntergeladen.";
@@ -860,7 +860,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.status.service"] = "Service : {0}";
             localized["desktop.shell.status.time"] = "Heure : {0}";
             localized["desktop.shell.status.time_placeholder"] = "Heure : -";
-            localized["desktop.shell.status.compliance_placeholder"] = "Conformite : chemin presenter partage";
+            localized["desktop.shell.status.compliance_placeholder"] = "Regles : chargement";
             localized["desktop.shell.notice.download_unavailable"] = "Notice : telechargement demande mais enregistrement de fichier indisponible sur cette plateforme.";
             localized["desktop.shell.notice.download_cancelled"] = "Notice : telechargement annule.";
             localized["desktop.shell.notice.download_completed"] = "Notice : {0} telecharge.";
@@ -1251,7 +1251,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.status.service"] = "サービス: {0}";
             localized["desktop.shell.status.time"] = "時刻: {0}";
             localized["desktop.shell.status.time_placeholder"] = "時刻: -";
-            localized["desktop.shell.status.compliance_placeholder"] = "コンプライアンス: 共有 presenter パス";
+            localized["desktop.shell.status.compliance_placeholder"] = "ルールセット: 読み込み中";
             localized["desktop.shell.notice.download_unavailable"] = "通知: ダウンロード要求がありましたが、このプラットフォームでは保存機能を利用できません。";
             localized["desktop.shell.notice.download_cancelled"] = "通知: ダウンロードをキャンセルしました。";
             localized["desktop.shell.notice.download_completed"] = "通知: {0} をダウンロードしました。";
@@ -1642,7 +1642,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.status.service"] = "Servico: {0}";
             localized["desktop.shell.status.time"] = "Hora: {0}";
             localized["desktop.shell.status.time_placeholder"] = "Hora: -";
-            localized["desktop.shell.status.compliance_placeholder"] = "Compliance: caminho compartilhado do presenter";
+            localized["desktop.shell.status.compliance_placeholder"] = "Conjunto de regras: carregando";
             localized["desktop.shell.notice.download_unavailable"] = "Aviso: download solicitado, mas salvar arquivo nao esta disponivel nesta plataforma.";
             localized["desktop.shell.notice.download_cancelled"] = "Aviso: download cancelado.";
             localized["desktop.shell.notice.download_completed"] = "Aviso: {0} baixado.";
@@ -2033,7 +2033,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.status.service"] = "服务: {0}";
             localized["desktop.shell.status.time"] = "时间: {0}";
             localized["desktop.shell.status.time_placeholder"] = "时间: -";
-            localized["desktop.shell.status.compliance_placeholder"] = "合规: 共享 presenter 路径";
+            localized["desktop.shell.status.compliance_placeholder"] = "规则集: 正在加载";
             localized["desktop.shell.notice.download_unavailable"] = "提示: 已请求下载，但此平台不支持保存文件。";
             localized["desktop.shell.notice.download_cancelled"] = "提示: 下载已取消。";
             localized["desktop.shell.notice.download_completed"] = "提示: 已下载 {0}。";

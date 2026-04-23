@@ -45,6 +45,10 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
 
     public int SaveCalls { get; private set; }
 
+    public int ExportCalls { get; private set; }
+
+    public int PrintCalls { get; private set; }
+
     public int InitializeCalls { get; private set; }
 
     public Task InitializeAsync(CancellationToken ct)
@@ -130,6 +134,18 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
     public Task SaveAsync(CancellationToken ct)
     {
         SaveCalls++;
+        return Task.CompletedTask;
+    }
+
+    public Task ExportAsync(CancellationToken ct)
+    {
+        ExportCalls++;
+        return Task.CompletedTask;
+    }
+
+    public Task PrintAsync(CancellationToken ct)
+    {
+        PrintCalls++;
         return Task.CompletedTask;
     }
 

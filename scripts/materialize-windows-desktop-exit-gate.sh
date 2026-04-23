@@ -383,13 +383,15 @@ else:
     evidence["release_channel_windows_artifact"] = windows_artifact
 
 default_file_name = artifact_file_name or f"chummer-{expected_head}-{expected_rid}-installer.exe"
+primary_shelf_root = Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files")))
+primary_shelf_candidates = [
+    Path(os.path.abspath(str(windows_local_desktop_files_root / default_file_name))),
+    primary_shelf_root / default_file_name,
+]
+override_candidates = []
 if windows_installer_path_override:
-    installer_candidates = [Path(os.path.abspath(str(windows_installer_path_override.expanduser())))]
-else:
-    installer_candidates = [
-        Path(os.path.abspath(str(windows_local_desktop_files_root / default_file_name))),
-        Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files" / default_file_name))),
-    ]
+    override_candidates.append(Path(os.path.abspath(str(windows_installer_path_override.expanduser()))))
+installer_candidates = primary_shelf_candidates + override_candidates
 installer_candidates = list(dict.fromkeys(installer_candidates))
 installer_path = next((path for path in installer_candidates if path.is_file()), installer_candidates[0])
 
@@ -406,11 +408,12 @@ evidence["expected_windows_rid"] = expected_rid
 evidence["expected_windows_arch"] = expected_arch
 if artifact_file_name:
     evidence["expected_windows_file_name"] = artifact_file_name
-primary_shelf_root = Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files")))
 installer_from_primary_shelf = path_is_within(installer_path, primary_shelf_root)
 evidence["windows_installer_primary_shelf_root"] = str(primary_shelf_root)
 evidence["windows_installer_from_primary_shelf"] = installer_from_primary_shelf
-if not windows_installer_path_override and not installer_from_primary_shelf:
+if windows_installer_path_override and installer_from_primary_shelf:
+    evidence["windows_installer_override_ignored_for_promoted_shelf"] = True
+if not installer_from_primary_shelf:
     reasons.append(
         "Promoted Windows installer was not resolved from the repo-local desktop shelf."
     )

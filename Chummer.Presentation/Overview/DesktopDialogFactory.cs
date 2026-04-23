@@ -4330,20 +4330,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return
         [
-            new DesktopDialogField(
-                "masterIndexSourceSelectionReceipt",
-                "Source Selection",
-                sourceSelectionReceipt,
-                sourcebookSelectionSummary,
-                IsReadOnly: true,
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField(
-                "masterIndexReferenceSourceReceipt",
-                "Reference Sources",
-                referenceSourceReceipt,
-                sourcebookSelectionSummary,
-                IsReadOnly: true,
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+            new DesktopDialogField("masterIndexSourceSelectionReceipt", "Source Selection", sourceSelectionReceipt, sourcebookSelectionSummary, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexReferenceSourceReceipt", "Reference Sources", referenceSourceReceipt, sourcebookSelectionSummary, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
         ];
     }
 

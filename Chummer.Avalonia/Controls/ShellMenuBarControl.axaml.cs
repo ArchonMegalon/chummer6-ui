@@ -18,8 +18,6 @@ public partial class ShellMenuBarControl : UserControl
         _rootMenuItems =
         [
             FileMenuButton,
-            EditMenuButton,
-            SpecialMenuButton,
             ToolsMenuButton,
             WindowsMenuButton,
             HelpMenuButton
@@ -70,11 +68,13 @@ public partial class ShellMenuBarControl : UserControl
         {
             string menuId = GetMenuId(menuItem);
             bool known = knownMenus.Contains(menuId);
+            bool hasCommands = _commandsByMenuId.TryGetValue(menuId, out IReadOnlyList<MenuCommandItem>? commands) && commands.Count > 0;
             bool active = known && string.Equals(openMenuId, menuId, StringComparison.Ordinal);
 
+            menuItem.IsVisible = known;
             menuItem.IsEnabled = known;
             menuItem.Classes.Set("active-menu", active);
-            RebuildMenuItemCommands(menuItem, commandsEnabled: known);
+            RebuildMenuItemCommands(menuItem, commandsEnabled: known && hasCommands);
         }
     }
 
@@ -129,11 +129,6 @@ public partial class ShellMenuBarControl : UserControl
         string menuId = GetMenuId(rootMenuItem);
         if (!_commandsByMenuId.TryGetValue(menuId, out IReadOnlyList<MenuCommandItem>? commands) || commands.Count == 0)
         {
-            rootMenuItem.Items.Add(new MenuItem
-            {
-                Header = "(No commands)",
-                IsEnabled = false
-            });
             return;
         }
 
@@ -159,8 +154,6 @@ public partial class ShellMenuBarControl : UserControl
     {
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
         FileMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.file", language);
-        EditMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.edit", language);
-        SpecialMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.special", language);
         ToolsMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.tools", language);
         WindowsMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.windows", language);
         HelpMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.help", language);

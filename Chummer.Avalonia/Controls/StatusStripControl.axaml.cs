@@ -21,19 +21,23 @@ public partial class StatusStripControl : UserControl
             characterState: state.CharacterState,
             serviceState: state.ServiceState,
             timeState: state.TimeState,
-            complianceState: state.ComplianceState);
+            complianceState: state.ComplianceState,
+            isBusy: state.IsBusy);
     }
 
     public void SetValues(
         string characterState,
         string serviceState,
         string timeState,
-        string complianceState)
+        string complianceState,
+        bool isBusy = false)
     {
         CharacterStateText.Text = characterState;
         ServiceStateText.Text = serviceState;
         TimeStateText.Text = timeState;
         ComplianceStateText.Text = complianceState;
+        WorkbenchProgressBar.IsVisible = isBusy;
+        WorkbenchProgressBar.IsIndeterminate = isBusy;
         ToolTip.SetTip(
             this,
             AccessibilityPrimitiveBoundary.BuildStatusAnnouncement(
@@ -60,8 +64,13 @@ public partial class StatusStripControl : UserControl
             "desktop.shell.status.service",
             language,
             DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.online", language));
-        TimeStateText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.status.time_placeholder", language);
+        TimeStateText.Text = DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.shell.status.time",
+            language,
+            DateTimeOffset.UtcNow.ToString("u"));
         ComplianceStateText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.status.compliance_placeholder", language);
+        WorkbenchProgressBar.IsVisible = false;
+        WorkbenchProgressBar.IsIndeterminate = false;
     }
 }
 
@@ -69,4 +78,7 @@ public sealed record StatusStripState(
     string CharacterState,
     string ServiceState,
     string TimeState,
-    string ComplianceState);
+    string ComplianceState)
+{
+    public bool IsBusy { get; init; }
+}

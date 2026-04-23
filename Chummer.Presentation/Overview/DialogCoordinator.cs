@@ -81,6 +81,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.new_character", StringComparison.Ordinal)
+            && string.Equals(actionId, "create_character", StringComparison.Ordinal))
+        {
+            await CreateCharacterFromDialogAsync(dialog, context, ct);
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.hero_lab_importer", StringComparison.Ordinal)
             && string.Equals(actionId, "import", StringComparison.Ordinal))
         {
@@ -100,9 +107,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (string.Equals(dialog.Id, "dialog.dice_roller", StringComparison.Ordinal) && string.Equals(actionId, "derive_initiative", StringComparison.Ordinal))
+        if (string.Equals(dialog.Id, "dialog.dice_roller", StringComparison.Ordinal) && string.Equals(actionId, "reroll_misses", StringComparison.Ordinal))
         {
-            DeriveInitiativePreview(dialog, context);
+            RerollMisses(dialog, context);
             return;
         }
 
@@ -163,9 +170,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 case "switch_sourcebook":
                     CycleMasterIndexSourcebook(dialog, context);
                     return;
-                case "edit_setting":
-                    OpenCharacterSettingsFromMasterIndex(context);
-                    return;
             }
         }
 
@@ -182,9 +186,25 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.ui.open_notes", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
         {
             string notes = DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesEditor") ?? string.Empty;
-            PublishDialogNotice(context, "Notes saved.", context.State.Preferences with
+            await context.UpdateMetadataAsync(new UpdateWorkspaceMetadata(
+                context.State.Profile?.Name,
+                context.State.Profile?.Alias,
+                notes), ct);
+            CharacterOverviewState stateAfterUpdate = context.GetState();
+            if (!string.IsNullOrWhiteSpace(stateAfterUpdate.Error))
             {
-                CharacterNotes = notes
+                return;
+            }
+
+            context.Publish(stateAfterUpdate with
+            {
+                ActiveDialog = null,
+                Error = null,
+                Preferences = stateAfterUpdate.Preferences with
+                {
+                    CharacterNotes = notes
+                },
+                Notice = "Notes saved."
             });
             return;
         }
@@ -212,14 +232,27 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.ui.gear_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string gearName = ReadDialogValue(dialog, "uiGearName", "Ares Predator");
-            PublishRulesetAwareDialogNotice(context, $"Gear '{gearName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildGearQuickAddRequest(dialog),
+                $"Gear '{gearName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.gear_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string gearName = ReadDialogValue(dialog, "uiGearName", "Ares Predator");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Gear '{gearName}' added. Dialog remains open for another item.", "uiGearQuantity", "uiGearMarkup", "uiGearFreeItem");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildGearQuickAddRequest(dialog),
+                $"Gear '{gearName}' added. Dialog remains open for another item.",
+                ct,
+                "uiGearQuantity",
+                "uiGearMarkup",
+                "uiGearFreeItem");
             return;
         }
 
@@ -230,59 +263,180 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.drug_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string drugName = ReadDialogValue(dialog, "uiDrugName", "Jazz");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildDrugQuickAddRequest(dialog),
+                $"Drug '{drugName}' added.",
+                ct);
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.drug_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string drugName = ReadDialogValue(dialog, "uiDrugName", "Jazz");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildDrugQuickAddRequest(dialog),
+                $"Drug '{drugName}' added. Dialog remains open for another dose.",
+                ct,
+                "uiDrugQuantity");
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.cyberware_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string cyberwareName = ReadDialogValue(dialog, "uiCyberwareName", "Wired Reflexes 2");
-            PublishRulesetAwareDialogNotice(context, $"Cyberware '{cyberwareName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildCyberwareQuickAddRequest(dialog),
+                $"Cyberware '{cyberwareName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.cyberware_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string cyberwareName = ReadDialogValue(dialog, "uiCyberwareName", "Wired Reflexes 2");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Cyberware '{cyberwareName}' added. Dialog remains open for another implant.", "uiCyberwareRating", "uiCyberwareMarkup", "uiCyberwareDiscount");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildCyberwareQuickAddRequest(dialog),
+                $"Cyberware '{cyberwareName}' added. Dialog remains open for another implant.",
+                ct,
+                "uiCyberwareRating",
+                "uiCyberwareMarkup",
+                "uiCyberwareDiscount");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.magic_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string magicName = ReadDialogValue(dialog, "uiMagicName", "Spell or Power");
-            PublishRulesetAwareDialogNotice(context, $"Spell/power '{magicName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildMagicQuickAddRequest(dialog),
+                $"Spell/power '{magicName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.magic_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string magicName = ReadDialogValue(dialog, "uiMagicName", "Spell or Power");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Spell/power '{magicName}' added. Dialog remains open for another selection.", "uiMagicLevel");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildMagicQuickAddRequest(dialog),
+                $"Spell/power '{magicName}' added. Dialog remains open for another selection.",
+                ct,
+                "uiMagicLevel");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.spell_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string spellName = ReadDialogValue(dialog, "uiSpellName", "Stunbolt");
-            PublishRulesetAwareDialogNotice(context, $"Spell '{spellName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildSpellQuickAddRequest(dialog),
+                $"Spell '{spellName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.spell_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string spellName = ReadDialogValue(dialog, "uiSpellName", "Stunbolt");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Spell '{spellName}' added. Dialog remains open for another spell.", "uiSpellExtendedOnly");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildSpellQuickAddRequest(dialog),
+                $"Spell '{spellName}' added. Dialog remains open for another spell.",
+                ct,
+                "uiSpellExtendedOnly");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.adept_power_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string powerName = ReadDialogValue(dialog, "uiAdeptPowerName", "Improved Reflexes");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildAdeptPowerQuickAddRequest(dialog),
+                $"Adept power '{powerName}' added.",
+                ct);
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.adept_power_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string powerName = ReadDialogValue(dialog, "uiAdeptPowerName", "Improved Reflexes");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildAdeptPowerQuickAddRequest(dialog),
+                $"Adept power '{powerName}' added. Dialog remains open for another power.",
+                ct,
+                "uiAdeptPowerLevel");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.complex_form_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string formName = ReadDialogValue(dialog, "uiComplexFormName", "Cleaner");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildComplexFormQuickAddRequest(dialog),
+                $"Complex form '{formName}' added.",
+                ct);
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.complex_form_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string formName = ReadDialogValue(dialog, "uiComplexFormName", "Cleaner");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildComplexFormQuickAddRequest(dialog),
+                $"Complex form '{formName}' added. Dialog remains open for another form.",
+                ct,
+                "uiComplexFormLevel");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.skill_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string skillName = ReadDialogValue(dialog, "uiSkillName", "Perception");
-            PublishRulesetAwareDialogNotice(context, $"Skill '{skillName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildSkillQuickAddRequest(dialog),
+                $"Skill '{skillName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.skill_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string skillName = ReadDialogValue(dialog, "uiSkillName", "Perception");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Skill '{skillName}' added. Dialog remains open for another skill.", "uiSkillRating");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildSkillQuickAddRequest(dialog),
+                $"Skill '{skillName}' added. Dialog remains open for another skill.",
+                ct,
+                "uiSkillRating");
             return;
         }
 
@@ -296,84 +450,230 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.ui.combat_add_weapon", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string weaponName = ReadDialogValue(dialog, "uiWeaponName", "Colt M23");
-            PublishRulesetAwareDialogNotice(context, $"Weapon '{weaponName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildWeaponQuickAddRequest(dialog),
+                $"Weapon '{weaponName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.combat_add_weapon", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string weaponName = ReadDialogValue(dialog, "uiWeaponName", "Colt M23");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Weapon '{weaponName}' added. Dialog remains open for another weapon.", "uiWeaponMarkup", "uiWeaponFreeItem", "uiWeaponBlackMarketDiscount");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildWeaponQuickAddRequest(dialog),
+                $"Weapon '{weaponName}' added. Dialog remains open for another weapon.",
+                ct,
+                "uiWeaponMarkup",
+                "uiWeaponFreeItem",
+                "uiWeaponBlackMarketDiscount");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.combat_add_armor", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string armorName = ReadDialogValue(dialog, "uiArmorName", "Armor Jacket");
-            PublishRulesetAwareDialogNotice(context, $"Armor '{armorName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildArmorQuickAddRequest(dialog),
+                $"Armor '{armorName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.combat_add_armor", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string armorName = ReadDialogValue(dialog, "uiArmorName", "Armor Jacket");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Armor '{armorName}' added. Dialog remains open for another armor item.", "uiArmorMarkup", "uiArmorFreeItem");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildArmorQuickAddRequest(dialog),
+                $"Armor '{armorName}' added. Dialog remains open for another armor item.",
+                ct,
+                "uiArmorMarkup",
+                "uiArmorFreeItem");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.contact_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string contactName = ReadDialogValue(dialog, "uiContactName", "Contact Name");
-            PublishRulesetAwareDialogNotice(context, $"Contact '{contactName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildContactQuickAddRequest(dialog),
+                $"Contact '{contactName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.contact_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string contactName = ReadDialogValue(dialog, "uiContactName", "Contact Name");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Contact '{contactName}' added. Dialog remains open for another contact.", "uiContactName", "uiContactConnection", "uiContactLoyalty");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildContactQuickAddRequest(dialog),
+                $"Contact '{contactName}' added. Dialog remains open for another contact.",
+                ct,
+                "uiContactName",
+                "uiContactConnection",
+                "uiContactLoyalty");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.matrix_program_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string programName = ReadDialogValue(dialog, "uiMatrixProgramName", "Armor");
-            PublishRulesetAwareDialogNotice(context, $"Program '{programName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildMatrixProgramQuickAddRequest(dialog),
+                $"Program '{programName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.matrix_program_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string programName = ReadDialogValue(dialog, "uiMatrixProgramName", "Armor");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Program '{programName}' added. Dialog remains open for another matrix entry.", "uiMatrixProgramShowDongles");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildMatrixProgramQuickAddRequest(dialog),
+                $"Program '{programName}' added. Dialog remains open for another matrix entry.",
+                ct,
+                "uiMatrixProgramShowDongles");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.initiation_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string rewardName = ReadDialogValue(dialog, "uiInitiationReward", "Masking");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildInitiationQuickAddRequest(dialog),
+                $"Initiation/submersion reward '{rewardName}' added.",
+                ct);
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.initiation_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string rewardName = ReadDialogValue(dialog, "uiInitiationReward", "Masking");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildInitiationQuickAddRequest(dialog),
+                $"Initiation/submersion reward '{rewardName}' added. Dialog remains open for another advancement step.",
+                ct,
+                "uiInitiationGrade");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.spirit_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string spiritName = ReadDialogValue(dialog, "uiSpiritName", "Watcher Spirit");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildSpiritQuickAddRequest(dialog),
+                $"Spirit '{spiritName}' added.",
+                ct);
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.spirit_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string spiritName = ReadDialogValue(dialog, "uiSpiritName", "Watcher Spirit");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildSpiritQuickAddRequest(dialog),
+                $"Spirit '{spiritName}' added. Dialog remains open for another spirit.",
+                ct,
+                "uiSpiritForce");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.critter_power_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string powerName = ReadDialogValue(dialog, "uiCritterPowerName", "Natural Weapon");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildCritterPowerQuickAddRequest(dialog),
+                $"Critter power '{powerName}' added.",
+                ct);
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.critter_power_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string powerName = ReadDialogValue(dialog, "uiCritterPowerName", "Natural Weapon");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildCritterPowerQuickAddRequest(dialog),
+                $"Critter power '{powerName}' added. Dialog remains open for another power.",
+                ct,
+                "uiCritterPowerRating");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.vehicle_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string vehicleName = ReadDialogValue(dialog, "uiVehicleName", "Hyundai Shin-Hyung");
-            PublishRulesetAwareDialogNotice(context, $"Vehicle '{vehicleName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildVehicleQuickAddRequest(dialog),
+                $"Vehicle '{vehicleName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.vehicle_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string vehicleName = ReadDialogValue(dialog, "uiVehicleName", "Hyundai Shin-Hyung");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Vehicle '{vehicleName}' added. Dialog remains open for another entry.", "uiVehicleShowDrones");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildVehicleQuickAddRequest(dialog),
+                $"Vehicle '{vehicleName}' added. Dialog remains open for another entry.",
+                ct,
+                "uiVehicleShowDrones");
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.quality_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string qualityName = ReadDialogValue(dialog, "uiQualityName", "First Impression");
-            PublishRulesetAwareDialogNotice(context, $"Quality '{qualityName}' added.");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildQualityQuickAddRequest(dialog),
+                $"Quality '{qualityName}' added.",
+                ct);
             return;
         }
 
         if (string.Equals(dialog.Id, "dialog.ui.quality_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
         {
             string qualityName = ReadDialogValue(dialog, "uiQualityName", "First Impression");
-            PublishRulesetAwareDialogAddMore(context, dialog, $"Quality '{qualityName}' added. Dialog remains open for another quality.", "uiQualityMetagenicOnly");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildQualityQuickAddRequest(dialog),
+                $"Quality '{qualityName}' added. Dialog remains open for another quality.",
+                ct,
+                "uiQualityMetagenicOnly");
             return;
         }
 
@@ -567,7 +867,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string priority = DesktopDialogFieldValueParser.GetValue(dialog, "characterPriority") ?? context.State.Preferences.CharacterPriority;
         int karmaNuyenRatio = DesktopDialogFieldValueParser.ParseInt(dialog, "characterKarmaNuyen", context.State.Preferences.KarmaNuyenRatio);
         bool houseRules = DesktopDialogFieldValueParser.ParseBool(dialog, "characterHouseRulesEnabled", context.State.Preferences.HouseRulesEnabled);
-        string notes = DesktopDialogFieldValueParser.GetValue(dialog, "characterNotes") ?? context.State.Preferences.CharacterNotes;
 
         context.Publish(context.State with
         {
@@ -578,8 +877,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             {
                 CharacterPriority = priority,
                 KarmaNuyenRatio = karmaNuyenRatio,
-                HouseRulesEnabled = houseRules,
-                CharacterNotes = notes
+                HouseRulesEnabled = houseRules
             },
             Notice = DesktopLocalizationCatalog.GetRequiredString(
                 "desktop.dialog.character_settings.notice.updated",
@@ -616,166 +914,389 @@ public sealed class DialogCoordinator : IDialogCoordinator
         DialogCoordinationContext context,
         CancellationToken ct)
     {
-        string expression = DesktopDialogFieldValueParser.GetValue(dialog, "diceExpression") ?? "1d6";
-        RulesetCapabilityInvocationResult result = await _engineEvaluator.InvokeAsync(
-            new RulesetCapabilityInvocationRequest(
-                CapabilityId: "ui.dice_roll",
-                InvocationKind: RulesetCapabilityInvocationKinds.Rule,
-                Arguments:
-                [
-                    new RulesetCapabilityArgument(
-                        Name: "expression",
-                        Value: new RulesetCapabilityValue(
-                            Kind: RulesetCapabilityValueKinds.String,
-                            StringValue: expression))
-                ]),
-            ct);
-
-        if (!result.Success)
+        await Task.Yield();
+        if (!TryReadDiceRequest(dialog, out DiceRollRequest request, out string error))
         {
-            string error = result.Diagnostics.Count is 0
-                ? "Dice evaluation failed."
-                : result.Diagnostics[0].Message;
-            context.Publish(context.State with { Error = error });
+            context.Publish(context.State with { Error = error, Notice = null });
             return;
         }
 
-        string? rawSummary = FormatEvaluationResult(result.Output);
-        string summary = string.IsNullOrWhiteSpace(rawSummary) ? $"{expression} result" : $"{expression}: {rawSummary}";
-        List<DesktopDialogField> fields = dialog.Fields
-            .Where(field => !string.Equals(field.Id, "diceResult", StringComparison.Ordinal))
-            .ToList();
-        fields.Add(new DesktopDialogField(
-            Id: "diceResult",
-            Label: "Last Result",
-            Value: summary,
-            Placeholder: summary,
-            IsMultiline: false,
-            IsReadOnly: true));
-
-        context.Publish(context.State with
-        {
-            Error = null,
-            Notice = summary,
-            ActiveDialog = dialog with
-            {
-                Message = "Dice expression evaluated by active ruleset.",
-                Fields = fields
-            }
-        });
+        DiceRollOutcome outcome = ExecuteDiceRoll(request);
+        PublishDiceOutcome(dialog, context, outcome, "Dice roller updated.");
     }
 
-    private static void DeriveInitiativePreview(
+    private static void RerollMisses(
         DesktopDialogState dialog,
         DialogCoordinationContext context)
     {
-        string preview = BuildInitiativePreview(dialog);
-        string threshold = DesktopDialogFieldValueParser.GetValue(dialog, "diceThreshold") ?? "0";
-        List<DesktopDialogField> fields = dialog.Fields
-            .Where(field => !string.Equals(field.Id, "initiativePreview", StringComparison.Ordinal))
+        string? lastRollStateJson = DesktopDialogFieldValueParser.GetValue(dialog, "diceLastRollState");
+        if (string.IsNullOrWhiteSpace(lastRollStateJson))
+        {
+            context.Publish(context.State with
+            {
+                Error = "Roll the dice first before rerolling misses.",
+                Notice = null
+            });
+            return;
+        }
+
+        DiceRollState? previous = JsonSerializer.Deserialize<DiceRollState>(lastRollStateJson);
+        if (previous is null)
+        {
+            context.Publish(context.State with
+            {
+                Error = "The previous roll state could not be restored.",
+                Notice = null
+            });
+            return;
+        }
+
+        int misses = previous.Lines.Count(line => !line.IsHit && !line.IsBubbleDie);
+        if (misses <= 0)
+        {
+            context.Publish(context.State with
+            {
+                Error = null,
+                Notice = "No misses are available to reroll."
+            });
+            return;
+        }
+
+        DiceRollOutcome outcome = ExecuteDiceReroll(previous);
+        PublishDiceOutcome(dialog, context, outcome, "Misses rerolled.");
+    }
+
+    private static async Task CreateCharacterFromDialogAsync(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context,
+        CancellationToken ct)
+    {
+        string rulesetId = RulesetDefaults.NormalizeOptional(ReadDialogValue(dialog, "newCharacterRulesetId", RulesetDefaults.Sr5))
+            ?? RulesetDefaults.Sr5;
+        string name = ReadDialogValue(dialog, "newCharacterName", "New Character").Trim();
+        string alias = ReadDialogValue(dialog, "newCharacterAlias", "Runner").Trim();
+        string buildMethod = ReadDialogValue(dialog, "newCharacterBuildMethod", "Priority").Trim();
+
+        if (string.IsNullOrWhiteSpace(alias))
+        {
+            alias = "Runner";
+        }
+
+        string xml = StarterWorkspaceXmlFactory.CreateCharacterXml(rulesetId, name, alias, buildMethod);
+        await context.ImportAsync(
+            new WorkspaceImportDocument(
+                xml,
+                rulesetId,
+                WorkspaceDocumentFormat.NativeXml),
+            ct);
+
+        CharacterOverviewState stateAfterImport = context.GetState();
+        if (stateAfterImport.Error is null)
+        {
+            context.Publish(stateAfterImport with
+            {
+                ActiveDialog = null,
+                Error = null,
+                Notice = $"Created '{name}' ({buildMethod}, {rulesetId.ToUpperInvariant()})."
+            });
+        }
+    }
+
+    private static bool TryReadDiceRequest(
+        DesktopDialogState dialog,
+        out DiceRollRequest request,
+        out string error)
+    {
+        request = new DiceRollRequest(
+            Method: "Standard",
+            DiceCount: 1,
+            Threshold: 0,
+            Gremlins: 0,
+            RuleOf6: false,
+            CinematicGameplay: false,
+            RushJob: false,
+            VariableGlitch: false,
+            BubbleDie: false);
+        error = string.Empty;
+
+        int diceCount = DesktopDialogFieldValueParser.ParseInt(dialog, "diceCount", 1);
+        if (diceCount <= 0)
+        {
+            error = "Dice count must be greater than zero.";
+            return false;
+        }
+
+        request = new DiceRollRequest(
+            Method: ReadDialogValue(dialog, "diceMethod", "Standard"),
+            DiceCount: diceCount,
+            Threshold: Math.Max(0, DesktopDialogFieldValueParser.ParseInt(dialog, "diceThreshold", 0)),
+            Gremlins: Math.Max(0, DesktopDialogFieldValueParser.ParseInt(dialog, "diceGremlins", 0)),
+            RuleOf6: DesktopDialogFieldValueParser.ParseBool(dialog, "diceRuleOf6", false),
+            CinematicGameplay: DesktopDialogFieldValueParser.ParseBool(dialog, "diceCinematicGameplay", false),
+            RushJob: DesktopDialogFieldValueParser.ParseBool(dialog, "diceRushJob", false),
+            VariableGlitch: DesktopDialogFieldValueParser.ParseBool(dialog, "diceVariableGlitch", false),
+            BubbleDie: DesktopDialogFieldValueParser.ParseBool(dialog, "diceBubbleDie", false));
+        return true;
+    }
+
+    private static DiceRollOutcome ExecuteDiceRoll(
+        DiceRollRequest request)
+    {
+        Random random = CreateDiceRandom(request);
+        List<DiceRollLine> lines = [];
+        for (int index = 0; index < request.DiceCount; index++)
+        {
+            lines.Add(RollDiceLine(random, request, bubbleDie: false));
+        }
+
+        return FinalizeDiceOutcome(request, lines);
+    }
+
+    private static DiceRollOutcome ExecuteDiceReroll(
+        DiceRollState previous)
+    {
+        Random random = CreateDiceRandom(previous.Request);
+        List<DiceRollLine> carriedHits = previous.Lines
+            .Where(line => line.IsHit && !line.IsBubbleDie)
+            .Select(line => line with { Sequence = 0 })
             .ToList();
-        fields.Add(new DesktopDialogField(
-            Id: "initiativePreview",
-            Label: "Initiative Preview",
-            Value: preview,
-            Placeholder: preview,
-            IsMultiline: false,
-            IsReadOnly: true));
+        int rerollCount = previous.Lines.Count(line => !line.IsHit && !line.IsBubbleDie);
+        for (int index = 0; index < rerollCount; index++)
+        {
+            carriedHits.Add(RollDiceLine(random, previous.Request, bubbleDie: false));
+        }
+
+        return FinalizeDiceOutcome(previous.Request, carriedHits);
+    }
+
+    private static DiceRollOutcome FinalizeDiceOutcome(
+        DiceRollRequest request,
+        List<DiceRollLine> baseLines)
+    {
+        List<DiceRollLine> lines = baseLines
+            .Select((line, index) => line with { Sequence = index + 1 })
+            .ToList();
+
+        int hitsWithoutBubble = CountDiceHits(lines, request.Method);
+        int glitchCountWithoutBubble = lines.Count(line => line.IsGlitch);
+        int glitchThresholdWithoutBubble = ComputeGlitchThreshold(lines.Count, hitsWithoutBubble, request.Gremlins, request.VariableGlitch);
+
+        if (request.BubbleDie
+            && (request.VariableGlitch
+                || (glitchCountWithoutBubble == glitchThresholdWithoutBubble - 1
+                    && (lines.Count & 1) == 0)))
+        {
+            Random bubbleRandom = CreateDiceRandom(request, bubbleSalt: 37);
+            lines.Add(RollDiceLine(bubbleRandom, request, bubbleDie: true) with { Sequence = lines.Count + 1 });
+        }
+
+        int hits = CountDiceHits(lines, request.Method);
+        int glitchCount = lines.Count(line => line.IsGlitch);
+        int glitchThreshold = ComputeGlitchThreshold(lines.Count, hits, request.Gremlins, request.VariableGlitch);
+        bool glitch = glitchCount >= glitchThreshold;
+        bool criticalGlitch = glitch && hits == 0;
+        int sum = lines.Sum(line => line.Total);
+
+        string summary = BuildDiceSummary(request, hits, glitch, criticalGlitch, sum);
+        string resultList = string.Join(
+            Environment.NewLine,
+            lines.Select(line => BuildDiceLineText(line, request.Method)));
+        if (string.IsNullOrWhiteSpace(resultList))
+        {
+            resultList = "No rolls yet.";
+        }
+
+        string stateJson = JsonSerializer.Serialize(new DiceRollState(request, lines, glitch, criticalGlitch));
+        return new DiceRollOutcome(summary, resultList, stateJson);
+    }
+
+    private static void PublishDiceOutcome(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context,
+        DiceRollOutcome outcome,
+        string message)
+    {
+        List<DesktopDialogField> fields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "diceResultsSummary" => field with { Value = outcome.Summary, Placeholder = outcome.Summary },
+                "diceResultsList" => field with { Value = outcome.ResultsList, Placeholder = outcome.ResultsList },
+                "diceLastRollState" => field with { Value = outcome.StateJson, Placeholder = outcome.StateJson },
+                _ => field
+            })
+            .ToList();
 
         context.Publish(context.State with
         {
             Error = null,
-            Notice = $"Initiative preview refreshed (threshold {threshold}).",
+            Notice = outcome.Summary,
             ActiveDialog = dialog with
             {
-                Message = "Ruleset-backed initiative preview updated without closing the utility.",
+                Message = message,
                 Fields = fields
             }
         });
     }
 
-    private static string BuildInitiativePreview(DesktopDialogState dialog)
+    private static DiceRollLine RollDiceLine(
+        Random random,
+        DiceRollRequest request,
+        bool bubbleDie)
     {
-        int initiativeBase = DesktopDialogFieldValueParser.ParseInt(dialog, "diceInitiativeBase", 10);
-        int initiativeDice = DesktopDialogFieldValueParser.ParseInt(dialog, "diceInitiativeDice", 1);
-        int woundModifier = DesktopDialogFieldValueParser.ParseInt(dialog, "diceWoundModifier", 0);
-        int currentPass = DesktopDialogFieldValueParser.ParseInt(dialog, "diceCurrentPass", 1);
+        int target = ResolveDiceTarget(request.Method, request.CinematicGameplay);
+        int glitchMin = ResolveGlitchMinimum(request.Method, request.RushJob);
+        bool allowRuleOf6 = string.Equals(request.Method, "Standard", StringComparison.OrdinalIgnoreCase) && request.RuleOf6;
 
-        int sanitizedDiceCount = Math.Max(0, initiativeDice);
-        int sanitizedPass = Math.Max(1, currentPass);
-        int modifiedBase = initiativeBase + woundModifier;
-        int min = modifiedBase + sanitizedDiceCount;
-        int max = modifiedBase + (sanitizedDiceCount * 6);
-        decimal average = modifiedBase + (sanitizedDiceCount * 3.5m);
-
-        return sanitizedDiceCount == 0
-            ? $"{modifiedBase} flat · pass {sanitizedPass}"
-            : $"{modifiedBase} + {sanitizedDiceCount}d6 · pass {sanitizedPass} · range {min}-{max} · avg {average:0.0}";
-    }
-
-    private static string? FormatEvaluationResult(RulesetCapabilityValue? value)
-    {
-        if (value is null)
-            return null;
-
-        return value.Kind switch
+        List<int> segments = [];
+        int firstFace = 0;
+        int current;
+        do
         {
-            RulesetCapabilityValueKinds.String => value.StringValue,
-            RulesetCapabilityValueKinds.Boolean => value.BooleanValue?.ToString(CultureInfo.InvariantCulture),
-            RulesetCapabilityValueKinds.Integer => value.IntegerValue?.ToString(CultureInfo.InvariantCulture),
-            RulesetCapabilityValueKinds.Number => value.NumberValue?.ToString(CultureInfo.InvariantCulture),
-            RulesetCapabilityValueKinds.Decimal => value.DecimalValue?.ToString(CultureInfo.InvariantCulture),
-            RulesetCapabilityValueKinds.List => FormatList(value.Items),
-            RulesetCapabilityValueKinds.Object => FormatObject(value.Properties),
-            _ => value.StringValue
-        };
-    }
-
-    private static string FormatList(IReadOnlyList<RulesetCapabilityValue>? values)
-    {
-        if (values is null || values.Count is 0)
-            return "[]";
-
-        StringBuilder builder = new();
-        builder.Append('[');
-        for (int index = 0; index < values.Count; index++)
-        {
-            if (index > 0)
+            current = random.Next(1, 7);
+            if (segments.Count == 0)
             {
-                builder.Append(", ");
+                firstFace = current;
             }
 
-            builder.Append(FormatEvaluationResult(values[index]) ?? "null");
-        }
+            segments.Add(current);
+        } while (allowRuleOf6 && current == 6);
 
-        builder.Append(']');
-        return builder.ToString();
+        int total = segments.Sum();
+        bool hit = string.Equals(request.Method, "ReallyLarge", StringComparison.OrdinalIgnoreCase)
+            ? total > 0
+            : total >= target;
+        bool glitch = firstFace <= glitchMin;
+        return new DiceRollLine(0, segments, total, hit, glitch, bubbleDie);
     }
 
-    private static string FormatObject(IReadOnlyDictionary<string, RulesetCapabilityValue>? values)
+    private static string BuildDiceSummary(
+        DiceRollRequest request,
+        int hits,
+        bool glitch,
+        bool criticalGlitch,
+        int sum)
     {
-        if (values is null || values.Count is 0)
-            return "{}";
+        string resultText = criticalGlitch
+            ? "Critical Glitch"
+            : glitch
+                ? request.Threshold > 0
+                    ? $"{(hits >= request.Threshold ? "Success" : "Failure")} (Glitch, {hits} hit{(hits == 1 ? string.Empty : "s")})"
+                    : $"Glitch ({hits} hit{(hits == 1 ? string.Empty : "s")})"
+                : request.Threshold > 0
+                    ? $"{(hits >= request.Threshold ? "Success" : "Failure")} ({hits} hit{(hits == 1 ? string.Empty : "s")})"
+                    : $"{hits} hit{(hits == 1 ? string.Empty : "s")}";
+        return $"{resultText}{Environment.NewLine}{Environment.NewLine}Sum {sum}";
+    }
 
-        StringBuilder builder = new();
-        builder.Append('{');
-        int index = 0;
-        foreach (KeyValuePair<string, RulesetCapabilityValue> item in values)
+    private static string BuildDiceLineText(DiceRollLine line, string method)
+    {
+        string rollText = string.Join("+", line.Segments);
+        string marker = line.IsBubbleDie
+            ? "bubble"
+            : line.IsHit
+                ? "hit"
+                : "miss";
+        string glitchMarker = line.IsGlitch ? " · glitch" : string.Empty;
+        string prefix = line.IsBubbleDie ? "Bubble" : $"Die {line.Sequence}";
+        return $"{prefix}: {rollText} = {line.Total} ({marker}{glitchMarker})";
+    }
+
+    private static int CountDiceHits(
+        IReadOnlyList<DiceRollLine> lines,
+        string method)
+    {
+        return string.Equals(method, "ReallyLarge", StringComparison.OrdinalIgnoreCase)
+            ? lines.Sum(line => line.Total)
+            : lines.Count(line => line.IsHit);
+    }
+
+    private static int ComputeGlitchThreshold(
+        int diceCount,
+        int hits,
+        int gremlins,
+        bool variableGlitch)
+    {
+        int threshold = variableGlitch
+            ? hits + 1
+            : (int)Math.Ceiling(diceCount / 2d);
+        threshold -= gremlins;
+        return Math.Max(1, threshold);
+    }
+
+    private static int ResolveDiceTarget(string method, bool cinematicGameplay)
+    {
+        if (string.Equals(method, "ReallyLarge", StringComparison.OrdinalIgnoreCase))
         {
-            if (index > 0)
-            {
-                builder.Append(", ");
-            }
-
-            builder.Append(item.Key);
-            builder.Append(": ");
-            builder.Append(FormatEvaluationResult(item.Value) ?? "null");
-            index++;
+            return 1;
         }
 
-        builder.Append('}');
-        return builder.ToString();
+        if (string.Equals(method, "Large", StringComparison.OrdinalIgnoreCase))
+        {
+            return 3;
+        }
+
+        return cinematicGameplay ? 4 : 5;
     }
+
+    private static int ResolveGlitchMinimum(string method, bool rushJob)
+    {
+        if (string.Equals(method, "ReallyLarge", StringComparison.OrdinalIgnoreCase))
+        {
+            return 7;
+        }
+
+        return rushJob ? 2 : 1;
+    }
+
+    private static Random CreateDiceRandom(
+        DiceRollRequest request,
+        int bubbleSalt = 0)
+    {
+        int requestHash = HashCode.Combine(
+            request.Method,
+            request.DiceCount,
+            request.Threshold,
+            request.Gremlins,
+            request.RuleOf6,
+            request.CinematicGameplay,
+            request.RushJob,
+            request.VariableGlitch);
+        int environmentHash = HashCode.Combine(
+            request.BubbleDie,
+            DateTime.UtcNow.Ticks,
+            bubbleSalt);
+        return new Random(HashCode.Combine(requestHash, environmentHash));
+    }
+
+    private sealed record DiceRollOutcome(
+        string Summary,
+        string ResultsList,
+        string StateJson);
+
+    private sealed record DiceRollState(
+        DiceRollRequest Request,
+        IReadOnlyList<DiceRollLine> Lines,
+        bool WasGlitch,
+        bool WasCriticalGlitch);
+
+    private sealed record DiceRollRequest(
+        string Method,
+        int DiceCount,
+        int Threshold,
+        int Gremlins,
+        bool RuleOf6,
+        bool CinematicGameplay,
+        bool RushJob,
+        bool VariableGlitch,
+        bool BubbleDie);
+
+    private sealed record DiceRollLine(
+        int Sequence,
+        IReadOnlyList<int> Segments,
+        int Total,
+        bool IsHit,
+        bool IsGlitch,
+        bool IsBubbleDie);
 
     private static void PublishDialogNotice(
         DialogCoordinationContext context,
@@ -833,6 +1354,325 @@ public sealed class DialogCoordinator : IDialogCoordinator
             dialog,
             RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(context.State), notice),
             fieldIdsToReset);
+
+    private static async Task ApplyQuickAddDialogAsync(
+        DialogCoordinationContext context,
+        DesktopDialogState dialog,
+        WorkspaceQuickAddRequest request,
+        string notice,
+        CancellationToken ct)
+    {
+        if (context.ApplyQuickAddAsync is null)
+        {
+            PublishRulesetAwareDialogNotice(context, notice);
+            return;
+        }
+
+        await context.ApplyQuickAddAsync(request, ct);
+        CharacterOverviewState stateAfterAdd = context.GetState();
+        if (!string.IsNullOrWhiteSpace(stateAfterAdd.Error))
+        {
+            return;
+        }
+
+        context.Publish(stateAfterAdd with
+        {
+            ActiveDialog = null,
+            Error = null,
+            Notice = RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(stateAfterAdd), notice)
+        });
+    }
+
+    private static async Task ApplyQuickAddDialogAddMoreAsync(
+        DialogCoordinationContext context,
+        DesktopDialogState dialog,
+        WorkspaceQuickAddRequest request,
+        string notice,
+        CancellationToken ct,
+        params string[] fieldIdsToReset)
+    {
+        if (context.ApplyQuickAddAsync is null)
+        {
+            PublishRulesetAwareDialogAddMore(context, dialog, notice, fieldIdsToReset);
+            return;
+        }
+
+        await context.ApplyQuickAddAsync(request, ct);
+        CharacterOverviewState stateAfterAdd = context.GetState();
+        if (!string.IsNullOrWhiteSpace(stateAfterAdd.Error))
+        {
+            return;
+        }
+
+        DesktopDialogState resetDialog = dialog with
+        {
+            Fields = dialog.Fields
+                .Select(field => fieldIdsToReset.Contains(field.Id, StringComparer.Ordinal)
+                    ? field with { Value = field.Placeholder }
+                    : field)
+                .ToArray(),
+            Message = "Previous selection added. Add & More keeps the classic selector open for the next entry."
+        };
+
+        resetDialog = DesktopDialogFactory.RebuildDynamicDialog(resetDialog, stateAfterAdd.Preferences);
+
+        context.Publish(stateAfterAdd with
+        {
+            ActiveDialog = resetDialog,
+            Error = null,
+            Notice = RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(stateAfterAdd), notice)
+        });
+    }
+
+    private static WorkspaceQuickAddRequest BuildGearQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Gear,
+            Name: ReadDialogValue(dialog, "uiGearName", "Gear"),
+            Category: ResolveSelectionCategory(dialog, "uiGearSelectedBranch", "uiGearCategory", "Gear"),
+            Source: ReadDialogValue(dialog, "uiGearSource", "Desktop Quick Add"),
+            Cost: ReadDialogValue(dialog, "uiGearCost", "0"),
+            Rating: DesktopDialogFieldValueParser.ParseInt(dialog, "uiGearRating", 0),
+            Quantity: Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiGearQuantity", 1)));
+    }
+
+    private static WorkspaceQuickAddRequest BuildWeaponQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Weapon,
+            Name: ReadDialogValue(dialog, "uiWeaponName", "Weapon"),
+            Category: ResolveSelectionCategory(dialog, "uiWeaponSelectedBranch", "uiWeaponCategory", "Weapon"),
+            Source: ReadDialogValue(dialog, "uiWeaponSource", "Desktop Quick Add"),
+            Cost: ReadDialogValue(dialog, "uiWeaponCost", "0"),
+            Accuracy: ReadDialogValue(dialog, "uiWeaponAccuracy", "4"));
+    }
+
+    private static WorkspaceQuickAddRequest BuildArmorQuickAddRequest(DesktopDialogState dialog)
+    {
+        string armorValue = ReadDialogValue(dialog, "uiArmorRating", "0");
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Armor,
+            Name: ReadDialogValue(dialog, "uiArmorName", "Armor"),
+            Category: ResolveSelectionCategory(dialog, "uiArmorSelectedBranch", "uiArmorCategory", "Armor"),
+            Source: ReadDialogValue(dialog, "uiArmorSource", "Desktop Quick Add"),
+            Cost: ReadDialogValue(dialog, "uiArmorCost", "0"),
+            ArmorValue: armorValue,
+            Rating: DesktopDialogFieldValueParser.ParseInt(dialog, "uiArmorRating", 0));
+    }
+
+    private static WorkspaceQuickAddRequest BuildSkillQuickAddRequest(DesktopDialogState dialog)
+    {
+        string category = ReadDialogValue(dialog, "uiSkillCategory", "Active");
+        bool isKnowledge = category.Contains("knowledge", StringComparison.OrdinalIgnoreCase)
+            || category.Contains("language", StringComparison.OrdinalIgnoreCase);
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Skill,
+            Name: ReadDialogValue(dialog, "uiSkillName", "Skill"),
+            Category: isKnowledge ? "Knowledge" : "Active Skill",
+            BaseValue: Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiSkillRating", 1)),
+            IsKnowledge: isKnowledge);
+    }
+
+    private static WorkspaceQuickAddRequest BuildContactQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Contact,
+            Name: ReadDialogValue(dialog, "uiContactName", "Contact"),
+            Role: ReadDialogValue(dialog, "uiContactRole", "Contact"),
+            Location: "Seattle",
+            Connection: Math.Max(0, DesktopDialogFieldValueParser.ParseInt(dialog, "uiContactConnection", 0)),
+            Loyalty: Math.Max(0, DesktopDialogFieldValueParser.ParseInt(dialog, "uiContactLoyalty", 0)));
+    }
+
+    private static WorkspaceQuickAddRequest BuildVehicleQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Vehicle,
+            Name: ReadDialogValue(dialog, "uiVehicleName", "Vehicle"),
+            Category: ResolveSelectionCategory(dialog, "uiVehicleSelectedBranch", "uiVehicleCategory", "Vehicle"),
+            Source: ReadDialogValue(dialog, "uiVehicleSource", "Desktop Quick Add"),
+            Cost: ReadDialogValue(dialog, "uiVehicleCost", "0"),
+            Handling: ReadDialogValue(dialog, "uiVehicleHandling", "3"),
+            Speed: ReadDialogValue(dialog, "uiVehicleSpeed", "3"),
+            Body: ReadDialogValue(dialog, "uiVehicleBody", "10"),
+            ArmorValue: ReadDialogValue(dialog, "uiVehicleArmor", "8"),
+            Sensor: "2",
+            Seats: "4");
+    }
+
+    private static WorkspaceQuickAddRequest BuildQualityQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Quality,
+            Name: ReadDialogValue(dialog, "uiQualityName", "Quality"),
+            Category: ReadDialogValue(dialog, "uiQualityType", "Positive"),
+            Source: "Desktop Quick Add",
+            Karma: DesktopDialogFieldValueParser.ParseInt(dialog, "uiQualityKarma", 0));
+    }
+
+    private static WorkspaceQuickAddRequest BuildDrugQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Drug,
+            Name: ReadDialogValue(dialog, "uiDrugName", "Drug"),
+            Category: "Drug",
+            Source: ReadDialogValue(dialog, "uiDrugSource", "Desktop Quick Add"),
+            Quantity: Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiDrugQuantity", 1)));
+    }
+
+    private static WorkspaceQuickAddRequest BuildCyberwareQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Cyberware,
+            Name: ReadDialogValue(dialog, "uiCyberwareName", "Cyberware"),
+            Category: ResolveSelectionCategory(dialog, "uiCyberwareSelectedBranch", "uiCyberwareCategory", "Cyberware"),
+            Source: ReadDialogValue(dialog, "uiCyberwareSource", "Desktop Quick Add"),
+            Cost: ReadDialogValue(dialog, "uiCyberwareCost", "0"),
+            Rating: Math.Max(0, DesktopDialogFieldValueParser.ParseInt(dialog, "uiCyberwareRating", 0)),
+            Grade: ReadDialogValue(dialog, "uiCyberwareGrade", "Standard"),
+            Essence: ReadDialogValue(dialog, "uiCyberwareEssence", "0.00"),
+            Capacity: ReadDialogValue(dialog, "uiCyberwareCapacity", "n/a"),
+            Location: ReadDialogValue(dialog, "uiCyberwareSlot", "Body"));
+    }
+
+    private static WorkspaceQuickAddRequest BuildMagicQuickAddRequest(DesktopDialogState dialog)
+    {
+        string family = ReadDialogValue(dialog, "uiMagicFamily", "Spell");
+        string normalizedFamily = family.Trim();
+        string kind = normalizedFamily.Contains("complex", StringComparison.OrdinalIgnoreCase)
+            ? WorkspaceQuickAddKinds.ComplexForm
+            : normalizedFamily.Contains("adept", StringComparison.OrdinalIgnoreCase)
+                || normalizedFamily.Contains("power", StringComparison.OrdinalIgnoreCase)
+                ? WorkspaceQuickAddKinds.Power
+                : WorkspaceQuickAddKinds.Spell;
+
+        return kind switch
+        {
+            WorkspaceQuickAddKinds.ComplexForm => new WorkspaceQuickAddRequest(
+                Kind: WorkspaceQuickAddKinds.ComplexForm,
+                Name: ReadDialogValue(dialog, "uiMagicName", "Complex Form"),
+                Source: ReadDialogValue(dialog, "uiMagicSource", "Desktop Quick Add"),
+                Target: ReadDialogValue(dialog, "uiMagicCategory", "Persona"),
+                Duration: "Sustained",
+                FadingValue: $"Level {Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiMagicLevel", 1))}"),
+            WorkspaceQuickAddKinds.Power => new WorkspaceQuickAddRequest(
+                Kind: WorkspaceQuickAddKinds.Power,
+                Name: ReadDialogValue(dialog, "uiMagicName", "Power"),
+                Source: ReadDialogValue(dialog, "uiMagicSource", "Desktop Quick Add"),
+                Rating: Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiMagicLevel", 1)),
+                PointsPerLevel: ParseDecimalOrDefault(ReadDialogValue(dialog, "uiMagicLevel", "1"), 1m)),
+            _ => new WorkspaceQuickAddRequest(
+                Kind: WorkspaceQuickAddKinds.Spell,
+                Name: ReadDialogValue(dialog, "uiMagicName", "Spell"),
+                Category: ReadDialogValue(dialog, "uiMagicCategory", "Combat"),
+                Source: ReadDialogValue(dialog, "uiMagicSource", "Desktop Quick Add"),
+                Type: "Mana",
+                Range: "LOS",
+                Duration: "Instant",
+                DrainValue: "F-3")
+        };
+    }
+
+    private static WorkspaceQuickAddRequest BuildSpellQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Spell,
+            Name: ReadDialogValue(dialog, "uiSpellName", "Spell"),
+            Category: ReadDialogValue(dialog, "uiSpellCategory", "Combat"),
+            Source: ReadDialogValue(dialog, "uiSpellSource", "Desktop Quick Add"),
+            Type: "Mana",
+            Range: "LOS",
+            Duration: "Instant",
+            DrainValue: "F-3");
+    }
+
+    private static WorkspaceQuickAddRequest BuildAdeptPowerQuickAddRequest(DesktopDialogState dialog)
+    {
+        int rating = Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiAdeptPowerLevel", 1));
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Power,
+            Name: ReadDialogValue(dialog, "uiAdeptPowerName", "Adept Power"),
+            Source: ReadDialogValue(dialog, "uiAdeptPowerSource", "Desktop Quick Add"),
+            Rating: rating,
+            PointsPerLevel: ParseDecimalOrDefault(ReadDialogValue(dialog, "uiAdeptPowerLevel", "1"), 1m));
+    }
+
+    private static WorkspaceQuickAddRequest BuildComplexFormQuickAddRequest(DesktopDialogState dialog)
+    {
+        int level = Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiComplexFormLevel", 1));
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.ComplexForm,
+            Name: ReadDialogValue(dialog, "uiComplexFormName", "Complex Form"),
+            Source: ReadDialogValue(dialog, "uiComplexFormSource", "Desktop Quick Add"),
+            Target: "Persona",
+            Duration: "Sustained",
+            FadingValue: $"Level {level}");
+    }
+
+    private static WorkspaceQuickAddRequest BuildMatrixProgramQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.MatrixProgram,
+            Name: ReadDialogValue(dialog, "uiMatrixProgramName", "Program"),
+            Source: ReadDialogValue(dialog, "uiMatrixProgramSource", "Desktop Quick Add"),
+            Slot: ReadDialogValue(dialog, "uiMatrixProgramSlot", "Common"));
+    }
+
+    private static WorkspaceQuickAddRequest BuildInitiationQuickAddRequest(DesktopDialogState dialog)
+    {
+        string track = ReadDialogValue(dialog, "uiInitiationTrack", "Initiation");
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.InitiationGrade,
+            Name: ReadDialogValue(dialog, "uiInitiationReward", "Initiation Reward"),
+            Rating: Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiInitiationGrade", 1)),
+            Res: track.Contains("submersion", StringComparison.OrdinalIgnoreCase),
+            Reward: ReadDialogValue(dialog, "uiInitiationReward", "Initiation Reward"));
+    }
+
+    private static WorkspaceQuickAddRequest BuildSpiritQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Spirit,
+            Name: ReadDialogValue(dialog, "uiSpiritName", "Spirit"),
+            Category: ReadDialogValue(dialog, "uiSpiritType", "Spirit"),
+            Force: Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiSpiritForce", 1)),
+            Services: 0,
+            Bound: false);
+    }
+
+    private static WorkspaceQuickAddRequest BuildCritterPowerQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.CritterPower,
+            Name: ReadDialogValue(dialog, "uiCritterPowerName", "Critter Power"),
+            Category: "Critter Power",
+            Type: "Passive",
+            Source: "Desktop Quick Add",
+            Range: "Self",
+            Duration: "Always",
+            Rating: Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiCritterPowerRating", 1)));
+    }
+
+    private static decimal ParseDecimalOrDefault(string? value, decimal fallback)
+        => decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed)
+            ? parsed
+            : fallback;
+
+    private static string ResolveSelectionCategory(
+        DesktopDialogState dialog,
+        string branchFieldId,
+        string categoryFieldId,
+        string fallback)
+    {
+        string branch = ReadDialogValue(dialog, branchFieldId, string.Empty);
+        if (!string.IsNullOrWhiteSpace(branch))
+        {
+            return branch;
+        }
+
+        string category = ReadDialogValue(dialog, categoryFieldId, fallback);
+        return IsShowAllSelectionCategory(category) ? fallback : category;
+    }
 
     private static bool TryCoordinateLegacyDeleteAction(
         DesktopDialogState dialog,
@@ -1267,27 +2107,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
         }
 
         return JsonSerializer.Deserialize<MasterIndexCoordinatorSnapshot>(snapshotJson);
-    }
-
-    private static void OpenCharacterSettingsFromMasterIndex(DialogCoordinationContext context)
-    {
-        DesktopDialogFactory dialogFactory = new();
-        CharacterOverviewState state = context.GetState();
-        DesktopDialogState characterSettingsDialog = dialogFactory.CreateCommandDialog(
-            "character_settings",
-            state.Profile,
-            state.Preferences,
-            state.ActiveSectionJson,
-            state.WorkspaceId,
-            ResolveContextRulesetId(state),
-            openWorkspaces: state.OpenWorkspaces);
-
-        context.Publish(state with
-        {
-            ActiveDialog = characterSettingsDialog,
-            Error = null,
-            Notice = "Character Settings opened from Master Index."
-        });
     }
 
     private static string? ResolveContextRulesetId(CharacterOverviewState state)

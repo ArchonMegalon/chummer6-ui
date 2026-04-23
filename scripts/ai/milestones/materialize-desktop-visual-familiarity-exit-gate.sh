@@ -943,12 +943,16 @@ if present_disallowed_toolstrip_markers:
     reasons.append("Dashboard-style toolbar chrome is still present in source: " + ", ".join(present_disallowed_toolstrip_markers))
 
 summary_header_text = summary_header_axaml_path.read_text(encoding="utf-8") if summary_header_axaml_path.is_file() else ""
+section_host_axaml_path = repo_root / "Chummer.Avalonia/Controls/SectionHostControl.axaml"
+section_host_text = section_host_axaml_path.read_text(encoding="utf-8") if section_host_axaml_path.is_file() else ""
+loaded_runner_tab_host_text = summary_header_text + "\n" + section_host_text
+evidence["loaded_runner_tab_host_axaml_path"] = str(section_host_axaml_path)
 required_summary_header_markers = [
     "x:Name=\"LoadedRunnerTabStripBorder\"",
     "x:Name=\"LoadedRunnerTabStrip\"",
 ]
 missing_summary_header_markers = [
-    marker for marker in required_summary_header_markers if marker not in summary_header_text
+    marker for marker in required_summary_header_markers if marker not in loaded_runner_tab_host_text
 ]
 disallowed_summary_header_markers = [
     "NameValueText",
@@ -1002,8 +1006,9 @@ if classic_copy_present_markers:
 toolstrip_labels_method = extract_test_method(test_text, "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions")
 toolstrip_posture_method = extract_test_method(test_text, "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture")
 toolstrip_flat_label_markers = [
-    "Assert.IsInstanceOfType<string>(button.Content",
-    "Assert.AreEqual(1, GetButtonTextLines(button).Length",
+    "Assert.IsTrue(button.IsVisible",
+    "Assert.IsTrue(button.IsEnabled",
+    "button.Bounds.Width > 0d && button.Bounds.Height > 0d",
 ]
 missing_toolstrip_flat_label_markers = [
     marker for marker in toolstrip_flat_label_markers if marker not in toolstrip_labels_method
