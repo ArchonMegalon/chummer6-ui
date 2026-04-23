@@ -955,6 +955,9 @@ bash scripts/ai/milestones/next90-m104-ui-explain-receipts-check.sh
 echo "[verify] checking next-90 M105 restore-continuity and conflict-safe desktop UX guard..."
 bash scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh
 
+echo "[verify] checking next-90 M109 build explain artifact companion closure guard..."
+bash scripts/ai/milestones/next90-m109-ui-build-explain-artifacts-check.sh
+
 echo "[verify] checking B15 localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh
 

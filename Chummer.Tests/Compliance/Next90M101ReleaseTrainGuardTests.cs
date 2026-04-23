@@ -191,6 +191,9 @@ public sealed class Next90M101ReleaseTrainGuardTests
         StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit fb8ad231 resolves the M101 release train proof citation to the current generated receipt and verifier guard.");
         StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit 46eb74e2 tightens the M101 release train proof citation.");
         StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit 35433ce3 tightens M101 proof floor authority guard.");
+        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit d7c9b1ec tightens M101 startup-smoke identity, install-posture, and fallback-receipt proof for the Avalonia primary release train.");
+        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit 79fb7eb9 tightens M101 percent-decoded fallback-proof smuggling guards for the Avalonia primary release train.");
+        StringAssert.Contains(scriptText, "\"362686fb\"");
         StringAssert.Contains(scriptText, "ui_work_task_encoded_helper_proof_guard_pin_present");
         StringAssert.Contains(scriptText, "ui_work_task_hex_encoded_helper_proof_guard_pin_present");
         StringAssert.Contains(scriptText, "ui_work_task_hex_helper_proof_floor_pin_present");
@@ -206,7 +209,7 @@ public sealed class Next90M101ReleaseTrainGuardTests
         StringAssert.Contains(scriptText, "\"2e8f29b7\"");
         StringAssert.Contains(scriptText, "\"342bff22\"");
         StringAssert.Contains(scriptText, "\"a3917b15\"");
-        StringAssert.Contains(scriptText, "EXPECTED_CURRENT_PACKAGE_PROOF_FLOOR_COMMIT = \"35433ce3\"");
+        StringAssert.Contains(scriptText, "EXPECTED_CURRENT_PACKAGE_PROOF_FLOOR_COMMIT = \"362686fb\"");
         StringAssert.Contains(scriptText, "\"currentPackageProofFloorCommit\": EXPECTED_CURRENT_PACKAGE_PROOF_FLOOR_COMMIT");
         StringAssert.Contains(scriptText, "previous_semantic_payload.pop(\"generatedAt\", None)");
         StringAssert.Contains(scriptText, "payload[\"generatedAt\"] = previous_payload[\"generatedAt\"]");
@@ -637,7 +640,7 @@ public sealed class Next90M101ReleaseTrainGuardTests
         Assert.AreEqual(2450443084, root.GetProperty("frontierId").GetInt64());
         Assert.AreEqual(101, root.GetProperty("milestoneId").GetInt32());
         Assert.AreEqual("c9c0d84f", root.GetProperty("landedCommit").GetString());
-        Assert.AreEqual("35433ce3", root.GetProperty("currentPackageProofFloorCommit").GetString());
+        Assert.AreEqual("362686fb", root.GetProperty("currentPackageProofFloorCommit").GetString());
         Assert.AreEqual("verify_closed_package_only", root.GetProperty("completionAction").GetString());
         Assert.IsTrue(root.GetProperty("doNotReopenClosedPackage").GetBoolean());
         StringAssert.Contains(root.GetProperty("doNotReopenReason").GetString(), "future shards must verify this receipt");
@@ -885,8 +888,8 @@ public sealed class Next90M101ReleaseTrainGuardTests
         Assert.IsTrue(proofCommitScope.GetProperty("a7ff93b4").GetBoolean());
         Assert.IsTrue(proofCommits.GetProperty("fb8ad231").GetBoolean());
         Assert.IsTrue(proofCommitScope.GetProperty("fb8ad231").GetBoolean());
-        Assert.IsTrue(proofCommits.GetProperty("35433ce3").GetBoolean());
-        Assert.IsTrue(proofCommitScope.GetProperty("35433ce3").GetBoolean());
+        Assert.IsTrue(proofCommits.GetProperty("362686fb").GetBoolean());
+        Assert.IsTrue(proofCommitScope.GetProperty("362686fb").GetBoolean());
         JsonElement queueProofCommitTokens = gitChecks.GetProperty("queue_proof_commit_tokens");
         JsonElement queueProofCommitTokensResolve = gitChecks.GetProperty("queue_proof_commit_tokens_resolve");
         JsonElement authorityProofCommitTokens = gitChecks.GetProperty("authority_row_proof_commit_tokens");
