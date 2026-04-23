@@ -64,6 +64,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.status.compliance_placeholder"] = "Compliance: shared presenter path",
         ["desktop.shell.feedback.import_raw_required"] = "State: provide debug XML content before importing.",
         ["desktop.shell.feedback.import_file_unavailable"] = "State: file picker unavailable on this platform.",
+        ["desktop.shell.feedback.import_file_cancelled"] = "State: {0} selection cancelled.",
         ["desktop.shell.feedback.demo_runner_unavailable"] = "State: bundled demo runner is unavailable in this build.",
         ["desktop.shell.feedback.demo_runner_loading"] = "State: loading bundled demo runner from {0}.",
         ["desktop.shell.feedback.no_active_workspace"] = "State: no active workspace to close.",
@@ -438,6 +439,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.error"] = "Status: Fehler - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "Status: Fugen Sie vor dem Import Debug-XML-Inhalt ein.";
             localized["desktop.shell.feedback.import_file_unavailable"] = "Status: Dateiauswahl ist auf dieser Plattform nicht verfugbar.";
+            localized["desktop.shell.feedback.import_file_cancelled"] = "Status: Auswahl fur {0} wurde abgebrochen.";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "Status: Der gebundelte Demo-Runner ist in diesem Build nicht verfugbar.";
             localized["desktop.shell.feedback.demo_runner_loading"] = "Status: Gebundelter Demo-Runner wird aus {0} geladen.";
             localized["desktop.shell.feedback.no_active_workspace"] = "Status: Kein aktiver Arbeitsbereich zum Schliessen.";
@@ -828,6 +830,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.error"] = "Etat : erreur - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "Etat : fournissez le contenu XML de debug avant l'import.";
             localized["desktop.shell.feedback.import_file_unavailable"] = "Etat : le selecteur de fichier est indisponible sur cette plateforme.";
+            localized["desktop.shell.feedback.import_file_cancelled"] = "Etat : la selection de fichier {0} a ete annulee.";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "Etat : le runner de demonstration fourni est indisponible dans ce build.";
             localized["desktop.shell.feedback.demo_runner_loading"] = "Etat : chargement du runner de demonstration depuis {0}.";
             localized["desktop.shell.feedback.no_active_workspace"] = "Etat : aucun workspace actif a fermer.";
@@ -1218,6 +1221,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.error"] = "状態: エラー - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "状態: インポート前にデバッグ XML 内容を入力してください。";
             localized["desktop.shell.feedback.import_file_unavailable"] = "状態: このプラットフォームではファイルピッカーを利用できません。";
+            localized["desktop.shell.feedback.import_file_cancelled"] = "状態: {0} のファイル選択は取り消されました。";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "状態: このビルドでは同梱デモランナーを利用できません。";
             localized["desktop.shell.feedback.demo_runner_loading"] = "状態: 同梱デモランナーを {0} から読み込み中です。";
             localized["desktop.shell.feedback.no_active_workspace"] = "状態: 閉じるアクティブワークスペースがありません。";
@@ -1608,6 +1612,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.error"] = "Status: erro - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "Status: forneca o conteudo XML de debug antes de importar.";
             localized["desktop.shell.feedback.import_file_unavailable"] = "Status: seletor de arquivo indisponivel nesta plataforma.";
+            localized["desktop.shell.feedback.import_file_cancelled"] = "Status: selecao de arquivo {0} cancelada.";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "Status: o runner de demonstracao incluido esta indisponivel neste build.";
             localized["desktop.shell.feedback.demo_runner_loading"] = "Status: carregando runner de demonstracao incluso de {0}.";
             localized["desktop.shell.feedback.no_active_workspace"] = "Status: nenhum workspace ativo para fechar.";
@@ -1998,6 +2003,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.error"] = "状态: 错误 - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "状态: 导入前请先提供调试 XML 内容。";
             localized["desktop.shell.feedback.import_file_unavailable"] = "状态: 此平台无法使用文件选择器。";
+            localized["desktop.shell.feedback.import_file_cancelled"] = "状态: 已取消 {0} 文件选择。";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "状态: 此构建中的内置演示跑者不可用。";
             localized["desktop.shell.feedback.demo_runner_loading"] = "状态: 正在从 {0} 加载内置演示跑者。";
             localized["desktop.shell.feedback.no_active_workspace"] = "状态: 没有可关闭的活动工作区。";

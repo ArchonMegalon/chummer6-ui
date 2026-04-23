@@ -15,6 +15,11 @@ internal static class MainWindowFeedbackCoordinator
         toolStrip.SetStatusText(S("desktop.shell.feedback.import_file_unavailable"));
     }
 
+    public static void ShowImportFileCancelled(ToolStripControl toolStrip, string operationTitle)
+    {
+        toolStrip.SetStatusText(F("desktop.shell.feedback.import_file_cancelled", operationTitle));
+    }
+
     public static void ShowBundledDemoRunnerUnavailable(ToolStripControl toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.demo_runner_unavailable"));

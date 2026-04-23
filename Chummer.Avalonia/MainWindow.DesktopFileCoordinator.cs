@@ -8,9 +8,19 @@ namespace Chummer.Avalonia;
 internal static class MainWindowDesktopFileCoordinator
 {
     private const string BundledDemoRelativePath = "Samples/Legacy/Soma-Career.chum5";
+    internal static Func<IStorageProvider, string, CancellationToken, Task<DesktopImportFileResult>>? OpenImportFileOverride { get; set; }
+    internal static Func<IStorageProvider, string, CancellationToken, Task<string?>>? OpenFolderPickerOverride { get; set; }
 
-    public static async Task<DesktopImportFileResult> OpenImportFileAsync(IStorageProvider storageProvider, CancellationToken ct)
+    public static async Task<DesktopImportFileResult> OpenImportFileAsync(
+        IStorageProvider storageProvider,
+        string title,
+        CancellationToken ct)
     {
+        if (OpenImportFileOverride is not null)
+        {
+            return await OpenImportFileOverride(storageProvider, title, ct);
+        }
+
         if (!storageProvider.CanOpen)
         {
             return new DesktopImportFileResult(DesktopFileOperationOutcome.Unavailable, Payload: null, SourceLabel: null);
@@ -18,7 +28,7 @@ internal static class MainWindowDesktopFileCoordinator
 
         IReadOnlyList<IStorageFile> files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Open Character File",
+            Title = title,
             AllowMultiple = false,
             FileTypeFilter =
             [
@@ -71,6 +81,30 @@ internal static class MainWindowDesktopFileCoordinator
         return candidates
             .Select(path => Path.GetFullPath(path))
             .FirstOrDefault(File.Exists);
+    }
+
+    public static async Task<string?> OpenFolderAsync(
+        IStorageProvider storageProvider,
+        string title,
+        CancellationToken ct)
+    {
+        if (OpenFolderPickerOverride is not null)
+        {
+            return await OpenFolderPickerOverride(storageProvider, title, ct);
+        }
+
+        if (!storageProvider.CanPickFolder)
+        {
+            return null;
+        }
+
+        IReadOnlyList<IStorageFolder> folders = await storageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false
+        });
+
+        return folders.FirstOrDefault()?.TryGetLocalPath();
     }
 
     public static async Task<DesktopDownloadSaveResult> SaveDownloadAsync(

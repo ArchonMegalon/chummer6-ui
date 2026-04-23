@@ -104,7 +104,51 @@ to_native_path() {
     return
   fi
 
+  if command -v winepath >/dev/null 2>&1; then
+    winepath -w "$1" | tr -d '\r'
+    return
+  fi
+
   echo "$1"
+}
+
+run_with_optional_xvfb() {
+  if command -v xvfb-run >/dev/null 2>&1; then
+    xvfb-run -a "$@"
+    return
+  fi
+
+  "$@"
+}
+
+run_windows_binary() {
+  local executable_path="$1"
+  shift
+
+  if command -v cygpath >/dev/null 2>&1; then
+    "$executable_path" "$@"
+    return
+  fi
+
+  if command -v wine >/dev/null 2>&1; then
+    local native_executable_path
+    native_executable_path="$(to_native_path "$executable_path")"
+    run_with_optional_xvfb wine "$native_executable_path" "$@"
+    return
+  fi
+
+  "$executable_path" "$@"
+}
+
+run_startup_smoke_process() {
+  local launch_path="$1"
+
+  if [[ "$(platform_from_rid "$RID")" == "windows" ]]; then
+    run_windows_binary "$launch_path" --startup-smoke
+    return
+  fi
+
+  "$launch_path" --startup-smoke
 }
 
 run_head_smoke() {
@@ -144,14 +188,14 @@ run_head_smoke() {
   XDG_DATA_HOME="$RUNTIME_HOME/.local/share" \
   XDG_STATE_HOME="$RUNTIME_HOME/.local/state" \
   XDG_CACHE_HOME="$RUNTIME_HOME/.cache" \
-  "$launch_path" --startup-smoke >>"$LOG_PATH" 2>&1
+  run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
 }
 
 run_windows_smoke() {
   INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-win-smoke.XXXXXX")"
   local native_install_root
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
-  "$ARTIFACT_PATH" --smoke-install "$native_install_root" >>"$LOG_PATH" 2>&1
+  run_windows_binary "$ARTIFACT_PATH" --smoke-install "$native_install_root" >>"$LOG_PATH" 2>&1
 
   local required_paths="${CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS:-}"
   if [[ -n "$required_paths" ]]; then
@@ -586,6 +630,43 @@ receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 }
 
+attach_release_artifact_metadata_to_receipt() {
+  local artifact_sha
+  artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
+
+  python3 - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$artifact_sha" "$APP_KEY" "$RID" <<'PY'
+import json
+import pathlib
+import sys
+
+receipt_path = pathlib.Path(sys.argv[1])
+artifact_path = pathlib.Path(sys.argv[2])
+artifact_sha = str(sys.argv[3]).strip().lower()
+app_key = str(sys.argv[4]).strip().lower()
+rid = str(sys.argv[5]).strip().lower()
+if not receipt_path.exists() or not receipt_path.is_file():
+    raise SystemExit(0)
+
+payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit(0)
+
+artifact_file_name = artifact_path.name
+artifact_relative_path = artifact_file_name
+if artifact_path.parent.name:
+    artifact_relative_path = f"{artifact_path.parent.name}/{artifact_file_name}"
+
+payload["artifactPath"] = str(artifact_path)
+payload["artifactFileName"] = artifact_file_name
+payload["fileName"] = artifact_file_name
+payload["artifactRelativePath"] = artifact_relative_path
+payload["artifactSha256"] = artifact_sha
+payload["artifactDigest"] = f"sha256:{artifact_sha}"
+payload["artifactId"] = str(payload.get("artifactId") or f"{app_key}-{rid}-installer").strip()
+receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
 main() {
   : >"$LOG_PATH"
   rm -f "$RECEIPT_PATH" "$PACKET_PATH"
@@ -622,5 +703,6 @@ if [[ "$status" -ne 0 ]]; then
   exit "$status"
 fi
 
+attach_release_artifact_metadata_to_receipt
 set_receipt_status "pass"
 echo "startup smoke passed for $APP_KEY $RID; receipt: $RECEIPT_PATH"
