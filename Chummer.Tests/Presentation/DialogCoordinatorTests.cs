@@ -34,7 +34,8 @@ public class DialogCoordinatorTests
                     new DesktopDialogField("globalTheme", "Theme", "dark-steel", "chummer"),
                     new DesktopDialogField("globalLanguage", "Language", "de-de", "en-us"),
                     new DesktopDialogField("globalSheetLanguage", "Sheet Language", "fr-fr", "en-us"),
-                    new DesktopDialogField("globalCompactMode", "Compact", "true", "false")
+                    new DesktopDialogField("globalCompactMode", "Compact", "true", "false"),
+                    new DesktopDialogField("globalHideMasterIndex", "Hide Master Index", "true", "false", InputType: "checkbox")
                 ],
                 Actions:
                 [
@@ -57,6 +58,7 @@ public class DialogCoordinatorTests
         Assert.AreEqual("de-de", published.Preferences.Language);
         Assert.AreEqual("fr-fr", published.Preferences.SheetLanguage);
         Assert.IsTrue(published.Preferences.CompactMode);
+        Assert.IsTrue(published.Preferences.HideMasterIndex);
         StringAssert.Contains(published.Notice ?? string.Empty, "Restart the desktop head to fully apply");
     }
 
@@ -93,51 +95,6 @@ public class DialogCoordinatorTests
         await coordinator.CoordinateAsync("save", context, CancellationToken.None);
 
         Assert.AreEqual(DesktopLocalizationCatalog.DefaultLanguage, published.Preferences.Language);
-    }
-
-    [TestMethod]
-    public async Task CoordinateAsync_apply_global_settings_updates_preferences_and_keeps_dialog_open()
-    {
-        DialogCoordinator coordinator = new();
-        CharacterOverviewState published = CharacterOverviewState.Empty with
-        {
-            ActiveDialog = new DesktopDialogState(
-                Id: "dialog.global_settings",
-                Title: "Global Settings",
-                Message: null,
-                Fields:
-                [
-                    new DesktopDialogField("globalActivePane", "Active Pane", "updates", "general", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-                    new DesktopDialogField("globalUiScale", "UI Scale", "125", "100", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-                    new DesktopDialogField("globalTheme", "Theme", "dark-steel", "chummer", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-                    new DesktopDialogField("globalLanguage", "Language", "de-de", "en-us", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-                    new DesktopDialogField("globalCompactMode", "Compact", "true", "false", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-                    new DesktopDialogField("globalUpdatePolicy", "Updates", "Preview channel · check daily", "Preview channel · check weekly"),
-                    new DesktopDialogField("globalCheckForUpdates", "Check", "false", "true", InputType: "checkbox"),
-                    new DesktopDialogField("globalCharacterRosterPath", "Character Roster Path", "/tmp/roster", "/Characters", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
-                ],
-                Actions:
-                [
-                    new DesktopDialogAction("apply", "Apply"),
-                    new DesktopDialogAction("save", "Save", true)
-                ])
-        };
-
-        DialogCoordinationContext context = new(
-            State: published,
-            Publish: state => published = state,
-            ImportAsync: static (_, _) => Task.CompletedTask,
-            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
-
-        await coordinator.CoordinateAsync("apply", context, CancellationToken.None);
-
-        Assert.IsNotNull(published.ActiveDialog);
-        Assert.AreEqual("updates", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "globalActivePane"));
-        Assert.AreEqual("Preview channel · check daily", published.Preferences.UpdateChannel);
-        Assert.IsFalse(published.Preferences.CheckForUpdatesOnLaunch);
-        Assert.AreEqual(125, published.Preferences.UiScalePercent);
-        Assert.AreEqual("/tmp/roster", published.Preferences.CharacterRosterPath);
     }
 
     [TestMethod]
@@ -225,7 +182,7 @@ public class DialogCoordinatorTests
     [TestMethod]
     public async Task CoordinateAsync_roll_adds_result_field_to_dice_dialog()
     {
-        DialogCoordinator coordinator = new(new SuccessfulDiceEvaluator());
+        DialogCoordinator coordinator = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
             ActiveDialog = new DesktopDialogState(
@@ -234,7 +191,23 @@ public class DialogCoordinatorTests
                 Message: null,
                 Fields:
                 [
-                    new DesktopDialogField("diceExpression", "Expression", "3d6+2", "1d6")
+                    new DesktopDialogField("diceMethod", "Method", "Standard", "Standard", InputType: "select", Options:
+                    [
+                        new DesktopDialogFieldOption("Standard", "Standard"),
+                        new DesktopDialogFieldOption("Large", "Large"),
+                        new DesktopDialogFieldOption("ReallyLarge", "Really Large")
+                    ]),
+                    new DesktopDialogField("diceCount", "Dice", "3", "1"),
+                    new DesktopDialogField("diceThreshold", "Threshold", "2", "0"),
+                    new DesktopDialogField("diceGremlins", "Gremlins", "0", "0"),
+                    new DesktopDialogField("diceRuleOf6", "Rule of 6", "false", "false", InputType: "checkbox"),
+                    new DesktopDialogField("diceCinematicGameplay", "Cinematic Gameplay", "false", "false", InputType: "checkbox"),
+                    new DesktopDialogField("diceRushJob", "Rush Job", "false", "false", InputType: "checkbox"),
+                    new DesktopDialogField("diceVariableGlitch", "Variable Glitch", "false", "false", InputType: "checkbox"),
+                    new DesktopDialogField("diceBubbleDie", "Bubble Die", "false", "false", InputType: "checkbox"),
+                    new DesktopDialogField("diceResultsSummary", "Results", "Roll dice to see hits, glitches, and the summed total.", "Roll dice to see hits, glitches, and the summed total.", IsReadOnly: true),
+                    new DesktopDialogField("diceResultsList", "Roll History", "No rolls yet.", "No rolls yet.", IsReadOnly: true),
+                    new DesktopDialogField("diceLastRollState", "Last Roll State", string.Empty, string.Empty, IsReadOnly: true)
                 ],
                 Actions:
                 [
@@ -252,12 +225,80 @@ public class DialogCoordinatorTests
         await coordinator.CoordinateAsync("roll", context, CancellationToken.None);
 
         Assert.IsNotNull(published.ActiveDialog);
-        Assert.IsNotNull(published.ActiveDialog!.Fields.FirstOrDefault(field => string.Equals(field.Id, "diceResult", StringComparison.Ordinal)));
-        StringAssert.Contains(published.Notice ?? string.Empty, "3d6+2");
+        Assert.AreNotEqual(
+            "Roll dice to see hits, glitches, and the summed total.",
+            DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "diceResultsSummary"));
+        StringAssert.Contains(
+            DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "diceResultsList"),
+            "Die 1:");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "diceLastRollState")));
     }
 
     [TestMethod]
-    public async Task CoordinateAsync_derive_initiative_updates_preview_without_closing_dialog()
+    public async Task CoordinateAsync_create_character_imports_workspace_and_closes_dialog_on_success()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.new_character",
+                Title: "New Character",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("newCharacterRulesetId", "Ruleset", "sr6", "sr5", InputType: "select", Options:
+                    [
+                        new DesktopDialogFieldOption("sr5", "SR5"),
+                        new DesktopDialogFieldOption("sr6", "SR6")
+                    ]),
+                    new DesktopDialogField("newCharacterBuildMethod", "Build Method", "Karma", "Priority", InputType: "select", Options:
+                    [
+                        new DesktopDialogFieldOption("Priority", "Priority"),
+                        new DesktopDialogFieldOption("Karma", "Karma")
+                    ])
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("create_character", "Create", true)
+                ])
+        };
+
+        WorkspaceImportDocument? imported = null;
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: (document, _) =>
+            {
+                imported = document;
+                published = published with
+                {
+                    Error = null,
+                    WorkspaceId = new CharacterWorkspaceId("ws-created")
+                };
+                return Task.CompletedTask;
+            },
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("create_character", context, CancellationToken.None);
+
+        Assert.IsNotNull(imported);
+        Assert.AreEqual("sr6", imported!.RulesetId);
+        StringAssert.Contains(imported.Content, "<name>New Character</name>");
+        StringAssert.Contains(imported.Content, "<alias>Runner</alias>");
+        StringAssert.Contains(imported.Content, "<buildmethod>Karma</buildmethod>");
+        StringAssert.Contains(imported.Content, "<attributes>");
+        StringAssert.Contains(imported.Content, "<newskills>");
+        StringAssert.Contains(imported.Content, "<qualities>");
+        StringAssert.Contains(imported.Content, "<contacts>");
+        StringAssert.Contains(imported.Content, "<gears>");
+        StringAssert.Contains(imported.Content, "<weapons>");
+        Assert.IsNull(published.ActiveDialog);
+        StringAssert.Contains(published.Notice ?? string.Empty, "Created 'New Character' (Karma, SR6).");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_reroll_misses_requires_previous_roll_state()
     {
         DialogCoordinator coordinator = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
@@ -268,16 +309,11 @@ public class DialogCoordinatorTests
                 Message: null,
                 Fields:
                 [
-                    new DesktopDialogField("diceInitiativeBase", "Base", "11", "10"),
-                    new DesktopDialogField("diceInitiativeDice", "Dice", "2", "1"),
-                    new DesktopDialogField("diceWoundModifier", "Wound", "-1", "0"),
-                    new DesktopDialogField("diceCurrentPass", "Pass", "2", "1"),
-                    new DesktopDialogField("diceThreshold", "Threshold", "4", "0"),
-                    new DesktopDialogField("initiativePreview", "Initiative Preview", "stale", "stale", IsReadOnly: true)
+                    new DesktopDialogField("diceLastRollState", "Last Roll State", string.Empty, string.Empty, IsReadOnly: true)
                 ],
                 Actions:
                 [
-                    new DesktopDialogAction("derive_initiative", "Preview Initiative", true)
+                    new DesktopDialogAction("reroll_misses", "Reroll Misses", true)
                 ])
         };
 
@@ -288,13 +324,11 @@ public class DialogCoordinatorTests
             UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
             GetState: () => published);
 
-        await coordinator.CoordinateAsync("derive_initiative", context, CancellationToken.None);
+        await coordinator.CoordinateAsync("reroll_misses", context, CancellationToken.None);
 
         Assert.IsNotNull(published.ActiveDialog);
         Assert.AreEqual("dialog.dice_roller", published.ActiveDialog!.Id);
-        Assert.AreEqual("10 + 2d6 · pass 2 · range 12-22 · avg 17.0",
-            DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "initiativePreview"));
-        StringAssert.Contains(published.Notice ?? string.Empty, "threshold 4");
+        Assert.AreEqual("Roll the dice first before rerolling misses.", published.Error);
     }
 
     [TestMethod]
@@ -724,6 +758,297 @@ public class DialogCoordinatorTests
 
         Assert.IsNull(published.ActiveDialog);
         Assert.AreEqual("Gear 'Ares Alpha' added.", published.Notice);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_add_gear_invokes_quick_add_delegate_when_available()
+    {
+        DialogCoordinator coordinator = new();
+        WorkspaceQuickAddRequest? captured = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.ui.gear_add",
+                Title: "Add Gear",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("uiGearName", "Gear Name", "Fake SIN", "Ares Predator"),
+                    new DesktopDialogField("uiGearCategory", "Category", "Identity", "Gear"),
+                    new DesktopDialogField("uiGearSource", "Source", "Run Faster", "Desktop Quick Add"),
+                    new DesktopDialogField("uiGearCost", "Cost", "2500", "0"),
+                    new DesktopDialogField("uiGearRating", "Rating", "1", "0"),
+                    new DesktopDialogField("uiGearQuantity", "Quantity", "2", "1")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("add", "Add", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                published = published with { ActiveSectionId = "gear" };
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("add", context, CancellationToken.None);
+
+        Assert.IsNotNull(captured);
+        Assert.AreEqual(WorkspaceQuickAddKinds.Gear, captured!.Kind);
+        Assert.AreEqual("Fake SIN", captured.Name);
+        Assert.AreEqual("Identity", captured.Category);
+        Assert.AreEqual("Run Faster", captured.Source);
+        Assert.AreEqual("2500", captured.Cost);
+        Assert.AreEqual(1, captured.Rating);
+        Assert.AreEqual(2, captured.Quantity);
+        Assert.IsNull(published.ActiveDialog);
+        Assert.AreEqual("Gear 'Fake SIN' added.", published.Notice);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_add_more_gear_invokes_quick_add_delegate_and_keeps_dialog_open()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        WorkspaceQuickAddRequest? captured = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default,
+            ActiveDialog = factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default) with
+            {
+                Fields = factory.CreateUiControlDialog("gear_add", DesktopPreferenceState.Default).Fields
+                    .Select(field => field.Id switch
+                    {
+                        "uiGearName" => field with { Value = "Certified Credstick" },
+                        "uiGearQuantity" => field with { Value = "3" },
+                        "uiGearMarkup" => field with { Value = "15" },
+                        "uiGearBlackMarketDiscount" => field with { Value = "true" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("add_more", context, CancellationToken.None);
+
+        Assert.IsNotNull(captured);
+        Assert.AreEqual(WorkspaceQuickAddKinds.Gear, captured!.Kind);
+        Assert.AreEqual("Certified Credstick", captured.Name);
+        Assert.AreEqual(3, captured.Quantity);
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("dialog.ui.gear_add", published.ActiveDialog!.Id);
+        Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearMarkup"));
+        StringAssert.Contains(published.Notice ?? string.Empty, "Gear 'Certified Credstick' added.");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_add_cyberware_invokes_quick_add_delegate_when_available()
+    {
+        DialogCoordinator coordinator = new();
+        WorkspaceQuickAddRequest? captured = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.ui.cyberware_add",
+                Title: "Add Cyberware",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("uiCyberwareName", "Cyberware", "Wired Reflexes 2", "Wired Reflexes 2"),
+                    new DesktopDialogField("uiCyberwareCategory", "Category", "Bodyware", "Show All"),
+                    new DesktopDialogField("uiCyberwareSelectedBranch", "Selected Branch", "Bodyware", "Bodyware"),
+                    new DesktopDialogField("uiCyberwareSource", "Source", "Core Rulebook p. 461", "Desktop Quick Add"),
+                    new DesktopDialogField("uiCyberwareCost", "Cost", "149000", "0"),
+                    new DesktopDialogField("uiCyberwareRating", "Rating", "2", "0"),
+                    new DesktopDialogField("uiCyberwareGrade", "Grade", "Alpha", "Standard"),
+                    new DesktopDialogField("uiCyberwareEssence", "Essence", "2.70", "0.00"),
+                    new DesktopDialogField("uiCyberwareCapacity", "Capacity", "n/a", "n/a"),
+                    new DesktopDialogField("uiCyberwareSlot", "Location", "Body", "Body")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("add", "Add", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("add", context, CancellationToken.None);
+
+        Assert.IsNotNull(captured);
+        Assert.AreEqual(WorkspaceQuickAddKinds.Cyberware, captured!.Kind);
+        Assert.AreEqual("Wired Reflexes 2", captured.Name);
+        Assert.AreEqual("Bodyware", captured.Category);
+        Assert.AreEqual("149000", captured.Cost);
+        Assert.AreEqual("Alpha", captured.Grade);
+        Assert.AreEqual("2.70", captured.Essence);
+        Assert.IsNull(published.ActiveDialog);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_add_spell_invokes_quick_add_delegate_when_available()
+    {
+        DialogCoordinator coordinator = new();
+        WorkspaceQuickAddRequest? captured = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.ui.spell_add",
+                Title: "Add Spell",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("uiSpellName", "Spell", "Heal", "Stunbolt"),
+                    new DesktopDialogField("uiSpellCategory", "Category", "Health", "Combat"),
+                    new DesktopDialogField("uiSpellSource", "Source", "Core Rulebook p. 289", "Desktop Quick Add")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("add", "Add", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("add", context, CancellationToken.None);
+
+        Assert.IsNotNull(captured);
+        Assert.AreEqual(WorkspaceQuickAddKinds.Spell, captured!.Kind);
+        Assert.AreEqual("Heal", captured.Name);
+        Assert.AreEqual("Health", captured.Category);
+        Assert.AreEqual("Mana", captured.Type);
+        Assert.AreEqual("F-3", captured.DrainValue);
+        Assert.IsNull(published.ActiveDialog);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_add_matrix_program_invokes_quick_add_delegate_when_available()
+    {
+        DialogCoordinator coordinator = new();
+        WorkspaceQuickAddRequest? captured = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.ui.matrix_program_add",
+                Title: "Add Program / Cyberdeck Item",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("uiMatrixProgramName", "Program", "Baby Monitor", "Armor"),
+                    new DesktopDialogField("uiMatrixProgramSlot", "Slot", "Hacking", "Common"),
+                    new DesktopDialogField("uiMatrixProgramSource", "Source", "Data Trails p. 61", "Desktop Quick Add")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("add", "Add", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("add", context, CancellationToken.None);
+
+        Assert.IsNotNull(captured);
+        Assert.AreEqual(WorkspaceQuickAddKinds.MatrixProgram, captured!.Kind);
+        Assert.AreEqual("Baby Monitor", captured.Name);
+        Assert.AreEqual("Hacking", captured.Slot);
+        Assert.AreEqual("Data Trails p. 61", captured.Source);
+        Assert.IsNull(published.ActiveDialog);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_add_initiation_invokes_quick_add_delegate_when_available()
+    {
+        DialogCoordinator coordinator = new();
+        WorkspaceQuickAddRequest? captured = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.ui.initiation_add",
+                Title: "Add Initiation / Submersion",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("uiInitiationTrack", "Track", "Submersion", "Initiation"),
+                    new DesktopDialogField("uiInitiationGrade", "Grade", "2", "1"),
+                    new DesktopDialogField("uiInitiationReward", "Reward", "Overclocking", "Masking")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("add", "Add", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("add", context, CancellationToken.None);
+
+        Assert.IsNotNull(captured);
+        Assert.AreEqual(WorkspaceQuickAddKinds.InitiationGrade, captured!.Kind);
+        Assert.AreEqual("Overclocking", captured.Name);
+        Assert.AreEqual(2, captured.Rating);
+        Assert.IsTrue(captured.Res);
+        Assert.IsNull(published.ActiveDialog);
     }
 
     [TestMethod]
@@ -1222,7 +1547,6 @@ public class DialogCoordinatorTests
         Assert.AreEqual("street-wyrd", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "masterIndexActiveSourcebookId"));
         Assert.AreEqual("armor.xml", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "masterIndexActiveFile"));
         Assert.AreEqual("SW · Street Wyrd", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "masterIndexCurrentSourcebook"));
-        Assert.AreEqual("Change Data File (armor.xml)", published.ActiveDialog.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
         StringAssert.Contains(published.Notice ?? string.Empty, "Street Wyrd");
         StringAssert.Contains(published.Notice ?? string.Empty, "armor.xml");
     }
@@ -1256,47 +1580,8 @@ public class DialogCoordinatorTests
         Assert.IsNotNull(published.ActiveDialog);
         Assert.AreEqual("dialog.master_index", published.ActiveDialog!.Id);
         Assert.AreEqual("weapons.xml", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "masterIndexActiveFile"));
-        Assert.AreEqual("Change Data File (weapons.xml)", published.ActiveDialog.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("weapons.xml", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "masterIndexFileSelection"));
         StringAssert.Contains(published.Notice ?? string.Empty, "weapons.xml");
-    }
-
-    [TestMethod]
-    public async Task CoordinateAsync_edit_setting_master_index_opens_character_settings_dialog()
-    {
-        DialogCoordinator coordinator = new();
-        CharacterOverviewState published = CharacterOverviewState.Empty with
-        {
-            Preferences = DesktopPreferenceState.Default with
-            {
-                CharacterPriority = "Karma"
-            },
-            ActiveDialog = new DesktopDialogState(
-                Id: "dialog.master_index",
-                Title: "Master Index",
-                Message: null,
-                Fields:
-                [
-                    new DesktopDialogField("masterIndexCurrentSourcebook", "Selected Book", "Core", "Core")
-                ],
-                Actions:
-                [
-                    new DesktopDialogAction("edit_setting", "Modify Setting (Character Settings)", true)
-                ])
-        };
-
-        DialogCoordinationContext context = new(
-            State: published,
-            Publish: state => published = state,
-            ImportAsync: static (_, _) => Task.CompletedTask,
-            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
-
-        await coordinator.CoordinateAsync("edit_setting", context, CancellationToken.None);
-
-        Assert.IsNotNull(published.ActiveDialog);
-        Assert.AreEqual("dialog.character_settings", published.ActiveDialog!.Id);
-        Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "characterPriority"));
-        Assert.AreEqual("Character Settings opened from Master Index.", published.Notice);
     }
 
     private static CharacterProfileSection CreateProfile(string name, string alias)

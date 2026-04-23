@@ -24,8 +24,10 @@ public sealed class GeneratedDialogElementParityComplianceTests
         StringAssert.Contains(scriptText, "GENERATED_DIALOG_ELEMENT_PARITY.generated.json");
         StringAssert.Contains(scriptText, "\"runtime_inspector\"");
         StringAssert.Contains(scriptText, "\"open_character\"");
+        StringAssert.Contains(scriptText, "\"new_character\"");
         StringAssert.Contains(scriptText, "\"quality_delete\"");
         StringAssert.Contains(scriptText, "\"dialog.global_settings\"");
+        StringAssert.Contains(scriptText, "\"dialog.dice_roller\"");
         StringAssert.Contains(scriptText, "\"dialog.ui.vehicle_edit\"");
         StringAssert.Contains(scriptText, "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions");
         StringAssert.Contains(scriptText, "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions");
@@ -71,9 +73,9 @@ public sealed class GeneratedDialogElementParityComplianceTests
         Assert.AreEqual("chummer6-ui.generated_dialog_element_parity", root.GetProperty("contract_name").GetString());
 
         JsonElement evidence = root.GetProperty("evidence");
-        Assert.AreEqual(27, evidence.GetProperty("commandDialogCount").GetInt32());
+        Assert.AreEqual(28, evidence.GetProperty("commandDialogCount").GetInt32());
         Assert.AreEqual(47, evidence.GetProperty("legacyControlCount").GetInt32());
-        Assert.AreEqual(10, evidence.GetProperty("rebuildableDialogCount").GetInt32());
+        Assert.AreEqual(13, evidence.GetProperty("rebuildableDialogCount").GetInt32());
         Assert.IsTrue(evidence.GetProperty("wiredIntoStandardVerify").GetBoolean());
         Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());
@@ -87,7 +89,9 @@ public sealed class GeneratedDialogElementParityComplianceTests
 
         string receiptText = root.GetRawText();
         StringAssert.Contains(receiptText, "\"runtime_inspector\"");
+        StringAssert.Contains(receiptText, "\"new_character\"");
         StringAssert.Contains(receiptText, "\"quality_delete\"");
+        StringAssert.Contains(receiptText, "\"dialog.dice_roller\"");
         StringAssert.Contains(receiptText, "\"dialog.ui.vehicle_edit\"");
         StringAssert.Contains(receiptText, "\"Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions\"");
         StringAssert.Contains(receiptText, "\"Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions\"");

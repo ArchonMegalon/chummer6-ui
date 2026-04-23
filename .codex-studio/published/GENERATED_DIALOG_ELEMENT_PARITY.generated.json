@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T01:10:57.307854Z",
+  "generatedAt": "2026-04-23T15:49:57.179725Z",
   "contract_name": "chummer6-ui.generated_dialog_element_parity",
   "status": "pass",
   "summary": "Generated dialog command/control inventories are locked, exhaustively shape-tested, and wired into standard verification.",
@@ -19,6 +19,7 @@
       "open_character",
       "open_for_printing",
       "open_for_export",
+      "new_character",
       "print_setup",
       "dice_roller",
       "global_settings",
@@ -94,6 +95,9 @@
     ],
     "expectedRebuildableDialogIds": [
       "dialog.global_settings",
+      "dialog.new_character",
+      "dialog.dice_roller",
+      "dialog.character_roster",
       "dialog.master_index",
       "dialog.ui.cyberware_add",
       "dialog.ui.gear_add",
@@ -124,6 +128,7 @@
       "open_character",
       "open_for_printing",
       "open_for_export",
+      "new_character",
       "print_setup",
       "dice_roller",
       "global_settings",
@@ -148,7 +153,7 @@
       "print_multiple",
       "update"
     ],
-    "commandDialogCount": 27,
+    "commandDialogCount": 28,
     "controlIdsFound": [
       "create_entry",
       "edit_entry",
@@ -201,6 +206,9 @@
     "legacyControlCount": 47,
     "rebuildableDialogIdsFound": [
       "dialog.global_settings",
+      "dialog.new_character",
+      "dialog.dice_roller",
+      "dialog.character_roster",
       "dialog.master_index",
       "dialog.ui.cyberware_add",
       "dialog.ui.gear_add",
@@ -211,7 +219,7 @@
       "dialog.ui.gear_edit",
       "dialog.ui.vehicle_edit"
     ],
-    "rebuildableDialogCount": 10,
+    "rebuildableDialogCount": 13,
     "wiredIntoStandardVerify": true,
     "verifyMarker": "checking generated dialog element parity guard",
     "verifyInvocation": "bash scripts/ai/milestones/generated-dialog-element-parity-check.sh",
@@ -280,7 +288,7 @@
       "-p:NuGetAudit=false"
     ],
     "buildExitCode": 0,
-    "buildOutputTail": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1312,13): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1247,13): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1339,13): warning MSTEST0037: Use 'Assert.IsLessThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1341,13): warning MSTEST0037: Use 'Assert.IsLessThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1342,13): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1343,13): warning MSTEST0037: Use 'Assert.IsLessThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1344,13): warning MSTEST0037: Use 'Assert.IsLessThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1353,13): warning MSTEST0037: Use 'Assert.IsGreaterThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs(1089,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs(1096,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(1922,17): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(2113,13): warning MSTEST0037: Use 'Assert.IsGreaterThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(2117,9): warning MSTEST0037: Use 'Assert.IsGreaterThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(2310,9): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(210,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(260,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(261,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(353,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(354,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(439,13): warning MSTEST0037: Use 'Assert.HasCount' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(440,13): warning MSTEST0037: Use 'Assert.HasCount' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(288,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(48,6): warning MSTEST0044: 'DataTestMethod' is obsolete. Use 'TestMethod' instead. (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0044) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(442,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(96,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs(97,13): warning MSTEST0037: Use 'Assert.IsEmpty' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(592,17): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DialogCoordinatorTests.cs(762,6): warning MSTEST0044: 'DataTestMethod' is obsolete. Use 'TestMethod' instead. (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0044) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3616,21): warning CA1822: Member 'WaitUntil' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1632,13): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1633,13): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3159,36): warning CA1822: Member 'RenderControlToBitmap' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3456,21): warning CA1822: Member 'WaitUntil' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3208,37): warning CA1822: Member 'CaptureScreenshotUiEvidence' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(2085,9): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(2086,9): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3378,25): warning CA1859: Change return type of method 'EnsureInlineDialogScreenshotRoot' from 'Avalonia.Controls.Control' to 'Avalonia.Controls.Border' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n    91 Warning(s)\n    0 Error(s)\nTime Elapsed 00:01:45.86",
+    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:15.59",
     "testResults": [
       {
         "command": [
@@ -295,7 +303,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 138 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 150 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -310,7 +318,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 69 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 86 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -325,7 +333,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 152 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 156 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -340,7 +348,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 161 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 187 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -355,7 +363,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 69 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 98 ms - Chummer.Tests.dll (net10.0)"
       }
     ],
     "failureCount": 0,
@@ -376,6 +384,7 @@
       "open_character",
       "open_for_printing",
       "open_for_export",
+      "new_character",
       "print_setup",
       "dice_roller",
       "global_settings",
@@ -451,6 +460,9 @@
     ],
     "rebuildableDialogIdsFound": [
       "dialog.global_settings",
+      "dialog.new_character",
+      "dialog.dice_roller",
+      "dialog.character_roster",
       "dialog.master_index",
       "dialog.ui.cyberware_add",
       "dialog.ui.gear_add",
@@ -513,7 +525,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 138 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 150 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -528,7 +540,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 69 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 86 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -543,7 +555,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 152 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 156 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -558,7 +570,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 161 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 187 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -573,7 +585,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 69 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 98 ms - Chummer.Tests.dll (net10.0)"
       }
     ]
   }

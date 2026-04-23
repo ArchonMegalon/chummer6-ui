@@ -25,7 +25,8 @@ public class DesktopDialogFactoryTests
             UiScalePercent = 125,
             Theme = "neo",
             Language = "de-de",
-            CompactMode = true
+            CompactMode = true,
+            HideMasterIndex = true
         };
 
         DesktopDialogState dialog = factory.CreateCommandDialog(
@@ -42,36 +43,26 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("de-de", DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage"));
         Assert.AreEqual("de-de", DesktopDialogFieldValueParser.GetValue(dialog, "globalSheetLanguage"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalCompactMode"));
-        Assert.AreEqual("general", DesktopDialogFieldValueParser.GetValue(dialog, "globalActivePane"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsSections"), "Sourcebooks");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsDetailTabs"), "Language");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalLegacyTabBar"), "Global Options");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalLegacyTabBar"), "Plugins");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsTree"), "[Global Settings]");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsTree"), "Desktop");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsTree"), "Data Paths");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsPropertyGrid"), "Scale | 125%");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalSettingsPropertyGrid"), "Sheet Language | de-de");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalPaneTools"), "Desktop Language | de-de");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalPaneCommandList"), "Set sheet language");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalCurrentPaneHeader"), "General / Desktop Language");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalCurrentPaneWorkflows"), "Set sheet language");
         Assert.AreEqual("/Characters", DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterRosterPath"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalCurrentPaneNotes"), "old utility settings form");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalRestartPosture"), "restart");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy"), "status strip");
-        Assert.AreEqual("Apply", dialog.Actions.Single(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)).Label);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tabs, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsSections", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tabs, dialog.Fields.Single(field => string.Equals(field.Id, "globalLegacyTabBar", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tabs, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsDetailTabs", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsTree", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsPropertyGrid", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "globalPaneTools", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "globalPaneCommandList", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsTree", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalSettingsPropertyGrid", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalPaneTools", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalHideMasterIndex"));
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalPreferNightlyBuilds"));
+        CollectionAssert.AreEqual(
+            new[] { "save", "cancel" },
+            dialog.Actions.Select(action => action.Id).ToArray());
+        Assert.AreEqual("select", dialog.Fields.Single(field => string.Equals(field.Id, "globalTheme", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual("number", dialog.Fields.Single(field => string.Equals(field.Id, "globalUiScale", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual("select", dialog.Fields.Single(field => string.Equals(field.Id, "globalLanguage", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual("select", dialog.Fields.Single(field => string.Equals(field.Id, "globalCharacterPriority", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual("checkbox", dialog.Fields.Single(field => string.Equals(field.Id, "globalCheckForUpdates", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual("checkbox", dialog.Fields.Single(field => string.Equals(field.Id, "globalPreferNightlyBuilds", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalTheme", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalUiScale", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalUpdatePolicy", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalHideMasterIndex", StringComparison.Ordinal)).LayoutSlot);
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalActivePane", StringComparison.Ordinal)));
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)));
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalPdfViewerPath", StringComparison.Ordinal)));
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalStartupBehavior", StringComparison.Ordinal)));
         StringAssert.Contains(dialog.Message ?? string.Empty, "Phase-1 desktop language changes apply on restart.");
     }
 
@@ -227,99 +218,41 @@ public class DesktopDialogFactoryTests
             masterIndex: CreateMasterIndexResponse());
 
         Assert.AreEqual("dialog.master_index", dialog.Id);
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSections"), "Results");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetailTabs"), "Setting");
-        Assert.AreEqual("Data File / Search / Notes", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexPaneHeader"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"), "All");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"), "books.xml · 42 entries");
+        Assert.AreEqual("books.xml", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCurrentFile"), "books.xml · 42 indexed entries");
         Assert.AreEqual("CRB · Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCurrentSourcebook"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSearchHints"), "Data File filters the list on the left");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectionTrail"), "Data File | books.xml");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectionTrail"), "Search | all rows");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectionTrail"), "Selected Result | Reference notes stay in this pane");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceTree"), "CRB · Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceTree"), "SW · Street Wyrd");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceTree"), "> CRB · Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "[Current File]");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "books.xml");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "[Current Book]");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCatalogEntries"), "p. 20 · Reference notes stay in this pane");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultList"), "> p. 20 · Reference notes stay in this pane");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultList"), "books.xml");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Change data file | books.xml");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Switch sourcebook | CRB · Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceCommands"), "Modify character setting | Character Settings");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceClickReminder"), "Click to open linked PDF at p. 20");
+        Assert.AreEqual("books.xml|20", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexActiveResultKey"));
+        CollectionAssert.Contains(
+            dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexActiveResultKey", StringComparison.Ordinal)).Options!.Select(option => option.Value).ToArray(),
+            "books.xml|20");
         Assert.AreEqual("/books/core-rulebook.pdf", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSelectedSource"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Data File | books.xml");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Selected item | Core Rulebook (CRB)");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexDetails"), "Source | CRB · Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Selected Result | Reference notes stay in this pane");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Data File | books.xml");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Activation | double-click row / open source");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultInspector"), "Source Link | pdf+url");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Activate result | Reference notes stay in this pane");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Open page | 20");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexResultCommands"), "Keep source and notes pinned on the right");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetInspector"), "Snippet Count | 16");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnippetPreview"), "Reference notes stay in this pane");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexNotesPane"), "Use Data File on the left");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Use Setting | Character Settings");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCharacterSetting"), "Modify | Modify...");
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexFileSelection", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCurrentFile", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceTree", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCatalogEntries", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexResultList", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexResultInspector", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSnippetInspector", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSnippetPreview", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceClickReminder", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexNotesPane", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexCharacterSetting", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSelectedSource", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSourceSelectionSummary", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexImportOracleMatrix", StringComparison.Ordinal)).VisualKind);
-        CollectionAssert.AreEqual(
-            new[] { "open_source", "switch_file", "switch_sourcebook", "edit_setting", "close" },
-            dialog.Actions.Select(action => action.Id).ToArray());
-        Assert.AreEqual("Open PDF p. 20", dialog.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Change Data File (books.xml)", dialog.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Switch Sourcebook (CRB)", dialog.Actions.Single(action => string.Equals(action.Id, "switch_sourcebook", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Modify Setting (Character Settings)", dialog.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
-        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexLibraryNotes", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexImportNotes", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSr6Notes", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual("12", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourcebooks"));
-        Assert.AreEqual("67% (8/12)", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexReferenceCoverage"));
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSettingsLane"));
-        Assert.AreEqual("all sourcebooks expose governed PDF/URL/site-snapshot references.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexReferenceSourceReceipt"));
-        Assert.AreEqual("sourcebook selection is governed by 24 toggles across 12 sourcebooks (67% coverage).", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceSelectionReceipt"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceSelectionSummary"), "2 sourcebooks");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourcebook1"), "Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourcebook2"), "Street Wyrd");
-        Assert.AreEqual("custom-data authoring is partial: 2 configured custom-data directories with stale overlay bridge posture.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCustomDataAuthoringReceipt"));
-        Assert.AreEqual("xml bridge is governed: 2 enabled data overlays expose XML payloads.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexXmlBridgeReceipt"));
-        Assert.AreEqual("translator lane is governed: 6 translator corpus files and 3 enabled language overlays.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexTranslatorReceipt"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleLane"), "75%");
-        Assert.AreEqual("import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleReceipt"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleMatrix"), "Chummer4 fixtures 18");
-        Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleMissingSources"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexAdjacentSr6OracleLane"), "1/2");
-        Assert.AreEqual("adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexAdjacentSr6OracleReceipt"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageLane"), "50%");
-        Assert.AreEqual("50% (1/2)", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageCoverage"));
-        Assert.AreEqual("online storage lane is partial: 1/2 continuity receipts are current with stale release proof on one required host lane.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageReceipt"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSourceSelectionReceipt"), "24 toggles");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexReferenceSourceReceipt"), "PDF/URL/site-snapshot");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCustomDataAuthoringReceipt"), "custom-data authoring is partial");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexImportOracleReceipt"), "3/4 fixture families");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexAdjacentSr6OracleLane"), "1/2 covered");
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageLane"));
+        Assert.AreEqual("1/2 · 50%", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageCoverage"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexOnlineStorageReceipt"), "1/2 continuity receipts");
         Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6SupplementLane"));
-        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6DesignerToolsLane"));
-        Assert.AreEqual("4/5", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6DesignerCoverage"));
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexHouseRuleLane"));
-        Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexHouseRuleOverlayCount"));
-        Assert.AreEqual("sr6 successor lane is partial: supplement/governed designers/house-rule posture remains mixed.", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6SuccessorReceipt"));
+        Assert.AreEqual("4/5 · partial", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6DesignerCoverage"));
+        Assert.AreEqual("governed · 3 overlays", DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexHouseRuleLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6SuccessorReceipt"), "sr6 successor lane is partial");
+        Assert.AreEqual("select", dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexFileSelection", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual("select", dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexActiveResultKey", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexActiveResultKey", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSnippetPreview", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexFileSelection", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSearch", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexActiveResultKey", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "masterIndexSnippetPreview", StringComparison.Ordinal)).LayoutSlot);
+        CollectionAssert.AreEqual(
+            new[] { "open_source", "close" },
+            dialog.Actions.Select(action => action.Id).ToArray());
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "masterIndexSourcebookSelection", StringComparison.Ordinal)));
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)));
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "masterIndexSourceClickReminder", StringComparison.Ordinal)));
     }
 
     [TestMethod]
@@ -342,24 +275,16 @@ public class DesktopDialogFactoryTests
             ("masterIndexActiveFile", "books.xml"),
             ("masterIndexActiveResultKey", string.Empty)));
 
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSearchHints"), "1 visible rows");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSelectionTrail"), "Search | Indexed");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultList"), "> p. 21");
+        Assert.AreEqual("books.xml|21", DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexActiveResultKey"));
         Assert.IsFalse(
-            DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultList").Contains("p. 20", StringComparison.Ordinal),
+            rebuilt.Fields.Single(field => string.Equals(field.Id, "masterIndexActiveResultKey", StringComparison.Ordinal)).Options!.Select(option => option.Value).Contains("books.xml|20", StringComparer.Ordinal),
             "Filtered result list should no longer contain the page 20 row.");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSnippetPreview"), "Indexed source detail remains on the right");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSourceCommands"), "Switch sourcebook | CRB · Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultInspector"), "Activation | double-click row / open source");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultCommands"), "Activate result | Indexed source detail remains on the right");
-        Assert.AreEqual("Open PDF p. 21", rebuilt.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Change Data File (books.xml)", rebuilt.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Switch Sourcebook (CRB)", rebuilt.Actions.Single(action => string.Equals(action.Id, "switch_sourcebook", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Modify Setting (Character Settings)", rebuilt.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
+        CollectionAssert.AreEqual(new[] { "open_source", "close" }, rebuilt.Actions.Select(action => action.Id).ToArray());
     }
 
     [TestMethod]
-    public void RebuildDynamicDialog_master_index_switches_sourcebook_from_browser_state()
+    public void RebuildDynamicDialog_master_index_switches_hidden_sourcebook_from_browser_state()
     {
         DesktopDialogFactory factory = new();
 
@@ -381,18 +306,13 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("SW · Street Wyrd", DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexCurrentSourcebook"));
         Assert.AreEqual("street-wyrd", DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexActiveSourcebookId"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSourceTree"), "> SW · Street Wyrd");
-        Assert.AreEqual("No indexed entries discovered.", DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexResultList"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexDetails"), "Street Wyrd (SW)");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSourceClickReminder"), "No local PDF is attached");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexCatalogEntries"), "Street Wyrd [SW]");
-        Assert.AreEqual("Open Linked Source", rebuilt.Actions.Single(action => string.Equals(action.Id, "open_source", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Change Data File (armor.xml)", rebuilt.Actions.Single(action => string.Equals(action.Id, "switch_file", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Modify Setting (Character Settings)", rebuilt.Actions.Single(action => string.Equals(action.Id, "edit_setting", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("armor.xml|122", DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexActiveResultKey"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(rebuilt, "masterIndexSnippetPreview"), "Street Wyrd armor-side note keeps the preview populated after switching books.");
+        CollectionAssert.AreEqual(new[] { "open_source", "close" }, rebuilt.Actions.Select(action => action.Id).ToArray());
     }
 
     [TestMethod]
-    public void CreateCommandDialog_character_settings_surfaces_rules_environment_posture()
+    public void CreateCommandDialog_character_settings_surfaces_only_editable_legacy_defaults()
     {
         DesktopDialogFactory factory = new();
 
@@ -405,11 +325,12 @@ public class DesktopDialogFactoryTests
             rulesetId: null,
             masterIndex: CreateMasterIndexResponse());
 
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "characterSettingsLanePosture"));
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "characterSourceToggleLanePosture"));
-        Assert.AreEqual("67% (24 toggles)", DesktopDialogFieldValueParser.GetValue(dialog, "characterSourceToggleCoverage"));
-        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "characterCustomDataLanePosture"));
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "characterXmlBridgePosture"));
+        Assert.AreEqual(DesktopPreferenceState.Default.CharacterPriority, DesktopDialogFieldValueParser.GetValue(dialog, "characterPriority"));
+        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(dialog, "characterKarmaNuyen"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "characterHouseRulesEnabled"));
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "characterNotes", StringComparison.Ordinal)));
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "characterSettingsLanePosture", StringComparison.Ordinal)));
+        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "characterXmlBridgePosture", StringComparison.Ordinal)));
     }
 
     [TestMethod]
@@ -485,11 +406,17 @@ public class DesktopDialogFactoryTests
             ]);
 
         Assert.AreEqual("dialog.dice_roller", dialog.Id);
-        Assert.AreEqual("ruleset-backed roll + initiative preview", DesktopDialogFieldValueParser.GetValue(dialog, "diceUtilityLane"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "2 open runners");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "active ws-2");
-        Assert.AreEqual("10 + 1d6 · pass 1 · range 11-16 · avg 13.5", DesktopDialogFieldValueParser.GetValue(dialog, "initiativePreview"));
-        Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "derive_initiative", StringComparison.Ordinal)));
+        Assert.AreEqual("Standard", DesktopDialogFieldValueParser.GetValue(dialog, "diceMethod"));
+        Assert.AreEqual("1", DesktopDialogFieldValueParser.GetValue(dialog, "diceCount"));
+        Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(dialog, "diceThreshold"));
+        Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(dialog, "diceGremlins"));
+        Assert.AreEqual("No rolls yet.", DesktopDialogFieldValueParser.GetValue(dialog, "diceResultsList"));
+        Assert.AreEqual("Dice roller + initiative preview + roster context", DesktopDialogFieldValueParser.GetValue(dialog, "diceUtilityLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "GST · Ghost [sr6]");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "GST/sr6, APX/sr5");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "initiativePreview"), "GST · Ghost [sr6]");
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "diceUtilityLane", StringComparison.Ordinal)).LayoutSlot);
+        Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "reroll_misses", StringComparison.Ordinal)));
     }
 
     [TestMethod]
@@ -543,13 +470,9 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Watch File | GST.chum5");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Character Name | Ghost");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Alias | GST");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Watch File | GST.chum5");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Settings File | sr6 roster setting");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "GST · Ghost");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), $"Portrait Source | {Path.Combine(rosterPath, "GST.png")}");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Match | watched runner sibling");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Status | loaded from watched runner sibling");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Bytes | 8");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "File Path | GST.chum5");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Settings |");
+            Assert.AreEqual(Path.Combine(rosterPath, "GST.png"), DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"));
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), $"Watch Folder | {rosterPath}");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Watcher | FileSystemWatcher active");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Include Subdirectories | Yes");
@@ -563,14 +486,9 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open roster folder");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open selected watched runner");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open matched portrait");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "active ruleset sr6");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "watch file GST.chum5");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "watched ");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"), "6 B");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerBackground"), "Dense-workbench veteran entry");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerBackground"), "Description:");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerNotes"), "Character Notes:");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerNotes"), "Game Notes:");
+            Assert.AreEqual(string.Empty, DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"));
+            Assert.AreEqual(string.Empty, DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerBackground"));
+            Assert.AreEqual(string.Empty, DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerNotes"));
             Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "rosterTree", StringComparison.Ordinal)).VisualKind);
             Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectionTrail", StringComparison.Ordinal)).VisualKind);
             Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "rosterSelectedRunner", StringComparison.Ordinal)).VisualKind);
@@ -636,8 +554,8 @@ public class DesktopDialogFactoryTests
                 ]);
 
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Watch File | campaign-a/ghost-runner.chum5");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), $"Portrait Source | {Path.Combine(nestedPath, "ghost-runner.png")}");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"), "Portrait Match | watched runner sibling");
+            Assert.AreEqual(Path.Combine(nestedPath, "ghost-runner.png"), DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"));
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Portrait Match | watched runner sibling");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open matched portrait");
             Assert.AreEqual("Open Portrait ghost-runner.png", dialog.Actions.Single(action => string.Equals(action.Id, "open_portrait", StringComparison.Ordinal)).Label);
             Assert.AreEqual("Open Watch File ghost-runner.chum5", dialog.Actions.Single(action => string.Equals(action.Id, "open_watch_file", StringComparison.Ordinal)).Label);
@@ -1715,6 +1633,80 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateCommandDialog_new_character_uses_explicit_creation_template()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "new_character",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: "sr6");
+
+        Assert.AreEqual("dialog.new_character", dialog.Id);
+        Assert.AreEqual("Select Build Method", dialog.Title);
+        Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
+        Assert.AreEqual("Priority", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod"));
+        Assert.IsNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterName", StringComparison.Ordinal)));
+        Assert.IsNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterAlias", StringComparison.Ordinal)));
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)).Label);
+        Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_new_character_normalizes_build_method_for_selected_ruleset()
+    {
+        DesktopDialogState dialog = new(
+            Id: "dialog.new_character",
+            Title: "Select Build Method",
+            Message: null,
+            Fields:
+            [
+                new DesktopDialogField(
+                    "newCharacterRulesetId",
+                    "Ruleset",
+                    "sr4",
+                    "sr5",
+                    InputType: "select",
+                    Options:
+                    [
+                        new DesktopDialogFieldOption("sr4", "SR4"),
+                        new DesktopDialogFieldOption("sr5", "SR5"),
+                        new DesktopDialogFieldOption("sr6", "SR6")
+                    ]),
+                new DesktopDialogField(
+                    "newCharacterBuildMethod",
+                    "Build Method",
+                    "Priority",
+                    "Priority",
+                    InputType: "select",
+                    Options:
+                    [
+                        new DesktopDialogFieldOption("Priority", "Priority"),
+                        new DesktopDialogFieldOption("Karma", "Karma")
+                    ])
+            ],
+            Actions:
+            [
+                new DesktopDialogAction("create_character", "OK", true)
+            ]);
+
+        DesktopDialogState rebuilt = RebuildDynamicDialog(dialog);
+
+        Assert.AreEqual("sr4", DesktopDialogFieldValueParser.GetValue(rebuilt, "newCharacterRulesetId"));
+        Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(rebuilt, "newCharacterBuildMethod"));
+        CollectionAssert.AreEqual(
+            new[] { "BP", "Karma" },
+            rebuilt.Fields
+                .Single(field => string.Equals(field.Id, "newCharacterBuildMethod", StringComparison.Ordinal))
+                .Options!
+                .Select(option => option.Value)
+                .ToArray());
+    }
+
+    [TestMethod]
     public void CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields()
     {
         DesktopDialogFactory factory = new();
@@ -1993,7 +1985,14 @@ public class DesktopDialogFactoryTests
                     Permanent: false,
                     ReferencePosture: "stale",
                     RuleSnippetCount: 6,
-                    RuleSnippets: [],
+                    RuleSnippets:
+                    [
+                        new MasterIndexRuleSnippetEntry(
+                            Language: "en-us",
+                            Page: 122,
+                            Snippet: "Street Wyrd armor-side note keeps the preview populated after switching books.",
+                            Provenance: "armor.xml")
+                    ],
                     ReferenceSourcePosture: "stale",
                     ReferenceSnapshot: "https://example.test/snapshots/street-wyrd")
             ],
@@ -2133,7 +2132,6 @@ public class DesktopDialogFactoryTests
         {
             "dialog.global_settings" => WithFieldValues(
                 CreateRepresentativeCommandDialog(factory, "global_settings"),
-                ("globalActivePane", "sourcebooks"),
                 ("globalLanguage", "fr-fr"),
                 ("globalSheetLanguage", "ja-jp")),
             "dialog.master_index" => WithFieldValues(
@@ -2255,6 +2253,7 @@ public class DesktopDialogFactoryTests
 
     private static readonly string[] AllFactoryMappedCommandIds =
     [
+        "new_character",
         "open_character",
         "open_for_printing",
         "open_for_export",

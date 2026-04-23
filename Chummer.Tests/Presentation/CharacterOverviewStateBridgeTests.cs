@@ -118,10 +118,10 @@ public class CharacterOverviewStateBridgeTests
         var presenter = new FakeCharacterOverviewPresenter();
         using var bridge = new CharacterOverviewStateBridge(presenter, _ => { });
 
-        await bridge.UpdateDialogFieldAsync("diceExpression", "10d6", CancellationToken.None);
+        await bridge.UpdateDialogFieldAsync("diceCount", "10", CancellationToken.None);
 
-        Assert.AreEqual("diceExpression", presenter.UpdatedDialogFieldId);
-        Assert.AreEqual("10d6", presenter.UpdatedDialogFieldValue);
+        Assert.AreEqual("diceCount", presenter.UpdatedDialogFieldId);
+        Assert.AreEqual("10", presenter.UpdatedDialogFieldValue);
     }
 
     [TestMethod]
@@ -158,6 +158,28 @@ public class CharacterOverviewStateBridgeTests
         await bridge.SaveAsync(CancellationToken.None);
 
         Assert.AreEqual(1, presenter.SaveCalls);
+    }
+
+    [TestMethod]
+    public async Task ExportAsync_delegates_to_presenter()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var bridge = new CharacterOverviewStateBridge(presenter, _ => { });
+
+        await bridge.ExportAsync(CancellationToken.None);
+
+        Assert.AreEqual(1, presenter.ExportCalls);
+    }
+
+    [TestMethod]
+    public async Task PrintAsync_delegates_to_presenter()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var bridge = new CharacterOverviewStateBridge(presenter, _ => { });
+
+        await bridge.PrintAsync(CancellationToken.None);
+
+        Assert.AreEqual(1, presenter.PrintCalls);
     }
 
     [TestMethod]

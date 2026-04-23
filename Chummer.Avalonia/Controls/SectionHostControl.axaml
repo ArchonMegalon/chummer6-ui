@@ -1,17 +1,50 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
              x:Class="Chummer.Avalonia.Controls.SectionHostControl">
-  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="1">
-    <Border Grid.Row="0" x:Name="NoticeBorder" Classes="shell-panel subtle" Padding="2,1" IsVisible="False">
+  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="1">
+    <Border Grid.Row="0"
+            x:Name="LoadedRunnerTabStripBorder"
+            Classes="shell-panel subtle"
+            Padding="1,0"
+            IsVisible="False">
+      <TabStrip x:Name="LoadedRunnerTabStrip"
+                Classes="classic-tabs"
+                SelectionChanged="LoadedRunnerTabStrip_OnSelectionChanged">
+        <TabStrip.ItemTemplate>
+          <DataTemplate x:DataType="controls:NavigatorTabItem">
+            <TextBlock Text="{Binding Label}" Classes="shell-tab-label" />
+          </DataTemplate>
+        </TabStrip.ItemTemplate>
+      </TabStrip>
+    </Border>
+
+    <Border Grid.Row="1"
+            x:Name="SectionActionTabStripBorder"
+            Classes="shell-panel subtle"
+            Padding="1,0"
+            IsVisible="False">
+      <TabStrip x:Name="SectionActionTabStrip"
+                Classes="classic-tabs"
+                SelectionChanged="SectionActionTabStrip_OnSelectionChanged">
+        <TabStrip.ItemTemplate>
+          <DataTemplate x:DataType="controls:NavigatorSectionActionItem">
+            <TextBlock Text="{Binding Label}" Classes="shell-tab-label" />
+          </DataTemplate>
+        </TabStrip.ItemTemplate>
+      </TabStrip>
+    </Border>
+
+    <Border Grid.Row="2" x:Name="NoticeBorder" Classes="shell-panel subtle" Padding="2,1" IsVisible="False">
       <TextBlock x:Name="NoticeText"
                  Classes="shell-caption"
                  Text="Notice: Ready."
                  TextTrimming="CharacterEllipsis" />
     </Border>
 
-    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
       <Border Padding="0">
-      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="2">
+      <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="2">
         <Border Grid.Row="0"
                 x:Name="SectionContextBorder"
                 Classes="shell-panel subtle"
@@ -28,247 +61,6 @@
           </StackPanel>
         </Border>
         <Border Grid.Row="1"
-                x:Name="SectionQuickActionsBorder"
-                Classes="shell-panel subtle"
-                IsVisible="False"
-                Padding="2,2">
-          <StackPanel Spacing="2">
-            <WrapPanel x:Name="SectionQuickActionsPanel"
-                       Orientation="Horizontal"
-                       ItemHeight="24" />
-          </StackPanel>
-        </Border>
-        <Border Grid.Row="2"
-                x:Name="BuildLabBorder"
-                Classes="shell-panel"
-                IsVisible="False"
-                Padding="4"
-                BorderThickness="1"
-                Background="{DynamicResource ChummerShellSurfaceBrush}"
-                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="4">
-            <TextBlock x:Name="BuildLabSummaryText"
-                       Text="Build Lab intake"
-                       FontWeight="Bold"
-                       TextWrapping="Wrap" />
-            <ListBox Grid.Row="1" x:Name="BuildLabFieldsList" Height="132">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <ListBox Grid.Row="2" x:Name="BuildLabConstraintsList" Height="72">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <TextBox Grid.Row="3"
-                     x:Name="BuildLabProvenanceBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-            <ListBox Grid.Row="4" x:Name="BuildLabVariantsList" Height="128">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <TextBox Grid.Row="5"
-                     x:Name="BuildLabCoverageBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-            <TextBox Grid.Row="6"
-                     x:Name="BuildLabTimelinesBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-            <TextBox Grid.Row="7"
-                     x:Name="BuildLabExportPayloadsBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-            <ListBox Grid.Row="8" x:Name="BuildLabExportTargetsList" Height="96">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <ListBox Grid.Row="9" x:Name="BuildLabActionsList" Height="56">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-          </Grid>
-        </Border>
-        <Border Grid.Row="3"
-                x:Name="BrowseWorkspaceBorder"
-                Classes="shell-panel"
-                IsVisible="False"
-                Padding="4"
-                BorderThickness="1"
-                Background="{DynamicResource ChummerShellSurfaceBrush}"
-                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="4">
-            <TextBlock x:Name="BrowseSummaryText"
-                       Text="Browse workspace"
-                       FontWeight="Bold"
-                       TextWrapping="Wrap" />
-            <ListBox Grid.Row="1" x:Name="BrowsePresetsList" Height="56">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <ListBox Grid.Row="2" x:Name="BrowseFacetsList" Height="96">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
-              <ListBox Grid.Column="0" x:Name="BrowseResultsList" Height="160">
-                <ListBox.ItemsPanel>
-                  <ItemsPanelTemplate>
-                    <VirtualizingStackPanel />
-                  </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-              </ListBox>
-              <TextBox Grid.Column="1"
-                       x:Name="BrowseDetailBox"
-                       AcceptsReturn="True"
-                       TextWrapping="Wrap"
-                       IsReadOnly="True" />
-            </Grid>
-            <ListBox Grid.Row="4" x:Name="BrowseSelectedItemsList" Height="76">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-          </Grid>
-        </Border>
-        <Border Grid.Row="4"
-                x:Name="ContactGraphBorder"
-                Classes="shell-panel"
-                IsVisible="False"
-                Padding="4"
-                BorderThickness="1"
-                Background="{DynamicResource ChummerShellSurfaceBrush}"
-                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="4">
-            <TextBlock x:Name="ContactGraphSummaryText"
-                       Text="Contact relationship graph"
-                       FontWeight="Bold"
-                       TextWrapping="Wrap" />
-            <ListBox Grid.Row="1" x:Name="ContactNodeList" Height="112">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <TextBox Grid.Row="2"
-                     x:Name="ContactFactionStatusBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-            <TextBox Grid.Row="3"
-                     x:Name="ContactHeatObligationBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-            <TextBox Grid.Row="4"
-                     x:Name="ContactFavorRailBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-          </Grid>
-        </Border>
-        <Border Grid.Row="5"
-                x:Name="NpcPersonaStudioBorder"
-                Classes="shell-panel"
-                IsVisible="False"
-                Padding="4"
-                BorderThickness="1"
-                Background="{DynamicResource ChummerShellSurfaceBrush}"
-                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="4">
-            <TextBlock x:Name="NpcPersonaSummaryText"
-                       Text="NPC Persona Studio"
-                       FontWeight="Bold"
-                       TextWrapping="Wrap" />
-            <ListBox Grid.Row="1" x:Name="NpcPersonaList" Height="92">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <ListBox Grid.Row="2" x:Name="NpcPolicyList" Height="92">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <TextBox Grid.Row="3"
-                     x:Name="NpcEvidenceBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-            <TextBox Grid.Row="4"
-                     x:Name="NpcApprovalBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-          </Grid>
-        </Border>
-        <Border Grid.Row="6"
-                x:Name="DowntimePlannerBorder"
-                Classes="shell-panel"
-                IsVisible="False"
-                Padding="4"
-                BorderThickness="1"
-                Background="{DynamicResource ChummerShellSurfaceBrush}"
-                BorderBrush="{DynamicResource ChummerShellBorderBrush}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="4">
-            <TextBlock x:Name="DowntimePlannerSummaryText"
-                       Text="Downtime planner"
-                       FontWeight="Bold"
-                       TextWrapping="Wrap" />
-            <ListBox Grid.Row="1" x:Name="DowntimePlannerLanesList" Height="92">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-            <TextBox Grid.Row="2"
-                     x:Name="DowntimeCalendarBox"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     IsReadOnly="True" />
-            <ListBox Grid.Row="3" x:Name="DowntimeScheduleList" Height="96">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
-          </Grid>
-        </Border>
-        <Border Grid.Row="7"
                 x:Name="ClassicCharacterSheetBorder"
                 Classes="shell-panel"
                 IsVisible="False"
@@ -285,7 +77,7 @@
                        ItemHeight="28" />
           </StackPanel>
         </Border>
-        <Border Grid.Row="8"
+        <Border Grid.Row="2"
                 x:Name="SectionRowsBorder"
                 Classes="shell-panel"
                 Padding="1,0">
@@ -314,27 +106,41 @@
             </ListBox.ItemsPanel>
           </ListBox>
         </Border>
-        <Expander Grid.Row="9"
+        <Expander Grid.Row="3"
                   x:Name="SectionPayloadExpander"
                   Header="Section Payload"
-                  IsExpanded="True"
                   Height="0"
                   MinHeight="0"
                   MaxHeight="0"
                   Opacity="0"
                   IsHitTestVisible="False"
-                  ClipToBounds="True">
+                  ClipToBounds="True"
+                  IsExpanded="False" />
+        <Expander Grid.Row="3"
+                  x:Name="SectionReviewExpander"
+                  Header="Section Review"
+                  IsExpanded="True"
+                  IsVisible="False">
           <TextBox x:Name="SectionPreviewBox"
                    AcceptsReturn="True"
                    TextWrapping="Wrap"
                    IsReadOnly="True"
                    MinHeight="120" />
         </Expander>
+        <Border Grid.Row="4"
+                x:Name="SectionQuickActionsBorder"
+                Classes="shell-panel"
+                Padding="1,0"
+                IsVisible="False">
+          <StackPanel x:Name="SectionQuickActionsHost"
+                      Orientation="Horizontal"
+                      Spacing="4" />
+        </Border>
       </Grid>
       </Border>
     </ScrollViewer>
 
-    <Border Grid.Row="2" x:Name="RawXmlImportBorder" Classes="shell-panel subtle" Padding="3" IsVisible="False">
+    <Border Grid.Row="4" x:Name="RawXmlImportBorder" Classes="shell-panel subtle" Padding="3" IsVisible="False">
       <Expander Header="Raw XML Import" IsExpanded="False">
         <StackPanel Spacing="2" Margin="0,4,0,0">
           <TextBox x:Name="XmlInputBox"
