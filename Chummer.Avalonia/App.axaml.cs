@@ -143,6 +143,15 @@ public partial class App : global::Avalonia.Application
             {
                 Console.Error.WriteLine($"Failed to display the desktop install linking window: {ex}");
             }
+
+            try
+            {
+                await DesktopHomeWindow.ShowIfNeededAsync(owner, "avalonia", installLinkingContext);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop home window: {ex}");
+            }
         }
 
         string? startupSurface = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SURFACE");

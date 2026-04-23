@@ -23,6 +23,9 @@ internal sealed class DesktopHomeWindow : Window
     private const string RestoreLocalAuthoritySummary = "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.";
     private const string RestoreReplacementGuardSummary = "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.";
     private const string RestoreSupportHandoffSummary = "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.";
+    private const string CampaignConsequenceVisibilitySummary = "Campaign consequences: downtime, heat, faction, contact, reputation, and aftermath state stay visible on the promoted Avalonia desktop route before the next session.";
+    private const string CampaignMemoryStaleStateSummary = "Campaign memory stale-state check: desktop compares the server-generated campaign memory packet with the local workspace timestamp and keeps both visible when they disagree.";
+    private const string CampaignNextSessionReturnActionSummary = "Next-session return actions: review Campaign Workspace, open the current workspace, review devices/access, or open Workspace Support before continuing play.";
     private DesktopInstallLinkingState _installState;
     private DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;

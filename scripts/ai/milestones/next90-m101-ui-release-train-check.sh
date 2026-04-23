@@ -234,6 +234,7 @@ ALLOWED_DESKTOP_ROUTE_TRUTH_KEYS = sorted(
         "publicInstallRoute",
         "revokeReason",
         "revokeReasonCode",
+        "revokeSource",
         "revokeState",
         "rid",
         "rollbackReason",
@@ -256,7 +257,7 @@ PRIMARY_ROUTE_TRUTH_FALLBACK_DISTINCT_FIELDS = [
     "updateEligibilityReason",
 ]
 LANDED_COMMIT = "c9c0d84f"
-EXPECTED_CURRENT_PACKAGE_PROOF_FLOOR_COMMIT = "35433ce3"
+EXPECTED_CURRENT_PACKAGE_PROOF_FLOOR_COMMIT = "362686fb"
 EXPECTED_RESOLVING_PROOF_COMMITS = [
     LANDED_COMMIT,
     "da549ef8",
@@ -371,6 +372,9 @@ EXPECTED_RESOLVING_PROOF_COMMITS = [
     "fb8ad231",
     "15ee0fff",
     "35433ce3",
+    "d7c9b1ec",
+    "79fb7eb9",
+    "362686fb",
     EXPECTED_CURRENT_PACKAGE_PROOF_FLOOR_COMMIT,
     "f7fcf1a9",
     "f3779b5d",
@@ -952,7 +956,7 @@ if queue_proof_items != design_queue_proof_items:
 
 registry_checks = {
     "milestone_101_present": block_contains(milestone_101_block, "id: 101"),
-    "milestone_101_in_progress": block_contains(milestone_101_block, "status: in_progress"),
+    "milestone_101_complete": block_contains(milestone_101_block, "status: complete"),
     "ui_work_task_present": block_contains(registry_task_block, "id: 101.3")
     and block_contains(registry_task_block, "Keep Avalonia primary-route proof independent from Blazor fallback proof on every promoted tuple."),
     "ui_work_task_complete": block_contains(registry_task_block, "status: complete"),

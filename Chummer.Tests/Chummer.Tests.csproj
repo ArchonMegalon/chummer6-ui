@@ -68,6 +68,7 @@
 	    <Compile Include="Compliance\MigrationComplianceTests.cs" />
     <Compile Include="Compliance\Next90M103VeteranCertificationGuardTests.cs" />
     <Compile Include="Compliance\Next90M104ExplainReceiptsGuardTests.cs" />
+    <Compile Include="Compliance\Next90M109BuildExplainArtifactsGuardTests.cs" />
     <Compile Include="Compliance\Next90M105PrimaryRouteDecisionGuardTests.cs" />
     <Compile Include="Compliance\Next90M105RestoreContinuityGuardTests.cs" />
     <Compile Include="Compliance\SectionHostRulesetParityComplianceTests.cs" />
