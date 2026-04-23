@@ -139,6 +139,357 @@ if [[ -n "$WINDOWS_SECONDARY_HEAD_PUBLISH_DIR" ]]; then
   WINDOWS_SECONDARY_HEAD_PUBLISH_DIR="$(abspath "$WINDOWS_SECONDARY_HEAD_PUBLISH_DIR")"
 fi
 
+desktop_release_channel() {
+  local value="${CHUMMER_DESKTOP_RELEASE_CHANNEL:-${CHUMMER_RELEASE_CHANNEL:-docker}}"
+  value="$(echo "$value" | tr '[:upper:]' '[:lower:]')"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  if [[ -z "$value" ]]; then
+    value="docker"
+  fi
+  printf '%s' "$value"
+}
+
+is_preview_release_channel() {
+  case "$(desktop_release_channel)" in
+    preview|docker)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+windows_signing_required() {
+  if [[ -n "${CHUMMER_WINDOWS_SIGNING_REQUIRED:-}" ]]; then
+    env_truthy "${CHUMMER_WINDOWS_SIGNING_REQUIRED}"
+    return
+  fi
+
+  if is_preview_release_channel; then
+    return 1
+  fi
+
+  return 0
+}
+
+macos_signing_required() {
+  if [[ -n "${CHUMMER_MAC_SIGNING_REQUIRED:-}" ]]; then
+    env_truthy "${CHUMMER_MAC_SIGNING_REQUIRED}"
+    return
+  fi
+
+  if is_preview_release_channel; then
+    return 1
+  fi
+
+  return 0
+}
+
+macos_notarization_required() {
+  if [[ -n "${CHUMMER_MAC_NOTARIZATION_REQUIRED:-}" ]]; then
+    env_truthy "${CHUMMER_MAC_NOTARIZATION_REQUIRED}"
+    return
+  fi
+
+  if is_preview_release_channel; then
+    return 1
+  fi
+
+  return 0
+}
+
+sha256_file() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+    return
+  fi
+
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+    return
+  fi
+
+  python3 - "$1" <<'PY'
+import hashlib
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+hasher = hashlib.sha256()
+with path.open("rb") as handle:
+    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+        hasher.update(chunk)
+print(hasher.hexdigest())
+PY
+}
+
+signing_receipt_path() {
+  if [[ "$RID" == win-* ]]; then
+    printf '%s' "${CHUMMER_WINDOWS_SIGNING_RECEIPT_PATH:-$DIST_DIR/signing/signing-$APP_KEY-$RID.receipt.json}"
+    return
+  fi
+
+  if [[ "$RID" == osx-* ]]; then
+    printf '%s' "${CHUMMER_MAC_SIGNING_RECEIPT_PATH:-$DIST_DIR/signing/signing-$APP_KEY-$RID.receipt.json}"
+    return
+  fi
+
+  printf '%s' ""
+}
+
+write_signing_receipt() {
+  local receipt_path="${1:-}"
+  local platform="${2:-}"
+  local signing_status="${3:-}"
+  local notarization_status="${4:-}"
+  local reason="${5:-}"
+  shift 5 || true
+
+  if [[ -z "$receipt_path" ]]; then
+    return 0
+  fi
+
+  python3 - "$receipt_path" "$platform" "$APP_KEY" "$RID" "$VERSION" "$(desktop_release_channel)" "$signing_status" "$notarization_status" "$reason" "$@" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def kind_for_name(file_name: str) -> str:
+    lowered = file_name.lower()
+    if lowered.endswith(("-installer.exe", "-installer.dmg", "-installer.pkg", ".msix")):
+        return "installer"
+    if lowered.endswith(".exe"):
+        return "portable"
+    if lowered.endswith(".tar.gz"):
+        return "archive"
+    return "artifact"
+
+
+def sha256_file(path: Path) -> str:
+    import hashlib
+
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest().lower()
+
+
+receipt_path = Path(sys.argv[1])
+platform = sys.argv[2]
+app = sys.argv[3]
+rid = sys.argv[4]
+release_version = sys.argv[5]
+release_channel = sys.argv[6]
+signing_status = sys.argv[7]
+notarization_status = sys.argv[8]
+reason = sys.argv[9]
+artifact_args = sys.argv[10:]
+
+artifacts = []
+for raw_path in artifact_args:
+    path = Path(raw_path)
+    if not path.is_file():
+        continue
+    artifacts.append(
+        {
+            "fileName": path.name,
+            "sha256": sha256_file(path),
+            "kind": kind_for_name(path.name),
+            "signingStatus": signing_status,
+            "notarizationStatus": notarization_status if platform == "macos" else None,
+        }
+    )
+
+payload = {
+    "contractName": "chummer6-ui.desktop_artifact_signing",
+    "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "platform": platform,
+    "app": app,
+    "rid": rid,
+    "releaseChannel": release_channel,
+    "releaseVersion": release_version,
+    "signingStatus": signing_status,
+    "notarizationStatus": notarization_status if platform == "macos" else None,
+    "reason": reason,
+    "artifacts": artifacts,
+}
+
+receipt_path.parent.mkdir(parents=True, exist_ok=True)
+receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+has_windows_signing_configuration() {
+  [[ -n "${CHUMMER_WINDOWS_SIGN_PFX_BASE64:-}" || -n "${CHUMMER_WINDOWS_SIGN_PFX_PATH:-}" ]]
+}
+
+run_windows_signing() {
+  local receipt_path="${1:-}"
+  shift || true
+  local -a artifacts=("$@")
+
+  if (( ${#artifacts[@]} == 0 )); then
+    return 0
+  fi
+
+  local powershell_bin="powershell"
+  if command -v pwsh >/dev/null 2>&1; then
+    powershell_bin="pwsh"
+  fi
+
+  CHUMMER_DESKTOP_APP_KEY="$APP_KEY" \
+  CHUMMER_DESKTOP_RID="$RID" \
+  CHUMMER_DESKTOP_RELEASE_CHANNEL="$(desktop_release_channel)" \
+  CHUMMER_DESKTOP_RELEASE_VERSION="$VERSION" \
+  CHUMMER_WINDOWS_SIGNING_RECEIPT_PATH="$receipt_path" \
+  "$powershell_bin" -NoLogo -NoProfile -File "$REPO_ROOT/scripts/sign-windows-artifacts.ps1" -ArtifactPaths "${artifacts[@]}"
+}
+
+pre_sign_windows_payloads_if_configured() {
+  local -a payload_artifacts=("$PUBLISH_DIR/$LAUNCH_TARGET")
+  if [[ -n "$WINDOWS_SECONDARY_HEAD_PUBLISH_DIR" && -n "$WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET" ]]; then
+    payload_artifacts+=("$WINDOWS_SECONDARY_HEAD_PUBLISH_DIR/$WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET")
+  fi
+
+  if has_windows_signing_configuration; then
+    run_windows_signing "" "${payload_artifacts[@]}"
+    return 0
+  fi
+
+  if windows_signing_required; then
+    local receipt_path
+    receipt_path="$(signing_receipt_path)"
+    write_signing_receipt \
+      "$receipt_path" \
+      "windows" \
+      "fail" \
+      "" \
+      "Windows signing is required for release channel '$(desktop_release_channel)', but no PFX certificate was configured."
+    echo "Windows signing is required for release channel '$(desktop_release_channel)', but no PFX certificate was configured." >&2
+    exit 1
+  fi
+}
+
+finalize_windows_signing_receipt() {
+  local portable_exe="$DIST_DIR/chummer-$APP_KEY-$RID.exe"
+  local installer_path="$DIST_DIR/chummer-$APP_KEY-$RID-installer.exe"
+  local receipt_path
+  receipt_path="$(signing_receipt_path)"
+
+  if has_windows_signing_configuration; then
+    run_windows_signing "$receipt_path" "$portable_exe" "$installer_path"
+    return 0
+  fi
+
+  write_signing_receipt \
+    "$receipt_path" \
+    "windows" \
+    "skipped_preview" \
+    "" \
+    "Preview channel does not require Authenticode signing." \
+    "$portable_exe" \
+    "$installer_path"
+}
+
+has_macos_signing_identity() {
+  [[ -n "${CHUMMER_MAC_APP_SIGN_IDENTITY:-}" ]]
+}
+
+has_macos_notary_profile() {
+  [[ -n "${CHUMMER_MAC_NOTARY_PROFILE:-}" ]]
+}
+
+sign_macos_publish_binary_if_configured() {
+  local target="$PUBLISH_DIR/$LAUNCH_TARGET"
+  if [[ ! -f "$target" ]]; then
+    echo "Launch target not found in macOS publish directory: $target" >&2
+    exit 1
+  fi
+
+  if has_macos_signing_identity; then
+    codesign --force --timestamp --options runtime --sign "${CHUMMER_MAC_APP_SIGN_IDENTITY}" "$target"
+    codesign --verify --verbose=2 "$target"
+    return 0
+  fi
+
+  if macos_signing_required; then
+    local receipt_path
+    receipt_path="$(signing_receipt_path)"
+    write_signing_receipt \
+      "$receipt_path" \
+      "macos" \
+      "fail" \
+      "" \
+      "macOS signing is required for release channel '$(desktop_release_channel)', but CHUMMER_MAC_APP_SIGN_IDENTITY is not configured." \
+      "$target"
+    echo "macOS signing is required for release channel '$(desktop_release_channel)', but CHUMMER_MAC_APP_SIGN_IDENTITY is not configured." >&2
+    exit 1
+  fi
+}
+
+sign_macos_app_bundle_if_configured() {
+  local app_bundle="$1"
+
+  if has_macos_signing_identity; then
+    codesign --force --deep --options runtime --timestamp --sign "${CHUMMER_MAC_APP_SIGN_IDENTITY}" "$app_bundle"
+    codesign --verify --deep --strict --verbose=2 "$app_bundle"
+    return 0
+  fi
+
+  if macos_signing_required; then
+    echo "macOS signing is required for release channel '$(desktop_release_channel)', but CHUMMER_MAC_APP_SIGN_IDENTITY is not configured." >&2
+    exit 1
+  fi
+}
+
+finalize_macos_signing_receipt() {
+  local installer_path="$1"
+  local receipt_path
+  receipt_path="$(signing_receipt_path)"
+  local signing_status="skipped_preview"
+  local notarization_status="skipped_preview"
+  local reason=""
+
+  if has_macos_signing_identity; then
+    codesign --force --timestamp --sign "${CHUMMER_MAC_APP_SIGN_IDENTITY}" "$installer_path"
+    codesign --verify --verbose=2 "$installer_path"
+    signing_status="pass"
+  elif macos_signing_required; then
+    reason="macOS signing is required for release channel '$(desktop_release_channel)', but CHUMMER_MAC_APP_SIGN_IDENTITY is not configured."
+    write_signing_receipt "$receipt_path" "macos" "fail" "fail" "$reason" "$installer_path"
+    echo "$reason" >&2
+    exit 1
+  fi
+
+  if has_macos_notary_profile; then
+    if ! has_macos_signing_identity; then
+      reason="macOS notarization was configured without a signing identity; configure CHUMMER_MAC_APP_SIGN_IDENTITY alongside CHUMMER_MAC_NOTARY_PROFILE."
+      write_signing_receipt "$receipt_path" "macos" "fail" "fail" "$reason" "$installer_path"
+      echo "$reason" >&2
+      exit 1
+    fi
+
+    xcrun notarytool submit "$installer_path" --keychain-profile "${CHUMMER_MAC_NOTARY_PROFILE}" --wait
+    xcrun stapler staple "$installer_path"
+    xcrun stapler validate "$installer_path"
+    notarization_status="pass"
+  elif macos_notarization_required; then
+    reason="macOS notarization is required for release channel '$(desktop_release_channel)', but CHUMMER_MAC_NOTARY_PROFILE is not configured."
+    write_signing_receipt "$receipt_path" "macos" "$signing_status" "fail" "$reason" "$installer_path"
+    echo "$reason" >&2
+    exit 1
+  fi
+
+  write_signing_receipt "$receipt_path" "macos" "$signing_status" "$notarization_status" "$reason" "$installer_path"
+}
+
 resolve_demo_character_source() {
   local configured="${CHUMMER_RELEASE_SAMPLE_SOURCE:-}"
   local fixture_root="${CHUMMER_LEGACY_FIXTURE_ROOT:-}"
@@ -450,6 +801,8 @@ build_macos_installer() {
 </plist>
 EOF
 
+  sign_macos_app_bundle_if_configured "$app_bundle"
+
   rm -f "$DIST_DIR/$installer_name"
   if ! TMPDIR="$hdiutil_tmp_work" hdiutil create \
     -volname "$APP_DISPLAY" \
@@ -462,6 +815,7 @@ EOF
     exit 1
   fi
 
+  finalize_macos_signing_receipt "$DIST_DIR/$installer_name"
   echo "built installer $DIST_DIR/$installer_name"
 }
 
@@ -683,8 +1037,10 @@ case "$RID" in
     bundle_demo_character_fixture
     require_publishable_release_version
     prune_release_symbols
+    pre_sign_windows_payloads_if_configured
     build_portable_artifacts
     build_windows_installer
+    finalize_windows_signing_receipt
     ;;
   linux-*)
     bundle_demo_character_fixture
@@ -697,6 +1053,7 @@ case "$RID" in
     bundle_demo_character_fixture
     require_publishable_release_version
     prune_release_symbols
+    sign_macos_publish_binary_if_configured
     build_portable_artifacts
     build_macos_installer
     ;;

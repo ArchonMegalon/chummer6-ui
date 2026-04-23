@@ -33,6 +33,9 @@ on:
       - 'Directory.Build.props'
       - 'global.json'
       - 'scripts/generate-releases-manifest.sh'
+      - 'scripts/resolve-desktop-release-context.sh'
+      - 'scripts/prepare-macos-signing-keychain.sh'
+      - 'scripts/sign-windows-artifacts.ps1'
       - 'scripts/sync-github-release-assets.py'
       - 'scripts/build-desktop-installer.sh'
       - 'scripts/run-desktop-startup-smoke.sh'
@@ -199,6 +202,34 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Resolve desktop release context
+        id: release-context
+        shell: bash
+        env:
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ vars.CHUMMER_DESKTOP_RELEASE_CHANNEL }}
+        run: |
+          set -euo pipefail
+          bash scripts/resolve-desktop-release-context.sh >> "$GITHUB_OUTPUT"
+
+      - name: Prepare macOS signing keychain
+        if: ${{ startsWith(matrix.rid, 'osx-') }}
+        id: prepare-macos-signing
+        shell: bash
+        env:
+          CHUMMER_MAC_SIGNING_REQUIRED: ${{ steps.release-context.outputs.mac_signing_required }}
+          CHUMMER_MAC_NOTARIZATION_REQUIRED: ${{ steps.release-context.outputs.mac_notarization_required }}
+          CHUMMER_MAC_CERTIFICATE_P12_BASE64: ${{ secrets.CHUMMER_MAC_CERTIFICATE_P12_BASE64 }}
+          CHUMMER_MAC_CERTIFICATE_PASSWORD: ${{ secrets.CHUMMER_MAC_CERTIFICATE_PASSWORD }}
+          CHUMMER_MAC_KEYCHAIN_PASSWORD: ${{ secrets.CHUMMER_MAC_KEYCHAIN_PASSWORD }}
+          CHUMMER_MAC_APP_SIGN_IDENTITY: ${{ vars.CHUMMER_MAC_APP_SIGN_IDENTITY }}
+          CHUMMER_MAC_NOTARY_PROFILE: ${{ vars.CHUMMER_MAC_NOTARY_PROFILE }}
+          CHUMMER_MAC_APPLE_ID: ${{ secrets.CHUMMER_MAC_APPLE_ID }}
+          CHUMMER_MAC_TEAM_ID: ${{ vars.CHUMMER_MAC_TEAM_ID }}
+          CHUMMER_MAC_APPLE_APP_PASSWORD: ${{ secrets.CHUMMER_MAC_APPLE_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          bash scripts/prepare-macos-signing-keychain.sh
+
       - name: Prepare local compatibility NuGet feed directories
         shell: bash
         run: |
@@ -261,7 +292,7 @@ jobs:
             -p:ChummerLocalHubRegistryContractsProject="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" \
             -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}" \
             -p:ChummerDesktopReleaseVersion="$release_version" \
-            -p:ChummerDesktopReleaseChannel="preview" \
+            -p:ChummerDesktopReleaseChannel="${{ steps.release-context.outputs.channel }}" \
             -o "$out_dir"
 
       - name: Publish secondary Windows desktop head
@@ -287,7 +318,7 @@ jobs:
             -p:ChummerLocalHubRegistryContractsProject="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT}" \
             -p:ChummerLocalUiKitProject="${CHUMMER_LOCAL_UI_KIT_PROJECT}" \
             -p:ChummerDesktopReleaseVersion="$release_version" \
-            -p:ChummerDesktopReleaseChannel="preview" \
+            -p:ChummerDesktopReleaseChannel="${{ steps.release-context.outputs.channel }}" \
             -o "$out_dir"
 
       - name: Preflight macOS packaging requirements
@@ -303,6 +334,19 @@ jobs:
       - name: Package installer
         shell: bash
         env:
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.release-context.outputs.channel }}
+          CHUMMER_WINDOWS_SIGNING_REQUIRED: ${{ steps.release-context.outputs.windows_signing_required }}
+          CHUMMER_MAC_SIGNING_REQUIRED: ${{ steps.release-context.outputs.mac_signing_required }}
+          CHUMMER_MAC_NOTARIZATION_REQUIRED: ${{ steps.release-context.outputs.mac_notarization_required }}
+          CHUMMER_WINDOWS_SIGN_PFX_BASE64: ${{ secrets.CHUMMER_WINDOWS_SIGN_PFX_BASE64 }}
+          CHUMMER_WINDOWS_SIGN_PFX_PASSWORD: ${{ secrets.CHUMMER_WINDOWS_SIGN_PFX_PASSWORD }}
+          CHUMMER_WINDOWS_SIGN_PFX_PATH: ${{ vars.CHUMMER_WINDOWS_SIGN_PFX_PATH }}
+          CHUMMER_WINDOWS_SIGNTOOL_PATH: ${{ vars.CHUMMER_WINDOWS_SIGNTOOL_PATH }}
+          CHUMMER_WINDOWS_TIMESTAMP_URL: ${{ vars.CHUMMER_WINDOWS_TIMESTAMP_URL }}
+          CHUMMER_WINDOWS_SIGNING_RECEIPT_PATH: dist/signing/signing-${{ matrix.app }}-${{ matrix.rid }}.receipt.json
+          CHUMMER_MAC_APP_SIGN_IDENTITY: ${{ steps.prepare-macos-signing.outputs.sign_identity != '' && steps.prepare-macos-signing.outputs.sign_identity || vars.CHUMMER_MAC_APP_SIGN_IDENTITY }}
+          CHUMMER_MAC_NOTARY_PROFILE: ${{ steps.prepare-macos-signing.outputs.notary_profile != '' && steps.prepare-macos-signing.outputs.notary_profile || vars.CHUMMER_MAC_NOTARY_PROFILE }}
+          CHUMMER_MAC_SIGNING_RECEIPT_PATH: dist/signing/signing-${{ matrix.app }}-${{ matrix.rid }}.receipt.json
           CHUMMER_WINDOWS_SECONDARY_HEAD_KEY: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'blazor-desktop' || '' }}
           CHUMMER_WINDOWS_SECONDARY_HEAD_PUBLISH_DIR: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && format('out/blazor-desktop/{0}', matrix.rid) || '' }}
           CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'Chummer.Blazor.Desktop.exe' || '' }}
@@ -321,7 +365,7 @@ jobs:
       - name: Startup smoke
         shell: bash
         env:
-          CHUMMER_DESKTOP_RELEASE_CHANNEL: preview
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.release-context.outputs.channel }}
           CHUMMER_DESKTOP_RELEASE_VERSION: run-${GITHUB_RUN_NUMBER:-local}
           CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-${{ matrix.os }}
           CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'avalonia/Chummer.Avalonia.exe;blazor-desktop/Chummer.Blazor.Desktop.exe' || '' }}
@@ -357,6 +401,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      - name: Upload signing evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-signing-${{ matrix.app }}-${{ matrix.rid }}
+          path: r/dist/signing
+          if-no-files-found: ignore
+          retention-days: 14
+
   generate-manifest:
     name: Generate Downloads Manifest
     needs: build-desktop
@@ -372,6 +425,15 @@ jobs:
           repository: ArchonMegalon/chummer6-hub-registry
           ref: fleet/hub-registry
           path: chummer-hub-registry
+
+      - name: Resolve desktop release context
+        id: release-context
+        shell: bash
+        env:
+          CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ vars.CHUMMER_DESKTOP_RELEASE_CHANNEL }}
+        run: |
+          set -euo pipefail
+          bash scripts/resolve-desktop-release-context.sh >> "$GITHUB_OUTPUT"
 
       - name: Validate amend manifests checksums
         run: bash scripts/validate-amend-manifests.sh
@@ -389,6 +451,13 @@ jobs:
           pattern: desktop-smoke-*
           merge-multiple: true
           path: dist/startup-smoke
+
+      - name: Download signing evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-signing-*
+          merge-multiple: true
+          path: dist/signing
 
       - name: Stage portal downloads directory
         shell: bash
@@ -416,7 +485,8 @@ jobs:
           MANIFEST_PATH="dist/releases.json" \
           PORTAL_MANIFEST_PATH="dist/releases.json" \
           RELEASE_VERSION="run-${GITHUB_RUN_NUMBER:-local}" \
-          RELEASE_CHANNEL="preview" \
+          RELEASE_CHANNEL="${{ steps.release-context.outputs.channel }}" \
+          SIGNING_RECEIPTS_DIR="dist/signing" \
           RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT}" \
           bash scripts/generate-releases-manifest.sh
 

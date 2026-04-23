@@ -3448,10 +3448,16 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "deploy-downloads-http");
         StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_URL");
         StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_TOKEN");
+        StringAssert.Contains(runbookText, "CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        StringAssert.Contains(runbookText, "release_candidate");
+        StringAssert.Contains(runbookText, "public_stable");
+        StringAssert.Contains(runbookText, "CHUMMER_WINDOWS_SIGN_PFX_BASE64");
+        StringAssert.Contains(runbookText, "CHUMMER_MAC_CERTIFICATE_P12_BASE64");
         StringAssert.Contains(runbookText, "latest-only");
         StringAssert.Contains(runbookText, "RUNBOOK_LOG_DIR");
         StringAssert.Contains(runbookText, "RUNBOOK_STATE_DIR");
 
+        StringAssert.Contains(envExampleText, "CHUMMER_DESKTOP_RELEASE_CHANNEL=preview");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED=true");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR=/srv/chummer/portal-downloads");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=https://chummer.example.com/downloads/releases.json");
@@ -3459,6 +3465,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(envExampleText, "# CHUMMER_PORTAL_DOWNLOADS_S3_URI=s3://chummer-downloads/releases");
         StringAssert.Contains(envExampleText, "# Live chummer.run upload topology:");
         StringAssert.Contains(envExampleText, "# CHUMMER_RELEASE_UPLOAD_URL=https://chummer.run/api/internal/releases/bundles");
+        StringAssert.Contains(envExampleText, "# CHUMMER_WINDOWS_SIGN_PFX_BASE64=replace-me");
+        StringAssert.Contains(envExampleText, "# CHUMMER_MAC_CERTIFICATE_P12_BASE64=replace-me");
+        StringAssert.Contains(envExampleText, "# CHUMMER_MAC_NOTARY_PROFILE=chummer-notary");
     }
 
     [TestMethod]
@@ -3531,6 +3540,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "Chummer.Infrastructure/**");
         StringAssert.Contains(workflowText, "Chummer.Portal/**");
         StringAssert.Contains(workflowText, "scripts/generate-releases-manifest.sh");
+        StringAssert.Contains(workflowText, "scripts/resolve-desktop-release-context.sh");
+        StringAssert.Contains(workflowText, "scripts/prepare-macos-signing-keychain.sh");
+        StringAssert.Contains(workflowText, "scripts/sign-windows-artifacts.ps1");
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle.sh");
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle-http.sh");
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle-s3.sh");
@@ -3540,9 +3552,23 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "deploy-downloads-http");
         StringAssert.Contains(workflowText, "deploy-downloads-object-storage");
         StringAssert.Contains(workflowText, "github.ref_name == 'main'");
+        StringAssert.Contains(workflowText, "id: release-context");
+        StringAssert.Contains(workflowText, "bash scripts/resolve-desktop-release-context.sh >> \"$GITHUB_OUTPUT\"");
+        StringAssert.Contains(workflowText, "name: Prepare macOS signing keychain");
+        StringAssert.Contains(workflowText, "bash scripts/prepare-macos-signing-keychain.sh");
+        StringAssert.Contains(workflowText, "CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.release-context.outputs.channel }}");
+        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SIGNING_REQUIRED: ${{ steps.release-context.outputs.windows_signing_required }}");
+        StringAssert.Contains(workflowText, "CHUMMER_MAC_NOTARIZATION_REQUIRED: ${{ steps.release-context.outputs.mac_notarization_required }}");
+        StringAssert.Contains(workflowText, "desktop-signing-${{ matrix.app }}-${{ matrix.rid }}");
+        StringAssert.Contains(workflowText, "path: r/dist/signing");
+        StringAssert.Contains(workflowText, "name: Download signing evidence");
+        StringAssert.Contains(workflowText, "path: dist/signing");
+        StringAssert.Contains(workflowText, "SIGNING_RECEIPTS_DIR=\"dist/signing\"");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS");
         StringAssert.Contains(startupSmokeScriptText, "Missing required installed path(s) after Windows smoke install:");
         StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
+        StringAssert.Contains(manifestScriptText, "SIGNING_RECEIPTS_DIR");
+        StringAssert.Contains(manifestScriptText, "--signing-receipts-dir");
         StringAssert.Contains(verifyScriptText, "--skip-startup-smoke-filter");
         StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
@@ -3593,6 +3619,61 @@ public class MigrationComplianceTests
         StringAssert.Contains(verifyScriptText, "Provide a portal base URL or manifest path as the first argument");
         StringAssert.Contains(verifyScriptText, "verify_public_release_channel.py");
         StringAssert.Contains(verifyScriptText, "Missing registry verifier");
+    }
+
+    [TestMethod]
+    public void Desktop_public_release_signing_hooks_are_materialized_in_scripts_and_docs()
+    {
+        string releaseContextPath = FindPath("scripts", "resolve-desktop-release-context.sh");
+        string releaseContextText = File.ReadAllText(releaseContextPath);
+        string windowsSigningPath = FindPath("scripts", "sign-windows-artifacts.ps1");
+        string windowsSigningText = File.ReadAllText(windowsSigningPath);
+        string macPrepPath = FindPath("scripts", "prepare-macos-signing-keychain.sh");
+        string macPrepText = File.ReadAllText(macPrepPath);
+        string installerScriptPath = FindPath("scripts", "build-desktop-installer.sh");
+        string installerScriptText = File.ReadAllText(installerScriptPath);
+        string publicPromotionPath = FindPath("scripts", "generate-public-promotion-evidence.py");
+        string publicPromotionText = File.ReadAllText(publicPromotionPath);
+        string releasePipelinePath = FindPath(".codex-design", "product", "RELEASE_PIPELINE.md");
+        string releasePipelineText = File.ReadAllText(releasePipelinePath);
+        string implementationScopePath = FindPath(".codex-design", "repo", "IMPLEMENTATION_SCOPE.md");
+        string implementationScopeText = File.ReadAllText(implementationScopePath);
+
+        StringAssert.Contains(releaseContextText, "preview");
+        StringAssert.Contains(releaseContextText, "release_candidate");
+        StringAssert.Contains(releaseContextText, "public_stable");
+        StringAssert.Contains(releaseContextText, "windows_signing_required=true");
+        StringAssert.Contains(releaseContextText, "mac_notarization_required=true");
+
+        StringAssert.Contains(windowsSigningText, "CHUMMER_WINDOWS_SIGN_PFX_BASE64");
+        StringAssert.Contains(windowsSigningText, "CHUMMER_WINDOWS_SIGNING_REQUIRED");
+        StringAssert.Contains(windowsSigningText, "signtool.exe");
+        StringAssert.Contains(windowsSigningText, "desktop_artifact_signing");
+        StringAssert.Contains(windowsSigningText, "skipped_preview");
+
+        StringAssert.Contains(macPrepText, "CHUMMER_MAC_CERTIFICATE_P12_BASE64");
+        StringAssert.Contains(macPrepText, "CHUMMER_MAC_APPLE_ID");
+        StringAssert.Contains(macPrepText, "xcrun notarytool store-credentials");
+        StringAssert.Contains(macPrepText, "security import");
+        StringAssert.Contains(macPrepText, "security list-keychains -d user -s");
+
+        StringAssert.Contains(installerScriptText, "pre_sign_windows_payloads_if_configured");
+        StringAssert.Contains(installerScriptText, "finalize_windows_signing_receipt");
+        StringAssert.Contains(installerScriptText, "sign_macos_publish_binary_if_configured");
+        StringAssert.Contains(installerScriptText, "sign_macos_app_bundle_if_configured");
+        StringAssert.Contains(installerScriptText, "finalize_macos_signing_receipt");
+        StringAssert.Contains(installerScriptText, "CHUMMER_MAC_NOTARY_PROFILE");
+        StringAssert.Contains(installerScriptText, "desktop_artifact_signing");
+
+        StringAssert.Contains(publicPromotionText, "--signing-receipts-dir");
+        StringAssert.Contains(publicPromotionText, "load_signing_receipts");
+        StringAssert.Contains(publicPromotionText, "find_matching_signing_receipt");
+        StringAssert.Contains(publicPromotionText, "\"signingReceiptPath\"");
+
+        StringAssert.Contains(releasePipelineText, "CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        StringAssert.Contains(releasePipelineText, "release_candidate");
+        StringAssert.Contains(releasePipelineText, "public_stable");
+        StringAssert.Contains(implementationScopeText, "Windows Authenticode signing and macOS codesign/notarization hooks");
     }
 
     [TestMethod]
