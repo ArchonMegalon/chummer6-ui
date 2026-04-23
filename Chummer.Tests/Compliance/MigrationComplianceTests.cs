@@ -3449,6 +3449,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_URL");
         StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_TOKEN");
         StringAssert.Contains(runbookText, "CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        StringAssert.Contains(runbookText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE");
         StringAssert.Contains(runbookText, "release_candidate");
         StringAssert.Contains(runbookText, "public_stable");
         StringAssert.Contains(runbookText, "CHUMMER_WINDOWS_SIGN_PFX_BASE64");
@@ -3458,6 +3459,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "RUNBOOK_STATE_DIR");
 
         StringAssert.Contains(envExampleText, "CHUMMER_DESKTOP_RELEASE_CHANNEL=preview");
+        StringAssert.Contains(envExampleText, "# CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED=true");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR=/srv/chummer/portal-downloads");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=https://chummer.example.com/downloads/releases.json");
@@ -3554,9 +3556,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "github.ref_name == 'main'");
         StringAssert.Contains(workflowText, "id: release-context");
         StringAssert.Contains(workflowText, "bash scripts/resolve-desktop-release-context.sh >> \"$GITHUB_OUTPUT\"");
+        StringAssert.Contains(workflowText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE: ${{ vars.CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE }}");
         StringAssert.Contains(workflowText, "name: Prepare macOS signing keychain");
         StringAssert.Contains(workflowText, "bash scripts/prepare-macos-signing-keychain.sh");
         StringAssert.Contains(workflowText, "CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.release-context.outputs.channel }}");
+        StringAssert.Contains(workflowText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE: ${{ steps.release-context.outputs.allow_unsigned_public_release }}");
         StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SIGNING_REQUIRED: ${{ steps.release-context.outputs.windows_signing_required }}");
         StringAssert.Contains(workflowText, "CHUMMER_MAC_NOTARIZATION_REQUIRED: ${{ steps.release-context.outputs.mac_notarization_required }}");
         StringAssert.Contains(workflowText, "desktop-signing-${{ matrix.app }}-${{ matrix.rid }}");
@@ -3569,6 +3573,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
         StringAssert.Contains(manifestScriptText, "SIGNING_RECEIPTS_DIR");
         StringAssert.Contains(manifestScriptText, "--signing-receipts-dir");
+        StringAssert.Contains(manifestScriptText, "promotion_evidence_args");
         StringAssert.Contains(verifyScriptText, "--skip-startup-smoke-filter");
         StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
@@ -3642,14 +3647,18 @@ public class MigrationComplianceTests
         StringAssert.Contains(releaseContextText, "preview");
         StringAssert.Contains(releaseContextText, "release_candidate");
         StringAssert.Contains(releaseContextText, "public_stable");
+        StringAssert.Contains(releaseContextText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE");
+        StringAssert.Contains(releaseContextText, "allow_unsigned_public_release=");
         StringAssert.Contains(releaseContextText, "windows_signing_required=true");
         StringAssert.Contains(releaseContextText, "mac_notarization_required=true");
 
         StringAssert.Contains(windowsSigningText, "CHUMMER_WINDOWS_SIGN_PFX_BASE64");
         StringAssert.Contains(windowsSigningText, "CHUMMER_WINDOWS_SIGNING_REQUIRED");
+        StringAssert.Contains(windowsSigningText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE");
         StringAssert.Contains(windowsSigningText, "signtool.exe");
         StringAssert.Contains(windowsSigningText, "desktop_artifact_signing");
         StringAssert.Contains(windowsSigningText, "skipped_preview");
+        StringAssert.Contains(windowsSigningText, "unsigned_public_release");
 
         StringAssert.Contains(macPrepText, "CHUMMER_MAC_CERTIFICATE_P12_BASE64");
         StringAssert.Contains(macPrepText, "CHUMMER_MAC_APPLE_ID");
@@ -3664,16 +3673,21 @@ public class MigrationComplianceTests
         StringAssert.Contains(installerScriptText, "finalize_macos_signing_receipt");
         StringAssert.Contains(installerScriptText, "CHUMMER_MAC_NOTARY_PROFILE");
         StringAssert.Contains(installerScriptText, "desktop_artifact_signing");
+        StringAssert.Contains(installerScriptText, "allow_unsigned_public_release()");
+        StringAssert.Contains(installerScriptText, "unsigned_public_release");
 
         StringAssert.Contains(publicPromotionText, "--signing-receipts-dir");
         StringAssert.Contains(publicPromotionText, "load_signing_receipts");
         StringAssert.Contains(publicPromotionText, "find_matching_signing_receipt");
         StringAssert.Contains(publicPromotionText, "\"signingReceiptPath\"");
+        StringAssert.Contains(publicPromotionText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE");
+        StringAssert.Contains(publicPromotionText, "unsigned_public_release");
 
         StringAssert.Contains(releasePipelineText, "CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        StringAssert.Contains(releasePipelineText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=1");
         StringAssert.Contains(releasePipelineText, "release_candidate");
         StringAssert.Contains(releasePipelineText, "public_stable");
-        StringAssert.Contains(implementationScopeText, "Windows Authenticode signing and macOS codesign/notarization hooks");
+        StringAssert.Contains(implementationScopeText, "explicit unsigned-public-release posture");
     }
 
     [TestMethod]
@@ -6119,6 +6133,153 @@ public class MigrationComplianceTests
         StringAssert.Contains(parityChecklistText, "| Workspace Actions |");
         StringAssert.Contains(parityChecklistText, "Dialog-factory-only desktop controls must be acknowledged explicitly");
         StringAssert.Contains(parityChecklistText, "present_in_dialog_factory_acknowledged");
+    }
+
+    [TestMethod]
+    public void Resolve_desktop_release_context_allows_explicit_unsigned_public_release()
+    {
+        string scriptPath = FindPath("scripts", "resolve-desktop-release-context.sh");
+        string workingDirectory = Path.GetDirectoryName(scriptPath) ?? throw new InvalidOperationException("Missing script directory.");
+
+        (int ExitCode, string Output) result = RunProcess(
+            GetBashExecutable(),
+            $"\"{scriptPath}\"",
+            workingDirectory,
+            new Dictionary<string, string>
+            {
+                ["CHUMMER_DESKTOP_RELEASE_CHANNEL"] = "public_stable",
+                ["CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE"] = "true",
+            });
+
+        Assert.AreEqual(0, result.ExitCode, result.Output);
+        StringAssert.Contains(result.Output, "channel=public_stable");
+        StringAssert.Contains(result.Output, "public_release=true");
+        StringAssert.Contains(result.Output, "allow_unsigned_public_release=true");
+        StringAssert.Contains(result.Output, "windows_signing_required=false");
+        StringAssert.Contains(result.Output, "mac_signing_required=false");
+        StringAssert.Contains(result.Output, "mac_notarization_required=false");
+    }
+
+    [TestMethod]
+    public void Public_promotion_evidence_accepts_explicit_unsigned_public_release_for_public_channel()
+    {
+        string scriptPath = FindPath("scripts", "generate-public-promotion-evidence.py");
+        string workingDirectory = Path.GetDirectoryName(scriptPath) ?? throw new InvalidOperationException("Missing script directory.");
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"chummer-public-promotion-{Guid.NewGuid():N}");
+        JsonSerializerOptions jsonOptions = new() { WriteIndented = true };
+        string generatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+        string windowsDigest = new('1', 64);
+        string macDigest = new('2', 64);
+
+        Directory.CreateDirectory(tempRoot);
+        try
+        {
+            string manifestPath = Path.Combine(tempRoot, "RELEASE_CHANNEL.generated.json");
+            string startupSmokeDir = Path.Combine(tempRoot, "startup-smoke");
+            string outputPath = Path.Combine(tempRoot, "release-evidence", "public-promotion.json");
+            Directory.CreateDirectory(startupSmokeDir);
+
+            var manifest = new
+            {
+                channelId = "public_stable",
+                artifacts = new object[]
+                {
+                    new
+                    {
+                        artifactId = "avalonia-win-x64-installer",
+                        fileName = "chummer-avalonia-win-x64-installer.exe",
+                        platform = "windows",
+                        head = "avalonia",
+                        rid = "win-x64",
+                        arch = "x64",
+                        sha256 = windowsDigest,
+                        sizeBytes = 1,
+                        kind = "installer",
+                    },
+                    new
+                    {
+                        artifactId = "avalonia-osx-arm64-dmg",
+                        fileName = "chummer-avalonia-osx-arm64.dmg",
+                        platform = "macos",
+                        head = "avalonia",
+                        rid = "osx-arm64",
+                        arch = "arm64",
+                        sha256 = macDigest,
+                        sizeBytes = 1,
+                        kind = "dmg",
+                    },
+                },
+            };
+
+            var windowsStartupSmokeReceipt = new
+            {
+                headId = "avalonia",
+                platform = "windows",
+                arch = "x64",
+                rid = "win-x64",
+                artifactDigest = $"sha256:{windowsDigest}",
+                status = "pass",
+                readyCheckpoint = "pre_ui_event_loop",
+                hostClass = "windows-host",
+                operatingSystem = "Windows 11",
+                completedAtUtc = generatedAt,
+            };
+
+            var macStartupSmokeReceipt = new
+            {
+                headId = "avalonia",
+                platform = "macos",
+                arch = "arm64",
+                rid = "osx-arm64",
+                artifactDigest = $"sha256:{macDigest}",
+                status = "pass",
+                readyCheckpoint = "pre_ui_event_loop",
+                hostClass = "macos-host",
+                operatingSystem = "macOS 15",
+                completedAtUtc = generatedAt,
+            };
+
+            File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, jsonOptions));
+            File.WriteAllText(
+                Path.Combine(startupSmokeDir, "startup-smoke-avalonia-win-x64.receipt.json"),
+                JsonSerializer.Serialize(windowsStartupSmokeReceipt, jsonOptions));
+            File.WriteAllText(
+                Path.Combine(startupSmokeDir, "startup-smoke-avalonia-osx-arm64.receipt.json"),
+                JsonSerializer.Serialize(macStartupSmokeReceipt, jsonOptions));
+
+            (int ExitCode, string Output) result = RunProcess(
+                "python3",
+                $"\"{scriptPath}\" --manifest \"{manifestPath}\" --startup-smoke-dir \"{startupSmokeDir}\" --output \"{outputPath}\" --channel public_stable --generated-at \"{generatedAt}\"",
+                workingDirectory,
+                new Dictionary<string, string>
+                {
+                    ["CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE"] = "true",
+                });
+
+            Assert.AreEqual(0, result.ExitCode, result.Output);
+
+            using JsonDocument payload = JsonDocument.Parse(File.ReadAllText(outputPath));
+            JsonElement[] artifacts = payload.RootElement.GetProperty("artifacts").EnumerateArray().ToArray();
+
+            Assert.AreEqual(2, artifacts.Length, "Expected the evidence generator to emit both promoted installer artifacts.");
+            Assert.IsTrue(
+                artifacts.All(artifact => artifact.GetProperty("promotionStatus").GetString() == "pass"),
+                "Explicit unsigned-public release mode should still be promotable when startup smoke proof is present.");
+
+            JsonElement windowsArtifact = artifacts.Single(artifact => artifact.GetProperty("platform").GetString() == "windows");
+            Assert.AreEqual("unsigned_public_release", windowsArtifact.GetProperty("signingStatus").GetString());
+
+            JsonElement macArtifact = artifacts.Single(artifact => artifact.GetProperty("platform").GetString() == "macos");
+            Assert.AreEqual("unsigned_public_release", macArtifact.GetProperty("signingStatus").GetString());
+            Assert.AreEqual("unsigned_public_release", macArtifact.GetProperty("notarizationStatus").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
     }
 
     [TestMethod]

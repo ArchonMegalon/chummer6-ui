@@ -134,6 +134,7 @@ function Write-Receipt(
 }
 
 $signingRequired = Test-Truthy $env:CHUMMER_WINDOWS_SIGNING_REQUIRED
+$allowUnsignedPublicRelease = Test-Truthy $env:CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE
 $timestampUrl = if ([string]::IsNullOrWhiteSpace($env:CHUMMER_WINDOWS_TIMESTAMP_URL)) {
     "http://timestamp.digicert.com"
 } else {
@@ -163,6 +164,11 @@ try {
             $reason = "Windows signing is required for release channel '$ReleaseChannel', but no PFX certificate was configured."
             Write-Receipt -Path $ReceiptPath -Paths $resolvedArtifactPaths -SigningStatus "fail" -Reason $reason
             throw $reason
+        }
+
+        if ($allowUnsignedPublicRelease -and (Normalize-Token $ReleaseChannel) -notin @("preview", "docker")) {
+            Write-Receipt -Path $ReceiptPath -Paths $resolvedArtifactPaths -SigningStatus "unsigned_public_release" -Reason "Unsigned public release posture is explicitly allowed for this lane."
+            exit 0
         }
 
         Write-Receipt -Path $ReceiptPath -Paths $resolvedArtifactPaths -SigningStatus "skipped_preview" -Reason "Preview channel does not require Authenticode signing."
@@ -204,4 +210,3 @@ finally {
         Remove-Item -LiteralPath $temporaryPfxPath -Force -ErrorAction SilentlyContinue
     }
 }
-

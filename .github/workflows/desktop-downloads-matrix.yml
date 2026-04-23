@@ -207,6 +207,7 @@ jobs:
         shell: bash
         env:
           CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ vars.CHUMMER_DESKTOP_RELEASE_CHANNEL }}
+          CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE: ${{ vars.CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE }}
         run: |
           set -euo pipefail
           bash scripts/resolve-desktop-release-context.sh >> "$GITHUB_OUTPUT"
@@ -216,6 +217,7 @@ jobs:
         id: prepare-macos-signing
         shell: bash
         env:
+          CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE: ${{ vars.CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE }}
           CHUMMER_MAC_SIGNING_REQUIRED: ${{ steps.release-context.outputs.mac_signing_required }}
           CHUMMER_MAC_NOTARIZATION_REQUIRED: ${{ steps.release-context.outputs.mac_notarization_required }}
           CHUMMER_MAC_CERTIFICATE_P12_BASE64: ${{ secrets.CHUMMER_MAC_CERTIFICATE_P12_BASE64 }}
@@ -335,6 +337,7 @@ jobs:
         shell: bash
         env:
           CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.release-context.outputs.channel }}
+          CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE: ${{ steps.release-context.outputs.allow_unsigned_public_release }}
           CHUMMER_WINDOWS_SIGNING_REQUIRED: ${{ steps.release-context.outputs.windows_signing_required }}
           CHUMMER_MAC_SIGNING_REQUIRED: ${{ steps.release-context.outputs.mac_signing_required }}
           CHUMMER_MAC_NOTARIZATION_REQUIRED: ${{ steps.release-context.outputs.mac_notarization_required }}
@@ -431,6 +434,7 @@ jobs:
         shell: bash
         env:
           CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ vars.CHUMMER_DESKTOP_RELEASE_CHANNEL }}
+          CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE: ${{ vars.CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE }}
         run: |
           set -euo pipefail
           bash scripts/resolve-desktop-release-context.sh >> "$GITHUB_OUTPUT"
@@ -486,6 +490,7 @@ jobs:
           PORTAL_MANIFEST_PATH="dist/releases.json" \
           RELEASE_VERSION="run-${GITHUB_RUN_NUMBER:-local}" \
           RELEASE_CHANNEL="${{ steps.release-context.outputs.channel }}" \
+          CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE="${{ steps.release-context.outputs.allow_unsigned_public_release }}" \
           SIGNING_RECEIPTS_DIR="dist/signing" \
           RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT}" \
           bash scripts/generate-releases-manifest.sh
