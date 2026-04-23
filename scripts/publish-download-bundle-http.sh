@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 BUNDLE_DIR="${1:-${DOWNLOAD_BUNDLE_DIR:-$REPO_ROOT/Chummer.Portal/downloads}}"
+MANIFEST_PATH="${CHUMMER_RELEASE_UPLOAD_MANIFEST_PATH:-$BUNDLE_DIR/releases.json}"
+CANONICAL_MANIFEST_PATH="${CHUMMER_RELEASE_UPLOAD_CANONICAL_MANIFEST_PATH:-$BUNDLE_DIR/RELEASE_CHANNEL.generated.json}"
 UPLOAD_URL="${CHUMMER_RELEASE_UPLOAD_URL:-https://chummer.run/api/internal/releases/bundles}"
 SESSIONS_URL="${CHUMMER_RELEASE_UPLOAD_SESSIONS_URL:-${UPLOAD_URL%/bundles}/upload-sessions}"
 PUBLIC_BASE_URL="${CHUMMER_PUBLIC_BASE_URL:-https://chummer.run}"
@@ -22,13 +24,13 @@ if [[ ! -d "$BUNDLE_DIR" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$BUNDLE_DIR/releases.json" ]]; then
-  echo "Bundle is missing releases.json: $BUNDLE_DIR/releases.json" >&2
+if [[ ! -f "$MANIFEST_PATH" ]]; then
+  echo "Bundle is missing releases.json: $MANIFEST_PATH" >&2
   exit 1
 fi
 
-if [[ ! -f "$BUNDLE_DIR/RELEASE_CHANNEL.generated.json" ]]; then
-  echo "Bundle is missing RELEASE_CHANNEL.generated.json: $BUNDLE_DIR/RELEASE_CHANNEL.generated.json" >&2
+if [[ ! -f "$CANONICAL_MANIFEST_PATH" ]]; then
+  echo "Bundle is missing RELEASE_CHANNEL.generated.json: $CANONICAL_MANIFEST_PATH" >&2
   exit 1
 fi
 
@@ -95,8 +97,8 @@ PY
 
 collect_upload_files() {
   local bundle_root="$1"
-  [[ -f "$bundle_root/releases.json" ]] && printf '%s\n' "$bundle_root/releases.json"
-  [[ -f "$bundle_root/RELEASE_CHANNEL.generated.json" ]] && printf '%s\n' "$bundle_root/RELEASE_CHANNEL.generated.json"
+  [[ -f "$MANIFEST_PATH" ]] && printf '%s\n' "$MANIFEST_PATH"
+  [[ -f "$CANONICAL_MANIFEST_PATH" ]] && printf '%s\n' "$CANONICAL_MANIFEST_PATH"
   [[ -f "$bundle_root/release-evidence/public-promotion.json" ]] && printf '%s\n' "$bundle_root/release-evidence/public-promotion.json"
   if [[ -d "$bundle_root/files" ]]; then
     find "$bundle_root/files" -type f | sort
