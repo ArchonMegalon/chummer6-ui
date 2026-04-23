@@ -1869,7 +1869,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(toolTop.Y > menuTop.Y);
             Assert.IsTrue(contentTop.Y > toolTop.Y);
             Assert.IsTrue(statusTop.Y > contentTop.Y);
-            Assert.IsTrue(progressBar.Value >= 100d);
+            Assert.IsFalse(progressBar.IsVisible, "The idle shell must not pin a fake completed workbench meter.");
         });
     }
 
@@ -2001,7 +2001,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(harness.FindControl<Control>("MenuBarRegion").IsVisible);
             Assert.IsTrue(harness.FindControl<Control>("ToolStripRegion").IsVisible);
             Assert.IsTrue(harness.FindControl<Control>("StatusStripRegion").IsVisible);
-            Assert.IsTrue(harness.FindControl<ProgressBar>("WorkbenchProgressBar").IsVisible);
+            Assert.IsFalse(harness.FindControl<ProgressBar>("WorkbenchProgressBar").IsVisible);
             Assert.IsTrue(harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible);
 
             Control leftNavigatorRegion = harness.FindControl<Control>("LeftNavigatorRegion");
@@ -2050,6 +2050,27 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(
                 hasLegacyOrWorkflowSectionMarker,
                 "Legacy frmCareer parity requires preview payload landmarks that map sections/workflows to the visible workbench.");
+        });
+    }
+
+    [TestMethod]
+    public void Desktop_shell_status_strip_only_shows_busy_indicator_while_runtime_is_busy()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            ProgressBar progressBar = harness.FindControl<ProgressBar>("WorkbenchProgressBar");
+            Assert.IsFalse(progressBar.IsVisible, "Idle workbench chrome must stay quiet.");
+
+            harness.SetShellBusyForTesting(true);
+            harness.WaitUntil(() => progressBar.IsVisible && progressBar.IsIndeterminate);
+
+            Assert.IsTrue(progressBar.IsVisible);
+            Assert.IsTrue(progressBar.IsIndeterminate);
+
+            harness.SetShellBusyForTesting(false);
+            harness.WaitUntil(() => !progressBar.IsVisible);
         });
     }
 
@@ -3508,6 +3529,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         public void SetActiveSectionForTesting(string sectionId)
         {
             _presenter.SetActiveSectionForTesting(sectionId);
+            Pump();
+        }
+
+        public void SetShellBusyForTesting(bool isBusy)
+        {
+            ShellPresenter.SetBusyForTesting(isBusy);
             Pump();
         }
 
@@ -5128,6 +5155,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             State = State with { ActiveWorkspaceId = activeWorkspaceId };
             StateChanged?.Invoke(this, EventArgs.Empty);
             return Task.CompletedTask;
+        }
+
+        public void SetBusyForTesting(bool isBusy)
+        {
+            State = State with { IsBusy = isBusy };
+            StateChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 

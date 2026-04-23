@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-04-23T11:31:14Z",
-  "generatedAt": "2026-04-23T11:31:14Z",
+  "generated_at": "2026-04-23T11:54:28Z",
+  "generatedAt": "2026-04-23T11:54:28Z",
   "schemaVersion": 1,
   "product": "chummer6",
   "contract_name": "Chummer.Hub.Registry.Contracts",
   "contractName": "Chummer.Hub.Registry.Contracts",
   "channelId": "docker",
   "version": "run-20260420-072339",
-  "publishedAt": "2026-04-23T11:29:30Z",
+  "publishedAt": "2026-04-23T11:54:26Z",
   "status": "published",
   "artifactSource": "ui_desktop_bundle",
   "message": null,
@@ -19,7 +19,7 @@
   "fixAvailabilitySummary": "Only send fixed notices after the affected install can receive the published channel artifact now on the shelf.",
   "releaseProof": {
     "status": "passed",
-    "generatedAt": "2026-04-23T11:17:59Z",
+    "generatedAt": "2026-04-23T11:27:53Z",
     "baseUrl": "https://chummer.run",
     "journeysPassed": [
       "install_claim_restore_continue",
@@ -32,9 +32,11 @@
       "/downloads/install/avalonia-linux-x64-installer",
       "/home/access",
       "/home/work",
+      "/account/access",
       "/account/work",
       "/account/support",
       "/contact",
+      "/downloads",
       "/downloads/install/avalonia-osx-arm64-installer",
       "/downloads/install/avalonia-win-x64-installer",
       "/downloads/install/blazor-desktop-linux-x64-installer",
@@ -199,8 +201,8 @@
       "channel": "docker",
       "version": "run-20260420-072339",
       "releaseVersion": "run-20260420-072339",
-      "generated_at": "2026-04-23T11:31:14Z",
-      "generatedAt": "2026-04-23T11:31:14Z",
+      "generated_at": "2026-04-23T11:54:28Z",
+      "generatedAt": "2026-04-23T11:54:28Z",
       "id": "avalonia-linux-x64-installer"
     },
     {
@@ -223,8 +225,8 @@
       "channel": "docker",
       "version": "run-20260420-072339",
       "releaseVersion": "run-20260420-072339",
-      "generated_at": "2026-04-23T11:31:14Z",
-      "generatedAt": "2026-04-23T11:31:14Z",
+      "generated_at": "2026-04-23T11:54:28Z",
+      "generatedAt": "2026-04-23T11:54:28Z",
       "id": "blazor-desktop-linux-x64-installer"
     },
     {
@@ -247,8 +249,8 @@
       "channel": "docker",
       "version": "run-20260420-072339",
       "releaseVersion": "run-20260420-072339",
-      "generated_at": "2026-04-23T11:31:14Z",
-      "generatedAt": "2026-04-23T11:31:14Z",
+      "generated_at": "2026-04-23T11:54:28Z",
+      "generatedAt": "2026-04-23T11:54:28Z",
       "id": "avalonia-osx-arm64-installer"
     },
     {
@@ -271,8 +273,8 @@
       "channel": "docker",
       "version": "run-20260420-072339",
       "releaseVersion": "run-20260420-072339",
-      "generated_at": "2026-04-23T11:31:14Z",
-      "generatedAt": "2026-04-23T11:31:14Z",
+      "generated_at": "2026-04-23T11:54:28Z",
+      "generatedAt": "2026-04-23T11:54:28Z",
       "id": "blazor-desktop-osx-arm64-installer"
     },
     {
@@ -295,8 +297,8 @@
       "channel": "docker",
       "version": "run-20260420-072339",
       "releaseVersion": "run-20260420-072339",
-      "generated_at": "2026-04-23T11:31:14Z",
-      "generatedAt": "2026-04-23T11:31:14Z",
+      "generated_at": "2026-04-23T11:54:28Z",
+      "generatedAt": "2026-04-23T11:54:28Z",
       "id": "avalonia-win-x64-installer"
     },
     {
@@ -319,8 +321,8 @@
       "channel": "docker",
       "version": "run-20260420-072339",
       "releaseVersion": "run-20260420-072339",
-      "generated_at": "2026-04-23T11:31:14Z",
-      "generatedAt": "2026-04-23T11:31:14Z",
+      "generated_at": "2026-04-23T11:54:28Z",
+      "generatedAt": "2026-04-23T11:54:28Z",
       "id": "avalonia-osx-arm64-archive"
     },
     {
@@ -343,8 +345,8 @@
       "channel": "docker",
       "version": "run-20260420-072339",
       "releaseVersion": "run-20260420-072339",
-      "generated_at": "2026-04-23T11:31:14Z",
-      "generatedAt": "2026-04-23T11:31:14Z",
+      "generated_at": "2026-04-23T11:54:28Z",
+      "generatedAt": "2026-04-23T11:54:28Z",
       "id": "blazor-desktop-osx-arm64-archive"
     }
   ],
@@ -455,6 +457,7 @@
         "rollbackReasonCode": "promoted_fallback_available",
         "rollbackReason": "A promoted fallback route blazor-desktop:linux:linux-x64 exists for primary route avalonia:linux:linux-x64 on linux/linux-x64.",
         "revokeState": "not_revoked",
+        "revokeSource": "none",
         "revokeReasonCode": "no_registry_revoke_marker",
         "revokeReason": "No registry revoke marker is active for avalonia:linux:linux-x64.",
         "installPosture": "installer_first",
@@ -481,6 +484,7 @@
         "rollbackReasonCode": "fallback_promoted_for_recovery",
         "rollbackReason": "Fallback Blazor Desktop tuple blazor-desktop:linux:linux-x64 is promoted for linux/linux-x64 rollback or recovery routing.",
         "revokeState": "not_revoked",
+        "revokeSource": "none",
         "revokeReasonCode": "no_registry_revoke_marker",
         "revokeReason": "No registry revoke marker is active for blazor-desktop:linux:linux-x64.",
         "installPosture": "installer_first",
@@ -507,6 +511,7 @@
         "rollbackReasonCode": "fallback_missing_artifact_or_startup_smoke_proof",
         "rollbackReason": "Fallback route blazor-desktop:windows:win-x64 is not promoted for windows/win-x64 because matching artifact bytes and fresh startup-smoke proof are still required; primary route avalonia:windows:win-x64 therefore requires manual recovery.",
         "revokeState": "not_revoked",
+        "revokeSource": "none",
         "revokeReasonCode": "no_registry_revoke_marker",
         "revokeReason": "No registry revoke marker is active for avalonia:windows:win-x64.",
         "installPosture": "installer_first",
@@ -533,6 +538,7 @@
         "rollbackReasonCode": "fallback_missing_artifact_or_startup_smoke_proof",
         "rollbackReason": "Fallback route blazor-desktop:windows:win-x64 needs artifact and startup-smoke proof before rollback use.",
         "revokeState": "not_revoked",
+        "revokeSource": "none",
         "revokeReasonCode": "no_registry_revoke_marker",
         "revokeReason": "No registry revoke marker is active for blazor-desktop:windows:win-x64.",
         "installPosture": "proof_capture_required",
@@ -559,6 +565,7 @@
         "rollbackReasonCode": "promoted_fallback_available",
         "rollbackReason": "A promoted fallback route blazor-desktop:macos:osx-arm64 exists for primary route avalonia:macos:osx-arm64 on macos/osx-arm64.",
         "revokeState": "not_revoked",
+        "revokeSource": "none",
         "revokeReasonCode": "no_registry_revoke_marker",
         "revokeReason": "No registry revoke marker is active for avalonia:macos:osx-arm64.",
         "installPosture": "installer_first",
@@ -585,6 +592,7 @@
         "rollbackReasonCode": "fallback_promoted_for_recovery",
         "rollbackReason": "Fallback Blazor Desktop tuple blazor-desktop:macos:osx-arm64 is promoted for macos/osx-arm64 rollback or recovery routing.",
         "revokeState": "not_revoked",
+        "revokeSource": "none",
         "revokeReasonCode": "no_registry_revoke_marker",
         "revokeReason": "No registry revoke marker is active for blazor-desktop:macos:osx-arm64.",
         "installPosture": "installer_first",

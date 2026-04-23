@@ -53,7 +53,10 @@ internal static class MainWindowShellFrameProjector
                     CharacterState: BuildCharacterStateText(workspaceContext, language),
                     ServiceState: BuildServiceStateText(shellSurface, language),
                     TimeState: DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.shell.status.time", language, DateTimeOffset.UtcNow.ToString("u")),
-                    ComplianceState: ShellStatusTextFormatter.BuildComplianceState(shellSurface, state.Preferences))),
+                    ComplianceState: ShellStatusTextFormatter.BuildComplianceState(shellSurface, state.Preferences))
+                {
+                    IsBusy = state.IsBusy || shellSurface.IsBusy
+                }),
             SectionHostState: new SectionHostState(
                 SectionId: state.ActiveSectionId,
                 Notice: BuildSectionNotice(state, shellSurface),
