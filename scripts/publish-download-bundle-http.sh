@@ -12,6 +12,8 @@ SESSIONS_URL="${CHUMMER_RELEASE_UPLOAD_SESSIONS_URL:-${UPLOAD_URL%/bundles}/uplo
 PUBLIC_BASE_URL="${CHUMMER_PUBLIC_BASE_URL:-https://chummer.run}"
 VERIFY_URL="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-$PUBLIC_BASE_URL/downloads/RELEASE_CHANNEL.generated.json}"
 TOKEN="${CHUMMER_RELEASE_UPLOAD_TOKEN:-}"
+TOKEN_FILE="${CHUMMER_RELEASE_UPLOAD_TOKEN_FILE:-${CHUMMER_RELEASE_UPLOAD_TOKEN_PATH:-}}"
+CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE="${CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE:-0}"
 ALLOW_DIRECT_FALLBACK="${CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK:-1}"
 DRY_RUN="${CHUMMER_RELEASE_UPLOAD_DRY_RUN:-0}"
 VERIFY_MANIFEST="${CHUMMER_RELEASE_UPLOAD_VERIFY_MANIFEST:-1}"
@@ -54,6 +56,29 @@ prompt_for_upload_token() {
   IFS= read -r -s TOKEN || return 1
   printf '\n' >&2
   [[ -n "${TOKEN:-}" ]]
+}
+
+resolve_upload_token() {
+  if [[ -n "${TOKEN:-}" ]]; then
+    return 0
+  fi
+
+  if [[ -z "$TOKEN_FILE" ]]; then
+    return 1
+  fi
+
+  if [[ ! -f "$TOKEN_FILE" ]]; then
+    echo "Configured CHUMMER_RELEASE_UPLOAD_TOKEN_FILE not found: $TOKEN_FILE" >&2
+    return 1
+  fi
+
+  TOKEN="$(head -n 1 "$TOKEN_FILE" | tr -d '\r\n')"
+  if [[ -z "${TOKEN:-}" ]]; then
+    echo "Configured CHUMMER_RELEASE_UPLOAD_TOKEN_FILE is empty: $TOKEN_FILE" >&2
+    return 1
+  fi
+
+  TOKEN="$(printf '%s' "$TOKEN" | tr -d '[:space:]')"
 }
 
 write_auth_curl_config() {
@@ -207,12 +232,18 @@ if to_bool "$DRY_RUN"; then
   echo "Files staged: $file_count"
   echo
   echo "Exact live publish command:"
-  echo "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL='$VERIFY_URL' bash '$SCRIPT_DIR/publish-download-bundle-http.sh' '$BUNDLE_DIR'"
-  echo "If CHUMMER_RELEASE_UPLOAD_TOKEN is unset, the script will prompt for it with hidden input."
+  echo "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL='$VERIFY_URL' CHUMMER_RELEASE_UPLOAD_TOKEN_FILE='$TOKEN_FILE' bash '$SCRIPT_DIR/publish-download-bundle-http.sh' '$BUNDLE_DIR'"
+  echo "If CHUMMER_RELEASE_UPLOAD_TOKEN is unset, set CHUMMER_RELEASE_UPLOAD_TOKEN_FILE or CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE=1."
   exit 0
 fi
 
-if [[ -z "$TOKEN" ]]; then
+if ! resolve_upload_token; then
+  if to_bool "$CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE"; then
+    echo "Cannot continue: CHUMMER_RELEASE_UPLOAD_TOKEN missing and interactive prompt disabled (CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE=1)." >&2
+    echo "Set CHUMMER_RELEASE_UPLOAD_TOKEN or CHUMMER_RELEASE_UPLOAD_TOKEN_FILE/CHUMMER_RELEASE_UPLOAD_TOKEN_PATH for live HTTP upload." >&2
+    exit 1
+  fi
+
   prompt_for_upload_token || {
     echo "Set CHUMMER_RELEASE_UPLOAD_TOKEN for live HTTP upload." >&2
     exit 1
