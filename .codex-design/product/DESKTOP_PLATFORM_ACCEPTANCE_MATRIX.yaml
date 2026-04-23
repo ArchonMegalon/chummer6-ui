@@ -39,7 +39,7 @@ platforms:
     fallback_package_kinds:
       - portable_exe
     startup_smoke_gate: required
-    signing_posture: required_for_promoted_release
+    signing_posture: explicit_unsigned_public_release_or_authenticode
     updater_mode: in_app_apply_helper
     supportability: primary
   - id: linux
@@ -57,7 +57,7 @@ platforms:
     fallback_package_kinds:
       - none
     startup_smoke_gate: required
-    signing_posture: codesign_and_notarization_required
+    signing_posture: explicit_unsigned_public_release_or_codesign_notarization
     updater_mode: claimed_setup_script_then_dmg_handoff
     supportability: account_gated_setup_script_preview
     public_manifest_visibility: visible_as_account_gated_setup_script_preview

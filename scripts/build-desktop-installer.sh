@@ -161,6 +161,26 @@ is_preview_release_channel() {
   esac
 }
 
+allow_unsigned_public_release() {
+  env_truthy "${CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE:-0}"
+}
+
+unsigned_public_release_status() {
+  if allow_unsigned_public_release && ! is_preview_release_channel; then
+    printf '%s' "unsigned_public_release"
+  else
+    printf '%s' "skipped_preview"
+  fi
+}
+
+unsigned_public_release_reason() {
+  if allow_unsigned_public_release && ! is_preview_release_channel; then
+    printf '%s' "Unsigned public release posture is explicitly allowed for this lane."
+  else
+    printf '%s' "Preview channel does not require Authenticode signing."
+  fi
+}
+
 windows_signing_required() {
   if [[ -n "${CHUMMER_WINDOWS_SIGNING_REQUIRED:-}" ]]; then
     env_truthy "${CHUMMER_WINDOWS_SIGNING_REQUIRED}"
@@ -348,6 +368,7 @@ run_windows_signing() {
   CHUMMER_DESKTOP_RID="$RID" \
   CHUMMER_DESKTOP_RELEASE_CHANNEL="$(desktop_release_channel)" \
   CHUMMER_DESKTOP_RELEASE_VERSION="$VERSION" \
+  CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE="${CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE:-0}" \
   CHUMMER_WINDOWS_SIGNING_RECEIPT_PATH="$receipt_path" \
   "$powershell_bin" -NoLogo -NoProfile -File "$REPO_ROOT/scripts/sign-windows-artifacts.ps1" -ArtifactPaths "${artifacts[@]}"
 }
@@ -391,9 +412,9 @@ finalize_windows_signing_receipt() {
   write_signing_receipt \
     "$receipt_path" \
     "windows" \
-    "skipped_preview" \
+    "$(unsigned_public_release_status)" \
     "" \
-    "Preview channel does not require Authenticode signing." \
+    "$(unsigned_public_release_reason)" \
     "$portable_exe" \
     "$installer_path"
 }
@@ -453,9 +474,14 @@ finalize_macos_signing_receipt() {
   local installer_path="$1"
   local receipt_path
   receipt_path="$(signing_receipt_path)"
-  local signing_status="skipped_preview"
-  local notarization_status="skipped_preview"
+  local signing_status
+  signing_status="$(unsigned_public_release_status)"
+  local notarization_status
+  notarization_status="$(unsigned_public_release_status)"
   local reason=""
+  if [[ "$signing_status" == "unsigned_public_release" || "$notarization_status" == "unsigned_public_release" ]]; then
+    reason="Unsigned public release posture is explicitly allowed for this lane."
+  fi
 
   if has_macos_signing_identity; then
     codesign --force --timestamp --sign "${CHUMMER_MAC_APP_SIGN_IDENTITY}" "$installer_path"
