@@ -214,6 +214,62 @@ output_path.write_text(json.dumps(sanitized, indent=2) + "\n", encoding="utf-8")
 PY
 }
 
+sanitize_source_manifest_for_channel_override() {
+  local source_path="${1:-}"
+  local output_path="${2:-}"
+  local release_channel="${3:-}"
+  python3 - "$source_path" "$output_path" "$release_channel" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+source_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+release_channel = str(sys.argv[3] or "").strip().lower()
+
+payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit(f"source manifest payload must be a JSON object: {source_path}")
+
+loaded_channel = str(payload.get("channelId") or payload.get("channel") or "").strip().lower()
+if not release_channel or not loaded_channel or loaded_channel == release_channel:
+    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    raise SystemExit(0)
+
+for key in (
+    "rolloutState",
+    "rollout_state",
+    "rolloutReason",
+    "rollout_reason",
+    "supportabilityState",
+    "supportability_state",
+    "supportabilitySummary",
+    "supportability_summary",
+    "knownIssueSummary",
+    "known_issue_summary",
+    "compatibilityState",
+    "compatibility_state",
+):
+    payload.pop(key, None)
+
+payload["channelId"] = release_channel
+payload["channel"] = release_channel
+
+for collection_name in ("artifacts", "downloads", "desktopRouteTruth", "installAwareArtifactRegistry"):
+    rows = payload.get(collection_name)
+    if not isinstance(rows, list):
+        continue
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if "channelId" in row or "channel" in row:
+            row["channelId"] = release_channel
+            row["channel"] = release_channel
+
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
 infer_release_version_from_startup_smoke() {
   local downloads_dir="${1:-}"
   local startup_smoke_dir="${2:-}"
@@ -433,6 +489,7 @@ RELEASE_PROOF_PATH="$(resolve_release_proof_path "$RELEASE_PROOF_PATH")"
 SANITIZED_RELEASE_PROOF_PATH=""
 SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH=""
 SANITIZED_STARTUP_SMOKE_DIR=""
+SANITIZED_SOURCE_MANIFEST_PATH=""
 cleanup_generate_release_manifest() {
   if [[ -n "$SANITIZED_RELEASE_PROOF_PATH" && -f "$SANITIZED_RELEASE_PROOF_PATH" ]]; then
     rm -f "$SANITIZED_RELEASE_PROOF_PATH"
@@ -442,6 +499,9 @@ cleanup_generate_release_manifest() {
   fi
   if [[ -n "$SANITIZED_STARTUP_SMOKE_DIR" && -d "$SANITIZED_STARTUP_SMOKE_DIR" ]]; then
     rm -rf "$SANITIZED_STARTUP_SMOKE_DIR"
+  fi
+  if [[ -n "$SANITIZED_SOURCE_MANIFEST_PATH" && -f "$SANITIZED_SOURCE_MANIFEST_PATH" ]]; then
+    rm -f "$SANITIZED_SOURCE_MANIFEST_PATH"
   fi
 }
 trap cleanup_generate_release_manifest EXIT
@@ -465,6 +525,14 @@ if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -maxdepth 1 -type 
     "$RELEASE_CHANNEL" \
     "$RELEASE_VERSION"
   STARTUP_SMOKE_DIR="$SANITIZED_STARTUP_SMOKE_DIR"
+fi
+if [[ -n "$SOURCE_MANIFEST_PATH" && -f "$SOURCE_MANIFEST_PATH" ]]; then
+  SANITIZED_SOURCE_MANIFEST_PATH="$(mktemp)"
+  sanitize_source_manifest_for_channel_override \
+    "$SOURCE_MANIFEST_PATH" \
+    "$SANITIZED_SOURCE_MANIFEST_PATH" \
+    "$RELEASE_CHANNEL"
+  SOURCE_MANIFEST_PATH="$SANITIZED_SOURCE_MANIFEST_PATH"
 fi
 
 mkdir -p "$(dirname "$MANIFEST_PATH")"

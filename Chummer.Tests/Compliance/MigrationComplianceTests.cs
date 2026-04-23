@@ -6283,6 +6283,63 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Publish_download_bundle_promotes_channel_override_without_reusing_preview_rollout_state()
+    {
+        string bundleRoot = FindDirectory("Docker", "Downloads");
+        string manifestPath = Path.Combine(bundleRoot, "releases.json");
+        string sourceVersion;
+        using (JsonDocument sourceManifest = JsonDocument.Parse(File.ReadAllText(manifestPath)))
+        {
+            sourceVersion = sourceManifest.RootElement.GetProperty("version").GetString()
+                ?? throw new InvalidOperationException("Expected Docker/Downloads/releases.json to contain a version.");
+        }
+
+        string scriptPath = FindPath("scripts", "publish-download-bundle.sh");
+        string workingDirectory = Path.GetDirectoryName(scriptPath) ?? throw new InvalidOperationException("Missing script directory.");
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"chummer-publish-download-bundle-{Guid.NewGuid():N}");
+        string generatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+        Directory.CreateDirectory(tempRoot);
+        try
+        {
+            (int ExitCode, string Output) result = RunProcess(
+                GetBashExecutable(),
+                $"\"{scriptPath}\" \"{bundleRoot}\" \"{tempRoot}\"",
+                workingDirectory,
+                new Dictionary<string, string>
+                {
+                    ["RELEASE_CHANNEL"] = "public_stable",
+                    ["RELEASE_VERSION"] = sourceVersion,
+                    ["RELEASE_PUBLISHED_AT"] = generatedAt,
+                    ["CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE"] = "true",
+                    ["CHUMMER_EXTERNAL_PROOF_BASE_URL"] = "https://chummer.run",
+                });
+
+            Assert.AreEqual(0, result.ExitCode, result.Output);
+
+            string canonicalManifestPath = Path.Combine(tempRoot, "RELEASE_CHANNEL.generated.json");
+            using JsonDocument canonicalManifest = JsonDocument.Parse(File.ReadAllText(canonicalManifestPath));
+            JsonElement root = canonicalManifest.RootElement;
+
+            Assert.AreEqual("public_stable", root.GetProperty("channelId").GetString());
+            Assert.AreEqual(sourceVersion, root.GetProperty("version").GetString());
+            Assert.AreEqual("public_stable", root.GetProperty("rolloutState").GetString());
+
+            string startupSmokeReceiptPath = Path.Combine(tempRoot, "startup-smoke", "startup-smoke-avalonia-win-x64.receipt.json");
+            using JsonDocument startupSmokeReceipt = JsonDocument.Parse(File.ReadAllText(startupSmokeReceiptPath));
+            Assert.AreEqual("public_stable", startupSmokeReceipt.RootElement.GetProperty("channelId").GetString());
+            Assert.AreEqual("public_stable", startupSmokeReceipt.RootElement.GetProperty("channel").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
     public void Amend_manifest_checksum_policy_is_enforced_in_ci()
     {
         string desktopWorkflowPath = FindPath(".github", "workflows", "desktop-downloads-matrix.yml");
