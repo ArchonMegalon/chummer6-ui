@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Chummer.Contracts.Presentation;
@@ -12,23 +13,27 @@ namespace Chummer.Avalonia.Controls;
 
 public partial class SectionHostControl : UserControl
 {
-    private BuildLabConceptIntakeState? _buildLab;
-    private BrowseWorkspaceState? _browseWorkspace;
+    private bool _suppressNavigationTabSelectionChanged;
+    private bool _suppressSectionActionSelectionChanged;
+
+    public event EventHandler<string>? NavigationTabSelected;
+    public event EventHandler<string>? SectionActionSelected;
     public event EventHandler<string>? QuickActionRequested;
 
     public SectionHostControl()
     {
         InitializeComponent();
-        BrowseResultsList.SelectionChanged += BrowseResultsList_OnSelectionChanged;
     }
 
     public string XmlInputText => XmlInputBox.Text ?? string.Empty;
 
     public void SetState(SectionHostState state)
     {
+        SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
+        SetSectionActions(state.SectionActions, state.ActiveActionId);
         SetNotice(state.Notice);
         SetClassicCharacterSheet(state.SectionId, state.PreviewJson, state.Rows);
-        SetSectionPreview(state.PreviewJson, state.Rows);
+        SetSectionPreview(state.SectionId, state.PreviewJson, state.Rows);
         SetSectionQuickActions(state.QuickActions);
         SetBuildLab(state.BuildLab);
         SetBrowseWorkspace(state.BrowseWorkspace);
@@ -38,18 +43,67 @@ public partial class SectionHostControl : UserControl
         SetSectionContext(state.SectionId, state.PreviewJson, state.Rows, state.QuickActions);
     }
 
-    public void SetNotice(string notice)
+    public void SetNavigationTabs(IReadOnlyList<NavigatorTabItem> navigationTabs, string? activeTabId)
     {
-        string normalizedNotice = string.IsNullOrWhiteSpace(notice) ? string.Empty : notice;
-        NoticeText.Text = normalizedNotice;
-        NoticeBorder.IsVisible = !string.IsNullOrWhiteSpace(normalizedNotice)
-            && !string.Equals(normalizedNotice, "Ready.", StringComparison.Ordinal);
+        NavigatorTabItem[] visibleTabs = navigationTabs
+            .Where(tab => tab.Enabled)
+            .ToArray();
+
+        LoadedRunnerTabStripBorder.IsVisible = visibleTabs.Length > 0;
+        _suppressNavigationTabSelectionChanged = true;
+        try
+        {
+            LoadedRunnerTabStrip.ItemsSource = visibleTabs;
+            LoadedRunnerTabStrip.SelectedItem = visibleTabs.FirstOrDefault(tab =>
+                string.Equals(tab.Id, activeTabId, StringComparison.Ordinal));
+        }
+        finally
+        {
+            _suppressNavigationTabSelectionChanged = false;
+        }
     }
 
-    public void SetSectionPreview(string previewJson, IEnumerable<SectionRowDisplayItem> rows)
+    public void SetSectionActions(IReadOnlyList<NavigatorSectionActionItem> sectionActions, string? activeActionId)
     {
-        SectionPreviewBox.Text = previewJson;
-        SectionRowsList.ItemsSource = rows.ToArray();
+        NavigatorSectionActionItem[] visibleActions = sectionActions
+            .Where(action => !string.IsNullOrWhiteSpace(action.Id))
+            .ToArray();
+
+        bool showSectionActions = visibleActions.Length > 1;
+        SectionActionTabStripBorder.IsVisible = showSectionActions;
+        _suppressSectionActionSelectionChanged = true;
+        try
+        {
+            SectionActionTabStrip.ItemsSource = showSectionActions ? visibleActions : Array.Empty<NavigatorSectionActionItem>();
+            SectionActionTabStrip.SelectedItem = showSectionActions
+                ? visibleActions.FirstOrDefault(action => string.Equals(action.Id, activeActionId, StringComparison.Ordinal))
+                : null;
+        }
+        finally
+        {
+            _suppressSectionActionSelectionChanged = false;
+        }
+
+        UpdateSectionRowsHeight();
+    }
+
+    public void SetNotice(string notice)
+    {
+        // Chummer5a parity posture: do not spend persistent workbench height on shell notices.
+        NoticeText.Text = string.Empty;
+        NoticeBorder.IsVisible = false;
+    }
+
+    public void SetSectionPreview(string? sectionId, string previewJson, IEnumerable<SectionRowDisplayItem> rows)
+    {
+        SectionRowDisplayItem[] rowArray = rows.ToArray();
+        string previewText = BuildSectionPreviewText(sectionId, previewJson, rowArray);
+        SectionPreviewBox.Text = previewText;
+        SectionReviewExpander.Header = BuildSectionPreviewHeader(sectionId, previewJson);
+        SectionReviewExpander.IsVisible = !string.IsNullOrWhiteSpace(previewText);
+        SectionReviewExpander.IsExpanded = true;
+        SectionRowsList.ItemsSource = null;
+        SectionRowsList.ItemsSource = rowArray;
     }
 
     public void SetSectionContext(
@@ -58,29 +112,14 @@ public partial class SectionHostControl : UserControl
         IEnumerable<SectionRowDisplayItem> rows,
         IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
     {
-        bool hasDedicatedWorkbenchSurface =
-            BuildLabBorder.IsVisible
-            || BrowseWorkspaceBorder.IsVisible
-            || ContactGraphBorder.IsVisible
-            || DowntimePlannerBorder.IsVisible
-            || NpcPersonaStudioBorder.IsVisible
-            || ClassicCharacterSheetBorder.IsVisible;
+        SectionRowDisplayItem[] rowArray = rows.ToArray();
+        bool showContext = !ClassicCharacterSheetBorder.IsVisible
+            && (!string.IsNullOrWhiteSpace(sectionId) || rowArray.Length > 0 || quickActions.Count > 0);
 
-        if (hasDedicatedWorkbenchSurface)
-        {
-            SectionContextBorder.IsVisible = false;
-            SectionContextTitleText.Text = string.Empty;
-            SectionContextSummaryText.Text = string.Empty;
-            return;
-        }
-
-        string title = BuildSectionTitle(sectionId, previewJson);
-        string summary = BuildSectionSummary(rows, quickActions);
-        SectionContextTitleText.Text = title;
-        SectionContextSummaryText.Text = summary;
-        SectionContextSummaryText.IsVisible = !string.IsNullOrWhiteSpace(summary);
-        SectionContextBorder.IsVisible = !string.IsNullOrWhiteSpace(title);
-        SectionRowsList.Height = 212d;
+        SectionContextBorder.IsVisible = showContext;
+        SectionContextTitleText.Text = showContext ? BuildSectionTitle(sectionId, previewJson) : string.Empty;
+        SectionContextSummaryText.Text = showContext ? BuildSectionSummary(sectionId, previewJson, rowArray, quickActions) : string.Empty;
+        UpdateSectionRowsHeight();
     }
 
     public void SetClassicCharacterSheet(string? sectionId, string previewJson, IEnumerable<SectionRowDisplayItem> rows)
@@ -90,27 +129,7 @@ public partial class SectionHostControl : UserControl
 
         IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts = BuildCharacterSummaryFacts(previewJson);
         IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts = BuildCharacterAttributeFacts(previewJson, rows);
-
-        bool hasFacts = summaryFacts.Count > 0 || attributeFacts.Count > 0;
-        bool sectionTargetsClassicCharacterSheet =
-            string.Equals(sectionId, "attributes", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(sectionId, "attributedetails", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(sectionId, "armor", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(sectionId, "cyberwares", StringComparison.OrdinalIgnoreCase)
-            || summaryFacts.Count > 0;
-
-        ClassicCharacterSheetBorder.IsVisible = hasFacts && sectionTargetsClassicCharacterSheet;
-        SectionRowsList.Height = ClassicCharacterSheetBorder.IsVisible ? 128d : 176d;
-        if (!ClassicCharacterSheetBorder.IsVisible)
-        {
-            ClassicCharacterSummaryTitle.Text = "Runner Summary";
-            return;
-        }
-
-        ClassicCharacterSummaryTitle.Text = string.Equals(sectionId, "attributes", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(sectionId, "attributedetails", StringComparison.OrdinalIgnoreCase)
-            ? "Attributes"
-            : "Runner Summary";
+        ClassicCharacterSummaryTitle.Text = BuildClassicSheetTitle(sectionId, summaryFacts, attributeFacts);
 
         foreach (ClassicSheetFactDisplayItem fact in summaryFacts)
         {
@@ -121,184 +140,80 @@ public partial class SectionHostControl : UserControl
         {
             ClassicAttributeFactsPanel.Children.Add(CreateClassicFactCard(fact, emphasizeValue: true));
         }
+
+        ClassicCharacterSheetBorder.IsVisible = summaryFacts.Count > 0 || attributeFacts.Count > 0;
+        UpdateSectionRowsHeight();
     }
 
     public void SetSectionQuickActions(IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
     {
-        SectionQuickActionsPanel.Children.Clear();
-        SectionQuickActionsBorder.IsVisible = quickActions.Count > 0;
+        SectionQuickActionsHost.Children.Clear();
 
         foreach (SectionQuickActionDisplayItem quickAction in quickActions)
         {
-            SectionQuickActionsPanel.Children.Add(CreateQuickActionButton(quickAction));
+            SectionQuickActionsHost.Children.Add(CreateQuickActionButton(quickAction));
+        }
+
+        SectionQuickActionsBorder.IsVisible = quickActions.Count > 0;
+        UpdateSectionRowsHeight();
+    }
+
+    private void LoadedRunnerTabStrip_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressNavigationTabSelectionChanged)
+        {
+            return;
+        }
+
+        if (sender is SelectingItemsControl { SelectedItem: NavigatorTabItem tab }
+            && !string.IsNullOrWhiteSpace(tab.Id))
+        {
+            NavigationTabSelected?.Invoke(this, tab.Id);
+        }
+    }
+
+    private void SectionActionTabStrip_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressSectionActionSelectionChanged)
+        {
+            return;
+        }
+
+        if (sender is SelectingItemsControl { SelectedItem: NavigatorSectionActionItem action }
+            && !string.IsNullOrWhiteSpace(action.Id))
+        {
+            SectionActionSelected?.Invoke(this, action.Id);
         }
     }
 
     public void SetBuildLab(BuildLabConceptIntakeState? buildLab)
     {
-        _buildLab = buildLab;
-        BuildLabBorder.IsVisible = buildLab is not null;
-
-        if (buildLab is null)
-        {
-            BuildLabSummaryText.Text = string.Empty;
-            BuildLabFieldsList.ItemsSource = Array.Empty<string>();
-            BuildLabConstraintsList.ItemsSource = Array.Empty<string>();
-            BuildLabProvenanceBox.Text = string.Empty;
-            BuildLabVariantsList.ItemsSource = Array.Empty<string>();
-            BuildLabCoverageBox.Text = string.Empty;
-            BuildLabTimelinesBox.Text = string.Empty;
-            BuildLabExportPayloadsBox.Text = string.Empty;
-            BuildLabExportTargetsList.ItemsSource = Array.Empty<string>();
-            BuildLabActionsList.ItemsSource = Array.Empty<string>();
-            return;
-        }
-
-        BuildLabSummaryText.Text = $"{buildLab.Title} · {buildLab.RulesetId}/{buildLab.BuildMethod}";
-        BuildLabFieldsList.ItemsSource = buildLab.IntakeFields
-            .Select(field => $"{field.Label}: {field.Value}")
-            .ToArray();
-        BuildLabConstraintsList.ItemsSource = buildLab.ConstraintBadges.Select(badge => badge.Label).ToArray();
-        BuildLabProvenanceBox.Text = BuildBuildLabProvenance(buildLab);
-        BuildLabVariantsList.ItemsSource = buildLab.Variants
-            .Select(BuildVariantLine)
-            .ToArray();
-        BuildLabCoverageBox.Text = BuildCoverageText(buildLab);
-        BuildLabTimelinesBox.Text = BuildTimelineText(buildLab);
-        BuildLabExportPayloadsBox.Text = BuildExportPayloadText(buildLab);
-        BuildLabExportTargetsList.ItemsSource = buildLab.ExportTargets
-            .Select(target => BuildExportTargetLine(buildLab, target))
-            .ToArray();
-        BuildLabActionsList.ItemsSource = buildLab.Actions
-            .Select(action => BuildActionLine(buildLab, action))
-            .ToArray();
+        // Chummer5a parity posture: remove synthetic build-lab scaffolding.
     }
 
     public void SetBrowseWorkspace(BrowseWorkspaceState? browseWorkspace)
     {
-        _browseWorkspace = browseWorkspace;
-        BrowseWorkspaceBorder.IsVisible = browseWorkspace is not null;
-
-        if (browseWorkspace is null)
-        {
-            BrowseSummaryText.Text = string.Empty;
-            BrowsePresetsList.ItemsSource = Array.Empty<string>();
-            BrowseFacetsList.ItemsSource = Array.Empty<string>();
-            BrowseResultsList.ItemsSource = Array.Empty<BrowseResultDisplayItem>();
-            BrowseSelectedItemsList.ItemsSource = Array.Empty<string>();
-            BrowseDetailBox.Text = string.Empty;
-            return;
-        }
-
-        BrowseSummaryText.Text = BuildBrowseSummary(browseWorkspace);
-        BrowsePresetsList.ItemsSource = browseWorkspace.Presets.Select(BuildPresetLine).ToArray();
-        BrowseWorkspaceFacetState[] preferredFacets = browseWorkspace.SourceFacets
-            .Concat(browseWorkspace.PackFacets)
-            .DistinctBy(facet => facet.FacetId, StringComparer.Ordinal)
-            .ToArray();
-        BrowseFacetsList.ItemsSource = preferredFacets.Length > 0
-            ? preferredFacets.Select(BuildFacetLine).ToArray()
-            : browseWorkspace.Facets.Take(4).Select(BuildFacetLine).ToArray();
-        BrowseResultsList.ItemsSource = browseWorkspace.Results
-            .Select(result => new BrowseResultDisplayItem(result.ItemId, BuildResultLine(result)))
-            .ToArray();
-        BrowseSelectedItemsList.ItemsSource = browseWorkspace.SelectedItems
-            .Select(item => string.IsNullOrWhiteSpace(item.Detail) ? item.Title : $"{item.Title} · {item.Detail}")
-            .ToArray();
-
-        int selectedIndex = Math.Clamp(browseWorkspace.ActiveResultIndex, 0, Math.Max(0, browseWorkspace.Results.Count - 1));
-        BrowseResultsList.SelectedIndex = browseWorkspace.Results.Count == 0 ? -1 : selectedIndex;
-        BrowseDetailBox.Text = BuildDetailText(browseWorkspace.ActiveDetail);
+        // Chummer5a parity posture: remove synthetic browse-workspace scaffolding.
     }
 
     public void SetContactGraph(ContactRelationshipGraphState? contactGraph)
     {
-        ContactGraphBorder.IsVisible = contactGraph is not null;
-
-        if (contactGraph is null)
-        {
-            ContactGraphSummaryText.Text = string.Empty;
-            ContactNodeList.ItemsSource = Array.Empty<string>();
-            ContactFactionStatusBox.Text = string.Empty;
-            ContactHeatObligationBox.Text = string.Empty;
-            ContactFavorRailBox.Text = string.Empty;
-            return;
-        }
-
-        ContactGraphSummaryText.Text = $"Relationship graph · {contactGraph.Nodes.Count} contacts · {contactGraph.EdgeCount} links";
-        ContactNodeList.ItemsSource = contactGraph.Nodes
-            .Select(node => $"{node.Name} · {node.Faction} · heat {node.Heat} · links: {string.Join(", ", node.LinkedContactNames)}")
-            .ToArray();
-        ContactFactionStatusBox.Text = BuildFactionStatusText(contactGraph);
-        ContactHeatObligationBox.Text = BuildHeatAndObligationText(contactGraph);
-        ContactFavorRailBox.Text = BuildFavorRailText(contactGraph);
+        // Chummer5a parity posture: remove synthetic contact-graph scaffolding.
     }
 
     public void SetNpcPersonaStudio(NpcPersonaStudioState? npcPersonaStudio)
     {
-        NpcPersonaStudioBorder.IsVisible = npcPersonaStudio is not null;
-
-        if (npcPersonaStudio is null)
-        {
-            NpcPersonaSummaryText.Text = string.Empty;
-            NpcPersonaList.ItemsSource = Array.Empty<string>();
-            NpcPolicyList.ItemsSource = Array.Empty<string>();
-            NpcEvidenceBox.Text = string.Empty;
-            NpcApprovalBox.Text = string.Empty;
-            return;
-        }
-
-        NpcPersonaSummaryText.Text = BuildPersonaSummary(npcPersonaStudio);
-        NpcPersonaList.ItemsSource = npcPersonaStudio.Personas
-            .Select(persona => BuildPersonaLine(persona, npcPersonaStudio.SelectedPersonaId))
-            .ToArray();
-        NpcPolicyList.ItemsSource = npcPersonaStudio.Policies
-            .Select(BuildPolicyLine)
-            .ToArray();
-        NpcEvidenceBox.Text = string.Join(Environment.NewLine, npcPersonaStudio.EvidenceLines);
-        NpcApprovalBox.Text = BuildApprovalSummary(npcPersonaStudio);
+        // Chummer5a parity posture: remove synthetic NPC-persona scaffolding.
     }
 
     public void SetDowntimePlanner(DowntimePlannerState? downtimePlanner)
     {
-        DowntimePlannerBorder.IsVisible = downtimePlanner is not null;
-
-        if (downtimePlanner is null)
-        {
-            DowntimePlannerSummaryText.Text = string.Empty;
-            DowntimePlannerLanesList.ItemsSource = Array.Empty<string>();
-            DowntimeCalendarBox.Text = string.Empty;
-            DowntimeScheduleList.ItemsSource = Array.Empty<string>();
-            return;
-        }
-
-        DowntimePlannerSummaryText.Text = BuildDowntimePlannerSummary(downtimePlanner);
-        DowntimePlannerLanesList.ItemsSource = downtimePlanner.PlannerLanes
-            .Select(lane => $"{lane.Title}: {lane.ItemCount} items")
-            .ToArray();
-        DowntimeCalendarBox.Text = BuildDowntimeCalendarText(downtimePlanner);
-        DowntimeScheduleList.ItemsSource = downtimePlanner.ScheduleItems
-            .Select(item => $"{item.TimeWindow} · {item.Title} ({item.LaneTitle})")
-            .ToArray();
+        // Chummer5a parity posture: remove synthetic downtime-planner scaffolding.
     }
 
     private void BrowseResultsList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_browseWorkspace is null)
-            return;
-
-        if (BrowseResultsList.SelectedItem is not BrowseResultDisplayItem selected)
-            return;
-
-        BrowseWorkspaceResultItemState? result = _browseWorkspace.Results
-            .FirstOrDefault(item => string.Equals(item.ItemId, selected.ItemId, StringComparison.Ordinal));
-        if (result is null)
-            return;
-
-        BrowseItemDetail? detail = string.Equals(_browseWorkspace.ActiveDetail?.ItemId, result.ItemId, StringComparison.Ordinal)
-            ? _browseWorkspace.ActiveDetail
-            : null;
-        BrowseDetailBox.Text = BuildDetailText(detail);
+        // Synthetic browse-workspace routing removed for shell parity.
     }
 
     private static string BuildBrowseSummary(BrowseWorkspaceState browseWorkspace)
@@ -758,6 +673,7 @@ public partial class SectionHostControl : UserControl
             Name = $"SectionQuickAction_{quickAction.ControlId}",
             Content = quickAction.Label,
             Tag = quickAction.ControlId,
+            IsVisible = true,
             Margin = new Thickness(0d, 0d, 8d, 0d)
         };
         button.Classes.Add("shell-action");
@@ -783,13 +699,21 @@ public partial class SectionHostControl : UserControl
         }
 
         List<ClassicSheetFactDisplayItem> facts = [];
-        AppendFact(facts, "Name", ReadString(root, "name"));
+        AppendFact(facts, "Alias", ReadString(root, "alias"));
         AppendFact(facts, "Metatype", ReadString(root, "metatype"));
+        AppendFact(facts, "Concept", ReadString(root, "concept"));
         AppendFact(facts, "Role", ReadString(root, "role"));
-        AppendFact(facts, "Priority", ReadString(root, "priority"));
-        AppendFact(facts, "Ruleset", ReadString(root, "ruleset")?.ToUpperInvariant());
+        AppendFact(facts, "Build", FirstNonBlank(
+            ReadString(root, "buildMethod"),
+            ReadString(root, "buildmethod"),
+            ReadString(root, "priority")));
+        AppendFact(facts, "Ruleset", FirstNonBlank(
+            ReadString(root, "gameEdition"),
+            ReadString(root, "ruleset"))?.ToUpperInvariant());
+        AppendFact(facts, "Karma", ReadScalar(root, "karma"));
+        AppendFact(facts, "Nuyen", ReadScalar(root, "nuyen"));
 
-        JsonObject? combat = root["combat"] as JsonObject;
+        JsonObject? combat = ReadObject(root, "combat");
         if (combat is not null)
         {
             AppendFact(facts, "Init", ReadString(combat, "initiative"));
@@ -797,7 +721,7 @@ public partial class SectionHostControl : UserControl
             AppendFact(facts, "Essence", ReadScalar(combat, "essence"));
         }
 
-        return facts;
+        return facts.Take(6).ToArray();
     }
 
     private static IReadOnlyList<ClassicSheetFactDisplayItem> BuildCharacterAttributeFacts(
@@ -805,14 +729,37 @@ public partial class SectionHostControl : UserControl
         IEnumerable<SectionRowDisplayItem> rows)
     {
         JsonObject? root = TryParseRootObject(previewJson);
-        JsonObject? attributes = root?["attributes"] as JsonObject;
         List<ClassicSheetFactDisplayItem> facts = [];
 
-        if (attributes is not null)
+        if (ReadArray(root, "attributes") is { Count: > 0 } attributeArray)
+        {
+            foreach (JsonNode? node in attributeArray)
+            {
+                if (node is not JsonObject attribute)
+                {
+                    continue;
+                }
+
+                string name = FirstNonBlank(
+                    ReadString(attribute, "name"),
+                    ReadString(attribute, "label"));
+                string value = FirstNonBlank(
+                    ReadScalar(attribute, "totalValue"),
+                    ReadScalar(attribute, "baseValue"),
+                    ReadScalar(attribute, "value"),
+                    ReadScalar(attribute, "base"));
+                if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(value))
+                {
+                    facts.Add(new ClassicSheetFactDisplayItem(ShortAttributeLabel(name), value));
+                }
+            }
+        }
+
+        if (facts.Count == 0 && ReadObject(root, "attributes") is { } attributesObject)
         {
             foreach (string key in new[] { "Body", "Agility", "Reaction", "Strength", "Willpower", "Logic", "Intuition", "Charisma", "Edge", "Magic", "Resonance" })
             {
-                string? value = ReadScalar(attributes, key);
+                string? value = ReadScalar(attributesObject, key);
                 if (!string.IsNullOrWhiteSpace(value))
                 {
                     facts.Add(new ClassicSheetFactDisplayItem(ShortAttributeLabel(key), value));
@@ -820,20 +767,21 @@ public partial class SectionHostControl : UserControl
             }
         }
 
-        if (facts.Count > 0)
+        if (facts.Count == 0)
         {
-            return facts;
-        }
-
-        foreach (SectionRowDisplayItem row in rows)
-        {
-            if (!row.Path.StartsWith("attributes.", StringComparison.OrdinalIgnoreCase))
+            foreach (SectionRowDisplayItem row in rows)
             {
-                continue;
-            }
+                if (!row.Path.StartsWith("attributes.", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
 
-            string attributeName = row.Path["attributes.".Length..];
-            facts.Add(new ClassicSheetFactDisplayItem(ShortAttributeLabel(attributeName), row.DisplayValue));
+                string attributeName = row.Path["attributes.".Length..];
+                if (!string.IsNullOrWhiteSpace(row.DisplayValue))
+                {
+                    facts.Add(new ClassicSheetFactDisplayItem(ShortAttributeLabel(attributeName), row.DisplayValue));
+                }
+            }
         }
 
         return facts;
@@ -859,10 +807,12 @@ public partial class SectionHostControl : UserControl
     private static string BuildSectionTitle(string? sectionId, string previewJson)
     {
         JsonObject? root = TryParseRootObject(previewJson);
-        string? previewSection = root is not null ? ReadString(root, "section") : null;
+        string? previewSection = root is not null ? FirstNonBlank(ReadString(root, "section"), ReadString(root, "sectionId")) : null;
         string rawSection = string.IsNullOrWhiteSpace(sectionId) ? previewSection ?? "Section" : sectionId;
         return rawSection.Trim().ToLowerInvariant() switch
         {
+            "summary" => "Runner Summary",
+            "profile" => "Profile",
             "cyberwares" => "Cyberware",
             "attributedetails" => "Attributes",
             "complexforms" => "Complex Forms",
@@ -873,27 +823,51 @@ public partial class SectionHostControl : UserControl
         };
     }
 
-    private static string BuildSectionSummary(IEnumerable<SectionRowDisplayItem> rows, IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+    private static string BuildSectionSummary(
+        string? sectionId,
+        string previewJson,
+        IEnumerable<SectionRowDisplayItem> rows,
+        IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
     {
         SectionRowDisplayItem[] rowArray = rows.ToArray();
         List<string> parts = [];
-        if (rowArray.Length > 0)
+        JsonObject? root = TryParseRootObject(previewJson);
+        string title = BuildSectionTitle(sectionId, previewJson);
+        int? recordedCount = ReadCount(root);
+
+        if (recordedCount is > 0)
+        {
+            parts.Add(recordedCount == 1 ? "1 visible entry" : $"{recordedCount} visible entries");
+        }
+        else if (rowArray.Length > 0)
         {
             parts.Add(rowArray.Length == 1 ? "1 visible entry" : $"{rowArray.Length} visible entries");
+        }
 
+        if (rowArray.Length > 0)
+        {
+            string leadPath = rowArray[0].DisplayPath.Trim();
             string leadValue = rowArray[0].DisplayValue.Trim();
-            if (!string.IsNullOrWhiteSpace(leadValue))
+            if (!string.IsNullOrWhiteSpace(leadValue) || !string.IsNullOrWhiteSpace(leadPath))
             {
-                parts.Add(leadValue);
+                parts.Add(string.IsNullOrWhiteSpace(leadValue) ? leadPath : $"{leadPath}: {leadValue}");
             }
         }
 
         if (quickActions.Count > 0)
         {
-            parts.Add(quickActions.Count == 1 ? "1 action" : $"{quickActions.Count} actions");
+            string actionSummary = string.Join(", ", quickActions.Take(2).Select(action => action.Label));
+            if (quickActions.Count > 2)
+            {
+                actionSummary = $"{actionSummary}, +{quickActions.Count - 2} more";
+            }
+
+            parts.Add($"Actions: {actionSummary}");
         }
 
-        return string.Join("  •  ", parts);
+        return parts.Count == 0
+            ? BuildEmptySectionSummary(sectionId, title, quickActions)
+            : string.Join("  •  ", parts);
     }
 
     private static string FormatSectionName(string sectionName)
@@ -942,14 +916,275 @@ public partial class SectionHostControl : UserControl
     }
 
     private static string? ReadString(JsonObject source, string propertyName)
-        => source.TryGetPropertyValue(propertyName, out JsonNode? node)
+        => TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
             ? SanitizeJsonValue(node)
             : null;
 
     private static string? ReadScalar(JsonObject source, string propertyName)
-        => source.TryGetPropertyValue(propertyName, out JsonNode? node)
+        => TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
             ? SanitizeJsonValue(node)
             : null;
+
+    private static JsonObject? ReadObject(JsonObject? source, string propertyName)
+        => source is not null
+            && TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
+            ? node as JsonObject
+            : null;
+
+    private static JsonArray? ReadArray(JsonObject? source, string propertyName)
+        => source is not null
+            && TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
+            ? node as JsonArray
+            : null;
+
+    private static bool TryGetPropertyValueIgnoreCase(JsonObject source, string propertyName, out JsonNode? node)
+    {
+        foreach ((string key, JsonNode? value) in source)
+        {
+            if (string.Equals(key, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                node = value;
+                return true;
+            }
+        }
+
+        node = null;
+        return false;
+    }
+
+    private static int? ReadCount(JsonObject? root)
+    {
+        if (root is null)
+        {
+            return null;
+        }
+
+        foreach (string key in new[]
+                 {
+                     "count",
+                     "gearCount",
+                     "weaponCount",
+                     "armorCount",
+                     "cyberwareCount",
+                     "vehicleCount",
+                     "knowledgeCount"
+                 })
+        {
+            if (int.TryParse(ReadScalar(root, key), NumberStyles.Integer, CultureInfo.InvariantCulture, out int count))
+            {
+                return count;
+            }
+        }
+
+        return null;
+    }
+
+    private static string BuildClassicSheetTitle(
+        string? sectionId,
+        IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts,
+        IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts)
+    {
+        string title = string.IsNullOrWhiteSpace(sectionId)
+            ? "Runner Summary"
+            : BuildSectionTitle(sectionId, "{}");
+        if (attributeFacts.Count > 0
+            && (string.Equals(sectionId, "profile", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(sectionId, "summary", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(sectionId, "attributes", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(sectionId, "attributedetails", StringComparison.OrdinalIgnoreCase)))
+        {
+            return "Runner Summary";
+        }
+
+        return summaryFacts.Count > 0 || attributeFacts.Count > 0
+            ? $"{title} Overview"
+            : title;
+    }
+
+    private static string BuildSectionPreviewText(
+        string? sectionId,
+        string previewJson,
+        IEnumerable<SectionRowDisplayItem> rows)
+    {
+        JsonObject? root = TryParseRootObject(previewJson);
+        SectionRowDisplayItem[] rowArray = rows.ToArray();
+        List<string> lines = [];
+        string title = BuildSectionTitle(sectionId, previewJson);
+
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            lines.Add(title);
+        }
+
+        AppendPreviewScalarLine(lines, "Name", root, "name");
+        AppendPreviewScalarLine(lines, "Alias", root, "alias");
+        AppendPreviewScalarLine(lines, "Metatype", root, "metatype");
+        AppendPreviewScalarLine(lines, "Concept", root, "concept");
+        AppendPreviewScalarLine(lines, "Build Method", root, "buildMethod", "buildmethod");
+        AppendPreviewScalarLine(lines, "Ruleset", root, "gameEdition", "ruleset");
+        AppendPreviewScalarLine(lines, "Karma", root, "karma");
+        AppendPreviewScalarLine(lines, "Nuyen", root, "nuyen");
+        AppendPreviewScalarLine(lines, "Street Cred", root, "streetCred");
+        AppendPreviewScalarLine(lines, "Notoriety", root, "notoriety");
+        AppendPreviewScalarLine(lines, "Public Awareness", root, "publicAwareness");
+
+        if (ReadObject(root, "combat") is { } combat)
+        {
+            AppendPreviewScalarLine(lines, "Initiative", combat, "initiative");
+            AppendPreviewScalarLine(lines, "Armor", combat, "armor");
+            AppendPreviewScalarLine(lines, "Essence", combat, "essence");
+        }
+
+        if (lines.Count > 1 && rowArray.Length > 0)
+        {
+            lines.Add(string.Empty);
+        }
+
+        if (rowArray.Length > 0)
+        {
+            foreach (SectionRowDisplayItem row in rowArray.Take(10))
+            {
+                string label = row.DisplayPath.Trim();
+                string value = row.DisplayValue.Trim();
+                if (string.IsNullOrWhiteSpace(label) && string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                lines.Add(string.IsNullOrWhiteSpace(value)
+                    ? label
+                    : $"{label}: {value}");
+            }
+
+            if (rowArray.Length > 10)
+            {
+                lines.Add($"+{rowArray.Length - 10} more entries");
+            }
+        }
+        else if (lines.Count == 1)
+        {
+            lines.Add(BuildEmptySectionReviewLine(sectionId));
+        }
+
+        string normalizedPayload = previewJson.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedPayload))
+        {
+            if (lines.Count > 0)
+            {
+                lines.Add(string.Empty);
+            }
+
+            lines.Add("Payload");
+            lines.Add(normalizedPayload);
+        }
+
+        return string.Join(Environment.NewLine, lines.Where(static line => line is not null)).Trim();
+    }
+
+    private static string BuildSectionPreviewHeader(string? sectionId, string previewJson)
+    {
+        string title = BuildSectionTitle(sectionId, previewJson);
+        return sectionId?.Trim().ToLowerInvariant() switch
+        {
+            "summary" or "profile" or "attributes" or "attributedetails" => $"{title} Review",
+            "skills" or "qualities" or "contacts" => $"{title} Review",
+            "gear" or "inventory" or "weapons" or "armors" or "cyberwares" or "vehicles" => $"{title} Loadout Review",
+            "progress" or "calendar" or "expenses" or "improvements" => $"{title} Journal Review",
+            "rules" => $"{title} Snapshot",
+            _ => $"{title} Review"
+        };
+    }
+
+    private static string BuildEmptySectionSummary(
+        string? sectionId,
+        string title,
+        IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+    {
+        string? primaryActionLabel = quickActions
+            .FirstOrDefault(action => action.IsPrimary)?.Label
+            ?? quickActions.FirstOrDefault()?.Label;
+        string emptySummary = NormalizeSectionId(sectionId) switch
+        {
+            "attributes" or "attributedetails" => "No attribute values are recorded yet.",
+            "skills" => "No active or knowledge skills are recorded yet.",
+            "qualities" => "No positive or negative qualities are recorded yet.",
+            "contacts" => "No contacts are recorded yet.",
+            "gear" or "inventory" => "No carried gear is recorded yet.",
+            "weapons" => "No weapons are recorded yet.",
+            "armors" => "No armor pieces are recorded yet.",
+            "cyberwares" => "No cyberware or bioware is recorded yet.",
+            "vehicles" => "No vehicles are recorded yet.",
+            "spells" => "No spells are recorded yet.",
+            "powers" => "No adept powers are recorded yet.",
+            "complexforms" => "No complex forms or programs are recorded yet.",
+            "drugs" => "No drugs or consumables are recorded yet.",
+            "progress" or "calendar" => "No journal entries are recorded yet.",
+            "initiationgrades" => "No initiation or submersion grades are recorded yet.",
+            "profile" => "Runner identity details are still blank.",
+            "rules" => "Rules and provider selections are still blank.",
+            _ => $"{title} is ready."
+        };
+
+        if (!string.IsNullOrWhiteSpace(primaryActionLabel))
+        {
+            return $"{emptySummary} Use {primaryActionLabel}.";
+        }
+
+        return emptySummary;
+    }
+
+    private static string BuildEmptySectionReviewLine(string? sectionId)
+    {
+        return NormalizeSectionId(sectionId) switch
+        {
+            "attributes" or "attributedetails" => "No attribute values are recorded yet.",
+            "skills" => "No skills are recorded yet.",
+            "qualities" => "No qualities are recorded yet.",
+            "contacts" => "No contacts are recorded yet.",
+            "gear" or "inventory" => "No gear entries are recorded yet.",
+            "weapons" => "No weapons are recorded yet.",
+            "armors" => "No armor entries are recorded yet.",
+            "cyberwares" => "No cyberware entries are recorded yet.",
+            "vehicles" => "No vehicles are recorded yet.",
+            "spells" => "No spells are recorded yet.",
+            "powers" => "No adept powers are recorded yet.",
+            "complexforms" => "No complex forms are recorded yet.",
+            "drugs" => "No consumables are recorded yet.",
+            "progress" or "calendar" => "No karma journal entries are recorded yet.",
+            "initiationgrades" => "No initiation entries are recorded yet.",
+            "profile" => "No profile details are recorded yet.",
+            "rules" => "No ruleset selections are recorded yet.",
+            _ => "No recorded entries yet."
+        };
+    }
+
+    private static string? NormalizeSectionId(string? sectionId)
+    {
+        if (string.IsNullOrWhiteSpace(sectionId))
+        {
+            return null;
+        }
+
+        return sectionId.Trim().ToLowerInvariant();
+    }
+
+    private static void AppendPreviewScalarLine(
+        List<string> lines,
+        string label,
+        JsonObject? source,
+        params string[] propertyNames)
+    {
+        if (source is null)
+        {
+            return;
+        }
+
+        string value = FirstNonBlank(propertyNames.Select(propertyName => ReadScalar(source, propertyName)).ToArray());
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            lines.Add($"{label}: {value}");
+        }
+    }
 
     private static string SanitizeJsonValue(JsonNode? node)
     {
@@ -1018,10 +1253,23 @@ public partial class SectionHostControl : UserControl
         card.Child = stack;
         return card;
     }
+
+    private void UpdateSectionRowsHeight()
+    {
+        bool denseChromeVisible = ClassicCharacterSheetBorder.IsVisible
+            || SectionContextBorder.IsVisible
+            || SectionActionTabStripBorder.IsVisible
+            || SectionQuickActionsBorder.IsVisible;
+        SectionRowsList.Height = denseChromeVisible ? 176d : 212d;
+    }
 }
 
 public sealed record SectionHostState(
     string? SectionId,
+    NavigatorTabItem[] NavigationTabs,
+    string? ActiveTabId,
+    NavigatorSectionActionItem[] SectionActions,
+    string? ActiveActionId,
     string Notice,
     string PreviewJson,
     SectionRowDisplayItem[] Rows,
@@ -1134,11 +1382,21 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
     {
         string normalizedSection = section.Trim().ToLowerInvariant() switch
         {
+            "attributes" => "attribute",
+            "skills" => "skill",
+            "qualities" => "quality",
+            "gear" => "gear",
+            "weapons" => "weapon",
+            "armors" => "armor",
+            "cyberwares" => "cyberware",
             "vehicles" => "vehicle",
             "contacts" => "contact",
             "spells" => "spell",
             "powers" => "power",
             "drugs" => "drug",
+            "aiprograms" => "program",
+            "expenses" => "expense",
+            "improvements" => "improvement",
             "complexforms" => "complex form",
             "initiationgrades" => "initiation grade",
             "mentorspirits" => "mentor spirit",

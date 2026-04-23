@@ -96,6 +96,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Open for Export",
                 "Paste Chummer XML to stage export workflows.",
                 rulesetId),
+            "new_character" => new DesktopDialogState(
+                "dialog.new_character",
+                "Select Build Method",
+                "Choose the ruleset and build method before opening the new character workspace.",
+                [
+                    CreateRulesetField("newCharacterRulesetId", rulesetId),
+                    CreateBuildMethodField("newCharacterBuildMethod", rulesetId)
+                ],
+                [
+                    new DesktopDialogAction("create_character", "OK", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "print_setup" => new DesktopDialogState(
                 "dialog.print_setup",
                 "Print Setup",
@@ -111,11 +123,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dice_roller" => new DesktopDialogState(
                 "dialog.dice_roller",
                 "Dice Roller",
-                "Ruleset-backed dice utility with initiative planning and current roster context.",
+                "Legacy dice roller posture with roll method, threshold, gremlins, and reroll support.",
                 BuildDiceToolFields(currentWorkspace, openWorkspaces),
                 [
                     new DesktopDialogAction("roll", "Roll", true),
-                    new DesktopDialogAction("derive_initiative", "Preview Initiative"),
+                    new DesktopDialogAction("reroll_misses", "Re-Roll Misses"),
                     new DesktopDialogAction("close", "Close")
                 ]),
             "global_settings" => BuildGlobalSettingsDialog(preferences, language),
@@ -133,20 +145,33 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "character_settings" => new DesktopDialogState(
                 "dialog.character_settings",
                 "Character Settings",
-                "Rules environment posture for source toggles, custom data, and XML bridge is surfaced here so the modern desktop does not hide legacy-era configuration truth.",
+                "Edit the current character-setting defaults used when creating and validating runners.",
                 [
-                    new DesktopDialogField("characterPriority", "Priority System", preferences.CharacterPriority, "SumToTen"),
-                    new DesktopDialogField("characterKarmaNuyen", "Karma/Nuyen Ratio", preferences.KarmaNuyenRatio.ToString(), "2", InputType: "number"),
-                    new DesktopDialogField("characterHouseRulesEnabled", "Enable House Rules", preferences.HouseRulesEnabled ? "true" : "false", "false", InputType: "checkbox"),
-                    new DesktopDialogField("characterNotes", "Character Notes", preferences.CharacterNotes, "notes", true),
-                    new DesktopDialogField("characterSettingsLanePosture", "Settings Lane", masterIndex?.SettingsLanePosture ?? "missing", "missing", IsReadOnly: true),
-                    new DesktopDialogField("characterSourceToggleLanePosture", "Source Toggle Lane", masterIndex?.SourceToggleLanePosture ?? "missing", "missing", IsReadOnly: true),
-                    new DesktopDialogField("characterSourceToggleCoverage", "Source Toggle Coverage", masterIndex is null ? "0%" : $"{masterIndex.SourcebookToggleCoveragePercent}% ({masterIndex.DistinctSourcebookToggles} toggles)", "0%", IsReadOnly: true),
-                    new DesktopDialogField("characterCustomDataLanePosture", "Custom Data Lane", masterIndex?.CustomDataLanePosture ?? "missing", "missing", IsReadOnly: true),
-                    new DesktopDialogField("characterXmlBridgePosture", "XML Bridge", masterIndex?.XmlBridgePosture ?? "missing", "missing", IsReadOnly: true)
+                    new DesktopDialogField(
+                        "characterPriority",
+                        "Build Method",
+                        preferences.CharacterPriority,
+                        DesktopPreferenceState.Default.CharacterPriority,
+                        InputType: "select",
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                        Options: BuildPriorityOptions()),
+                    new DesktopDialogField(
+                        "characterKarmaNuyen",
+                        "Karma/Nuyen Ratio",
+                        preferences.KarmaNuyenRatio.ToString(),
+                        "2",
+                        InputType: "number",
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField(
+                        "characterHouseRulesEnabled",
+                        "Enable House Rules",
+                        preferences.HouseRulesEnabled ? "true" : "false",
+                        "false",
+                        InputType: "checkbox",
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left)
                 ],
                 [
-                    new DesktopDialogAction("save", "Save", true),
+                    new DesktopDialogAction("save", "OK", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "translator" => new DesktopDialogState(
@@ -257,14 +282,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "wiki" => new DesktopDialogState(
                 "dialog.wiki",
                 "Wiki",
-                "https://github.com/chummer5a/chummer5a/wiki",
-                BuildExternalLinkFields("Chummer Wiki", "https://github.com/chummer5a/chummer5a/wiki", "Use the legacy wiki as an external reference without displacing the current workbench."),
+                "https://github.com/chummer5a/chummer5a/wiki/",
+                BuildExternalLinkFields("Chummer Wiki", "https://github.com/chummer5a/chummer5a/wiki/", "Use the legacy wiki as an external reference without displacing the current workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "discord" => new DesktopDialogState(
                 "dialog.discord",
                 "Discord",
-                "https://discord.gg/EV44Mya",
-                BuildExternalLinkFields("Community Discord", "https://discord.gg/EV44Mya", "Community chat opens in the browser instead of replacing the desktop workbench."),
+                "https://discord.gg/mJB7st9",
+                BuildExternalLinkFields("Community Discord", "https://discord.gg/mJB7st9", "Community chat opens in the browser instead of replacing the desktop workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "revision_history" => new DesktopDialogState(
                 "dialog.revision_history",
@@ -274,9 +299,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 [new DesktopDialogAction("close", "Close", true)]),
             "dumpshock" => new DesktopDialogState(
                 "dialog.dumpshock",
-                "Dumpshock Thread",
-                "https://forums.dumpshock.com/index.php?showtopic=37464",
-                BuildExternalLinkFields("Dumpshock Thread", "https://forums.dumpshock.com/index.php?showtopic=37464", "The legacy forum thread opens externally and stays outside the workbench shell."),
+                "Issue Tracker",
+                "https://github.com/chummer5a/chummer5a/issues/",
+                BuildExternalLinkFields("Issue Tracker", "https://github.com/chummer5a/chummer5a/issues/", "The legacy issue tracker opens externally and stays outside the desktop workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "print_character" => new DesktopDialogState(
                 "dialog.print_character",
@@ -401,40 +426,130 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static DesktopDialogField CreateRulesetField(string fieldId, string? rulesetId)
     {
-        string value = RulesetDefaults.NormalizeOptional(rulesetId) ?? string.Empty;
+        string value = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         return new DesktopDialogField(
             Id: fieldId,
             Label: "Ruleset",
             Value: value,
-            Placeholder: value);
+            Placeholder: value,
+            InputType: "select",
+            Options: BuildRulesetOptions());
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildRulesetOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("sr4", "SR4"),
+            new DesktopDialogFieldOption("sr5", "SR5"),
+            new DesktopDialogFieldOption("sr6", "SR6")
+        };
+
+    private static DesktopDialogField CreateBuildMethodField(string fieldId, string? rulesetId)
+    {
+        DesktopDialogFieldOption[] options = BuildBuildMethodOptions(rulesetId).ToArray();
+        DesktopDialogFieldOption selected = options[0];
+        return new DesktopDialogField(
+            Id: fieldId,
+            Label: "Build Method",
+            Value: selected.Value,
+            Placeholder: selected.Value,
+            InputType: "select",
+            Options: options);
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildBuildMethodOptions(string? rulesetId)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        return normalizedRulesetId switch
+        {
+            var id when string.Equals(id, RulesetDefaults.Sr4, StringComparison.Ordinal) =>
+            [
+                new DesktopDialogFieldOption("BP", "BP"),
+                new DesktopDialogFieldOption("Karma", "Karma")
+            ],
+            _ =>
+            [
+                new DesktopDialogFieldOption("Priority", "Priority"),
+                new DesktopDialogFieldOption("SumToTen", "Sum-to-Ten"),
+                new DesktopDialogFieldOption("Karma", "Karma"),
+                new DesktopDialogFieldOption("LifeModule", "Life Modules")
+            ]
+        };
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildDiceToolFields(
         CharacterWorkspaceId? currentWorkspace,
         IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
     {
-        IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
-        int savedCount = roster.Count(workspace => workspace.HasSavedWorkspace);
-        string rosterContext = roster.Count switch
-        {
-            0 => "No open runners. The utility still works as a standalone dice and initiative pad.",
-            _ => $"{roster.Count} open runner{(roster.Count == 1 ? string.Empty : "s")} · {savedCount} saved · active {(currentWorkspace?.Value ?? roster[0].Id.Value)}"
-        };
-
         return
         [
-            new DesktopDialogField("diceExpression", "Expression", "12d6", "12d6"),
-            new DesktopDialogField("diceThreshold", "Threshold", "0", "0", InputType: "number"),
-            new DesktopDialogField("diceLimit", "Limit", "0", "0", InputType: "number"),
-            new DesktopDialogField("diceWoundModifier", "Wound Modifier", "0", "0", InputType: "number"),
-            new DesktopDialogField("diceInitiativeBase", "Initiative Base", "10", "10", InputType: "number"),
-            new DesktopDialogField("diceInitiativeDice", "Initiative Dice", "1", "1", InputType: "number"),
-            new DesktopDialogField("diceCurrentPass", "Current Pass", "1", "1", InputType: "number"),
-            new DesktopDialogField("diceUtilityLane", "Utility Lane", "ruleset-backed roll + initiative preview", "ruleset-backed roll + initiative preview", IsReadOnly: true),
-            new DesktopDialogField("diceRosterContext", "Roster Context", rosterContext, rosterContext, IsReadOnly: true),
-            new DesktopDialogField("initiativePreview", "Initiative Preview", BuildInitiativePreview(10, 1, 0, 1), BuildInitiativePreview(10, 1, 0, 1), IsReadOnly: true)
+            new DesktopDialogField("diceMethod", "Method", "Standard", "Standard", InputType: "select", Options: BuildDiceMethodOptions(), LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("diceCount", "Dice", "1", "1", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("diceThreshold", "Threshold", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("diceGremlins", "Gremlins", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("diceRuleOf6", "Rule of 6", "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceCinematicGameplay", "Cinematic Gameplay", "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceRushJob", "Rush Job", "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceVariableGlitch", "Variable Glitch", "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceBubbleDie", "Bubble Die", "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceResultsSummary", "Results", "Roll dice to see hits, glitches, and the summed total.", "Roll dice to see hits, glitches, and the summed total.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("diceResultsList", "Roll History", "No rolls yet.", "No rolls yet.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
+            new DesktopDialogField("diceUtilityLane", "Utility Lane", "Dice roller + initiative preview + roster context", "Dice roller + initiative preview + roster context", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("diceRosterContext", "Roster Context", BuildDiceRosterContext(currentWorkspace, openWorkspaces), "No roster context.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("initiativePreview", "Initiative Preview", BuildInitiativePreview(currentWorkspace, openWorkspaces), "No active runner.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("diceLastRollState", "Last Roll State", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
         ];
     }
+
+    private static string BuildDiceRosterContext(
+        CharacterWorkspaceId? currentWorkspace,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+    {
+        OpenWorkspaceState[] roster = (openWorkspaces ?? Array.Empty<OpenWorkspaceState>())
+            .OrderByDescending(workspace => workspace.LastOpenedUtc)
+            .ToArray();
+        OpenWorkspaceState? active = currentWorkspace is null
+            ? roster.FirstOrDefault()
+            : roster.FirstOrDefault(workspace => workspace.Id.Equals(currentWorkspace.Value)) ?? roster.FirstOrDefault();
+        string activeRunner = active is null
+            ? "none"
+            : $"{active.Alias} · {active.Name} [{active.RulesetId}]";
+        string openSummary = roster.Length == 0
+            ? "none"
+            : string.Join(", ", roster.Select(workspace => $"{workspace.Alias}/{workspace.RulesetId}"));
+
+        return BuildGridValue(
+            ("Active Runner", activeRunner),
+            ("Open Runners", roster.Length.ToString(CultureInfo.InvariantCulture)),
+            ("Roster Mix", openSummary));
+    }
+
+    private static string BuildInitiativePreview(
+        CharacterWorkspaceId? currentWorkspace,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+    {
+        OpenWorkspaceState[] roster = (openWorkspaces ?? Array.Empty<OpenWorkspaceState>())
+            .OrderByDescending(workspace => workspace.LastOpenedUtc)
+            .ToArray();
+        OpenWorkspaceState? active = currentWorkspace is null
+            ? roster.FirstOrDefault()
+            : roster.FirstOrDefault(workspace => workspace.Id.Equals(currentWorkspace.Value)) ?? roster.FirstOrDefault();
+
+        if (active is null)
+        {
+            return "No active runner. Roll history stays available and initiative context appears after opening a roster entry.";
+        }
+
+        return $"{active.Alias} · {active.Name} [{active.RulesetId}]{Environment.NewLine}Initiative preview uses the active roster runner and keeps results local to this utility lane.";
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildDiceMethodOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("Standard", "Standard"),
+            new DesktopDialogFieldOption("Large", "Large"),
+            new DesktopDialogFieldOption("ReallyLarge", "Really Large")
+        };
 
     internal static DesktopDialogState BuildGlobalSettingsDialog(
         DesktopPreferenceState preferences,
@@ -442,7 +557,6 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string? activePane = null)
     {
         string normalizedLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(language);
-        string pane = NormalizeGlobalSettingsPane(activePane);
         string S(string key) => DesktopLocalizationCatalog.GetRequiredString(key, normalizedLanguage);
         string F(string key, params object[] values) => DesktopLocalizationCatalog.GetRequiredFormattedString(key, normalizedLanguage, values);
 
@@ -450,10 +564,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dialog.global_settings",
             S("desktop.dialog.global_settings.title"),
             F("desktop.dialog.global_settings.message", DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
-            BuildGlobalSettingsFields(preferences, normalizedLanguage, S, pane),
+            BuildGlobalSettingsFields(preferences, normalizedLanguage, S),
             [
-                new DesktopDialogAction("apply", "Apply"),
-                new DesktopDialogAction("save", S("desktop.dialog.action.save"), true),
+                new DesktopDialogAction("save", "Save", true),
                 new DesktopDialogAction("cancel", S("desktop.dialog.action.cancel"))
             ]);
     }
@@ -462,6 +575,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         DesktopDialogState dialog,
         DesktopPreferenceState fallback)
     {
+        bool preferNightlyBuilds = DesktopDialogFieldValueParser.ParseBool(
+            dialog,
+            "globalPreferNightlyBuilds",
+            UsesPreviewUpdateChannel(DesktopDialogFieldValueParser.GetValue(dialog, "globalUpdatePolicy") ?? fallback.UpdateChannel));
+
         return DesktopPreferenceStateRuntime.Normalize(fallback with
         {
             UiScalePercent = DesktopDialogFieldValueParser.ParseInt(dialog, "globalUiScale", fallback.UiScalePercent),
@@ -473,11 +591,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             KarmaNuyenRatio = DesktopDialogFieldValueParser.ParseInt(dialog, "globalKarmaNuyenRatio", fallback.KarmaNuyenRatio),
             HouseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "globalHouseRulesEnabled", fallback.HouseRulesEnabled),
             StartupBehavior = DesktopDialogFieldValueParser.GetValue(dialog, "globalStartupBehavior") ?? fallback.StartupBehavior,
-            UpdateChannel = DesktopDialogFieldValueParser.GetValue(dialog, "globalUpdatePolicy") ?? fallback.UpdateChannel,
+            UpdateChannel = preferNightlyBuilds
+                ? "Preview channel · check weekly"
+                : "Stable channel · check weekly",
             CheckForUpdatesOnLaunch = DesktopDialogFieldValueParser.ParseBool(dialog, "globalCheckForUpdates", fallback.CheckForUpdatesOnLaunch),
             CharacterRosterPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterRosterPath") ?? fallback.CharacterRosterPath,
             PdfViewerPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalPdfViewerPath") ?? fallback.PdfViewerPath,
-            VisibleChromePolicy = DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy") ?? fallback.VisibleChromePolicy
+            VisibleChromePolicy = DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy") ?? fallback.VisibleChromePolicy,
+            HideMasterIndex = DesktopDialogFieldValueParser.ParseBool(dialog, "globalHideMasterIndex", fallback.HideMasterIndex)
         });
     }
 
@@ -486,8 +607,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         DesktopPreferenceState fallback)
     {
         DesktopPreferenceState parsedPreferences = ParseGlobalSettingsPreferences(dialog, fallback);
-        string activePane = ReadGlobalSettingsActivePane(dialog);
-        return BuildGlobalSettingsDialog(parsedPreferences, parsedPreferences.Language, activePane);
+        return BuildGlobalSettingsDialog(parsedPreferences, parsedPreferences.Language);
     }
 
     internal static DesktopDialogState RebuildDynamicDialog(
@@ -499,6 +619,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return dialog.Id switch
         {
+            "dialog.new_character" => RebuildNewCharacterDialog(dialog),
+            "dialog.dice_roller" => RebuildDiceRollerDialog(dialog),
+            "dialog.character_roster" => RebuildCharacterRosterDialog(dialog, fallback),
             "dialog.master_index" => RebuildMasterIndexDialog(dialog),
             "dialog.ui.cyberware_add" => RebuildCyberwareSelectionDialog(dialog),
             "dialog.ui.gear_add" => RebuildGearSelectionDialog(dialog),
@@ -510,6 +633,70 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dialog.ui.vehicle_edit" => RebuildVehicleEditDialog(dialog),
             _ => dialog
         };
+    }
+
+    private static DesktopDialogState RebuildNewCharacterDialog(DesktopDialogState dialog)
+    {
+        string rulesetId = RulesetDefaults.NormalizeOptional(
+                DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"))
+            ?? RulesetDefaults.Sr5;
+        DesktopDialogFieldOption[] buildMethodOptions = BuildBuildMethodOptions(rulesetId).ToArray();
+        string currentBuildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod") ?? string.Empty;
+        string resolvedBuildMethod = buildMethodOptions.Any(option => string.Equals(option.Value, currentBuildMethod, StringComparison.Ordinal))
+            ? currentBuildMethod
+            : buildMethodOptions[0].Value;
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "newCharacterRulesetId" => field with
+                {
+                    Value = rulesetId,
+                    Placeholder = rulesetId,
+                    Options = BuildRulesetOptions()
+                },
+                "newCharacterBuildMethod" => field with
+                {
+                    Value = resolvedBuildMethod,
+                    Placeholder = resolvedBuildMethod,
+                    Options = buildMethodOptions
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with { Fields = updatedFields };
+    }
+
+    private static DesktopDialogState RebuildDiceRollerDialog(DesktopDialogState dialog)
+    {
+        string method = DesktopDialogFieldValueParser.GetValue(dialog, "diceMethod") ?? string.Empty;
+        string normalizedMethod = string.Equals(method, "Large", StringComparison.OrdinalIgnoreCase)
+            ? "Large"
+            : string.Equals(method, "ReallyLarge", StringComparison.OrdinalIgnoreCase)
+                ? "ReallyLarge"
+                : "Standard";
+        bool standardMethod = string.Equals(normalizedMethod, "Standard", StringComparison.Ordinal);
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "diceMethod" => field with
+                {
+                    Value = normalizedMethod,
+                    Placeholder = normalizedMethod
+                },
+                "diceRuleOf6" => field with
+                {
+                    Value = standardMethod ? DesktopDialogFieldValueParser.Normalize(field, field.Value) : "false",
+                    Placeholder = "false",
+                    IsReadOnly = !standardMethod
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with { Fields = updatedFields };
     }
 
     internal static string ReadGlobalSettingsActivePane(DesktopDialogState dialog)
@@ -682,33 +869,25 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ? BuildGridValue(
                 ("Character Name", name),
                 ("Alias", alias),
-                ("Player", "Local profile"),
-                ("Metatype", "Unavailable in roster summary"),
-                ("Career Karma", "Unavailable in roster summary"),
-                ("Essence", "Unavailable in roster summary"),
-                ("File Name", string.IsNullOrWhiteSpace(workspace) ? "(no workspace)" : workspace),
-                ("Watch File", selectedWatchedFile ?? "not matched"),
-                ("Settings File", "default roster setting"))
+                ("Player Name", string.Empty),
+                ("Metatype", string.Empty),
+                ("Career Karma", string.Empty),
+                ("Essence", string.Empty),
+                ("File Path", selectedWatchedFile ?? (string.IsNullOrWhiteSpace(workspace) ? string.Empty : workspace)),
+                ("Settings", string.Empty))
             : BuildGridValue(
                 ("Character Name", selectedRunner.Name),
                 ("Alias", selectedRunner.Alias),
-                ("Player", "Local profile"),
-                ("Metatype", RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId),
-                ("Career Karma", selectedRunner.HasSavedWorkspace ? "Saved runner" : "Unsaved runner"),
-                ("Essence", "Unavailable in roster summary"),
-                ("File Name", selectedRunner.Id.Value),
-                ("Watch File", selectedWatchedFile ?? "not matched"),
-                ("Settings File", $"{(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)} roster setting"));
-        string selectedRunnerBackground = selectedRunner is null
-            ? "Background details appear after a runner is opened from the roster."
-            : $"Description: {selectedRunner.Name} is staged as the active roster runner.{Environment.NewLine}Concept: Dense-workbench veteran entry with compact desktop follow-through.{Environment.NewLine}Background: {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)} is surfaced directly on the roster.";
-        string selectedRunnerNotes = selectedRunner is null
-            ? "Notes and session comments appear after a runner is opened from the roster."
-            : $"Character Notes: Keep the runner tabs for full editing; the roster stays dense-workbench friendly and navigation-first.{Environment.NewLine}Game Notes: {(selectedRunner.HasSavedWorkspace ? "Saved workspace is present." : "Runner has not been saved yet.")}{Environment.NewLine}Watch posture: Current runner stays selected in the roster.";
-        string selectedRunnerStatus = selectedRunner is null
-            ? "No runner selected."
-            : $"Opened {selectedRunner.LastOpenedUtc:yyyy-MM-dd HH:mm} UTC · {(selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet")} · active ruleset {(RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId) ?? selectedRunner.RulesetId)} · watch file {(selectedWatchedFile ?? "not matched")}";
-        (string portraitCandidate, string portraitStatus, string portraitMatchSource) = ResolveRosterPortraitCandidate(rosterPath, selectedWatchedFile, selectedRunner, alias, name, workspace);
+                ("Player Name", string.Empty),
+                ("Metatype", string.Empty),
+                ("Career Karma", string.Empty),
+                ("Essence", string.Empty),
+                ("File Path", selectedWatchedFile ?? selectedRunner.Id.Value),
+                ("Settings", string.Empty));
+        string selectedRunnerBackground = string.Empty;
+        string selectedRunnerNotes = string.Empty;
+        string selectedRunnerStatus = string.Empty;
+        (string portraitCandidate, _, string portraitMatchSource) = ResolveRosterPortraitCandidate(rosterPath, selectedWatchedFile, selectedRunner, alias, name, workspace);
         FileInfo? selectedWatchFileInfo = !string.IsNullOrWhiteSpace(selectedWatchedFile)
             ? new FileInfo(Path.Combine(rosterPath, selectedWatchedFile))
             : null;
@@ -717,10 +896,6 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             selectedWatchFileInfo = null;
         }
         FileInfo? portraitInfo = File.Exists(portraitCandidate) ? new FileInfo(portraitCandidate) : null;
-        if (selectedWatchFileInfo is not null)
-        {
-            selectedRunnerStatus += $" · watched {selectedWatchFileInfo.LastWriteTimeUtc:yyyy-MM-dd HH:mm} UTC · {selectedWatchFileInfo.Length.ToString(CultureInfo.InvariantCulture)} B";
-        }
         string selectionTrail = selectedRunner is null
             ? BuildGridValue(
                 ("Active Runner", $"{alias} · {name}"),
@@ -759,14 +934,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             : "Configure watch folder" + Environment.NewLine +
               "Scan watch folder now" + Environment.NewLine +
               "Open imported runner";
-        string mugshotStatus =
-            "Runner Portrait" + Environment.NewLine +
-            $"{(selectedRunner?.Alias ?? alias)} · {(selectedRunner?.Name ?? name)}" + Environment.NewLine +
-            $"Portrait Source | {portraitCandidate}" + Environment.NewLine +
-            $"Portrait Match | {portraitMatchSource}" + Environment.NewLine +
-            $"Portrait Status | {portraitStatus}" + Environment.NewLine +
-            $"Portrait Bytes | {(portraitInfo is null ? "n/a" : portraitInfo.Length.ToString(CultureInfo.InvariantCulture))}" + Environment.NewLine +
-            $"Portrait Updated | {(portraitInfo is null ? "n/a" : portraitInfo.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC")}";
+        string mugshotStatus = portraitCandidate;
+        string rosterSnapshot = JsonSerializer.Serialize(
+            new RosterDialogSnapshot(
+                alias,
+                name,
+                workspace,
+                ordered.Select(candidate => new RosterDialogWorkspaceSnapshot(
+                    candidate.Id.Value,
+                    candidate.Name,
+                    candidate.Alias,
+                    candidate.LastOpenedUtc,
+                    candidate.RulesetId,
+                    candidate.HasSavedWorkspace)).ToArray(),
+                watchedFiles));
 
         return
         [
@@ -783,6 +964,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterWatchFolderPath", "Watch Folder Path", rosterPath, rosterPath, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterSelectedWatchFile", "Selected Watch File", selectedWatchedFile ?? string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterPortraitPath", "Portrait Path", portraitCandidate, portraitCandidate, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterSnapshot", "Snapshot", rosterSnapshot, rosterSnapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterSelectionTrail", "Selection Trail", selectionTrail, selectionTrail, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterMugshot", "Mugshot", mugshotStatus, "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
@@ -819,7 +1001,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         if (string.IsNullOrWhiteSpace(rosterPath))
         {
-            return ($"{baseName}.png", "legacy portrait slot awaits a real image pipeline", "generated fallback slot");
+            return ($"{baseName}.png", string.Empty, "generated fallback slot");
         }
 
         if (Directory.Exists(rosterPath))
@@ -860,11 +1042,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             string watchedStem = Path.GetFileNameWithoutExtension(selectedWatchedFile);
             if (!string.IsNullOrWhiteSpace(watchedStem))
             {
-                return (Path.Combine(watchedDirectory, $"{watchedStem}.png"), "watched runner portrait slot awaits a real image pipeline", "watched runner sibling");
+                return (Path.Combine(watchedDirectory, $"{watchedStem}.png"), string.Empty, "watched runner sibling");
             }
         }
 
-        return (Path.Combine(rosterPath, $"{baseName}.png"), "legacy portrait slot awaits a real image pipeline", "generated fallback slot");
+        return (Path.Combine(rosterPath, $"{baseName}.png"), string.Empty, "generated fallback slot");
     }
 
     private static string BuildRosterPortraitBaseName(string? alias, string? name)
@@ -927,173 +1109,150 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static IReadOnlyList<DesktopDialogField> BuildGlobalSettingsFields(
         DesktopPreferenceState preferences,
         string language,
-        Func<string, string> localize,
-        string activePane)
+        Func<string, string> localize)
     {
         string normalizedLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(language);
         string normalizedSheetLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(string.IsNullOrWhiteSpace(preferences.SheetLanguage) ? normalizedLanguage : preferences.SheetLanguage);
-        string pane = NormalizeGlobalSettingsPane(activePane);
-        static string Marker(string targetPane, string activePaneId)
-            => string.Equals(targetPane, activePaneId, StringComparison.Ordinal) ? "▶ " : string.Empty;
-
-        string settingsTree =
-            "[Global Settings]" + Environment.NewLine +
-            $"├─ {Marker("general", pane)}General{Environment.NewLine}" +
-            $"│  ├─ Desktop{Environment.NewLine}" +
-            $"│  └─ Language{Environment.NewLine}" +
-            $"├─ {Marker("sourcebooks", pane)}Sourcebooks{Environment.NewLine}" +
-            $"│  └─ Build Defaults{Environment.NewLine}" +
-            $"├─ {Marker("updates", pane)}Updates{Environment.NewLine}" +
-            $"│  └─ Startup and Channel{Environment.NewLine}" +
-            $"└─ {Marker("paths", pane)}Data Paths{Environment.NewLine}" +
-            $"   └─ Roster and External Tools";
-        string sections =
-            $"General{Environment.NewLine}Sourcebooks{Environment.NewLine}Updates{Environment.NewLine}Data Paths";
-        string legacyTopTabs =
-            "Global Options" + Environment.NewLine +
-            "Custom Data Directories" + Environment.NewLine +
-            "GitHub Issues" + Environment.NewLine +
-            "Plugins";
-        string detailTabs = pane switch
-        {
-            "sourcebooks" => "Defaults" + Environment.NewLine + "Controls" + Environment.NewLine + "Notes",
-            "updates" => "Startup" + Environment.NewLine + "Channel" + Environment.NewLine + "Notes",
-            "paths" => "Roster" + Environment.NewLine + "PDFs" + Environment.NewLine + "Notes",
-            _ => "Desktop" + Environment.NewLine + "Language" + Environment.NewLine + "Notes"
-        };
-        string detailTabDefault = pane switch
-        {
-            "sourcebooks" => "Defaults",
-            "updates" => "Startup",
-            "paths" => "Roster",
-            _ => "Desktop"
-        };
-        string paneHeader = pane switch
-        {
-            "sourcebooks" => "Sourcebooks / Build Defaults",
-            "updates" => "Updates / Startup",
-            "paths" => "Data Paths / External Tools",
-            _ => "General / Desktop Language"
-        };
-
-        string settingsGrid = pane switch
-        {
-            "sourcebooks" => BuildGridValue(
-                ("Sourcebook Control", "Master Index / Character Settings"),
-                ("Default Priority", preferences.CharacterPriority),
-                ("Karma / Nuyen", preferences.KarmaNuyenRatio.ToString()),
-                ("House Rules", preferences.HouseRulesEnabled ? "enabled" : "disabled"),
-                ("Current Language", normalizedLanguage)),
-            "updates" => BuildGridValue(
-                ("Startup", preferences.StartupBehavior),
-                ("Update Channel", preferences.UpdateChannel),
-                ("Check on Launch", preferences.CheckForUpdatesOnLaunch ? "enabled" : "disabled"),
-                ("Restart", "phase-1 language change applies on restart"),
-                ("Language", normalizedLanguage)),
-            "paths" => BuildGridValue(
-                ("Character Roster Path", preferences.CharacterRosterPath),
-                ("PDF Viewer", preferences.PdfViewerPath),
-                ("Visible Heads", preferences.VisibleChromePolicy),
-                ("Theme", preferences.Theme),
-                ("Compact Mode", preferences.CompactMode ? "on" : "off")),
-            _ => BuildGridValue(
-                ("Theme", preferences.Theme),
-                ("Language", normalizedLanguage),
-                ("Sheet Language", normalizedSheetLanguage),
-                ("Scale", $"{preferences.UiScalePercent}%"),
-                ("Compact Mode", preferences.CompactMode ? "on" : "off")),
-        };
-        string settingsWorkflows = pane switch
-        {
-            "sourcebooks" => "Adjust build defaults" + Environment.NewLine + "Review sourcebook posture" + Environment.NewLine + "Return to Master Index for toggles",
-            "updates" => "Choose startup behavior" + Environment.NewLine + "Set update channel" + Environment.NewLine + "Keep checks inside the desktop head",
-            "paths" => "Set roster path" + Environment.NewLine + "Choose PDF helper" + Environment.NewLine + "Keep export and print routes obvious",
-            _ => "Change theme and scale" + Environment.NewLine + "Set desktop language" + Environment.NewLine + "Set sheet language and compact mode"
-        };
-        string settingsSnippet = pane switch
-        {
-            "sourcebooks" => "Use this pane for rules-default posture that veterans expect near sourcebook control. Sourcebook enablement itself stays visible in Master Index and Character Settings, but the default build posture belongs here.",
-            "updates" => "This pane should behave like the old utility settings form: startup and update behavior stay editable without leaving the desktop workbench or opening a browser detour.",
-            "paths" => "Data paths and external helpers stay grouped here so roster/import/print workflows remain obvious and compact like the legacy utility surfaces.",
-            _ => "This pane should behave like the old utility settings form: navigation stays on the left, current-pane facts stay visible on the right, and dense work continues without wasting space."
-        };
-        string paneTools = pane switch
-        {
-            "sourcebooks" => BuildGridValue(
-                ("Build Defaults", "Priority + karma + house rules"),
-                ("Sourcebook Control", "Master Index / Character Settings"),
-                ("Toggle Posture", "governed by rules environment"),
-                ("Current Language", normalizedLanguage)),
-            "updates" => BuildGridValue(
-                ("Startup", preferences.StartupBehavior),
-                ("Update Channel", preferences.UpdateChannel),
-                ("Check on Launch", preferences.CheckForUpdatesOnLaunch ? "enabled" : "disabled"),
-                ("Restart Needed", "language / shell only")),
-            "paths" => BuildGridValue(
-                ("Character Roster Path", preferences.CharacterRosterPath),
-                ("PDF Viewer", preferences.PdfViewerPath),
-                ("PDF Parameters", "<page>"),
-                ("PDF Offset", "0")),
-            _ => BuildGridValue(
-                ("Desktop Language", normalizedLanguage),
-                ("Sheet Language", normalizedSheetLanguage),
-                ("Theme", preferences.Theme),
-                ("Scale", $"{preferences.UiScalePercent}%")),
-        };
-        string paneCommandList = pane switch
-        {
-            "sourcebooks" => "Review default priority" + Environment.NewLine + "Review karma ratio" + Environment.NewLine + "Return to source toggles",
-            "updates" => "Set startup mode" + Environment.NewLine + "Choose update channel" + Environment.NewLine + "Check for updates on launch",
-            "paths" => "Browse roster path" + Environment.NewLine + "Remove roster path" + Environment.NewLine + "Browse PDF application" + Environment.NewLine + "Scan folder for PDF files" + Environment.NewLine + "Test PDF helper",
-            _ => "Set desktop language" + Environment.NewLine + "Set sheet language" + Environment.NewLine + "Change theme" + Environment.NewLine + "Adjust UI scale"
-        };
-        string restartPosture = pane switch
-        {
-            "updates" => "Update and startup edits apply immediately where possible; desktop language changes still call for a restart.",
-            _ => "Most values apply inside the current desktop session; language and some shell chrome changes still need a restart."
-        };
-
-        string generalSlot = string.Equals(pane, "general", StringComparison.Ordinal) ? DesktopDialogFieldLayoutSlots.Full : DesktopDialogFieldLayoutSlots.Hidden;
-        string sourcebooksSlot = string.Equals(pane, "sourcebooks", StringComparison.Ordinal) ? DesktopDialogFieldLayoutSlots.Full : DesktopDialogFieldLayoutSlots.Hidden;
-        string updatesSlot = string.Equals(pane, "updates", StringComparison.Ordinal) ? DesktopDialogFieldLayoutSlots.Full : DesktopDialogFieldLayoutSlots.Hidden;
-        string pathsSlot = string.Equals(pane, "paths", StringComparison.Ordinal) ? DesktopDialogFieldLayoutSlots.Full : DesktopDialogFieldLayoutSlots.Hidden;
-
+        bool preferNightlyBuilds = UsesPreviewUpdateChannel(preferences.UpdateChannel);
         return
         [
-            new DesktopDialogField("globalActivePane", "Active Pane", pane, "general", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("globalSettingsSections", "Sections", sections, "General", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("globalLegacyTabBar", "Legacy Tabs", legacyTopTabs, "Global Options", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("globalSettingsDetailTabs", "Pane Tabs", detailTabs, detailTabDefault, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("globalSettingsTree", "Navigation", settingsTree, "[Settings]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("globalSettingsPropertyGrid", "Current Pane", settingsGrid, settingsGrid, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("globalPaneTools", "Pane Tools", paneTools, paneTools, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("globalCurrentPaneHeader", "Pane Header", paneHeader, paneHeader, IsReadOnly: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("globalCurrentPaneWorkflows", "Workflow Checklist", settingsWorkflows, settingsWorkflows, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
-            new DesktopDialogField("globalPaneCommandList", "Pane Commands", paneCommandList, paneCommandList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
-
-            new DesktopDialogField("globalTheme", localize("desktop.dialog.global_settings.field.theme"), preferences.Theme, "classic", LayoutSlot: generalSlot),
-            new DesktopDialogField("globalUiScale", localize("desktop.dialog.global_settings.field.ui_scale"), preferences.UiScalePercent.ToString(), "100", InputType: "number", LayoutSlot: generalSlot),
-            new DesktopDialogField("globalLanguage", localize("desktop.dialog.global_settings.field.language"), normalizedLanguage, DesktopLocalizationCatalog.DefaultLanguage, LayoutSlot: generalSlot),
-            new DesktopDialogField("globalSheetLanguage", "Sheet Language", normalizedSheetLanguage, normalizedSheetLanguage, LayoutSlot: generalSlot),
-            new DesktopDialogField("globalCompactMode", localize("desktop.dialog.global_settings.field.compact_mode"), preferences.CompactMode ? "true" : "false", "false", InputType: "checkbox", LayoutSlot: generalSlot),
-
-            new DesktopDialogField("globalCharacterPriority", "Default Priority", preferences.CharacterPriority, DesktopPreferenceState.Default.CharacterPriority, LayoutSlot: sourcebooksSlot),
-            new DesktopDialogField("globalKarmaNuyenRatio", "Karma / Nuyen Ratio", preferences.KarmaNuyenRatio.ToString(), DesktopPreferenceState.Default.KarmaNuyenRatio.ToString(), InputType: "number", LayoutSlot: sourcebooksSlot),
-            new DesktopDialogField("globalHouseRulesEnabled", "Enable House Rules", preferences.HouseRulesEnabled ? "true" : "false", "false", InputType: "checkbox", LayoutSlot: sourcebooksSlot),
-            new DesktopDialogField("globalSourcebookControl", "Sourcebook Control", "Use Master Index / Character Settings for sourcebook toggles.", "Use Master Index / Character Settings for sourcebook toggles.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: sourcebooksSlot),
-
-            new DesktopDialogField("globalStartupBehavior", "Startup", preferences.StartupBehavior, DesktopPreferenceState.Default.StartupBehavior, LayoutSlot: updatesSlot),
-            new DesktopDialogField("globalUpdatePolicy", "Updates", preferences.UpdateChannel, DesktopPreferenceState.Default.UpdateChannel, LayoutSlot: updatesSlot),
-            new DesktopDialogField("globalCheckForUpdates", "Check for updates on launch", preferences.CheckForUpdatesOnLaunch ? "true" : "false", "true", InputType: "checkbox", LayoutSlot: updatesSlot),
-
-            new DesktopDialogField("globalCharacterRosterPath", "Character Roster Path", preferences.CharacterRosterPath, DesktopPreferenceState.Default.CharacterRosterPath, LayoutSlot: pathsSlot),
-            new DesktopDialogField("globalPdfViewerPath", "PDF Viewer", preferences.PdfViewerPath, DesktopPreferenceState.Default.PdfViewerPath, LayoutSlot: pathsSlot),
-            new DesktopDialogField("globalVisibilityPolicy", "Visible Heads", preferences.VisibleChromePolicy, DesktopPreferenceState.Default.VisibleChromePolicy, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: pathsSlot),
-
-            new DesktopDialogField("globalCurrentPaneNotes", "Current Pane Notes", settingsSnippet, settingsSnippet, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("globalRestartPosture", "Restart Posture", restartPosture, restartPosture, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField(
+                "globalTheme",
+                localize("desktop.dialog.global_settings.field.theme"),
+                preferences.Theme,
+                DesktopPreferenceState.Default.Theme,
+                InputType: "select",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                Options: BuildThemeOptions()),
+            new DesktopDialogField(
+                "globalUiScale",
+                localize("desktop.dialog.global_settings.field.ui_scale"),
+                preferences.UiScalePercent.ToString(CultureInfo.InvariantCulture),
+                DesktopPreferenceState.Default.UiScalePercent.ToString(CultureInfo.InvariantCulture),
+                InputType: "number",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                "globalLanguage",
+                "Language",
+                normalizedLanguage,
+                DesktopLocalizationCatalog.DefaultLanguage,
+                InputType: "select",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                Options: BuildLanguageOptions()),
+            new DesktopDialogField(
+                "globalSheetLanguage",
+                "Sheet Language",
+                normalizedSheetLanguage,
+                normalizedLanguage,
+                InputType: "select",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                Options: BuildLanguageOptions()),
+            new DesktopDialogField(
+                "globalCompactMode",
+                localize("desktop.dialog.global_settings.field.compact_mode"),
+                preferences.CompactMode ? "true" : "false",
+                "false",
+                InputType: "checkbox",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                "globalCharacterPriority",
+                "Default Setting for New Characters",
+                preferences.CharacterPriority,
+                DesktopPreferenceState.Default.CharacterPriority,
+                InputType: "select",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                Options: BuildPriorityOptions()),
+            new DesktopDialogField(
+                "globalKarmaNuyenRatio",
+                "Karma / Nuyen Ratio",
+                preferences.KarmaNuyenRatio.ToString(CultureInfo.InvariantCulture),
+                DesktopPreferenceState.Default.KarmaNuyenRatio.ToString(CultureInfo.InvariantCulture),
+                InputType: "number",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                "globalHouseRulesEnabled",
+                "Enable House Rules",
+                preferences.HouseRulesEnabled ? "true" : "false",
+                "false",
+                InputType: "checkbox",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                "globalUpdatePolicy",
+                "Update Channel",
+                preferences.UpdateChannel,
+                DesktopPreferenceState.Default.UpdateChannel,
+                InputType: "select",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                Options: BuildUpdateChannelOptions()),
+            new DesktopDialogField(
+                "globalCheckForUpdates",
+                "Automatically download updates",
+                preferences.CheckForUpdatesOnLaunch ? "true" : "false",
+                "true",
+                InputType: "checkbox",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField(
+                "globalPreferNightlyBuilds",
+                "Prefer Nightly builds when updating",
+                preferNightlyBuilds ? "true" : "false",
+                "true",
+                InputType: "checkbox",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField(
+                "globalCharacterRosterPath",
+                "Character Roster Watch Folder",
+                preferences.CharacterRosterPath,
+                DesktopPreferenceState.Default.CharacterRosterPath),
+            new DesktopDialogField(
+                "globalHideMasterIndex",
+                "Hide the Master Index",
+                preferences.HideMasterIndex ? "true" : "false",
+                "false",
+                InputType: "checkbox",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
         ];
     }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildThemeOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("classic", "Classic"),
+            new DesktopDialogFieldOption("steel", "Steel"),
+            new DesktopDialogFieldOption("dark-steel", "Dark Steel"),
+            new DesktopDialogFieldOption("mint", "Mint")
+        };
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildLanguageOptions()
+        => DesktopLocalizationCatalog.ShippingLanguages
+            .Select(language => new DesktopDialogFieldOption(language.Code, language.Code))
+            .ToArray();
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildPriorityOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("Priority", "Priority"),
+            new DesktopDialogFieldOption("SumToTen", "Sum To Ten"),
+            new DesktopDialogFieldOption("Karma", "Karma")
+        };
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildStartupOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("Restore last roster on startup", "Restore last roster on startup"),
+            new DesktopDialogFieldOption("Open empty shell on startup", "Open empty shell on startup")
+        };
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildUpdateChannelOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("Preview channel · check weekly", "Preview channel · check weekly"),
+            new DesktopDialogFieldOption("Preview channel · check daily", "Preview channel · check daily"),
+            new DesktopDialogFieldOption("Stable channel · check weekly", "Stable channel · check weekly")
+        };
+
+    private static bool UsesPreviewUpdateChannel(string? updateChannel)
+        => !string.IsNullOrWhiteSpace(updateChannel)
+            && updateChannel.Contains("preview", StringComparison.OrdinalIgnoreCase);
 
     private static DesktopDialogField BuildSelectionSectionsField(string id)
     {
@@ -3107,7 +3266,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return
         [
-            new DesktopDialogField("uiContactName", "Name", "Dr. Mercy", "Dr. Mercy"),
+            new DesktopDialogField("uiContactName", "Contact Name", "Dr. Mercy", "Dr. Mercy"),
             new DesktopDialogField("uiContactRole", "Role", "Street Doc", "Street Doc"),
             new DesktopDialogField("uiContactConnection", "Connection", "3", "3", InputType: "number"),
             new DesktopDialogField("uiContactLoyalty", "Loyalty", "2", "2", InputType: "number"),
@@ -3782,33 +3941,48 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         if (masterIndex is null)
         {
-            return
+            List<DesktopDialogField> emptyStateFields =
             [
-                new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true),
-                new DesktopDialogField("masterIndexPaneHeader", "Pane Header", "Data File / Search / Notes", "Data File / Search / Notes", IsReadOnly: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-                new DesktopDialogField("masterIndexDetailTabs", "Pane Tabs", "Results" + Environment.NewLine + "Source" + Environment.NewLine + "Notes" + Environment.NewLine + "Setting", "Results", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-                new DesktopDialogField("masterIndexFileSelection", "Data File", "All" + Environment.NewLine + "books.xml · 0 entries", "All", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
-                new DesktopDialogField("masterIndexCurrentFile", "Current Data File", "books.xml · 0 entries", "books.xml · 0 entries", IsReadOnly: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-                new DesktopDialogField("masterIndexSearch", "Search", string.Empty, "Search index"),
-                new DesktopDialogField("masterIndexSelectionTrail", "Selection Trail", "Data File | books.xml" + Environment.NewLine + "Search | all rows" + Environment.NewLine + "Selected Result | none" + Environment.NewLine + "Open Page | unavailable", "Data File | books.xml", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
-                new DesktopDialogField("masterIndexSourceTree", "Source Tree", "[Sourcebooks]" + Environment.NewLine + "└─ All Sources", "[Sourcebooks]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-                new DesktopDialogField("masterIndexCatalogEntries", "Items", "[Current Book]" + Environment.NewLine + "└─ No index entries discovered.", "[Current Book]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-                new DesktopDialogField("masterIndexSourceCommands", "Source Commands", "Change data file filter" + Environment.NewLine + "Modify character setting" + Environment.NewLine + "Open linked PDF", "Change data file filter", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-                new DesktopDialogField("masterIndexResultInspector", "Result Inspector", "Selected Result | none" + Environment.NewLine + "Data File | books.xml" + Environment.NewLine + "Linked Source | unavailable" + Environment.NewLine + "Open Page | unavailable" + Environment.NewLine + "Reference Posture | missing", "Selected Result | none", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                new DesktopDialogField("masterIndexResultList", "Results", "No indexed entries discovered.", "No indexed entries discovered.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
-                new DesktopDialogField("masterIndexResultCommands", "Result Commands", "Select result to refresh notes" + Environment.NewLine + "Open selected result page" + Environment.NewLine + "Keep source and notes pinned on the right", "Select result to refresh notes", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                new DesktopDialogField("masterIndexSnippetInspector", "Snippet Inspector", "Snippet Count | 0" + Environment.NewLine + "Snippet Page | unavailable" + Environment.NewLine + "Snippet Provenance | unavailable" + Environment.NewLine + "Note Posture | right-pane legacy preview", "Snippet Count | 0", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                new DesktopDialogField("masterIndexSourceClickReminder", "Linked Source", "No linked PDF is available for the current selection. Choose a result row to refresh source and notes.", "No linked PDF is available for the current selection.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-                new DesktopDialogField("masterIndexNotesPane", "Notes", "Select a result row to inspect notes and linked source text on the right.", "Select a result row to inspect notes and linked source text on the right.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                new DesktopDialogField("masterIndexCharacterSetting", "Use Setting", "Use Setting | default" + Environment.NewLine + "Modify | Modify...", "Use Setting | default", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
+                new DesktopDialogField("masterIndexFileSelection", "Data File", "All", "All", InputType: "select", Options: [new DesktopDialogFieldOption("All", "All data files")], LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField("masterIndexSearch", "Search", string.Empty, "Search index", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField(
+                    "masterIndexActiveResultKey",
+                    "Entries",
+                    string.Empty,
+                    "No indexed entries discovered.",
+                    IsReadOnly: true,
+                    InputType: "select",
+                    VisualKind: DesktopDialogFieldVisualKinds.List,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: [new DesktopDialogFieldOption(string.Empty, "No indexed entries discovered.")]),
+                new DesktopDialogField("masterIndexSnippetPreview", "Notes", string.Empty, string.Empty, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField("masterIndexCurrentSourcebook", "Source", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField("masterIndexCurrentFile", "Current Data File", "All data files", "All data files", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexSnapshot", "Snapshot", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexActiveSourcebookId", "Active Sourcebook", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexActiveFile", "Active File", "All", "All", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-                new DesktopDialogField("masterIndexActiveResultKey", "Active Result", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+                new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexImportOracleReceipt", "Import Oracle", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexAdjacentSr6OracleLane", "Adjacent SR6 Oracle", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexOnlineStorageLane", "Online Storage Lane", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexOnlineStorageCoverage", "Online Storage Coverage", "0/2 · 0%", "0/2 · 0%", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexOnlineStorageReceipt", "Online Storage Receipt", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexSr6SupplementLane", "SR6 Supplements", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", "0/0 · missing", "0/0 · missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexHouseRuleLane", "House Rules", "missing · 0 overlays", "missing · 0 overlays", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexSettingsSummary", "Use Setting", "Current defaults", "Current defaults", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
             ];
+
+            emptyStateFields.InsertRange(10, BuildSourcebookSelectionFields(masterIndex, []));
+            return emptyStateFields;
         }
 
-        MasterIndexSourcebookEntry selectedSourcebook = masterIndex.Sourcebooks.FirstOrDefault()
+        IReadOnlyList<MasterIndexFileEntry> files = NormalizeMasterIndexFiles(masterIndex.Files);
+        IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks = NormalizeMasterIndexSourcebooks(masterIndex.Sourcebooks);
+
+        MasterIndexSourcebookEntry? selectedSourcebook = sourcebooks.FirstOrDefault()
             ?? new MasterIndexSourcebookEntry(
                 Id: "unknown",
                 Code: "UNK",
@@ -3818,193 +3992,156 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 RuleSnippetCount: 0,
                 RuleSnippets: [],
                 ReferenceSourcePosture: "missing");
-        string referenceSources = $"{masterIndex.SourcebooksWithGovernedReferenceSources} governed / {masterIndex.SourcebooksWithStaleReferenceSources} stale / {masterIndex.SourcebooksMissingReferenceSources} missing";
-        string importCoverage = $"{masterIndex.ImportOracleCoveragePercent}% ({masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected})";
-        string adjacentOracleCoverage = $"{masterIndex.AdjacentSr6OracleSourcesCovered}/{masterIndex.AdjacentSr6OracleSourcesExpected}";
-        string onlineStorageCoverage = $"{masterIndex.OnlineStorageCoveragePercent}% ({masterIndex.OnlineStorageReceiptsCovered}/{masterIndex.OnlineStorageReceiptsExpected})";
-        string sr6DesignerCoverage = $"{masterIndex.Sr6DesignerFamiliesAvailable}/{masterIndex.Sr6DesignerFamiliesExpected}";
-        string sr6Successor = $"{masterIndex.Sr6SupplementLanePosture}, designers {masterIndex.Sr6DesignerFamiliesAvailable}/{masterIndex.Sr6DesignerFamiliesExpected}, house rules {masterIndex.HouseRuleLanePosture}";
-        string sourcebookSelectionSummary = BuildSourcebookSelectionSummary(masterIndex.Sourcebooks);
-        string importOracleMatrix = BuildImportOracleMatrix(masterIndex);
-        string missingImportSources = masterIndex.ImportOracleMissingSources is { Count: > 0 }
-            ? string.Join(", ", masterIndex.ImportOracleMissingSources)
-            : "none";
-        string sourceTree = "[Sourcebooks]" + Environment.NewLine + string.Join(
-            Environment.NewLine,
-            masterIndex.Sourcebooks
-                .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(sourcebook => sourcebook.Id == selectedSourcebook.Id
-                    ? $"> {sourcebook.Code} · {sourcebook.Name}"
-                    : $"├─ {sourcebook.Code} · {sourcebook.Name}"));
-        string selectedSource = selectedSourcebook.LocalPdfPath
-            ?? selectedSourcebook.ReferenceUrl
-            ?? selectedSourcebook.ReferenceSnapshot
-            ?? "(no linked source)";
-        MasterIndexRuleSnippetEntry? selectedSnippet = selectedSourcebook.RuleSnippets.FirstOrDefault();
-        MasterIndexFileEntry? selectedFile = ResolveMasterIndexSelectedFile(masterIndex.Files, selectedSnippet);
+        string selectedSourcebookId = NormalizeMasterIndexValue(selectedSourcebook?.Id, "unknown");
+        string selectedSourcebookCode = NormalizeMasterIndexValue(selectedSourcebook?.Code, "UNK");
+        string selectedSourcebookName = NormalizeMasterIndexValue(selectedSourcebook?.Name, "Unknown Source");
+        string selectedSource = ResolveMasterIndexLinkedSource(
+            selectedSourcebook?.LocalPdfPath,
+            selectedSourcebook?.ReferenceUrl,
+            selectedSourcebook?.ReferenceSnapshot);
+        List<(MasterIndexSourcebookEntry Sourcebook, MasterIndexRuleSnippetEntry Snippet)> flattenedSnippets = sourcebooks
+            .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
+            .SelectMany(sourcebook => (sourcebook.RuleSnippets ?? []).Select(snippet => (Sourcebook: sourcebook, Snippet: snippet)))
+            .OrderBy(entry => entry.Snippet.Page)
+            .ThenBy(entry => entry.Snippet.Provenance, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        (MasterIndexSourcebookEntry Sourcebook, MasterIndexRuleSnippetEntry Snippet) selectedEntry = flattenedSnippets.FirstOrDefault();
+        if (selectedEntry.Sourcebook is not null && selectedEntry.Snippet is not null)
+        {
+            selectedSourcebook = selectedEntry.Sourcebook;
+            selectedSourcebookId = NormalizeMasterIndexValue(selectedSourcebook?.Id, "unknown");
+            selectedSourcebookCode = NormalizeMasterIndexValue(selectedSourcebook?.Code, "UNK");
+            selectedSourcebookName = NormalizeMasterIndexValue(selectedSourcebook?.Name, "Unknown Source");
+            selectedSource = ResolveMasterIndexLinkedSource(
+                selectedSourcebook?.LocalPdfPath,
+                selectedSourcebook?.ReferenceUrl,
+                selectedSourcebook?.ReferenceSnapshot);
+        }
+
+        MasterIndexRuleSnippetEntry? selectedSnippet = selectedEntry.Snippet;
+        MasterIndexFileEntry? selectedFile = ResolveMasterIndexSelectedFile(files, selectedSnippet);
         string selectedFileName = selectedFile?.File ?? "All";
-        string snapshot = JsonSerializer.Serialize(CreateMasterIndexDialogSnapshot(masterIndex));
+        string snapshot = JsonSerializer.Serialize(CreateMasterIndexDialogSnapshot(masterIndex.SettingsLanePosture, files, sourcebooks));
         string activeResultKey = selectedSnippet is null
             ? string.Empty
             : BuildMasterIndexSnippetKey(selectedSnippet.Provenance, selectedSnippet.Page);
         string selectedFileSummary = selectedFile is null
             ? "All data files"
             : $"{selectedFile.File} · {selectedFile.ElementCount} indexed entries";
-        string selectedSnippetLabel = selectedSnippet is null
-            ? "none"
-            : BuildMasterIndexSnippetLabel(selectedSnippet);
-        string sourceLinkKinds = BuildReferenceTargetKinds(selectedSourcebook);
-        string resultInspector = BuildGridValue(
-            ("Selected Result", selectedSnippetLabel),
-            ("Data File", selectedFileName),
-            ("Current Book", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
-            ("Linked Source", selectedSource),
-            ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"),
-            ("Activation", "double-click row / open source"),
-            ("Source Link", sourceLinkKinds),
-            ("Use Setting", "Character Settings"));
-        string selectionTrail = BuildGridValue(
-            ("Data File", selectedFileName),
-            ("Search", "all rows"),
-            ("Selected Result", selectedSnippetLabel),
-            ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"));
-        string sourceCommands =
-            $"Change data file | {selectedFileName}" + Environment.NewLine +
-            $"Switch sourcebook | {selectedSourcebook.Code} · {selectedSourcebook.Name}" + Environment.NewLine +
-            "Modify character setting | Character Settings" + Environment.NewLine +
-            (string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
-                ? $"Open linked source | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "snapshot")}"
-                : $"Open linked PDF | p. {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}");
-        string resultCommands =
-            $"Activate result | {selectedSnippetLabel}" + Environment.NewLine +
-            $"Open page | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}" + Environment.NewLine +
-            "Keep source and notes pinned on the right";
-        string libraryNotes =
-            $"{masterIndex.Sourcebooks.Count} active books loaded. Linked sources are available for most active books, and note coverage is {masterIndex.ReferenceCoveragePercent}%." + Environment.NewLine +
-            "Use Data File on the left, pick a row in the list, and keep Source plus Notes visible on the right like the old reference utility.";
-        string importNotes =
-            $"Import coverage is {importCoverage}. Covered sources stay in the current utility posture; missing source families: {missingImportSources}.";
-        string sr6Notes =
-            $"SR6 successor posture is {masterIndex.Sr6SupplementLanePosture}. Designer tool coverage is {sr6DesignerCoverage}, and house-rule overlays remain {masterIndex.HouseRuleLanePosture}.";
-        string snippetPreview = selectedSourcebook.RuleSnippets.Count == 0
-            ? "No indexed notes are currently attached to the selected source." + Environment.NewLine + "Reference notes stay in this pane once an indexed entry is selected."
-            : string.Join(
-                Environment.NewLine + Environment.NewLine,
-                selectedSourcebook.RuleSnippets.Take(2).Select(
-                    snippet => $"Page {snippet.Page} · {snippet.Provenance}{Environment.NewLine}{snippet.Snippet}"));
-        string snippetInspector = selectedSourcebook.RuleSnippets.Count == 0
-            ? "Snippet Preview | unavailable" + Environment.NewLine + "Keep note text on the right like the legacy utility form."
-            : BuildGridValue(
-                ("Snippet Page", selectedSourcebook.RuleSnippets[0].Page.ToString(CultureInfo.InvariantCulture)),
-                ("Data File", selectedSourcebook.RuleSnippets[0].Provenance),
-                ("Snippet Count", selectedSourcebook.RuleSnippetCount.ToString(CultureInfo.InvariantCulture)),
-                ("Note Posture", "right-pane legacy preview"));
-        string selectionProfile = BuildGridValue(
-            ("Use Setting", $"Character Settings ({masterIndex.SettingsProfileCount} profiles)"),
-            ("Source Toggles", $"{masterIndex.DistinctSourcebookToggles} toggles"),
-            ("Custom Data", $"{masterIndex.DistinctCustomDataDirectoryCount} folders"),
-            ("Modify", "Modify..."));
-        MasterIndexRuleSnippetEntry[] catalogSnippets = selectedSourcebook.RuleSnippets.Take(6).ToArray();
-        string fileSelection = BuildMasterIndexFileSelection(masterIndex.Files, selectedFile);
-        string catalogEntries = selectedSourcebook.RuleSnippets.Count == 0
-            ? "[Current File]" + Environment.NewLine + $"└─ {selectedFileName}" + Environment.NewLine + "[Current Book]" + Environment.NewLine + $"└─ {selectedSourcebook.Name} [{selectedSourcebook.Code}]"
-            : "[Current File]" + Environment.NewLine +
-                $"└─ {selectedFileName}" + Environment.NewLine +
-                "[Current Book]" + Environment.NewLine +
-                $"└─ {selectedSourcebook.Name} [{selectedSourcebook.Code}]" + Environment.NewLine +
-                string.Join(
-                    Environment.NewLine,
-                    catalogSnippets
-                        .Select((snippet, index) =>
-                            $"{(index == catalogSnippets.Length - 1 ? "   └─ " : "   ├─ ")}p. {snippet.Page} · {BuildMasterIndexSnippetLabel(snippet)}"));
-        string resultList = selectedSourcebook.RuleSnippets.Count == 0
-            ? "No indexed entries discovered."
-            : string.Join(
-                Environment.NewLine,
-                selectedSourcebook.RuleSnippets
-                    .Take(8)
-                    .Select((snippet, index) =>
-                        $"{(index == 0 ? ">" : " ")} p. {snippet.Page} · {BuildMasterIndexSnippetLabel(snippet)} · {snippet.Provenance}"));
-        string paneHeader = "Data File / Search / Notes";
-        string searchHints =
-            "Data File filters the list on the left. Search narrows the current file, and selecting a row refreshes Source plus Notes on the right like the legacy utility form.";
-        string sourceClickReminder = string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
-            ? "No local PDF is attached; keep the linked source visible and use the row selection to refresh notes."
-            : $"<- Click to open linked PDF at p. {selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"}";
-        string sourceDetails =
-            BuildGridValue(
-                ("Data File", selectedFileName),
-                ("Selected item", $"{selectedSourcebook.Name} ({selectedSourcebook.Code})"),
-                ("Source", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
-                ("Linked Source", selectedSource),
-                ("Open Action", string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "open linked source" : "open linked PDF"));
+        string snippetPreview = selectedSnippet is null
+            ? string.Empty
+            : $"Page {selectedSnippet.Page} · {selectedSnippet.Provenance}{Environment.NewLine}{selectedSnippet.Snippet}";
+
+        IReadOnlyList<DesktopDialogFieldOption> fileOptions = BuildMasterIndexFileOptions(files);
+        IReadOnlyList<DesktopDialogFieldOption> resultOptions = BuildMasterIndexResultOptions(flattenedSnippets);
+        string sourcebookDisplay = $"{selectedSourcebookCode} · {selectedSourcebookName}";
 
         List<DesktopDialogField> fields =
         [
-            new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSections", "Sections", "Search" + Environment.NewLine + "Results" + Environment.NewLine + "Sources" + Environment.NewLine + "Snippets", "Search", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("masterIndexDetailTabs", "Pane Tabs", "Results" + Environment.NewLine + "Source" + Environment.NewLine + "Notes" + Environment.NewLine + "Setting", "Results", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("masterIndexPaneHeader", "Pane Header", paneHeader, paneHeader, IsReadOnly: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexFileSelection", "Data File", fileSelection, "All", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
-            new DesktopDialogField("masterIndexCurrentFile", "Current Data File", selectedFileSummary, selectedFileSummary, IsReadOnly: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexSearch", "Search", string.Empty, "Search terms"),
-            new DesktopDialogField("masterIndexSearchHints", "Search Hints", searchHints, searchHints, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexCurrentSourcebook", "Selected Book", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", IsReadOnly: true),
-            new DesktopDialogField("masterIndexSelectionTrail", "Selection Trail", NormalizeGridValue(selectionTrail), NormalizeGridValue(selectionTrail), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
-            new DesktopDialogField("masterIndexCharacterSetting", "Current Filters", NormalizeGridValue(selectionProfile), NormalizeGridValue(selectionProfile), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
-            new DesktopDialogField("masterIndexSourceTree", "Source Tree", sourceTree, "[Sourcebooks]", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("masterIndexCatalogEntries", "Items", catalogEntries, catalogEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("masterIndexSourceCommands", "Source Commands", sourceCommands, sourceCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("masterIndexDetails", "Details", sourceDetails, sourceDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("masterIndexResultList", "Results", resultList, resultList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
-            new DesktopDialogField("masterIndexResultInspector", "Result Inspector", resultInspector, resultInspector, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("masterIndexResultCommands", "Result Commands", resultCommands, resultCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("masterIndexSnippetPreview", "Snippet Preview", snippetPreview, snippetPreview, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexSnippetInspector", "Snippet Inspector", snippetInspector, snippetInspector, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("masterIndexSourceClickReminder", "Linked Source", sourceClickReminder, sourceClickReminder, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexNotesPane", "Notes", libraryNotes + Environment.NewLine + Environment.NewLine + snippetPreview, libraryNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexSelectedSource", "Source", selectedSource, selectedSource, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("masterIndexSourceSelectionSummary", "Source Selection Summary", sourcebookSelectionSummary, sourcebookSelectionSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("masterIndexFileSelection", "Data File", selectedFileName, "All", InputType: "select", Options: fileOptions, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("masterIndexSearch", "Search", string.Empty, "Search index", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField(
+                "masterIndexActiveResultKey",
+                "Entries",
+                activeResultKey,
+                activeResultKey,
+                InputType: "select",
+                VisualKind: DesktopDialogFieldVisualKinds.List,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                Options: resultOptions),
+            new DesktopDialogField("masterIndexSnippetPreview", "Notes", snippetPreview, snippetPreview, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("masterIndexCurrentSourcebook", "Source", sourcebookDisplay, sourcebookDisplay, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", selectedSource, selectedSource, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("masterIndexCurrentFile", "Current Data File", selectedFileSummary, selectedFileSummary, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexSnapshot", "Snapshot", snapshot, snapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexActiveSourcebookId", "Active Sourcebook", selectedSourcebook.Id, selectedSourcebook.Id, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexActiveSourcebookId", "Active Sourcebook", selectedSourcebookId, selectedSourcebookId, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexActiveFile", "Active File", selectedFileName, selectedFileName, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexActiveResultKey", "Active Result", activeResultKey, activeResultKey, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexLibraryNotes", "Library Notes", libraryNotes, libraryNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexImportNotes", "Import Notes", importNotes, importNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSr6Notes", "SR6 Notes", sr6Notes, sr6Notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSourcebooks", "Sourcebooks", masterIndex.SourcebookCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexReferenceCoverage", "Snippet Coverage", $"{masterIndex.ReferenceCoveragePercent}% ({masterIndex.SourcebooksWithSnippets}/{masterIndex.SourcebookCount})", "0%", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexReferenceSources", "Reference Sources", referenceSources, referenceSources, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexReferenceSourceReceipt", "Reference Source Receipt", masterIndex.ReferenceSourceLaneReceipt, masterIndex.ReferenceSourceLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSettingsLane", "Settings Lane", masterIndex.SettingsLanePosture, masterIndex.SettingsLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSourceToggleLane", "Source Toggle Lane", masterIndex.SourceToggleLanePosture, masterIndex.SourceToggleLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSourceSelectionReceipt", "Source Selection Receipt", masterIndex.SourceSelectionLaneReceipt, masterIndex.SourceSelectionLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexCustomDataLane", "Custom Data Lane", masterIndex.CustomDataLanePosture, masterIndex.CustomDataLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring Receipt", masterIndex.CustomDataAuthoringLaneReceipt, masterIndex.CustomDataAuthoringLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexXmlBridgeReceipt", "XML Bridge Receipt", masterIndex.XmlBridgeLaneReceipt, masterIndex.XmlBridgeLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexTranslatorLane", "Translator Lane", masterIndex.TranslatorLanePosture, masterIndex.TranslatorLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexTranslatorReceipt", "Translator Receipt", masterIndex.TranslatorLaneReceipt, masterIndex.TranslatorLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexImportOracleLane", "Import Oracle Lane", $"{masterIndex.ImportOracleLanePosture} ({importCoverage})", masterIndex.ImportOracleLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexImportOracleReceipt", "Import Oracle Receipt", masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexImportOracleMatrix", "Import Oracle Matrix", importOracleMatrix, importOracleMatrix, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexImportOracleMissingSources", "Import Oracle Missing Sources", missingImportSources, missingImportSources, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexAdjacentSr6OracleLane", "Adjacent SR6 Oracle Lane", $"{masterIndex.AdjacentSr6OracleReceiptPosture} ({adjacentOracleCoverage})", masterIndex.AdjacentSr6OracleReceiptPosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexAdjacentSr6OracleReceipt", "Adjacent SR6 Oracle Receipt", masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexOnlineStorageLane", "Online Storage Lane", $"{masterIndex.OnlineStorageLanePosture}/{masterIndex.OnlineStorageReceiptPosture} ({onlineStorageCoverage})", masterIndex.OnlineStorageLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexOnlineStorageCoverage", "Online Storage Coverage", onlineStorageCoverage, onlineStorageCoverage, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexOnlineStorageReceipt", "Online Storage Receipt", masterIndex.OnlineStorageLaneReceipt, masterIndex.OnlineStorageLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSr6SuccessorLane", "SR6 Successor Lane", sr6Successor, sr6Successor, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSr6SupplementLane", "SR6 Supplement Lane", masterIndex.Sr6SupplementLanePosture, masterIndex.Sr6SupplementLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSr6DesignerToolsLane", "SR6 Designer Tools Lane", masterIndex.Sr6DesignerToolsPosture, masterIndex.Sr6DesignerToolsPosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", sr6DesignerCoverage, sr6DesignerCoverage, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexHouseRuleLane", "House-Rule Lane", masterIndex.HouseRuleLanePosture, masterIndex.HouseRuleLanePosture, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexHouseRuleOverlayCount", "House-Rule Overlay Count", masterIndex.HouseRuleOverlayCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", masterIndex.Sr6SuccessorLaneReceipt, masterIndex.Sr6SuccessorLaneReceipt, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+            new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring", NormalizeMasterIndexValue(masterIndex.CustomDataAuthoringLaneReceipt, masterIndex.CustomDataLanePosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexImportOracleReceipt", "Import Oracle", NormalizeMasterIndexValue(masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleReceiptPosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexAdjacentSr6OracleLane", "Adjacent SR6 Oracle", NormalizeMasterIndexValue(masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleReceiptPosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexOnlineStorageLane", "Online Storage Lane", masterIndex.OnlineStorageLanePosture, "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexOnlineStorageCoverage", "Online Storage Coverage", $"{masterIndex.OnlineStorageReceiptsCovered}/{masterIndex.OnlineStorageReceiptsExpected} · {masterIndex.OnlineStorageCoveragePercent}%", "0/2 · 0%", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexOnlineStorageReceipt", "Online Storage Receipt", NormalizeMasterIndexValue(masterIndex.OnlineStorageLaneReceipt, masterIndex.OnlineStorageReceiptPosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6SupplementLane", "SR6 Supplements", masterIndex.Sr6SupplementLanePosture, "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", $"{masterIndex.Sr6DesignerFamiliesAvailable}/{masterIndex.Sr6DesignerFamiliesExpected} · {masterIndex.Sr6DesignerToolsPosture}", "0/0 · missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexHouseRuleLane", "House Rules", $"{masterIndex.HouseRuleLanePosture} · {masterIndex.HouseRuleOverlayCount} overlays", "missing · 0 overlays", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", NormalizeMasterIndexValue(masterIndex.Sr6SuccessorLaneReceipt, masterIndex.Sr6SupplementLanePosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                "masterIndexSettingsSummary",
+                "Use Setting",
+                $"Current defaults · {masterIndex.SettingsProfileCount} profiles · {masterIndex.SettingsLanePosture}",
+                "Current defaults",
+                IsReadOnly: true,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
         ];
 
-        fields.AddRange(BuildSourcebookSelectionFields(masterIndex.Sourcebooks));
+        fields.InsertRange(10, BuildSourcebookSelectionFields(masterIndex, sourcebooks));
         return fields;
+    }
+
+    private static DesktopDialogState RebuildCharacterRosterDialog(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
+    {
+        string snapshotJson = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSnapshot") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(snapshotJson))
+        {
+            return dialog;
+        }
+
+        RosterDialogSnapshot? snapshot = JsonSerializer.Deserialize<RosterDialogSnapshot>(snapshotJson);
+        if (snapshot is null)
+        {
+            return dialog;
+        }
+
+        string selectedRunnerId = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerId") ?? string.Empty;
+        CharacterWorkspaceId? currentWorkspace = string.IsNullOrWhiteSpace(selectedRunnerId)
+            ? null
+            : new CharacterWorkspaceId(selectedRunnerId);
+        OpenWorkspaceState[] workspaces = snapshot.Workspaces
+            .Select(workspace => new OpenWorkspaceState(
+                new CharacterWorkspaceId(workspace.Id),
+                workspace.Name,
+                workspace.Alias,
+                workspace.LastOpenedUtc,
+                workspace.RulesetId,
+                workspace.HasSavedWorkspace))
+            .ToArray();
+
+        DesktopDialogField[] rebuiltFields = BuildRosterFields(
+                snapshot.FallbackName,
+                snapshot.FallbackAlias,
+                snapshot.FallbackWorkspace,
+                currentWorkspace,
+                workspaces,
+                fallback)
+            .ToArray();
+        DesktopDialogAction[] rebuiltActions = BuildRosterActions(
+                snapshot.FallbackName,
+                snapshot.FallbackAlias,
+                snapshot.FallbackWorkspace,
+                currentWorkspace,
+                workspaces,
+                fallback)
+            .ToArray();
+
+        string requestedWatchFile = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedWatchFile") ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(requestedWatchFile))
+        {
+            rebuiltFields = rebuiltFields
+                .Select(field => string.Equals(field.Id, "rosterSelectedWatchFile", StringComparison.Ordinal)
+                    ? field with { Value = requestedWatchFile, Placeholder = requestedWatchFile }
+                    : field)
+                .ToArray();
+        }
+
+        return dialog with
+        {
+            Fields = rebuiltFields,
+            Actions = rebuiltActions
+        };
     }
 
     private static DesktopDialogState RebuildMasterIndexDialog(DesktopDialogState dialog)
@@ -4026,27 +4163,31 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexActiveFile"),
             DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"));
 
-        MasterIndexDialogSourcebookSnapshot selectedSourcebook = snapshot.Sourcebooks
-            .FirstOrDefault(sourcebook => string.Equals(sourcebook.Id, requestedSourcebookId, StringComparison.Ordinal))
-            ?? snapshot.Sourcebooks[0];
-
-        List<MasterIndexDialogSnippetSnapshot> filteredSnippets = selectedSourcebook.RuleSnippets
-            .Where(snippet => string.Equals(requestedFile, "All", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(snippet.File, requestedFile, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(snippet.Provenance, requestedFile, StringComparison.OrdinalIgnoreCase))
-            .Where(snippet => string.IsNullOrWhiteSpace(search)
-                || snippet.Snippet.Contains(search, StringComparison.OrdinalIgnoreCase)
-                || snippet.Provenance.Contains(search, StringComparison.OrdinalIgnoreCase)
-                || selectedSourcebook.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
-                || selectedSourcebook.Code.Contains(search, StringComparison.OrdinalIgnoreCase)
-                || snippet.Page.ToString(CultureInfo.InvariantCulture).Contains(search, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(snippet => snippet.Page)
-            .ThenBy(snippet => snippet.Provenance, StringComparer.OrdinalIgnoreCase)
+        List<(MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)> filteredSnippets = snapshot.Sourcebooks
+            .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
+            .SelectMany(sourcebook => sourcebook.RuleSnippets.Select(snippet => (Sourcebook: sourcebook, Snippet: snippet)))
+            .Where(entry => string.Equals(requestedFile, "All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(entry.Snippet.File, requestedFile, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(entry.Snippet.Provenance, requestedFile, StringComparison.OrdinalIgnoreCase))
+            .Where(entry => string.IsNullOrWhiteSpace(search)
+                || entry.Snippet.Snippet.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || entry.Snippet.Provenance.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || entry.Sourcebook.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || entry.Sourcebook.Code.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || entry.Snippet.Page.ToString(CultureInfo.InvariantCulture).Contains(search, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(entry => entry.Snippet.Page)
+            .ThenBy(entry => entry.Snippet.Provenance, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        MasterIndexDialogSnippetSnapshot? selectedSnippet = ResolveMasterIndexSelectedSnippet(
+        (MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)? selectedEntry = ResolveMasterIndexSelectedEntry(
             filteredSnippets,
+            requestedSourcebookId,
             DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexActiveResultKey"));
+        MasterIndexDialogSourcebookSnapshot selectedSourcebook = selectedEntry?.Sourcebook
+            ?? snapshot.Sourcebooks.FirstOrDefault(sourcebook => string.Equals(sourcebook.Id, requestedSourcebookId, StringComparison.Ordinal))
+            ?? snapshot.Sourcebooks[0];
+        MasterIndexDialogSnippetSnapshot? selectedSnippet = selectedEntry?.Snippet;
         MasterIndexDialogFileSnapshot? selectedFile = ResolveMasterIndexSelectedFileSnapshot(
             snapshot.Files,
             requestedFile,
@@ -4056,164 +4197,107 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string selectedFileSummary = selectedFile is null
             ? "All data files"
             : $"{selectedFile.File} · {selectedFile.ElementCount} indexed entries";
-        string selectedResultLabel = selectedSnippet is null
-            ? "none"
-            : BuildMasterIndexSnippetLabel(selectedSnippet.Snippet);
-        string selectedSource = selectedSourcebook.LocalPdfPath
-            ?? selectedSourcebook.ReferenceUrl
-            ?? selectedSourcebook.ReferenceSnapshot
-            ?? "(no linked source)";
-        string sourceTree = "[Sourcebooks]" + Environment.NewLine + string.Join(
-            Environment.NewLine,
-            snapshot.Sourcebooks
-                .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(sourcebook => string.Equals(sourcebook.Id, selectedSourcebook.Id, StringComparison.Ordinal)
-                    ? $"> {sourcebook.Code} · {sourcebook.Name}"
-                    : $"├─ {sourcebook.Code} · {sourcebook.Name}"));
-        string fileSelection = BuildMasterIndexFileSelectionSnapshot(snapshot.Files, selectedFile);
-        string searchLine = string.IsNullOrWhiteSpace(search) ? "all rows" : search;
-        string catalogEntries = filteredSnippets.Count == 0
-            ? "[Current File]" + Environment.NewLine +
-              $"└─ {selectedFileName}" + Environment.NewLine +
-              "[Current Book]" + Environment.NewLine +
-              $"└─ {selectedSourcebook.Name} [{selectedSourcebook.Code}]"
-            : "[Current File]" + Environment.NewLine +
-              $"└─ {selectedFileName}" + Environment.NewLine +
-              "[Current Book]" + Environment.NewLine +
-              $"└─ {selectedSourcebook.Name} [{selectedSourcebook.Code}]" + Environment.NewLine +
-              string.Join(
-                  Environment.NewLine,
-                  filteredSnippets
-                      .Take(6)
-                      .Select((snippet, index) =>
-                          $"{(index == Math.Min(filteredSnippets.Count, 6) - 1 ? "   └─ " : "   ├─ ")}p. {snippet.Page} · {BuildMasterIndexSnippetLabel(snippet.Snippet)}"));
-        string resultList = filteredSnippets.Count == 0
-            ? "No indexed entries discovered."
-            : string.Join(
-                Environment.NewLine,
-                filteredSnippets
-                    .Take(8)
-                    .Select(snippet =>
-                        $"{(selectedSnippet is not null && string.Equals(BuildMasterIndexSnippetKey(snippet.File, snippet.Page), BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page), StringComparison.Ordinal) ? ">" : " ")} p. {snippet.Page} · {BuildMasterIndexSnippetLabel(snippet.Snippet)} · {snippet.Provenance}"));
-        string selectionTrail = NormalizeGridValue(BuildGridValue(
-            ("Data File", selectedFileName),
-            ("Search", searchLine),
-            ("Selected Result", selectedResultLabel),
-            ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")));
-        string sourceLinkKinds = BuildMasterIndexReferenceTargetKinds(selectedSourcebook);
-        string sourceDetails = BuildGridValue(
-            ("Data File", selectedFileName),
-            ("Selected item", $"{selectedSourcebook.Name} ({selectedSourcebook.Code})"),
-            ("Source", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
-            ("Linked Source", selectedSource),
-            ("Open Action", string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath) ? "open linked source" : "open linked PDF"),
-            ("Visible Results", filteredSnippets.Count.ToString(CultureInfo.InvariantCulture)));
-        string resultInspector = BuildGridValue(
-            ("Selected Result", selectedResultLabel),
-            ("Data File", selectedFileName),
-            ("Current Book", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
-            ("Linked Source", selectedSource),
-            ("Open Page", selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"),
-            ("Activation", "double-click row / open source"),
-            ("Source Link", sourceLinkKinds),
-            ("Use Setting", "Character Settings"));
-        string sourceCommands =
-            $"Change data file | {selectedFileName}" + Environment.NewLine +
-            $"Switch sourcebook | {selectedSourcebook.Code} · {selectedSourcebook.Name}" + Environment.NewLine +
-            "Modify character setting | Character Settings" + Environment.NewLine +
-            (string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
-                ? $"Open linked source | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "snapshot")}" 
-                : $"Open linked PDF | p. {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}");
-        string resultCommands =
-            $"Activate result | {selectedResultLabel}" + Environment.NewLine +
-            $"Open page | {(selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source")}" + Environment.NewLine +
-            "Keep source and notes pinned on the right";
+        string selectedSource = ResolveMasterIndexLinkedSource(
+            selectedSourcebook.LocalPdfPath,
+            selectedSourcebook.ReferenceUrl,
+            selectedSourcebook.ReferenceSnapshot);
         string snippetPreview = selectedSnippet is null
-            ? "No indexed notes match the current data-file and search filters." + Environment.NewLine +
-              "Keep Source plus Notes pinned on the right while switching file, sourcebook, or result."
+            ? string.Empty
             : $"Page {selectedSnippet.Page} · {selectedSnippet.Provenance}{Environment.NewLine}{selectedSnippet.Snippet}";
-        string snippetInspector = selectedSnippet is null
-            ? BuildGridValue(
-                ("Snippet Count", "0"),
-                ("Snippet Page", "unavailable"),
-                ("Data File", "unavailable"),
-                ("Note Posture", "right-pane legacy preview"))
-            : BuildGridValue(
-                ("Snippet Count", filteredSnippets.Count.ToString(CultureInfo.InvariantCulture)),
-                ("Snippet Page", selectedSnippet.Page.ToString(CultureInfo.InvariantCulture)),
-                ("Data File", selectedSnippet.Provenance),
-                ("Note Posture", "right-pane legacy preview"));
-        string sourceClickReminder = string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
-            ? "No local PDF is attached; switch sourcebook or keep the linked source visible while notes stay pinned on the right."
-            : $"<- Click to open linked PDF at p. {selectedSnippet?.Page.ToString(CultureInfo.InvariantCulture) ?? "linked source"}";
-        string searchHints =
-            $"Data File filters the list on the left. Search narrows the current file to {filteredSnippets.Count} visible rows, and selecting a row refreshes Source plus Notes on the right.";
-        string notesPane =
-            "Use Data File on the left, then switch sourcebook or result without losing the source/notes pane rhythm." +
-            Environment.NewLine + Environment.NewLine + snippetPreview;
 
-        return ReplaceDialogActions(
-            ReplaceDialogFields(
-                dialog,
-                ("masterIndexActiveSourcebookId", selectedSourcebook.Id, selectedSourcebook.Id),
-                ("masterIndexActiveFile", selectedFileName, selectedFileName),
-                ("masterIndexActiveResultKey", selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page), selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.File, selectedSnippet.Page)),
-                ("masterIndexCurrentSourcebook", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}", $"{selectedSourcebook.Code} · {selectedSourcebook.Name}"),
-                ("masterIndexFileSelection", fileSelection, "All"),
-                ("masterIndexCurrentFile", selectedFileSummary, selectedFileSummary),
-                ("masterIndexSearchHints", searchHints, searchHints),
-                ("masterIndexSelectionTrail", selectionTrail, selectionTrail),
-                ("masterIndexSourceTree", sourceTree, "[Sourcebooks]"),
-                ("masterIndexCatalogEntries", catalogEntries, catalogEntries),
-                ("masterIndexSourceCommands", sourceCommands, sourceCommands),
-                ("masterIndexDetails", sourceDetails, sourceDetails),
-                ("masterIndexResultList", resultList, resultList),
-                ("masterIndexResultInspector", resultInspector, resultInspector),
-                ("masterIndexResultCommands", resultCommands, resultCommands),
-                ("masterIndexSnippetPreview", snippetPreview, snippetPreview),
-                ("masterIndexSnippetInspector", snippetInspector, snippetInspector),
-                ("masterIndexSourceClickReminder", sourceClickReminder, sourceClickReminder),
-                ("masterIndexNotesPane", notesPane, notesPane),
-                ("masterIndexSelectedSource", selectedSource, selectedSource)),
-            ("open_source", string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
-                ? (selectedSnippet is null ? "Open Linked Source" : $"Open Linked Source p. {selectedSnippet.Page}")
-                : (selectedSnippet is null ? "Open Linked PDF" : $"Open PDF p. {selectedSnippet.Page}"), true),
-            ("switch_file", $"Change Data File ({selectedFileName})", false),
-            ("switch_sourcebook", $"Switch Sourcebook ({selectedSourcebook.Code})", false),
-            ("edit_setting", "Modify Setting (Character Settings)", false));
+        DesktopDialogField[] rebuiltFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "masterIndexActiveSourcebookId" => field with { Value = selectedSourcebook.Id, Placeholder = selectedSourcebook.Id },
+                "masterIndexActiveFile" => field with { Value = selectedFileName, Placeholder = selectedFileName },
+                "masterIndexActiveResultKey" => field with
+                {
+                    Label = "Entries",
+                    Value = selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.Provenance, selectedSnippet.Page),
+                    Placeholder = selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.Provenance, selectedSnippet.Page),
+                    InputType = "select",
+                    VisualKind = DesktopDialogFieldVisualKinds.List,
+                    IsReadOnly = false,
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Left,
+                    Options = BuildMasterIndexResultOptions(filteredSnippets)
+                },
+                "masterIndexCurrentSourcebook" => field with
+                {
+                    Label = "Source",
+                    Value = $"{selectedSourcebook.Code} · {selectedSourcebook.Name}",
+                    Placeholder = $"{selectedSourcebook.Code} · {selectedSourcebook.Name}",
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Left
+                },
+                "masterIndexFileSelection" => field with
+                {
+                    Value = selectedFileName,
+                    Placeholder = "All",
+                    Options = BuildMasterIndexFileOptions(snapshot.Files.Select(file => new MasterIndexFileEntry(file.File, string.Empty, file.ElementCount)).ToArray())
+                },
+                "masterIndexCurrentFile" => field with { Value = selectedFileSummary, Placeholder = selectedFileSummary },
+                "masterIndexSnippetPreview" => field with
+                {
+                    Value = snippetPreview,
+                    Placeholder = snippetPreview,
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Right
+                },
+                "masterIndexSelectedSource" => field with
+                {
+                    Label = "Linked PDF / URL",
+                    Value = selectedSource,
+                    Placeholder = selectedSource,
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Right
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with { Fields = rebuiltFields };
     }
 
     private static IReadOnlyList<DesktopDialogAction> BuildMasterIndexActions(MasterIndexResponse? masterIndex)
-    {
-        MasterIndexSourcebookEntry? selectedSourcebook = masterIndex?.Sourcebooks.FirstOrDefault();
-        MasterIndexRuleSnippetEntry? selectedSnippet = selectedSourcebook?.RuleSnippets.FirstOrDefault();
-        MasterIndexFileEntry? selectedFile = masterIndex is null
-            ? null
-            : ResolveMasterIndexSelectedFile(masterIndex.Files, selectedSnippet);
-        string selectedFileName = selectedFile?.File ?? "All";
-        bool hasLinkedSource = selectedSourcebook is not null
-            && (!string.IsNullOrWhiteSpace(selectedSourcebook.LocalPdfPath)
-                || !string.IsNullOrWhiteSpace(selectedSourcebook.ReferenceUrl)
-                || !string.IsNullOrWhiteSpace(selectedSourcebook.ReferenceSnapshot));
-
-        return
-        [
-            new DesktopDialogAction(
-                "open_source",
-                hasLinkedSource
-                    ? (selectedSnippet is null ? "Open Linked PDF" : $"Open PDF p. {selectedSnippet.Page}")
-                    : (selectedSnippet is null ? "Open Linked Source" : $"Open Linked Source p. {selectedSnippet.Page}"),
-                true),
-            new DesktopDialogAction("switch_file", $"Change Data File ({selectedFileName})"),
-            new DesktopDialogAction(
-                "switch_sourcebook",
-                selectedSourcebook is null
-                    ? "Switch Sourcebook"
-                    : $"Switch Sourcebook ({selectedSourcebook.Code})"),
-            new DesktopDialogAction("edit_setting", "Modify Setting (Character Settings)"),
+        => [
+            new DesktopDialogAction("open_source", "Open Linked Source", true),
             new DesktopDialogAction("close", "Close")
         ];
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMasterIndexFileOptions(IReadOnlyList<MasterIndexFileEntry> files)
+    {
+        List<DesktopDialogFieldOption> options = [new("All", "All data files")];
+        options.AddRange(files
+            .OrderBy(file => file.File, StringComparer.OrdinalIgnoreCase)
+            .Select(file => new DesktopDialogFieldOption(file.File, $"{file.File} · {file.ElementCount} entries")));
+        return options;
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMasterIndexResultOptions(
+        IEnumerable<(MasterIndexSourcebookEntry Sourcebook, MasterIndexRuleSnippetEntry Snippet)> snippets)
+    {
+        DesktopDialogFieldOption[] options = snippets
+            .Select(entry => new DesktopDialogFieldOption(
+                BuildMasterIndexSnippetKey(entry.Snippet.Provenance, entry.Snippet.Page),
+                $"{entry.Sourcebook.Code} p. {entry.Snippet.Page} · {BuildMasterIndexSnippetLabel(entry.Snippet.Snippet)} · {entry.Snippet.Provenance}"))
+            .DistinctBy(option => option.Value, StringComparer.Ordinal)
+            .ToArray();
+
+        return options.Length == 0
+            ? [new DesktopDialogFieldOption(string.Empty, "No indexed entries discovered.")]
+            : options;
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMasterIndexResultOptions(
+        IEnumerable<(MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)> snippets)
+    {
+        DesktopDialogFieldOption[] options = snippets
+            .Select(entry => new DesktopDialogFieldOption(
+                BuildMasterIndexSnippetKey(entry.Snippet.File, entry.Snippet.Page),
+                $"{entry.Sourcebook.Code} p. {entry.Snippet.Page} · {BuildMasterIndexSnippetLabel(entry.Snippet.Snippet)} · {entry.Snippet.Provenance}"))
+            .DistinctBy(option => option.Value, StringComparer.Ordinal)
+            .ToArray();
+
+        return options.Length == 0
+            ? [new DesktopDialogFieldOption(string.Empty, "No indexed entries discovered.")]
+            : options;
     }
 
     private static string BuildSourcebookSelectionSummary(IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
@@ -4230,6 +4314,37 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         int localPdfCount = sourcebooks.Count(sourcebook => !string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath));
 
         return $"{sourcebooks.Count} sourcebooks ({selectableCount} selectable, {permanentCount} permanent); linked sources on {linkedSourceCount}/{sourcebooks.Count}, local PDFs on {localPdfCount}/{sourcebooks.Count}.";
+    }
+
+    private static IReadOnlyList<DesktopDialogField> BuildSourcebookSelectionFields(
+        MasterIndexResponse? masterIndex,
+        IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
+    {
+        string sourcebookSelectionSummary = BuildSourcebookSelectionSummary(sourcebooks);
+        string sourceSelectionReceipt = masterIndex is null
+            ? "All"
+            : NormalizeMasterIndexValue(masterIndex.SourceSelectionLaneReceipt, masterIndex.SourceToggleLanePosture);
+        string referenceSourceReceipt = masterIndex is null
+            ? "missing"
+            : NormalizeMasterIndexValue(masterIndex.ReferenceSourceLaneReceipt, sourcebookSelectionSummary);
+
+        return
+        [
+            new DesktopDialogField(
+                "masterIndexSourceSelectionReceipt",
+                "Source Selection",
+                sourceSelectionReceipt,
+                sourcebookSelectionSummary,
+                IsReadOnly: true,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                "masterIndexReferenceSourceReceipt",
+                "Reference Sources",
+                referenceSourceReceipt,
+                sourcebookSelectionSummary,
+                IsReadOnly: true,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+        ];
     }
 
     private static string BuildMasterIndexReferenceTargetKinds(MasterIndexDialogSourcebookSnapshot sourcebook)
@@ -4250,14 +4365,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return $"Chummer4 fixtures {masterIndex.LegacyChummer4FixtureCount}, Chummer5a fixtures {masterIndex.LegacyChummer5FixtureCount}, Hero Lab fixtures {masterIndex.HeroLabFixtureCount}, adjacent SR6 sources {masterIndex.AdjacentSr6OracleSourcesCovered}/{masterIndex.AdjacentSr6OracleSourcesExpected}.";
     }
 
-    private static MasterIndexDialogSnapshot CreateMasterIndexDialogSnapshot(MasterIndexResponse masterIndex)
+    private static MasterIndexDialogSnapshot CreateMasterIndexDialogSnapshot(
+        string? settingsLanePosture,
+        IReadOnlyList<MasterIndexFileEntry> files,
+        IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
         => new(
-            masterIndex.SettingsLanePosture,
-            masterIndex.Files
+            NormalizeMasterIndexValue(settingsLanePosture, "missing"),
+            files
                 .OrderBy(file => file.File, StringComparer.OrdinalIgnoreCase)
                 .Select(file => new MasterIndexDialogFileSnapshot(file.File, file.ElementCount))
                 .ToArray(),
-            masterIndex.Sourcebooks
+            sourcebooks
                 .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(sourcebook => new MasterIndexDialogSourcebookSnapshot(
@@ -4269,7 +4387,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     sourcebook.LocalPdfPath,
                     sourcebook.ReferenceUrl,
                     sourcebook.ReferenceSnapshot,
-                    sourcebook.RuleSnippets
+                    (sourcebook.RuleSnippets ?? [])
                         .OrderBy(snippet => snippet.Page)
                         .ThenBy(snippet => snippet.Provenance, StringComparer.OrdinalIgnoreCase)
                         .Select(snippet => new MasterIndexDialogSnippetSnapshot(
@@ -4279,6 +4397,58 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                             snippet.Snippet))
                         .ToArray()))
                 .ToArray());
+
+    private static IReadOnlyList<MasterIndexFileEntry> NormalizeMasterIndexFiles(IReadOnlyList<MasterIndexFileEntry>? files)
+        => (files ?? [])
+            .Where(static file => file is not null)
+            .Select(file => new MasterIndexFileEntry(
+                NormalizeMasterIndexValue(file.File, "unknown.xml"),
+                NormalizeMasterIndexValue(file.Root),
+                Math.Max(file.ElementCount, 0)))
+            .DistinctBy(file => file.File, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    private static IReadOnlyList<MasterIndexSourcebookEntry> NormalizeMasterIndexSourcebooks(IReadOnlyList<MasterIndexSourcebookEntry>? sourcebooks)
+        => (sourcebooks ?? [])
+            .Where(static sourcebook => sourcebook is not null)
+            .Select(sourcebook =>
+            {
+                MasterIndexRuleSnippetEntry[] normalizedSnippets = NormalizeMasterIndexSnippets(sourcebook.RuleSnippets).ToArray();
+                return new MasterIndexSourcebookEntry(
+                    NormalizeMasterIndexValue(sourcebook.Id, "unknown"),
+                    NormalizeMasterIndexValue(sourcebook.Code, "UNK"),
+                    NormalizeMasterIndexValue(sourcebook.Name, "Unknown Source"),
+                    sourcebook.Permanent,
+                    NormalizeMasterIndexValue(sourcebook.ReferencePosture, "missing"),
+                    Math.Max(sourcebook.RuleSnippetCount, normalizedSnippets.Length),
+                    normalizedSnippets,
+                    NormalizeMasterIndexValue(sourcebook.ReferenceSourcePosture, "missing"),
+                    NormalizeMasterIndexValue(sourcebook.LocalPdfPath),
+                    NormalizeMasterIndexValue(sourcebook.ReferenceUrl),
+                    NormalizeMasterIndexValue(sourcebook.ReferenceSnapshot),
+                    NormalizeMasterIndexValue(sourcebook.ReferenceSnapshotPosture, "missing"));
+            })
+            .DistinctBy(sourcebook => sourcebook.Id, StringComparer.Ordinal)
+            .ToArray();
+
+    private static IReadOnlyList<MasterIndexRuleSnippetEntry> NormalizeMasterIndexSnippets(IReadOnlyList<MasterIndexRuleSnippetEntry>? snippets)
+        => (snippets ?? [])
+            .Where(static snippet => snippet is not null)
+            .Select(snippet => new MasterIndexRuleSnippetEntry(
+                NormalizeMasterIndexValue(snippet.Language, "en-US"),
+                Math.Max(snippet.Page, 0),
+                NormalizeMasterIndexValue(snippet.Snippet),
+                NormalizeMasterIndexValue(snippet.Provenance, "unknown")))
+            .ToArray();
+
+    private static string ResolveMasterIndexLinkedSource(params string?[] candidates)
+        => candidates
+            .Select(candidate => NormalizeMasterIndexValue(candidate))
+            .FirstOrDefault(candidate => !string.IsNullOrWhiteSpace(candidate))
+        ?? string.Empty;
+
+    private static string NormalizeMasterIndexValue(string? value, string fallback = "")
+        => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
     private static MasterIndexFileEntry? ResolveMasterIndexSelectedFile(
         IReadOnlyList<MasterIndexFileEntry> files,
@@ -4360,8 +4530,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static string BuildMasterIndexSnippetLabel(MasterIndexRuleSnippetEntry snippet)
         => BuildMasterIndexSnippetLabel(snippet.Snippet);
 
-    private static string BuildMasterIndexSnippetLabel(string snippetText)
+    private static string BuildMasterIndexSnippetLabel(string? snippetText)
     {
+        if (string.IsNullOrWhiteSpace(snippetText))
+        {
+            return "(no note text)";
+        }
+
         string normalized = string.Join(" ", snippetText
             .Split([Environment.NewLine, "\r", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         if (normalized.Length <= 64)
@@ -4372,8 +4547,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return normalized[..61].TrimEnd() + "...";
     }
 
-    private static string BuildMasterIndexSnippetKey(string provenance, int page)
-        => $"{provenance}|{page}";
+    private static string BuildMasterIndexSnippetKey(string? provenance, int page)
+        => $"{provenance ?? string.Empty}|{page}";
 
     private static string NormalizeMasterIndexActiveFile(string? activeFile, string? fileSelectionField)
     {
@@ -4417,58 +4592,26 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return snapshot.Sourcebooks[0].Id;
     }
 
-    private static MasterIndexDialogSnippetSnapshot? ResolveMasterIndexSelectedSnippet(
-        IReadOnlyList<MasterIndexDialogSnippetSnapshot> snippets,
+    private static (MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)? ResolveMasterIndexSelectedEntry(
+        IReadOnlyList<(MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)> snippets,
+        string requestedSourcebookId,
         string? requestedKey)
     {
         if (!string.IsNullOrWhiteSpace(requestedKey))
         {
-            MasterIndexDialogSnippetSnapshot? matchingSnippet = snippets.FirstOrDefault(snippet =>
-                string.Equals(BuildMasterIndexSnippetKey(snippet.File, snippet.Page), requestedKey, StringComparison.Ordinal)
-                || string.Equals(BuildMasterIndexSnippetKey(snippet.Provenance, snippet.Page), requestedKey, StringComparison.Ordinal));
-            if (matchingSnippet is not null)
+            (MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet) matchingSnippet = snippets.FirstOrDefault(snippet =>
+                string.Equals(BuildMasterIndexSnippetKey(snippet.Snippet.File, snippet.Snippet.Page), requestedKey, StringComparison.Ordinal)
+                || string.Equals(BuildMasterIndexSnippetKey(snippet.Snippet.Provenance, snippet.Snippet.Page), requestedKey, StringComparison.Ordinal));
+            if (matchingSnippet.Sourcebook is not null && matchingSnippet.Snippet is not null)
                 return matchingSnippet;
         }
 
+        (MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet) matchingSourcebookSnippet = snippets
+            .FirstOrDefault(snippet => string.Equals(snippet.Sourcebook.Id, requestedSourcebookId, StringComparison.Ordinal));
+        if (matchingSourcebookSnippet.Sourcebook is not null && matchingSourcebookSnippet.Snippet is not null)
+            return matchingSourcebookSnippet;
+
         return snippets.FirstOrDefault();
-    }
-
-    private static IEnumerable<DesktopDialogField> BuildSourcebookSelectionFields(IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
-    {
-        int index = 1;
-        foreach (MasterIndexSourcebookEntry sourcebook in sourcebooks
-                     .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
-                     .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase))
-        {
-            string label = $"Sourcebook {sourcebook.Code}";
-            string snippetCoverage = sourcebook.RuleSnippetCount <= 0 ? "no snippets" : $"{sourcebook.RuleSnippetCount} snippets";
-            string selectionKind = sourcebook.Permanent ? "permanent" : "selectable";
-            string targetKinds = BuildReferenceTargetKinds(sourcebook);
-            string value =
-                $"{sourcebook.Name} [{selectionKind}] | ref {sourcebook.ReferencePosture} | source {sourcebook.ReferenceSourcePosture} | {snippetCoverage} | targets {targetKinds}";
-
-            yield return new DesktopDialogField(
-                $"masterIndexSourcebook{index}",
-                label,
-                value,
-                value,
-                IsReadOnly: true,
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden);
-            index++;
-        }
-    }
-
-    private static string BuildReferenceTargetKinds(MasterIndexSourcebookEntry sourcebook)
-    {
-        List<string> kinds = [];
-        if (!string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath))
-            kinds.Add("pdf");
-        if (!string.IsNullOrWhiteSpace(sourcebook.ReferenceUrl))
-            kinds.Add("url");
-        if (!string.IsNullOrWhiteSpace(sourcebook.ReferenceSnapshot))
-            kinds.Add("snapshot");
-
-        return kinds.Count == 0 ? "none" : string.Join("+", kinds);
     }
 
     private sealed record MasterIndexDialogSnapshot(
@@ -4496,4 +4639,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string Provenance,
         int Page,
         string Snippet);
+
+    private sealed record RosterDialogSnapshot(
+        string FallbackAlias,
+        string FallbackName,
+        string FallbackWorkspace,
+        IReadOnlyList<RosterDialogWorkspaceSnapshot> Workspaces,
+        IReadOnlyList<string> WatchedFiles);
+
+    private sealed record RosterDialogWorkspaceSnapshot(
+        string Id,
+        string Name,
+        string Alias,
+        DateTimeOffset LastOpenedUtc,
+        string RulesetId,
+        bool HasSavedWorkspace);
 }

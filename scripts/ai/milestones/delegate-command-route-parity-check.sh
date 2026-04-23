@@ -36,6 +36,8 @@ EXPECTED_CONTRACT_METHODS = [
     "SelectTabAsync",
     "UpdateMetadataAsync",
     "SaveAsync",
+    "ExportAsync",
+    "PrintAsync",
 ]
 
 BRIDGE_EVENT_TESTS = [
@@ -75,7 +77,7 @@ DIALOG_COORDINATOR_TEST_MARKERS = [
     "CoordinateAsync_save_global_settings_updates_preferences_and_closes_dialog",
     "CoordinateAsync_apply_metadata_calls_update_delegate_and_closes_dialog_on_success",
     "CoordinateAsync_roll_adds_result_field_to_dice_dialog",
-    "CoordinateAsync_derive_initiative_updates_preview_without_closing_dialog",
+    "CoordinateAsync_reroll_misses_requires_previous_roll_state",
     "CoordinateAsync_import_imports_workspace_and_closes_dialog_on_success",
     "CoordinateAsync_apply_ruleset_calls_delegate_and_closes_dialog_on_success",
     "CoordinateAsync_add_more_gear_keeps_dialog_open_and_rebuilds_preview",
@@ -111,6 +113,8 @@ BRIDGE_FORWARDER_MARKERS = {
     "SelectTabAsync": "return _presenter.SelectTabAsync(tabId, ct);",
     "UpdateMetadataAsync": "return _presenter.UpdateMetadataAsync(command, ct);",
     "SaveAsync": "return _presenter.SaveAsync(ct);",
+    "ExportAsync": "return _presenter.ExportAsync(ct);",
+    "PrintAsync": "return _presenter.PrintAsync(ct);",
 }
 
 ADAPTER_FORWARDER_MARKERS = dict(BRIDGE_FORWARDER_MARKERS)

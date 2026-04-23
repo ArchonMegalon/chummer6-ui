@@ -26,6 +26,7 @@ EXPECTED_COMMAND_IDS = [
     "open_character",
     "open_for_printing",
     "open_for_export",
+    "new_character",
     "print_setup",
     "dice_roller",
     "global_settings",
@@ -103,6 +104,9 @@ EXPECTED_CONTROL_IDS = [
 
 EXPECTED_REBUILDABLE_DIALOG_IDS = [
     "dialog.global_settings",
+    "dialog.new_character",
+    "dialog.dice_roller",
+    "dialog.character_roster",
     "dialog.master_index",
     "dialog.ui.cyberware_add",
     "dialog.ui.gear_add",

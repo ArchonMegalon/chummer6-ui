@@ -26,6 +26,8 @@ public sealed class DelegateCommandRouteParityComplianceTests
         StringAssert.Contains(scriptText, "EXPECTED_CONTRACT_METHODS");
         StringAssert.Contains(scriptText, "\"UpdateMetadataAsync\"");
         StringAssert.Contains(scriptText, "\"SaveAsync\"");
+        StringAssert.Contains(scriptText, "\"ExportAsync\"");
+        StringAssert.Contains(scriptText, "\"PrintAsync\"");
         StringAssert.Contains(scriptText, "Name~delegates_to_presenter");
         StringAssert.Contains(scriptText, "Name~CoordinateAsync_");
         StringAssert.Contains(scriptText, "Name~Avalonia_and_Blazor_");
@@ -90,9 +92,9 @@ public sealed class DelegateCommandRouteParityComplianceTests
         Assert.AreEqual("chummer6-ui.delegate_command_route_parity", root.GetProperty("contract_name").GetString());
 
         JsonElement evidence = root.GetProperty("evidence");
-        Assert.AreEqual(14, evidence.GetProperty("contractMethodCount").GetInt32());
-        Assert.AreEqual(14, evidence.GetProperty("bridgeMethodCount").GetInt32());
-        Assert.AreEqual(14, evidence.GetProperty("adapterMethodCount").GetInt32());
+        Assert.AreEqual(16, evidence.GetProperty("contractMethodCount").GetInt32());
+        Assert.AreEqual(16, evidence.GetProperty("bridgeMethodCount").GetInt32());
+        Assert.AreEqual(16, evidence.GetProperty("adapterMethodCount").GetInt32());
         Assert.IsTrue(evidence.GetProperty("wiredIntoStandardVerify").GetBoolean());
         Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
@@ -103,6 +105,8 @@ public sealed class DelegateCommandRouteParityComplianceTests
 
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"UpdateMetadataAsync\"");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"SaveAsync\"");
+        StringAssert.Contains(receipt.RootElement.GetRawText(), "\"ExportAsync\"");
+        StringAssert.Contains(receipt.RootElement.GetRawText(), "\"PrintAsync\"");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"buildExitCode\": 0");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"Name~delegates_to_presenter\"");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"Name~CoordinateAsync_\"");

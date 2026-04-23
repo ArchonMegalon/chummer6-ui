@@ -22,15 +22,16 @@ public sealed class SectionHostRulesetParityComplianceTests
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "SECTION_HOST_RULESET_PARITY.generated.json");
-        StringAssert.Contains(scriptText, "\"build-lab\"");
+        StringAssert.Contains(scriptText, "\"gear\"");
         StringAssert.Contains(scriptText, "quick_action_control_ids_found");
         StringAssert.Contains(scriptText, "\"unknownQuickActionControls\"");
         StringAssert.Contains(scriptText, "\"switch_ruleset\"");
         StringAssert.Contains(scriptText, "\"tab-notes.metadata\"");
-        StringAssert.Contains(scriptText, "SectionQuickActionCatalog_standard_sections_are_ruleset_stable_and_primary_first");
-        StringAssert.Contains(scriptText, "SectionQuickActionCatalog_sr6_adapted_sections_use_guided_entry_posture_only_for_sr6");
+        StringAssert.Contains(scriptText, "SectionQuickActionCatalog_backed_sections_keep_only_real_primary_actions");
+        StringAssert.Contains(scriptText, "SectionQuickActionCatalog_unbacked_sections_stay_hidden");
         StringAssert.Contains(scriptText, "ResolveCommands_and_navigation_tabs_clone_requested_ruleset");
         StringAssert.Contains(scriptText, "ResolveWorkspaceActionsForTab_returns_ruleset_cloned_tab_scoped_inventory");
+        StringAssert.Contains(scriptText, "Project_hides_unbacked_section_quick_actions");
         StringAssert.Contains(scriptText, "Project_formats_ruleset_conditioned_navigator_section_action_labels");
         StringAssert.Contains(scriptText, "ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset");
         StringAssert.Contains(scriptText, "\"QuickActions: ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId),\"");
@@ -75,9 +76,9 @@ public sealed class SectionHostRulesetParityComplianceTests
         Assert.AreEqual("chummer6-ui.section_host_ruleset_parity", root.GetProperty("contract_name").GetString());
 
         JsonElement evidence = root.GetProperty("evidence");
-        Assert.AreEqual(32, evidence.GetProperty("standardSectionCount").GetInt32());
-        Assert.AreEqual(3, evidence.GetProperty("sr6AdaptedSectionCount").GetInt32());
-        Assert.AreEqual(23, evidence.GetProperty("commandCount").GetInt32());
+        Assert.AreEqual(23, evidence.GetProperty("standardSectionCount").GetInt32());
+        Assert.AreEqual(0, evidence.GetProperty("sr6AdaptedSectionCount").GetInt32());
+        Assert.AreEqual(39, evidence.GetProperty("commandCount").GetInt32());
         Assert.AreEqual(10, evidence.GetProperty("tabCount").GetInt32());
         Assert.AreEqual(13, evidence.GetProperty("workspaceActionCount").GetInt32());
         Assert.AreEqual("pass", evidence.GetProperty("rulesetAdaptationStatus").GetString());
@@ -94,11 +95,12 @@ public sealed class SectionHostRulesetParityComplianceTests
         Assert.AreEqual("pass", root.GetProperty("executionReview").GetProperty("status").GetString());
 
         string receiptText = root.GetRawText();
-        StringAssert.Contains(receiptText, "\"build-lab\"");
+        StringAssert.Contains(receiptText, "\"gear\"");
         StringAssert.Contains(receiptText, "\"tab-info.validate\"");
-        StringAssert.Contains(receiptText, "\"switch_ruleset\"");
+        StringAssert.Contains(receiptText, "\"new_critter\"");
         StringAssert.Contains(receiptText, "\"Name~SectionQuickActionCatalog_\"");
         StringAssert.Contains(receiptText, "\"Name~ResolveWorkspaceActionsForTab_\"");
+        StringAssert.Contains(receiptText, "\"Name~Project_hides_unbacked_section_quick_actions\"");
         StringAssert.Contains(receiptText, "\"Name~Project_formats_ruleset_conditioned_navigator_section_action_labels\"");
         StringAssert.Contains(receiptText, "\"Name~ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset\"");
         StringAssert.Contains(receiptText, "\"exitCode\": 0");

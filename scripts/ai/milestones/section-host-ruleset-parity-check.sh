@@ -33,58 +33,61 @@ EXPECTED_STANDARD_SECTION_IDS = [
     "armorlocations",
     "cyberwares",
     "drugs",
-    "vehicles",
-    "vehiclemods",
-    "vehiclelocations",
-    "contacts",
-    "skills",
-    "qualities",
     "spells",
     "powers",
     "complexforms",
-    "metamagics",
     "initiationgrades",
     "spirits",
-    "foci",
-    "mentorspirits",
     "critterpowers",
     "aiprograms",
-    "calendar",
-    "expenses",
-    "progress",
-    "improvements",
+    "vehicles",
+    "contacts",
+    "skills",
+    "qualities",
     "profile",
 ]
 
-EXPECTED_SR6_ADAPTED_SECTION_IDS = [
-    "build-lab",
-    "rules",
-    "summary",
-]
+EXPECTED_SR6_ADAPTED_SECTION_IDS = []
 
 EXPECTED_COMMAND_IDS = [
     "file",
-    "edit",
-    "special",
     "tools",
     "windows",
     "help",
     "new_character",
+    "new_critter",
     "open_character",
+    "open_for_printing",
+    "open_for_export",
     "save_character",
     "save_character_as",
     "print_character",
+    "export_character",
     "copy",
     "paste",
-    "export_character",
-    "switch_ruleset",
     "dice_roller",
     "global_settings",
+    "character_settings",
+    "update",
+    "restart",
+    "switch_ruleset",
+    "translator",
+    "xml_editor",
+    "hero_lab_importer",
     "master_index",
     "character_roster",
+    "data_exporter",
+    "report_bug",
+    "print_setup",
+    "print_multiple",
+    "exit",
     "new_window",
     "close_window",
-    "report_bug",
+    "close_all",
+    "wiki",
+    "discord",
+    "revision_history",
+    "dumpshock",
     "about",
 ]
 
@@ -136,8 +139,8 @@ EXPECTED_ACTIONS_BY_TAB = {
 }
 
 SECTION_TEST_MARKERS = [
-    "SectionQuickActionCatalog_standard_sections_are_ruleset_stable_and_primary_first",
-    "SectionQuickActionCatalog_sr6_adapted_sections_use_guided_entry_posture_only_for_sr6",
+    "SectionQuickActionCatalog_backed_sections_keep_only_real_primary_actions",
+    "SectionQuickActionCatalog_unbacked_sections_stay_hidden",
 ]
 
 SHELL_CATALOG_TEST_MARKERS = [
@@ -148,7 +151,8 @@ SHELL_CATALOG_TEST_MARKERS = [
 
 PROJECTOR_TEST_MARKERS = [
     "Project_projects_standard_section_quick_actions_into_section_host_state",
-    "Project_projects_sr6_adapted_section_quick_actions_only_for_sr6",
+    "Project_hides_unbacked_section_quick_actions",
+    "Project_projects_runtime_backed_magic_and_aug_section_quick_actions",
     "Project_formats_ruleset_conditioned_navigator_section_action_labels",
 ]
 
@@ -163,7 +167,8 @@ TEST_FILTER_COMMANDS = [
     "Name~ResolveCommands_and_navigation_tabs_clone_requested_ruleset",
     "Name~ResolveWorkspaceActionsForTab_",
     "Name~Project_projects_standard_section_quick_actions_into_section_host_state",
-    "Name~Project_projects_sr6_adapted_section_quick_actions_only_for_sr6",
+    "Name~Project_hides_unbacked_section_quick_actions",
+    "Name~Project_projects_runtime_backed_magic_and_aug_section_quick_actions",
     "Name~Project_formats_ruleset_conditioned_navigator_section_action_labels",
     "Name~ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset",
     "Name~BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces",
@@ -256,7 +261,7 @@ texts = {name: read_text(path) for name, path in PATHS.items() if path.is_file()
 
 section_catalog_text = texts.get("section_catalog", "")
 standard_section_ids_found: list[str] = []
-for match in re.finditer(r'((?:"[^"]+"\s+or\s+)*"[^"]+")\s*=>\s*Standard\(', section_catalog_text):
+for match in re.finditer(r'((?:"[^"]+"\s+or\s+)*"[^"]+")\s*=>\s*PrimaryOnly\(', section_catalog_text):
     standard_section_ids_found.extend(re.findall(r'"([^"]+)"', match.group(1)))
 evidence["standardSectionIdsFound"] = standard_section_ids_found
 evidence["standardSectionCount"] = len(standard_section_ids_found)
@@ -266,14 +271,17 @@ if standard_section_ids_found != EXPECTED_STANDARD_SECTION_IDS:
         section_inventory_failures,
     )
 
-adapted_match = re.search(r"return normalizedSectionId is (.*?);", section_catalog_text, re.S)
-sr6_adapted_section_ids_found = re.findall(r'"([^"]+)"', adapted_match.group(1)) if adapted_match else []
+sr6_adapted_section_ids_found: list[str] = []
+for match in re.finditer(r'((?:"[^"]+"\s+or\s+)*"[^"]+")\s*=>\s*([A-Za-z0-9_]+)\(', section_catalog_text):
+    if match.group(2) == "PrimaryOnly":
+        continue
+    sr6_adapted_section_ids_found.extend(re.findall(r'"([^"]+)"', match.group(1)))
 evidence["sr6AdaptedSectionIdsFound"] = sr6_adapted_section_ids_found
 evidence["sr6AdaptedSectionCount"] = len(sr6_adapted_section_ids_found)
 if sr6_adapted_section_ids_found != EXPECTED_SR6_ADAPTED_SECTION_IDS:
     add_failure("SR6-adapted section inventory drifted from the parity contract.", section_inventory_failures)
 
-quick_action_control_ids_found = unique_preserving_order(re.findall(r'new SectionQuickActionDefinition\("([^"]+)"', section_catalog_text))
+quick_action_control_ids_found = unique_preserving_order(re.findall(r'PrimaryOnly\("([^"]+)"', section_catalog_text))
 evidence["quickActionControlIdsFound"] = quick_action_control_ids_found
 evidence["quickActionControlCount"] = len(quick_action_control_ids_found)
 
