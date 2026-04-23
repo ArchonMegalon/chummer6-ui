@@ -30,7 +30,7 @@ It is the repo for builders, inspectors, compare views, explain UX, moderation/a
 * Windows `.exe`, macOS `.dmg`, and Linux `.deb` installer targets for the desktop release bundle
 * platform-specific startup-smoke fixtures that prove each built desktop head can launch
 * release-bundle emission for desktop artifacts
-* automatic post-build publication of the latest successful desktop bundle into configured self-hosted downloads targets
+* automatic post-build publication of the latest successful desktop bundle into configured self-hosted downloads targets and configured live `chummer.run` upload targets
 * the flagship desktop delivery cut with `Chummer.Avalonia` as the primary desktop head and `Chummer.Blazor.Desktop` as the bounded compatibility fallback
 * runtime language selection, fallback behavior, and localization-safe desktop release gates for the shipping locale set
 

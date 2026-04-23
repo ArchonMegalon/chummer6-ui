@@ -15,6 +15,7 @@ on:
         type: boolean
   push:
     branches:
+      - main
       - Docker
     paths:
       - '.github/workflows/desktop-downloads-matrix.yml'
@@ -36,6 +37,7 @@ on:
       - 'scripts/build-desktop-installer.sh'
       - 'scripts/run-desktop-startup-smoke.sh'
       - 'scripts/publish-download-bundle.sh'
+      - 'scripts/publish-download-bundle-http.sh'
       - 'scripts/publish-download-bundle-s3.sh'
       - 'scripts/verify-releases-manifest.sh'
       - 'scripts/validate-amend-manifests.sh'
@@ -496,7 +498,7 @@ jobs:
   deploy-downloads:
     name: Deploy Downloads Bundle
     needs: generate-manifest
-    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR != '' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' && vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR != '' }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR }}
@@ -561,7 +563,7 @@ jobs:
   deploy-downloads-http:
     name: Deploy Downloads Bundle (HTTP Promote)
     needs: generate-manifest
-    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.CHUMMER_RELEASE_UPLOAD_URL != '' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' && vars.CHUMMER_RELEASE_UPLOAD_URL != '' }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_RELEASE_UPLOAD_URL: ${{ vars.CHUMMER_RELEASE_UPLOAD_URL }}
@@ -609,7 +611,7 @@ jobs:
   deploy-downloads-object-storage:
     name: Deploy Downloads Bundle (Object Storage)
     needs: generate-manifest
-    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI != '' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' && vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI != '' }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_PORTAL_DOWNLOADS_S3_URI: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI }}

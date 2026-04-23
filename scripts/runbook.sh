@@ -307,6 +307,7 @@ if [[ "$RUNBOOK_MODE" == "desktop-gate" ]]; then
   require_path "scripts/generate-parity-checklist.sh"
   require_path "scripts/check-host-gate-prereqs.sh"
   require_path "scripts/runbook-strict-host-gates.sh"
+  require_path "scripts/publish-download-bundle-http.sh"
   require_path "docs/SELF_HOSTED_DOWNLOADS_RUNBOOK.md"
 
   require_match "Chummer.Blazor.Desktop\\\\Chummer.Blazor.Desktop.csproj" "Chummer.sln"
@@ -329,6 +330,7 @@ if [[ "$RUNBOOK_MODE" == "desktop-gate" ]]; then
   require_match "scripts/run-desktop-startup-smoke.sh" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "scripts/generate-releases-manifest.sh" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "scripts/publish-download-bundle.sh" ".github/workflows/desktop-downloads-matrix.yml"
+  require_match "scripts/publish-download-bundle-http.sh" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "scripts/publish-download-bundle-s3.sh" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "scripts/validate-amend-manifests.sh" ".github/workflows/desktop-downloads-matrix.yml"
   require_match "SELF_HOSTED_DOWNLOADS_RUNBOOK.md" "README.md"
@@ -353,11 +355,13 @@ if [[ "$RUNBOOK_MODE" == "desktop-gate" ]]; then
   require_match "RUNBOOK_MODE\" == \"host-prereqs\"" "scripts/runbook.sh"
   require_match "RUNBOOK_MODE\" == \"downloads-sync\"" "scripts/runbook.sh"
   require_match "RUNBOOK_MODE\" == \"downloads-sync-s3\"" "scripts/runbook.sh"
+  require_match "RUNBOOK_MODE\" == \"downloads-upload-http\"" "scripts/runbook.sh"
   require_match "RUNBOOK_MODE\" == \"parity-checklist\"" "scripts/runbook.sh"
   require_match "RUNBOOK_MODE\" == \"amend-checksums\"" "scripts/runbook.sh"
   require_match "bash scripts/generate-releases-manifest.sh" "scripts/runbook.sh"
   require_match "bash scripts/generate-parity-checklist.sh" "scripts/runbook.sh"
   require_match "bash scripts/publish-download-bundle.sh" "scripts/runbook.sh"
+  require_match "bash scripts/publish-download-bundle-http.sh" "scripts/runbook.sh"
   require_match "bash scripts/publish-download-bundle-s3.sh" "scripts/runbook.sh"
   require_match "DOCKER_TESTS_SOFT_FAIL=0" "scripts/runbook-strict-host-gates.sh"
   require_match "TEST_NUGET_SOFT_FAIL=0" "scripts/runbook-strict-host-gates.sh"
@@ -503,6 +507,19 @@ if [[ "$RUNBOOK_MODE" == "downloads-sync-s3" ]]; then
   echo
   echo "== object storage sync summary =="
   rg -n "Published|Verified manifest|Verified artifact links/files|failed artifact verification|Set CHUMMER|Expected desktop-download-bundle|aws CLI" "$SYNC_S3_LOG_FILE" | tail -n 200 || true
+  exit "$status"
+fi
+
+if [[ "$RUNBOOK_MODE" == "downloads-upload-http" ]]; then
+  DOWNLOAD_BUNDLE_DIR="${DOWNLOAD_BUNDLE_DIR:-${RUNBOOK_ARG_FRAMEWORK:-$REPO_ROOT/Chummer.Portal/downloads}}"
+  DOWNLOADS_UPLOAD_HTTP_LOG_FILE="${DOWNLOADS_UPLOAD_HTTP_LOG_FILE:-$(resolve_runbook_log_file chummer-downloads-upload-http)}"
+  set +e
+  bash scripts/publish-download-bundle-http.sh "$DOWNLOAD_BUNDLE_DIR" 2>&1 | tee "$DOWNLOADS_UPLOAD_HTTP_LOG_FILE"
+  status=${PIPESTATUS[0]}
+  set -e
+  echo
+  echo "== http upload summary =="
+  rg -n "Publishing|Upload accepted|Verified route|Verified manifest|failed with HTTP|Dry run only|Exact live publish command" "$DOWNLOADS_UPLOAD_HTTP_LOG_FILE" | tail -n 200 || true
   exit "$status"
 fi
 
