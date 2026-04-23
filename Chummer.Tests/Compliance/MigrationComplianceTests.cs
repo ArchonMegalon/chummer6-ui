@@ -3444,6 +3444,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "Treat object storage as the alternate topology");
         StringAssert.Contains(runbookText, "docs/examples/self-hosted-downloads.env.example");
         StringAssert.Contains(runbookText, "RUNBOOK_MODE=downloads-smoke bash scripts/runbook.sh");
+        StringAssert.Contains(runbookText, "Mode C: Live `chummer.run` HTTP Publish");
+        StringAssert.Contains(runbookText, "deploy-downloads-http");
+        StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_URL");
+        StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_TOKEN");
+        StringAssert.Contains(runbookText, "latest-only");
         StringAssert.Contains(runbookText, "RUNBOOK_LOG_DIR");
         StringAssert.Contains(runbookText, "RUNBOOK_STATE_DIR");
 
@@ -3452,6 +3457,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=https://chummer.example.com/downloads/releases.json");
         StringAssert.Contains(envExampleText, "# Alternate object-storage topology:");
         StringAssert.Contains(envExampleText, "# CHUMMER_PORTAL_DOWNLOADS_S3_URI=s3://chummer-downloads/releases");
+        StringAssert.Contains(envExampleText, "# Live chummer.run upload topology:");
+        StringAssert.Contains(envExampleText, "# CHUMMER_RELEASE_UPLOAD_URL=https://chummer.run/api/internal/releases/bundles");
     }
 
     [TestMethod]
@@ -3525,10 +3532,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "Chummer.Portal/**");
         StringAssert.Contains(workflowText, "scripts/generate-releases-manifest.sh");
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle.sh");
+        StringAssert.Contains(workflowText, "scripts/publish-download-bundle-http.sh");
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle-s3.sh");
+        StringAssert.Contains(workflowText, "branches:\n      - main\n      - Docker");
         StringAssert.Contains(workflowText, "deploy_portal_downloads");
         StringAssert.Contains(workflowText, "deploy-downloads");
+        StringAssert.Contains(workflowText, "deploy-downloads-http");
         StringAssert.Contains(workflowText, "deploy-downloads-object-storage");
+        StringAssert.Contains(workflowText, "github.ref_name == 'main'");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS");
         StringAssert.Contains(startupSmokeScriptText, "Missing required installed path(s) after Windows smoke install:");
         StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
@@ -5787,6 +5798,8 @@ public class MigrationComplianceTests
         string promotionEvidenceText = File.ReadAllText(promotionEvidencePath);
         string publisherPath = FindPath("scripts", "publish-download-bundle.sh");
         string publisherText = File.ReadAllText(publisherPath);
+        string httpPublisherPath = FindPath("scripts", "publish-download-bundle-http.sh");
+        string httpPublisherText = File.ReadAllText(httpPublisherPath);
         string s3PublisherPath = FindPath("scripts", "publish-download-bundle-s3.sh");
         string s3PublisherText = File.ReadAllText(s3PublisherPath);
         string hostPrereqPath = FindPath("scripts", "check-host-gate-prereqs.sh");
@@ -5806,6 +5819,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"host-prereqs\"");
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"downloads-sync\"");
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"downloads-sync-s3\"");
+        StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"downloads-upload-http\"");
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"downloads-verify\"");
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"downloads-smoke\"");
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"parity-checklist\"");
@@ -5815,6 +5829,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "cp -f \"${portal_artifacts[@]}\" \"$portal_files_dir\"/");
         StringAssert.Contains(runbookText, "bash scripts/generate-parity-checklist.sh");
         StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle.sh");
+        StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle-http.sh");
         StringAssert.Contains(runbookText, "bash scripts/publish-download-bundle-s3.sh");
         StringAssert.Contains(runbookText, "bash scripts/verify-releases-manifest.sh");
         StringAssert.Contains(runbookText, "bash scripts/validate-amend-manifests.sh");
@@ -5835,9 +5850,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "and not PUBLIC_SKIP_STARTUP_SMOKE_FILTER");
         StringAssert.Contains(publisherText, "CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_AGE_SECONDS");
         StringAssert.Contains(publisherText, "CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS");
-        StringAssert.Contains(publisherText, "find \"$startup_smoke_deploy_dir\" -maxdepth 1 -type f -name \"startup-smoke-*.receipt.json\" -delete");
+        StringAssert.Contains(publisherText, "find \"$startup_smoke_deploy_dir\" -maxdepth 1 -type f \\(");
         StringAssert.Contains(publisherText, "verified_startup_smoke_tmp=\"$(mktemp)\"");
         StringAssert.Contains(publisherText, "if ! python3 - \"$DEPLOY_DIR/RELEASE_CHANNEL.generated.json\" \"$STARTUP_SMOKE_SOURCE\" \"$DEPLOY_DIR/files\" >\"$verified_startup_smoke_tmp\"");
+        StringAssert.Contains(httpPublisherText, "CHUMMER_RELEASE_UPLOAD_URL");
+        StringAssert.Contains(httpPublisherText, "create upload session");
+        StringAssert.Contains(httpPublisherText, "Upload accepted.");
+        StringAssert.Contains(httpPublisherText, "Live publish verification completed.");
         StringAssert.Contains(startupSmokeText, "set_receipt_status()");
         StringAssert.Contains(startupSmokeText, "payload[\"status\"] = status_value");
         StringAssert.Contains(startupSmokeText, "set_receipt_status \"pass\"");
@@ -5863,6 +5882,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-manifest");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-sync");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-sync-s3");
+        StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-upload-http");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-verify");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-downloads-smoke");
         StringAssert.Contains(runbookText, "resolve_runbook_log_file chummer-ui-e2e");

@@ -158,7 +158,7 @@ Forbidden posture:
 
 1. `chummer6-core` produces runtime-bundle outputs and fingerprints.
 2. `chummer6-ui` produces installer-ready desktop bundles for Windows `.exe`, macOS `.dmg`, and Linux `.deb`, plus any machine update payloads needed by the updater lane.
-3. When a self-hosted downloads target is configured, the successful desktop build automatically replaces the previous public downloads bundle and prunes superseded desktop artifacts so `/downloads` stays latest-only.
+3. When a self-hosted downloads target or live `chummer.run` upload target is configured, the successful mainline desktop build automatically replaces the previous public downloads bundle and prunes superseded desktop artifacts so `/downloads` stays latest-only. Manual republish debt after a green build is release-pipeline failure, not operator folklore.
 4. `fleet` expands the release matrix, runs verify/promotion/signoff/signing/notarization orchestration, and prepares a registry publication payload.
 5. `chummer6-hub-registry` becomes the source of truth for promoted channels, installer/download records, desktop release heads, update-feed metadata, compatibility, and runtime-bundle heads.
 6. `chummer6-hub` reads registry truth, serves `/downloads`, mints optional download receipts and install-claim tickets, and renders account-aware install UX without changing the underlying artifact.

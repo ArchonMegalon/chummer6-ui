@@ -29,6 +29,8 @@ It does not own promoted release-channel truth.
 5. `chummer6-hub-registry` materializes `RELEASE_CHANNEL.generated.json` and the compatibility `releases.json`.
 6. `chummer6-hub` serves public downloads by consuming the registry projection.
 
+When a downloads deploy target is configured, the successful mainline `Desktop Downloads Matrix` build is responsible for replacing the live `chummer.run` shelf automatically. The public downloads shelf is latest-only: a green build must publish the newest bundle without a second manual release pass.
+
 Desktop heads may consume that canonical registry projection directly for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` points at `RELEASE_CHANNEL.generated.json` (or a compatible `/downloads/` base URL).
 
 The local shell wrappers in `scripts/generate-releases-manifest.sh` and `scripts/verify-releases-manifest.sh` are compatibility entrypoints. The canonical materializer now lives in `chummer6-hub-registry`.

@@ -30,7 +30,7 @@ Repository variables:
 2. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
 
 Workflow path:
-1. Run workflow `Desktop Downloads Matrix`.
+1. Push the release-ready source to `main` or run workflow `Desktop Downloads Matrix` from `main`.
 2. If `CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR` is configured, deploy job `deploy-downloads` runs automatically after bundle generation.
 3. `scripts/publish-download-bundle.sh` prunes superseded desktop artifacts from the target downloads root before syncing the freshly built bundle.
 4. Job verifies local deployed manifest and live manifest URL.
@@ -55,7 +55,7 @@ Repository secrets:
 3. `CHUMMER_PORTAL_DOWNLOADS_AWS_SESSION_TOKEN` (optional)
 
 Workflow path:
-1. Run workflow `Desktop Downloads Matrix`.
+1. Push the release-ready source to `main` or run workflow `Desktop Downloads Matrix` from `main`.
 2. If `CHUMMER_PORTAL_DOWNLOADS_S3_URI` is configured, deploy job `deploy-downloads-object-storage` runs automatically after bundle generation.
 3. Job syncs bundle using `scripts/publish-download-bundle-s3.sh`.
 4. Job verifies live manifest URL.
@@ -63,6 +63,28 @@ Workflow path:
 Manual path:
 1. `RUNBOOK_MODE=downloads-sync-s3 DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_PORTAL_DOWNLOADS_S3_URI=<s3://bucket/path> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalBaseOrManifestUrl> [CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL=<endpoint>] bash scripts/runbook.sh`
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
+
+## Mode C: Live `chummer.run` HTTP Publish
+
+Use this mode when the release lane must promote the newest desktop bundle directly into the live `chummer.run` shelf instead of a mounted filesystem target or object store.
+
+Repository variables and secrets:
+1. `CHUMMER_RELEASE_UPLOAD_URL`
+2. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
+3. `CHUMMER_RELEASE_UPLOAD_TOKEN`
+
+Workflow path:
+1. Push the release-ready source to `main` or run workflow `Desktop Downloads Matrix` from `main`.
+2. If `CHUMMER_RELEASE_UPLOAD_URL` is configured, deploy job `deploy-downloads-http` runs automatically after bundle generation.
+3. Job uploads the finished desktop bundle with `scripts/publish-download-bundle-http.sh`.
+4. Job verifies the live `RELEASE_CHANNEL.generated.json` response from `chummer.run`.
+
+Manual path:
+1. `RUNBOOK_MODE=downloads-upload-http DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_RELEASE_UPLOAD_URL=<uploadUrl> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalManifestUrl> CHUMMER_RELEASE_UPLOAD_TOKEN=<token> bash scripts/runbook.sh`
+2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
+
+Operational rule:
+1. The public `chummer.run` shelf is latest-only. After a successful build with a configured live upload target, the new bundle must be published automatically; leaving `chummer.run` on an older build is a release-pipeline failure.
 
 ## Strict Test Gate Commands (host-side)
 
