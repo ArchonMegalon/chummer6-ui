@@ -155,6 +155,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.button.open_work_support"] = "Open Work Support",
         ["desktop.home.button.open_tracked_case"] = "Open Tracked Case",
         ["desktop.home.button.open_campaign_followthrough"] = "Open Campaign Follow-through",
+        ["desktop.home.button.open_campaign_primer"] = "Open Campaign Primer",
+        ["desktop.home.button.open_mission_briefing"] = "Open Mission Briefing",
         ["desktop.home.button.open_my_artifacts"] = "Open My Stuff",
         ["desktop.home.button.open_campaign_artifacts"] = "Open Campaign Stuff",
         ["desktop.home.button.open_published_artifacts"] = "Open Published Stuff",
@@ -494,6 +496,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_work_support"] = "Arbeits-Support öffnen";
             localized["desktop.home.button.open_tracked_case"] = "Verfolgten Fall öffnen";
             localized["desktop.home.button.open_campaign_followthrough"] = "Kampagnen-Nachverfolgung öffnen";
+            localized["desktop.home.button.open_campaign_primer"] = "Kampagnen-Priming öffnen";
+            localized["desktop.home.button.open_mission_briefing"] = "Mission-Briefing öffnen";
             localized["desktop.home.button.open_devices_access"] = "Gerate und Zugriff offnen";
             localized["desktop.home.button.open_current_workspace"] = "Aktuellen Arbeitsbereich offnen";
             localized["desktop.home.button.open_current_campaign_workspace"] = "Aktuellen Kampagnen-Arbeitsbereich offnen";
@@ -885,6 +889,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_work_support"] = "Ouvrir le support de travail";
             localized["desktop.home.button.open_tracked_case"] = "Ouvrir le dossier suivi";
             localized["desktop.home.button.open_campaign_followthrough"] = "Ouvrir le suivi de campagne";
+            localized["desktop.home.button.open_campaign_primer"] = "Ouvrir le guide de campagne";
+            localized["desktop.home.button.open_mission_briefing"] = "Ouvrir le briefing de mission";
             localized["desktop.home.button.open_devices_access"] = "Ouvrir appareils et acces";
             localized["desktop.home.button.open_current_workspace"] = "Ouvrir l'espace de travail actuel";
             localized["desktop.home.button.open_current_campaign_workspace"] = "Ouvrir l'espace de campagne actuel";
@@ -1276,6 +1282,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_work_support"] = "作業サポートを開く";
             localized["desktop.home.button.open_tracked_case"] = "追跡ケースを開く";
             localized["desktop.home.button.open_campaign_followthrough"] = "キャンペーン追跡を開く";
+            localized["desktop.home.button.open_campaign_primer"] = "キャンペーンプライマーを開く";
+            localized["desktop.home.button.open_mission_briefing"] = "ミッションブリーフィングを開く";
             localized["desktop.home.button.open_devices_access"] = "デバイスとアクセスを開く";
             localized["desktop.home.button.open_current_workspace"] = "現在のワークスペースを開く";
             localized["desktop.home.button.open_current_campaign_workspace"] = "現在のキャンペーンワークスペースを開く";
@@ -1667,6 +1675,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_work_support"] = "Abrir suporte de trabalho";
             localized["desktop.home.button.open_tracked_case"] = "Abrir caso rastreado";
             localized["desktop.home.button.open_campaign_followthrough"] = "Abrir acompanhamento da campanha";
+            localized["desktop.home.button.open_campaign_primer"] = "Abrir introducao da campanha";
+            localized["desktop.home.button.open_mission_briefing"] = "Abrir briefing da missao";
             localized["desktop.home.button.open_devices_access"] = "Abrir dispositivos e acesso";
             localized["desktop.home.button.open_current_workspace"] = "Abrir workspace atual";
             localized["desktop.home.button.open_current_campaign_workspace"] = "Abrir workspace atual da campanha";
@@ -2058,6 +2068,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_work_support"] = "打开工作支持";
             localized["desktop.home.button.open_tracked_case"] = "打开跟踪工单";
             localized["desktop.home.button.open_campaign_followthrough"] = "打开战役跟进";
+            localized["desktop.home.button.open_campaign_primer"] = "打开战役导览";
+            localized["desktop.home.button.open_mission_briefing"] = "打开任务简报";
             localized["desktop.home.button.open_devices_access"] = "打开设备与访问";
             localized["desktop.home.button.open_current_workspace"] = "打开当前工作区";
             localized["desktop.home.button.open_current_campaign_workspace"] = "打开当前战役工作区";

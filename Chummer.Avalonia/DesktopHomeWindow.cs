@@ -26,6 +26,7 @@ internal sealed class DesktopHomeWindow : Window
     private const string CampaignConsequenceVisibilitySummary = "Campaign consequences: downtime, heat, faction, contact, reputation, and aftermath state stay visible on the promoted Avalonia desktop route before the next session.";
     private const string CampaignMemoryStaleStateSummary = "Campaign memory stale-state check: desktop compares the server-generated campaign memory packet with the local workspace timestamp and keeps both visible when they disagree.";
     private const string CampaignNextSessionReturnActionSummary = "Next-session return actions: review Campaign Workspace, open the current workspace, review devices/access, or open Workspace Support before continuing play.";
+    private const string CampaignArtifactLaunchSummary = "Artifact launch: open the campaign primer or mission briefing directly from the promoted desktop route instead of browsing the shelf first.";
     private DesktopInstallLinkingState _installState;
     private DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;
@@ -640,6 +641,9 @@ internal sealed class DesktopHomeWindow : Window
             lines.Add(_buildExplainProjection.ExplainFocus);
         }
 
+        lines.Add(BuildCampaignConsequenceVisibilitySummary());
+        lines.Add(BuildCampaignMemoryVisibilitySummary());
+
         return string.Join(" ", lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
     }
 
@@ -662,6 +666,7 @@ internal sealed class DesktopHomeWindow : Window
                 $"Next safe action: {_buildExplainProjection.NextSafeAction}",
                 $"Runtime: {runtimeSummary}",
                 continuity,
+                BuildCampaignNextSessionReturnActionSummary(),
                 $"Watchout: {watchout}"
             });
     }
@@ -790,6 +795,9 @@ internal sealed class DesktopHomeWindow : Window
         List<string> lines =
         [
             BuildCampaignRestoreContinuitySummary(),
+            BuildCampaignConsequenceVisibilitySummary(),
+            BuildCampaignMemoryVisibilitySummary(),
+            BuildCampaignNextSessionReturnActionSummary(),
             BuildCampaignStaleStateVisibilitySummary(),
             BuildCampaignRestoreDecisionSummary(),
             BuildCampaignRestoreDecisionOrderSummary(),
@@ -819,6 +827,9 @@ internal sealed class DesktopHomeWindow : Window
             _campaignProjection.RestoreSummary,
             _campaignProjection.DeviceRoleSummary,
             BuildCampaignRestoreContinuitySummary(),
+            BuildCampaignConsequenceVisibilitySummary(),
+            BuildCampaignMemoryVisibilitySummary(),
+            BuildCampaignNextSessionReturnActionSummary(),
             BuildCampaignStaleStateVisibilitySummary(),
             BuildCampaignRestoreDecisionSummary(),
             BuildCampaignRestoreDecisionOrderSummary(),
@@ -826,6 +837,7 @@ internal sealed class DesktopHomeWindow : Window
             BuildCampaignRestoreReplacementGuardSummary(),
             BuildCampaignConflictChoiceSummary(),
             BuildCampaignRestoreSupportHandoffSummary(),
+            CampaignArtifactLaunchSummary,
             _campaignProjection.SupportClosureSummary
         ];
 
@@ -840,6 +852,43 @@ internal sealed class DesktopHomeWindow : Window
         }
 
         return string.Join("\n", lines);
+    }
+
+    private string BuildCampaignConsequenceVisibilitySummary()
+    {
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemorySummary))
+        {
+            return $"{CampaignConsequenceVisibilitySummary} Live memory packet: {_campaignServerPlane.CampaignMemorySummary}";
+        }
+
+        return $"{CampaignConsequenceVisibilitySummary} Live memory packet is not available yet, so keep the desktop workspace visible until the next governed recap lands.";
+    }
+
+    private string BuildCampaignMemoryVisibilitySummary()
+    {
+        if (_campaignServerPlane is null)
+        {
+            return $"{CampaignMemoryStaleStateSummary} Server continuity is unavailable, so the desktop keeps the last local workspace list and return choices visible.";
+        }
+
+        if (IsServerContinuityOlderThanLocalWorkspace(_recentWorkspaces, _campaignServerPlane))
+        {
+            DateTimeOffset latestLocalWorkspaceUpdate = _recentWorkspaces
+                .Select(static workspace => workspace.LastUpdatedUtc.ToUniversalTime())
+                .DefaultIfEmpty(DateTimeOffset.MinValue)
+                .Max();
+            return $"{CampaignMemoryStaleStateSummary} Local workspace changed at {latestLocalWorkspaceUpdate:yyyy-MM-dd HH:mm} UTC after server memory {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
+        }
+
+        return $"{CampaignMemoryStaleStateSummary} Server memory packet is current as of {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
+    }
+
+    private string BuildCampaignNextSessionReturnActionSummary()
+    {
+        string returnSummary = !string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemoryReturnSummary)
+            ? _campaignServerPlane.CampaignMemoryReturnSummary
+            : _campaignProjection.NextSafeAction;
+        return $"{CampaignNextSessionReturnActionSummary} Return lane: {returnSummary}";
     }
 
     private string BuildCampaignRestoreContinuitySummary()
@@ -1012,6 +1061,8 @@ internal sealed class DesktopHomeWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
+            actions.Add(CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
+            actions.Add(CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
             actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync));
         }
         else
@@ -1266,6 +1317,30 @@ internal sealed class DesktopHomeWindow : Window
     private bool OpenArtifactShelfView(string view)
         => DesktopInstallLinkingRuntime.IsClaimed(_installState)
            && DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/artifacts?view={Uri.EscapeDataString(view)}");
+
+    private Task OpenCampaignPrimerArtifact()
+        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
+            ? DesktopCampaignArtifactWindow.ShowPrimerAsync(
+                this,
+                _installState,
+                _preferences,
+                _recentWorkspaces,
+                _campaignProjection,
+                _campaignServerPlane,
+                _supportProjection)
+            : Task.CompletedTask;
+
+    private Task OpenMissionBriefingArtifact()
+        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
+            ? DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(
+                this,
+                _installState,
+                _preferences,
+                _recentWorkspaces,
+                _campaignProjection,
+                _campaignServerPlane,
+                _supportProjection)
+            : Task.CompletedTask;
 
     private Task OpenBuildFollowThroughAsync()
     {
