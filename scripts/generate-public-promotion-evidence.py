@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate release-evidence/public-promotion.json for desktop bundles.")
     parser.add_argument("--manifest", required=True, help="Path to RELEASE_CHANNEL.generated.json")
     parser.add_argument("--startup-smoke-dir", required=True, help="Path to the startup-smoke receipt directory")
+    parser.add_argument("--signing-receipts-dir", default="", help="Optional path to desktop signing receipt directory")
     parser.add_argument("--output", required=True, help="Path to write public-promotion.json")
     parser.add_argument("--channel", default="", help="Release channel override; defaults to the manifest channel when omitted")
     parser.add_argument("--generated-at", default="", help="RFC3339 timestamp override; defaults to now")
@@ -114,6 +115,26 @@ def load_receipts(startup_smoke_dir: Path) -> list[dict]:
     return receipts
 
 
+def load_signing_receipts(signing_receipts_dir: Path) -> list[dict]:
+    receipts: list[dict] = []
+    if not signing_receipts_dir.is_dir():
+        return receipts
+
+    for path in signing_receipts_dir.rglob("*.receipt.json"):
+        try:
+            payload = load_json(path)
+        except json.JSONDecodeError:
+            continue
+
+        contract_name = str(payload.get("contractName") or payload.get("contract_name") or "").strip()
+        if contract_name != "chummer6-ui.desktop_artifact_signing":
+            continue
+
+        payload["__sourcePath"] = str(path)
+        receipts.append(payload)
+    return receipts
+
+
 def parse_iso_utc(raw: Any) -> datetime | None:
     value = str(raw or "").strip()
     if not value:
@@ -131,6 +152,10 @@ def parse_iso_utc(raw: Any) -> datetime | None:
 
 def receipt_recorded_at(receipt: dict) -> datetime | None:
     return parse_iso_utc(receipt.get("completedAtUtc") or receipt.get("recordedAtUtc") or receipt.get("startedAtUtc"))
+
+
+def signing_receipt_generated_at(receipt: dict) -> datetime | None:
+    return parse_iso_utc(receipt.get("generatedAt") or receipt.get("generated_at"))
 
 
 def validate_receipt_for_artifact(
@@ -224,6 +249,67 @@ def find_matching_receipt(artifact: dict, receipts: list[dict], now_utc: datetim
     return candidate, ""
 
 
+def find_matching_signing_receipt(artifact: dict, receipts: list[dict]) -> tuple[dict | None, dict | None]:
+    expected_file_name = resolve_file_name(artifact).lower()
+    expected_platform = normalize_platform(artifact.get("platform"))
+    expected_rid = normalize_token(artifact.get("rid"))
+    expected_digest = normalize_token(artifact.get("sha256"))
+    candidates: list[tuple[int, float, dict, dict | None]] = []
+
+    for receipt in receipts:
+        receipt_platform = normalize_platform(receipt.get("platform"))
+        if receipt_platform and receipt_platform != expected_platform:
+            continue
+
+        receipt_rid = normalize_token(receipt.get("rid"))
+        if receipt_rid and expected_rid and receipt_rid != expected_rid:
+            continue
+
+        best_score = 0
+        matched_artifact: dict | None = None
+        for row in receipt.get("artifacts") or []:
+            if not isinstance(row, dict):
+                continue
+
+            score = 0
+            row_file_name = str(row.get("fileName") or "").strip().lower()
+            if row_file_name and row_file_name == expected_file_name:
+                score += 8
+
+            row_digest = normalize_token(row.get("sha256"))
+            if expected_digest and row_digest and row_digest == expected_digest:
+                score += 5
+
+            row_kind = normalize_token(row.get("kind"))
+            artifact_kind = normalize_token(artifact.get("kind"))
+            if row_kind and artifact_kind and row_kind == artifact_kind:
+                score += 1
+
+            if score > best_score:
+                best_score = score
+                matched_artifact = row
+
+        if best_score == 0:
+            top_level_signing = normalize_token(receipt.get("signingStatus"))
+            top_level_notarization = normalize_token(receipt.get("notarizationStatus"))
+            if top_level_signing or top_level_notarization:
+                best_score = 1
+
+        if best_score == 0:
+            continue
+
+        generated = signing_receipt_generated_at(receipt)
+        generated_score = generated.timestamp() if generated is not None else 0.0
+        candidates.append((best_score, generated_score, receipt, matched_artifact))
+
+    if not candidates:
+        return None, None
+
+    candidates.sort(key=lambda item: (item[0], item[1], str(item[2].get("__sourcePath") or "")), reverse=True)
+    _, _, receipt, matched_artifact = candidates[0]
+    return receipt, matched_artifact
+
+
 def env_override(*names: str) -> str | None:
     for name in names:
         value = os.environ.get(name, "").strip()
@@ -272,6 +358,7 @@ def main() -> int:
     args = parse_args()
     manifest_path = Path(args.manifest)
     startup_smoke_dir = Path(args.startup_smoke_dir)
+    signing_receipts_dir = Path(args.signing_receipts_dir).resolve() if args.signing_receipts_dir else Path()
     output_path = Path(args.output)
 
     manifest = load_json(manifest_path)
@@ -282,6 +369,7 @@ def main() -> int:
     channel = (args.channel or manifest.get("channelId") or "").strip().lower()
     generated_at = args.generated_at.strip() or now_rfc3339()
     receipts = load_receipts(startup_smoke_dir)
+    signing_receipts = load_signing_receipts(signing_receipts_dir) if args.signing_receipts_dir else []
     now_utc = datetime.now(timezone.utc)
 
     evidence_artifacts: list[dict] = []
@@ -299,10 +387,20 @@ def main() -> int:
 
         signing_status: str | None = None
         notarization_status: str | None = None
+        signing_receipt_path = ""
+        signing_receipt, signing_artifact = find_matching_signing_receipt(artifact, signing_receipts)
+        if signing_receipt is not None:
+            signing_status = normalize_token((signing_artifact or {}).get("signingStatus") or signing_receipt.get("signingStatus")) or None
+            notarization_status = normalize_token((signing_artifact or {}).get("notarizationStatus") or signing_receipt.get("notarizationStatus")) or None
+            signing_receipt_path = str(signing_receipt.get("__sourcePath") or "")
         if platform == "windows":
-            signing_status = allowed_windows_status(channel)
+            if not signing_status:
+                signing_status = allowed_windows_status(channel)
         elif platform == "macos":
-            signing_status, notarization_status = allowed_mac_statuses(channel)
+            if not signing_status or not notarization_status:
+                fallback_signing, fallback_notarization = allowed_mac_statuses(channel)
+                signing_status = signing_status or fallback_signing
+                notarization_status = notarization_status or fallback_notarization
 
         evidence_artifacts.append(
             {
@@ -313,6 +411,7 @@ def main() -> int:
                 "startupSmokeStatus": startup_smoke_status,
                 "startupSmokeReason": startup_smoke_reason,
                 "startupSmokeReceiptPath": str((receipt or {}).get("__sourcePath") or ""),
+                "signingReceiptPath": signing_receipt_path,
                 "signingStatus": signing_status,
                 "notarizationStatus": notarization_status,
                 "artifactSha256": artifact.get("sha256"),

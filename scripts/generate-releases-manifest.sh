@@ -10,6 +10,7 @@ MANIFEST_PATH="${MANIFEST_PATH:-$REPO_ROOT/Docker/Downloads/releases.json}"
 PORTAL_MANIFEST_PATH="${PORTAL_MANIFEST_PATH:-$REPO_ROOT/Chummer.Portal/downloads/releases.json}"
 PORTAL_DOWNLOADS_DIR="${PORTAL_DOWNLOADS_DIR:-$REPO_ROOT/Chummer.Portal/downloads}"
 STARTUP_SMOKE_DIR="${STARTUP_SMOKE_DIR:-$(dirname "$DOWNLOADS_DIR")/startup-smoke}"
+SIGNING_RECEIPTS_DIR="${SIGNING_RECEIPTS_DIR:-$(dirname "$DOWNLOADS_DIR")/signing}"
 STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}"
 RELEASE_VERSION="${RELEASE_VERSION:-unpublished}"
@@ -664,12 +665,17 @@ for artifact in payload.get("artifacts") or []:
         seen.add(file_name)
 PY
 )
-python3 "$SCRIPT_DIR/generate-public-promotion-evidence.py" \
-  --manifest "$CANONICAL_MANIFEST_PATH" \
-  --startup-smoke-dir "$STARTUP_SMOKE_DIR" \
-  --output "$PROMOTION_EVIDENCE_PATH" \
-  --channel "$RELEASE_CHANNEL" \
+promotion_evidence_args=(
+  --manifest "$CANONICAL_MANIFEST_PATH"
+  --startup-smoke-dir "$STARTUP_SMOKE_DIR"
+  --output "$PROMOTION_EVIDENCE_PATH"
+  --channel "$RELEASE_CHANNEL"
   --generated-at "$RELEASE_PUBLISHED_AT"
+)
+if [[ -d "$SIGNING_RECEIPTS_DIR" ]] && find "$SIGNING_RECEIPTS_DIR" -type f -name '*.receipt.json' | grep -q .; then
+  promotion_evidence_args+=(--signing-receipts-dir "$SIGNING_RECEIPTS_DIR")
+fi
+python3 "$SCRIPT_DIR/generate-public-promotion-evidence.py" "${promotion_evidence_args[@]}"
 
 if [[ "$REQUIRE_STARTUP_SMOKE_PROOF" != "0" ]]; then
   if ! python3 - "$PROMOTION_EVIDENCE_PATH" <<'PY'
