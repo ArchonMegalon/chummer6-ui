@@ -74,11 +74,12 @@ require_contains \
 unit_test_build_exit=0
 signoff_test_build_exit=0
 signoff_test_run_exit=0
+signoff_test_dll="Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.Signoff.Tests.dll"
 if [[ ! -s "$directive_matrix_reasons_file" && ! -s "$catalog_definition_reasons_file" && ! -s "$shell_binding_reasons_file" ]]; then
   echo "[UI-RS] executing targeted ruleset posture and shell acceptance tests..."
   scripts/ai/with-package-plane.sh build Chummer.Tests/Chummer.Tests.csproj --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false || unit_test_build_exit=$?
   scripts/ai/with-package-plane.sh build Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false || signoff_test_build_exit=$?
-  scripts/ai/with-package-plane.sh run --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --no-build --nologo --verbosity quiet || signoff_test_run_exit=$?
+  dotnet "$signoff_test_dll" || signoff_test_run_exit=$?
 fi
 
 python3 - <<'PY' "$receipt_path" "$directive_matrix_reasons_file" "$catalog_definition_reasons_file" "$shell_binding_reasons_file" "$unit_test_build_exit" "$signoff_test_build_exit" "$signoff_test_run_exit" "$release_channel_path"

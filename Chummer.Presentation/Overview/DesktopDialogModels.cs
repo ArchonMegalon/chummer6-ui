@@ -9,7 +9,8 @@ public sealed record DesktopDialogField(
     bool IsReadOnly = false,
     string InputType = "text",
     string VisualKind = DesktopDialogFieldVisualKinds.Default,
-    string LayoutSlot = DesktopDialogFieldLayoutSlots.Full)
+    string LayoutSlot = DesktopDialogFieldLayoutSlots.Full,
+    IReadOnlyList<DesktopDialogFieldOption>? Options = null)
 {
     public string AccessibleName => DesktopDialogAccessibility.BuildFieldAccessibleName(Label);
     public string ToolTip => DesktopDialogAccessibility.BuildFieldToolTip(Label, Placeholder, Value);
@@ -39,6 +40,10 @@ public sealed record DesktopDialogState(
     string? Message,
     IReadOnlyList<DesktopDialogField> Fields,
     IReadOnlyList<DesktopDialogAction> Actions);
+
+public sealed record DesktopDialogFieldOption(
+    string Value,
+    string Label);
 
 public static class DesktopDialogFieldVisualKinds
 {

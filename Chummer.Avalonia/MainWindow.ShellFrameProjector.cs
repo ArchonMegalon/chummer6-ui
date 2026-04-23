@@ -12,7 +12,46 @@ namespace Chummer.Avalonia;
 
 internal static class MainWindowShellFrameProjector
 {
-    private static readonly CatalogOnlyRulesetShellCatalogResolver CompatibilityShellCatalogResolver = new();
+    private static readonly IReadOnlyDictionary<string, HashSet<string>> VisibleMenuCommandsByMenuId =
+        new Dictionary<string, HashSet<string>>(StringComparer.Ordinal)
+        {
+            ["file"] = new(StringComparer.Ordinal)
+            {
+                "new_character",
+                "new_critter",
+                "open_character",
+                "open_for_printing",
+                "open_for_export",
+                "save_character",
+                "save_character_as",
+                "print_character",
+                "exit"
+            },
+            ["tools"] = new(StringComparer.Ordinal)
+            {
+                "dice_roller",
+                "global_settings",
+                "character_settings",
+                "update",
+                "master_index",
+                "character_roster",
+                "report_bug"
+            },
+            ["windows"] = new(StringComparer.Ordinal)
+            {
+                "new_window",
+                "close_window",
+                "close_all"
+            },
+            ["help"] = new(StringComparer.Ordinal)
+            {
+                "wiki",
+                "discord",
+                "revision_history",
+                "dumpshock",
+                "about"
+            }
+        };
 
     public static MainWindowShellFrame Project(
         CharacterOverviewState state,
@@ -44,6 +83,7 @@ internal static class MainWindowShellFrameProjector
                     NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
                     NavigationTabs: navigationTabs,
                     ActiveTabId: shellSurface.ActiveTabId,
+                    HasVisibleContent: false,
                     RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId),
                     RestoreContinuitySummary: BuildRestoreContinuitySummary(workspaceContext, language),
                     StaleStateSummary: BuildStaleStateSummary(shellSurface, workspaceContext, language),
@@ -53,9 +93,16 @@ internal static class MainWindowShellFrameProjector
                     CharacterState: BuildCharacterStateText(workspaceContext, language),
                     ServiceState: BuildServiceStateText(shellSurface, language),
                     TimeState: DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.shell.status.time", language, DateTimeOffset.UtcNow.ToString("u")),
-                    ComplianceState: ShellStatusTextFormatter.BuildComplianceState(shellSurface, state.Preferences))),
+                    ComplianceState: ShellStatusTextFormatter.BuildComplianceState(shellSurface, state.Preferences))
+                {
+                    IsBusy = state.IsBusy || shellSurface.IsBusy
+                }),
             SectionHostState: new SectionHostState(
                 SectionId: state.ActiveSectionId,
+                NavigationTabs: navigationTabs,
+                ActiveTabId: shellSurface.ActiveTabId,
+                SectionActions: ProjectSectionActions(shellSurface),
+                ActiveActionId: state.ActiveActionId,
                 Notice: BuildSectionNotice(state, shellSurface),
                 PreviewJson: state.ActiveSectionJson ?? string.Empty,
                 Rows: state.ActiveSectionRows
@@ -258,14 +305,14 @@ internal static class MainWindowShellFrameProjector
             .Where(command => !string.Equals(command.Group, "menu", StringComparison.Ordinal));
         if (!string.IsNullOrWhiteSpace(shellSurface.OpenMenuId))
         {
-            visibleCommands = visibleCommands.Where(command => string.Equals(command.Group, shellSurface.OpenMenuId, StringComparison.Ordinal));
+            visibleCommands = visibleCommands.Where(command => string.Equals(GetProjectedMenuGroupId(command), shellSurface.OpenMenuId, StringComparison.Ordinal));
         }
 
         return visibleCommands
             .Select(command => new CommandPaletteItem(
                 command.Id,
                 ShellChromeBoundary.FormatCommandLabel(command.Id),
-                command.Group,
+                GetProjectedMenuGroupId(command),
                 commandAvailabilityEvaluator.IsCommandEnabled(command, state)))
             .ToArray();
     }
@@ -281,6 +328,7 @@ internal static class MainWindowShellFrameProjector
         }
 
         return ResolveMenuCommandsForGroup(shellSurface, shellSurface.OpenMenuId)
+            .Where(command => IsStateVisibleMenuCommand(state, shellSurface.OpenMenuId, command.Id))
             .Select(command => new MenuCommandItem(
                 command.Id,
                 ShellChromeBoundary.FormatCommandLabel(command.Id),
@@ -301,6 +349,7 @@ internal static class MainWindowShellFrameProjector
             .ToDictionary(
                 menuId => menuId,
                 menuId => (IReadOnlyList<MenuCommandItem>)ResolveMenuCommandsForGroup(shellSurface, menuId)
+                    .Where(command => IsStateVisibleMenuCommand(state, menuId, command.Id))
                     .Select(command => new MenuCommandItem(
                         command.Id,
                         ShellChromeBoundary.FormatCommandLabel(command.Id),
@@ -316,16 +365,46 @@ internal static class MainWindowShellFrameProjector
         string menuId)
     {
         AppCommandDefinition[] runtimeCommands = shellSurface.Commands
-            .Where(command => string.Equals(command.Group, menuId, StringComparison.Ordinal))
+            .Where(command => string.Equals(GetProjectedMenuGroupId(command), menuId, StringComparison.Ordinal))
+            .Where(command => IsVisibleMenuCommand(menuId, command.Id))
             .ToArray();
         if (runtimeCommands.Length > 0)
         {
             return runtimeCommands;
         }
 
-        return CompatibilityShellCatalogResolver.ResolveCommands(shellSurface.ActiveRulesetId)
-            .Where(command => string.Equals(command.Group, menuId, StringComparison.Ordinal))
-            .ToArray();
+        return [];
+    }
+
+    private static bool IsVisibleMenuCommand(string menuId, string commandId)
+    {
+        if (!VisibleMenuCommandsByMenuId.TryGetValue(menuId, out HashSet<string>? visibleCommands))
+        {
+            return false;
+        }
+
+        return visibleCommands.Contains(commandId);
+    }
+
+    private static bool IsStateVisibleMenuCommand(CharacterOverviewState state, string menuId, string commandId)
+    {
+        if (!IsVisibleMenuCommand(menuId, commandId))
+        {
+            return false;
+        }
+
+        return !(string.Equals(commandId, "master_index", StringComparison.Ordinal)
+            && state.Preferences.HideMasterIndex);
+    }
+
+    private static string GetProjectedMenuGroupId(AppCommandDefinition command)
+    {
+        if (string.Equals(command.Id, "report_bug", StringComparison.Ordinal))
+        {
+            return "tools";
+        }
+
+        return command.Group;
     }
 
     private static NavigatorWorkspaceItem[] ProjectOpenWorkspaces(CharacterOverviewState state, ShellSurfaceState shellSurface)
@@ -343,7 +422,9 @@ internal static class MainWindowShellFrameProjector
 
     private static SectionQuickActionDisplayItem[] ProjectSectionQuickActions(string? rulesetId, string? sectionId)
     {
-        return [];
+        return SectionQuickActionCatalog.ForSection(rulesetId, sectionId)
+            .Select(action => new SectionQuickActionDisplayItem(action.ControlId, action.Label, action.IsPrimary))
+            .ToArray();
     }
 
     private static OpenWorkspaceState[] ResolveOpenWorkspaces(CharacterOverviewState overviewState, ShellSurfaceState shellSurface)
@@ -411,6 +492,32 @@ internal static class MainWindowShellFrameProjector
                 Actions: Array.Empty<DialogActionDisplayItem>());
         }
 
+        if (string.Equals(state.ActiveDialog.Id, "dialog.master_index", StringComparison.Ordinal)
+            || string.Equals(state.ActiveDialog.Id, "dialog.switch_ruleset", StringComparison.Ordinal))
+        {
+            return new CommandDialogPaneState(
+                Commands: commands,
+                SelectedCommandId: lastCommandId,
+                DialogTitle: null,
+                DialogMessage: null,
+                Fields: Array.Empty<DialogFieldDisplayItem>(),
+                Actions: Array.Empty<DialogActionDisplayItem>());
+        }
+
+        if (string.Equals(state.ActiveDialog.Id, "dialog.character_roster", StringComparison.Ordinal))
+        {
+            DialogActionDisplayItem[] rosterActions = state.ActiveDialog.Actions
+                .Select(action => new DialogActionDisplayItem(action.Id, action.Label, action.IsPrimary))
+                .ToArray();
+            return new CommandDialogPaneState(
+                Commands: commands,
+                SelectedCommandId: lastCommandId,
+                DialogTitle: null,
+                DialogMessage: null,
+                Fields: Array.Empty<DialogFieldDisplayItem>(),
+                Actions: rosterActions);
+        }
+
         DialogFieldDisplayItem[] fields = state.ActiveDialog.Fields
             .Select(field => new DialogFieldDisplayItem(
                 field.Id,
@@ -420,6 +527,7 @@ internal static class MainWindowShellFrameProjector
                 field.IsMultiline,
                 field.IsReadOnly,
                 field.InputType,
+                field.Options?.Select(option => new DialogFieldOptionDisplayItem(option.Value, option.Label)).ToArray(),
                 field.VisualKind,
                 field.LayoutSlot))
             .ToArray();

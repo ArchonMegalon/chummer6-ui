@@ -212,7 +212,7 @@ budget_evidence.update(
             for token in ['Width="0"', 'MinWidth="0"', 'MaxWidth="0"', 'IsHitTestVisible="False"']
         ),
         "loadedRunnerTabStripPanel": all(
-            token in summary_header_text
+            token in section_host_text
             for token in ['x:Name="LoadedRunnerTabStripBorder"', "classic-tabs"]
         ),
     }

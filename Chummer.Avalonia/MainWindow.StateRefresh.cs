@@ -32,8 +32,12 @@ public partial class MainWindow
     private void ApplyWorkbenchChromeVisibility(MainWindowShellFrame shellFrame)
     {
         bool showNavigatorPane = shellFrame.ShowNavigatorPane;
+        bool showSummaryHeader = shellFrame.ChromeState.SummaryHeader.HasVisibleContent;
+
         LeftNavigatorRegion.IsVisible = showNavigatorPane;
         LeftNavigatorRegion.IsHitTestVisible = showNavigatorPane;
+        SummaryHeaderRegion.IsVisible = showSummaryHeader;
+        SummaryHeaderRegion.IsHitTestVisible = showSummaryHeader;
 
         if (ContentRegion.ColumnDefinitions.Count >= 3)
         {

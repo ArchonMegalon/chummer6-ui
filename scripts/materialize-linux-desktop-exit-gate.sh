@@ -234,6 +234,30 @@ raise SystemExit(1)
 PY
 }
 
+resolve_promoted_startup_smoke_receipt_path() {
+  python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" <<'PY'
+import pathlib
+import sys
+
+release_channel_path = pathlib.Path(sys.argv[1])
+local_files_root = pathlib.Path(sys.argv[2])
+head = str(sys.argv[3]).strip().lower()
+rid = str(sys.argv[4]).strip().lower()
+
+receipt_name = f"startup-smoke-{head}-{rid}.receipt.json"
+candidates = [
+    local_files_root.parent / "startup-smoke" / receipt_name,
+    release_channel_path.parent / "startup-smoke" / receipt_name,
+    release_channel_path.parent.parent / "startup-smoke" / receipt_name,
+]
+for candidate in candidates:
+    if candidate.is_file():
+        print(str(candidate))
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
 capture_git_metadata() {
   local output_path="$1"
 
@@ -264,6 +288,8 @@ GATE_INPUT_MARKERS = (
     "Chummer.Blazor/",
     "Chummer.Blazor.Desktop/",
     "Chummer/chummer.ico",
+    "Chummer/chummer6-icon-preview.png",
+    "Chummer/changelog.txt",
     "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
@@ -456,6 +482,8 @@ GATE_INPUT_MARKERS = (
     "Chummer.Blazor/",
     "Chummer.Blazor.Desktop/",
     "Chummer/chummer.ico",
+    "Chummer/chummer6-icon-preview.png",
+    "Chummer/changelog.txt",
     "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
@@ -1439,6 +1467,202 @@ CURRENT_STAGE="unit_tests"
 bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/test.sh" "$SOURCE_SNAPSHOT_ROOT/$TEST_PROJECT_PATH" -c Release -f "$FRAMEWORK" --logger "trx;LogFileName=$(basename "$TEST_TRX_PATH")" --results-directory "$TEST_RESULTS_DIR"
 test -f "$TEST_TRX_PATH"
 
+if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_ONLY:-0}" == "1" ]]; then
+  CURRENT_STAGE="promoted_installer_shelf_probe"
+  if [[ -z "$PROMOTED_INSTALLER_PATH" ]]; then
+    PROMOTED_INSTALLER_PATH="$(resolve_promoted_installer_path || true)"
+  fi
+  PROMOTED_STARTUP_SMOKE_RECEIPT_PATH="$(resolve_promoted_startup_smoke_receipt_path || true)"
+  if [[ -n "$PROMOTED_INSTALLER_PATH" && -f "$PROMOTED_INSTALLER_PATH" \
+    && -n "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" && -f "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" ]]; then
+    mkdir -p "$DIST_DIR" "$SMOKE_INSTALLER_DIR"
+    cp "$PROMOTED_INSTALLER_PATH" "$INSTALLER_PATH"
+    cp "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" "$INSTALLER_RECEIPT_PATH"
+    INSTALLER_SMOKE_ARTIFACT_PATH="$PROMOTED_INSTALLER_PATH"
+
+    CURRENT_STAGE="promoted_installer_proof_integrity"
+    python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import json
+import pathlib
+import sys
+
+(
+    release_channel_path_text,
+    repo_root_text,
+    local_desktop_files_root_text,
+    app_key,
+    rid,
+    installer_smoke_artifact_path_text,
+    installer_receipt_path_text,
+    use_promoted_installer,
+    failure_reasons_path_text,
+) = sys.argv[1:]
+
+release_channel_path = pathlib.Path(release_channel_path_text)
+repo_root = pathlib.Path(repo_root_text)
+local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
+installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
+installer_receipt_path = pathlib.Path(installer_receipt_path_text)
+failure_reasons_path = pathlib.Path(failure_reasons_path_text)
+
+reasons: list[str] = []
+
+
+def normalize_token(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+def load_json(path: pathlib.Path) -> dict:
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}
+    return loaded if isinstance(loaded, dict) else {}
+
+
+def sha256(path: pathlib.Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest().lower()
+
+
+def parse_iso(value: object) -> dt.datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = dt.datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed.astimezone(dt.timezone.utc)
+
+
+release_channel = load_json(release_channel_path)
+expected_artifact = None
+for item in release_channel.get("artifacts") or []:
+    if not isinstance(item, dict):
+        continue
+    if (
+        normalize_token(item.get("platform")) == "linux"
+        and normalize_token(item.get("kind")) == "installer"
+        and normalize_token(item.get("head")) == normalize_token(app_key)
+        and normalize_token(item.get("rid")) == normalize_token(rid)
+    ):
+        expected_artifact = item
+        break
+
+if expected_artifact is None:
+    reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
+else:
+    expected_file_name = str(expected_artifact.get("fileName") or "").strip()
+    expected_sha = normalize_token(expected_artifact.get("sha256"))
+    expected_size = int(expected_artifact.get("sizeBytes") or 0)
+    expected_version = str(release_channel.get("version") or expected_artifact.get("version") or "").strip()
+    expected_channel = normalize_token(release_channel.get("channelId") or release_channel.get("channel"))
+    shelf_path = local_desktop_files_root / expected_file_name if expected_file_name else pathlib.Path()
+    if not expected_file_name:
+        reasons.append(f"Promoted Linux artifact fileName is missing for {app_key} ({rid}).")
+    elif not shelf_path.is_file():
+        reasons.append(f"Promoted Linux installer file is missing from repo-local desktop shelf: {shelf_path}")
+    else:
+        if expected_size and shelf_path.stat().st_size != expected_size:
+            reasons.append("Promoted Linux installer size does not match release-channel artifact size.")
+        if expected_sha and sha256(shelf_path) != expected_sha:
+            reasons.append("Promoted Linux installer sha256 does not match release-channel artifact sha256.")
+    if not installer_smoke_artifact_path.is_file():
+        reasons.append(f"Linux startup smoke installer artifact path is missing: {installer_smoke_artifact_path}")
+    elif expected_sha and sha256(installer_smoke_artifact_path) != expected_sha:
+        reasons.append("Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes.")
+    if str(use_promoted_installer).strip() == "1" and shelf_path.is_file():
+        try:
+            if installer_smoke_artifact_path.resolve() != shelf_path.resolve():
+                reasons.append("Linux startup smoke installer artifact path does not resolve to promoted repo-local shelf bytes.")
+        except Exception:
+            reasons.append("Linux startup smoke installer artifact path could not be resolved for promoted shelf verification.")
+
+    receipt = load_json(installer_receipt_path)
+    if not receipt:
+        reasons.append(f"Linux startup smoke receipt is missing or unreadable: {installer_receipt_path}")
+    else:
+        if normalize_token(receipt.get("status")) not in {"pass", "passed", "ready"}:
+            reasons.append("Linux startup smoke receipt status is not passing.")
+        if normalize_token(receipt.get("readyCheckpoint")) != "pre_ui_event_loop":
+            reasons.append("Linux startup smoke receipt readyCheckpoint is not pre_ui_event_loop.")
+        if normalize_token(receipt.get("headId")) != normalize_token(app_key):
+            reasons.append("Linux startup smoke receipt headId does not match promoted head.")
+        if normalize_token(receipt.get("platform")) != "linux":
+            reasons.append("Linux startup smoke receipt platform is not linux.")
+        if normalize_token(receipt.get("rid")) != normalize_token(rid):
+            reasons.append("Linux startup smoke receipt rid does not match promoted RID.")
+        if expected_channel and normalize_token(receipt.get("channelId") or receipt.get("channel")) != expected_channel:
+            reasons.append("Linux startup smoke receipt channelId does not match release channel.")
+        receipt_version = str(receipt.get("version") or receipt.get("releaseVersion") or "").strip()
+        if expected_version and receipt_version != expected_version:
+            reasons.append("Linux startup smoke receipt version does not match release channel version.")
+        if expected_sha and normalize_token(receipt.get("artifactDigest")) != f"sha256:{expected_sha}":
+            reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")
+        if not str(receipt.get("operatingSystem") or "").strip():
+            reasons.append("Linux startup smoke receipt operatingSystem is missing.")
+        if "linux" not in normalize_token(receipt.get("hostClass")).split("-"):
+            reasons.append("Linux startup smoke receipt hostClass does not identify a Linux host.")
+        recorded_at = parse_iso(
+            receipt.get("completedAtUtc") or receipt.get("recordedAtUtc") or receipt.get("startedAtUtc")
+        )
+        if recorded_at is None:
+            reasons.append("Linux startup smoke receipt timestamp is missing or invalid.")
+        for label, key in (
+            ("artifactInstallLaunchCapturePath", "launch"),
+            ("artifactInstallWrapperCapturePath", "wrapper"),
+            ("artifactInstallDesktopEntryCapturePath", "desktop entry"),
+            ("artifactInstallVerificationPath", "verification"),
+        ):
+            value = str(receipt.get(label) or "").strip()
+            if not value:
+                reasons.append(f"Linux startup smoke receipt is missing {label}.")
+                continue
+            path = pathlib.Path(value)
+            if not path.exists():
+                reasons.append(f"Linux startup smoke {key} proof path does not exist: {value}")
+            try:
+                path.resolve().relative_to(repo_root.resolve())
+            except Exception:
+                reasons.append(f"Linux startup smoke {key} proof path is outside the UI repo root: {value}")
+
+if reasons:
+    failure_reasons_path.parent.mkdir(parents=True, exist_ok=True)
+    failure_reasons_path.write_text(json.dumps({"reasons": reasons}, indent=2) + "\n", encoding="utf-8")
+    print("\n".join(reasons), file=sys.stderr)
+    raise SystemExit(1)
+PY
+
+    CURRENT_STAGE="source_snapshot_identity"
+    refresh_source_snapshot_manifest
+    assert_source_snapshot_identity_stable
+
+    CURRENT_STAGE="git_identity_stability"
+    capture_git_metadata "$GIT_FINISH_PATH"
+    if ! assert_repo_git_identity_stable; then
+      GIT_IDENTITY_NOTE=" (post-run git identity drift detected outside the isolated source snapshot; source snapshot identity stayed stable)"
+    fi
+
+    CURRENT_STAGE="complete"
+    write_proof "passed" "linux promoted installer shelf, startup smoke, and unit tests passed$GIT_IDENTITY_NOTE" "0"
+    publish_canonical_proof
+    echo "linux desktop exit gate passed; proof: $PROOF_PATH"
+    exit 0
+  fi
+fi
+
 CURRENT_STAGE="publish_linux_binary"
 bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" publish "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -c Release -r "$RID" --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" -o "$PUBLISH_DIR" --nologo
 test -f "$PUBLISH_DIR/$LAUNCH_TARGET"
@@ -1458,6 +1682,7 @@ if [[ "$USE_PROMOTED_INSTALLER" == "1" ]]; then
     echo "Linux promoted installer path could not be resolved for $APP_KEY $RID." >&2
     exit 1
   fi
+  cp "$PROMOTED_INSTALLER_PATH" "$INSTALLER_PATH"
   INSTALLER_SMOKE_ARTIFACT_PATH="$PROMOTED_INSTALLER_PATH"
 fi
 

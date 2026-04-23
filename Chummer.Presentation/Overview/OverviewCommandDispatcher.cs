@@ -79,11 +79,25 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
 
                 await context.LoadAsync(context.CurrentWorkspace.Value, ct);
                 return;
-            case "new_character":
-                context.Publish(context.CreateResetState(commandId, "New character workspace initialized."));
-                return;
             case "new_critter":
-                context.Publish(context.CreateResetState(commandId, "New critter workspace initialized."));
+                await context.ImportAsync(
+                    new WorkspaceImportDocument(
+                        StarterWorkspaceXmlFactory.CreateCharacterXml(
+                            ResolveDialogRulesetId(context) ?? RulesetDefaults.Sr5,
+                            "New Critter",
+                            "Critter",
+                            "Priority",
+                            isCritter: true),
+                        ResolveDialogRulesetId(context) ?? RulesetDefaults.Sr5,
+                        WorkspaceDocumentFormat.NativeXml),
+                    ct);
+                return;
+            case "exit":
+                context.Publish(context.State with
+                {
+                    Error = null,
+                    Notice = "Exit is handled by the desktop shell."
+                });
                 return;
             case "close_all":
             case "restart":
@@ -213,4 +227,5 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             ? null
             : RulesetDefaults.NormalizeRequired(tabRulesetId);
     }
+
 }

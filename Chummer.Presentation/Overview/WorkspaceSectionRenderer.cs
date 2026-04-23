@@ -29,7 +29,7 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveActionId: actionId ?? currentActionId,
             ActiveSectionId: sectionId,
             ActiveSectionJson: section.ToJsonString(WriteIndentedOptions),
-            ActiveSectionRows: SectionRowProjector.BuildRows(section),
+            ActiveSectionRows: SectionRowProjector.BuildRows(sectionId, section),
             ActiveBuildLab: buildLab,
             ActiveBrowseWorkspace: browseWorkspace,
             ActiveNpcPersonaStudio: npcPersonaStudio);
@@ -48,7 +48,7 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveActionId: action.Id,
             ActiveSectionId: "summary",
             ActiveSectionJson: JsonSerializer.Serialize(summary, WriteIndentedOptions),
-            ActiveSectionRows: SectionRowProjector.BuildRows(summaryNode),
+            ActiveSectionRows: SectionRowProjector.BuildRows("summary", summaryNode),
             ActiveBuildLab: null,
             ActiveBrowseWorkspace: null,
             ActiveNpcPersonaStudio: null);
@@ -67,7 +67,7 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveActionId: action.Id,
             ActiveSectionId: "validate",
             ActiveSectionJson: JsonSerializer.Serialize(validation, WriteIndentedOptions),
-            ActiveSectionRows: SectionRowProjector.BuildRows(validationNode),
+            ActiveSectionRows: SectionRowProjector.BuildRows("validate", validationNode),
             ActiveBuildLab: null,
             ActiveBrowseWorkspace: null,
             ActiveNpcPersonaStudio: null);

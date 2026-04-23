@@ -6,6 +6,7 @@ namespace Chummer.Presentation.Shell;
 public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalogResolver
 {
     private const string DefaultRulesetEnvironmentVariable = "CHUMMER_DEFAULT_RULESET";
+    private static readonly string[] ClassicToolbarLeadCommands = ["save_character", "print_character", "copy"];
 
     private static readonly IReadOnlyList<WorkflowDefinition> WorkflowDefinitions =
     [
@@ -18,8 +19,8 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
 
     private static readonly IReadOnlyList<WorkflowSurfaceDefinition> WorkflowSurfaces =
     [
-        new("catalog.shell.menu", WorkflowDefinitionIds.LibraryShell, WorkflowSurfaceKinds.ShellRegion, ShellRegionIds.MenuBar, WorkflowLayoutTokens.ShellFrame, ["file", "edit", "special", "tools", "windows", "help"]),
-        new("catalog.shell.toolbar", WorkflowDefinitionIds.LibraryShell, WorkflowSurfaceKinds.ShellRegion, ShellRegionIds.ToolStrip, WorkflowLayoutTokens.ShellFrame, ["save_character", "print_character", "copy"]),
+        new("catalog.shell.menu", WorkflowDefinitionIds.LibraryShell, WorkflowSurfaceKinds.ShellRegion, ShellRegionIds.MenuBar, WorkflowLayoutTokens.ShellFrame, ["file", "tools", "windows", "help"]),
+        new("catalog.shell.toolbar", WorkflowDefinitionIds.LibraryShell, WorkflowSurfaceKinds.ShellRegion, ShellRegionIds.ToolStrip, WorkflowLayoutTokens.ShellFrame, ["save_character", "print_character", "copy", "new_character", "open_character", "close_window"]),
         new("catalog.career.section", WorkflowDefinitionIds.CareerWorkbench, WorkflowSurfaceKinds.Workbench, ShellRegionIds.SectionPane, WorkflowLayoutTokens.CareerWorkbench, ["tab-info.summary", "tab-info.profile", "tab-skills.skills"]),
         new("catalog.selection.dialog", WorkflowDefinitionIds.SelectionDialog, WorkflowSurfaceKinds.Dialog, ShellRegionIds.DialogHost, WorkflowLayoutTokens.SelectionDialog, ["tab-gear.inventory"]),
         new("catalog.tool.dice", WorkflowDefinitionIds.DiceTool, WorkflowSurfaceKinds.Tool, ShellRegionIds.DialogHost, WorkflowLayoutTokens.ToolPanel, ["dice_roller"]),
@@ -30,27 +31,43 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
     private static readonly IReadOnlyList<AppCommandDefinition> CompatibilityCommands =
     [
         Command("file", "command.file", "menu", false),
-        Command("edit", "command.edit", "menu", false),
-        Command("special", "command.special", "menu", false),
         Command("tools", "command.tools", "menu", false),
         Command("windows", "command.windows", "menu", false),
         Command("help", "command.help", "menu", false),
         Command("new_character", "command.new_character", "file", false),
+        Command("new_critter", "command.new_critter", "file", false),
         Command("open_character", "command.open_character", "file", false),
+        Command("open_for_printing", "command.open_for_printing", "file", false),
+        Command("open_for_export", "command.open_for_export", "file", false),
         Command("save_character", "command.save_character", "file", true),
         Command("save_character_as", "command.save_character_as", "file", true),
         Command("print_character", "command.print_character", "file", true),
+        Command("export_character", "command.export_character", "file", true),
         Command("copy", "command.copy", "edit", true),
         Command("paste", "command.paste", "edit", true),
-        Command("export_character", "command.export_character", "file", true),
-        Command("switch_ruleset", "command.switch_ruleset", "special", false),
         Command("dice_roller", "command.dice_roller", "tools", false),
         Command("global_settings", "command.global_settings", "tools", false),
+        Command("character_settings", "command.character_settings", "tools", true),
+        Command("update", "command.update", "tools", false),
+        Command("restart", "command.restart", "tools", false),
+        Command("switch_ruleset", "command.switch_ruleset", "special", false),
+        Command("translator", "command.translator", "tools", false),
+        Command("xml_editor", "command.xml_editor", "tools", false),
+        Command("hero_lab_importer", "command.hero_lab_importer", "tools", false),
         Command("master_index", "command.master_index", "tools", false),
         Command("character_roster", "command.character_roster", "tools", false),
+        Command("data_exporter", "command.data_exporter", "tools", false),
+        Command("report_bug", "command.report_bug", "tools", false),
+        Command("print_setup", "command.print_setup", "file", false),
+        Command("print_multiple", "command.print_multiple", "file", false),
+        Command("exit", "command.exit", "file", false),
         Command("new_window", "command.new_window", "windows", false),
         Command("close_window", "command.close_window", "windows", false),
-        Command("report_bug", "command.report_bug", "help", false),
+        Command("close_all", "command.close_all", "windows", false),
+        Command("wiki", "command.wiki", "help", false),
+        Command("discord", "command.discord", "help", false),
+        Command("revision_history", "command.revision_history", "help", false),
+        Command("dumpshock", "command.dumpshock", "help", false),
         Command("about", "command.about", "help", false)
     ];
 

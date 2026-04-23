@@ -60,6 +60,7 @@
   <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true'">
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="CharacterSectionServiceTests.cs" />
+    <Compile Include="Compliance\DesktopInstallerParityComplianceTests.cs" />
     <Compile Include="Compliance\DelegateCommandRouteParityComplianceTests.cs" />
 	    <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
 	    <Compile Include="Compliance\GeneratedDialogElementParityComplianceTests.cs" />

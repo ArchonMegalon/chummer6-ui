@@ -116,10 +116,10 @@ public class CharacterOverviewViewModelAdapterTests
         var presenter = new FakeCharacterOverviewPresenter();
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
 
-        await adapter.UpdateDialogFieldAsync("diceExpression", "8d6", CancellationToken.None);
+        await adapter.UpdateDialogFieldAsync("diceCount", "8", CancellationToken.None);
 
-        Assert.AreEqual("diceExpression", presenter.UpdatedDialogFieldId);
-        Assert.AreEqual("8d6", presenter.UpdatedDialogFieldValue);
+        Assert.AreEqual("diceCount", presenter.UpdatedDialogFieldId);
+        Assert.AreEqual("8", presenter.UpdatedDialogFieldValue);
     }
 
     [TestMethod]
@@ -156,6 +156,28 @@ public class CharacterOverviewViewModelAdapterTests
         await adapter.SaveAsync(CancellationToken.None);
 
         Assert.AreEqual(1, presenter.SaveCalls);
+    }
+
+    [TestMethod]
+    public async Task ExportAsync_delegates_to_presenter()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var adapter = new CharacterOverviewViewModelAdapter(presenter);
+
+        await adapter.ExportAsync(CancellationToken.None);
+
+        Assert.AreEqual(1, presenter.ExportCalls);
+    }
+
+    [TestMethod]
+    public async Task PrintAsync_delegates_to_presenter()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var adapter = new CharacterOverviewViewModelAdapter(presenter);
+
+        await adapter.PrintAsync(CancellationToken.None);
+
+        Assert.AreEqual(1, presenter.PrintCalls);
     }
 
     [TestMethod]

@@ -8,7 +8,7 @@ public static class OverviewCommandPolicy
 
     private static readonly HashSet<string> MenuCommandIds = new(StringComparer.Ordinal)
     {
-        "file", "edit", "special", "tools", "windows", "help"
+        "file", "tools", "windows", "help"
     };
 
     private static readonly HashSet<string> ImportHintCommandIds = new(StringComparer.Ordinal)
@@ -19,6 +19,7 @@ public static class OverviewCommandPolicy
     private static readonly HashSet<string> DialogCommandIds = new(StringComparer.Ordinal)
     {
         RuntimeInspectorCommandId,
+        "new_character",
         "new_window",
         "wiki",
         "discord",
@@ -53,8 +54,8 @@ public static class OverviewCommandPolicy
         "save_character_as",
         "print_character",
         "refresh_character",
-        "new_character",
         "new_critter",
+        "exit",
         "close_all",
         "restart",
         "close_window"

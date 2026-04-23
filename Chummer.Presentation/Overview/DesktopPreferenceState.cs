@@ -14,8 +14,9 @@ public sealed record DesktopPreferenceState(
     bool CheckForUpdatesOnLaunch = true,
     string CharacterRosterPath = "/Characters",
     string PdfViewerPath = "/usr/bin/default-pdf-viewer",
-    string VisibleChromePolicy = "Menu, toolstrip, dialogs, and status strip stay compact by default.",
-    string SheetLanguage = "")
+    string VisibleChromePolicy = "Menu, toolstrip, dialogs, and optional runner tabs stay compact by default.",
+    string SheetLanguage = "",
+    bool HideMasterIndex = false)
 {
     public static DesktopPreferenceState Default { get; } = new(
         UiScalePercent: 100,
@@ -31,6 +32,7 @@ public sealed record DesktopPreferenceState(
         CheckForUpdatesOnLaunch: true,
         CharacterRosterPath: "/Characters",
         PdfViewerPath: "/usr/bin/default-pdf-viewer",
-        VisibleChromePolicy: "Menu, toolstrip, dialogs, and status strip stay compact by default.",
-        SheetLanguage: "");
+        VisibleChromePolicy: "Menu, toolstrip, dialogs, and optional runner tabs stay compact by default.",
+        SheetLanguage: "",
+        HideMasterIndex: false);
 }

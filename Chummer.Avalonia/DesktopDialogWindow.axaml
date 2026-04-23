@@ -38,6 +38,7 @@
       </ScrollViewer>
 
       <Border Grid.Row="2"
+              Name="DialogActionsBorder"
               Background="{DynamicResource ChummerShellChromeBrush}"
               BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
               BorderThickness="0,1,0,0"

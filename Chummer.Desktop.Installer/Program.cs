@@ -67,6 +67,7 @@ internal static class Program
     private static int Install(InstallerMetadata metadata, string? payloadPathOverride, string? claimCode)
     {
         string targetDir = InstallPayload(metadata, metadata.InstallDirectory, payloadPathOverride);
+        TryDeleteLegacyInstallDirectories(metadata);
         string installedInstallerPath = Path.Combine(targetDir, metadata.InstallerOutputName + ".exe");
         string launchPath = metadata.PrimaryHead.ResolveLaunchPath(targetDir);
         File.Copy(Environment.ProcessPath!, installedInstallerPath, overwrite: true);
@@ -85,14 +86,10 @@ internal static class Program
 
         RegisterUninstall(metadata, installedInstallerPath);
 
-        DialogResult launch = MessageBox.Show(
-            $"{metadata.DisplayName} installed to:\n{targetDir}\n\nYes: launch now\nNo: finish without launching",
-            "Install Complete",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Information);
-        if (launch == DialogResult.Yes)
+        DialogResult launch = PromptForInstalledHeadLaunch(metadata, targetDir);
+        if (launch is DialogResult.Yes or DialogResult.No)
         {
-            LaunchInstalledApp(metadata, claimCode);
+            LaunchInstalledApp(metadata, claimCode, launch);
         }
 
         return 0;
@@ -114,6 +111,26 @@ internal static class Program
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
         return 0;
+    }
+
+    private static void TryDeleteLegacyInstallDirectories(InstallerMetadata metadata)
+    {
+        foreach (string legacyDirectory in metadata.GetLegacyInstallDirectories())
+        {
+            if (!Directory.Exists(legacyDirectory))
+            {
+                continue;
+            }
+
+            try
+            {
+                Directory.Delete(legacyDirectory, recursive: true);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Chummer installer could not prune legacy install directory '{legacyDirectory}': {ex.Message}");
+            }
+        }
     }
 
     private static int SmokeInstall(InstallerMetadata metadata, string targetDirectory, string? payloadPathOverride)
@@ -774,9 +791,32 @@ internal static class Program
         }
     }
 
-    private static void LaunchInstalledApp(InstallerMetadata metadata, string? claimCode)
+    private static DialogResult PromptForInstalledHeadLaunch(InstallerMetadata metadata, string targetDir)
     {
-        string target = metadata.PrimaryHead.ResolveLaunchPath(metadata.InstallDirectory);
+        if (metadata.InstalledHeads.Count > 1)
+        {
+            string primaryName = metadata.InstalledHeads[0].DisplayName;
+            string secondaryName = metadata.InstalledHeads[1].DisplayName;
+            return MessageBox.Show(
+                $"{metadata.DisplayName} installed to:\n{targetDir}\n\nYes: launch {primaryName}\nNo: launch {secondaryName}\nCancel: finish without launching",
+                "Install Complete",
+                MessageBoxButtons.YesNoCancel,
+                MessageBoxIcon.Information);
+        }
+
+        return MessageBox.Show(
+            $"{metadata.DisplayName} installed to:\n{targetDir}\n\nYes: launch now\nNo: finish without launching",
+            "Install Complete",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Information);
+    }
+
+    private static void LaunchInstalledApp(InstallerMetadata metadata, string? claimCode, DialogResult launchChoice)
+    {
+        InstalledHeadMetadata head = launchChoice == DialogResult.No && metadata.InstalledHeads.Count > 1
+            ? metadata.InstalledHeads[1]
+            : metadata.PrimaryHead;
+        string target = head.ResolveLaunchPath(metadata.InstallDirectory);
         ProcessStartInfo startInfo = new()
         {
             FileName = target,
@@ -988,14 +1028,42 @@ internal static class Program
         public InstalledHeadMetadata PrimaryHead => InstalledHeads[0];
         public bool UsesBundledLayout => InstalledHeads.Any(head => !string.IsNullOrWhiteSpace(head.RelativeRoot));
 
-        public string InstallDirectory =>
+        public string InstallRoot =>
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "Programs",
-                "Chummer6",
-                InstallDirName);
+                "Chummer6");
+
+        public string InstallDirectory =>
+            Path.Combine(InstallRoot, InstallDirName);
 
         public string UninstallRegistryKeyPath => $@"Software\Microsoft\Windows\CurrentVersion\Uninstall\Chummer6.{AppId}";
+
+        public IReadOnlyList<string> GetLegacyInstallDirectories()
+        {
+            if (!UsesBundledLayout
+                || !InstallDirName.StartsWith("Desktop-", StringComparison.OrdinalIgnoreCase))
+            {
+                return [];
+            }
+
+            string ridSuffix = InstallDirName["Desktop-".Length..];
+            if (string.IsNullOrWhiteSpace(ridSuffix))
+            {
+                return [];
+            }
+
+            string[] candidates =
+            [
+                Path.Combine(InstallRoot, $"AvaloniaDesktop-{ridSuffix}"),
+                Path.Combine(InstallRoot, $"BlazorDesktop-{ridSuffix}")
+            ];
+
+            return candidates
+                .Where(candidate => !PathEquals(candidate, InstallDirectory))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
 
         public static InstallerMetadata Load()
         {
@@ -1098,6 +1166,15 @@ internal static class Program
             }
 
             return string.IsNullOrWhiteSpace(appId) ? "avalonia" : appId.Trim();
+        }
+
+        private static bool PathEquals(string left, string right)
+        {
+            static string Normalize(string path)
+                => Path.GetFullPath(path)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            return string.Equals(Normalize(left), Normalize(right), StringComparison.OrdinalIgnoreCase);
         }
     }
 

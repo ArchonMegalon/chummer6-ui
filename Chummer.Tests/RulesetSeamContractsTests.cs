@@ -2787,7 +2787,10 @@ public class RulesetSeamContractsTests
                 new XmlCharacterFileQueries(new CharacterFileService()),
                 new XmlCharacterSectionQueries(new CharacterSectionService()),
                 new XmlCharacterMetadataCommands(new CharacterFileService())),
-            new Sr6WorkspaceCodec()
+            new Sr6WorkspaceCodec(
+                new XmlCharacterFileQueries(new CharacterFileService()),
+                new XmlCharacterSectionQueries(new CharacterSectionService()),
+                new XmlCharacterMetadataCommands(new CharacterFileService()))
         ];
 
         foreach (IRulesetWorkspaceCodec codec in codecs)

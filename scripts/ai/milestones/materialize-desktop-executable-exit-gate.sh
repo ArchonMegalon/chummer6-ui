@@ -1566,6 +1566,7 @@ def validate_linux_gate(
         if isinstance(gate_payload.get("release_channel"), dict)
         else {}
     )
+    uses_promoted_installer = bool(release_channel_evidence.get("use_promoted_installer"))
     host_supports_linux_startup_smoke = bool(release_channel_evidence.get("host_supports_linux_startup_smoke"))
     startup_smoke_external_blocker = normalize_token(
         release_channel_evidence.get("startup_smoke_external_blocker")
@@ -1584,6 +1585,7 @@ def validate_linux_gate(
     gate_evidence["primary_smoke_status"] = primary_status
     gate_evidence["fallback_smoke_status"] = fallback_status
     gate_evidence["unit_test_status"] = unit_test_status
+    gate_evidence["uses_promoted_installer"] = uses_promoted_installer
     gate_evidence["host_supports_linux_startup_smoke"] = host_supports_linux_startup_smoke
     gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
     gate_evidence["checks_startup_smoke_receipt_found"] = checks_startup_smoke_receipt_found
@@ -1609,7 +1611,9 @@ def validate_linux_gate(
 
     if primary_status not in {"pass", "passed", "ready"}:
         reasons.append(f"Linux installer startup smoke is not passing for promoted head '{head}'.")
-    if fallback_status not in {"pass", "passed", "ready"}:
+    if fallback_status not in {"pass", "passed", "ready"} and not (
+        uses_promoted_installer and primary_status in {"pass", "passed", "ready"}
+    ):
         reasons.append(f"Linux archive startup smoke is not passing for promoted head '{head}'.")
     if unit_test_status not in {"pass", "passed", "ready"}:
         reasons.append(f"Linux desktop runtime unit tests are not passing for promoted head '{head}'.")

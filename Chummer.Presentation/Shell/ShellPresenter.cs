@@ -6,7 +6,7 @@ namespace Chummer.Presentation.Shell;
 
 public sealed class ShellPresenter : IShellPresenter
 {
-    private static readonly string[] MenuOrder = ["file", "edit", "special", "tools", "windows", "help"];
+    private static readonly string[] MenuOrder = ["file", "tools", "windows", "help"];
     private static readonly CatalogOnlyRulesetShellCatalogResolver CompatibilityShellCatalogResolver = new();
     private readonly IChummerClient _runtimeClient;
     private readonly IShellBootstrapDataProvider _bootstrapDataProvider;

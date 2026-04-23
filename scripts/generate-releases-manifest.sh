@@ -713,6 +713,16 @@ else
   cp "$CANONICAL_MANIFEST_PATH" "$PORTAL_CANONICAL_MANIFEST_PATH"
   echo "synced portal manifest -> $PORTAL_MANIFEST_PATH"
 
+  portal_startup_smoke_dir="$PORTAL_DOWNLOADS_DIR/startup-smoke"
+  mkdir -p "$portal_startup_smoke_dir"
+  find "$portal_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
+  if [[ -d "$canonical_startup_smoke_dir" ]] && find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
+    cp -f "$canonical_startup_smoke_dir"/startup-smoke-*.receipt.json "$portal_startup_smoke_dir"/
+    echo "synced startup-smoke receipts -> $portal_startup_smoke_dir"
+  else
+    echo "no startup-smoke receipts found in $canonical_startup_smoke_dir for portal sync"
+  fi
+
   portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
   mkdir -p "$portal_files_dir"
   portal_artifacts=()

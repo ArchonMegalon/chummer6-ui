@@ -26,6 +26,21 @@ internal sealed class MainWindowInteractionCoordinator
         return _presenter.SaveAsync(ct);
     }
 
+    public Task ImportAsync(byte[] documentBytes, CancellationToken ct)
+    {
+        return _adapter.ImportAsync(documentBytes, ct);
+    }
+
+    public Task ExportAsync(CancellationToken ct)
+    {
+        return _presenter.ExportAsync(ct);
+    }
+
+    public Task PrintAsync(CancellationToken ct)
+    {
+        return _presenter.PrintAsync(ct);
+    }
+
     public Task ToggleMenuAsync(string menuId, CancellationToken ct)
     {
         return _shellPresenter.ToggleMenuAsync(menuId, ct);

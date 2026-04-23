@@ -33,7 +33,7 @@ public sealed class MainWindowShellFrameProjectorTests
     }
 
     [TestMethod]
-    public void Project_projects_sr6_adapted_section_quick_actions_only_for_sr6()
+    public void Project_hides_unbacked_section_quick_actions()
     {
         MainWindowShellFrame sr6Frame = ProjectFrame(
             RulesetDefaults.Sr6,
@@ -44,14 +44,25 @@ public sealed class MainWindowShellFrameProjectorTests
             activeSectionId: "summary",
             activeTabId: "tab-info");
 
-        CollectionAssert.AreEqual(
-            Sr6AdaptedQuickActionControlIds,
-            sr6Frame.SectionHostState.QuickActions.Select(action => action.ControlId).ToArray());
-        CollectionAssert.AreEqual(
-            Sr6AdaptedQuickActionLabels,
-            sr6Frame.SectionHostState.QuickActions.Select(action => action.Label).ToArray());
-        Assert.IsTrue(sr6Frame.SectionHostState.QuickActions[0].IsPrimary);
+        Assert.IsEmpty(sr6Frame.SectionHostState.QuickActions);
         Assert.IsEmpty(sr5Frame.SectionHostState.QuickActions);
+    }
+
+    [TestMethod]
+    public void Project_projects_runtime_backed_magic_and_aug_section_quick_actions()
+    {
+        foreach ((string sectionId, string expectedControlId, string expectedLabel) in RuntimeBackedSectionQuickActions)
+        {
+            MainWindowShellFrame frame = ProjectFrame(
+                RulesetDefaults.Sr6,
+                activeSectionId: sectionId,
+                activeTabId: "tab-magic");
+
+            Assert.AreEqual(1, frame.SectionHostState.QuickActions.Length, $"Expected one quick action for '{sectionId}'.");
+            Assert.AreEqual(expectedControlId, frame.SectionHostState.QuickActions[0].ControlId);
+            Assert.AreEqual(expectedLabel, frame.SectionHostState.QuickActions[0].Label);
+            Assert.IsTrue(frame.SectionHostState.QuickActions[0].IsPrimary);
+        }
     }
 
     [TestMethod]
@@ -69,6 +80,53 @@ public sealed class MainWindowShellFrameProjectorTests
         }
     }
 
+    [TestMethod]
+    public void Project_projects_active_tab_section_actions_into_visible_section_host_state()
+    {
+        WorkspaceSurfaceActionDefinition[] actions =
+        [
+            new WorkspaceSurfaceActionDefinition(
+                Id: "tab-info.summary",
+                Label: "Summary",
+                TabId: "tab-info",
+                Kind: WorkspaceSurfaceActionKind.Summary,
+                TargetId: "summary",
+                RequiresOpenCharacter: true,
+                EnabledByDefault: true,
+                RulesetId: RulesetDefaults.Sr6),
+            new WorkspaceSurfaceActionDefinition(
+                Id: "tab-info.profile",
+                Label: "Profile",
+                TabId: "tab-info",
+                Kind: WorkspaceSurfaceActionKind.Section,
+                TargetId: "profile",
+                RequiresOpenCharacter: true,
+                EnabledByDefault: true,
+                RulesetId: RulesetDefaults.Sr6),
+            new WorkspaceSurfaceActionDefinition(
+                Id: "tab-info.attributes",
+                Label: "Attributes",
+                TabId: "tab-info",
+                Kind: WorkspaceSurfaceActionKind.Section,
+                TargetId: "attributes",
+                RequiresOpenCharacter: true,
+                EnabledByDefault: true,
+                RulesetId: RulesetDefaults.Sr6),
+        ];
+
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr6,
+            activeSectionId: "profile",
+            activeTabId: "tab-info",
+            workspaceActions: actions);
+
+        CollectionAssert.AreEqual(
+            actions.Select(action => action.Id).ToArray(),
+            frame.SectionHostState.SectionActions.Select(action => action.Id).ToArray());
+        Assert.AreEqual("tab-info.summary", frame.SectionHostState.SectionActions[0].Id);
+        Assert.AreEqual("tab-info.profile", frame.SectionHostState.ActiveActionId);
+    }
+
     private static MainWindowShellFrame ProjectFrame(
         string rulesetId,
         string activeSectionId,
@@ -80,7 +138,10 @@ public sealed class MainWindowShellFrameProjectorTests
             ActiveSectionId = activeSectionId,
             ActiveSectionJson = $"{{\"section\":\"{activeSectionId}\"}}",
             ActiveSectionRows = [new SectionRowState($"{activeSectionId}.value", "ready")],
-            ActiveActionId = workspaceActions?.FirstOrDefault()?.Id
+            ActiveActionId = workspaceActions?
+                .FirstOrDefault(action => string.Equals(action.TargetId, activeSectionId, StringComparison.Ordinal))
+                ?.Id
+                ?? workspaceActions?.FirstOrDefault()?.Id
         };
 
         ShellSurfaceState shellSurface = new(
@@ -145,29 +206,23 @@ public sealed class MainWindowShellFrameProjectorTests
 
     private static readonly string[] StandardInventoryQuickActionControlIds =
     [
-        "gear_add",
-        "gear_edit",
-        "gear_delete",
-        "gear_source"
+        "gear_add"
     ];
 
     private static readonly string[] StandardInventoryQuickActionLabels =
     [
-        "Add Gear",
-        "Edit Gear",
-        "Remove Gear",
-        "Show Source"
+        "Add Gear"
     ];
 
-    private static readonly string[] Sr6AdaptedQuickActionControlIds =
+    private static readonly (string SectionId, string ControlId, string Label)[] RuntimeBackedSectionQuickActions =
     [
-        "create_entry",
-        "show_source"
-    ];
-
-    private static readonly string[] Sr6AdaptedQuickActionLabels =
-    [
-        "Add Guided Entry",
-        "Show Source"
+        ("cyberwares", "cyberware_add", "Add Cyberware"),
+        ("spells", "spell_add", "Add Spell"),
+        ("powers", "adept_power_add", "Add Adept Power"),
+        ("complexforms", "complex_form_add", "Add Complex Form"),
+        ("initiationgrades", "initiation_add", "Add Initiation"),
+        ("spirits", "spirit_add", "Add Spirit"),
+        ("critterpowers", "critter_power_add", "Add Critter Power"),
+        ("aiprograms", "matrix_program_add", "Add Program")
     ];
 }

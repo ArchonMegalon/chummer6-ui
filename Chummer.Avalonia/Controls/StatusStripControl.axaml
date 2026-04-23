@@ -22,14 +22,14 @@
       <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" />
       <TextBlock x:Name="TimeStateText"
                  Classes="shell-caption"
-                 Text="Time: -"
+                 Text="Time: loading"
                  VerticalAlignment="Center"
                  TextWrapping="NoWrap"
                  TextTrimming="CharacterEllipsis" />
       <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" />
       <TextBlock x:Name="ComplianceStateText"
                  Classes="shell-caption"
-                 Text="Compliance: shared presenter path"
+                 Text="Ruleset: loading"
                  VerticalAlignment="Center"
                  TextWrapping="NoWrap"
                  TextTrimming="CharacterEllipsis" />
@@ -42,9 +42,8 @@
       <ProgressBar x:Name="WorkbenchProgressBar"
                    Width="56"
                    Height="8"
-                   Minimum="0"
-                   Maximum="100"
-                   Value="100" />
+                   IsVisible="False"
+                   IsIndeterminate="False" />
     </StackPanel>
   </Grid>
 </UserControl>

@@ -501,7 +501,7 @@ heads = [
         "headId": primary_head_key,
         "displayName": DISPLAY_NAMES[primary_head_key],
         "launchExecutable": primary_launch_target,
-        "shortcutName": SHORTCUT_NAMES[primary_head_key],
+        "shortcutName": "Chummer6 Desktop" if secondary_head_key and primary_head_key == "avalonia" else SHORTCUT_NAMES[primary_head_key],
         "relativeRoot": primary_relative_root,
     }
 ]

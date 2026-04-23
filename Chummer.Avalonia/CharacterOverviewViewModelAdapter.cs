@@ -84,6 +84,16 @@ public sealed class CharacterOverviewViewModelAdapter : IDisposable
         return _presenter.SaveAsync(ct);
     }
 
+    public Task ExportAsync(CancellationToken ct)
+    {
+        return _presenter.ExportAsync(ct);
+    }
+
+    public Task PrintAsync(CancellationToken ct)
+    {
+        return _presenter.PrintAsync(ct);
+    }
+
     public Task ImportAsync(byte[] documentBytes, CancellationToken ct)
     {
         return _presenter.ImportAsync(

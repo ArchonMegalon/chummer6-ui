@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -92,6 +93,7 @@ public partial class CommandDialogPaneControl : UserControl
         DialogFieldsHost.Children.Clear();
         DialogFieldDisplayItem[] visibleFields = fields
             .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+            .Where(ShouldRenderField)
             .ToArray();
 
         for (int index = 0; index < visibleFields.Length; index++)
@@ -181,34 +183,12 @@ public partial class CommandDialogPaneControl : UserControl
 
     private Control CreateFieldPane(DialogFieldDisplayItem field)
     {
-        StackPanel row = new()
-        {
-            Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
-            Spacing = 4
-        };
-        TextBlock label = new()
-        {
-            Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
-            Text = field.Label,
-            FontWeight = FontWeight.SemiBold
-        };
-        ApplyAccessibility(label, field.AccessibleName, field.ToolTip, field.HelpText);
-        row.Children.Add(label);
-
-        Control fieldControl = CreateFieldControl(field);
-        fieldControl.Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id);
-        ApplyAccessibility(fieldControl, field.AccessibleName, field.ToolTip, field.HelpText);
-        row.Children.Add(fieldControl);
-        return row;
-    }
-
-    private Control CreateFieldControl(DialogFieldDisplayItem field)
-    {
         if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
         {
             CheckBox checkBox = new()
             {
                 Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
+                Content = field.Label,
                 IsChecked = ParseCheckbox(field.Value),
                 IsEnabled = !field.IsReadOnly
             };
@@ -235,6 +215,135 @@ public partial class CommandDialogPaneControl : UserControl
 
             ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
             return checkBox;
+        }
+
+        StackPanel row = new()
+        {
+            Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
+            Spacing = 4
+        };
+        TextBlock label = new()
+        {
+            Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
+            Text = field.Label,
+            FontWeight = FontWeight.SemiBold
+        };
+        ApplyAccessibility(label, field.AccessibleName, field.ToolTip, field.HelpText);
+        row.Children.Add(label);
+
+        Control fieldControl = CreateFieldControl(field);
+        fieldControl.Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id);
+        ApplyAccessibility(fieldControl, field.AccessibleName, field.ToolTip, field.HelpText);
+        row.Children.Add(fieldControl);
+        return row;
+    }
+
+    private static bool ShouldRenderField(DialogFieldDisplayItem field)
+    {
+        if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tabs, StringComparison.Ordinal))
+        {
+            // Chummer5a parity posture: synthetic dialog tab strips and section rails
+            // stay out of the visible surface even if the presenter still carries them.
+            return false;
+        }
+
+        return true;
+    }
+
+    private Control CreateFieldControl(DialogFieldDisplayItem field)
+    {
+        if (string.Equals(field.InputType, "select", StringComparison.Ordinal)
+            && string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
+        {
+            DialogFieldOptionDisplayItem[] options = (field.Options ?? [])
+                .DistinctBy(option => option.Value, StringComparer.Ordinal)
+                .ToArray();
+            ListBox listBox = new()
+            {
+                ItemsSource = options,
+                SelectedItem = options.FirstOrDefault(option => string.Equals(option.Value, field.Value, StringComparison.Ordinal)),
+                IsEnabled = !field.IsReadOnly,
+                MinHeight = 160
+            };
+            listBox.ItemTemplate = new FuncDataTemplate<DialogFieldOptionDisplayItem>((option, _) =>
+                new TextBlock
+                {
+                    Text = option?.Label ?? string.Empty,
+                    TextWrapping = TextWrapping.Wrap
+                });
+            if (!field.IsReadOnly)
+            {
+                listBox.SelectionChanged += (_, _) =>
+                {
+                    if (_suppressDialogUpdates)
+                    {
+                        return;
+                    }
+
+                    if (listBox.SelectedItem is not DialogFieldOptionDisplayItem selectedOption)
+                    {
+                        return;
+                    }
+
+                    if (string.Equals(selectedOption.Value, field.Value, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    DialogFieldValueChanged?.Invoke(
+                        this,
+                        new DialogFieldValueChangedEventArgs(field.Id, selectedOption.Value));
+                };
+            }
+
+            ApplyAccessibility(listBox, field.AccessibleName, field.ToolTip, field.HelpText);
+            return listBox;
+        }
+
+        if (string.Equals(field.InputType, "select", StringComparison.Ordinal))
+        {
+            DialogFieldOptionDisplayItem[] options = (field.Options ?? [])
+                .DistinctBy(option => option.Value, StringComparer.Ordinal)
+                .ToArray();
+            ComboBox comboBox = new()
+            {
+                ItemsSource = options,
+                SelectedItem = options.FirstOrDefault(option => string.Equals(option.Value, field.Value, StringComparison.Ordinal)),
+                IsEnabled = !field.IsReadOnly,
+                MinWidth = 180
+            };
+            comboBox.ItemTemplate = new FuncDataTemplate<DialogFieldOptionDisplayItem>((option, _) =>
+                new TextBlock
+                {
+                    Text = option?.Label ?? string.Empty
+                });
+            if (!field.IsReadOnly)
+            {
+                comboBox.SelectionChanged += (_, _) =>
+                {
+                    if (_suppressDialogUpdates)
+                    {
+                        return;
+                    }
+
+                    if (comboBox.SelectedItem is not DialogFieldOptionDisplayItem selectedOption)
+                    {
+                        return;
+                    }
+
+                    if (string.Equals(selectedOption.Value, field.Value, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    DialogFieldValueChanged?.Invoke(
+                        this,
+                        new DialogFieldValueChangedEventArgs(field.Id, selectedOption.Value));
+                };
+            }
+
+            ApplyAccessibility(comboBox, field.AccessibleName, field.ToolTip, field.HelpText);
+            return comboBox;
         }
 
         if (field.IsReadOnly && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
@@ -374,6 +483,7 @@ public partial class CommandDialogPaneControl : UserControl
             .FirstOrDefault(line => line.StartsWith("Portrait Source | ", StringComparison.Ordinal))
             ?.Substring("Portrait Source | ".Length)
             .Trim();
+        string? previewLabel = lines.Length > 0 ? lines[0] : null;
         StackPanel panel = new()
         {
             Spacing = 4
@@ -394,22 +504,12 @@ public partial class CommandDialogPaneControl : UserControl
             }
             catch
             {
-                previewControl = new TextBlock
-                {
-                    Text = lines.Length > 0 ? lines[0] : "Mugshot Preview",
-                    HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
-                };
+                previewControl = CreateMugshotFallback(previewLabel);
             }
         }
         else
         {
-            previewControl = new TextBlock
-            {
-                Text = lines.Length > 0 ? lines[0] : "Mugshot Preview",
-                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
-                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
-            };
+            previewControl = CreateMugshotFallback(previewLabel);
         }
 
         panel.Children.Add(new Border
@@ -431,6 +531,21 @@ public partial class CommandDialogPaneControl : UserControl
         }
 
         return panel;
+    }
+
+    private static Control CreateMugshotFallback(string? previewLabel)
+    {
+        if (!string.IsNullOrWhiteSpace(previewLabel))
+        {
+            return new TextBlock
+            {
+                Text = previewLabel,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+            };
+        }
+
+        return new Panel();
     }
 
     private static Control CreateGridPanel(string value)
@@ -561,6 +676,7 @@ public sealed record DialogFieldDisplayItem(
     bool IsMultiline,
     bool IsReadOnly,
     string InputType,
+    IReadOnlyList<DialogFieldOptionDisplayItem>? Options = null,
     string VisualKind = DesktopDialogFieldVisualKinds.Default,
     string LayoutSlot = DesktopDialogFieldLayoutSlots.Full)
 {
@@ -580,6 +696,10 @@ public sealed record DialogFieldDisplayItem(
         return $"{Label}: {Value}";
     }
 }
+
+public sealed record DialogFieldOptionDisplayItem(
+    string Value,
+    string Label);
 
 public sealed record DialogActionDisplayItem(string Id, string Label, bool IsPrimary)
 {
