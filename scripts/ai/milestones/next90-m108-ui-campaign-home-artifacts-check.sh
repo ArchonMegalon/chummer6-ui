@@ -134,8 +134,8 @@ queue_text = read_text(queue_path)
 design_queue_text = read_text(design_queue_path)
 
 registry_block = extract_block(registry_text, "      - id: 108.3", "      - id: 108.4")
-queue_block = extract_block(queue_text, f"    package_id: {PACKAGE_ID}", "  - title:")
-design_queue_block = extract_block(design_queue_text, f"    package_id: {PACKAGE_ID}", "  - title:")
+queue_block = extract_block(queue_text, f"  - title: {TITLE}", "  - title:")
+design_queue_block = extract_block(design_queue_text, f"  - title: {TITLE}", "  - title:")
 
 reject_worker_unsafe_proof(registry_block, "registry block")
 reject_worker_unsafe_proof(queue_block, "fleet queue block")
