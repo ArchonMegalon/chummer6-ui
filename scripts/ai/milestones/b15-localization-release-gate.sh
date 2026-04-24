@@ -44,6 +44,9 @@ if [[ $signoff_status -ne 0 ]]; then
   if rg -q "libhostpolicy\.so|Failed to run as a self-contained app|runtimeconfig\.json' was not found" "$signoff_log"; then
     signoff_retry_attempted=1
     signoff_retry_reason="runtimeconfig_bootstrap_repair"
+  elif rg -q "CSC : error CS0006: Metadata file .* could not be found" "$signoff_log"; then
+    signoff_retry_attempted=1
+    signoff_retry_reason="metadata_reference_rebuild"
   elif rg -q "error NETSDK1064: Package .* was not found|Package .* version .* was not found" "$signoff_log"; then
     signoff_retry_attempted=1
     signoff_retry_reason="package_restore_repair"
@@ -51,7 +54,7 @@ if [[ $signoff_status -ne 0 ]]; then
 
   if [[ $signoff_retry_attempted -eq 1 ]]; then
     set +e
-    scripts/ai/with-package-plane.sh build --project "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false >>"$signoff_log" 2>&1
+    scripts/ai/with-package-plane.sh build "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false >>"$signoff_log" 2>&1
     run_signoff_runner >>"$signoff_log" 2>&1
     signoff_status=$?
     set -e
