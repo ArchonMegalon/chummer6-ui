@@ -27,7 +27,12 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHomeBuildExplainProjector_uses_real_contract_state();
             DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
             FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions();
+            DesktopHome_promotes_campaign_memory_and_return_actions();
+            DesktopCampaignArtifactSurface_is_a_real_top_level_surface();
+            DesktopCampaignArtifact_surface_keeps_memory_and_return_actions_visible();
             DesktopCampaignWorkspace_is_a_real_top_level_surface();
+            DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement();
+            DesktopRuleEnvironmentStudioSurface_is_a_real_top_level_surface();
             DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible();
             DesktopUpdateSurface_is_a_real_top_level_surface();
             DesktopSupportSurface_is_a_real_top_level_surface();
@@ -792,6 +797,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "CreateCampaignActions()");
         RequireContains(source, "desktop.home.section.campaign_return");
         RequireContains(source, "desktop.home.button.open_current_campaign_workspace");
+        RequireContains(source, "desktop.home.button.open_campaign_primer");
+        RequireContains(source, "desktop.home.button.open_mission_briefing");
         RequireContains(source, "desktop.home.button.open_my_artifacts");
         RequireContains(source, "desktop.home.button.open_campaign_artifacts");
         RequireContains(source, "desktop.home.button.open_published_artifacts");
@@ -806,8 +813,19 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "ResolveSupportWorkspace()");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
         RequireContains(source, "OpenArtifactShelfView");
+        RequireContains(source, "OpenCampaignPrimerArtifact");
+        RequireContains(source, "OpenMissionBriefingArtifact");
+        RequireContains(source, "CampaignArtifactLaunchSummary");
+        RequireContains(source, "CampaignConsequenceVisibilitySummary");
+        RequireContains(source, "CampaignMemoryStaleStateSummary");
+        RequireContains(source, "CampaignNextSessionReturnActionSummary");
+        RequireContains(source, "BuildCampaignConsequenceVisibilitySummary()");
+        RequireContains(source, "BuildCampaignMemoryVisibilitySummary()");
+        RequireContains(source, "BuildCampaignNextSessionReturnActionSummary()");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal($\"/artifacts?view={Uri.EscapeDataString(view)}\")");
+        RequireContains(source, "DesktopCampaignArtifactWindow.ShowPrimerAsync(");
+        RequireContains(source, "DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(");
 
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeCampaignProjector.cs");
         RequireContains(projectorSource, "Campaign return:");
@@ -873,6 +891,19 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
         RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "desktop.home.button.open_campaign_primer");
+        RequireContains(source, "desktop.home.button.open_mission_briefing");
+        RequireContains(source, "OpenCampaignPrimerArtifact");
+        RequireContains(source, "OpenMissionBriefingArtifact");
+        RequireContains(source, "CampaignArtifactLaunchSummary");
+        RequireContains(source, "CampaignConsequenceVisibilitySummary");
+        RequireContains(source, "CampaignMemoryStaleStateSummary");
+        RequireContains(source, "CampaignNextSessionReturnActionSummary");
+        RequireContains(source, "BuildCampaignConsequenceVisibilitySummary()");
+        RequireContains(source, "BuildCampaignMemoryVisibilitySummary()");
+        RequireContains(source, "BuildCampaignNextSessionReturnActionSummary()");
+        RequireContains(source, "DesktopCampaignArtifactWindow.ShowPrimerAsync(");
+        RequireContains(source, "DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(");
 
         string navigationSource = ReadSource("Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs");
         RequireContains(navigationSource, "OpenWorkspaceFromDesktopSurfaceAsync");
@@ -880,9 +911,91 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(navigationSource, "RunUiActionAsync");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
-        RequireContains(appSource, "CHUMMER_DESKTOP_STARTUP_SURFACE");
-        RequireContains(appSource, "campaign_workspace");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.EnvironmentVariableName");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CampaignWorkspace)");
         RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopRuleEnvironmentStudioSurface_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs");
+        RequireContains(source, "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)");
+        RequireContains(source, "Rule Environment Studio");
+        RequireContains(source, "Rule-environment studio");
+        RequireContains(source, "Amend-package lifecycle");
+        RequireContains(source, "Before-after diffs");
+        RequireContains(source, "Explain receipts");
+        RequireContains(source, "BuildLifecycleBody()");
+        RequireContains(source, "BuildDiffBody()");
+        RequireContains(source, "BuildReceiptBody()");
+        RequireContains(source, "DesktopTrustReceiptText.BuildImportRuleEnvironment");
+        RequireContains(source, "DesktopTrustReceiptText.BuildImportDiffBefore");
+        RequireContains(source, "DesktopTrustReceiptText.BuildImportDiffAfter");
+        RequireContains(source, "DesktopTrustReceiptText.BuildImportExplainReceipt");
+        RequireContains(source, "DesktopTrustReceiptText.BuildImportSupportReuse");
+        RequireContains(source, "ReadBuildExplainProjectionAsync");
+        RequireContains(source, "client.GetShellBootstrapAsync");
+        RequireContains(source, "client.GetRuntimeInspectorProfileAsync");
+        RequireContains(source, "client.GetBuildPathSuggestionsAsync");
+        RequireContains(source, "client.GetBuildPathPreviewAsync");
+        RequireContains(source, "client.GetBuildAsync");
+        RequireContains(source, "client.GetRulesAsync");
+        RequireContains(source, "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId)");
+        RequireContains(source, "DesktopSupportWindow.ShowAsync(owner, _installState.HeadId)");
+        RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)");
+        RequireContains(source, "mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId)");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio");
+        RequireContains(appSource, "DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopCampaignArtifactSurface_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopCampaignArtifactWindow.cs");
+        RequireContains(source, "internal sealed class DesktopCampaignArtifactWindow : Window");
+        RequireContains(source, "public static Task ShowPrimerAsync(Window owner, string headId)");
+        RequireContains(source, "public static Task ShowMissionBriefingAsync(Window owner, string headId)");
+        RequireContains(source, "Desktop campaign artifact surface requires an IChummerClient instance.");
+        RequireContains(source, "client.ListWorkspacesAsync");
+        RequireContains(source, "client.GetAccountCampaignSummaryAsync");
+        RequireContains(source, "client.GetCampaignWorkspaceDigestsAsync");
+        RequireContains(source, "GetCampaignWorkspaceServerPlaneAsync");
+        RequireContains(source, "client.GetDesktopHomeSupportDigestsAsync");
+        RequireContains(source, "Campaign Primer");
+        RequireContains(source, "Mission Briefing");
+        RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
+        RequireContains(source, "mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId)");
+        RequireContains(source, "new ScrollViewer");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.CampaignPrimer");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CampaignPrimer)");
+        RequireContains(appSource, "DesktopCampaignArtifactWindow.ShowPrimerAsync(owner, \"avalonia\")");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.MissionBriefing");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.MissionBriefing)");
+        RequireContains(appSource, "DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopHome_promotes_campaign_memory_and_return_actions()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        RequireContains(source, "Campaign memory and return loop");
+        RequireContains(source, "BuildCampaignMemoryPanelBody()");
+        RequireContains(source, "BuildCampaignConsequenceVisibilitySummary()");
+        RequireContains(source, "BuildCampaignMemoryVisibilitySummary()");
+        RequireContains(source, "BuildCampaignNextSessionReturnActionSummary()");
+        RequireContains(source, "BuildCampaignStaleStateVisibilitySummary()");
+        RequireContains(source, "CreateCampaignMemoryActions()");
+        RequireContains(source, "Review Campaign Memory");
+        RequireContains(source, "OpenWorkspaceSupport");
+        RequireContains(source, "_campaignMemoryText");
+        RequireContains(source, "_campaignMemoryActionsRow");
+        RequireContains(source, "ResetActionRow(_campaignMemoryActionsRow, CreateCampaignMemoryActions())");
     }
 
     private static void DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible()
@@ -892,12 +1005,72 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "BuildRestoreContinuityChoiceSummary()");
         RequireContains(source, "BuildRestoreStaleStateVisibilitySummary()");
         RequireContains(source, "BuildRestoreConflictChoiceSummary()");
+        RequireContains(source, "BuildCampaignConsequenceVisibilitySummary()");
+        RequireContains(source, "BuildCampaignMemoryVisibilitySummary()");
+        RequireContains(source, "BuildCampaignNextSessionReturnActionSummary()");
         RequireContains(source, "Restore choice: open the current campaign workspace");
         RequireContains(source, "Stale state: server continuity is unavailable");
         RequireContains(source, "Conflict choices:");
+        RequireContains(source, "Campaign consequences:");
+        RequireContains(source, "Campaign memory stale-state check:");
+        RequireContains(source, "Next-session return actions:");
         RequireContains(source, "Review before continuing:");
         RequireContains(source, "Support choice: open the tracked case");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
+    }
+
+    private static void DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs");
+        string homeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(source, "GM prep packets");
+        RequireContains(source, "Roster movement");
+        RequireContains(source, "GmPrepPacketSurfaceSummary");
+        RequireContains(source, "RosterMovementSurfaceSummary");
+        RequireContains(source, "BuildGmPrepBody()");
+        RequireContains(source, "BuildRosterMovementBody()");
+        RequireContains(source, "CreateGmPrepActions()");
+        RequireContains(source, "CreateRosterMovementActions()");
+        RequireContains(source, "ShowGmPrepAsync");
+        RequireContains(source, "ShowRosterMovementAsync");
+        RequireContains(source, "DesktopCampaignWorkspaceSurface.GmPrepPackets");
+        RequireContains(source, "DesktopCampaignWorkspaceSurface.RosterMovement");
+        RequireContains(source, "focusSection?.BringIntoView();");
+        RequireContains(source, "GM prep packets:");
+        RequireContains(source, "Prep publication packet:");
+        RequireContains(source, "GM prep memory packet:");
+        RequireContains(source, "Roster movement:");
+        RequireContains(source, "Travel posture:");
+        RequireContains(source, "Roster movement inventory:");
+        RequireContains(source, "Workspace roster choices:");
+        RequireContains(source, "Roster movement follow-through:");
+        RequireContains(source, "OpenCampaignPrimerArtifact");
+        RequireContains(source, "OpenMissionBriefingArtifact");
+        RequireContains(source, "OpenDevicesAccessWindowAsync");
+        RequireContains(homeSource, "\"Open GM Prep Packets\"");
+        RequireContains(homeSource, "\"Review Roster Movement\"");
+        RequireContains(homeSource, "OpenGmPrepPacketsAsync");
+        RequireContains(homeSource, "OpenRosterMovementAsync");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.GmPrepPackets");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.RosterMovement");
+        RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(owner, \"avalonia\")");
+        RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopCampaignArtifact_surface_keeps_memory_and_return_actions_visible()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopCampaignArtifactWindow.cs");
+        RequireContains(source, "CampaignConsequenceVisibilitySummary");
+        RequireContains(source, "CampaignMemoryStaleStateSummary");
+        RequireContains(source, "CampaignNextSessionReturnActionSummary");
+        RequireContains(source, "BuildCampaignConsequenceVisibilitySummary()");
+        RequireContains(source, "BuildCampaignMemoryVisibilitySummary()");
+        RequireContains(source, "BuildCampaignNextSessionReturnActionSummary()");
+        RequireContains(source, "BuildFollowThroughBody()");
+        RequireContains(source, "Campaign memory return:");
+        RequireContains(source, "Open Campaign Workspace");
+        RequireContains(source, "OpenCampaignWorkspaceAsync");
     }
 
     private static void DesktopUpdateSurface_is_a_real_top_level_surface()
@@ -922,7 +1095,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
-        RequireContains(appSource, "string.Equals(startupSurface, \"update\"");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.Update)");
         RequireContains(appSource, "DesktopUpdateWindow.ShowAsync(owner, \"avalonia\")");
     }
 
@@ -949,7 +1122,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
-        RequireContains(appSource, "string.Equals(startupSurface, \"support\"");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.Support)");
         RequireContains(appSource, "DesktopSupportWindow.ShowAsync(owner, \"avalonia\")");
     }
 
@@ -977,7 +1150,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
-        RequireContains(appSource, "string.Equals(startupSurface, \"support_case\"");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.SupportCase)");
         RequireContains(appSource, "DesktopSupportCaseWindow.ShowPreviewAsync(owner, \"avalonia\")");
     }
 
@@ -1001,7 +1174,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
-        RequireContains(appSource, "string.Equals(startupSurface, \"devices_access\"");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.DevicesAccess)");
         RequireContains(appSource, "DesktopDevicesAccessWindow.ShowAsync(owner, \"avalonia\")");
     }
 
@@ -1027,7 +1200,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
-        RequireContains(appSource, "string.Equals(startupSurface, \"report_issue\"");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.ReportIssue)");
         RequireContains(appSource, "DesktopReportIssueWindow.ShowAsync(owner, \"avalonia\")");
     }
 
@@ -1051,7 +1224,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
-        RequireContains(appSource, "string.Equals(startupSurface, \"crash_recovery\"");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CrashRecovery)");
         RequireContains(appSource, "DesktopCrashRecoveryWindow.ShowPreviewAsync(owner, \"avalonia\")");
         RequireContains(appSource, "DesktopCrashRecoveryWindow.TryShowPendingAsync(owner)");
     }
@@ -1312,12 +1485,18 @@ internal static class AccessibilitySignoffSmokeTests
     {
         string toolStripMarkup = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml");
         RequireContains(toolStripMarkup, "x:Name=\"DesktopHomeButton\"");
+        RequireContains(toolStripMarkup, "x:Name=\"GmPrepButton\"");
+        RequireContains(toolStripMarkup, "x:Name=\"RosterMovementButton\"");
+        RequireContains(toolStripMarkup, "x:Name=\"RuleEnvironmentStudioButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"CampaignWorkspaceButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"UpdateStatusButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"InstallLinkingButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"SupportButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"ReportIssueButton\"");
         RequireContains(toolStripMarkup, "DesktopHomeButton_OnClick");
+        RequireContains(toolStripMarkup, "GmPrepButton_OnClick");
+        RequireContains(toolStripMarkup, "RosterMovementButton_OnClick");
+        RequireContains(toolStripMarkup, "RuleEnvironmentStudioButton_OnClick");
         RequireContains(toolStripMarkup, "CampaignWorkspaceButton_OnClick");
         RequireContains(toolStripMarkup, "UpdateStatusButton_OnClick");
         RequireContains(toolStripMarkup, "InstallLinkingButton_OnClick");
@@ -1326,11 +1505,17 @@ internal static class AccessibilitySignoffSmokeTests
 
         string toolStripSource = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml.cs");
         RequireContains(toolStripSource, "DesktopHomeRequested");
+        RequireContains(toolStripSource, "GmPrepRequested");
+        RequireContains(toolStripSource, "RosterMovementRequested");
+        RequireContains(toolStripSource, "RuleEnvironmentStudioRequested");
         RequireContains(toolStripSource, "CampaignWorkspaceRequested");
         RequireContains(toolStripSource, "UpdateStatusRequested");
         RequireContains(toolStripSource, "InstallLinkingRequested");
         RequireContains(toolStripSource, "SupportRequested");
         RequireContains(toolStripSource, "ReportIssueRequested");
+        RequireContains(toolStripSource, "\"Open GM Prep Packets\"");
+        RequireContains(toolStripSource, "\"Review Roster Movement\"");
+        RequireContains(toolStripSource, "\"Open Rule Environment Studio\"");
         RequireContains(toolStripSource, "desktop.shell.tool.desktop_home");
         RequireContains(toolStripSource, "desktop.shell.tool.campaign_workspace");
         RequireContains(toolStripSource, "desktop.shell.tool.update_status");
@@ -1357,6 +1542,9 @@ internal static class AccessibilitySignoffSmokeTests
 
         string bindingSource = ReadSource("Chummer.Avalonia/MainWindow.ControlBinding.cs");
         RequireContains(bindingSource, "onDesktopHomeRequested");
+        RequireContains(bindingSource, "onGmPrepRequested");
+        RequireContains(bindingSource, "onRosterMovementRequested");
+        RequireContains(bindingSource, "onRuleEnvironmentStudioRequested");
         RequireContains(bindingSource, "onCampaignWorkspaceRequested");
         RequireContains(bindingSource, "onUpdateStatusRequested");
         RequireContains(bindingSource, "onInstallLinkingRequested");
@@ -1364,6 +1552,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(bindingSource, "onReportIssueRequested");
         RequireContains(bindingSource, "onSettingsRequested");
         RequireContains(bindingSource, "toolStrip.DesktopHomeRequested +=");
+        RequireContains(bindingSource, "toolStrip.GmPrepRequested +=");
+        RequireContains(bindingSource, "toolStrip.RosterMovementRequested +=");
+        RequireContains(bindingSource, "toolStrip.RuleEnvironmentStudioRequested +=");
         RequireContains(bindingSource, "toolStrip.CampaignWorkspaceRequested +=");
         RequireContains(bindingSource, "toolStrip.UpdateStatusRequested +=");
         RequireContains(bindingSource, "toolStrip.InstallLinkingRequested +=");
@@ -1373,13 +1564,21 @@ internal static class AccessibilitySignoffSmokeTests
 
         string eventHandlerSource = ReadSource("Chummer.Avalonia/MainWindow.EventHandlers.cs");
         RequireContains(eventHandlerSource, "ToolStrip_OnDesktopHomeRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnGmPrepRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnRosterMovementRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnRuleEnvironmentStudioRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnCampaignWorkspaceRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnUpdateStatusRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnInstallLinkingRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnSupportRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnReportIssueRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnSettingsRequested");
-        RequireContains(eventHandlerSource, "_interactionCoordinator.ExecuteCommandAsync(\"new_character\", CancellationToken.None)");
+        RequireContains(eventHandlerSource, "DesktopHomeWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip)");
+        RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId)");
+        RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId)");
+        RequireContains(eventHandlerSource, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)");
+        RequireContains(eventHandlerSource, "MainWindowFeedbackCoordinator.ShowRuleEnvironmentStudioReviewed(_controls.ToolStrip)");
         RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopUpdateWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopSupportWindow.ShowAsync(this, \"avalonia\")");
@@ -1393,6 +1592,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(desktopHomeSource, "new ScrollViewer");
         RequireContains(desktopHomeSource, "CreateLanguageActions()");
         RequireContains(desktopHomeSource, "desktop.home.button.open_settings");
+        RequireContains(desktopHomeSource, "Open Rule Environment Studio");
+        RequireContains(desktopHomeSource, "OpenRuleEnvironmentStudioAsync");
         RequireContains(desktopHomeSource, "mainWindow.OpenDesktopCommandFromSurfaceAsync(\"global_settings\", \"open global settings\")");
 
         string installLinkSource = ReadSource("Chummer.Avalonia/DesktopInstallLinkingWindow.cs");
@@ -1409,7 +1610,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(navigationSource, "_interactionCoordinator.ExecuteCommandAsync");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
-        RequireContains(appSource, "string.Equals(startupSurface, \"settings\"");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.Settings)");
         RequireContains(appSource, "owner.OpenDesktopCommandFromSurfaceAsync(\"global_settings\", \"open global settings\")");
     }
 
