@@ -160,12 +160,28 @@ public sealed partial class CharacterOverviewPresenter
     {
         if (IsNewWorkspaceCommand(lastCommandId))
         {
+            string[] visibleNewWorkspaceTabPreference =
+            [
+                "tab-attributes",
+                "tab-skills",
+                "tab-info",
+                "tab-gear",
+                "tab-qualities"
+            ];
+            foreach (string preferredTabId in visibleNewWorkspaceTabPreference)
+            {
+                string? matchingTabId = navigationTabs
+                    .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, preferredTabId, StringComparison.Ordinal))
+                    ?.Id;
+                if (!string.IsNullOrWhiteSpace(matchingTabId))
+                {
+                    return matchingTabId;
+                }
+            }
+
             return navigationTabs
-                .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, "tab-create", StringComparison.Ordinal))
-                ?.Id
-                ?? navigationTabs
-                    .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.SectionId, "build-lab", StringComparison.Ordinal))
-                    ?.Id
+                .FirstOrDefault(tab => tab.EnabledByDefault
+                    && !string.Equals(tab.SectionId, "build-lab", StringComparison.Ordinal))?.Id
                 ?? navigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
         }
 

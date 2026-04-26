@@ -24,6 +24,8 @@ public partial class DesktopDialogWindow : Window
     private readonly Border _dialogActionsBorder;
     private readonly StackPanel _dialogActionsPanel;
     private bool _suppressCloseNotification;
+    private string? _lastFocusedControlName;
+    private int? _lastFocusedTextCaretIndex;
 
     public DesktopDialogWindow()
     {
@@ -53,6 +55,11 @@ public partial class DesktopDialogWindow : Window
 
     public void BindDialog(DesktopDialogState dialog)
     {
+        string? previousDialogId = BoundDialogId;
+        bool shouldRestoreFocus = IsVisible
+            && string.Equals(previousDialogId, dialog.Id, StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(_lastFocusedControlName);
+
         BoundDialogId = dialog.Id;
         ApplyDialogSizing(dialog.Id);
         Title = dialog.Title;
@@ -66,7 +73,10 @@ public partial class DesktopDialogWindow : Window
         RefreshDialogVisuals();
         if (IsVisible)
         {
-            FocusPreferredControl();
+            if (!shouldRestoreFocus || !TryRestoreFocusedControl())
+            {
+                FocusPreferredControl();
+            }
         }
     }
 
@@ -1597,11 +1607,12 @@ public partial class DesktopDialogWindow : Window
         grid.Children.Add(valueControl);
     }
 
-    private static void ApplyAccessibility(Control control, string accessibleName, string toolTip, string helpText)
+    private void ApplyAccessibility(Control control, string accessibleName, string toolTip, string helpText)
     {
         AutomationProperties.SetName(control, accessibleName);
         AutomationProperties.SetHelpText(control, helpText);
         ToolTip.SetTip(control, toolTip);
+        TrackFocus(control);
     }
 
     private void BuildActions(IReadOnlyList<DesktopDialogAction> actions)
@@ -1997,6 +2008,54 @@ public partial class DesktopDialogWindow : Window
             .OfType<InputElement>()
             .FirstOrDefault(control => control.Focusable && control.IsEnabled)?
             .Focus();
+    }
+
+    private void TrackFocus(Control control)
+    {
+        control.GotFocus += (_, _) => RememberFocusedControl(control);
+
+        if (control is TextBox textBox)
+        {
+            textBox.TextChanged += (_, _) => RememberFocusedControl(textBox);
+        }
+    }
+
+    private void RememberFocusedControl(Control control)
+    {
+        if (string.IsNullOrWhiteSpace(control.Name))
+        {
+            return;
+        }
+
+        _lastFocusedControlName = control.Name;
+        _lastFocusedTextCaretIndex = control is TextBox textBox
+            ? textBox.CaretIndex
+            : null;
+    }
+
+    private bool TryRestoreFocusedControl()
+    {
+        if (string.IsNullOrWhiteSpace(_lastFocusedControlName))
+        {
+            return false;
+        }
+
+        Control? target = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Control>()
+            .Concat(_dialogActionsPanel.GetVisualDescendants().OfType<Control>())
+            .FirstOrDefault(control => string.Equals(control.Name, _lastFocusedControlName, StringComparison.Ordinal));
+        if (target is null || !target.Focusable || !target.IsEnabled)
+        {
+            return false;
+        }
+
+        target.Focus();
+        if (target is TextBox textBox && _lastFocusedTextCaretIndex is int caretIndex)
+        {
+            textBox.CaretIndex = Math.Clamp(caretIndex, 0, textBox.Text?.Length ?? 0);
+        }
+
+        return true;
     }
 }
 
