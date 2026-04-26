@@ -12,4 +12,19 @@ items:
   - .codex-design
   owned_surfaces:
   - design_mirror:ui
+- title: Publish the adversarial Linux user-journey tester gate and keep desktop_client blocked until a separate tester/fixer audit passes with multiple screenshots per workflow.
+  task: Publish the adversarial Linux user-journey tester gate and keep desktop_client blocked until a separate tester/fixer audit passes with multiple screenshots per workflow.
+  package_id: ui-user-journey-tester-audit
+  source_ref: chummer6-design:desktop_user_journey_tester_audit
+  audit_finding_key: desktop_client.user_journey_tester_missing
+  audit_scope_id: ui
+  source_items:
+  - /docker/chummercomplete/chummer-design/products/chummer/GOLDEN_JOURNEY_RELEASE_GATES.yaml
+  allowed_paths:
+  - scripts/ai/milestones/user-journey-tester-audit.sh
+  - scripts/ai/verify.sh
+  - WORKLIST.md
+  - Chummer.Tests/Compliance/UserJourneyTesterAuditComplianceTests.cs
+  owned_surfaces:
+  - desktop_client:user_journey_tester
 source_queue_fingerprint: 97d170e1550eee4afc0af065b78cda302a97674c

@@ -43,6 +43,11 @@ if ! rg -q "\\| P5 Ui-kit package boundary \\| (open|done) \\| [0-9]+% \\| [0-9]
   exit 10
 fi
 
+if ! rg -q "\\| B16 Adversarial user-journey tester gate \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+  echo "[UI-MILESTONES] FAIL: B16 user-journey tester milestone row missing completion/ETA/confidence."
+  exit 53
+fi
+
 if rg -q "Finish milestone coverage modeling for ui so ETA and completion truth are no longer partial\\." .codex-studio/published/QUEUE.generated.yaml; then
   if ! rg -q "^\\| B8 Runtime inspector \\+ Hub UX \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue published milestone-coverage modeling but WORKLIST milestone rows are not explicit."
@@ -292,6 +297,23 @@ if rg -q "Replace duplicated \`Chummer.Contracts\` source in UI with package con
   if ! rg -q "^\\| WL-213 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-213`\)' WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue has contracts package-boundary publication but WORKLIST must either keep WL-213 active or mark it done."
     exit 43
+  fi
+fi
+
+if rg -q "Publish the adversarial Linux user-journey tester gate and keep desktop_client blocked until a separate tester/fixer audit passes with multiple screenshots per workflow\\." .codex-studio/published/QUEUE.generated.yaml; then
+  if ! rg -q "^\\| B16 Adversarial user-journey tester gate \\| (open|done) \\| [0-9]+% \\| [0-9]{4}-[0-9]{2}-[0-9]{2} \\| (low|medium|high) \\|" WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has user-journey tester gate publication but WORKLIST milestone registry lacks explicit B16 mapping."
+    exit 54
+  fi
+
+  if ! rg -q "^\\| WL-221 \\| (queued|done) \\| P1 \\| Publish the adversarial Linux user-journey tester gate and keep desktop_client blocked until a separate tester/fixer audit passes with multiple screenshots per workflow\\." WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: queue has user-journey tester gate publication but WORKLIST lacks WL-221 runnable backlog entry."
+    exit 55
+  fi
+
+  if ! rg -q "^\\| WL-221 \\| done \\|" WORKLIST.md && ! rg -q '^- Repo-local live queue: active \(`WL-221`\)' WORKLIST.md; then
+    echo "[UI-MILESTONES] FAIL: user-journey tester gate publication must either keep WL-221 active or mark it done."
+    exit 56
   fi
 fi
 

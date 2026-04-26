@@ -72,6 +72,7 @@
     <Compile Include="Compliance\Next90M105PrimaryRouteDecisionGuardTests.cs" />
     <Compile Include="Compliance\Next90M105RestoreContinuityGuardTests.cs" />
     <Compile Include="Compliance\SectionHostRulesetParityComplianceTests.cs" />
+    <Compile Include="Compliance\UserJourneyTesterAuditComplianceTests.cs" />
     <Compile Include="ExternalHostProofBlockersTests.cs" />
     <Compile Include="ServiceCollectionDesktopRuntimeExtensionsTests.cs" />
     <Compile Include="Presentation\FixtureBackedChummerClient.cs" />
