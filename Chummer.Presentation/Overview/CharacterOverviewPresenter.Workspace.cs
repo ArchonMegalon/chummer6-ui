@@ -145,10 +145,7 @@ public sealed partial class CharacterOverviewPresenter
         IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
         string? defaultTabId = !string.IsNullOrWhiteSpace(State.ActiveTabId)
             ? State.ActiveTabId
-            : navigationTabs
-                .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
-                ?.Id
-                ?? navigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
+            : ResolveDefaultWorkspaceTabId(navigationTabs, State.LastCommandId);
         if (string.IsNullOrWhiteSpace(defaultTabId))
         {
             return;
@@ -156,6 +153,31 @@ public sealed partial class CharacterOverviewPresenter
 
         await SelectTabAsync(defaultTabId, ct);
     }
+
+    private static string? ResolveDefaultWorkspaceTabId(
+        IReadOnlyList<NavigationTabDefinition> navigationTabs,
+        string? lastCommandId)
+    {
+        if (IsNewWorkspaceCommand(lastCommandId))
+        {
+            return navigationTabs
+                .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, "tab-create", StringComparison.Ordinal))
+                ?.Id
+                ?? navigationTabs
+                    .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.SectionId, "build-lab", StringComparison.Ordinal))
+                    ?.Id
+                ?? navigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
+        }
+
+        return navigationTabs
+            .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
+            ?.Id
+            ?? navigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
+    }
+
+    private static bool IsNewWorkspaceCommand(string? commandId)
+        => string.Equals(commandId, "new_character", StringComparison.Ordinal)
+            || string.Equals(commandId, "new_critter", StringComparison.Ordinal);
 
     public async Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct)
     {

@@ -587,6 +587,8 @@ public class CharacterOverviewPresenterTests
         StringAssert.Contains(client.LastImportedDocument.Content, "<cyberwares>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<vehicles>");
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
+        Assert.AreEqual("tab-create", presenter.State.ActiveTabId);
+        Assert.AreEqual("build-lab", presenter.State.ActiveSectionId);
 
         await presenter.SelectTabAsync("tab-attributes", CancellationToken.None);
         Assert.AreEqual("attributes", presenter.State.ActiveSectionId);
@@ -755,6 +757,8 @@ public class CharacterOverviewPresenterTests
         StringAssert.Contains(client.LastImportedDocument.Content, "<newskills>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<qualities>");
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
+        Assert.AreEqual("tab-create", presenter.State.ActiveTabId);
+        Assert.AreEqual("build-lab", presenter.State.ActiveSectionId);
     }
 
     [TestMethod]
