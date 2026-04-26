@@ -137,6 +137,112 @@ public sealed class AvaloniaFlagshipUiGateTests
             "Click LoadDemoRunnerButton, then open File > Open Character and capture import familiarity.",
             "Chummer5a File/Open and Hero Lab Importer import route lineage.",
             ["Open Character"])];
+    private static readonly string[] RequiredWorkflowFamilyIds =
+    [
+        "create-open-import-save-save-as-print-export",
+        "metatype-priorities-karma-entry",
+        "attributes-skills-skill-groups-specializations-knowledge-languages",
+        "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+        "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+        "cyberware-bioware-modular-hierarchies-nested-plugins",
+        "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+        "improvements-explain-result-parity",
+        "recovery-reload-migration-roundtrips",
+        "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare"
+    ];
+    private static readonly WorkflowScreenshotCoverage[] RequiredWorkflowScreenshotCoverage =
+    [
+        new(
+            "create-open-import-save-save-as-print-export",
+            "Chummer4/Chummer5a File menu New/Open/Save/Save As/Print/Export handoff lineage.",
+            [
+                "19-workflow-file-menu-loaded-light.png",
+                "36-workflow-new-character-dialog-light.png",
+                "18-import-dialog-light.png"
+            ]),
+        new(
+            "metatype-priorities-karma-entry",
+            "Chummer4/Chummer5a character creation priority and karma journal lineage.",
+            [
+                "15-creation-section-light.png",
+                "11-diary-dialog-light.png",
+                "36-workflow-new-character-dialog-light.png"
+            ]),
+        new(
+            "attributes-skills-skill-groups-specializations-knowledge-languages",
+            "Chummer4/Chummer5a Attributes and Skills tab edit-list lineage.",
+            [
+                "15-creation-section-light.png",
+                "20-workflow-skills-section-light.png",
+                "21-workflow-skill-add-dialog-light.png"
+            ]),
+        new(
+            "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+            "Chummer4/Chummer5a qualities, contacts, diary, notes, and source review lineage.",
+            [
+                "10-contacts-section-light.png",
+                "22-workflow-qualities-section-light.png",
+                "23-workflow-quality-add-dialog-light.png",
+                "37-workflow-calendar-section-light.png"
+            ]),
+        new(
+            "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+            "Chummer4/Chummer5a gear, armor, weapon, vehicle, drone, mod, and location list lineage.",
+            [
+                "09-vehicles-section-light.png",
+                "24-workflow-gear-section-light.png",
+                "25-workflow-gear-add-dialog-light.png",
+                "26-workflow-weapons-section-light.png",
+                "27-workflow-weapon-add-dialog-light.png",
+                "28-workflow-armor-section-light.png",
+                "29-workflow-armor-add-dialog-light.png"
+            ]),
+        new(
+            "cyberware-bioware-modular-hierarchies-nested-plugins",
+            "Chummer4/Chummer5a cyberware/bioware nested selection and plugin lineage.",
+            [
+                "08-cyberware-dialog-light.png",
+                "30-workflow-cyberware-section-light.png"
+            ]),
+        new(
+            "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+            "Chummer4/Chummer5a magic, adept, resonance, initiation, and matrix form lineage.",
+            [
+                "12-magic-dialog-light.png",
+                "13-matrix-dialog-light.png",
+                "14-advancement-dialog-light.png",
+                "31-workflow-powers-section-light.png",
+                "32-workflow-adept-power-dialog-light.png",
+                "33-workflow-complex-form-dialog-light.png"
+            ]),
+        new(
+            "improvements-explain-result-parity",
+            "Chummer4/Chummer5a validation, explain, source, and applied-result review lineage.",
+            [
+                "14-advancement-dialog-light.png",
+                "16-master-index-dialog-light.png",
+                "34-workflow-validate-section-light.png",
+                "35-workflow-rules-section-light.png"
+            ]),
+        new(
+            "recovery-reload-migration-roundtrips",
+            "Chummer4/Chummer5a open/import/reload/recovery roundtrip lineage.",
+            [
+                "04-loaded-runner-light.png",
+                "18-import-dialog-light.png",
+                "19-workflow-file-menu-loaded-light.png"
+            ]),
+        new(
+            "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+            "Chummer4/Chummer5a dense list, quick action, preview, drill-in, and compare workbench lineage.",
+            [
+                "05-dense-section-light.png",
+                "06-dense-section-dark.png",
+                "07-loaded-runner-tabs-light.png",
+                "24-workflow-gear-section-light.png",
+                "25-workflow-gear-add-dialog-light.png"
+            ])
+    ];
     private static bool _headlessInitialized;
     private static HeadlessUnitTestSession? _headlessSession;
 
@@ -2498,6 +2604,39 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Screenshot_workflow_coverage_requires_multiple_frames_for_every_canonical_family()
+    {
+        string[] actualFamilyIds = RequiredWorkflowScreenshotCoverage
+            .Select(coverage => coverage.WorkflowFamilyId)
+            .ToArray();
+        CollectionAssert.AreEqual(
+            RequiredWorkflowFamilyIds,
+            actualFamilyIds,
+            "Screenshot coverage must track the same canonical workflow families used by the desktop execution gate.");
+
+        foreach (WorkflowScreenshotCoverage coverage in RequiredWorkflowScreenshotCoverage)
+        {
+            Assert.IsFalse(
+                string.IsNullOrWhiteSpace(coverage.LegacyBehaviorLineage),
+                $"Workflow family '{coverage.WorkflowFamilyId}' must cite the Chummer4/Chummer5a behavior lineage it protects.");
+            Assert.IsTrue(
+                coverage.ScreenshotFiles.Length >= 2,
+                $"Workflow family '{coverage.WorkflowFamilyId}' must be backed by multiple screenshot frames.");
+            Assert.AreEqual(
+                coverage.ScreenshotFiles.Length,
+                coverage.ScreenshotFiles.Distinct(StringComparer.Ordinal).Count(),
+                $"Workflow family '{coverage.WorkflowFamilyId}' must not duplicate screenshot file names inside the same coverage row.");
+
+            foreach (string screenshotFile in coverage.ScreenshotFiles)
+            {
+                Assert.IsTrue(
+                    screenshotFile.EndsWith(".png", StringComparison.Ordinal),
+                    $"Workflow family '{coverage.WorkflowFamilyId}' references non-PNG screenshot evidence '{screenshotFile}'.");
+            }
+        }
+    }
+
+    [TestMethod]
     public void Visual_review_evidence_is_published_for_light_and_dark_shell_states()
     {
         string screenshotDirectory = ResolveScreenshotDirectory();
@@ -2509,7 +2648,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         Directory.CreateDirectory(screenshotDirectory);
 
-        string[] expectedFiles =
+        string[] baselineExpectedFiles =
         [
             GetVeteranCertificationReviewStep("toolstrip").ScreenshotFileName,
             GetVeteranCertificationReviewStep("menu").ScreenshotFileName,
@@ -2529,6 +2668,14 @@ public sealed class AvaloniaFlagshipUiGateTests
             GetVeteranCertificationReviewStep("master_index").ScreenshotFileName,
             GetVeteranCertificationReviewStep("roster").ScreenshotFileName,
             GetVeteranCertificationReviewStep("import").ScreenshotFileName
+        ];
+        string[] expectedFiles =
+        [
+            .. baselineExpectedFiles,
+            .. RequiredWorkflowScreenshotCoverage
+                .SelectMany(coverage => coverage.ScreenshotFiles)
+                .Where(fileName => !baselineExpectedFiles.Contains(fileName, StringComparer.Ordinal))
+                .Distinct(StringComparer.Ordinal)
         ];
 
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -2650,6 +2797,83 @@ public sealed class AvaloniaFlagshipUiGateTests
                 });
             }
 
+            void CaptureLoadedFileMenuWorkflowFrame(FlagshipUiHarness harness, string fileName)
+            {
+                harness.Click("FileMenuButton");
+                harness.WaitUntil(() =>
+                {
+                    string[] visibleCommands = SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton"))
+                        .Select(command => command.Tag?.ToString() ?? string.Empty)
+                        .Where(static commandId => !string.IsNullOrWhiteSpace(commandId))
+                        .ToArray();
+                    return visibleCommands.Contains("open_character", StringComparer.Ordinal)
+                        && visibleCommands.Contains("save_character", StringComparer.Ordinal)
+                        && visibleCommands.Contains("save_character_as", StringComparer.Ordinal)
+                        && visibleCommands.Contains("print_character", StringComparer.Ordinal)
+                        && visibleCommands.Contains("open_for_export", StringComparer.Ordinal);
+                });
+                CaptureCurrentFrame(harness, fileName);
+                harness.CloseMenu("FileMenuButton");
+            }
+
+            void CaptureSectionWorkflowFrame(
+                FlagshipUiHarness harness,
+                string sectionId,
+                string fileName,
+                string requiredPreviewMarker)
+            {
+                harness.SetActiveSectionForTesting(sectionId);
+                ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
+                TextBox sectionPreview = harness.FindControl<TextBox>("SectionPreviewBox");
+                harness.WaitUntil(() =>
+                    sectionRows.ItemCount > 0
+                    && (sectionPreview.Text ?? string.Empty).Contains(requiredPreviewMarker, StringComparison.OrdinalIgnoreCase));
+                object[] rows = SnapshotListBoxItems(sectionRows);
+                if (rows.Length > 0)
+                {
+                    sectionRows.SelectedItem = rows[0];
+                    harness.WaitUntil(() => ReferenceEquals(sectionRows.SelectedItem, rows[0]));
+                }
+
+                CaptureCurrentFrame(harness, fileName);
+            }
+
+            void CloseActiveDialog(FlagshipUiHarness harness)
+            {
+                string[] availableActionIds = harness.DialogActionIds();
+                string? actionId = new[] { "cancel", "close", "add", "ok", "continue" }
+                    .FirstOrDefault(candidate => availableActionIds.Contains(candidate, StringComparer.Ordinal));
+                if (actionId is not null)
+                {
+                    harness.InvokeDialogAction(actionId);
+                }
+                else
+                {
+                    harness.Presenter.CloseDialogAsync(CancellationToken.None).GetAwaiter().GetResult();
+                }
+
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+            }
+
+            void CaptureQuickActionWorkflowFrame(
+                FlagshipUiHarness harness,
+                string sectionId,
+                string actionControlId,
+                string expectedTitle,
+                string fileName)
+            {
+                harness.SetActiveSectionForTesting(sectionId);
+                harness.WaitUntil(() => harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
+                harness.OpenUiControl(actionControlId);
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        expectedTitle,
+                        StringComparison.Ordinal));
+                CaptureCurrentFrame(harness, fileName);
+                CloseActiveDialog(harness);
+            }
+
             WithIsolatedHarness(harness =>
             {
                 harness.WaitForReady();
@@ -2679,6 +2903,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.Click("LoadDemoRunnerButton");
                 harness.WaitUntil(() => harness.Presenter.ImportCalls > 0);
                 CaptureCurrentFrame(harness, expectedFiles[3]);
+                CaptureLoadedFileMenuWorkflowFrame(harness, "19-workflow-file-menu-loaded-light.png");
 
                 ListBox denseSectionRows = harness.FindControl<ListBox>("SectionRowsList");
                 harness.WaitUntil(() => denseSectionRows.ItemCount > 0);
@@ -2801,8 +3026,41 @@ public sealed class AvaloniaFlagshipUiGateTests
                 attributeRows.SelectedItem = attributeRow;
                 harness.WaitUntil(() => ReferenceEquals(attributeRows.SelectedItem, attributeRow));
                 CaptureCurrentFrame(harness, expectedFiles[14]);
+
+                CaptureSectionWorkflowFrame(harness, "skills", "20-workflow-skills-section-light.png", "skills");
+                CaptureQuickActionWorkflowFrame(harness, "skills", "skill_add", "Add Skill", "21-workflow-skill-add-dialog-light.png");
+
+                CaptureSectionWorkflowFrame(harness, "qualities", "22-workflow-qualities-section-light.png", "qualities");
+                CaptureQuickActionWorkflowFrame(harness, "qualities", "quality_add", "Add Quality", "23-workflow-quality-add-dialog-light.png");
+
+                CaptureSectionWorkflowFrame(harness, "inventory", "24-workflow-gear-section-light.png", "gear");
+                CaptureQuickActionWorkflowFrame(harness, "inventory", "gear_add", "Add Gear", "25-workflow-gear-add-dialog-light.png");
+
+                CaptureSectionWorkflowFrame(harness, "weapons", "26-workflow-weapons-section-light.png", "weapons");
+                CaptureQuickActionWorkflowFrame(harness, "weapons", "combat_add_weapon", "Add Weapon", "27-workflow-weapon-add-dialog-light.png");
+
+                CaptureSectionWorkflowFrame(harness, "armors", "28-workflow-armor-section-light.png", "armors");
+                CaptureQuickActionWorkflowFrame(harness, "armors", "combat_add_armor", "Add Armor", "29-workflow-armor-add-dialog-light.png");
+
+                CaptureSectionWorkflowFrame(harness, "cyberwares", "30-workflow-cyberware-section-light.png", "cyberwares");
+
+                CaptureSectionWorkflowFrame(harness, "powers", "31-workflow-powers-section-light.png", "powers");
+                CaptureQuickActionWorkflowFrame(harness, "powers", "adept_power_add", "Add Adept Power", "32-workflow-adept-power-dialog-light.png");
+
+                CaptureQuickActionWorkflowFrame(harness, "complexforms", "complex_form_add", "Add Complex Form", "33-workflow-complex-form-dialog-light.png");
+
+                CaptureSectionWorkflowFrame(harness, "validate", "34-workflow-validate-section-light.png", "validate");
+                CaptureSectionWorkflowFrame(harness, "rules", "35-workflow-rules-section-light.png", "rules");
+                CaptureSectionWorkflowFrame(harness, "calendar", "37-workflow-calendar-section-light.png", "calendar");
                 return true;
             });
+
+            CaptureDialogFrameInFreshHarness(
+                "36-workflow-new-character-dialog-light.png",
+                "FileMenuButton",
+                "new_character",
+                "cancel",
+                ["Select Build Method"]);
 
             CaptureDialogFrameInFreshHarness(
                 GetVeteranCertificationReviewStep("master_index").ScreenshotFileName,
@@ -2879,6 +3137,13 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ScreenshotDirectory: screenshotDirectory,
                 Entries: expectedFiles
                     .Select(fileName => packet.UiEvidence[fileName])
+                    .ToArray(),
+                WorkflowCoverage: RequiredWorkflowScreenshotCoverage
+                    .Select(coverage => new WorkflowScreenshotCoverageEvidence(
+                        WorkflowFamilyId: coverage.WorkflowFamilyId,
+                        LegacyBehaviorLineage: coverage.LegacyBehaviorLineage,
+                        ScreenshotFiles: coverage.ScreenshotFiles,
+                        ScreenshotCount: coverage.ScreenshotFiles.Length))
                     .ToArray());
             File.WriteAllText(
                 screenshotEvidencePath,
@@ -2901,6 +3166,16 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             FileInfo fileInfo = new(fullPath);
             Assert.IsTrue(fileInfo.Length > 0, $"Screenshot evidence '{fileName}' is empty.");
+        }
+
+        foreach (WorkflowScreenshotCoverage coverage in RequiredWorkflowScreenshotCoverage)
+        {
+            foreach (string fileName in coverage.ScreenshotFiles)
+            {
+                Assert.IsTrue(
+                    expectedFiles.Contains(fileName, StringComparer.Ordinal),
+                    $"Workflow family '{coverage.WorkflowFamilyId}' references screenshot evidence '{fileName}' that is not part of the visual review contract.");
+            }
         }
 
         Assert.IsTrue(File.Exists(screenshotEvidencePath), "Expected screenshot control evidence was not created.");
@@ -3298,6 +3573,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         string Chummer5aBaseline,
         string[] RequiredDialogMarkers);
 
+    private sealed record WorkflowScreenshotCoverage(
+        string WorkflowFamilyId,
+        string LegacyBehaviorLineage,
+        string[] ScreenshotFiles);
+
     private sealed record VeteranCertificationCapturePacket(
         Dictionary<string, byte[]> Screenshots,
         Dictionary<string, ScreenshotUiEvidence> UiEvidence);
@@ -3305,7 +3585,14 @@ public sealed class AvaloniaFlagshipUiGateTests
     private sealed record ScreenshotControlEvidencePacket(
         string ContractName,
         string ScreenshotDirectory,
-        ScreenshotUiEvidence[] Entries);
+        ScreenshotUiEvidence[] Entries,
+        WorkflowScreenshotCoverageEvidence[] WorkflowCoverage);
+
+    private sealed record WorkflowScreenshotCoverageEvidence(
+        string WorkflowFamilyId,
+        string LegacyBehaviorLineage,
+        string[] ScreenshotFiles,
+        int ScreenshotCount);
 
     private sealed record ScreenshotUiEvidence(
         string Screenshot,

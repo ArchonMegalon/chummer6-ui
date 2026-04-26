@@ -155,6 +155,10 @@ PROOF_PATH="${CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH:-$DEFAULT_PROOF_PATH}"
 BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$WORKSPACE_ROOT/.linux-desktop-exit-gate.build.lock}"
 LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
 USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-1}"
+FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_FLAGSHIP_UI_GATE:-1}"
+FLAGSHIP_UI_GATE_SCRIPT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_SCRIPT:-$REPO_ROOT/scripts/ai/milestones/b14-flagship-ui-release-gate.sh}"
+FLAGSHIP_UI_GATE_RECEIPT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_RECEIPT_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
+FLAGSHIP_UI_GATE_SCREENSHOT_DIR="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_SCREENSHOT_DIR:-$REPO_ROOT/.codex-studio/published/ui-flagship-release-gate-screenshots}"
 
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
@@ -830,7 +834,7 @@ write_proof() {
     "$READY_CHECKPOINT" "$RUN_ROOT" "$PUBLISH_DIR" "$DIST_DIR" "$ARCHIVE_PATH" "$INSTALLER_PATH" "$ARCHIVE_RECEIPT_PATH" "$INSTALLER_RECEIPT_PATH" \
     "$TEST_RESULTS_DIR" "$TEST_TRX_PATH" "$GIT_START_PATH" "$GIT_FINISH_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" \
     "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$USE_PROMOTED_INSTALLER" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$PROMOTED_INSTALLER_PATH" \
-    "$FAILURE_REASONS_PATH" <<'PY'
+    "$FAILURE_REASONS_PATH" "$FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED" "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" "$FLAGSHIP_UI_GATE_SCRIPT" <<'PY'
 import datetime as dt
 import hashlib
 import json
@@ -879,6 +883,10 @@ import xml.etree.ElementTree as ET
     installer_smoke_artifact_path,
     promoted_installer_path,
     failure_reasons_path,
+    flagship_ui_screenshot_gate_enabled,
+    flagship_ui_gate_receipt_path,
+    flagship_ui_gate_screenshot_dir,
+    flagship_ui_gate_script,
 ) = sys.argv[1:]
 
 
@@ -1168,6 +1176,19 @@ for artifact in (release_channel_payload.get("artifacts") or []):
     ):
         release_channel_linux_artifact = artifact
         break
+flagship_ui_gate_receipt = load_json(flagship_ui_gate_receipt_path) or {}
+flagship_ui_visual_review = (
+    flagship_ui_gate_receipt.get("visualReviewEvidence")
+    if isinstance(flagship_ui_gate_receipt, dict)
+    else {}
+) or {}
+flagship_ui_workflow_coverage = (
+    flagship_ui_visual_review.get("workflowScreenshotCoverage")
+    if isinstance(flagship_ui_visual_review, dict)
+    else []
+) or []
+flagship_ui_screenshot_files = sorted(path.name for path in pathlib.Path(flagship_ui_gate_screenshot_dir).glob("*.png"))
+flagship_ui_status = normalize_token(flagship_ui_gate_receipt.get("status")) if isinstance(flagship_ui_gate_receipt, dict) else ""
 
 payload = {
     "contract_name": "chummer6-ui.linux_desktop_exit_gate",
@@ -1197,6 +1218,9 @@ payload = {
         "startup_smoke_receipt_found": startup_smoke_receipt_exists,
         "startup_smoke_receipt_path": installer_receipt_path,
         "startup_smoke_external_blocker": startup_smoke_external_blocker,
+        "flagship_ui_screenshot_gate_status": flagship_ui_status,
+        "flagship_ui_screenshot_gate_receipt_path": flagship_ui_gate_receipt_path,
+        "flagship_ui_screenshot_count": len(flagship_ui_screenshot_files),
     },
     "build": {
         "output_base_root": output_base_root,
@@ -1258,6 +1282,26 @@ payload = {
         else ("missing" if not pathlib.Path(test_trx_path).is_file() else "failed"),
         "summary": test_summary,
         "assembly_name": "Chummer.Desktop.Runtime.Tests.dll",
+    },
+    "flagship_ui_screenshot_gate": {
+        "enabled": str(flagship_ui_screenshot_gate_enabled).strip() == "1",
+        "script": flagship_ui_gate_script,
+        "receipt_path": flagship_ui_gate_receipt_path,
+        "receipt_status": flagship_ui_status,
+        "screenshot_directory": flagship_ui_gate_screenshot_dir,
+        "screenshot_count": len(flagship_ui_screenshot_files),
+        "screenshot_files": flagship_ui_screenshot_files,
+        "workflow_screenshot_coverage_status": str(
+            flagship_ui_visual_review.get("workflowScreenshotCoverageStatus")
+            if isinstance(flagship_ui_visual_review, dict)
+            else ""
+        ).strip(),
+        "required_workflow_family_ids": (
+            flagship_ui_visual_review.get("requiredWorkflowFamilyIds")
+            if isinstance(flagship_ui_visual_review, dict)
+            else []
+        ) or [],
+        "workflow_screenshot_coverage": flagship_ui_workflow_coverage,
     },
     "git": {
         **current_git,
@@ -1383,6 +1427,99 @@ release_build_lock() {
   fi
 }
 
+validate_flagship_ui_screenshot_gate() {
+  python3 - "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" <<'PY'
+from __future__ import annotations
+
+import json
+import pathlib
+import sys
+
+receipt_path = pathlib.Path(sys.argv[1])
+screenshot_dir = pathlib.Path(sys.argv[2])
+required_workflow_family_ids = [
+    "create-open-import-save-save-as-print-export",
+    "metatype-priorities-karma-entry",
+    "attributes-skills-skill-groups-specializations-knowledge-languages",
+    "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+    "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+    "cyberware-bioware-modular-hierarchies-nested-plugins",
+    "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+    "improvements-explain-result-parity",
+    "recovery-reload-migration-roundtrips",
+    "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+]
+
+
+def status_ok(value: object) -> bool:
+    return str(value or "").strip().lower() in {"pass", "passed", "ready"}
+
+
+if not receipt_path.is_file():
+    raise SystemExit(f"Flagship UI screenshot gate receipt is missing: {receipt_path}")
+if not screenshot_dir.is_dir():
+    raise SystemExit(f"Flagship UI screenshot directory is missing: {screenshot_dir}")
+
+receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+if not status_ok(receipt.get("status")):
+    raise SystemExit("Flagship UI screenshot gate receipt status is not passing.")
+
+visual_review = receipt.get("visualReviewEvidence") or {}
+expected_screenshots = [
+    str(name or "").strip()
+    for name in visual_review.get("expectedScreenshots") or []
+    if str(name or "").strip()
+]
+png_files = {path.name for path in screenshot_dir.glob("*.png")}
+missing_screenshots = [name for name in expected_screenshots if name not in png_files]
+if missing_screenshots:
+    raise SystemExit(
+        "Flagship UI screenshot gate is missing expected PNGs: "
+        + ", ".join(missing_screenshots)
+    )
+if len(png_files) < len(expected_screenshots):
+    raise SystemExit("Flagship UI screenshot gate produced fewer PNG files than expected.")
+if not status_ok(visual_review.get("workflowScreenshotCoverageStatus")):
+    raise SystemExit("Flagship UI workflow screenshot coverage status is not passing.")
+
+workflow_coverage = visual_review.get("workflowScreenshotCoverage") or []
+if not isinstance(workflow_coverage, list):
+    raise SystemExit("Flagship UI workflow screenshot coverage is not a list.")
+coverage_by_id = {
+    str(item.get("workflowFamilyId") or "").strip(): item
+    for item in workflow_coverage
+    if isinstance(item, dict)
+}
+missing_family_ids = [
+    family_id
+    for family_id in required_workflow_family_ids
+    if family_id not in coverage_by_id
+]
+if missing_family_ids:
+    raise SystemExit(
+        "Flagship UI workflow screenshot coverage is missing families: "
+        + ", ".join(missing_family_ids)
+    )
+for family_id in required_workflow_family_ids:
+    coverage = coverage_by_id[family_id]
+    screenshot_files = [
+        str(name or "").strip()
+        for name in coverage.get("screenshotFiles") or []
+        if str(name or "").strip()
+    ]
+    if len(screenshot_files) < 2:
+        raise SystemExit(f"Workflow family '{family_id}' has fewer than two screenshots.")
+    if not str(coverage.get("legacyBehaviorLineage") or "").strip():
+        raise SystemExit(f"Workflow family '{family_id}' is missing legacyBehaviorLineage.")
+    missing_for_family = [name for name in screenshot_files if name not in png_files]
+    if missing_for_family:
+        raise SystemExit(
+            f"Workflow family '{family_id}' references missing screenshots: "
+            + ", ".join(missing_for_family)
+        )
+PY
+}
+
 on_error() {
   local exit_code=$?
   trap - ERR
@@ -1455,6 +1592,13 @@ trap 'cleanup_snapshot' EXIT
 
 mkdir -p "$PUBLISH_DIR" "$DIST_DIR" "$TEST_RESULTS_DIR" "$SMOKE_ARCHIVE_DIR" "$SMOKE_INSTALLER_DIR"
 rm -f "$FAILURE_REASONS_PATH"
+
+if [[ "$FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED" == "1" ]]; then
+  CURRENT_STAGE="flagship_ui_screenshot_gate"
+  bash "$FLAGSHIP_UI_GATE_SCRIPT"
+  validate_flagship_ui_screenshot_gate
+fi
+
 capture_git_metadata "$GIT_START_PATH"
 
 CURRENT_STAGE="source_snapshot"
