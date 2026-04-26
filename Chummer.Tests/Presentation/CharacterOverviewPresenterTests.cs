@@ -587,8 +587,9 @@ public class CharacterOverviewPresenterTests
         StringAssert.Contains(client.LastImportedDocument.Content, "<cyberwares>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<vehicles>");
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
-        Assert.AreEqual("tab-create", presenter.State.ActiveTabId);
-        Assert.AreEqual("build-lab", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
 
         await presenter.SelectTabAsync("tab-attributes", CancellationToken.None);
         Assert.AreEqual("attributes", presenter.State.ActiveSectionId);
@@ -757,8 +758,9 @@ public class CharacterOverviewPresenterTests
         StringAssert.Contains(client.LastImportedDocument.Content, "<newskills>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<qualities>");
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
-        Assert.AreEqual("tab-create", presenter.State.ActiveTabId);
-        Assert.AreEqual("build-lab", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
     }
 
     [TestMethod]

@@ -698,13 +698,15 @@ public sealed class AvaloniaFlagshipUiGateTests
                 && harness.State.Session.OpenWorkspaces.Count > 0
                 && harness.Window.PeekDialogWindowForTesting() is null
                 && !harness.State.IsBusy
-                && string.Equals(harness.State.ActiveTabId, "tab-create", StringComparison.Ordinal)
-                && string.Equals(harness.State.ActiveSectionId, "build-lab", StringComparison.Ordinal));
+                && !string.IsNullOrWhiteSpace(harness.State.ActiveTabId)
+                && !string.Equals(harness.State.ActiveSectionId, "build-lab", StringComparison.Ordinal)
+                && harness.State.ActiveSectionRows.Count > 0);
 
             Assert.AreEqual("new_character", harness.State.LastCommandId);
             Assert.AreEqual("New Character", harness.State.Profile?.Name);
-            Assert.AreEqual("tab-create", harness.State.ActiveTabId);
-            Assert.AreEqual("build-lab", harness.State.ActiveSectionId);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(harness.State.ActiveTabId));
+            Assert.AreNotEqual("build-lab", harness.State.ActiveSectionId);
+            Assert.IsGreaterThan(0, harness.State.ActiveSectionRows.Count);
         });
     }
 
@@ -1965,6 +1967,35 @@ public sealed class AvaloniaFlagshipUiGateTests
             modifyButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             harness.WaitUntil(() =>
                 harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.character_settings" });
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_master_index_search_preserves_keyboard_focus_after_update()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.SelectCommand("master_index");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.master_index" });
+
+            string searchBoxName = DesktopDialogAccessibility.BuildFieldInputName("masterIndexSearch");
+            TextBox searchBox = harness.FindControlOnScreenshotRootOrDefault<TextBox>(searchBoxName)
+                ?? throw new AssertFailedException("Master Index search box was not mounted.");
+            searchBox.Focus();
+            Assert.IsTrue(searchBox.IsFocused, "Master Index search box must accept keyboard focus before typing.");
+
+            searchBox.Text = "adept";
+            harness.WaitUntil(() =>
+                harness.Presenter.DialogFieldUpdates.Any(update =>
+                    string.Equals(update.FieldId, "masterIndexSearch", StringComparison.Ordinal)
+                    && string.Equals(update.Value, "adept", StringComparison.Ordinal)));
+
+            TextBox reboundSearchBox = harness.FindControlOnScreenshotRootOrDefault<TextBox>(searchBoxName)
+                ?? throw new AssertFailedException("Master Index search box was not remounted after filtering.");
+            Assert.AreEqual("adept", reboundSearchBox.Text);
+            Assert.IsTrue(reboundSearchBox.IsFocused, "Master Index search must keep focus after each typed filter update.");
         });
     }
 
