@@ -75,6 +75,7 @@ Hub owns the person/install relationship, install claim tickets, installation gr
 Hub is also the owned intake/orchestration seam for crash automation; Fleet consumes normalized work from Hub rather than raw client crash submissions.
 Hub owns raw support and feedback intake plus user-facing closure, but it does not become the product governor.
 Hub is the initial bounded home of the campaign spine, product-control plane, and world-state/mission-market contract family, but that does not make it the hidden owner of every middle-layer concern in perpetuity.
+Hub owns external admin projection validation, AdminIntent receipts, outbound notification template/suppression truth, delivery receipts, and journey-proof event aggregation. Teable, Emailit, ProductLift, Signitic, and comparable providers may feed those loops only through adapters and receipts.
 
 ### `chummer6-ui-kit`
 
@@ -151,6 +152,9 @@ Owns:
 * support/help-desk bridges
 * survey bridges
 * automation bridges
+* admin projection and intent-entry adapters
+* outbound delivery adapters and delivery receipts
+* journey-proof event aggregation
 * research/eval/prompt-tooling integrations
 * later grounded support-assistant or human-handoff layers
 
