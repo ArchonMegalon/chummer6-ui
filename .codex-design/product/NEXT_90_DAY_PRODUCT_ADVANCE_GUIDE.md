@@ -158,6 +158,82 @@ Exit: new users can reach first playable session through guided install, claim, 
 Owners: `chummer6-hub`, `chummer6-hub-registry`, `fleet`, `executive-assistant`, `chummer6-design`
 Exit: public status, release shelf, proof shelf, adoption health, support pulse, and launch readiness compile from the same registry and governor truth.
 
+## Wave 15 - make live table loops and world memory playable
+
+### 121. Live action economy, source anchors, and GM Runboard
+Owners: `chummer6-core`, `chummer6-ui-kit`, `chummer6-ui`, `chummer6-mobile`, `chummer6-hub`, `chummer6-design`
+Exit: one player and one GM can complete one SR6 combat round with action-budget truth, source anchors, between-turn affordance receipts, and a live GM Runboard that hands off to ResolutionReport without becoming a VTT.
+
+### 122. Campaign adoption, runner goals, and first BLACK LEDGER consequence
+Owners: `chummer6-hub`, `chummer6-core`, `chummer6-ui`, `chummer6-mobile`, `chummer6-media-factory`, `chummer6-design`
+Exit: an existing table can adopt current campaign state, a runner can pin and update one goal, and one GM-approved `ResolutionReport -> WorldTick -> player-safe NewsItem` loop is live with receipt-backed spoiler policy.
+
+## Wave 16 - make public run network and companion runtime real
+
+### 123. Open Runs and Community Hub table-formation loop
+Owners: `chummer6-hub`, `chummer6-hub-registry`, `chummer6-ui`, `chummer6-mobile`, `chummer6-media-factory`, `chummer6-design`
+Exit: a GM can open a run, players can request seats with compatible runners, schedule and meeting handoff stay Chummer-owned, and run closeout can feed BLACK LEDGER, newsreel, reputation, and artifact shelves.
+
+### 124. Switch companion runtime and bounded table-pulse moments
+Owners: `chummer6-core`, `chummer6-hub`, `chummer6-ui`, `chummer6-mobile`, `executive-assistant`, `chummer6-media-factory`, `chummer6-design`
+Exit: `CompanionPacket` trigger truth is emitted by Chummer-owned domains and rendered on desktop/mobile with tone, suppression, fallback templates, evidence drawers, and optional EA/media packs that never own rules, support, release, campaign, or world truth.
+
+## Wave 17 - turn public signal and horizons into governed implementation lanes
+
+### 125. Public signal, visibility, and canon-feedback implementation loop
+Owners: `chummer6-hub`, `chummer6-hub-registry`, `fleet`, `executive-assistant`, `chummer6-design`
+Exit: ProductLift, Katteb, ClickRank, support, survey, and public-content findings become classified SignalToCanon packets; accepted fixes patch Chummer-owned source before regenerated public output changes; Fleet can synthesize repeated-signal queue candidates without owning canon.
+
+### 126. Horizon handoff gates and bounded research-to-build conversion
+Owners: `chummer6-design`, `fleet`, `chummer6-core`, `chummer6-hub`, `chummer6-ui`, `chummer6-mobile`, `chummer6-media-factory`
+Exit: public-eligible horizons with demand have owner handoff gates, bounded research packets, executable proof requirements, public-claim stop rules, and Fleet scheduling only after Chummer-owned canon names the owner, allowed surface, proof gate, and stop condition.
+
+## Wave 18 - finish release operations, localization, privacy, and support trust
+
+### 127. Release pipeline, updater, platform acceptance, and public downloads completion
+Owners: `chummer6-ui`, `chummer6-hub-registry`, `chummer6-hub`, `fleet`, `chummer6-design`
+Exit: release, installer, updater, rollback, revoke, download, proof shelf, platform acceptance, and public channel surfaces compile from one release-truth chain.
+
+### 128. Localization, accessibility, telemetry, privacy, support, and crash trust completion
+Owners: `chummer6-ui-kit`, `chummer6-ui`, `chummer6-mobile`, `chummer6-hub`, `fleet`, `chummer6-design`
+Exit: promoted desktop, mobile, Hub, public, support, and artifact surfaces satisfy localization, accessibility, dense-data, telemetry, privacy, retention, support, and crash-status contracts.
+
+## Wave 19 - finish account/community, provider, and public-guide substrate
+
+### 129. Account, identity, channel linking, participation, entitlements, and community ledger completion
+Owners: `chummer6-hub`, `chummer6-hub-registry`, `chummer6-ui`, `fleet`, `executive-assistant`, `chummer6-design`
+Exit: accounts, identities, channels, groups, memberships, sponsorship, rewards, entitlements, participation, and lane-local Fleet receipt semantics form one reusable community substrate.
+
+### 130. External tools, LTD provider stewardship, and governed integration adapter completion
+Owners: `executive-assistant`, `fleet`, `chummer6-hub`, `chummer6-media-factory`, `chummer6-core`, `chummer6-design`
+Exit: every external tool has an owner, allowed surface, forbidden surface, receipt type, privacy posture, fallback, kill switch, and non-authority boundary.
+
+### 131. Public guide, help, FAQ, content export, media briefs, and search visibility completion
+Owners: `chummer6-design`, `chummer6-hub`, `chummer6-hub-registry`, `executive-assistant`, `fleet`, `chummer6-media-factory`
+Exit: guide, help, FAQ, public parts, media briefs, metadata, schema, sitemap, visibility, and content-export outputs compile from Chummer-owned source truth before public output changes.
+
+## Wave 20 - implement rules, source, and deterministic horizon tranche
+
+### 132. Deterministic horizon implementation tranche: NEXUS-PAN, ALICE, KARMA FORGE, Knowledge Fabric, and Local Co-Processor
+Owners: `chummer6-core`, `chummer6-hub`, `chummer6-hub-registry`, `chummer6-ui`, `chummer6-mobile`, `fleet`, `chummer6-design`
+Exit: deterministic horizons move from public storytelling to bounded implementation only through owner handoff gates and executable proof, without assistant-side rules invention.
+
+### 134. Source anchors, local rulebook binding, house-rule discovery, and amend-package marketplace completion
+Owners: `chummer6-core`, `chummer6-hub`, `chummer6-hub-registry`, `chummer6-ui`, `executive-assistant`, `chummer6-design`
+Exit: source anchors, rulebook binding, house-rule demand, amend-package promotion, marketplace/publication, rollback, compatibility, and explain receipts operate as one governed rule-environment lane.
+
+## Wave 21 - implement media, run-network, and table-social horizon tranche
+
+### 133. Media and social horizon implementation tranche: JACKPOINT, RUNBOOK PRESS, GHOSTWIRE, RUNSITE, TABLE PULSE, and Community Hub
+Owners: `chummer6-hub`, `chummer6-hub-registry`, `chummer6-media-factory`, `chummer6-ui`, `chummer6-mobile`, `executive-assistant`, `fleet`, `chummer6-design`
+Exit: media/social horizons become bounded implementation lanes with first-party manifests, consent, provenance, publication, revocation, inspectable artifacts, and unsupported-claim guards.
+
+## Wave 22 - close backbone, contract, repo-boundary, and final design coverage
+
+### 135. Product backbone, contract sets, ownership matrix, repo hygiene, and final design coverage closeout
+Owners: `chummer6-design`, `fleet`, `chummer6-core`, `chummer6-hub`, `chummer6-hub-registry`, `chummer6-ui`, `chummer6-mobile`, `chummer6-ui-kit`, `chummer6-media-factory`, `executive-assistant`
+Exit: every canonical design source family is implemented, explicitly non-goal/future-only, or represented by a repo-owned executable milestone with queue slice, allowed paths, proof gate, and stop condition.
+
 ## Non-goals for this quarter
 
 This wave is not the time to:

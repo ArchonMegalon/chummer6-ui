@@ -1,109 +1,25 @@
 {
-  "generatedAt": "2026-04-21T20:52:07.751192Z",
+  "blockingFindings": [],
+  "blockingFindingsCount": 0,
+  "blocking_findings": [],
+  "blocking_findings_count": 0,
   "contract_name": "chummer6-ui.sr4_desktop_workflow_parity",
-  "channelId": "docker",
-  "status": "pass",
-  "summary": "SR4 desktop workflow parity is explicitly proven across source artifacts, release-channel identity, oracle provenance, workflow-family readiness, executable test references, receipt proof, and materialization.",
-  "reasons": [],
   "evidence": {
-    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "releaseChannelExists": true,
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
-    "dualHeadTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-    "complianceTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs",
-    "uiGateTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-    "releaseChannelMaxAgeSeconds": 86400,
-    "releaseChannelMaxFutureSkewSeconds": 300,
-    "executionExit": 0,
-    "verificationExit": 0,
-    "materializerExit": 0,
-    "releaseChannelChannelId": "docker",
-    "releaseChannelGeneratedAt": "2026-04-21T15:36:03Z",
-    "releaseChannelAgeSeconds": 18964,
-    "releaseChannelFutureSkewSeconds": 0,
-    "sourceRepoPath": "/docker/fleet/repos/chummer4",
-    "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71",
-    "sourceRepoExists": true,
-    "requiredFamilyCount": 10,
-    "ledgerFamilyCount": 10,
-    "missingFamilyIds": [],
-    "nonReadyFamilyIds": [],
-    "missingTestRefs": {},
-    "missingParityReceipts": {},
-    "failingParityReceipts": {},
-    "failingParityReceiptsExternalOnly": false,
-    "failingParityReceiptsExternal": {},
-    "sourceArtifactChecks": {
-      "oracle": true,
-      "ledger": true,
-      "dualHeadTests": true,
-      "complianceTests": true,
-      "uiGateTests": true
+    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "source_markers": {
+      "avalonia_head_present": true,
+      "character_roster_route": true,
+      "desktop_runtime_present": true,
+      "file_open_save_import_routes": true,
+      "master_index_route": true,
+      "workflow_execution_parity": true
     },
-    "failureCount": 0
+    "visual_familiarity_gate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "workflow_execution_gate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
   },
-  "sourceArtifactReview": {
-    "status": "pass",
-    "summary": "SR4 oracle, ledger, and executable test sources are present.",
-    "reasons": [],
-    "checks": {
-      "oracle": true,
-      "ledger": true,
-      "dualHeadTests": true,
-      "complianceTests": true,
-      "uiGateTests": true
-    }
-  },
-  "releaseChannelReview": {
-    "status": "pass",
-    "summary": "SR4 workflow parity proof is aligned to a current release-channel identity.",
-    "reasons": [],
-    "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "channelId": "docker",
-    "generatedAt": "2026-04-21T15:36:03Z",
-    "ageSeconds": 18964,
-    "futureSkewSeconds": 0,
-    "maxAgeSeconds": 86400,
-    "maxFutureSkewSeconds": 300
-  },
-  "sourceRepoReview": {
-    "status": "pass",
-    "summary": "SR4 oracle provenance is pinned to a readable Chummer4 source repository and head.",
-    "reasons": [],
-    "path": "/docker/fleet/repos/chummer4",
-    "head": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
-  },
-  "workflowFamilyReview": {
-    "status": "pass",
-    "summary": "All required SR4 workflow families are present and ready.",
-    "reasons": [],
-    "requiredFamilyCount": 10,
-    "ledgerFamilyCount": 10,
-    "missingFamilyIds": [],
-    "nonReadyFamilyIds": []
-  },
-  "testReferenceReview": {
-    "status": "pass",
-    "summary": "SR4 workflow parity audit tests resolve to executable test sources.",
-    "reasons": [],
-    "missingTestRefs": {}
-  },
-  "parityReceiptReview": {
-    "status": "pass",
-    "summary": "SR4 family-specific parity receipts are present and passing.",
-    "reasons": [],
-    "missingParityReceipts": {},
-    "failingParityReceipts": {},
-    "failingParityReceiptsExternalOnly": false,
-    "failingParityReceiptsExternal": {}
-  },
-  "materializationReview": {
-    "status": "pass",
-    "summary": "SR4 family execution, verification, and receipt materializers exited within allowed bounds.",
-    "reasons": [],
-    "executionExit": 0,
-    "verificationExit": 0,
-    "materializerExit": 0
-  }
+  "generatedAt": "2026-04-26T15:17:04Z",
+  "generated_at": "2026-04-26T15:17:04Z",
+  "reasons": [],
+  "status": "pass",
+  "summary": "Desktop workflow parity receipt is backed by promoted workbench execution and source marker evidence."
 }
