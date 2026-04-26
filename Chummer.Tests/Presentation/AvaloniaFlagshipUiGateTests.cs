@@ -91,7 +91,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         "WindowsMenuButton",
         "HelpMenuButton",
     ];
-    private static readonly string[] ExpectedFileMenuCommandIds = ["open_character", "save_character"];
+    private static readonly string[] ExpectedFileMenuCommandIds = ["new_character", "open_character", "save_character"];
     private static readonly string[] ExpectedSummaryHeaderTabSelectionOrder = ["tab-gear", "tab-profile"];
     private static readonly string[] ExpectedNavigatorWorkspaceSelection = ["runner-1"];
     private static readonly string[] ExpectedNavigatorTabSelection = ["tab-gear"];
@@ -561,6 +561,44 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsNull(
                 harness.Window.PeekDialogWindowForTesting(),
                 "New Critter must import directly into a workspace instead of leaving synthetic dialog chrome behind.");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_file_menu_new_character_opens_create_dialog_and_imports_workspace()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            Assert.IsNull(harness.State.WorkspaceId, "Runtime-backed New Character proof starts without an active workspace.");
+
+            harness.Click("FileMenuButton");
+            harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton")).Length > 0);
+
+            MenuItem newCharacterCommand = SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton"))
+                .FirstOrDefault(command => string.Equals(command.Tag?.ToString(), "new_character", StringComparison.Ordinal))
+                ?? throw new AssertFailedException("File menu must expose New Character.");
+
+            RaiseMenuItemClick(newCharacterCommand);
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            Button createButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("create_character"));
+            Assert.IsTrue(createButton.IsEnabled, "New Character OK action must be enabled.");
+            createButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+            harness.WaitUntil(() =>
+                harness.State.WorkspaceId is not null
+                && harness.State.Session.OpenWorkspaces.Count > 0
+                && harness.Window.PeekDialogWindowForTesting() is null
+                && !harness.State.IsBusy
+                && string.Equals(harness.State.ActiveTabId, "tab-create", StringComparison.Ordinal)
+                && string.Equals(harness.State.ActiveSectionId, "build-lab", StringComparison.Ordinal));
+
+            Assert.AreEqual("new_character", harness.State.LastCommandId);
+            Assert.AreEqual("New Character", harness.State.Profile?.Name);
+            Assert.AreEqual("tab-create", harness.State.ActiveTabId);
+            Assert.AreEqual("build-lab", harness.State.ActiveSectionId);
         });
     }
 
@@ -1099,13 +1137,14 @@ public sealed class AvaloniaFlagshipUiGateTests
                 knownMenuIds: menuIds,
                 openMenuCommands:
                 [
+                    new MenuCommandItem("new_character", "new character", true, true),
                     new MenuCommandItem("open_character", "open character", true, true),
                     new MenuCommandItem("save_character", "save character", true),
                 ],
                 isBusy: false);
 
             MenuItem[] commandItems = SnapshotMenuCommands(FindDescendant<MenuItem>(control, "FileMenuButton"));
-            Assert.AreEqual(2, commandItems.Length, "Standalone menu proof must render visible dropdown command items for the open menu.");
+            Assert.AreEqual(3, commandItems.Length, "Standalone menu proof must render visible dropdown command items for the open menu.");
 
             foreach (MenuItem commandItem in commandItems)
             {

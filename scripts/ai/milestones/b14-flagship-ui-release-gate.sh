@@ -160,6 +160,7 @@ desktop_startup_smoke_runtime_tests_path = Path(sys.argv[7])
 avalonia_text = avalonia_gate_tests_path.read_text(encoding="utf-8")
 required_avalonia_tests = [
     "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers",
+    "Runtime_backed_file_menu_new_character_opens_create_dialog_and_imports_workspace",
     "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
@@ -768,6 +769,9 @@ payload = {
         "runtimeBackedClickablePrimaryMenus": runtime_backed_shell_menu_status,
         "runtimeBackedToolstripActions": runtime_backed_toolstrip_actions_status,
         "runtimeBackedCodexTree": runtime_backed_codex_tree_status,
+        "runtimeBackedNewCharacterFileWorkflow": proof_status(
+            "Runtime_backed_file_menu_new_character_opens_create_dialog_and_imports_workspace" in avalonia_gate_tests_text
+        ),
         "runtimeBackedSr4CodexOrientationModel": runtime_backed_ruleset_orientation_status,
         "runtimeBackedSr5CodexOrientationModel": runtime_backed_ruleset_orientation_status,
         "runtimeBackedSr6CodexOrientationModel": runtime_backed_ruleset_orientation_status,
@@ -821,6 +825,7 @@ payload = {
             "layoutParityHardGate": layout_gate_status,
             "releaseLifecycle": desktop_lifecycle_status,
             "requiredRuntimeBackedTests": [
+                "Runtime_backed_file_menu_new_character_opens_create_dialog_and_imports_workspace",
                 "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
                 "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
                 "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
