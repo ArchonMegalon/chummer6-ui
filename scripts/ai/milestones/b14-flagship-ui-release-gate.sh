@@ -190,6 +190,7 @@ required_avalonia_tests = [
     "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
     "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
     "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+    "Screenshot_workflow_coverage_requires_multiple_frames_for_every_canonical_family",
 ]
 missing_avalonia = [name for name in required_avalonia_tests if name not in avalonia_text]
 if missing_avalonia:
@@ -430,6 +431,37 @@ expected_screenshots = [
     "16-master-index-dialog-light.png",
     "17-character-roster-dialog-light.png",
     "18-import-dialog-light.png",
+    "19-workflow-file-menu-loaded-light.png",
+    "20-workflow-skills-section-light.png",
+    "21-workflow-skill-add-dialog-light.png",
+    "22-workflow-qualities-section-light.png",
+    "23-workflow-quality-add-dialog-light.png",
+    "24-workflow-gear-section-light.png",
+    "25-workflow-gear-add-dialog-light.png",
+    "26-workflow-weapons-section-light.png",
+    "27-workflow-weapon-add-dialog-light.png",
+    "28-workflow-armor-section-light.png",
+    "29-workflow-armor-add-dialog-light.png",
+    "30-workflow-cyberware-section-light.png",
+    "31-workflow-powers-section-light.png",
+    "32-workflow-adept-power-dialog-light.png",
+    "33-workflow-complex-form-dialog-light.png",
+    "34-workflow-validate-section-light.png",
+    "35-workflow-rules-section-light.png",
+    "36-workflow-new-character-dialog-light.png",
+    "37-workflow-calendar-section-light.png",
+]
+required_workflow_family_ids = [
+    "create-open-import-save-save-as-print-export",
+    "metatype-priorities-karma-entry",
+    "attributes-skills-skill-groups-specializations-knowledge-languages",
+    "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+    "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+    "cyberware-bioware-modular-hierarchies-nested-plugins",
+    "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+    "improvements-explain-result-parity",
+    "recovery-reload-migration-roundtrips",
+    "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
 ]
 required_full_workflow_tests = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
@@ -706,7 +738,77 @@ if missing:
     raise SystemExit(
         "[b14] FAIL: missing screenshot evidence: " + ", ".join(missing)
     )
-avalonia_visual_review_status = proof_status(not missing, len(captured) == len(expected_screenshots))
+
+control_evidence_path = os.path.join(screenshot_dir, "SCREENSHOT_CONTROL_EVIDENCE.generated.json")
+if not os.path.isfile(control_evidence_path):
+    raise SystemExit(f"[b14] FAIL: missing screenshot control evidence: {control_evidence_path}")
+with open(control_evidence_path, "r", encoding="utf-8") as handle:
+    screenshot_control_evidence = json.load(handle)
+control_entry_names = [
+    str(entry.get("screenshot") or "").strip()
+    for entry in screenshot_control_evidence.get("entries") or []
+    if isinstance(entry, dict)
+]
+missing_control_entries = [
+    name for name in expected_screenshots if name not in control_entry_names
+]
+if missing_control_entries:
+    raise SystemExit(
+        "[b14] FAIL: screenshot control evidence is missing entries: "
+        + ", ".join(missing_control_entries)
+    )
+
+workflow_coverage = screenshot_control_evidence.get("workflowCoverage") or []
+if not isinstance(workflow_coverage, list):
+    raise SystemExit("[b14] FAIL: screenshot control evidence workflowCoverage is not a list.")
+workflow_coverage_by_id = {
+    str(item.get("workflowFamilyId") or "").strip(): item
+    for item in workflow_coverage
+    if isinstance(item, dict)
+}
+missing_workflow_coverage = [
+    family_id
+    for family_id in required_workflow_family_ids
+    if family_id not in workflow_coverage_by_id
+]
+if missing_workflow_coverage:
+    raise SystemExit(
+        "[b14] FAIL: missing screenshot-backed workflow coverage: "
+        + ", ".join(missing_workflow_coverage)
+    )
+for family_id in required_workflow_family_ids:
+    coverage = workflow_coverage_by_id[family_id]
+    lineage = str(coverage.get("legacyBehaviorLineage") or "").strip()
+    screenshot_files = [
+        str(name or "").strip()
+        for name in coverage.get("screenshotFiles") or []
+        if str(name or "").strip()
+    ]
+    if not lineage:
+        raise SystemExit(f"[b14] FAIL: workflow screenshot coverage '{family_id}' is missing legacyBehaviorLineage.")
+    if len(screenshot_files) < 2:
+        raise SystemExit(f"[b14] FAIL: workflow screenshot coverage '{family_id}' has fewer than two screenshots.")
+    if len(set(screenshot_files)) != len(screenshot_files):
+        raise SystemExit(f"[b14] FAIL: workflow screenshot coverage '{family_id}' repeats a screenshot filename.")
+    missing_files_for_family = [
+        name
+        for name in screenshot_files
+        if name not in expected_screenshots or not os.path.isfile(os.path.join(screenshot_dir, name))
+    ]
+    if missing_files_for_family:
+        raise SystemExit(
+            f"[b14] FAIL: workflow screenshot coverage '{family_id}' references missing screenshots: "
+            + ", ".join(missing_files_for_family)
+        )
+workflow_screenshot_coverage_status = proof_status(
+    not missing_workflow_coverage,
+    all(len((workflow_coverage_by_id[family_id].get("screenshotFiles") or [])) >= 2 for family_id in required_workflow_family_ids),
+)
+avalonia_visual_review_status = proof_status(
+    not missing,
+    len(captured) == len(expected_screenshots),
+    status_ok(workflow_screenshot_coverage_status),
+)
 bundled_demo_runner_status = proof_status(os.path.isfile(sample_path))
 avalonia_head_status = proof_status(
     avalonia_visual_review_status,
@@ -761,6 +863,7 @@ payload = {
             tests_present(avalonia_gate_tests_text, default_single_runner_layout_tests),
         ),
         "crossHeadWorkflowParity": workflow_equivalence_status,
+        "workflowScreenshotCoverage": workflow_screenshot_coverage_status,
         "installUpdateRecoveryLifecycle": desktop_lifecycle_status,
         "themeReadabilityContrast": theme_readability_contrast_status,
         "blazorDesktopShellChrome": blazor_shell_chrome_status,
@@ -820,6 +923,7 @@ payload = {
             ],
             "sourceTestFile": avalonia_gate_tests_path,
             "visualReview": avalonia_visual_review_status,
+            "workflowScreenshotCoverage": workflow_screenshot_coverage_status,
             "themeReadabilityContrast": theme_readability_contrast_status,
             "bundledDemoRunner": bundled_demo_runner_status,
             "layoutParityHardGate": layout_gate_status,
@@ -854,7 +958,8 @@ payload = {
                 "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
                 "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
                 "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
-                "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+                "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+                "Screenshot_workflow_coverage_requires_multiple_frames_for_every_canonical_family"
             ],
             "requiredLifecycleTests": required_lifecycle_runtime_tests,
         },
@@ -915,6 +1020,10 @@ payload = {
         "screenshotDirectory": screenshot_dir,
         "expectedScreenshots": expected_screenshots,
         "capturedScreenshots": captured,
+        "controlEvidencePath": control_evidence_path,
+        "workflowScreenshotCoverageStatus": workflow_screenshot_coverage_status,
+        "requiredWorkflowFamilyIds": required_workflow_family_ids,
+        "workflowScreenshotCoverage": workflow_coverage,
     },
     "signoffLane": {
         "workbenchReleaseSignoffPath": signoff_path,
