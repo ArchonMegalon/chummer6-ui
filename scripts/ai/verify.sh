@@ -943,6 +943,9 @@ rm -f "$missing_promoted_platform_heads_mutation_release_channel" "$missing_prom
 restore_desktop_executable_exit_gate_receipt
 trap - EXIT
 
+echo "[verify] checking adversarial Linux user-journey tester audit..."
+bash scripts/ai/milestones/user-journey-tester-audit.sh
+
 echo "[verify] checking next-90 M101 independent Avalonia release-train guard..."
 bash scripts/ai/milestones/next90-m101-ui-release-train-check.sh
 
