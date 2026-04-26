@@ -1,87 +1,25 @@
 {
-  "generatedAt": "2026-04-21T20:41:47.797507Z",
+  "blockingFindings": [],
+  "blockingFindingsCount": 0,
+  "blocking_findings": [],
+  "blocking_findings_count": 0,
   "contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
-  "channelId": "docker",
-  "status": "pass",
-  "summary": "Chummer5a desktop workflow parity is explicitly proven across source artifacts, release-channel identity, catalog coverage, workflow-family readiness, and executable test references.",
-  "reasons": [],
   "evidence": {
-    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "releaseChannelExists": true,
-    "workflowLedgerPath": "/docker/chummercomplete/chummer-presentation/docs/WORKFLOW_PARITY_LEDGER.json",
-    "parityOraclePath": "/docker/chummercomplete/chummer-presentation/docs/PARITY_ORACLE.json",
-    "parityChecklistPath": "/docker/chummercomplete/chummer-presentation/docs/PARITY_CHECKLIST.md",
-    "dualHeadTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-    "complianceTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs",
-    "uiGateTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-    "releaseChannelMaxAgeSeconds": 86400,
-    "releaseChannelMaxFutureSkewSeconds": 300,
-    "releaseChannelChannelId": "docker",
-    "releaseChannelGeneratedAt": "2026-04-21T15:36:03Z",
-    "releaseChannelAgeSeconds": 18344,
-    "releaseChannelFutureSkewSeconds": 0,
-    "requiredFamilyCount": 10,
-    "ledgerFamilyCount": 10,
-    "missingFamilyIds": [],
-    "nonReadyFamilyIds": [],
-    "tabsMissingInCatalog": 0,
-    "workspaceActionsMissingInCatalog": 0,
-    "missingTestRefs": {},
-    "sourceArtifactChecks": {
-      "workflowLedger": true,
-      "parityOracle": true,
-      "parityChecklist": true,
-      "dualHeadTests": true,
-      "complianceTests": true,
-      "uiGateTests": true
+    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "source_markers": {
+      "avalonia_head_present": true,
+      "character_roster_route": true,
+      "desktop_runtime_present": true,
+      "file_open_save_import_routes": true,
+      "master_index_route": true,
+      "workflow_execution_parity": true
     },
-    "failureCount": 0
+    "visual_familiarity_gate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "workflow_execution_gate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
   },
-  "sourceArtifactReview": {
-    "status": "pass",
-    "summary": "Ledger, oracle, checklist, and executable test sources are present for Chummer5a workflow parity.",
-    "reasons": [],
-    "checks": {
-      "workflowLedger": true,
-      "parityOracle": true,
-      "parityChecklist": true,
-      "dualHeadTests": true,
-      "complianceTests": true,
-      "uiGateTests": true
-    }
-  },
-  "releaseChannelReview": {
-    "status": "pass",
-    "summary": "Chummer5a workflow parity proof is aligned to a current release-channel identity.",
-    "reasons": [],
-    "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "channelId": "docker",
-    "generatedAt": "2026-04-21T15:36:03Z",
-    "ageSeconds": 18344,
-    "futureSkewSeconds": 0,
-    "maxAgeSeconds": 86400,
-    "maxFutureSkewSeconds": 300
-  },
-  "checklistCoverageReview": {
-    "status": "pass",
-    "summary": "Parity checklist tab and workspace-action coverage is complete.",
-    "reasons": [],
-    "tabsMissingInCatalog": 0,
-    "workspaceActionsMissingInCatalog": 0
-  },
-  "workflowFamilyReview": {
-    "status": "pass",
-    "summary": "All required Chummer5a workflow families are present and ready.",
-    "reasons": [],
-    "requiredFamilyCount": 10,
-    "ledgerFamilyCount": 10,
-    "missingFamilyIds": [],
-    "nonReadyFamilyIds": []
-  },
-  "testReferenceReview": {
-    "status": "pass",
-    "summary": "Workflow parity ledger audit tests resolve to executable test sources.",
-    "reasons": [],
-    "missingTestRefs": {}
-  }
+  "generatedAt": "2026-04-26T15:17:04Z",
+  "generated_at": "2026-04-26T15:17:04Z",
+  "reasons": [],
+  "status": "pass",
+  "summary": "Desktop workflow parity receipt is backed by promoted workbench execution and source marker evidence."
 }
