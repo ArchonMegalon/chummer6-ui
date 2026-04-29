@@ -127,10 +127,7 @@ public class DualHeadAcceptanceTests
                 fileQueries,
                 sectionQueries,
                 metadataCommands),
-            new Sr6WorkspaceCodec(
-                fileQueries,
-                sectionQueries,
-                metadataCommands)
+            new Sr6WorkspaceCodec()
         ];
         IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(codecs);
         return new WorkspaceService(

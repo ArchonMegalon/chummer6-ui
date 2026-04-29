@@ -90,8 +90,45 @@ public partial class MainWindow
     private async void ToolStrip_OnDesktopHomeRequested(object? sender, EventArgs e)
     {
         await RunUiActionAsync(
-            () => _interactionCoordinator.ExecuteCommandAsync("new_character", CancellationToken.None),
-            "create new character");
+            async () =>
+            {
+                await DesktopHomeWindow.ShowAsync(this, "avalonia");
+                MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip);
+            },
+            "open desktop home");
+    }
+
+    private async void ToolStrip_OnGmPrepRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId);
+                MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
+            },
+            "open GM prep packets");
+    }
+
+    private async void ToolStrip_OnRosterMovementRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId);
+                MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
+            },
+            "review roster movement");
+    }
+
+    private async void ToolStrip_OnRuleEnvironmentStudioRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity);
+                MainWindowFeedbackCoordinator.ShowRuleEnvironmentStudioReviewed(_controls.ToolStrip);
+            },
+            "open rule environment studio");
     }
 
     private async void ToolStrip_OnCloseWorkspaceRequested(object? sender, EventArgs e)

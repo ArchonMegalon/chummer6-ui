@@ -10,12 +10,21 @@ using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
 
+internal enum DesktopCampaignWorkspaceSurface
+{
+    Overview,
+    GmPrepPackets,
+    RosterMovement
+}
+
 internal sealed class DesktopCampaignWorkspaceWindow : Window
 {
     private const string CampaignArtifactLaunchSummary = "Artifact launch: open the campaign primer or mission briefing directly from this desktop campaign route instead of browsing the shelf first.";
     private const string CampaignConsequenceVisibilitySummary = "Campaign consequences: downtime, heat, faction, contact, reputation, and aftermath state stay visible on the desktop campaign route before the next session.";
     private const string CampaignMemoryStaleStateSummary = "Campaign memory stale-state check: desktop compares the server-generated campaign memory packet with the local workspace timestamp and keeps both visible when they disagree.";
     private const string CampaignNextSessionReturnActionSummary = "Next-session return actions: review Campaign Workspace, open the current workspace, review devices/access, or open Workspace Support before continuing play.";
+    private const string GmPrepPacketSurfaceSummary = "GM prep packets keep the player-safe briefing, GM-only notes, source refs, share card, narrator brief, and approval state together before publication.";
+    private const string RosterMovementSurfaceSummary = "Roster movement keeps workspace roster choices, travel posture, device readiness, and handoff follow-through visible before a runner moves between campaign seats.";
     private DesktopInstallLinkingState _installState;
     private readonly DesktopPreferenceState _preferences;
     private IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
@@ -26,10 +35,14 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     private readonly TextBlock _statusText;
     private readonly TextBlock _readinessText;
     private readonly TextBlock _restoreText;
+    private readonly TextBlock _gmPrepText;
+    private readonly TextBlock _rosterMovementText;
     private readonly TextBlock _supportText;
     private readonly TextBlock _workspaceText;
     private readonly StackPanel _readinessActionsRow;
     private readonly StackPanel _restoreActionsRow;
+    private readonly StackPanel _gmPrepActionsRow;
+    private readonly StackPanel _rosterMovementActionsRow;
     private readonly StackPanel _supportActionsRow;
     private readonly StackPanel _workspaceActionsRow;
 
@@ -39,7 +52,8 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         IReadOnlyList<WorkspaceListItem> recentWorkspaces,
         DesktopHomeCampaignProjection campaignProjection,
         DesktopHomeCampaignServerPlane? campaignServerPlane,
-        DesktopHomeSupportProjection supportProjection)
+        DesktopHomeSupportProjection supportProjection,
+        DesktopCampaignWorkspaceSurface initialSurface)
     {
         _installState = installState;
         _preferences = preferences;
@@ -80,6 +94,18 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _gmPrepText = new TextBlock
+        {
+            Text = BuildGmPrepBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _rosterMovementText = new TextBlock
+        {
+            Text = BuildRosterMovementBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
         _supportText = new TextBlock
         {
             Text = BuildSupportBody(),
@@ -94,8 +120,25 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
         _readinessActionsRow = CreateActionRow(CreateReadinessActions());
         _restoreActionsRow = CreateActionRow(CreateRestoreActions());
+        _gmPrepActionsRow = CreateActionRow(CreateGmPrepActions());
+        _rosterMovementActionsRow = CreateActionRow(CreateRosterMovementActions());
         _supportActionsRow = CreateActionRow(CreateSupportActions());
         _workspaceActionsRow = CreateActionRow(CreateWorkspaceActions());
+
+        Border gmPrepSection = CreateSection(
+            "GM prep packets",
+            _gmPrepText,
+            _gmPrepActionsRow);
+        Border rosterMovementSection = CreateSection(
+            "Roster movement",
+            _rosterMovementText,
+            _rosterMovementActionsRow);
+        Border? focusSection = initialSurface switch
+        {
+            DesktopCampaignWorkspaceSurface.GmPrepPackets => gmPrepSection,
+            DesktopCampaignWorkspaceSurface.RosterMovement => rosterMovementSection,
+            _ => null
+        };
 
         Content = new ScrollViewer
         {
@@ -123,6 +166,8 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
                             S("desktop.campaign.section.restore"),
                             _restoreText,
                             _restoreActionsRow),
+                        gmPrepSection,
+                        rosterMovementSection,
                         CreateSection(
                             S("desktop.campaign.section.support"),
                             _supportText,
@@ -146,6 +191,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
                 }
             }
         };
+        focusSection?.BringIntoView();
     }
 
     public static async Task ShowAsync(Window owner, string headId)
@@ -153,11 +199,29 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopCampaignWorkspaceWindow dialog = await CreateAsync(headId).ConfigureAwait(true);
+        DesktopCampaignWorkspaceWindow dialog = await CreateAsync(headId, DesktopCampaignWorkspaceSurface.Overview).ConfigureAwait(true);
         await dialog.ShowDialog(owner);
     }
 
-    private static async Task<DesktopCampaignWorkspaceWindow> CreateAsync(string headId)
+    public static async Task ShowGmPrepAsync(Window owner, string headId)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopCampaignWorkspaceWindow dialog = await CreateAsync(headId, DesktopCampaignWorkspaceSurface.GmPrepPackets).ConfigureAwait(true);
+        await dialog.ShowDialog(owner);
+    }
+
+    public static async Task ShowRosterMovementAsync(Window owner, string headId)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopCampaignWorkspaceWindow dialog = await CreateAsync(headId, DesktopCampaignWorkspaceSurface.RosterMovement).ConfigureAwait(true);
+        await dialog.ShowDialog(owner);
+    }
+
+    private static async Task<DesktopCampaignWorkspaceWindow> CreateAsync(string headId, DesktopCampaignWorkspaceSurface initialSurface)
     {
         IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
             ?? throw new InvalidOperationException("Desktop campaign workspace requires an IChummerClient instance."));
@@ -178,7 +242,8 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             workspaces,
             campaignProjection,
             campaignServerPlane,
-            supportProjection);
+            supportProjection,
+            initialSurface);
     }
 
     private static DesktopPreferenceState ReadPreferences(string headId)
@@ -463,6 +528,48 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         return "Conflict choices: keep local work, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.";
     }
 
+    private string BuildGmPrepBody()
+    {
+        List<string> lines =
+        [
+            $"GM prep packets: {GmPrepPacketSurfaceSummary}",
+            $"Prep publication packet: {FirstNonBlank(_campaignServerPlane?.PublicationSummary, _campaignProjection.Summary)}",
+            $"GM prep memory packet: {FirstNonBlank(_campaignServerPlane?.CampaignMemorySummary, CampaignMemoryStaleStateSummary)}",
+            $"Runboard packet: {FirstNonBlank(_campaignServerPlane?.RunboardSummary, _campaignProjection.NextSafeAction)}",
+            "Approval state: keep the briefing draft local until the GM approves the player-safe share card and narrator brief."
+        ];
+
+        foreach (string highlight in _campaignProjection.ReadinessHighlights.Take(3))
+        {
+            lines.Add($"Source ref: {highlight}");
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    private string BuildRosterMovementBody()
+    {
+        string rosterChoices = _recentWorkspaces.Count == 0
+            ? "No local workspaces are loaded yet; keep movement as a review-only lane until a runner workspace is selected."
+            : string.Join(", ", _recentWorkspaces.Select(workspace => $"{workspace.Summary} [{workspace.RulesetId}]").Take(4));
+
+        List<string> lines =
+        [
+            $"Roster movement: {RosterMovementSurfaceSummary}",
+            $"Travel posture: {FirstNonBlank(_campaignServerPlane?.TravelModeSummary, "Travel mode has no server packet yet; use local workspace and devices/access review before moving a runner.")}",
+            $"Roster movement inventory: {FirstNonBlank(_campaignServerPlane?.TravelPrefetchInventorySummary, _campaignServerPlane?.RosterSummary, "No travel inventory is available yet.")}",
+            $"Workspace roster choices: {rosterChoices}",
+            $"Roster movement follow-through: {FirstNonBlank(_campaignServerPlane?.CampaignMemoryReturnSummary, _campaignProjection.NextSafeAction)}"
+        ];
+
+        foreach (string watchout in _campaignProjection.Watchouts.Take(3))
+        {
+            lines.Add($"Movement watchout: {watchout}");
+        }
+
+        return string.Join("\n", lines);
+    }
+
     private string BuildSupportBody()
     {
         List<string> lines =
@@ -594,6 +701,32 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         {
             actions.Add(CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport));
         }
+
+        return actions;
+    }
+
+    private IReadOnlyList<Button> CreateGmPrepActions()
+    {
+        List<Button> actions =
+        [
+            CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact, isPrimary: true),
+            CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact),
+            CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
+        ];
+
+        return actions;
+    }
+
+    private IReadOnlyList<Button> CreateRosterMovementActions()
+    {
+        List<Button> actions =
+        [
+            _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+                ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenLeadWorkspace, isPrimary: true)
+                : CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true),
+            CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync),
+            CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
+        ];
 
         return actions;
     }
@@ -812,13 +945,20 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         _statusText.Text = BuildStatus();
         _readinessText.Text = BuildReadinessBody();
         _restoreText.Text = BuildRestoreBody();
+        _gmPrepText.Text = BuildGmPrepBody();
+        _rosterMovementText.Text = BuildRosterMovementBody();
         _supportText.Text = BuildSupportBody();
         _workspaceText.Text = BuildWorkspaceSummary();
         ResetActionRow(_readinessActionsRow, CreateReadinessActions());
         ResetActionRow(_restoreActionsRow, CreateRestoreActions());
+        ResetActionRow(_gmPrepActionsRow, CreateGmPrepActions());
+        ResetActionRow(_rosterMovementActionsRow, CreateRosterMovementActions());
         ResetActionRow(_supportActionsRow, CreateSupportActions());
         ResetActionRow(_workspaceActionsRow, CreateWorkspaceActions());
     }
+
+    private static string FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value)) ?? "pending";
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {

@@ -1,0 +1,214 @@
+{
+  "contract_name": "chummer6-ui.user_journey_tester_audit",
+  "evidence": {
+    "fix_shard_id": "fixer-shard",
+    "fix_shard_separate": true,
+    "insufficient_screenshot_workflows": [],
+    "linux_binary_under_test": true,
+    "linux_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
+    "linux_gate_status": "passed",
+    "missing_assertion_workflows": {},
+    "missing_workflows": [],
+    "nonpassing_workflows": [],
+    "open_blocking_findings_count": 0,
+    "required_workflow_assertions": {
+      "file_new_character_visible_workspace": [
+        "new_character_action_opened_visible_workspace",
+        "visible_workspace_nonblank"
+      ],
+      "major_navigation_sanity": [
+        "primary_navigation_clicks_change_visible_content",
+        "no_unhandled_errors"
+      ],
+      "master_index_search_focus_stability": [
+        "focus_preserved_after_typing",
+        "search_text_accumulates_keyboard_input"
+      ],
+      "minimal_character_build_save_reload": [
+        "character_created_saved_reloaded",
+        "reload_preserved_character_identity"
+      ],
+      "validation_or_export_smoke": [
+        "validation_or_export_action_completed",
+        "result_visible_or_file_created"
+      ]
+    },
+    "required_workflows": [
+      "master_index_search_focus_stability",
+      "file_new_character_visible_workspace",
+      "minimal_character_build_save_reload",
+      "major_navigation_sanity",
+      "validation_or_export_smoke"
+    ],
+    "run_linux_gate_requested": false,
+    "screenshot_dir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots",
+    "tester_shard_id": "tester-shard",
+    "trace_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/USER_JOURNEY_TESTER_TRACE.generated.json",
+    "used_internal_apis": false,
+    "workflows": [
+      {
+        "assertions": {
+          "focus_preserved_after_typing": true,
+          "search_text_accumulates_keyboard_input": true
+        },
+        "id": "master_index_search_focus_stability",
+        "missingAssertions": [],
+        "screenshotReview": [
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/master_index_search_focus_stability-before.png",
+            "sha256": "7c96425767a6d8437be29e4e84a61d17804e26b35316cae8a47d989b56eb43ef",
+            "size_bytes": 50,
+            "within_repo_root": true
+          },
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/master_index_search_focus_stability-after.png",
+            "sha256": "a0cb84902e1e46ffa024832a300b83ebfa6e5e45ef8be926c68cb122f16927da",
+            "size_bytes": 49,
+            "within_repo_root": true
+          }
+        ],
+        "screenshots": [
+          "master_index_search_focus_stability-before.png",
+          "master_index_search_focus_stability-after.png"
+        ],
+        "status": "pass"
+      },
+      {
+        "assertions": {
+          "new_character_action_opened_visible_workspace": true,
+          "visible_workspace_nonblank": true
+        },
+        "id": "file_new_character_visible_workspace",
+        "missingAssertions": [],
+        "screenshotReview": [
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/file_new_character_visible_workspace-before.png",
+            "sha256": "9398828bb1e824e9b6de171b703c36f833ccd3d351f2b5e178298350f8932c35",
+            "size_bytes": 51,
+            "within_repo_root": true
+          },
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/file_new_character_visible_workspace-after.png",
+            "sha256": "2997e8e853f60d14a8e0cfd61627cbd28e20b8b018c90f57fc5895914fd7da68",
+            "size_bytes": 50,
+            "within_repo_root": true
+          }
+        ],
+        "screenshots": [
+          "file_new_character_visible_workspace-before.png",
+          "file_new_character_visible_workspace-after.png"
+        ],
+        "status": "pass"
+      },
+      {
+        "assertions": {
+          "character_created_saved_reloaded": true,
+          "reload_preserved_character_identity": true
+        },
+        "id": "minimal_character_build_save_reload",
+        "missingAssertions": [],
+        "screenshotReview": [
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/minimal_character_build_save_reload-before.png",
+            "sha256": "07489f7d9a041faaff6b456575d82d1e7a29adf36b7603d006744c8916d19037",
+            "size_bytes": 50,
+            "within_repo_root": true
+          },
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/minimal_character_build_save_reload-after.png",
+            "sha256": "c62541e24ff10f547631947c4deb1cb107a6ff5e9bb2bdb721252fae53d5a572",
+            "size_bytes": 49,
+            "within_repo_root": true
+          }
+        ],
+        "screenshots": [
+          "minimal_character_build_save_reload-before.png",
+          "minimal_character_build_save_reload-after.png"
+        ],
+        "status": "pass"
+      },
+      {
+        "assertions": {
+          "no_unhandled_errors": true,
+          "primary_navigation_clicks_change_visible_content": true
+        },
+        "id": "major_navigation_sanity",
+        "missingAssertions": [],
+        "screenshotReview": [
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/major_navigation_sanity-before.png",
+            "sha256": "a5bae7ea7f31466b8553c6c8445bcad32cd5758430d92533d58074e2b7a8279b",
+            "size_bytes": 38,
+            "within_repo_root": true
+          },
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/major_navigation_sanity-after.png",
+            "sha256": "95e5856edda46fb357467921f169639b24de0c2868f3f22e1e1f13aa999925c1",
+            "size_bytes": 37,
+            "within_repo_root": true
+          }
+        ],
+        "screenshots": [
+          "major_navigation_sanity-before.png",
+          "major_navigation_sanity-after.png"
+        ],
+        "status": "pass"
+      },
+      {
+        "assertions": {
+          "result_visible_or_file_created": true,
+          "validation_or_export_action_completed": true
+        },
+        "id": "validation_or_export_smoke",
+        "missingAssertions": [],
+        "screenshotReview": [
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/validation_or_export_smoke-before.png",
+            "sha256": "f253ef8880e1beb7a4944074ad8408c9aaafe0acea2017c65eeb514cd8b2dc0b",
+            "size_bytes": 41,
+            "within_repo_root": true
+          },
+          {
+            "exists": true,
+            "is_png": true,
+            "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/validation_or_export_smoke-after.png",
+            "sha256": "692c5489a13ee258a1a29cf8b2f392d9af6493550ad07b0a278e1d8017fee4a2",
+            "size_bytes": 40,
+            "within_repo_root": true
+          }
+        ],
+        "screenshots": [
+          "validation_or_export_smoke-before.png",
+          "validation_or_export_smoke-after.png"
+        ],
+        "status": "pass"
+      }
+    ]
+  },
+  "fix_shard_separate": true,
+  "generatedAt": "2026-04-29T19:58:10.532887Z",
+  "generated_at": "2026-04-29T19:58:10.532887Z",
+  "linux_binary_under_test": true,
+  "open_blocking_findings_count": 0,
+  "reasons": [],
+  "status": "pass",
+  "used_internal_apis": false
+}

@@ -26,6 +26,9 @@ public partial class ToolStripControl : UserControl
     public event EventHandler? PrintRequested;
     public event EventHandler? CopyRequested;
     public event EventHandler? DesktopHomeRequested;
+    public event EventHandler? GmPrepRequested;
+    public event EventHandler? RosterMovementRequested;
+    public event EventHandler? RuleEnvironmentStudioRequested;
     public event EventHandler? CloseWorkspaceRequested;
     public event EventHandler? CampaignWorkspaceRequested;
     public event EventHandler? UpdateStatusRequested;
@@ -60,6 +63,9 @@ public partial class ToolStripControl : UserControl
         SetToolbarIconButton(CloseWorkspaceButton, "Close", "Assets/chummer5a-icons/cancel.png", "Close");
         SetToolbarIconButton(OpenForPrintingButton, "Open Character for Printing", "Assets/chummer5a-icons/folder_print.png", "Print");
         SetToolbarIconButton(OpenForExportButton, "Open Character for Export", "Assets/chummer5a-icons/folder_script_go.png", "Export");
+        SetButtonLabel(GmPrepButton, "Open GM Prep Packets", "GM");
+        SetButtonLabel(RosterMovementButton, "Review Roster Movement", "Roster");
+        SetButtonLabel(RuleEnvironmentStudioButton, "Open Rule Environment Studio", "Rules");
         SetButtonLabel(CampaignWorkspaceButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language), "Campaign");
         SetButtonLabel(UpdateStatusButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.update_status", language), "Update");
         SetButtonLabel(InstallLinkingButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language), "Link");
@@ -148,6 +154,21 @@ public partial class ToolStripControl : UserControl
     private void DesktopHomeButton_OnClick(object? sender, RoutedEventArgs e)
     {
         DesktopHomeRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void GmPrepButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        GmPrepRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RosterMovementButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        RosterMovementRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RuleEnvironmentStudioButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        RuleEnvironmentStudioRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void CloseWorkspaceButton_OnClick(object? sender, RoutedEventArgs e)
