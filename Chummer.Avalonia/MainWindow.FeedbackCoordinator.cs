@@ -45,6 +45,11 @@ internal static class MainWindowFeedbackCoordinator
         toolStrip.SetStatusText(S("desktop.shell.feedback.campaign_workspace_reviewed"));
     }
 
+    public static void ShowRuleEnvironmentStudioReviewed(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText("Rule Environment Studio opened with runtime, import, and explain receipts visible.");
+    }
+
     public static void ShowLocalWorkspaceKept(ToolStripControl toolStrip)
     {
         toolStrip.SetStatusText("Local workspace remains visible while restore and conflict review stay manual.");

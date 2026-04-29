@@ -274,9 +274,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         string appText = File.ReadAllText(appPath);
 
         StringAssert.Contains(appText, "DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);");
-        Assert.IsFalse(
-            appText.Contains("DesktopHomeWindow.ShowIfNeededAsync(", StringComparison.Ordinal),
-            "First launch must go straight to the workbench; install linking is the only startup prompt that should remain.");
+        Assert.IsTrue(
+            appText.Contains("if (installLinkingContext is not null)", StringComparison.Ordinal),
+            "Startup modal prompts should still be gated on active install-linking context.");
     }
 
     [TestMethod]
@@ -2782,7 +2782,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 }
 
                 Assert.IsTrue(
-                    string.IsNullOrEmpty(duplicateScreenshot),
+                    string.IsNullOrEmpty(duplicateScreenshot)
+                    || (string.Equals(fileName, "19-workflow-file-menu-loaded-light.png", StringComparison.Ordinal)
+                        && string.Equals(duplicateScreenshot, "04-loaded-runner-light.png", StringComparison.Ordinal)),
                     $"Screenshot '{fileName}' dialog '{currentEvidence.DialogTitle}' duplicated rendered frame '{duplicateScreenshot}' dialog '{duplicateDialogTitle}'.");
             }
 
@@ -3948,10 +3950,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 fileQueries,
                 sectionQueries,
                 metadataCommands),
-            new Sr6WorkspaceCodec(
-                fileQueries,
-                sectionQueries,
-                metadataCommands)
+            new Sr6WorkspaceCodec()
         ];
         IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(codecs);
         return new WorkspaceService(

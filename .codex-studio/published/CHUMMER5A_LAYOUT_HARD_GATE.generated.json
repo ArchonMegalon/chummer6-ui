@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-23T16:12:08.801083Z",
+  "generatedAt": "2026-04-27T12:18:56.914529Z",
   "contract_name": "chummer6-ui.chummer5a_layout_hard_gate",
   "status": "pass",
   "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
@@ -60,9 +60,9 @@
       "DesktopHomeButton": 891,
       "ImportFileButton": 1058,
       "CloseWorkspaceButton": 1223,
-      "SettingsButton": 2121,
-      "LoadDemoRunnerButton": 1778,
-      "ImportRawButton": 1955
+      "SettingsButton": 2651,
+      "LoadDemoRunnerButton": 2308,
+      "ImportRawButton": 2485
     },
     "toolstripButtonVisibility": {
       "SaveButton": true,
