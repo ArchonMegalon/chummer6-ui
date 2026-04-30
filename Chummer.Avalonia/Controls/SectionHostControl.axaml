@@ -118,7 +118,7 @@
                   IsExpanded="False" />
         <Expander Grid.Row="3"
                   x:Name="SectionReviewExpander"
-                  Header="Section Review"
+                  Header="Section"
                   IsExpanded="True"
                   IsVisible="False">
           <TextBox x:Name="SectionPreviewBox"
