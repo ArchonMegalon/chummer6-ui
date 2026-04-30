@@ -1,17 +1,17 @@
 {
   "contract_name": "chummer6-ui.macos_desktop_exit_gate",
-  "generated_at": "2026-04-30T12:14:51Z",
+  "generated_at": "2026-04-30T15:09:57Z",
   "channelId": "preview",
-  "releaseVersion": "run-20260429-233209",
-  "status": "passed",
-  "reason": "macOS desktop release-channel publication and startup smoke checks passed",
+  "releaseVersion": "run-20260430-150422",
+  "status": "failed",
+  "reason": "macOS desktop exit gate checks failed",
   "head": {
     "app_key": "avalonia",
     "platform": "macos",
     "rid": "osx-arm64",
     "launch_target": "Chummer.Avalonia"
   },
-  "summary": "macOS desktop exit gate passed.",
+  "summary": "macOS desktop exit gate failed: Release channel does not publish a promoted macOS install medium artifact for avalonia (osx-arm64).",
   "artifact": {
     "installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
     "installer_exists": true,
@@ -41,7 +41,7 @@
     "channel_id": "preview",
     "rid": "osx-arm64",
     "version": "run-20260429-233209",
-    "version_matches_release_channel": true,
+    "version_matches_release_channel": false,
     "host_class": "macos-host",
     "operating_system": "macOS 26.4.1",
     "artifact_path": "files/chummer-avalonia-osx-arm64-installer.dmg",
@@ -56,7 +56,7 @@
       "/docker/chummercomplete/chummer6-ui/dist/files/chummer-avalonia-osx-arm64-installer.dmg"
     ],
     "receipt_recorded_at": "2026-04-26T17:48:19.106813+00:00",
-    "receipt_age_seconds": 325592,
+    "receipt_age_seconds": 336098,
     "receipt_max_age_seconds": 604800,
     "receipt_max_future_skew_seconds": 300,
     "external_blocker": "",
@@ -97,31 +97,7 @@
     "host_supports_macos_startup_smoke": false,
     "release_channel_status": "published",
     "release_channel_id": "preview",
-    "release_channel_version": "run-20260429-233209",
-    "release_channel_macos_artifact": {
-      "artifactId": "avalonia-osx-arm64-installer",
-      "head": "avalonia",
-      "rid": "osx-arm64",
-      "platform": "macos",
-      "arch": "arm64",
-      "kind": "installer",
-      "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
-      "downloadUrl": "/downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
-      "sha256": "62e410197697915a84b011cc3b15293fa98a5f2852613fa59a930b910a55d354",
-      "sizeBytes": 51740511,
-      "platformLabel": "Avalonia Desktop macOS ARM64 Installer",
-      "updateFeedUrl": null,
-      "embeddedRuntimeBundleHeadId": null,
-      "compatibilityState": "compatible",
-      "installAccessClass": "account_required",
-      "channelId": "preview",
-      "channel": "preview",
-      "version": "run-20260429-233209",
-      "releaseVersion": "run-20260429-233209",
-      "generated_at": "2026-04-30T04:32:57Z",
-      "generatedAt": "2026-04-30T04:32:57Z",
-      "id": "avalonia-osx-arm64-installer"
-    },
+    "release_channel_version": "run-20260430-150422",
     "artifact": {
       "installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
       "installer_exists": true,
@@ -160,7 +136,7 @@
       "channel_id": "preview",
       "rid": "osx-arm64",
       "version": "run-20260429-233209",
-      "version_matches_release_channel": true,
+      "version_matches_release_channel": false,
       "host_class": "macos-host",
       "operating_system": "macOS 26.4.1",
       "artifact_path": "files/chummer-avalonia-osx-arm64-installer.dmg",
@@ -175,7 +151,7 @@
         "/docker/chummercomplete/chummer6-ui/dist/files/chummer-avalonia-osx-arm64-installer.dmg"
       ],
       "receipt_recorded_at": "2026-04-26T17:48:19.106813+00:00",
-      "receipt_age_seconds": 325592,
+      "receipt_age_seconds": 336098,
       "receipt_max_age_seconds": 604800,
       "receipt_max_future_skew_seconds": 300,
       "external_blocker": "",
@@ -210,5 +186,7 @@
     "startup_smoke_receipt_found": true,
     "startup_smoke_external_blocker": ""
   },
-  "reasons": []
+  "reasons": [
+    "Release channel does not publish a promoted macOS install medium artifact for avalonia (osx-arm64)."
+  ]
 }

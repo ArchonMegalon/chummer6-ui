@@ -1,9 +1,13 @@
 {
-  "generatedAt": "2026-04-30T12:24:42.312915Z",
+  "generatedAt": "2026-04-30T14:35:29.115260Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family execution evidence is explicitly grounded for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family execution evidence is incomplete for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
+  "reasons": [
+    "dotnet test execution failed (exit 1): /usr/lib/dotnet/sdk/10.0.105/Microsoft.Common.CurrentVersion.targets(2137,5): error MSB4181: The \"MSBuild\" task returned false but did not log an error. [/docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/Chummer.Infrastructure.Browser.csproj]",
+    "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap (external blocker: missing_api_surface_contract).",
+    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts, Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections, Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
@@ -28,7 +32,7 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
-      "exitCode": 0
+      "exitCode": 1
     },
     "apiProbe": {
       "baseUrl": "http://127.0.0.1:8088",
@@ -47,13 +51,13 @@
         }
       ]
     },
-    "external_blocker": "",
-    "matchedPassedTests": [
+    "external_blocker": "missing_api_surface_contract",
+    "matchedPassedTests": [],
+    "missingAuditTests": [
       "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
       "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
       "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
     ],
-    "missingAuditTests": [],
     "failedAuditTests": {}
   }
 }

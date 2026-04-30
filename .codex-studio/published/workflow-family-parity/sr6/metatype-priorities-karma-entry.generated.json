@@ -1,9 +1,11 @@
 {
-  "generatedAt": "2026-04-30T12:24:42.366415Z",
+  "generatedAt": "2026-04-30T14:35:29.159443Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family verification evidence is explicitly grounded for metatype-priorities-karma-entry.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family verification evidence is incomplete for metatype-priorities-karma-entry.",
+  "reasons": [
+    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/metatype-priorities-karma-entry.generated.json (fail; external_blocker=missing_api_surface_contract)"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "metatype-priorities-karma-entry",
@@ -24,10 +26,12 @@
         "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
       ]
     },
-    "executionReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/metatype-priorities-karma-entry.generated.json"
+    "executionReceipts": [],
+    "executionFailures": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/metatype-priorities-karma-entry.generated.json (fail; external_blocker=missing_api_surface_contract)"
     ],
-    "executionFailures": [],
-    "executionExternalBlockers": []
+    "executionExternalBlockers": [
+      "missing_api_surface_contract"
+    ]
   }
 }

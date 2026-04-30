@@ -59,6 +59,11 @@ Install these on the Mac host:
 7. Apple signing identity in the keychain
 8. Apple notarization credentials stored as a `notarytool` keychain profile
 
+Local-preview fallback:
+1. `scripts/prepare-macos-signing-keychain.sh` can now bootstrap a persistent local code-signing identity when no hosted P12 is configured.
+2. The default persistent keychain path is `~/Library/Keychains/chummer-signing.keychain-db`.
+3. The local bootstrap path is intended for preview/dev continuity on a stable Mac host; public signing/notarization lanes should still use a real Apple identity and notarization credentials.
+
 Example one-time notarization profile setup:
 
 ```bash
@@ -94,6 +99,10 @@ export CHUMMER_RELEASE_CHANNEL="preview"
 export CHUMMER_RELEASE_VERSION="run-$(date -u +%Y%m%d-%H%M%S)"
 export CHUMMER_MAC_RELEASE_TMPDIR="$HOME/chummer-release-tmp"
 export CHUMMER_DESKTOP_INSTALLER_TMPDIR="$CHUMMER_MAC_RELEASE_TMPDIR/desktop-installer"
+# Optional local-preview fallback when no P12 is configured:
+export CHUMMER_MAC_KEYCHAIN_PATH="$HOME/Library/Keychains/chummer-signing.keychain-db"
+export CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD="chummer-local-signing"
+export CHUMMER_MAC_LOCAL_CERT_COMMON_NAME="Chummer Local Code Signing"
 ```
 
 Temp-root note:

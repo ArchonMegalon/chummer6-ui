@@ -1,25 +1,29 @@
 {
-  "generatedAt": "2026-04-30T12:25:03.958706Z",
+  "generatedAt": "2026-04-30T14:36:40.172802Z",
   "contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
   "channelId": "preview",
-  "status": "pass",
-  "summary": "SR4 and SR6 desktop parity frontier closure is explicitly proven by executable workflow, coverage, ruleset-adaptation, release-channel, and gate-execution subreviews.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR4/SR6 desktop parity frontier closure is not yet proven.",
+  "reasons": [
+    "SR6 parity receipt is not passing: SR6 workflow parity receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap (external blocker: missing_api_surface_contract): armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail; external_blocker=missing_api_surface_contract), attributes-skills-skill-groups-specializations-knowledge-languages: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail; external_blocker=missing_api_surface_contract), create-open-import-save-save-as-print-export: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json (fail; external_blocker=missing_api_surface_contract), cyberware-bioware-modular-hierarchies-nested-plugins: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail; external_blocker=missing_api_surface_contract), dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail; external_blocker=missing_api_surface_contract), improvements-explain-result-parity: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json (fail; external_blocker=missing_api_surface_contract), magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json (fail; external_blocker=missing_api_surface_contract), metatype-priorities-karma-entry: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json (fail; external_blocker=missing_api_surface_contract), qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json (fail; external_blocker=missing_api_surface_contract), recovery-reload-migration-roundtrips: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json (fail; external_blocker=missing_api_surface_contract)",
+    "SR6 parity receipt has failing parity receipt proofs for: armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers, attributes-skills-skill-groups-specializations-knowledge-languages, create-open-import-save-save-as-print-export, cyberware-bioware-modular-hierarchies-nested-plugins, dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare, improvements-explain-result-parity, magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms, metatype-priorities-karma-entry, qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources, recovery-reload-migration-roundtrips",
+    "SR6 parity gate exited non-zero: 43"
+  ],
   "evidence": {
-    "sr4ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "sr6ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "chummer5aReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "rulesetUiAdaptationReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
+    "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr6ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "chummer5aReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "rulesetUiAdaptationReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "preview",
-    "releaseChannelGeneratedAt": "2026-04-30T04:32:57Z",
-    "releaseChannelAgeSeconds": 28326,
+    "releaseChannelGeneratedAt": "2026-04-30T14:26:28Z",
+    "releaseChannelAgeSeconds": 612,
     "releaseChannelFutureSkewSeconds": 0,
     "sr4Status": "pass",
-    "sr6Status": "pass",
+    "sr6Status": "fail",
     "chummer5aStatus": "pass",
     "rulesetUiAdaptationStatus": "pass",
     "sr4ClosureCounts": null,
@@ -35,33 +39,37 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "preview",
-    "generatedAt": "2026-04-30T04:32:57Z",
-    "ageSeconds": 28326,
+    "generatedAt": "2026-04-30T14:26:28Z",
+    "ageSeconds": 612,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
   },
   "workflowReceiptReview": {
-    "status": "pass",
-    "summary": "SR4, SR6, Chummer5a, and ruleset-adaptation receipts are present, passing, and timestamped.",
-    "reasons": [],
+    "status": "fail",
+    "summary": "One or more workflow or ruleset receipts are missing, stale, or not passing.",
+    "reasons": [
+      "SR6 parity receipt is not passing: SR6 workflow parity receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap (external blocker: missing_api_surface_contract): armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail; external_blocker=missing_api_surface_contract), attributes-skills-skill-groups-specializations-knowledge-languages: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail; external_blocker=missing_api_surface_contract), create-open-import-save-save-as-print-export: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json (fail; external_blocker=missing_api_surface_contract), cyberware-bioware-modular-hierarchies-nested-plugins: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail; external_blocker=missing_api_surface_contract), dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail; external_blocker=missing_api_surface_contract), improvements-explain-result-parity: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json (fail; external_blocker=missing_api_surface_contract), magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json (fail; external_blocker=missing_api_surface_contract), metatype-priorities-karma-entry: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json (fail; external_blocker=missing_api_surface_contract), qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json (fail; external_blocker=missing_api_surface_contract), recovery-reload-migration-roundtrips: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/SR6_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json (fail; external_blocker=missing_api_surface_contract)"
+    ],
     "receiptStatuses": {
       "sr4": "pass",
-      "sr6": "pass",
+      "sr6": "fail",
       "chummer5a": "pass",
       "rulesetUiAdaptation": "pass"
     },
     "receiptGeneratedAts": {
-      "sr4": "2026-04-30T12:24:17.842759Z",
-      "sr6": "2026-04-30T12:24:42.441363Z",
-      "chummer5a": "2026-04-30T12:24:42.522108Z",
-      "rulesetUiAdaptation": "2026-04-30T12:25:03.919474Z"
+      "sr4": "2026-04-30T14:34:42.711498Z",
+      "sr6": "2026-04-30T14:35:29.224705Z",
+      "chummer5a": "2026-04-30T14:35:29.292698Z",
+      "rulesetUiAdaptation": "2026-04-30T14:36:40.135453Z"
     }
   },
   "workflowCoverageReview": {
-    "status": "pass",
-    "summary": "SR4, SR6, and Chummer5a workflow-family coverage is explicit with no missing families, tests, or parity receipts.",
-    "reasons": [],
+    "status": "fail",
+    "summary": "Workflow-family coverage still has explicit SR4/SR6/Chummer5a gaps.",
+    "reasons": [
+      "SR6 parity receipt has failing parity receipt proofs for: armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers, attributes-skills-skill-groups-specializations-knowledge-languages, create-open-import-save-save-as-print-export, cyberware-bioware-modular-hierarchies-nested-plugins, dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare, improvements-explain-result-parity, magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms, metatype-priorities-karma-entry, qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources, recovery-reload-migration-roundtrips"
+    ],
     "sr4": {
       "missingFamilyIds": [],
       "nonReadyFamilyIds": [],
@@ -75,8 +83,19 @@
       "nonReadyFamilyIds": [],
       "missingTestRefKeys": [],
       "missingParityReceiptKeys": [],
-      "failingParityReceiptKeys": [],
-      "failingParityReceiptsExternalOnly": false
+      "failingParityReceiptKeys": [
+        "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+        "attributes-skills-skill-groups-specializations-knowledge-languages",
+        "create-open-import-save-save-as-print-export",
+        "cyberware-bioware-modular-hierarchies-nested-plugins",
+        "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+        "improvements-explain-result-parity",
+        "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+        "metatype-priorities-karma-entry",
+        "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+        "recovery-reload-migration-roundtrips"
+      ],
+      "failingParityReceiptsExternalOnly": true
     },
     "chummer5a": {
       "requiredFamilyCount": 10,
@@ -131,19 +150,21 @@
       "rulesetUiAdaptation": "preview"
     },
     "receiptReleaseChannelGeneratedAts": {
-      "sr4": "2026-04-30T04:32:57Z",
-      "sr6": "2026-04-30T04:32:57Z",
-      "chummer5a": "2026-04-30T04:32:57Z",
-      "rulesetUiAdaptation": "2026-04-30T04:32:57Z"
+      "sr4": "2026-04-30T14:26:28Z",
+      "sr6": "2026-04-30T14:26:28Z",
+      "chummer5a": "2026-04-30T14:26:28Z",
+      "rulesetUiAdaptation": "2026-04-30T14:26:28Z"
     }
   },
   "gateExecutionReview": {
-    "status": "pass",
-    "summary": "All frontier prerequisite gates executed successfully.",
-    "reasons": [],
+    "status": "fail",
+    "summary": "One or more frontier prerequisite gates exited non-zero.",
+    "reasons": [
+      "SR6 parity gate exited non-zero: 43"
+    ],
     "gateExitCodes": {
       "sr4": 0,
-      "sr6": 0,
+      "sr6": 43,
       "chummer5a": 0,
       "rulesetUiAdaptation": 0
     }

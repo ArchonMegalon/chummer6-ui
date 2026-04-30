@@ -21,16 +21,19 @@ desktop_update_runtime_tests_path="$repo_root/Chummer.Tests/DesktopUpdateRuntime
 desktop_install_linking_runtime_tests_path="$repo_root/Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
 desktop_startup_smoke_runtime_tests_path="$repo_root/Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs"
 workflow_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+ui_element_parity_audit_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json"
 layout_hard_gate_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
 sr4_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr6_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr4_sr6_frontier_receipt_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
 desktop_workflow_execution_receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+desktop_executable_exit_gate_receipt_path="$repo_root/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json"
 localization_release_gate_receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
 interactive_control_inventory_receipt_path="$repo_root/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
 veteran_task_time_receipt_path="$repo_root/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
 chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
+flagship_product_readiness_receipt_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json}"
 nuget_packages="${CHUMMER_NUGET_PACKAGES:-$repo_root/.codex-studio/.nuget/packages}"
 lock_stale_max_age_seconds="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-900}"
 
@@ -384,7 +387,7 @@ bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_shell_ruleset_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_shell_ruleset_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$ui_element_parity_audit_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$desktop_executable_exit_gate_receipt_path" "$flagship_product_readiness_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
 import json
 import os
 import sys
@@ -403,16 +406,19 @@ from datetime import datetime, timezone
     desktop_install_linking_runtime_tests_path,
     desktop_startup_smoke_runtime_tests_path,
     workflow_parity_receipt_path,
+    ui_element_parity_audit_receipt_path,
     layout_hard_gate_receipt_path,
     sr4_workflow_parity_receipt_path,
     sr6_workflow_parity_receipt_path,
     sr4_sr6_frontier_receipt_path,
     desktop_workflow_execution_receipt_path,
+    desktop_executable_exit_gate_receipt_path,
+    flagship_product_readiness_receipt_path,
     localization_release_gate_receipt_path,
     interactive_control_inventory_receipt_path,
     veteran_task_time_receipt_path,
     chummer5a_screenshot_review_receipt_path,
-) = sys.argv[1:22]
+) = sys.argv[1:25]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -613,6 +619,8 @@ desktop_lifecycle_status = proof_status(
 )
 with open(workflow_parity_receipt_path, "r", encoding="utf-8") as handle:
     workflow_parity_receipt = json.load(handle)
+with open(ui_element_parity_audit_receipt_path, "r", encoding="utf-8") as handle:
+    ui_element_parity_audit_receipt = json.load(handle)
 if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
     raise SystemExit(
         "[b14] FAIL: explicit Chummer5a desktop workflow parity proof is not passed: "
@@ -652,6 +660,27 @@ if localization_release_status not in {"pass", "passed", "ready"}:
         "[b14] FAIL: explicit localization release gate proof is not passed: "
         + ", ".join(localization_release_gate_receipt.get("blocking_findings") or ["missing reason"])
     )
+with open(desktop_executable_exit_gate_receipt_path, "r", encoding="utf-8") as handle:
+    desktop_executable_exit_gate_receipt = json.load(handle)
+with open(flagship_product_readiness_receipt_path, "r", encoding="utf-8") as handle:
+    flagship_product_readiness_receipt = json.load(handle)
+ui_element_parity_summary = ui_element_parity_audit_receipt.get("summary") or {}
+ui_element_visual_no_count = int(ui_element_parity_summary.get("visual_no_count") or 0)
+ui_element_behavioral_no_count = int(ui_element_parity_summary.get("behavioral_no_count") or 0)
+ui_element_coverage_gap_keys = [
+    str(key or "").strip()
+    for key in ui_element_parity_summary.get("coverage_gap_keys") or []
+    if str(key or "").strip()
+]
+flagship_readiness_status = str(flagship_product_readiness_receipt.get("status") or "").strip().lower()
+flagship_readiness_coverage = flagship_product_readiness_receipt.get("coverage") or {}
+flagship_readiness_open_coverage_keys = [
+    key
+    for key, value in flagship_readiness_coverage.items()
+    if str(value or "").strip().lower() != "ready"
+]
+desktop_client_coverage_status = str(flagship_readiness_coverage.get("desktop_client") or "").strip().lower()
+desktop_executable_exit_gate_status = str(desktop_executable_exit_gate_receipt.get("status") or "").strip().lower()
 workflow_equivalence_status = proof_status(
     tests_present(dual_head_tests_text, required_full_workflow_tests),
     status_ok(str(workflow_parity_receipt.get("status") or "").strip().lower()),
@@ -836,10 +865,46 @@ blazor_head_status = proof_status(
     blazor_journey_panels_status,
     blazor_release_lifecycle_status,
 )
+blocking_findings = []
+if ui_element_visual_no_count > 0 or ui_element_behavioral_no_count > 0:
+    blocking_findings.append(
+        "Top-level release gate cannot pass while parity matrix still has no-parity rows."
+    )
+if ui_element_coverage_gap_keys:
+    blocking_findings.append(
+        "Top-level release gate cannot pass while parity audit still reports open coverage gaps: "
+        + ", ".join(ui_element_coverage_gap_keys)
+        + "."
+    )
+if not status_ok(flagship_readiness_status):
+    blocking_findings.append(
+        "Top-level release gate cannot pass while flagship readiness is not passed."
+    )
+if desktop_client_coverage_status != "ready":
+    blocking_findings.append(
+        "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready."
+    )
+if flagship_readiness_open_coverage_keys:
+    blocking_findings.append(
+        "Top-level release gate cannot pass while flagship readiness still has open coverage keys: "
+        + ", ".join(flagship_readiness_open_coverage_keys)
+        + "."
+    )
+if not status_ok(desktop_executable_exit_gate_status):
+    blocking_findings.append(
+        "Top-level release gate cannot pass while desktop executable exit gate is not passed."
+    )
+top_level_release_gate_status = "pass" if not blocking_findings else "fail"
 
 payload = {
     "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-    "status": "pass",
+    "status": top_level_release_gate_status,
+    "summary": (
+        "Flagship UI release gate is fully proven."
+        if top_level_release_gate_status == "pass"
+        else "Flagship UI release gate is blocked by open parity, readiness, or desktop executable proof."
+    ),
+    "blockingFindings": blocking_findings,
     "releaseGate": "b14-flagship-ui-release-gate",
     "desktopHead": "avalonia",
     "desktopHeads": ["avalonia"],
@@ -996,6 +1061,7 @@ payload = {
         "status": workflow_equivalence_status,
         "sourceTestFile": dual_head_tests_path,
         "explicitParityReceiptPath": workflow_parity_receipt_path,
+        "uiElementParityAuditReceiptPath": ui_element_parity_audit_receipt_path,
         "explicitSr4ParityReceiptPath": sr4_workflow_parity_receipt_path,
         "explicitSr6ParityReceiptPath": sr6_workflow_parity_receipt_path,
         "explicitSr4Sr6FrontierReceiptPath": sr4_sr6_frontier_receipt_path,
@@ -1013,6 +1079,24 @@ payload = {
             "recovery-reload-migration-roundtrips",
             "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
         ],
+    },
+    "uiElementParityAuditProof": {
+        "status": proof_status(ui_element_visual_no_count == 0, ui_element_behavioral_no_count == 0),
+        "uiElementParityAuditReceiptPath": ui_element_parity_audit_receipt_path,
+        "visualNoCount": ui_element_visual_no_count,
+        "behavioralNoCount": ui_element_behavioral_no_count,
+        "coverageGapKeys": ui_element_coverage_gap_keys,
+    },
+    "desktopExecutableProof": {
+        "status": desktop_executable_exit_gate_status,
+        "desktopExecutableExitGateReceiptPath": desktop_executable_exit_gate_receipt_path,
+        "reasons": desktop_executable_exit_gate_receipt.get("reasons") or [],
+    },
+    "flagshipReadinessProof": {
+        "status": flagship_readiness_status,
+        "flagshipProductReadinessReceiptPath": flagship_product_readiness_receipt_path,
+        "coverage": flagship_readiness_coverage,
+        "openCoverageKeys": flagship_readiness_open_coverage_keys,
     },
     "localizationReleaseProof": {
         "status": localization_release_status,
@@ -1105,6 +1189,21 @@ receipt["chummer5aScreenshotReviewProof"] = {
     "reviewJobs": chummer5a_screenshot_review_receipt.get("reviewJobs") or {},
 }
 receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+PY
+
+python3 - <<'PY' "$receipt_path"
+import json
+import sys
+from pathlib import Path
+
+receipt_path = Path(sys.argv[1])
+receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+status = str(receipt.get("status") or "").strip().lower()
+if status not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: flagship UI release gate is not passed: "
+        + "; ".join(receipt.get("blockingFindings") or ["missing reason"])
+    )
 PY
 
 echo "[b14] PASS"
