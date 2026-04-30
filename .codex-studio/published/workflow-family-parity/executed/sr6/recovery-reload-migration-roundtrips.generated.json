@@ -1,9 +1,13 @@
 {
-  "generatedAt": "2026-04-30T12:24:42.313873Z",
+  "generatedAt": "2026-04-30T14:35:29.116089Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family execution evidence is explicitly grounded for recovery-reload-migration-roundtrips.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family execution evidence is incomplete for recovery-reload-migration-roundtrips.",
+  "reasons": [
+    "dotnet test execution failed (exit 1): /usr/lib/dotnet/sdk/10.0.105/Microsoft.Common.CurrentVersion.targets(2137,5): error MSB4181: The \"MSBuild\" task returned false but did not log an error. [/docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/Chummer.Infrastructure.Browser.csproj]",
+    "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap (external blocker: missing_api_surface_contract).",
+    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_metadata_save_roundtrip_match, Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "recovery-reload-migration-roundtrips",
@@ -26,7 +30,7 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
-      "exitCode": 0
+      "exitCode": 1
     },
     "apiProbe": {
       "baseUrl": "http://127.0.0.1:8088",
@@ -45,12 +49,12 @@
         }
       ]
     },
-    "external_blocker": "",
-    "matchedPassedTests": [
+    "external_blocker": "missing_api_surface_contract",
+    "matchedPassedTests": [],
+    "missingAuditTests": [
       "Avalonia_and_Blazor_metadata_save_roundtrip_match",
       "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
     ],
-    "missingAuditTests": [],
     "failedAuditTests": {}
   }
 }

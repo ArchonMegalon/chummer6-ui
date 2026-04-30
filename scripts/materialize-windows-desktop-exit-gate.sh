@@ -430,17 +430,20 @@ if installer_exists and artifact_sha and artifact_sha != installer_sha:
     reasons.append("Release-channel Windows artifact sha256 does not match installer digest.")
 
 payload_marker_present = False
+appended_payload_marker_present = False
 sample_marker_present = False
 if installer_exists:
     blob = installer_path.read_bytes()
     payload_marker_present = b"ChummerInstaller.Payload.zip" in blob
+    appended_payload_marker_present = b"CHUMMER6PAYLOAD1" in blob
     sample_marker_present = b"Samples/Legacy/Soma-Career.chum5" in blob
 evidence["embedded_payload_marker_present"] = payload_marker_present
+evidence["appended_payload_marker_present"] = appended_payload_marker_present
 evidence["embedded_sample_marker_present"] = sample_marker_present
-evidence["installer_payload_validation_mode"] = "release-channel digest-size-and-embedded-markers"
+evidence["installer_payload_validation_mode"] = "release-channel digest-size-and-payload-markers"
 
-if installer_exists and not payload_marker_present:
-    reasons.append("Published Windows installer is missing the embedded desktop payload marker.")
+if installer_exists and not (payload_marker_present or appended_payload_marker_present):
+    reasons.append("Published Windows installer is missing a recognizable desktop payload marker.")
 if installer_exists and not sample_marker_present:
     reasons.append("Published Windows installer is missing the bundled demo runner sample marker.")
 

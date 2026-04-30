@@ -3665,6 +3665,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(macPrepText, "xcrun notarytool store-credentials");
         StringAssert.Contains(macPrepText, "security import");
         StringAssert.Contains(macPrepText, "security list-keychains -d user -s");
+        StringAssert.Contains(macPrepText, "CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD");
+        StringAssert.Contains(macPrepText, "CHUMMER_MAC_LOCAL_CERT_COMMON_NAME");
+        StringAssert.Contains(macPrepText, "openssl pkcs12 -export");
+        StringAssert.Contains(macPrepText, "extendedKeyUsage = critical, codeSigning");
 
         StringAssert.Contains(installerScriptText, "pre_sign_windows_payloads_if_configured");
         StringAssert.Contains(installerScriptText, "finalize_windows_signing_receipt");
@@ -4242,6 +4246,28 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS=\"$release_gate_lock_poll_seconds\" \\");
         StringAssert.Contains(executableGateScriptText, "bash \"$visual_familiarity_materializer_path\" >/dev/null");
         StringAssert.Contains(executableGateScriptText, "bash \"$workflow_execution_materializer_path\" >/dev/null");
+    }
+
+    [TestMethod]
+    public void Flagship_release_gate_fail_closes_open_parity_readiness_and_desktop_executable_proof()
+    {
+        string flagshipGateScriptPath = FindPath("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
+        string flagshipGateScriptText = File.ReadAllText(flagshipGateScriptPath);
+
+        StringAssert.Contains(flagshipGateScriptText, "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json");
+        StringAssert.Contains(flagshipGateScriptText, "FLAGSHIP_PRODUCT_READINESS.generated.json");
+        StringAssert.Contains(flagshipGateScriptText, "DESKTOP_EXECUTABLE_EXIT_GATE.generated.json");
+        StringAssert.Contains(flagshipGateScriptText, "ui_element_visual_no_count");
+        StringAssert.Contains(flagshipGateScriptText, "ui_element_behavioral_no_count");
+        StringAssert.Contains(flagshipGateScriptText, "flagship_readiness_open_coverage_keys");
+        StringAssert.Contains(flagshipGateScriptText, "desktop_client_coverage_status");
+        StringAssert.Contains(flagshipGateScriptText, "desktop_executable_exit_gate_status");
+        StringAssert.Contains(flagshipGateScriptText, "\"blockingFindings\": blocking_findings");
+        StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while parity matrix still has no-parity rows.");
+        StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while flagship readiness is not passed.");
+        StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.");
+        StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while desktop executable exit gate is not passed.");
+        StringAssert.Contains(flagshipGateScriptText, "[b14] FAIL: flagship UI release gate is not passed:");
     }
 
     [TestMethod]

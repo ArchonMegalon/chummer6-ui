@@ -1,9 +1,11 @@
 {
-  "generatedAt": "2026-04-30T12:24:42.367923Z",
+  "generatedAt": "2026-04-30T14:35:29.160961Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family verification evidence is explicitly grounded for magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family verification evidence is incomplete for magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.",
+  "reasons": [
+    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json (fail; external_blocker=missing_api_surface_contract)"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
@@ -26,10 +28,12 @@
         "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
       ]
     },
-    "executionReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json"
+    "executionReceipts": [],
+    "executionFailures": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json (fail; external_blocker=missing_api_surface_contract)"
     ],
-    "executionFailures": [],
-    "executionExternalBlockers": []
+    "executionExternalBlockers": [
+      "missing_api_surface_contract"
+    ]
   }
 }
