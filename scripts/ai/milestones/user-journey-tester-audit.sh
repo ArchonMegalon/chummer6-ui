@@ -52,6 +52,8 @@ REQUIRED_WORKFLOW_ASSERTIONS = {
     "file_new_character_visible_workspace": [
         "new_character_action_opened_visible_workspace",
         "visible_workspace_nonblank",
+        "starter_attributes_match_seeded_workspace",
+        "section_preview_omits_review_copy",
     ],
     "minimal_character_build_save_reload": [
         "character_created_saved_reloaded",

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-04-27T12:18:06.858758Z",
+  "generatedAt": "2026-04-30T12:24:42.441363Z",
   "contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
-  "channelId": "docker",
+  "channelId": "preview",
   "status": "pass",
   "summary": "SR6 desktop workflow carry-forward parity is explicitly proven across source artifacts, release-channel identity, SR4 baseline proof, workflow-family readiness, executable test references, receipt proof, and materialization.",
   "reasons": [],
@@ -18,9 +18,9 @@
     "executionExit": 0,
     "verificationExit": 0,
     "materializerExit": 0,
-    "releaseChannelChannelId": "docker",
-    "releaseChannelGeneratedAt": "2026-04-26T17:02:10Z",
-    "releaseChannelAgeSeconds": 69356,
+    "releaseChannelChannelId": "preview",
+    "releaseChannelGeneratedAt": "2026-04-30T04:32:57Z",
+    "releaseChannelAgeSeconds": 28305,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -38,8 +38,8 @@
       "complianceTests": true,
       "uiGateTests": true
     },
-    "sr4ReceiptChannelId": "docker",
-    "sr4ReceiptGeneratedAt": "2026-04-27T12:17:45.111431Z",
+    "sr4ReceiptChannelId": "preview",
+    "sr4ReceiptGeneratedAt": "2026-04-30T12:24:17.842759Z",
     "failureCount": 0
   },
   "sourceArtifactReview": {
@@ -59,9 +59,9 @@
     "summary": "SR6 workflow parity proof is aligned to a current release-channel identity.",
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "channelId": "docker",
-    "generatedAt": "2026-04-26T17:02:10Z",
-    "ageSeconds": 69356,
+    "channelId": "preview",
+    "generatedAt": "2026-04-30T04:32:57Z",
+    "ageSeconds": 28305,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -71,8 +71,8 @@
     "summary": "SR4 baseline workflow parity proof is present and aligned for SR6 carry-forward closure.",
     "reasons": [],
     "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "channelId": "docker",
-    "generatedAt": "2026-04-27T12:17:45.111431Z"
+    "channelId": "preview",
+    "generatedAt": "2026-04-30T12:24:17.842759Z"
   },
   "workflowFamilyReview": {
     "status": "pass",

@@ -26,6 +26,8 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(scriptText, "validation_or_export_smoke");
         StringAssert.Contains(scriptText, "focus_preserved_after_typing");
         StringAssert.Contains(scriptText, "new_character_action_opened_visible_workspace");
+        StringAssert.Contains(scriptText, "starter_attributes_match_seeded_workspace");
+        StringAssert.Contains(scriptText, "section_preview_omits_review_copy");
         StringAssert.Contains(scriptText, "tester_shard_id and fix_shard_id must both be present and different");
         StringAssert.Contains(scriptText, "used_internal_apis=false");
         StringAssert.Contains(scriptText, "PNG_SIGNATURE");

@@ -1861,6 +1861,58 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_backed_new_character_starter_attributes_match_seeded_workspace_and_omit_review_copy()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            harness.ClickDialogAction("create_character");
+            harness.WaitUntil(() =>
+                harness.Presenter.ImportCalls > 0
+                && harness.Presenter.State.WorkspaceId is not null
+                && harness.Presenter.State.Session.OpenWorkspaces.Count > 0
+                && harness.Window.PeekDialogWindowForTesting() is null);
+
+            harness.SetActiveSectionForTesting("attributes");
+
+            ListBox attributeRows = harness.FindControl<ListBox>("SectionRowsList");
+            TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
+            Expander previewExpander = harness.FindControl<Expander>("SectionReviewExpander");
+
+            harness.WaitUntil(() =>
+            {
+                string[] visibleRows = SnapshotListBoxItems(attributeRows)
+                    .Select(item => item.ToString() ?? string.Empty)
+                    .ToArray();
+                return visibleRows.Any(row => row.EndsWith("Body · Total 3", StringComparison.Ordinal))
+                    && visibleRows.Any(row => row.EndsWith("Agility · Total 4", StringComparison.Ordinal))
+                    && visibleRows.Any(row => row.EndsWith("Reaction · Total 4", StringComparison.Ordinal))
+                    && visibleRows.Any(row => row.EndsWith("Edge · Total 2", StringComparison.Ordinal))
+                    && !string.IsNullOrWhiteSpace(preview.Text)
+                    && previewExpander.IsVisible;
+            });
+
+            string[] rowText = SnapshotListBoxItems(attributeRows).Select(item => item.ToString() ?? string.Empty).ToArray();
+
+            Assert.IsTrue(rowText.Any(row => row.EndsWith("Body · Total 3", StringComparison.Ordinal)));
+            Assert.IsTrue(rowText.Any(row => row.EndsWith("Agility · Total 4", StringComparison.Ordinal)));
+            Assert.IsTrue(rowText.Any(row => row.EndsWith("Reaction · Total 4", StringComparison.Ordinal)));
+            Assert.IsTrue(rowText.Any(row => row.EndsWith("Edge · Total 2", StringComparison.Ordinal)));
+            Assert.IsFalse(rowText.Any(row => row.EndsWith("Body · Total 1", StringComparison.Ordinal)));
+            Assert.IsFalse(rowText.Any(row => row.EndsWith("Agility · Total 1", StringComparison.Ordinal)));
+
+            Assert.AreEqual("Attributes", previewExpander.Header?.ToString());
+            Assert.IsFalse(
+                (previewExpander.Header?.ToString() ?? string.Empty).Contains("Review", StringComparison.OrdinalIgnoreCase),
+                "The section preview header must not invent Review chrome that Chummer5A never had.");
+        });
+    }
+
+    [TestMethod]
     public void Runtime_backed_new_character_ruleset_selection_updates_created_workspace_request()
     {
         WithHarness(harness =>
@@ -4927,6 +4979,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             if (_state.WorkspaceId is { } workspaceId
                 && _workspaceFixtures.TryGetValue(workspaceId.Value, out WorkspaceFixtureState? fixture))
             {
+                if (fixture.SectionFixtures.TryGetValue(sectionId, out SectionFixtureState? sectionFixture))
+                {
+                    preview = sectionFixture.Preview;
+                    rows = sectionFixture.Rows;
+                }
+
                 _workspaceFixtures[workspaceId.Value] = fixture with
                 {
                     SectionId = sectionId,
@@ -5266,7 +5324,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 BuildProfile(name, alias, role, notes, buildMethod),
                 "cyberwares",
                 BuildWorkspacePreviewJson(name, rulesetId, role),
-                BuildWorkspaceRows(name, role));
+                BuildWorkspaceRows(name, role),
+                BuildWorkspaceSectionFixtures(document.Content, name, alias, buildMethod, rulesetId));
         }
 
         private CharacterOverviewState ActivateWorkspaceState(
@@ -5425,6 +5484,77 @@ public sealed class AvaloniaFlagshipUiGateTests
                 $"<character><name>{name}</name><alias>{alias}</alias><metatype>Human</metatype><buildmethod>{buildMethod}</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion><karma>0</karma><nuyen>0</nuyen><created>True</created><gameedition>{edition}</gameedition></character>";
         }
 
+        private static IReadOnlyDictionary<string, SectionFixtureState> BuildWorkspaceSectionFixtures(
+            string content,
+            string name,
+            string alias,
+            string buildMethod,
+            string rulesetId)
+        {
+            try
+            {
+                XElement root = XElement.Parse(content);
+                XElement[] attributeNodes = root
+                    .Element("attributes")?
+                    .Elements("attribute")
+                    .ToArray()
+                    ?? [];
+                if (attributeNodes.Length == 0)
+                {
+                    return new Dictionary<string, SectionFixtureState>(StringComparer.OrdinalIgnoreCase);
+                }
+
+                var attributeFacts = attributeNodes
+                    .Select(attributeNode =>
+                    {
+                        string attributeName = (attributeNode.Element("name")?.Value ?? string.Empty).Trim();
+                        string totalValue = (attributeNode.Element("totalvalue")?.Value ?? attributeNode.Element("value")?.Value ?? string.Empty).Trim();
+                        string baseValue = (attributeNode.Element("base")?.Value ?? totalValue).Trim();
+                        return new { attributeName, baseValue, totalValue };
+                    })
+                    .Where(attribute => !string.IsNullOrWhiteSpace(attribute.attributeName) && !string.IsNullOrWhiteSpace(attribute.totalValue))
+                    .ToArray();
+                if (attributeFacts.Length == 0)
+                {
+                    return new Dictionary<string, SectionFixtureState>(StringComparer.OrdinalIgnoreCase);
+                }
+
+                string escapedName = JsonEncodedText.Encode(name).ToString();
+                string escapedAlias = JsonEncodedText.Encode(alias).ToString();
+                string escapedBuildMethod = JsonEncodedText.Encode(buildMethod).ToString();
+                string escapedRulesetId = JsonEncodedText.Encode(rulesetId).ToString();
+                string attributesJson = string.Join(
+                    ",\n",
+                    attributeFacts.Select(attribute =>
+                        $"    {{ \"name\": \"{JsonEncodedText.Encode(attribute.attributeName)}\", \"baseValue\": {attribute.baseValue}, \"totalValue\": {attribute.totalValue} }}"));
+                string preview = $$"""
+{
+  "section": "attributes",
+  "name": "{{escapedName}}",
+  "alias": "{{escapedAlias}}",
+  "buildMethod": "{{escapedBuildMethod}}",
+  "gameEdition": "{{escapedRulesetId}}",
+  "attributes": [
+{{attributesJson}}
+  ]
+}
+""";
+                SectionRowState[] rows = attributeFacts
+                    .Select((attribute, index) => new SectionRowState($"attributes[{index}]", $"{attribute.attributeName} · Total {attribute.totalValue}"))
+                    .ToArray();
+                SectionFixtureState attributesFixture = new(preview, rows);
+                return new Dictionary<string, SectionFixtureState>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["attributes"] = attributesFixture,
+                    ["attributedetails"] = attributesFixture
+                };
+            }
+            catch
+            {
+                return new Dictionary<string, SectionFixtureState>(StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
         private static DesktopDialogState RebuildDynamicDialog(DesktopDialogState dialog)
         {
             MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
@@ -5570,7 +5700,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             CharacterProfileSection Profile,
             string SectionId,
             string SectionJson,
-            SectionRowState[] SectionRows);
+            SectionRowState[] SectionRows,
+            IReadOnlyDictionary<string, SectionFixtureState> SectionFixtures);
+
+        private sealed record SectionFixtureState(string Preview, SectionRowState[] Rows);
 
         private static (string Preview, SectionRowState[] Rows) BuildSectionFixture(string sectionId)
         {

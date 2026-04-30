@@ -1,6 +1,6 @@
 {
   "contractName": "chummer6-ui.ui_flagship_release_gate.screenshot_control_evidence",
-  "screenshotDirectory": "/tmp/chummer-ui-flagship-gate-screenshots.sCmsDB",
+  "screenshotDirectory": "/tmp/chummer-ui-flagship-gate-screenshots.I4B1gk",
   "entries": [
     {
       "screenshot": "01-initial-shell-light.png",
@@ -253,7 +253,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Section Review",
+          "text": "Section",
           "x": 0,
           "y": 0,
           "width": 190,
@@ -559,7 +559,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:24Z",
+          "text": "Time: 2026-04-30 12:19:07Z",
           "x": 203,
           "y": 0,
           "width": 159,
@@ -655,7 +655,7 @@
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
         "Runner Summary",
         "Section Payload",
-        "Section Review",
+        "Section",
         "(none)",
         "New Character",
         "file",
@@ -674,7 +674,7 @@
         "Character: none",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:24Z",
+        "Time: 2026-04-30 12:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -934,7 +934,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Section Review",
+          "text": "Section",
           "x": 0,
           "y": 0,
           "width": 190,
@@ -1240,7 +1240,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:24Z",
+          "text": "Time: 2026-04-30 12:19:07Z",
           "x": 203,
           "y": 0,
           "width": 159,
@@ -1336,7 +1336,7 @@
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
         "Runner Summary",
         "Section Payload",
-        "Section Review",
+        "Section",
         "(none)",
         "New Character",
         "file",
@@ -1355,7 +1355,7 @@
         "Character: none",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:24Z",
+        "Time: 2026-04-30 12:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -2113,16 +2113,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 242,
+          "width": 227,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware Loadout Review",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -2194,7 +2194,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -2221,7 +2221,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -2302,7 +2302,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -2374,7 +2374,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -2419,7 +2419,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 242,
+          "width": 227,
           "height": 660
         },
         {
@@ -2497,7 +2497,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:24Z",
+          "text": "Time: 2026-04-30 12:19:08Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -2509,7 +2509,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -2518,7 +2518,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 240,
+          "width": 225,
           "height": 46
         },
         {
@@ -2651,7 +2651,6 @@
         "Name",
         "Soma",
         "Section Payload",
-        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -2671,7 +2670,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:24Z",
+        "Time: 2026-04-30 12:19:08Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -2979,16 +2978,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 242,
+          "width": 227,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware Loadout Review",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -3060,7 +3059,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -3087,7 +3086,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -3168,7 +3167,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -3240,7 +3239,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -3285,7 +3284,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 242,
+          "width": 227,
           "height": 660
         },
         {
@@ -3363,7 +3362,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:24Z",
+          "text": "Time: 2026-04-30 12:19:08Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -3375,7 +3374,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -3384,7 +3383,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 240,
+          "width": 225,
           "height": 46
         },
         {
@@ -3517,7 +3516,6 @@
         "Name",
         "Soma",
         "Section Payload",
-        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -3537,7 +3535,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:24Z",
+        "Time: 2026-04-30 12:19:08Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -3847,16 +3845,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 242,
+          "width": 227,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware Loadout Review",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -3928,7 +3926,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -3955,7 +3953,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -4036,7 +4034,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -4108,7 +4106,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -4153,7 +4151,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 242,
+          "width": 227,
           "height": 660
         },
         {
@@ -4231,7 +4229,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:24Z",
+          "text": "Time: 2026-04-30 12:19:08Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -4243,7 +4241,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -4252,7 +4250,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 240,
+          "width": 225,
           "height": 46
         },
         {
@@ -4385,7 +4383,6 @@
         "Name",
         "Soma",
         "Section Payload",
-        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -4405,7 +4402,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:24Z",
+        "Time: 2026-04-30 12:19:08Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -4715,16 +4712,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 242,
+          "width": 227,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware Loadout Review",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -4796,7 +4793,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -4823,7 +4820,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -4904,7 +4901,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -4976,7 +4973,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -5021,7 +5018,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 242,
+          "width": 227,
           "height": 660
         },
         {
@@ -5099,7 +5096,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:26Z",
+          "text": "Time: 2026-04-30 12:19:10Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -5111,7 +5108,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -5120,7 +5117,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 240,
+          "width": 225,
           "height": 46
         },
         {
@@ -5251,7 +5248,6 @@
         "Contact 1",
         "Fixer (Loyalty 4 / Connection 5)",
         "Section Payload",
-        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -5271,7 +5267,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:26Z",
+        "Time: 2026-04-30 12:19:10Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -6932,7 +6928,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Vehicles Loadout Review",
+          "text": "Vehicles",
           "x": 0,
           "y": 0,
           "width": 398,
@@ -7337,7 +7333,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:26Z",
+          "text": "Time: 2026-04-30 12:19:10Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -7454,7 +7450,6 @@
         "Vehicle 1",
         "Roadmaster \u00B7 Armor 16 / Handling 3",
         "Section Payload",
-        "Vehicles Loadout Review",
         "Add Vehicle",
         "(none)",
         "New Character",
@@ -7474,7 +7469,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:26Z",
+        "Time: 2026-04-30 12:19:10Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -7783,7 +7778,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Contacts Review",
+          "text": "Contacts",
           "x": 0,
           "y": 0,
           "width": 592,
@@ -8188,7 +8183,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:26Z",
+          "text": "Time: 2026-04-30 12:19:10Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -8306,7 +8301,6 @@
         "Contact 1",
         "Fixer (Loyalty 4 / Connection 5)",
         "Section Payload",
-        "Contacts Review",
         "Add Contact",
         "(none)",
         "New Character",
@@ -8326,7 +8320,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:26Z",
+        "Time: 2026-04-30 12:19:10Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -10992,7 +10986,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Attributes Review",
+          "text": "Attributes",
           "x": 0,
           "y": 0,
           "width": 414,
@@ -11370,7 +11364,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:27Z",
+          "text": "Time: 2026-04-30 12:19:11Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -11508,7 +11502,7 @@
         "Attribute 2",
         "Agility \u00B7 Total 7",
         "Section Payload",
-        "Attributes Review",
+        "Attributes",
         "(none)",
         "New Character",
         "file",
@@ -11527,7 +11521,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:27Z",
+        "Time: 2026-04-30 12:19:11Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -12357,16 +12351,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 242,
+          "width": 227,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware Loadout Review",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -12438,7 +12432,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -12465,7 +12459,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -12546,7 +12540,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -12618,7 +12612,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -12663,7 +12657,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 242,
+          "width": 227,
           "height": 660
         },
         {
@@ -12741,7 +12735,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:31Z",
+          "text": "Time: 2026-04-30 12:19:14Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -12753,7 +12747,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -12762,7 +12756,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 240,
+          "width": 225,
           "height": 46
         },
         {
@@ -12895,7 +12889,6 @@
         "Name",
         "Soma",
         "Section Payload",
-        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -12915,7 +12908,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:31Z",
+        "Time: 2026-04-30 12:19:14Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -13223,16 +13216,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 242,
+          "width": 227,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware Loadout Review",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -13304,7 +13297,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -13331,7 +13324,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -13412,7 +13405,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 200,
+          "width": 185,
           "height": 573
         },
         {
@@ -13484,7 +13477,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 208,
+          "width": 193,
           "height": 579
         },
         {
@@ -13529,7 +13522,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 242,
+          "width": 227,
           "height": 660
         },
         {
@@ -13607,7 +13600,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:24Z",
+          "text": "Time: 2026-04-30 12:19:08Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -13619,7 +13612,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 242,
+          "width": 227,
           "height": 48
         },
         {
@@ -13628,7 +13621,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 240,
+          "width": 225,
           "height": 46
         },
         {
@@ -13761,7 +13754,6 @@
         "Name",
         "Soma",
         "Section Payload",
-        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -13781,7 +13773,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:24Z",
+        "Time: 2026-04-30 12:19:08Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -14307,7 +14299,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Skills Review",
+          "text": "Skills",
           "x": 0,
           "y": 0,
           "width": 441,
@@ -14712,7 +14704,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:27Z",
+          "text": "Time: 2026-04-30 12:19:11Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -14832,7 +14824,6 @@
         "Skill 2",
         "Sneaking \u00B7 Rating 5",
         "Section Payload",
-        "Skills Review",
         "Add Skill",
         "(none)",
         "New Character",
@@ -14852,7 +14843,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:27Z",
+        "Time: 2026-04-30 12:19:11Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -15835,7 +15826,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Qualities Review",
+          "text": "Qualities",
           "x": 0,
           "y": 0,
           "width": 457,
@@ -16240,7 +16231,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:27Z",
+          "text": "Time: 2026-04-30 12:19:11Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -16360,7 +16351,6 @@
         "Quality 2",
         "Distinctive Style \u00B7 Negative",
         "Section Payload",
-        "Qualities Review",
         "Add Quality",
         "(none)",
         "New Character",
@@ -16380,7 +16370,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:27Z",
+        "Time: 2026-04-30 12:19:11Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -17357,7 +17347,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Calendar Journal Review",
+          "text": "Calendar",
           "x": 0,
           "y": 0,
           "width": 456,
@@ -17744,7 +17734,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:29Z",
+          "text": "Time: 2026-04-30 12:19:13Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -17862,7 +17852,6 @@
         "Entry 1",
         "Downtime recon \u00B7 \u002B2 karma",
         "Section Payload",
-        "Calendar Journal Review",
         "(none)",
         "New Character",
         "file",
@@ -17881,7 +17870,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:29Z",
+        "Time: 2026-04-30 12:19:13Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -18178,7 +18167,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Inventory Loadout Review",
+          "text": "Inventory",
           "x": 0,
           "y": 0,
           "width": 366,
@@ -18583,7 +18572,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:28Z",
+          "text": "Time: 2026-04-30 12:19:11Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -18703,7 +18692,6 @@
         "Gear 2",
         "Fake SIN \u00B7 Rating 4",
         "Section Payload",
-        "Inventory Loadout Review",
         "Add Gear",
         "(none)",
         "New Character",
@@ -18723,7 +18711,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:28Z",
+        "Time: 2026-04-30 12:19:11Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -20211,7 +20199,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Weapons Loadout Review",
+          "text": "Weapons",
           "x": 0,
           "y": 0,
           "width": 524,
@@ -20616,7 +20604,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:28Z",
+          "text": "Time: 2026-04-30 12:19:12Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -20733,7 +20721,6 @@
         "Weapon 1",
         "Ares Alpha \u00B7 11P AP -2",
         "Section Payload",
-        "Weapons Loadout Review",
         "Add Weapon",
         "(none)",
         "New Character",
@@ -20753,7 +20740,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:28Z",
+        "Time: 2026-04-30 12:19:12Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -22222,7 +22209,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Armors Loadout Review",
+          "text": "Armors",
           "x": 0,
           "y": 0,
           "width": 398,
@@ -22627,7 +22614,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:28Z",
+          "text": "Time: 2026-04-30 12:19:12Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -22744,7 +22731,6 @@
         "Armor 1",
         "Armor Jacket \u00B7 Armor 12",
         "Section Payload",
-        "Armors Loadout Review",
         "Add Armor",
         "(none)",
         "New Character",
@@ -22764,7 +22750,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:28Z",
+        "Time: 2026-04-30 12:19:12Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -24185,7 +24171,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware Loadout Review",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
           "width": 553,
@@ -24590,7 +24576,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:29Z",
+          "text": "Time: 2026-04-30 12:19:12Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -24707,7 +24693,6 @@
         "Cyberware 1",
         "Wired Reflexes 2 \u00B7 Essence 2.4",
         "Section Payload",
-        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -24727,7 +24712,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:29Z",
+        "Time: 2026-04-30 12:19:12Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -25026,7 +25011,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Powers Review",
+          "text": "Powers",
           "x": 0,
           "y": 0,
           "width": 406,
@@ -25431,7 +25416,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:29Z",
+          "text": "Time: 2026-04-30 12:19:12Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -25549,7 +25534,6 @@
         "Power 1",
         "Improved Reflexes 1",
         "Section Payload",
-        "Powers Review",
         "Add Adept Power",
         "(none)",
         "New Character",
@@ -25569,7 +25553,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:29Z",
+        "Time: 2026-04-30 12:19:12Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -27008,7 +26992,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Validate Review",
+          "text": "Validate",
           "x": 0,
           "y": 0,
           "width": 360,
@@ -27395,7 +27379,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:29Z",
+          "text": "Time: 2026-04-30 12:19:13Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -27515,7 +27499,6 @@
         "Isvalid",
         "true",
         "Section Payload",
-        "Validate Review",
         "(none)",
         "New Character",
         "file",
@@ -27534,7 +27517,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:29Z",
+        "Time: 2026-04-30 12:19:13Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -27838,7 +27821,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Rules Snapshot",
+          "text": "Rules",
           "x": 0,
           "y": 0,
           "width": 279,
@@ -28216,7 +28199,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-04-27 12:16:29Z",
+          "text": "Time: 2026-04-30 12:19:13Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -28338,7 +28321,7 @@
         "Provider",
         "fixture-backed",
         "Section Payload",
-        "Rules Snapshot",
+        "Rules",
         "(none)",
         "New Character",
         "file",
@@ -28357,7 +28340,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-04-27 12:16:29Z",
+        "Time: 2026-04-30 12:19:13Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],

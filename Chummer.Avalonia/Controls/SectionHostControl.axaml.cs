@@ -1084,15 +1084,7 @@ public partial class SectionHostControl : UserControl
     private static string BuildSectionPreviewHeader(string? sectionId, string previewJson)
     {
         string title = BuildSectionTitle(sectionId, previewJson);
-        return sectionId?.Trim().ToLowerInvariant() switch
-        {
-            "summary" or "profile" or "attributes" or "attributedetails" => $"{title} Review",
-            "skills" or "qualities" or "contacts" => $"{title} Review",
-            "gear" or "inventory" or "weapons" or "armors" or "cyberwares" or "vehicles" => $"{title} Loadout Review",
-            "progress" or "calendar" or "expenses" or "improvements" => $"{title} Journal Review",
-            "rules" => $"{title} Snapshot",
-            _ => $"{title} Review"
-        };
+        return string.IsNullOrWhiteSpace(title) ? "Section" : title;
     }
 
     private static string BuildEmptySectionSummary(
