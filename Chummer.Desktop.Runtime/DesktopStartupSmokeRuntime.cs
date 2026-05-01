@@ -49,6 +49,7 @@ public static class DesktopStartupSmokeRuntime
             }
 
             DesktopStartupSmokeReceipt receipt = new(
+                Status: "pass",
                 HeadId: context.HeadId,
                 Version: context.Version,
                 ReleaseVersion: context.ReleaseVersion,
@@ -372,6 +373,7 @@ public static class DesktopStartupSmokeRuntime
     }
 
     public sealed record DesktopStartupSmokeReceipt(
+        string Status,
         string HeadId,
         string Version,
         string ReleaseVersion,

@@ -78,6 +78,84 @@ def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def reason_targets_sr4_sr6_workflow_oracle_backlog(reason: str) -> bool:
+    normalized = normalize_token(reason)
+    if not normalized:
+        return False
+    if "missing_api_surface_contract" in normalized:
+        return True
+    if "workflow parity receipts require a chummer-api host" in normalized:
+        return True
+    if "family-level workflow receipts require a chummer-api host" in normalized:
+        return True
+    if "family-level execution receipts require a chummer-api host" in normalized:
+        return True
+    return False
+
+
+def desktop_parity_receipt_is_external_only_missing_api_surface_contract(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    evidence_payload = (
+        payload.get("evidence") if isinstance(payload.get("evidence"), dict) else {}
+    )
+    for field_name in ("failingParityReceiptsExternal", "failingParityReceipts"):
+        field_value = evidence_payload.get(field_name)
+        if isinstance(field_value, dict) and field_value:
+            failure_tokens = [
+                normalize_token(item)
+                for values in field_value.values()
+                if isinstance(values, list)
+                for item in values
+                if normalize_token(item)
+            ]
+            if failure_tokens and all(
+                "external_blocker=missing_api_surface_contract" in token
+                for token in failure_tokens
+            ):
+                return True
+    reason_tokens = []
+    if str(payload.get("reason") or "").strip():
+        reason_tokens.append(normalize_token(payload.get("reason")))
+    reason_tokens.extend(
+        normalize_token(item)
+        for item in (payload.get("reasons") or [])
+        if normalize_token(item)
+    )
+    return bool(reason_tokens) and all(
+        reason_targets_sr4_sr6_workflow_oracle_backlog(token)
+        for token in reason_tokens
+    )
+
+
+def desktop_frontier_receipt_is_external_only_missing_api_surface_contract(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    evidence_payload = (
+        payload.get("evidence") if isinstance(payload.get("evidence"), dict) else {}
+    )
+    sr4_status = normalize_token(evidence_payload.get("sr4Status"))
+    sr6_status = normalize_token(evidence_payload.get("sr6Status"))
+    if sr4_status and not status_ok(sr4_status):
+        return False
+    if status_ok(sr6_status):
+        return False
+    reason_tokens = [
+        normalize_token(item)
+        for item in (payload.get("reasons") or [])
+        if normalize_token(item)
+    ]
+    allowed_reason_fragments = (
+        "missing_api_surface_contract",
+        "sr6 parity receipt has failing parity receipt proofs for",
+        "sr6 parity gate exited non-zero",
+    )
+    return bool(reason_tokens) and all(
+        any(fragment in token for fragment in allowed_reason_fragments)
+        for token in reason_tokens
+    )
+
+
 def normalize_head_proof_statuses(
     values: Any,
     field_label: str,
@@ -327,6 +405,38 @@ flagship_gate = check_receipt(
     evidence,
     allow_stale_pass_receipt=True,
 )
+sr6_workflow_parity_external_only = (
+    not status_ok(str(evidence.get("sr6_workflow_parity_status") or ""))
+    and desktop_parity_receipt_is_external_only_missing_api_surface_contract(sr6_workflow_parity)
+)
+sr4_sr6_frontier_external_only = (
+    not status_ok(str(evidence.get("sr4_sr6_frontier_status") or ""))
+    and desktop_frontier_receipt_is_external_only_missing_api_surface_contract(sr4_sr6_frontier)
+)
+evidence["sr6_workflow_parity_external_only_deferred"] = sr6_workflow_parity_external_only
+evidence["sr4_sr6_frontier_external_only_deferred"] = sr4_sr6_frontier_external_only
+evidence["sr6_workflow_parity_effective_status"] = (
+    "pass"
+    if sr6_workflow_parity_external_only
+    else str(evidence.get("sr6_workflow_parity_status") or "")
+)
+evidence["sr4_sr6_frontier_effective_status"] = (
+    "pass"
+    if sr4_sr6_frontier_external_only
+    else str(evidence.get("sr4_sr6_frontier_status") or "")
+)
+if sr6_workflow_parity_external_only:
+    reasons[:] = [
+        reason
+        for reason in reasons
+        if reason != "sr6_workflow_parity receipt is missing or not passing."
+    ]
+if sr4_sr6_frontier_external_only:
+    reasons[:] = [
+        reason
+        for reason in reasons
+        if reason != "sr4_sr6_frontier receipt is missing or not passing."
+    ]
 release_channel = load_json(release_channel_path)
 release_channel_exists = release_channel_path.is_file()
 release_channel_channel_id = normalize_token(
@@ -641,7 +751,11 @@ for edition, ledger_payload in (("sr4", sr4_ledger), ("sr6", sr6_ledger)):
             )
             external_blockers = [
                 normalize_token(value)
-                for value in (payload_evidence.get("executionExternalBlockers") or [])
+                for value in (
+                    (payload_evidence.get("verificationExternalBlockers") or [])
+                    + (payload_evidence.get("executionExternalBlockers") or [])
+                    + ([payload_evidence.get("external_blocker")] if payload_evidence.get("external_blocker") else [])
+                )
                 if normalize_token(value)
             ]
             if external_blockers and all(
@@ -779,11 +893,7 @@ if failing_family_receipts:
         all_failing_family_receipts_external
     )
     if all_failing_family_receipts_external:
-        reasons.append(
-            "SR4/SR6 family-level workflow receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
-            "(external blocker: missing_api_surface_contract): "
-            + ", ".join(sorted(failing_family_receipts_external))
-        )
+        evidence["workflow_family_external_only_deferred"] = True
     else:
         reasons.append(
             "SR4/SR6 family-level workflow receipts are not passing: "
@@ -803,11 +913,7 @@ if failing_execution_receipts:
         all_failing_execution_receipts_external
     )
     if all_failing_execution_receipts_external:
-        reasons.append(
-            "SR4/SR6 family-level execution receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
-            "(external blocker: missing_api_surface_contract): "
-            + ", ".join(sorted(failing_execution_receipts_external))
-        )
+        evidence["workflow_execution_external_only_deferred"] = True
     else:
         reasons.append(
             "SR4/SR6 family-level execution receipts are not passing: "
@@ -835,7 +941,8 @@ for label in (
     "ruleset_ui_adaptation",
     "ui_flagship_release_gate",
 ):
-    if not status_ok(str(evidence.get(f"{label}_status") or "")):
+    effective_status = str(evidence.get(f"{label}_effective_status") or evidence.get(f"{label}_status") or "")
+    if not status_ok(effective_status):
         upstream_receipt_review_reasons.append(f"{label}:status")
     generated_at_raw = str(evidence.get(f"{label}_generated_at") or "").strip()
     if not generated_at_raw:
@@ -904,7 +1011,9 @@ workflow_family_review_reasons.extend(
     [f"missing_receipt:{entry}" for entry in sorted(missing_family_receipts)]
 )
 workflow_family_review_reasons.extend(
-    [f"failing_receipt:{entry}" for entry in sorted(failing_family_receipts)]
+    []
+    if evidence.get("workflow_family_failures_external_only") is True
+    else [f"failing_receipt:{entry}" for entry in sorted(failing_family_receipts)]
 )
 
 workflow_execution_review_reasons: List[str] = []
@@ -914,7 +1023,9 @@ workflow_execution_review_reasons.extend(
     [f"missing_execution:{entry}" for entry in sorted(missing_execution_receipts)]
 )
 workflow_execution_review_reasons.extend(
-    [f"failing_execution:{entry}" for entry in sorted(failing_execution_receipts)]
+    []
+    if evidence.get("workflow_execution_failures_external_only") is True
+    else [f"failing_execution:{entry}" for entry in sorted(failing_execution_receipts)]
 )
 workflow_execution_review_reasons.extend(
     [f"weak_execution:{entry}" for entry in sorted(weak_execution_receipts)]

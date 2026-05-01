@@ -4469,7 +4469,9 @@ if desktop_install_artifacts and not tuple_coverage_declares_external_proof_requ
     reasons.append(
         "Release channel desktopTupleCoverage must declare externalProofRequests explicitly (empty list when complete)."
     )
-required_desktop_platforms = ("linux", "windows", "macos")
+required_desktop_platforms = tuple(
+    tuple_coverage_required_desktop_platforms or ("linux", "windows", "macos")
+)
 platform_artifact_counts = {
     platform: len(
         [
@@ -4492,7 +4494,34 @@ platform_heads_from_release_channel = {
 evidence["required_desktop_platforms"] = list(required_desktop_platforms)
 evidence["platform_artifact_counts"] = platform_artifact_counts
 evidence["platform_heads_from_release_channel"] = platform_heads_from_release_channel
-desktop_files_root = repo_root / "Docker" / "Downloads" / "files"
+def resolve_desktop_files_root() -> Path:
+    candidates: List[Path] = []
+    if release_channel_path.parent.name == "downloads":
+        candidates.append(release_channel_path.parent / "files")
+    run_services_root_raw = str(os.environ.get("CHUMMER_RUN_SERVICES_ROOT") or "").strip()
+    if run_services_root_raw:
+        candidates.append(Path(run_services_root_raw) / "Chummer.Portal" / "downloads" / "files")
+    candidates.extend(
+        [
+            repo_root.parent / "chummer.run-services" / "Chummer.Portal" / "downloads" / "files",
+            Path("/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files"),
+            repo_root / "Docker" / "Downloads" / "files",
+        ]
+    )
+    seen: set[str] = set()
+    deduped: List[Path] = []
+    for candidate in candidates:
+        candidate_key = str(candidate)
+        if candidate_key in seen:
+            continue
+        seen.add(candidate_key)
+        deduped.append(candidate)
+    for candidate in deduped:
+        if candidate.is_dir():
+            return candidate
+    return deduped[-1]
+
+desktop_files_root = resolve_desktop_files_root()
 evidence["desktop_files_root"] = str(desktop_files_root)
 quarantine_roots = [
     repo_root / "Docker" / "Downloads" / "quarantine",
