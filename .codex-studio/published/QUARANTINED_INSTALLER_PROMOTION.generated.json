@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-01T08:37:11Z",
-  "generated_at": "2026-05-01T08:37:11Z",
+  "generatedAt": "2026-05-01T09:39:51Z",
+  "generated_at": "2026-05-01T09:39:51Z",
   "contract_name": "chummer6-ui.proof_backed_quarantine_installer_promotion",
-  "downloadsDir": "/tmp/tmp.BV5ynouN0C",
-  "startupSmokeDir": "/tmp/chummer6-ui-desktop-build/bundle/startup-smoke",
-  "releaseChannel": "preview",
-  "releaseVersion": "run-20260501-083446",
+  "downloadsDir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
+  "startupSmokeDir": "/tmp/tmp.ynEUyljyhs",
+  "releaseChannel": "docker",
+  "releaseVersion": "run-20260429-233209",
   "quarantineDirs": [
     "/docker/chummercomplete/chummer-presentation/.codex-studio/quarantine",
     "/docker/chummercomplete/chummer-presentation/Docker/Downloads/quarantine"
@@ -22,9 +22,14 @@
       "arch": "x64",
       "status": "skipped",
       "reasons": [
-        "startup smoke receipt is missing"
+        "startup smoke receipt stale: 958365s exceeds 604800s",
+        "startup smoke artifactDigest does not match candidate bytes",
+        "destination already exists with different bytes"
       ],
-      "startupSmokeReceiptPath": "/tmp/chummer6-ui-desktop-build/bundle/startup-smoke/startup-smoke-blazor-desktop-linux-x64.receipt.json"
+      "startupSmokeReceiptPath": "/tmp/tmp.ynEUyljyhs/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+      "candidateSha256": "b36624a7b8a5a1b4e06cac6ead3040d86db542dd8dfe5694252d3b5cc54e6f56",
+      "destinationPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
+      "destinationSha256": "755de1de2a11d363f5f127dd81d9a00a1f33d9b20f6e75adb569d1c97e3faa94"
     },
     {
       "candidatePath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/quarantine/chummer-blazor-desktop-linux-x64-installer.deb",
@@ -35,9 +40,14 @@
       "arch": "x64",
       "status": "skipped",
       "reasons": [
-        "startup smoke receipt is missing"
+        "startup smoke receipt stale: 958365s exceeds 604800s",
+        "startup smoke artifactDigest does not match candidate bytes",
+        "destination already exists with different bytes"
       ],
-      "startupSmokeReceiptPath": "/tmp/chummer6-ui-desktop-build/bundle/startup-smoke/startup-smoke-blazor-desktop-linux-x64.receipt.json"
+      "startupSmokeReceiptPath": "/tmp/tmp.ynEUyljyhs/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+      "candidateSha256": "b36624a7b8a5a1b4e06cac6ead3040d86db542dd8dfe5694252d3b5cc54e6f56",
+      "destinationPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
+      "destinationSha256": "755de1de2a11d363f5f127dd81d9a00a1f33d9b20f6e75adb569d1c97e3faa94"
     }
   ]
 }
