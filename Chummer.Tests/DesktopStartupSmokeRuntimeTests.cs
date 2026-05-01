@@ -49,6 +49,7 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Assert.IsTrue(File.Exists(receiptPath));
 
             using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+            Assert.AreEqual("pass", receipt.RootElement.GetProperty("status").GetString());
             Assert.AreEqual("avalonia", receipt.RootElement.GetProperty("headId").GetString());
             Assert.AreEqual("test-host", receipt.RootElement.GetProperty("hostClass").GetString());
             Assert.AreEqual("runtime_test_ready", receipt.RootElement.GetProperty("readyCheckpoint").GetString());
