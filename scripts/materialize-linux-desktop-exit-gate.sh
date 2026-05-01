@@ -262,6 +262,39 @@ raise SystemExit(1)
 PY
 }
 
+release_channel_publishes_promoted_installer_tuple() {
+  python3 - "$RELEASE_CHANNEL_PATH" "$APP_KEY" "$RID" <<'PY'
+import json
+import pathlib
+import sys
+
+release_channel_path = pathlib.Path(sys.argv[1])
+head = str(sys.argv[2]).strip().lower()
+rid = str(sys.argv[3]).strip().lower()
+
+if not release_channel_path.is_file():
+    raise SystemExit(1)
+
+try:
+    payload = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+
+for item in payload.get("artifacts") or []:
+    if not isinstance(item, dict):
+        continue
+    if (
+        str(item.get("platform") or "").strip().lower() == "linux"
+        and str(item.get("kind") or "").strip().lower() == "installer"
+        and str(item.get("head") or "").strip().lower() == head
+        and str(item.get("rid") or "").strip().lower() == rid
+    ):
+        raise SystemExit(0)
+
+raise SystemExit(1)
+PY
+}
+
 capture_git_metadata() {
   local output_path="$1"
 
@@ -1693,6 +1726,7 @@ def parse_iso(value: object) -> dt.datetime | None:
 
 release_channel = load_json(release_channel_path)
 expected_artifact = None
+promoted_mode = str(use_promoted_installer).strip() == "1"
 for item in release_channel.get("artifacts") or []:
     if not isinstance(item, dict):
         continue
@@ -1706,7 +1740,8 @@ for item in release_channel.get("artifacts") or []:
         break
 
 if expected_artifact is None:
-    reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
+    if promoted_mode:
+        reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
 else:
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
     expected_sha = normalize_token(expected_artifact.get("sha256"))
@@ -1727,7 +1762,7 @@ else:
         reasons.append(f"Linux startup smoke installer artifact path is missing: {installer_smoke_artifact_path}")
     elif expected_sha and sha256(installer_smoke_artifact_path) != expected_sha:
         reasons.append("Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes.")
-    if str(use_promoted_installer).strip() == "1" and shelf_path.is_file():
+    if promoted_mode and shelf_path.is_file():
         try:
             if installer_smoke_artifact_path.resolve() != shelf_path.resolve():
                 reasons.append("Linux startup smoke installer artifact path does not resolve to promoted repo-local shelf bytes.")
@@ -1817,7 +1852,14 @@ test -f "$ARCHIVE_PATH"
 test -f "$INSTALLER_PATH"
 INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
 
-if [[ "$USE_PROMOTED_INSTALLER" == "1" ]]; then
+EFFECTIVE_USE_PROMOTED_INSTALLER="$USE_PROMOTED_INSTALLER"
+if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_ONLY:-0}" != "1" ]]; then
+  if ! release_channel_publishes_promoted_installer_tuple; then
+    EFFECTIVE_USE_PROMOTED_INSTALLER="0"
+  fi
+fi
+
+if [[ "$EFFECTIVE_USE_PROMOTED_INSTALLER" == "1" ]]; then
   CURRENT_STAGE="resolve_promoted_installer"
   if [[ -z "$PROMOTED_INSTALLER_PATH" ]]; then
     PROMOTED_INSTALLER_PATH="$(resolve_promoted_installer_path)"
@@ -1839,7 +1881,7 @@ CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/r
 test -f "$INSTALLER_RECEIPT_PATH"
 
 CURRENT_STAGE="promoted_installer_proof_integrity"
-python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$EFFECTIVE_USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -1965,6 +2007,7 @@ else:
         reasons.append("Linux release-channel proof version is missing.")
 
     expected_artifact = None
+    promoted_mode = str(use_promoted_installer).strip() == "1"
     for item in (release_channel.get("artifacts") or []):
         if not isinstance(item, dict):
             continue
@@ -1977,7 +2020,8 @@ else:
             expected_artifact = item
             break
     if expected_artifact is None:
-        reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
+        if promoted_mode:
+            reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
     else:
         expected_file_name = str(expected_artifact.get("fileName") or "").strip()
         expected_size = int(expected_artifact.get("sizeBytes") or 0)
@@ -2012,7 +2056,7 @@ else:
                         "Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes."
                     )
 
-            if str(use_promoted_installer).strip() == "1":
+            if promoted_mode:
                 try:
                     if installer_smoke_artifact_path.resolve() != promoted_shelf_artifact_path.resolve():
                         reasons.append(
@@ -2116,7 +2160,7 @@ else:
                     )
                 elif path_uses_legacy_chummer5a_root(receipt_artifact_path_obj):
                     reasons.append("Linux startup smoke receipt artifactPath points into a legacy chummer5a root.")
-                elif str(use_promoted_installer).strip() == "1":
+                elif promoted_mode:
                     try:
                         if (
                             promoted_shelf_artifact_path.is_file()

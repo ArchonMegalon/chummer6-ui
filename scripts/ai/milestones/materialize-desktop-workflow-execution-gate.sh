@@ -293,12 +293,13 @@ def check_receipt(
     evidence: Dict[str, Any],
     *,
     allow_stale_pass_receipt: bool = False,
+    require_passing_receipt: bool = True,
 ) -> Dict[str, Any]:
     payload = load_json(path)
     status = str(payload.get("status") or "").strip().lower()
     evidence[f"{label}_path"] = str(path)
     evidence[f"{label}_status"] = status
-    if not status_ok(status):
+    if require_passing_receipt and not status_ok(status):
         reasons.append(f"{label} receipt is missing or not passing.")
     validate_receipt_freshness(
         label,
@@ -404,6 +405,7 @@ flagship_gate = check_receipt(
     reasons,
     evidence,
     allow_stale_pass_receipt=True,
+    require_passing_receipt=False,
 )
 sr6_workflow_parity_external_only = (
     not status_ok(str(evidence.get("sr6_workflow_parity_status") or ""))

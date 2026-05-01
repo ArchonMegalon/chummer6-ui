@@ -34,6 +34,10 @@ veteran_task_time_receipt_path="$repo_root/.codex-studio/published/VETERAN_TASK_
 chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
 flagship_product_readiness_receipt_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json}"
+refresh_supporting_receipts="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS:-1}"
+desktop_workflow_execution_gate_script_path="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh}"
+flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
+ui_parity_audit_probe_path="${CHUMMER_UI_PARITY_AUDIT_PROBE_PATH:-/docker/fleet/scripts/codex-shims/codexea_ui_parity_audit_probe.py}"
 nuget_packages="${CHUMMER_NUGET_PACKAGES:-$repo_root/.codex-studio/.nuget/packages}"
 lock_stale_max_age_seconds="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-900}"
 
@@ -386,6 +390,21 @@ bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
+
+if [[ "$refresh_supporting_receipts" == "1" ]]; then
+  if [[ -f "$desktop_workflow_execution_gate_script_path" ]]; then
+    echo "[b14] refreshing desktop workflow execution gate..."
+    bash "$desktop_workflow_execution_gate_script_path" >/dev/null
+  fi
+  if [[ -f "$flagship_product_readiness_materializer_path" ]]; then
+    echo "[b14] refreshing flagship product readiness proof..."
+    python3 "$flagship_product_readiness_materializer_path" >/dev/null
+  fi
+  if [[ -f "$ui_parity_audit_probe_path" ]]; then
+    echo "[b14] refreshing UI parity audit proof..."
+    python3 "$ui_parity_audit_probe_path" >/dev/null
+  fi
+fi
 
 python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_shell_ruleset_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$ui_element_parity_audit_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$desktop_executable_exit_gate_receipt_path" "$flagship_product_readiness_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
 import json

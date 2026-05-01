@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-04-30T14:35:29.161396Z",
+  "generatedAt": "2026-05-01T11:09:32.190881Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family verification evidence is incomplete for recovery-reload-migration-roundtrips.",
-  "reasons": [
-    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/recovery-reload-migration-roundtrips.generated.json (fail; external_blocker=missing_api_surface_contract)"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family verification evidence is explicitly grounded for recovery-reload-migration-roundtrips.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "recovery-reload-migration-roundtrips",
@@ -24,12 +22,10 @@
         "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
       ]
     },
-    "executionReceipts": [],
-    "executionFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/recovery-reload-migration-roundtrips.generated.json (fail; external_blocker=missing_api_surface_contract)"
+    "executionReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/recovery-reload-migration-roundtrips.generated.json"
     ],
-    "executionExternalBlockers": [
-      "missing_api_surface_contract"
-    ]
+    "executionFailures": [],
+    "executionExternalBlockers": []
   }
 }
