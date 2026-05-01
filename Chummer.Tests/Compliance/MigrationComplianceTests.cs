@@ -4964,6 +4964,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "\"releaseLifecycle\"");
         StringAssert.Contains(workflowGateScriptText, "def normalize_head_proof_statuses(");
         StringAssert.Contains(workflowGateScriptText, "\"flagship_gate.headProofs.status\"");
+        StringAssert.Contains(workflowGateScriptText, "require_passing_receipt: bool = True");
+        StringAssert.Contains(workflowGateScriptText, "require_passing_receipt=False");
         StringAssert.Contains(workflowGateScriptText, "_non_canonical_keys");
         StringAssert.Contains(workflowGateScriptText, "_duplicate_normalized_keys");
         StringAssert.Contains(workflowGateScriptText, "contains a non-canonical key");

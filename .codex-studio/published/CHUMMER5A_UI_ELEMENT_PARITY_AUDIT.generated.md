@@ -1,6 +1,6 @@
 # Chummer5A UI Element Parity Audit
 
-Generated at: 2026-05-01T08:37:18.509317Z
+Generated at: 2026-05-01T11:00:41.942416Z
 
 ## Scope
 This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.
@@ -11,10 +11,10 @@ This matrix covers every parity-tracked visible surface and currently-present di
 - Behavioral parity yes/no: 84/0
 - Chummer6-only extras present: 0
 - Removable extras present: 0
-- Active/productive/nonproductive shard runs: 8/0/0
+- Active/productive/nonproductive shard runs: 2/0/0
 
 ## Top findings
-- [HIGH] readiness_gap: Flagship readiness still contains open coverage keys outside the surface-level desktop parity matrix. desktop_client: Executable desktop exit gate proof is missing or not passed. Desktop shell/install/support liveliness must be proven from shipped artifacts., Executable gate blocker: Windows desktop exit gate is missing or not passing., Executable gate blocker: Windows gate reason: Windows startup smoke receipt artifactDigest does not match promoted installer bytes., Executable gate blocker: Windows gate reason: Windows startup smoke receipt version does not match release channel run-20260501-081932., Executable gate blocker: Windows startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes., Executable gate blocker: Windows startup smoke receipt version does not match release channel version for promoted installer bytes., Windows desktop exit gate proof is missing, not passed, or lacks embedded payload/sample integrity proof., Release channel publishes Windows installer media, but executable-gate evidence is missing passing Windows startup-smoke tuple proof.
+- No parity findings were emitted from the current audit inputs.
 
 ## Element matrix
 

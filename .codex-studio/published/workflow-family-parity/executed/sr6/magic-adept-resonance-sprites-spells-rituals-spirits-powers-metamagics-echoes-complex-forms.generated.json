@@ -1,13 +1,9 @@
 {
-  "generatedAt": "2026-04-30T14:35:29.115689Z",
+  "generatedAt": "2026-05-01T11:09:32.152290Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family execution evidence is incomplete for magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.",
-  "reasons": [
-    "dotnet test execution failed (exit 1): /usr/lib/dotnet/sdk/10.0.105/Microsoft.Common.CurrentVersion.targets(2137,5): error MSB4181: The \"MSBuild\" task returned false but did not log an error. [/docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/Chummer.Infrastructure.Browser.csproj]",
-    "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap (external blocker: missing_api_surface_contract).",
-    "Audit tests not present in executed TRX results: Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions, Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections, Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions, Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family execution evidence is explicitly grounded for magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
@@ -34,7 +30,7 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
-      "exitCode": 1
+      "exitCode": 0
     },
     "apiProbe": {
       "baseUrl": "http://127.0.0.1:8088",
@@ -53,14 +49,14 @@
         }
       ]
     },
-    "external_blocker": "missing_api_surface_contract",
-    "matchedPassedTests": [],
-    "missingAuditTests": [
+    "external_blocker": "",
+    "matchedPassedTests": [
       "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
       "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
       "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
       "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
     ],
+    "missingAuditTests": [],
     "failedAuditTests": {}
   }
 }

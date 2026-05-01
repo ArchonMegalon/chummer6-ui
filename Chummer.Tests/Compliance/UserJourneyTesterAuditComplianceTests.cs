@@ -46,15 +46,15 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(verifyText, "checking adversarial Linux user-journey tester audit");
         StringAssert.Contains(verifyText, "bash scripts/ai/milestones/user-journey-tester-audit.sh");
 
-        StringAssert.Contains(worklistText, "| B16 Adversarial user-journey tester gate | open |");
-        StringAssert.Contains(worklistText, "| WL-221 | queued | P1 | Publish the adversarial Linux user-journey tester gate");
-        StringAssert.Contains(worklistText, "Repo-local live queue: active (`WL-221`)");
+        StringAssert.Contains(worklistText, "| B16 Adversarial user-journey tester gate | done |");
+        StringAssert.Contains(worklistText, "| WL-221 | done | P1 | Publish the adversarial Linux user-journey tester gate");
+        StringAssert.Contains(worklistText, "Repo-local live queue: none.");
 
         StringAssert.Contains(milestoneScriptText, "B16 user-journey tester milestone row");
         StringAssert.Contains(milestoneScriptText, "WL-221 runnable backlog entry");
 
-        StringAssert.Contains(queueText, "package_id: ui-user-journey-tester-audit");
-        StringAssert.Contains(queueText, "desktop_client:user_journey_tester");
+        Assert.IsFalse(queueText.Contains("package_id: ui-user-journey-tester-audit", System.StringComparison.Ordinal));
+        Assert.IsFalse(queueText.Contains("desktop_client:user_journey_tester", System.StringComparison.Ordinal));
     }
 
     private static string FindRepoRoot()
