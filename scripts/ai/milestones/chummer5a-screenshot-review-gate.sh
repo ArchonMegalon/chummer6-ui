@@ -128,6 +128,8 @@ required_visual_review_keys = [
     "sourceAnchorReview",
     "screenCaptureReview",
     "legacyFamiliarityReview",
+    "legacyEquivalentChromeReview",
+    "muscleMemoryParityReview",
 ]
 missing_visual_review_keys = [
     key for key in required_visual_review_keys

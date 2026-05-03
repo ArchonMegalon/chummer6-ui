@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Chummer.Contracts.Presentation;
@@ -4454,6 +4455,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(screenshotReviewGateText, "supporting_receipt_reasons");
         StringAssert.Contains(screenshotReviewGateText, "screenshot_asset_reasons");
         StringAssert.Contains(screenshotReviewGateText, "required_visual_review_keys");
+        StringAssert.Contains(screenshotReviewGateText, "legacyEquivalentChromeReview");
+        StringAssert.Contains(screenshotReviewGateText, "muscleMemoryParityReview");
         StringAssert.Contains(screenshotReviewGateText, "missing_visual_review_keys");
         StringAssert.Contains(screenshotReviewGateText, "failing_visual_review_keys");
         StringAssert.Contains(screenshotReviewGateText, "visual_failure_count");
@@ -4694,29 +4697,190 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Chummer5a_legacy_equivalent_chrome_gate_derives_policy_source_absence_and_tester_wiring_subproofs()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "chummer5a-legacy-equivalent-chrome-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+        string policyPath = FindPath("docs", "CHUMMER5A_LEGACY_EQUIVALENT_CHROME_POLICY.json");
+        string policyText = File.ReadAllText(policyPath);
+        string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
+
+        StringAssert.Contains(scriptText, "chummer6-ui.chummer5a_legacy_equivalent_chrome_gate");
+        StringAssert.Contains(scriptText, "CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER5A_LEGACY_EQUIVALENT_CHROME_POLICY_PATH");
+        StringAssert.Contains(scriptText, "\"policyReview\"");
+        StringAssert.Contains(scriptText, "\"sourceAbsenceReview\"");
+        StringAssert.Contains(scriptText, "\"testerWiringReview\"");
+        StringAssert.Contains(scriptText, "\"failureCount\"] = len(reasons)", StringComparison.Ordinal);
+        StringAssert.Contains(scriptText, "must stay present_in_chummer6=no");
+        StringAssert.Contains(scriptText, "forbiddenLiteralHits");
+        StringAssert.Contains(scriptText, "missingRequiredMarkers");
+
+        StringAssert.Contains(policyText, "\"contractName\": \"chummer6-ui.chummer5a_legacy_equivalent_chrome_policy\"");
+        StringAssert.Contains(policyText, "\"removable_if_not_in_chummer5a\"");
+        StringAssert.Contains(policyText, "\"Runner Summary\"");
+        StringAssert.Contains(policyText, "\"Review framing\"");
+        StringAssert.Contains(policyText, "\"section_preview_omits_review_copy\"");
+
+        StringAssert.Contains(verifyText, "checking Chummer5a legacy-equivalent chrome gate");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/chummer5a-legacy-equivalent-chrome-gate.sh");
+    }
+
+    [TestMethod]
+    public void Chummer5a_muscle_memory_parity_gate_derives_full_scope_policy_dialog_widget_and_wiring_subproofs()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "chummer5a-muscle-memory-parity-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+        string policyPath = FindPath("docs", "CHUMMER5A_MUSCLE_MEMORY_PARITY_POLICY.json");
+        string policyText = File.ReadAllText(policyPath);
+        string designDocPath = FindPath("docs", "CHUMMER5A_MUSCLE_MEMORY_EXIT_TESTS.md");
+        string designDocText = File.ReadAllText(designDocPath);
+        string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
+
+        StringAssert.Contains(scriptText, "chummer6-ui.chummer5a_muscle_memory_parity_gate");
+        StringAssert.Contains(scriptText, "CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json");
+        StringAssert.Contains(scriptText, "\"scopeInventoryReview\"");
+        StringAssert.Contains(scriptText, "\"dialogWidgetClassReview\"");
+        StringAssert.Contains(scriptText, "\"dialogLayoutSlotReview\"");
+        StringAssert.Contains(scriptText, "\"dialogFieldOrderReview\"");
+        StringAssert.Contains(scriptText, "\"tooltipCoverageReview\"");
+        StringAssert.Contains(scriptText, "\"auxiliaryPointerRouteReview\"");
+        StringAssert.Contains(scriptText, "\"dialogGeometryReview\"");
+        StringAssert.Contains(scriptText, "\"designReview\"");
+        StringAssert.Contains(scriptText, "\"inventoryRuntimeReview\"");
+        StringAssert.Contains(scriptText, "\"wiringReview\"");
+        StringAssert.Contains(scriptText, "CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "Runtime_backed_chummer5a_muscle_memory_inventory_receipt_covers_every_surface_and_element");
+        StringAssert.Contains(scriptText, "Runtime_backed_mouse_only_");
+        StringAssert.Contains(scriptText, "all_oracle_tabs_workspace_actions_and_desktop_controls");
+
+        StringAssert.Contains(policyText, "\"contractName\": \"chummer6-ui.chummer5a_muscle_memory_parity_policy\"");
+        StringAssert.Contains(policyText, "\"scopeStrategy\": \"all_oracle_tabs_workspace_actions_and_desktop_controls\"");
+        StringAssert.Contains(policyText, "\"runtimeInventoryContract\": \"chummer6-ui.chummer5a_muscle_memory_inventory\"");
+        StringAssert.Contains(policyText, "\"requiredRuntimeTestMarkers\"");
+        StringAssert.Contains(policyText, "\"popupMenusInScope\": true");
+        StringAssert.Contains(policyText, "\"tooltipsInScope\": true");
+        StringAssert.Contains(policyText, "\"pointer_route_parity\"");
+        StringAssert.Contains(policyText, "\"mouse_only_replay\"");
+        StringAssert.Contains(policyText, "\"dialogId\": \"gear_add\"");
+        StringAssert.Contains(policyText, "\"this.cboCategory.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_gear_add_dialog_uses_legacy_category_combobox_posture\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_mouse_only_master_index_source_click_executes_open_source_action\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_mouse_only_character_roster_double_tap_opens_selected_runner\"");
+
+        StringAssert.Contains(designDocText, "every dialog and utility form");
+        StringAssert.Contains(designDocText, "every workspace panel, grid, tab strip, list, tree, and preview pane");
+        StringAssert.Contains(designDocText, "every popup menu, flyout, context menu, and tooltip");
+        StringAssert.Contains(designDocText, "loop through every UI element");
+        StringAssert.Contains(designDocText, "record control class, label text, tooltip text, layout zone, and mouse-route hints");
+        StringAssert.Contains(designDocText, "Expected left/right/hidden layout slots");
+        StringAssert.Contains(designDocText, "within-slot field order");
+        StringAssert.Contains(designDocText, "context menu or secondary flyout");
+        StringAssert.Contains(designDocText, "right click");
+        StringAssert.Contains(designDocText, "middle click");
+        StringAssert.Contains(designDocText, "Mouse-only macro replay");
+        StringAssert.Contains(designDocText, "Master Index source link");
+        StringAssert.Contains(designDocText, "Character Roster selection");
+
+        StringAssert.Contains(verifyText, "checking Chummer5a muscle-memory parity gate");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/chummer5a-muscle-memory-parity-gate.sh");
+    }
+
+    [TestMethod]
+    public void Chummer4_sr4_muscle_memory_parity_gate_derives_policy_workflow_dialog_seed_and_wiring_subproofs()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "chummer4-sr4-muscle-memory-parity-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+        string policyPath = FindPath("docs", "CHUMMER4_SR4_MUSCLE_MEMORY_PARITY_POLICY.json");
+        string policyText = File.ReadAllText(policyPath);
+        string designDocPath = FindPath("docs", "CHUMMER4_SR4_MUSCLE_MEMORY_EXIT_TESTS.md");
+        string designDocText = File.ReadAllText(designDocPath);
+        string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
+
+        StringAssert.Contains(scriptText, "chummer6-ui.chummer4_sr4_muscle_memory_parity_gate");
+        StringAssert.Contains(scriptText, "CHUMMER4_SR4_MUSCLE_MEMORY_PARITY_GATE.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER4_SR4_MUSCLE_MEMORY_PARITY_POLICY.json");
+        StringAssert.Contains(scriptText, "SR4_DESKTOP_WORKFLOW_PARITY.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "\"policyReview\"");
+        StringAssert.Contains(scriptText, "\"workflowParityReview\"");
+        StringAssert.Contains(scriptText, "\"detailedDialogReview\"");
+        StringAssert.Contains(scriptText, "\"runtimeReview\"");
+        StringAssert.Contains(scriptText, "\"inventoryReview\"");
+        StringAssert.Contains(scriptText, "\"wiringReview\"");
+        StringAssert.Contains(scriptText, "Runtime_backed_sr4_");
+
+        StringAssert.Contains(policyText, "\"contractName\": \"chummer6-ui.chummer4_sr4_muscle_memory_parity_policy\"");
+        StringAssert.Contains(policyText, "\"scopeStrategy\": \"promoted_sr4_surfaces_with_chummer4_dialog_oracles\"");
+        StringAssert.Contains(policyText, "\"sr4WorkflowParityContract\": \"chummer6-ui.sr4_desktop_workflow_parity\"");
+        StringAssert.Contains(policyText, "\"runtimeInventoryContract\": \"chummer6-ui.chummer4_sr4_muscle_memory_inventory\"");
+        StringAssert.Contains(policyText, "\"promotedDialogsAndPanelsInScope\": true");
+        StringAssert.Contains(policyText, "\"menusInScope\": true");
+        StringAssert.Contains(policyText, "\"tooltipsInScope\": true");
+        StringAssert.Contains(policyText, "\"Runtime_backed_sr4_chummer4_muscle_memory_inventory_receipt_covers_every_surface_and_element\"");
+        StringAssert.Contains(policyText, "\"dialogId\": \"gear_add\"");
+        StringAssert.Contains(policyText, "\"dialogId\": \"dice_roller\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_sr4_switch_ruleset_dialog_preserves_compact_combo_posture\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_sr4_new_character_dialog_preserves_chummer4_build_method_combo_posture\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_sr4_new_character_preserves_modify_button_row_order_and_footer_posture\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_sr4_dice_roller_preserves_chummer4_spinner_posture_and_topbar_geography\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_sr4_starter_runner_gear_add_uses_chummer4_category_combobox_posture\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_sr4_starter_runner_gear_add_preserves_two_pane_geography_and_primary_action_band\"");
+        StringAssert.Contains(policyText, "\"BuildLegacyInlineNumericUpDown\"");
+
+        StringAssert.Contains(designDocText, "promoted SR4 surfaces");
+        StringAssert.Contains(designDocText, "Chummer4 as the legacy oracle");
+        StringAssert.Contains(designDocText, "switch-ruleset chooser");
+        StringAssert.Contains(designDocText, "SR4 starter-runner follow-through");
+        StringAssert.Contains(designDocText, "full promoted SR4 dialog/panel/menu/tooltip surface inventory");
+        StringAssert.Contains(designDocText, "within-slot field order");
+        StringAssert.Contains(designDocText, "right-click secondary-menu posture");
+        StringAssert.Contains(designDocText, "spinner posture");
+        StringAssert.Contains(designDocText, "two-pane geography");
+
+        StringAssert.Contains(verifyText, "checking Chummer4/SR4 muscle-memory parity gate");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/chummer4-sr4-muscle-memory-parity-gate.sh");
+    }
+
+    [TestMethod]
     public void Desktop_visual_familiarity_exit_gate_derives_flagship_head_interaction_source_screenshot_and_legacy_reviews()
     {
         string visualGateScriptPath = FindPath("scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
         string visualGateScriptText = File.ReadAllText(visualGateScriptPath);
 
+        StringAssert.Contains(visualGateScriptText, "evidence[\"flagship_gate_receipt_exists\"] = flagship_gate_path.is_file()");
+        StringAssert.Contains(visualGateScriptText, "Flagship UI release gate receipt is missing.");
+        StringAssert.Contains(visualGateScriptText, "Flagship UI release gate receipt is unreadable or not a JSON object.");
+        Assert.IsFalse(
+            visualGateScriptText.Contains("Flagship UI release gate is missing or not passing.", StringComparison.Ordinal),
+            "Visual familiarity must not depend on the aggregate flagship gate already passing."
+        );
         StringAssert.Contains(visualGateScriptText, "flagship_gate_review_start = len(reasons)");
         StringAssert.Contains(visualGateScriptText, "head_proof_review_start = len(reasons)");
         StringAssert.Contains(visualGateScriptText, "interaction_proof_review_start = len(reasons)");
         StringAssert.Contains(visualGateScriptText, "source_anchor_review_start = len(reasons)");
         StringAssert.Contains(visualGateScriptText, "screen_capture_review_start = len(reasons)");
         StringAssert.Contains(visualGateScriptText, "legacy_familiarity_review_start = len(reasons)");
+        StringAssert.Contains(visualGateScriptText, "legacy_equivalent_chrome_review_start = len(reasons)");
+        StringAssert.Contains(visualGateScriptText, "muscle_memory_parity_review_start = len(reasons)");
+        StringAssert.Contains(visualGateScriptText, "legacy_equivalent_chrome_gate_receipt_path");
+        StringAssert.Contains(visualGateScriptText, "muscle_memory_parity_gate_receipt_path");
         StringAssert.Contains(visualGateScriptText, "\"flagshipGateReview\"");
         StringAssert.Contains(visualGateScriptText, "\"headProofReview\"");
         StringAssert.Contains(visualGateScriptText, "\"interactionProofReview\"");
         StringAssert.Contains(visualGateScriptText, "\"sourceAnchorReview\"");
         StringAssert.Contains(visualGateScriptText, "\"screenCaptureReview\"");
         StringAssert.Contains(visualGateScriptText, "\"legacyFamiliarityReview\"");
+        StringAssert.Contains(visualGateScriptText, "\"legacyEquivalentChromeReview\"");
+        StringAssert.Contains(visualGateScriptText, "\"muscleMemoryParityReview\"");
         StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not flagship_gate_review_reasons else \"fail\"");
         StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not head_proof_review_reasons else \"fail\"");
         StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not interaction_proof_review_reasons else \"fail\"");
         StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not source_anchor_review_reasons else \"fail\"");
         StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not screen_capture_review_reasons else \"fail\"");
         StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not legacy_familiarity_review_reasons else \"fail\"");
+        StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not legacy_equivalent_chrome_review_reasons else \"fail\"");
+        StringAssert.Contains(visualGateScriptText, "\"status\": \"pass\" if not muscle_memory_parity_review_reasons else \"fail\"");
         StringAssert.Contains(visualGateScriptText, "\"reasonCount\": len(flagship_gate_review_reasons)");
         StringAssert.Contains(visualGateScriptText, "\"reasonCount\": len(screen_capture_review_reasons)");
         StringAssert.Contains(visualGateScriptText, "\"requiredInteractionKeys\": required_legacy_interaction_keys");
@@ -6357,6 +6521,104 @@ public class MigrationComplianceTests
             using JsonDocument startupSmokeReceipt = JsonDocument.Parse(File.ReadAllText(startupSmokeReceiptPath));
             Assert.AreEqual("public_stable", startupSmokeReceipt.RootElement.GetProperty("channelId").GetString());
             Assert.AreEqual("public_stable", startupSmokeReceipt.RootElement.GetProperty("channel").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void Generate_releases_manifest_syncs_canonical_and_portal_promoted_files()
+    {
+        string scriptPath = FindPath("scripts", "generate-releases-manifest.sh");
+        string workingDirectory = Path.GetDirectoryName(scriptPath) ?? throw new InvalidOperationException("Missing script directory.");
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"chummer-generate-release-sync-{Guid.NewGuid():N}");
+        string downloadsDir = Path.Combine(tempRoot, "downloads", "files");
+        string startupSmokeDir = Path.Combine(tempRoot, "startup-smoke");
+        string canonicalDir = Path.Combine(tempRoot, "canonical");
+        string portalDownloadsDir = Path.Combine(tempRoot, "portal", "downloads");
+        string portalRoot = Path.Combine(tempRoot, "portal");
+        string manifestPath = Path.Combine(tempRoot, "releases.json");
+        string canonicalManifestPath = Path.Combine(canonicalDir, "RELEASE_CHANNEL.generated.json");
+        string portalManifestPath = Path.Combine(portalRoot, "releases.json");
+        string portalCanonicalManifestPath = Path.Combine(portalRoot, "RELEASE_CHANNEL.generated.json");
+        string promotionEvidencePath = Path.Combine(tempRoot, "release-evidence", "public-promotion.json");
+        string quarantinePromotionEvidencePath = Path.Combine(tempRoot, "quarantine-promotion.json");
+        string externalHostProofBlockersPath = Path.Combine(tempRoot, "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json");
+        string generatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+        string releaseVersion = "run-20260502-140000";
+        byte[] installerBytes = "canonical-sync-proof"u8.ToArray();
+        string artifactName = "chummer-avalonia-win-x64-installer.exe";
+        string artifactPath = Path.Combine(downloadsDir, artifactName);
+        string artifactDigest = Convert.ToHexString(SHA256.HashData(installerBytes)).ToLowerInvariant();
+        JsonSerializerOptions jsonOptions = new() { WriteIndented = true };
+
+        Directory.CreateDirectory(downloadsDir);
+        Directory.CreateDirectory(startupSmokeDir);
+        File.WriteAllBytes(artifactPath, installerBytes);
+
+        var startupSmokeReceipt = new
+        {
+            status = "pass",
+            headId = "avalonia",
+            platform = "windows",
+            arch = "x64",
+            rid = "win-x64",
+            channelId = "preview",
+            channel = "preview",
+            version = releaseVersion,
+            releaseVersion = releaseVersion,
+            artifactDigest = $"sha256:{artifactDigest}",
+            artifactSha256 = artifactDigest,
+            artifactPath = artifactPath,
+            artifactFileName = artifactName,
+            hostClass = "windows-host",
+            operatingSystem = "Windows 11",
+            readyCheckpoint = "pre_ui_event_loop",
+            completedAtUtc = generatedAt,
+        };
+
+        File.WriteAllText(
+            Path.Combine(startupSmokeDir, "startup-smoke-avalonia-win-x64.receipt.json"),
+            JsonSerializer.Serialize(startupSmokeReceipt, jsonOptions));
+
+        try
+        {
+            (int ExitCode, string Output) result = RunProcess(
+                GetBashExecutable(),
+                $"\"{scriptPath}\"",
+                workingDirectory,
+                new Dictionary<string, string>
+                {
+                    ["DOWNLOADS_DIR"] = downloadsDir,
+                    ["STARTUP_SMOKE_DIR"] = startupSmokeDir,
+                    ["MANIFEST_PATH"] = manifestPath,
+                    ["CANONICAL_MANIFEST_PATH"] = canonicalManifestPath,
+                    ["PORTAL_MANIFEST_PATH"] = portalManifestPath,
+                    ["PORTAL_CANONICAL_MANIFEST_PATH"] = portalCanonicalManifestPath,
+                    ["PORTAL_DOWNLOADS_DIR"] = portalDownloadsDir,
+                    ["PROMOTION_EVIDENCE_PATH"] = promotionEvidencePath,
+                    ["QUARANTINE_PROMOTION_EVIDENCE_PATH"] = quarantinePromotionEvidencePath,
+                    ["EXTERNAL_HOST_PROOF_BLOCKERS_PATH"] = externalHostProofBlockersPath,
+                    ["RELEASE_CHANNEL"] = "preview",
+                    ["RELEASE_VERSION"] = releaseVersion,
+                    ["RELEASE_PUBLISHED_AT"] = generatedAt,
+                    ["CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE"] = "0",
+                    ["CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS"] = "0",
+                });
+
+            Assert.AreEqual(0, result.ExitCode, result.Output);
+            StringAssert.Contains(result.Output, "canonical release artifact(s)");
+            StringAssert.Contains(result.Output, "local portal artifact(s)");
+
+            string canonicalArtifactPath = Path.Combine(canonicalDir, "files", artifactName);
+            string portalArtifactPath = Path.Combine(portalDownloadsDir, "files", artifactName);
+            CollectionAssert.AreEqual(installerBytes, File.ReadAllBytes(canonicalArtifactPath));
+            CollectionAssert.AreEqual(installerBytes, File.ReadAllBytes(portalArtifactPath));
         }
         finally
         {

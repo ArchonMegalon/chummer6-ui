@@ -435,6 +435,33 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateCommandDialog_dice_roller_uses_sr4_legacy_labels_and_action_order()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "dice_roller",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: new CharacterWorkspaceId("ws-2"),
+            rulesetId: RulesetDefaults.Sr4,
+            openWorkspaces:
+            [
+                new OpenWorkspaceState(new CharacterWorkspaceId("ws-2"), "Ghost", "GST", DateTimeOffset.Parse("2026-04-04T12:00:00+00:00"), RulesetDefaults.Sr4, false)
+            ]);
+
+        Assert.AreEqual("using Rule of 6", dialog.Fields.Single(field => string.Equals(field.Id, "diceRuleOf6", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Hit on 4, 5, or 6", dialog.Fields.Single(field => string.Equals(field.Id, "diceCinematicGameplay", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Rushed Job (Glitch on 1 or 2)", dialog.Fields.Single(field => string.Equals(field.Id, "diceRushJob", StringComparison.Ordinal)).Label);
+        CollectionAssert.AreEqual(
+            new[] { "roll", "reroll_misses", "close" },
+            dialog.Actions.Select(action => action.Id).ToArray());
+        Assert.AreEqual("Roll", dialog.Actions[0].Label);
+        Assert.AreEqual("Re-Roll Misses", dialog.Actions[1].Label);
+    }
+
+    [TestMethod]
     public void CreateCommandDialog_character_roster_summarizes_open_workspaces()
     {
         DesktopDialogFactory factory = new();
@@ -653,8 +680,16 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryTree"), "Visual");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCandidateList"), "Armor Jacket");
         Assert.AreEqual("Show All", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategory"));
+        Assert.AreEqual("select", dialog.Fields.Single(field => string.Equals(field.Id, "uiGearCategory", StringComparison.Ordinal)).InputType);
+        CollectionAssert.AreEqual(
+            new[] { "Show All", "Armor", "Visual", "Pistols", "Medical" },
+            dialog.Fields.Single(field => string.Equals(field.Id, "uiGearCategory", StringComparison.Ordinal)).Options!.Select(option => option.Value).ToArray());
         Assert.AreEqual("Pistols", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectedBranch"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSearchInCategoryOnly"));
+        Assert.AreEqual("select", dialog.Fields.Single(field => string.Equals(field.Id, "uiGearBookFilter", StringComparison.Ordinal)).InputType);
+        CollectionAssert.AreEqual(
+            new[] { "All Books", "Core Rulebook" },
+            dialog.Fields.Single(field => string.Equals(field.Id, "uiGearBookFilter", StringComparison.Ordinal)).Options!.Select(option => option.Value).ToArray());
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearBrowseGrid"), "Name | Category | Avail | Cost");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearBrowseGrid"), "Medkit Rating 6 | Medical | 8 | ¥1,500");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSelectionTrail"), "Category Path | Gear > Firearms > Pistols > Ares Predator V");
@@ -1671,6 +1706,33 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateCommandDialog_new_character_uses_sr4_bp_defaults_when_requested()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "new_character",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr4);
+
+        Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
+        Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod"));
+        CollectionAssert.AreEqual(
+            new[] { "BP", "Karma" },
+            dialog.Fields
+                .Single(field => string.Equals(field.Id, "newCharacterBuildMethod", StringComparison.Ordinal))
+                .Options!
+                .Select(option => option.Value)
+                .ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "create_character", "cancel" },
+            dialog.Actions.Select(action => action.Id).ToArray());
+    }
+
+    [TestMethod]
     public void RebuildDynamicDialog_new_character_normalizes_build_method_for_selected_ruleset()
     {
         DesktopDialogState dialog = new(
@@ -1756,6 +1818,29 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.switch_ruleset", dialog.Id);
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "preferredRulesetId"));
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "apply_ruleset", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_switch_ruleset_uses_sr4_option_and_compact_footer_order()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "switch_ruleset",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr4);
+
+        CollectionAssert.Contains(
+            dialog.Fields.Single(field => string.Equals(field.Id, "preferredRulesetId", StringComparison.Ordinal)).Options!
+                .Select(option => option.Value)
+                .ToArray(),
+            RulesetDefaults.Sr4);
+        CollectionAssert.AreEqual(
+            new[] { "apply_ruleset", "cancel" },
+            dialog.Actions.Select(action => action.Id).ToArray());
     }
 
     [TestMethod]

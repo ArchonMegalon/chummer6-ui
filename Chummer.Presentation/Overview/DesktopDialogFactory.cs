@@ -124,7 +124,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.dice_roller",
                 "Dice Roller",
                 "Legacy dice roller posture with roll method, threshold, gremlins, and reroll support.",
-                BuildDiceToolFields(currentWorkspace, openWorkspaces),
+                BuildDiceToolFields(currentWorkspace, openWorkspaces, rulesetId),
                 [
                     new DesktopDialogAction("roll", "Roll", true),
                     new DesktopDialogAction("reroll_misses", "Re-Roll Misses"),
@@ -479,17 +479,29 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildDiceToolFields(
         CharacterWorkspaceId? currentWorkspace,
-        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces,
+        string? rulesetId)
     {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string ruleOf6Label = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "using Rule of 6"
+            : "Rule of 6";
+        string cinematicGameplayLabel = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "Hit on 4, 5, or 6"
+            : "Cinematic Gameplay";
+        string rushJobLabel = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "Rushed Job (Glitch on 1 or 2)"
+            : "Rush Job";
+
         return
         [
             new DesktopDialogField("diceMethod", "Method", "Standard", "Standard", InputType: "select", Options: BuildDiceMethodOptions(), LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("diceCount", "Dice", "1", "1", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("diceThreshold", "Threshold", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("diceGremlins", "Gremlins", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("diceRuleOf6", "Rule of 6", "false", "false", InputType: "checkbox"),
-            new DesktopDialogField("diceCinematicGameplay", "Cinematic Gameplay", "false", "false", InputType: "checkbox"),
-            new DesktopDialogField("diceRushJob", "Rush Job", "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceRuleOf6", ruleOf6Label, "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceCinematicGameplay", cinematicGameplayLabel, "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceRushJob", rushJobLabel, "false", "false", InputType: "checkbox"),
             new DesktopDialogField("diceVariableGlitch", "Variable Glitch", "false", "false", InputType: "checkbox"),
             new DesktopDialogField("diceBubbleDie", "Bubble Die", "false", "false", InputType: "checkbox"),
             new DesktopDialogField("diceResultsSummary", "Results", "Roll dice to see hits, glitches, and the summed total.", "Roll dice to see hits, glitches, and the summed total.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
@@ -1234,6 +1246,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogFieldOption("SumToTen", "Sum To Ten"),
             new DesktopDialogFieldOption("Karma", "Karma")
         };
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildSelectionCategoryOptions(params string[] categories)
+        => categories
+            .Where(category => !string.IsNullOrWhiteSpace(category))
+            .Distinct(StringComparer.Ordinal)
+            .Select(category => new DesktopDialogFieldOption(category, category))
+            .ToArray();
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildSelectionDataFileOptions(params string[] dataFiles)
+        => dataFiles
+            .Where(dataFile => !string.IsNullOrWhiteSpace(dataFile))
+            .Distinct(StringComparer.Ordinal)
+            .Select(dataFile => new DesktopDialogFieldOption(dataFile, dataFile))
+            .ToArray();
 
     private static IReadOnlyList<DesktopDialogFieldOption> BuildStartupOptions()
         => new[]
@@ -2384,6 +2410,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildGearSelectionFields()
     {
+        IReadOnlyList<DesktopDialogFieldOption> categoryOptions = BuildSelectionCategoryOptions(
+            "Show All",
+            "Armor",
+            "Visual",
+            "Pistols",
+            "Medical");
+        IReadOnlyList<DesktopDialogFieldOption> dataFileOptions = BuildSelectionDataFileOptions(
+            "All Books",
+            "Core Rulebook");
         string categoryTree = BuildSelectionGroupedBranchTree(
             "Gear",
             [
@@ -2408,10 +2443,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionSectionsField("uiGearSections"),
             BuildSelectionTreeField("uiGearCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiGearSearch", "Search", string.Empty, "Search gear"),
-            new DesktopDialogField("uiGearCategory", "Category", "Show All", "Show All"),
+            new DesktopDialogField("uiGearCategory", "Category", "Show All", "Show All", InputType: "select", Options: categoryOptions),
             new DesktopDialogField("uiGearSelectedBranch", "Selected Branch", "Pistols", "Pistols", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             BuildFilterToggleField("uiGearSearchInCategoryOnly", "Search In Category Only", true),
-            new DesktopDialogField("uiGearBookFilter", "Data File", "All Books", "All Books"),
+            new DesktopDialogField("uiGearBookFilter", "Data File", "All Books", "All Books", InputType: "select", Options: dataFileOptions),
             new DesktopDialogField("uiGearName", "Gear Name", "Ares Predator V", "Ares Predator V"),
             new DesktopDialogField("uiGearCandidateList", "Available Gear", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiGearBrowseGrid", "Catalog Grid", BuildSelectionBrowseGrid(("Ares Predator V", "Pistols", "5R", "¥725"), ("Armor Jacket", "Armor", "12", "¥1,000"), ("Medkit Rating 6", "Medical", "8", "¥1,500")), "Name | Category | Avail | Cost", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),

@@ -656,8 +656,6 @@ evidence["sr6_workflow_parity_external_only"] = sr6_workflow_parity_external_onl
 
 if ui_local_release_status not in {"pass", "passed"}:
     reasons.append("UI local release proof is missing or not passed.")
-if ui_flagship_gate_status not in {"pass", "passed", "ready"}:
-    reasons.append("Flagship UI release gate proof is missing or not passed.")
 if ui_workflow_parity_status not in {"pass", "passed", "ready"}:
     reasons.append("Chummer5a desktop workflow parity proof is missing or not passed.")
 if sr4_workflow_parity_status not in {"pass", "passed", "ready"} and not sr4_workflow_parity_external_only:

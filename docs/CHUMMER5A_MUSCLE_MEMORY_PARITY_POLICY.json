@@ -1,0 +1,69 @@
+{
+  "contractName": "chummer6-ui.chummer5a_muscle_memory_parity_policy",
+  "scopeStrategy": "all_oracle_tabs_workspace_actions_and_desktop_controls",
+  "summary": "Generic hard-parity policy for preserving Chummer5A mouse muscle memory across every promoted dialog, panel, grid, popup menu, and tooltip surface.",
+  "runtimeInventoryContract": "chummer6-ui.chummer5a_muscle_memory_inventory",
+  "requiredRuntimeTestMarkers": [
+    "Runtime_backed_chummer5a_muscle_memory_inventory_receipt_covers_every_surface_and_element",
+    "Runtime_backed_mouse_only_master_index_source_click_executes_open_source_action",
+    "Runtime_backed_mouse_only_character_roster_double_tap_opens_selected_runner"
+  ],
+  "fullScope": {
+    "tabsFromOracle": true,
+    "workspaceActionsFromOracle": true,
+    "desktopControlsFromOracle": true,
+    "popupMenusInScope": true,
+    "tooltipsInScope": true
+  },
+  "exitLayers": [
+    {
+      "id": "inventory_coverage",
+      "description": "Every promoted dialog, panel, grid, popup menu, and tooltip route listed by the parity oracle is in scope."
+    },
+    {
+      "id": "widget_class_parity",
+      "description": "Equivalent legacy controls keep the same widget class."
+    },
+    {
+      "id": "label_text_parity",
+      "description": "Visible labels and action captions stay legacy-identical except for trivial punctuation normalization."
+    },
+    {
+      "id": "action_geography_parity",
+      "description": "Buttons stay in the same action strip, left-to-right order, and normalized layout zone."
+    },
+    {
+      "id": "pointer_route_parity",
+      "description": "Left, double, right, middle, and wheel interactions remain functionally identical when legacy already had the same route."
+    },
+    {
+      "id": "mouse_only_replay",
+      "description": "Mouse-only veteran macros must land on the same visible result, including source-click and double-tap legacy routes."
+    }
+  ],
+  "detailedDialogChecks": [
+    {
+      "dialogId": "gear_add",
+      "legacyDesignerPath": "/docker/chummer5a/Chummer/Forms/Selection Forms/SelectGear.Designer.cs",
+      "legacyRequiredPatterns": [
+        "this.lblCategory.Text = \"Category:\";",
+        "this.cboCategory = new Chummer.ElasticComboBox();",
+        "this.cboCategory.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;",
+        "this.cboCategory.SelectedIndexChanged += new System.EventHandler(this.cboCategory_SelectedIndexChanged);",
+        "this.lstGear.DoubleClick += new System.EventHandler(this.cmdOK_Click);"
+      ],
+      "currentRequiredPatterns": [
+        "new DesktopDialogField(\"uiGearCategory\", \"Category\", \"Show All\", \"Show All\", InputType: \"select\"",
+        "categoryOptions = BuildSelectionCategoryOptions(",
+        "\"Pistols\"",
+        "\"Medical\"",
+        "new DesktopDialogField(\"uiGearBookFilter\", \"Data File\", \"All Books\", \"All Books\", InputType: \"select\"",
+        "dataFileOptions = BuildSelectionDataFileOptions("
+      ],
+      "requiredTestMarkers": [
+        "CreateUiControlDialog_gear_add_uses_selection_form_posture",
+        "Runtime_backed_gear_add_dialog_uses_legacy_category_combobox_posture"
+      ]
+    }
+  ]
+}

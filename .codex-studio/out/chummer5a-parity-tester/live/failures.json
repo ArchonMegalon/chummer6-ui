@@ -1,0 +1,95 @@
+{
+  "failures": [
+    {
+      "fixture": "(live user journey)",
+      "checkpoint": "user_journey_tester_trace",
+      "step": 1,
+      "category": "behavioral",
+      "severity": "blocking",
+      "expected": "User-journey trace should prove observable Linux desktop flows with the required assertions and screenshots.",
+      "actual": "user journey workflow file_new_character_visible_workspace is missing required assertion(s): starter_attributes_match_seeded_workspace, section_preview_omits_review_copy",
+      "reference_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/reference/reference-screenshots-not-captured.txt",
+      "actual_screenshot": "",
+      "diff_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/diff/diff-images-not-generated.txt",
+      "remediation_target": "Refresh the user-journey tester trace until the required Linux desktop workflows, screenshots, and assertions all pass."
+    },
+    {
+      "fixture": "(user journey audit)",
+      "checkpoint": "user_journey_tester_audit",
+      "step": 2,
+      "category": "behavioral",
+      "severity": "blocking",
+      "expected": "User-journey audit receipt should independently certify the Linux desktop proof trace with no remaining reasons or contract drift.",
+      "actual": "user journey audit receipt status is not pass/passed/ready: /docker/chummercomplete/chummer-presentation/.codex-studio/published/USER_JOURNEY_TESTER_AUDIT.generated.json; user journey audit receipt still reports reasons: tester trace is missing required user-observable assertion(s): file_new_character_visible_workspace: starter_attributes_match_seeded_workspace, section_preview_omits_review_copy; user journey audit receipt reports missing user-observable assertions: /docker/chummercomplete/chummer-presentation/.codex-studio/published/USER_JOURNEY_TESTER_AUDIT.generated.json",
+      "reference_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/reference/reference-screenshots-not-captured.txt",
+      "actual_screenshot": "",
+      "diff_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/diff/diff-images-not-generated.txt",
+      "remediation_target": "Refresh the separate user-journey tester audit until it passes against the same trace and screenshot set the parity gate is reading."
+    },
+    {
+      "fixture": "Bastion.chum5",
+      "checkpoint": "fixture_ui_reconstruction_receipt",
+      "step": 3,
+      "category": "behavioral",
+      "severity": "blocking",
+      "expected": "Bastion.chum5 should have a passing per-fixture UI reconstruction receipt.",
+      "actual": "Missing JSON receipt: /docker/chummercomplete/chummer-presentation/.codex-studio/published/chummer5a-fixture-ui-reconstruction/Bastion.chum5.generated.json",
+      "reference_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/reference/reference-screenshots-not-captured.txt",
+      "actual_screenshot": "",
+      "diff_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/diff/diff-images-not-generated.txt",
+      "remediation_target": "Refresh the UI reconstruction proof for Bastion.chum5 until the receipt passes with open/save/reload/roundtrip assertions and screenshot evidence."
+    },
+    {
+      "fixture": "Fuzzy-chargen.chum5",
+      "checkpoint": "fixture_ui_reconstruction_receipt",
+      "step": 4,
+      "category": "behavioral",
+      "severity": "blocking",
+      "expected": "Fuzzy-chargen.chum5 should have a passing per-fixture UI reconstruction receipt.",
+      "actual": "Missing JSON receipt: /docker/chummercomplete/chummer-presentation/.codex-studio/published/chummer5a-fixture-ui-reconstruction/Fuzzy-chargen.chum5.generated.json",
+      "reference_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/reference/reference-screenshots-not-captured.txt",
+      "actual_screenshot": "",
+      "diff_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/diff/diff-images-not-generated.txt",
+      "remediation_target": "Refresh the UI reconstruction proof for Fuzzy-chargen.chum5 until the receipt passes with open/save/reload/roundtrip assertions and screenshot evidence."
+    },
+    {
+      "fixture": "Soma.chum5",
+      "checkpoint": "fixture_ui_reconstruction_receipt",
+      "step": 5,
+      "category": "behavioral",
+      "severity": "blocking",
+      "expected": "Soma.chum5 should have a passing per-fixture UI reconstruction receipt.",
+      "actual": "Missing JSON receipt: /docker/chummercomplete/chummer-presentation/.codex-studio/published/chummer5a-fixture-ui-reconstruction/Soma.chum5.generated.json",
+      "reference_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/reference/reference-screenshots-not-captured.txt",
+      "actual_screenshot": "",
+      "diff_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/diff/diff-images-not-generated.txt",
+      "remediation_target": "Refresh the UI reconstruction proof for Soma.chum5 until the receipt passes with open/save/reload/roundtrip assertions and screenshot evidence."
+    },
+    {
+      "fixture": "Tenshi.chum5",
+      "checkpoint": "fixture_ui_reconstruction_receipt",
+      "step": 6,
+      "category": "behavioral",
+      "severity": "blocking",
+      "expected": "Tenshi.chum5 should have a passing per-fixture UI reconstruction receipt.",
+      "actual": "Missing JSON receipt: /docker/chummercomplete/chummer-presentation/.codex-studio/published/chummer5a-fixture-ui-reconstruction/Tenshi.chum5.generated.json",
+      "reference_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/reference/reference-screenshots-not-captured.txt",
+      "actual_screenshot": "",
+      "diff_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/diff/diff-images-not-generated.txt",
+      "remediation_target": "Refresh the UI reconstruction proof for Tenshi.chum5 until the receipt passes with open/save/reload/roundtrip assertions and screenshot evidence."
+    },
+    {
+      "fixture": "Popstar.chum5",
+      "checkpoint": "fixture_ui_reconstruction_receipt",
+      "step": 7,
+      "category": "behavioral",
+      "severity": "blocking",
+      "expected": "Popstar.chum5 should have a passing per-fixture UI reconstruction receipt.",
+      "actual": "Missing JSON receipt: /docker/chummercomplete/chummer-presentation/.codex-studio/published/chummer5a-fixture-ui-reconstruction/Popstar.chum5.generated.json",
+      "reference_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/reference/reference-screenshots-not-captured.txt",
+      "actual_screenshot": "",
+      "diff_screenshot": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-parity-tester/live/screenshots/diff/diff-images-not-generated.txt",
+      "remediation_target": "Refresh the UI reconstruction proof for Popstar.chum5 until the receipt passes with open/save/reload/roundtrip assertions and screenshot evidence."
+    }
+  ]
+}

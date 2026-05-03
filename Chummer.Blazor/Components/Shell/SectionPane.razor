@@ -600,7 +600,7 @@
         if (hasClassicFacts)
         {
             <section class="classic-runner-sheet">
-                <h3>Runner Summary</h3>
+                <h3>@BuildClassicSheetHeading()</h3>
                 if (summaryFacts.Count > 0)
                 {
                     <div class="classic-summary-grid">
@@ -1011,6 +1011,12 @@
             "progress" => "Karma Journal",
             _ => FormatSectionName(sectionId)
         };
+    }
+
+    private string BuildClassicSheetHeading()
+    {
+        string title = BuildSectionHeading();
+        return string.IsNullOrWhiteSpace(title) ? "Section" : title;
     }
 
     private IReadOnlyList<ClassicSheetFact> BuildClassicSummaryFacts()

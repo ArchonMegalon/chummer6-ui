@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+proof_file="$repo_root/.codex-studio/generated/rule-environment-studio-proof.json"
+
+if [[ -f "$proof_file" ]]; then
+  python3 "$repo_root/scripts/verify-avalonia-primary-route-proof.py" "$proof_file"
+else
+  echo "verify.sh: optional rule-environment studio proof not present at $proof_file; skipping package-specific proof check"
+fi
+
+bash "$repo_root/scripts/verify-releases-manifest.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
@@ -183,6 +196,15 @@ bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh
 
 echo "[verify] checking veteran task-time evidence gate..."
 bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh
+
+echo "[verify] checking Chummer5a legacy-equivalent chrome gate..."
+bash scripts/ai/milestones/chummer5a-legacy-equivalent-chrome-gate.sh
+
+echo "[verify] checking Chummer5a muscle-memory parity gate..."
+bash scripts/ai/milestones/chummer5a-muscle-memory-parity-gate.sh
+
+echo "[verify] checking Chummer4/SR4 muscle-memory parity gate..."
+bash scripts/ai/milestones/chummer4-sr4-muscle-memory-parity-gate.sh
 
 echo "[verify] checking Chummer5a screenshot review gate..."
 bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh

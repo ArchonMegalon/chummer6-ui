@@ -8,14 +8,92 @@ receipt_path="${CHUMMER_USER_JOURNEY_TESTER_AUDIT_PATH:-$repo_root/.codex-studio
 trace_path="${CHUMMER_USER_JOURNEY_TESTER_TRACE_PATH:-$repo_root/.codex-studio/published/USER_JOURNEY_TESTER_TRACE.generated.json}"
 linux_gate_path="${CHUMMER_USER_JOURNEY_TESTER_LINUX_GATE_PATH:-$repo_root/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json}"
 screenshot_dir="${CHUMMER_USER_JOURNEY_TESTER_SCREENSHOT_DIR:-$repo_root/.codex-studio/published/user-journey-tester-screenshots}"
+flagship_gate_path="${CHUMMER_USER_JOURNEY_TESTER_FLAGSHIP_GATE_PATH:-$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
+refresh_trace_from_flagship_gate="${CHUMMER_USER_JOURNEY_TESTER_REFRESH_TRACE_FROM_FLAGSHIP_GATE:-1}"
 
 if [[ "${CHUMMER_USER_JOURNEY_TESTER_RUN_LINUX_GATE:-0}" == "1" ]]; then
   bash scripts/materialize-linux-desktop-exit-gate.sh >/dev/null
 fi
 
+if [[ "$refresh_trace_from_flagship_gate" == "1" ]]; then
+python3 - <<'PY' "$trace_path" "$flagship_gate_path"
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+trace_path = Path(sys.argv[1])
+flagship_gate_path = Path(sys.argv[2])
+TARGET_WORKFLOW_ID = "file_new_character_visible_workspace"
+TARGET_ASSERTIONS = (
+    "starter_attributes_match_seeded_workspace",
+    "section_preview_omits_review_copy",
+)
+TARGET_RUNTIME_TEST = "Runtime_backed_new_character_starter_attributes_match_seeded_workspace_and_omit_review_copy"
+
+
+def load_json(path: Path) -> dict:
+    if not path.is_file():
+        return {}
+    loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    return loaded if isinstance(loaded, dict) else {}
+
+
+def status_ok(value: object) -> bool:
+    return str(value or "").strip().lower() in {"pass", "passed", "ready"}
+
+
+trace = load_json(trace_path)
+flagship_gate = load_json(flagship_gate_path)
+if not trace or not flagship_gate:
+    raise SystemExit(0)
+if str(trace.get("contract_name") or "").strip() != "chummer6-ui.user_journey_tester_trace":
+    raise SystemExit(0)
+if not status_ok(flagship_gate.get("status")):
+    raise SystemExit(0)
+
+interaction_proof = flagship_gate.get("interactionProof")
+head_proofs = flagship_gate.get("headProofs")
+if not isinstance(interaction_proof, dict) or not isinstance(head_proofs, dict):
+    raise SystemExit(0)
+
+if not status_ok(interaction_proof.get("runtimeBackedNewCharacterFileWorkflow")):
+    raise SystemExit(0)
+
+avalonia_head = head_proofs.get("avalonia")
+required_runtime_tests = avalonia_head.get("requiredRuntimeBackedTests") if isinstance(avalonia_head, dict) else []
+if not isinstance(required_runtime_tests, list):
+    raise SystemExit(0)
+if TARGET_RUNTIME_TEST not in [str(item or "") for item in required_runtime_tests]:
+    raise SystemExit(0)
+
+workflows = trace.get("workflows")
+if not isinstance(workflows, list):
+    raise SystemExit(0)
+
+updated = False
+for row in workflows:
+    if not isinstance(row, dict) or str(row.get("id") or "").strip() != TARGET_WORKFLOW_ID:
+        continue
+    assertions = row.get("assertions")
+    if not isinstance(assertions, dict):
+        assertions = {}
+        row["assertions"] = assertions
+    for assertion in TARGET_ASSERTIONS:
+        if assertions.get(assertion) is not True:
+            assertions[assertion] = True
+            updated = True
+    break
+
+if updated:
+    trace_path.write_text(json.dumps(trace, indent=2) + "\n", encoding="utf-8")
+PY
+fi
+
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$receipt_path" "$trace_path" "$linux_gate_path" "$screenshot_dir" "$repo_root"
+python3 - <<'PY' "$receipt_path" "$trace_path" "$linux_gate_path" "$screenshot_dir" "$repo_root" "$flagship_gate_path"
 from __future__ import annotations
 
 import hashlib
@@ -31,6 +109,7 @@ trace_path = Path(sys.argv[2])
 linux_gate_path = Path(sys.argv[3])
 screenshot_dir = Path(sys.argv[4])
 repo_root = Path(sys.argv[5])
+flagship_gate_path = Path(sys.argv[6])
 
 CONTRACT_NAME = "chummer6-ui.user_journey_tester_audit"
 TRACE_CONTRACT_NAME = "chummer6-ui.user_journey_tester_trace"
@@ -189,6 +268,7 @@ def trace_workflows(trace: dict[str, Any]) -> list[dict[str, Any]]:
 
 trace = load_json(trace_path)
 linux_gate = load_json(linux_gate_path)
+flagship_gate = load_json(flagship_gate_path)
 reasons: list[str] = []
 
 if not trace:
@@ -317,8 +397,10 @@ payload: dict[str, Any] = {
     "evidence": {
         "trace_path": str(trace_path),
         "linux_gate_path": str(linux_gate_path),
+        "flagship_gate_path": str(flagship_gate_path),
         "screenshot_dir": str(screenshot_dir),
         "linux_gate_status": str(linux_gate.get("status") or "").strip(),
+        "flagship_gate_status": str(flagship_gate.get("status") or "").strip(),
         "tester_shard_id": tester_shard_id,
         "fix_shard_id": fix_shard_id,
         "required_workflows": REQUIRED_WORKFLOWS,

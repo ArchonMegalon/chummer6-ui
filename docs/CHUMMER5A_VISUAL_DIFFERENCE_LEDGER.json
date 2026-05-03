@@ -177,7 +177,7 @@
           "uiElement": "SectionHostControl.ClassicCharacterSheetBorder/ClassicCharacterSummaryTitle/ClassicCharacterFactsPanel",
           "category": "summary_band",
           "legacyPosture": "frmCareer kept the runner summary woven into the character form rather than in detached cards or a landing dashboard.",
-          "currentPosture": "The promoted shell recreates that effect as a compact Runner Summary band inside SectionHostControl instead of copying the old form layout exactly.",
+          "currentPosture": "The promoted shell recreates that effect as a compact section-scoped summary band inside SectionHostControl instead of copying the old form layout exactly.",
           "whyItDiffers": "The familiarity target is a dense always-near summary, not a pixel match to every legacy panel edge."
         },
         {
@@ -610,7 +610,7 @@
           "uiElement": "SectionHostControl.ClassicCharacterSheetBorder",
           "category": "summary_band",
           "legacyPosture": "The old creation experience kept a compact runner summary close to the editing surface rather than delegating it to an external dashboard.",
-          "currentPosture": "The promoted creation surface uses the same Runner Summary band to keep the character sheet posture visible while editing attributes.",
+          "currentPosture": "The promoted creation surface uses the same compact summary band to keep the character sheet posture visible while editing attributes.",
           "whyItDiffers": "One summary-band implementation is cheaper to maintain and still gives the user the same dense builder cue."
         },
         {
