@@ -496,7 +496,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             new DesktopDialogField("diceMethod", "Method", "Standard", "Standard", InputType: "select", Options: BuildDiceMethodOptions(), LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("diceCount", "Dice", "1", "1", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("diceCount", "Dice", "1", "1", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("diceThreshold", "Threshold", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("diceGremlins", "Gremlins", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("diceRuleOf6", ruleOf6Label, "false", "false", InputType: "checkbox"),
@@ -1209,7 +1209,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferNightlyBuilds ? "true" : "false",
                 "true",
                 InputType: "checkbox",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField(
                 "globalCharacterRosterPath",
                 "Character Roster Watch Folder",
@@ -3991,7 +3991,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                     Options: [new DesktopDialogFieldOption(string.Empty, "No indexed entries discovered.")]),
                 new DesktopDialogField("masterIndexSnippetPreview", "Notes", string.Empty, string.Empty, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                new DesktopDialogField("masterIndexCurrentSourcebook", "Source", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField("masterIndexCurrentSourcebook", "Source", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField("masterIndexCurrentFile", "Current Data File", "All data files", "All data files", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexSnapshot", "Snapshot", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -4007,7 +4007,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", "0/0 · missing", "0/0 · missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexHouseRuleLane", "House Rules", "missing · 0 overlays", "missing · 0 overlays", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-                new DesktopDialogField("masterIndexSettingsSummary", "Use Setting", "Current defaults", "Current defaults", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+                new DesktopDialogField("masterIndexSettingsSummary", "Use Setting", "Current defaults", "Current defaults", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Full)
             ];
 
             emptyStateFields.InsertRange(10, BuildSourcebookSelectionFields(masterIndex, []));
@@ -4086,7 +4086,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                 Options: resultOptions),
             new DesktopDialogField("masterIndexSnippetPreview", "Notes", snippetPreview, snippetPreview, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("masterIndexCurrentSourcebook", "Source", sourcebookDisplay, sourcebookDisplay, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("masterIndexCurrentSourcebook", "Source", sourcebookDisplay, sourcebookDisplay, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", selectedSource, selectedSource, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexCurrentFile", "Current Data File", selectedFileSummary, selectedFileSummary, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexSnapshot", "Snapshot", snapshot, snapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -4108,7 +4108,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 $"Current defaults · {masterIndex.SettingsProfileCount} profiles · {masterIndex.SettingsLanePosture}",
                 "Current defaults",
                 IsReadOnly: true,
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Full)
         ];
 
         fields.InsertRange(10, BuildSourcebookSelectionFields(masterIndex, sourcebooks));

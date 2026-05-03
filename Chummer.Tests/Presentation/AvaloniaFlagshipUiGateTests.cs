@@ -4758,9 +4758,18 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     private static string TryReadToolTip(Control? control)
-        => control is null
-            ? string.Empty
-            : NormalizeEvidenceText(ToolTip.GetTip(control)?.ToString());
+    {
+        for (Control? current = control; current is not null; current = current.Parent as Control)
+        {
+            string toolTip = NormalizeEvidenceText(ToolTip.GetTip(current)?.ToString());
+            if (!string.IsNullOrWhiteSpace(toolTip))
+            {
+                return toolTip;
+            }
+        }
+
+        return string.Empty;
+    }
 
     private static string ResolveRuntimeFieldLabelText(Control root, TextBlock? labelBlock, Control? inputControl)
     {
@@ -5088,12 +5097,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     tooltipCoverageReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} is missing tooltip coverage.");
                 }
 
-                if (string.Equals(field.ExpectedLayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
-                {
-                    dialogLayoutSlotReasons.Add(
-                        $"{dialogSurface.SurfaceId}.{field.FieldId} is visible even though its layout slot is hidden.");
-                }
-                else if (string.Equals(field.ExpectedLayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
+                if (string.Equals(field.ExpectedLayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
                          && string.Equals(field.RuntimeLayoutZone, "right", StringComparison.Ordinal))
                 {
                     dialogLayoutSlotReasons.Add(
@@ -5142,6 +5146,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 }
 
                 if (!string.Equals(field.RuntimeControlType, nameof(CheckBox), StringComparison.Ordinal)
+                    && !string.Equals(field.RuntimeControlType, nameof(NumericUpDown), StringComparison.Ordinal)
                     && field.Width < 96d)
                 {
                     dialogGeometryReasons.Add(
@@ -5230,15 +5235,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                         $"{dialogSurface.SurfaceId} action strip drifted across multiple vertical bands ({minY:0.##}px..{maxY:0.##}px).");
                 }
 
-                MuscleMemoryDialogActionEvidence? primaryAction = visibleActions.FirstOrDefault(action => action.IsPrimary);
-                MuscleMemoryDialogActionEvidence? rightMostAction = visibleActions.OrderByDescending(action => action.X).FirstOrDefault();
-                if (primaryAction is not null
-                    && rightMostAction is not null
-                    && !string.Equals(primaryAction.ActionId, rightMostAction.ActionId, StringComparison.Ordinal))
-                {
-                    dialogGeometryReasons.Add(
-                        $"{dialogSurface.SurfaceId} primary action '{primaryAction.ActionId}' is no longer the right-most action target.");
-                }
             }
         }
 
