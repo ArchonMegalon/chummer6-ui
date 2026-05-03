@@ -67,7 +67,7 @@
                 Padding="3,2">
           <StackPanel Spacing="4">
             <TextBlock x:Name="ClassicCharacterSummaryTitle"
-                       Text="Runner Summary"
+                       Text="Section"
                        Classes="shell-section-title" />
             <WrapPanel x:Name="ClassicCharacterFactsPanel"
                        Orientation="Horizontal"

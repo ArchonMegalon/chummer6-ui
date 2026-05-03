@@ -487,10 +487,12 @@ public sealed class DesktopExecutableGateComplianceTests
         string executableScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
         string visualScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
         string workflowScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string windowsGateScriptPath = Path.Combine(repoRoot, "scripts", "materialize-windows-desktop-exit-gate.sh");
 
         string executableScriptText = File.ReadAllText(executableScriptPath);
         string visualScriptText = File.ReadAllText(visualScriptPath);
         string workflowScriptText = File.ReadAllText(workflowScriptPath);
+        string windowsGateScriptText = File.ReadAllText(windowsGateScriptPath);
 
         StringAssert.Contains(executableScriptText, "visual_familiarity.release_channel_channel_id");
         StringAssert.Contains(executableScriptText, "workflow_execution.release_channel_channel_id");
@@ -778,6 +780,10 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(visualScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
         StringAssert.Contains(visualScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(visualScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head visual proof:");
+        Assert.IsFalse(
+            visualScriptText.Contains("Flagship UI release gate is missing or not passing.", StringComparison.Ordinal),
+            "Visual gate must not depend on the aggregate flagship gate already passing."
+        );
 
         StringAssert.Contains(workflowScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(workflowScriptText, "release_channel_channel_id");
@@ -788,6 +794,14 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(workflowScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
         StringAssert.Contains(workflowScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(workflowScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head workflow execution proof:");
+        Assert.IsFalse(
+            executableScriptText.Contains("Flagship UI release gate is missing or not passing.", StringComparison.Ordinal),
+            "Executable gate must not depend on the aggregate flagship gate already passing."
+        );
+        Assert.IsFalse(
+            windowsGateScriptText.Contains("Flagship UI release gate proof is missing or not passed.", StringComparison.Ordinal),
+            "Windows gate must not depend on the aggregate flagship gate already passing."
+        );
     }
 
     [TestMethod]

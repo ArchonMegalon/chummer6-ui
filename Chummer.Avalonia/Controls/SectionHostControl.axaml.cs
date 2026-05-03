@@ -129,7 +129,7 @@ public partial class SectionHostControl : UserControl
 
         IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts = BuildCharacterSummaryFacts(previewJson);
         IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts = BuildCharacterAttributeFacts(previewJson, rows);
-        ClassicCharacterSummaryTitle.Text = BuildClassicSheetTitle(sectionId, summaryFacts, attributeFacts);
+        ClassicCharacterSummaryTitle.Text = BuildClassicSheetTitle(sectionId, previewJson);
 
         foreach (ClassicSheetFactDisplayItem fact in summaryFacts)
         {
@@ -811,7 +811,6 @@ public partial class SectionHostControl : UserControl
         string rawSection = string.IsNullOrWhiteSpace(sectionId) ? previewSection ?? "Section" : sectionId;
         return rawSection.Trim().ToLowerInvariant() switch
         {
-            "summary" => "Runner Summary",
             "profile" => "Profile",
             "cyberwares" => "Cyberware",
             "attributedetails" => "Attributes",
@@ -981,24 +980,10 @@ public partial class SectionHostControl : UserControl
 
     private static string BuildClassicSheetTitle(
         string? sectionId,
-        IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts,
-        IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts)
+        string previewJson)
     {
-        string title = string.IsNullOrWhiteSpace(sectionId)
-            ? "Runner Summary"
-            : BuildSectionTitle(sectionId, "{}");
-        if (attributeFacts.Count > 0
-            && (string.Equals(sectionId, "profile", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(sectionId, "summary", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(sectionId, "attributes", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(sectionId, "attributedetails", StringComparison.OrdinalIgnoreCase)))
-        {
-            return "Runner Summary";
-        }
-
-        return summaryFacts.Count > 0 || attributeFacts.Count > 0
-            ? $"{title} Overview"
-            : title;
+        string title = BuildSectionTitle(sectionId, previewJson);
+        return string.IsNullOrWhiteSpace(title) ? "Section" : title;
     }
 
     private static string BuildSectionPreviewText(

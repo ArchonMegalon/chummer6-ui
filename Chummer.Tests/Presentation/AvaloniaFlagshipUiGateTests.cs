@@ -99,6 +99,63 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly string[] ExpectedNavigatorWorkflowSurfaceSelection = ["workflow-progress"];
     private static readonly string[] ExpectedSettingsCommandSelection = ["global_settings"];
     private static readonly string[] ExpectedSaveDialogActionSelection = ["save"];
+    private static readonly string[] RequiredMuscleMemoryCommandDialogIds = AppCommandCatalog.All
+        .Select(command => command.Id)
+        .Where(OverviewCommandPolicy.IsDialogCommand)
+        .Where(commandId => !OverviewCommandPolicy.IsRuntimeInspectorCommand(commandId))
+        .OrderBy(commandId => commandId, StringComparer.Ordinal)
+        .ToArray();
+    private static readonly IReadOnlyDictionary<string, string> MuscleMemorySectionByUiControlId =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["create_entry"] = "progress",
+            ["delete_entry"] = "progress",
+            ["edit_entry"] = "progress",
+            ["open_notes"] = "notes",
+            ["move_up"] = "progress",
+            ["move_down"] = "progress",
+            ["toggle_free_paid"] = "progress",
+            ["show_source"] = "rules",
+            ["gear_add"] = "inventory",
+            ["gear_edit"] = "inventory",
+            ["gear_delete"] = "inventory",
+            ["gear_mount"] = "inventory",
+            ["gear_source"] = "inventory",
+            ["cyberware_add"] = "cyberwares",
+            ["cyberware_edit"] = "cyberwares",
+            ["cyberware_delete"] = "cyberwares",
+            ["drug_add"] = "drugs",
+            ["drug_delete"] = "drugs",
+            ["magic_add"] = "spells",
+            ["magic_delete"] = "spells",
+            ["magic_bind"] = "spells",
+            ["magic_source"] = "spells",
+            ["spell_add"] = "spells",
+            ["adept_power_add"] = "powers",
+            ["complex_form_add"] = "complexforms",
+            ["initiation_add"] = "initiationgrades",
+            ["spirit_add"] = "spirits",
+            ["critter_power_add"] = "critterpowers",
+            ["matrix_program_add"] = "complexforms",
+            ["skill_add"] = "skills",
+            ["skill_specialize"] = "skills",
+            ["skill_remove"] = "skills",
+            ["skill_group"] = "skills",
+            ["combat_add_weapon"] = "weapons",
+            ["combat_add_armor"] = "armors",
+            ["combat_reload"] = "weapons",
+            ["combat_damage_track"] = "build",
+            ["vehicle_add"] = "vehicles",
+            ["vehicle_edit"] = "vehicles",
+            ["vehicle_delete"] = "vehicles",
+            ["vehicle_mod_add"] = "vehicles",
+            ["contact_add"] = "contacts",
+            ["contact_edit"] = "contacts",
+            ["contact_remove"] = "contacts",
+            ["contact_connection"] = "contacts",
+            ["quality_add"] = "qualities",
+            ["quality_delete"] = "qualities"
+        };
     private static readonly VeteranCertificationReviewStep[] VeteranCertificationReviewSteps =
     [
         new(
@@ -1882,6 +1939,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             ListBox attributeRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
             Expander previewExpander = harness.FindControl<Expander>("SectionReviewExpander");
+            TextBlock classicSummaryTitle = harness.FindControl<TextBlock>("ClassicCharacterSummaryTitle");
 
             harness.WaitUntil(() =>
             {
@@ -1909,6 +1967,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsFalse(
                 (previewExpander.Header?.ToString() ?? string.Empty).Contains("Review", StringComparison.OrdinalIgnoreCase),
                 "The section preview header must not invent Review chrome that Chummer5A never had.");
+            Assert.IsFalse(
+                (classicSummaryTitle.Text ?? string.Empty).Contains("Runner Summary", StringComparison.Ordinal),
+                "The dense workbench must not reintroduce synthetic Runner Summary chrome once the same function already lives inside the classic sheet posture.");
         });
     }
 
@@ -1944,6 +2005,63 @@ public sealed class AvaloniaFlagshipUiGateTests
             StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<buildmethod>BP</buildmethod>");
             StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<gameedition>SR4</gameedition>");
         });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_gear_add_dialog_uses_legacy_category_combobox_posture()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SetActiveSectionForTesting("inventory");
+            harness.OpenUiControl("gear_add");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.ui.gear_add" });
+
+            TextBlock categoryLabel = harness.FindControl<TextBlock>(DesktopDialogAccessibility.BuildFieldLabelName("uiGearCategory"));
+            ComboBox categoryCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCategory"));
+            ComboBox dataFileCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearBookFilter"));
+
+            Assert.AreEqual("Category", categoryLabel.Text);
+            Assert.AreEqual("Show All", (categoryCombo.SelectedItem as DesktopDialogFieldOption)?.Value);
+            CollectionAssert.AreEqual(
+                new[] { "Show All", "Armor", "Visual", "Pistols", "Medical" },
+                categoryCombo.ItemsSource!.OfType<DesktopDialogFieldOption>().Select(option => option.Value).ToArray());
+            CollectionAssert.AreEqual(
+                new[] { "All Books", "Core Rulebook" },
+                dataFileCombo.ItemsSource!.OfType<DesktopDialogFieldOption>().Select(option => option.Value).ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_chummer5a_muscle_memory_inventory_receipt_covers_every_surface_and_element()
+    {
+        MuscleMemoryInventoryReceipt receipt = CaptureMuscleMemoryInventoryReceipt(
+            assertion => WithLoadedRunnerHarness(assertion),
+            "chummer6-ui.chummer5a_muscle_memory_inventory",
+            "Runtime muscle-memory inventory captured every shell, menu, workspace, and dialog surface without generic parity drift.",
+            "Runtime muscle-memory inventory found generic parity drift in the promoted UI surface inventory.");
+        PersistMuscleMemoryInventoryReceipt(receipt, ResolveChummer5aMuscleMemoryInventoryReceiptPath());
+
+        if (receipt.Reasons.Length > 0)
+        {
+            Assert.Fail(string.Join(Environment.NewLine, receipt.Reasons));
+        }
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_chummer4_muscle_memory_inventory_receipt_covers_every_surface_and_element()
+    {
+        MuscleMemoryInventoryReceipt receipt = CaptureMuscleMemoryInventoryReceipt(
+            assertion => WithSr4LoadedRunnerHarness(assertion),
+            "chummer6-ui.chummer4_sr4_muscle_memory_inventory",
+            "SR4/Chummer4 muscle-memory inventory captured every promoted shell, menu, workspace, and dialog surface without generic parity drift.",
+            "SR4/Chummer4 muscle-memory inventory found promoted-surface parity drift in the runtime desktop inventory.");
+        PersistMuscleMemoryInventoryReceipt(receipt, ResolveSr4MuscleMemoryInventoryReceiptPath());
+
+        if (receipt.Reasons.Length > 0)
+        {
+            Assert.Fail(string.Join(Environment.NewLine, receipt.Reasons));
+        }
     }
 
     [TestMethod]
@@ -2019,6 +2137,24 @@ public sealed class AvaloniaFlagshipUiGateTests
             modifyButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             harness.WaitUntil(() =>
                 harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.character_settings" });
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_mouse_only_master_index_source_click_executes_open_source_action()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("master_index");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.master_index" });
+
+            harness.Click(DesktopDialogAccessibility.BuildFieldInputName("masterIndexCurrentSourcebook"));
+            harness.WaitUntil(() => harness.Presenter.ExecutedDialogActionIds.Contains("open_source"));
+            Assert.AreEqual(
+                "dialog.master_index",
+                harness.Window.PeekDialogWindowForTesting()?.BoundDialogId,
+                "Source click must stay on the legacy Master Index surface after opening the linked PDF route.");
         });
     }
 
@@ -2123,6 +2259,33 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_backed_mouse_only_character_roster_double_tap_opens_selected_runner()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("character_roster");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.character_roster" });
+
+            string selectedRunnerId = DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "rosterSelectedRunnerId") ?? string.Empty;
+            Assert.IsFalse(
+                string.IsNullOrWhiteSpace(selectedRunnerId),
+                "Character Roster must have a selected runner before the legacy double-click route is exercised.");
+
+            harness.DoubleTap(DesktopDialogAccessibility.BuildFieldInputName("rosterSelectedRunnerId"));
+            harness.WaitUntil(() => harness.Presenter.ExecutedDialogActionIds.Contains("open_runner"));
+            harness.WaitUntil(() => harness.Presenter.State.ActiveDialog is null);
+            Assert.AreEqual(
+                selectedRunnerId,
+                harness.Presenter.State.WorkspaceId?.Value,
+                "Double-tapping the selected roster runner must activate that runner.");
+            Assert.IsNull(
+                harness.Window.PeekDialogWindowForTesting(),
+                "Double-tapping the selected roster runner must dismiss the roster dialog once the runner is opened.");
+        });
+    }
+
+    [TestMethod]
     public void Active_dialog_screenshots_capture_the_modal_window_surface()
     {
         WithLoadedRunnerHarness(harness =>
@@ -2166,6 +2329,252 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Assert.IsTrue(harness.ScreenshotRootContainsVisibleText("Startup Ruleset"));
             Assert.IsTrue(harness.ScreenshotRootContainsVisibleText("Ruleset"));
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_switch_ruleset_dialog_preserves_compact_combo_posture()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("switch_ruleset", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.switch_ruleset" });
+
+            ComboBox? rulesetCombo = harness.FindControlOnScreenshotRootOrDefault<ComboBox>(
+                DesktopDialogAccessibility.BuildFieldInputName("preferredRulesetId"));
+            TextBox? rulesetTextBox = harness.FindControlOnScreenshotRootOrDefault<TextBox>(
+                DesktopDialogAccessibility.BuildFieldInputName("preferredRulesetId"));
+
+            Assert.IsNotNull(rulesetCombo, "SR4 ruleset switching must preserve a legacy-style chooser.");
+            Assert.IsNull(rulesetTextBox, "SR4 ruleset switching must not degrade into a freeform textbox.");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_new_character_dialog_preserves_chummer4_build_method_combo_posture()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            ComboBox rulesetCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId"));
+            DesktopDialogFieldOption sr4Option = rulesetCombo.ItemsSource
+                .OfType<DesktopDialogFieldOption>()
+                .First(option => string.Equals(option.Value, RulesetDefaults.Sr4, StringComparison.Ordinal));
+            rulesetCombo.SelectedItem = sr4Option;
+
+            harness.WaitUntil(() =>
+                harness.Presenter.DialogFieldUpdates.Any(update =>
+                    string.Equals(update.FieldId, "newCharacterRulesetId", StringComparison.Ordinal)
+                    && string.Equals(update.Value, RulesetDefaults.Sr4, StringComparison.Ordinal)));
+
+            ComboBox? buildMethodCombo = harness.FindControlOnScreenshotRootOrDefault<ComboBox>(
+                DesktopDialogAccessibility.BuildFieldInputName("newCharacterBuildMethod"));
+            TextBox? buildMethodTextBox = harness.FindControlOnScreenshotRootOrDefault<TextBox>(
+                DesktopDialogAccessibility.BuildFieldInputName("newCharacterBuildMethod"));
+
+            Assert.IsNotNull(buildMethodCombo, "SR4 new-character posture must preserve a Chummer4-style build-method combo.");
+            Assert.IsNull(buildMethodTextBox, "SR4 new-character posture must not degrade build method into a textbox.");
+            Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "newCharacterBuildMethod"));
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_new_character_preserves_modify_button_row_order_and_footer_posture()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            ComboBox rulesetCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId"));
+            DesktopDialogFieldOption sr4Option = rulesetCombo.ItemsSource
+                .OfType<DesktopDialogFieldOption>()
+                .First(option => string.Equals(option.Value, RulesetDefaults.Sr4, StringComparison.Ordinal));
+            rulesetCombo.SelectedItem = sr4Option;
+
+            harness.WaitUntil(() =>
+                harness.Presenter.DialogFieldUpdates.Any(update =>
+                    string.Equals(update.FieldId, "newCharacterRulesetId", StringComparison.Ordinal)
+                    && string.Equals(update.Value, RulesetDefaults.Sr4, StringComparison.Ordinal)));
+
+            Control root = harness.GetScreenshotRootControlForTesting();
+            ComboBox buildMethodCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterBuildMethod"));
+            ComboBox rebuiltRulesetCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId"));
+            Button modifyButton = harness.FindControl<Button>("newCharacterModifyButton");
+            Button createButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("create_character"));
+            Button cancelButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("cancel"));
+
+            Rect buildMethodBounds = GetBoundsRelativeToRoot(buildMethodCombo, root);
+            Rect rulesetBounds = GetBoundsRelativeToRoot(rebuiltRulesetCombo, root);
+            Rect modifyBounds = GetBoundsRelativeToRoot(modifyButton, root);
+            Rect createBounds = GetBoundsRelativeToRoot(createButton, root);
+            Rect cancelBounds = GetBoundsRelativeToRoot(cancelButton, root);
+
+            Assert.IsTrue(
+                Math.Abs(buildMethodBounds.Y - modifyBounds.Y) <= 18d,
+                $"SR4 build-method chooser and Modify button must stay on the same row band, actual {buildMethodBounds.Y:0.##} vs {modifyBounds.Y:0.##}.");
+            Assert.IsTrue(
+                modifyBounds.X > buildMethodBounds.X,
+                "SR4 Modify button must stay to the right of the build-method chooser.");
+            Assert.IsTrue(
+                rulesetBounds.Y > buildMethodBounds.Y,
+                "SR4 ruleset chooser must remain below the build-method row.");
+            Assert.IsTrue(
+                Math.Abs(createBounds.Y - cancelBounds.Y) <= 18d,
+                $"SR4 footer actions must stay on one band, actual {createBounds.Y:0.##} vs {cancelBounds.Y:0.##}.");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_dice_roller_preserves_chummer4_checkbox_copy()
+    {
+        WithSr4LoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("dice_roller");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.dice_roller" });
+
+            string[] checkboxLabels =
+            [
+                harness.FindControl<CheckBox>(DesktopDialogAccessibility.BuildFieldInputName("diceRuleOf6")).Content?.ToString() ?? string.Empty,
+                harness.FindControl<CheckBox>(DesktopDialogAccessibility.BuildFieldInputName("diceCinematicGameplay")).Content?.ToString() ?? string.Empty,
+                harness.FindControl<CheckBox>(DesktopDialogAccessibility.BuildFieldInputName("diceRushJob")).Content?.ToString() ?? string.Empty
+            ];
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "using Rule of 6",
+                    "Hit on 4, 5, or 6",
+                    "Rushed Job (Glitch on 1 or 2)"
+                },
+                checkboxLabels);
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_dice_roller_preserves_chummer4_spinner_posture_and_topbar_geography()
+    {
+        WithSr4LoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("dice_roller");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.dice_roller" });
+
+            Control root = harness.GetScreenshotRootControlForTesting();
+            NumericUpDown diceCount = harness.FindControl<NumericUpDown>(DesktopDialogAccessibility.BuildFieldInputName("diceCount"));
+            NumericUpDown threshold = harness.FindControl<NumericUpDown>(DesktopDialogAccessibility.BuildFieldInputName("diceThreshold"));
+            NumericUpDown gremlins = harness.FindControl<NumericUpDown>(DesktopDialogAccessibility.BuildFieldInputName("diceGremlins"));
+            ComboBox methodCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("diceMethod"));
+            ListBox resultsList = harness.FindControl<ListBox>(DesktopDialogAccessibility.BuildFieldInputName("diceResultsList"));
+            Button rollButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("roll"));
+            Button rerollButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("reroll_misses"));
+
+            Rect diceCountBounds = GetBoundsRelativeToRoot(diceCount, root);
+            Rect methodBounds = GetBoundsRelativeToRoot(methodCombo, root);
+            Rect rollBounds = GetBoundsRelativeToRoot(rollButton, root);
+            Rect rerollBounds = GetBoundsRelativeToRoot(rerollButton, root);
+            Rect thresholdBounds = GetBoundsRelativeToRoot(threshold, root);
+            Rect gremlinsBounds = GetBoundsRelativeToRoot(gremlins, root);
+            Rect resultsListBounds = GetBoundsRelativeToRoot(resultsList, root);
+
+            Assert.IsTrue(
+                Math.Abs(diceCountBounds.Y - methodBounds.Y) <= 18d
+                && Math.Abs(methodBounds.Y - rollBounds.Y) <= 18d,
+                "SR4 dice-count spinner, method combo, and Roll button must stay on the legacy top bar.");
+            Assert.IsTrue(
+                diceCountBounds.X < methodBounds.X
+                && methodBounds.X < rollBounds.X
+                && rollBounds.X < rerollBounds.X,
+                "SR4 dice roller top-bar controls must preserve the legacy left-to-right order.");
+            Assert.IsTrue(
+                thresholdBounds.X >= methodBounds.X
+                && gremlinsBounds.X >= methodBounds.X,
+                "SR4 threshold and gremlins spinners must stay in the right-side option pane.");
+            Assert.IsTrue(
+                Math.Abs(thresholdBounds.X - gremlinsBounds.X) <= 24d
+                && gremlinsBounds.Y > thresholdBounds.Y,
+                "SR4 threshold and gremlins spinners must stay vertically stacked in the same control column.");
+            Assert.IsTrue(
+                resultsListBounds.X < thresholdBounds.X,
+                "SR4 roll history list must stay in the left pane rather than collapsing into the right-side controls.");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_starter_runner_gear_add_uses_chummer4_category_combobox_posture()
+    {
+        WithSr4LoadedRunnerHarness(harness =>
+        {
+            harness.SetActiveSectionForTesting("inventory");
+            harness.OpenUiControl("gear_add");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.ui.gear_add" });
+
+            TextBlock categoryLabel = harness.FindControl<TextBlock>(DesktopDialogAccessibility.BuildFieldLabelName("uiGearCategory"));
+            ComboBox categoryCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCategory"));
+            TextBox? categoryTextBox = harness.FindControlOrDefault<TextBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCategory"));
+
+            Assert.AreEqual("Category", categoryLabel.Text);
+            Assert.IsNotNull(categoryCombo, "SR4 gear selection must preserve a category combo.");
+            Assert.IsNull(categoryTextBox, "SR4 gear selection must not degrade category into a textbox.");
+            Assert.AreEqual("Show All", (categoryCombo.SelectedItem as DesktopDialogFieldOption)?.Value);
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_starter_runner_gear_add_preserves_two_pane_geography_and_primary_action_band()
+    {
+        WithSr4LoadedRunnerHarness(harness =>
+        {
+            harness.SetActiveSectionForTesting("inventory");
+            harness.OpenUiControl("gear_add");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.ui.gear_add" });
+
+            Control root = harness.GetScreenshotRootControlForTesting();
+            ComboBox categoryCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCategory"));
+            ComboBox dataFileCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearBookFilter"));
+            Control candidateList = harness.FindControl<Control>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCandidateList"));
+            Control browseGrid = harness.FindControl<Control>(DesktopDialogAccessibility.BuildFieldInputName("uiGearBrowseGrid"));
+            Control selectionDetails = harness.FindControl<Control>(DesktopDialogAccessibility.BuildFieldInputName("uiGearSelectionDetails"));
+            Button addButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("add"));
+            Button addMoreButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("add_more"));
+            Button cancelButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("cancel"));
+
+            Rect categoryBounds = GetBoundsRelativeToRoot(categoryCombo, root);
+            Rect dataFileBounds = GetBoundsRelativeToRoot(dataFileCombo, root);
+            Rect candidateBounds = GetBoundsRelativeToRoot(candidateList, root);
+            Rect browseGridBounds = GetBoundsRelativeToRoot(browseGrid, root);
+            Rect detailsBounds = GetBoundsRelativeToRoot(selectionDetails, root);
+            Rect addBounds = GetBoundsRelativeToRoot(addButton, root);
+            Rect addMoreBounds = GetBoundsRelativeToRoot(addMoreButton, root);
+            Rect cancelBounds = GetBoundsRelativeToRoot(cancelButton, root);
+
+            Assert.IsTrue(
+                categoryBounds.Y < candidateBounds.Y,
+                "SR4 gear category chooser must stay above the browse list.");
+            Assert.IsTrue(
+                dataFileBounds.Y < detailsBounds.Y,
+                "SR4 gear data-file filter must stay above the right-side detail pane.");
+            Assert.IsTrue(
+                candidateBounds.X < browseGridBounds.X,
+                "SR4 gear browse list must stay to the left of the paired browse grid.");
+            Assert.IsTrue(
+                detailsBounds.Y > browseGridBounds.Y,
+                "SR4 gear selection details must stay below the top browse row rather than replacing it.");
+            Assert.IsTrue(
+                Math.Abs(addBounds.Y - addMoreBounds.Y) <= 18d
+                && Math.Abs(addBounds.Y - cancelBounds.Y) <= 18d,
+                "SR4 gear add/footer actions must stay on a single legacy action band.");
         });
     }
 
@@ -2432,11 +2841,15 @@ public sealed class AvaloniaFlagshipUiGateTests
             ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox sectionPreview = harness.FindControl<TextBox>("SectionPreviewBox");
             Control classicCharacterSheet = harness.FindControl<Control>("ClassicCharacterSheetBorder");
+            TextBlock classicSummaryTitle = harness.FindControl<TextBlock>("ClassicCharacterSummaryTitle");
 
             harness.WaitUntil(() => sectionRows.ItemCount >= 8);
             string[] rowText = SnapshotListBoxItems(sectionRows).Select(item => item.ToString() ?? string.Empty).ToArray();
 
-            Assert.IsTrue(classicCharacterSheet.IsVisible, "Dense character-sheet posture must surface a visible runner summary band.");
+            Assert.IsTrue(classicCharacterSheet.IsVisible, "Dense character-sheet posture must surface a visible compact summary band.");
+            Assert.IsFalse(
+                (classicSummaryTitle.Text ?? string.Empty).Contains("Runner Summary", StringComparison.Ordinal),
+                "The dense workbench must not reintroduce synthetic Runner Summary chrome once the same function already lives inside the classic sheet posture.");
             CollectionAssert.Contains(rowText, "attributes.body = 5");
             CollectionAssert.Contains(rowText, "attributes.agility = 7");
             CollectionAssert.Contains(rowText, "skills.firearms[0] = Automatics 6");
@@ -3651,6 +4064,118 @@ public sealed class AvaloniaFlagshipUiGateTests
             .OrderBy(control => control.Name, StringComparer.Ordinal)
             .ToArray();
 
+    private sealed record ParityOracleInventory(
+        string[] WorkspaceActions,
+        string[] DesktopControls,
+        string[] AcknowledgedDialogFactoryOnlyDesktopControls);
+
+    private sealed record MuscleMemoryInventoryReceipt(
+        string ContractName,
+        string GeneratedAt,
+        string Status,
+        string Summary,
+        string[] Reasons,
+        MuscleMemoryInventoryEvidence Evidence,
+        MuscleMemoryInventoryReviews Reviews);
+
+    private sealed record MuscleMemoryInventoryEvidence(
+        string ParityOraclePath,
+        int ShellSurfaceCount,
+        int MenuRootCount,
+        int WorkspaceActionCount,
+        int DialogSurfaceCount,
+        int UiControlSurfaceCount,
+        int CommandDialogSurfaceCount,
+        int TotalVisibleElementCount,
+        int TooltipBearingFieldCount,
+        int TooltipBearingActionCount,
+        MuscleMemorySurfaceEvidence[] ShellSurfaces,
+        MuscleMemorySurfaceEvidence[] MenuRootSurfaces,
+        MuscleMemorySurfaceEvidence[] WorkspaceActionSurfaces,
+        MuscleMemorySurfaceEvidence[] DialogSurfaces);
+
+    private sealed record MuscleMemoryInventoryReviews(
+        ReviewResult SurfaceCoverageReview,
+        ReviewResult DialogWidgetClassReview,
+        ReviewResult DialogLabelReview,
+        ReviewResult DialogLayoutSlotReview,
+        ReviewResult DialogFieldOrderReview,
+        ReviewResult DialogActionOrderReview,
+        ReviewResult PointerRouteReview,
+        ReviewResult AuxiliaryPointerRouteReview,
+        ReviewResult TooltipCoverageReview,
+        ReviewResult DialogGeometryReview);
+
+    private sealed record ReviewResult(
+        string Status,
+        int ReasonCount,
+        string[] Reasons);
+
+    private sealed record MuscleMemorySurfaceEvidence(
+        string SurfaceKind,
+        string SurfaceId,
+        string Title,
+        string Route,
+        string DialogId,
+        int VisibleElementCount,
+        int InteractiveElementCount,
+        string[] VisibleTextSamples,
+        string[] VisibleNamedControlIds,
+        string[] MenuCommandIds,
+        string[] VisibleTabLabels,
+        string[] QuickActionIds,
+        MuscleMemoryElementEvidence[] Elements,
+        MuscleMemoryDialogFieldEvidence[] DialogFields,
+        MuscleMemoryDialogActionEvidence[] DialogActions);
+
+    private sealed record MuscleMemoryElementEvidence(
+        string Key,
+        string Name,
+        string ControlType,
+        string Text,
+        string ToolTip,
+        bool Interactive,
+        bool HasContextMenu,
+        bool HasContextFlyout,
+        string LayoutZone,
+        string[] MouseRoutes,
+        double X,
+        double Y,
+        double Width,
+        double Height);
+
+    private sealed record MuscleMemoryDialogFieldEvidence(
+        string FieldId,
+        string ExpectedLabel,
+        string ExpectedInputType,
+        string ExpectedVisualKind,
+        string ExpectedLayoutSlot,
+        int OptionsCount,
+        bool IsVisible,
+        string RuntimeLabelText,
+        string RuntimeControlType,
+        string RuntimeToolTip,
+        string RuntimeLayoutZone,
+        string[] MouseRoutes,
+        double X,
+        double Y,
+        double Width,
+        double Height);
+
+    private sealed record MuscleMemoryDialogActionEvidence(
+        string ActionId,
+        string ExpectedLabel,
+        bool IsPrimary,
+        bool IsVisible,
+        string RuntimeLabelText,
+        string RuntimeControlType,
+        string RuntimeToolTip,
+        string[] MouseRoutes,
+        double X,
+        double Y,
+        double Width,
+        double Height);
+
     private sealed record VeteranCertificationReviewStep(
         string Surface,
         string ScreenshotFileName,
@@ -3787,6 +4312,1031 @@ public sealed class AvaloniaFlagshipUiGateTests
         harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
     }
 
+    private static ParityOracleInventory LoadParityOracleInventory()
+    {
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(ResolveSourceFile("docs", "PARITY_ORACLE.json")));
+        JsonElement root = document.RootElement;
+        return new ParityOracleInventory(
+            WorkspaceActions: ReadParityOracleStringArray(root, "workspaceActions"),
+            DesktopControls: ReadParityOracleStringArray(root, "desktopControls"),
+            AcknowledgedDialogFactoryOnlyDesktopControls: ReadParityOracleStringArray(root, "acknowledgedDialogFactoryOnlyDesktopControls"));
+    }
+
+    private static string[] ReadParityOracleStringArray(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out JsonElement property)
+            || property.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        return property.EnumerateArray()
+            .Select(element => element.GetString() ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+    }
+
+    private static string ResolveChummer5aMuscleMemoryInventoryReceiptPath()
+        => ResolveMuscleMemoryInventoryReceiptPath(
+            "CHUMMER5A_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH",
+            "CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json");
+
+    private static string ResolveSr4MuscleMemoryInventoryReceiptPath()
+        => ResolveMuscleMemoryInventoryReceiptPath(
+            "CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH",
+            "CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY.generated.json");
+
+    private static string ResolveMuscleMemoryInventoryReceiptPath(string envVarName, string defaultFileName)
+    {
+        string? configured = Environment.GetEnvironmentVariable(envVarName)
+            ?? Environment.GetEnvironmentVariable("CHUMMER_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH");
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return Path.GetFullPath(configured);
+        }
+
+        string docsDirectory = Path.GetDirectoryName(ResolveSourceFile("docs", "PARITY_ORACLE.json"))
+            ?? throw new DirectoryNotFoundException("Could not resolve docs directory for muscle-memory inventory receipt.");
+        string repoRoot = Directory.GetParent(docsDirectory)?.FullName
+            ?? throw new DirectoryNotFoundException("Could not resolve repo root for muscle-memory inventory receipt.");
+        return Path.GetFullPath(
+            Path.Combine(
+                repoRoot,
+                ".codex-studio",
+                "published",
+                defaultFileName));
+    }
+
+    private static MuscleMemoryInventoryReceipt CaptureMuscleMemoryInventoryReceipt(
+        Action<Action<FlagshipUiHarness>> harnessRunner,
+        string contractName,
+        string successSummary,
+        string failureSummary)
+    {
+        ParityOracleInventory oracle = LoadParityOracleInventory();
+        HashSet<string> commandDialogIds = new(RequiredMuscleMemoryCommandDialogIds, StringComparer.Ordinal);
+        string[] uiControlIds = oracle.DesktopControls
+            .Concat(oracle.AcknowledgedDialogFactoryOnlyDesktopControls)
+            .Where(id => !commandDialogIds.Contains(id))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+
+        List<MuscleMemorySurfaceEvidence> shellSurfaces = [];
+        List<MuscleMemorySurfaceEvidence> menuRootSurfaces = [];
+        List<MuscleMemorySurfaceEvidence> workspaceActionSurfaces = [];
+        List<MuscleMemorySurfaceEvidence> dialogSurfaces = [];
+
+        harnessRunner(harness =>
+        {
+            shellSurfaces.Add(CaptureSurfaceEvidence(
+                "shell",
+                "menu_bar",
+                "Menu Bar",
+                "ShellMenuBarControl",
+                harness.FindControl<Control>("ShellMenuBarControl")));
+            shellSurfaces.Add(CaptureSurfaceEvidence(
+                "shell",
+                "tool_strip",
+                "Tool Strip",
+                "ToolStripControl",
+                harness.FindControl<Control>("ToolStripControl")));
+            shellSurfaces.Add(CaptureSurfaceEvidence(
+                "shell",
+                "summary_header",
+                "Summary Header",
+                "SummaryHeaderControl",
+                harness.FindControl<Control>("SummaryHeaderControl")));
+            shellSurfaces.Add(CaptureSurfaceEvidence(
+                "shell",
+                "status_strip",
+                "Status Strip",
+                "StatusStripControl",
+                harness.FindControl<Control>("StatusStripControl")));
+
+            foreach (string menuButtonName in StandaloneMenuButtonNames)
+            {
+                harness.Click(menuButtonName);
+                MenuItem rootMenuItem = harness.FindControl<MenuItem>(menuButtonName);
+                harness.WaitUntil(() => SnapshotMenuCommands(rootMenuItem).Length > 0);
+                menuRootSurfaces.Add(CaptureMenuRootSurfaceEvidence(menuButtonName, rootMenuItem));
+                harness.CloseMenu(menuButtonName);
+            }
+
+            foreach (string sectionId in oracle.WorkspaceActions)
+            {
+                workspaceActionSurfaces.Add(CaptureWorkspaceActionSurfaceEvidence(harness, sectionId));
+            }
+
+            foreach (string controlId in uiControlIds)
+            {
+                if (MuscleMemorySectionByUiControlId.TryGetValue(controlId, out string? sectionId))
+                {
+                    harness.SetActiveSectionForTesting(sectionId);
+                }
+
+                harness.OpenUiControl(controlId);
+                DesktopDialogState dialogState = WaitForActiveDialog(harness, $"ui control '{controlId}'");
+                dialogSurfaces.Add(CaptureDialogSurfaceEvidence(
+                    harness,
+                    "uiControl",
+                    controlId,
+                    dialogState));
+                CloseActiveDialog(harness);
+            }
+
+            foreach (string commandId in RequiredMuscleMemoryCommandDialogIds)
+            {
+                harness.Presenter.ExecuteCommandAsync(commandId, CancellationToken.None).GetAwaiter().GetResult();
+                DesktopDialogState dialogState = WaitForActiveDialog(harness, $"command '{commandId}'");
+                dialogSurfaces.Add(CaptureDialogSurfaceEvidence(
+                    harness,
+                    "commandDialog",
+                    commandId,
+                    dialogState));
+                CloseActiveDialog(harness);
+            }
+        });
+
+        return BuildMuscleMemoryInventoryReceipt(
+            contractName,
+            successSummary,
+            failureSummary,
+            oracle,
+            uiControlIds,
+            shellSurfaces,
+            menuRootSurfaces,
+            workspaceActionSurfaces,
+            dialogSurfaces);
+    }
+
+    private static void PersistMuscleMemoryInventoryReceipt(MuscleMemoryInventoryReceipt receipt, string receiptPath)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(receiptPath)!);
+        File.WriteAllText(
+            receiptPath,
+            JsonSerializer.Serialize(receipt, ScreenshotEvidenceJsonOptions));
+    }
+
+    private static DesktopDialogState WaitForActiveDialog(FlagshipUiHarness harness, string context)
+    {
+        harness.WaitUntil(() => harness.Presenter.State.ActiveDialog is not null, 4000, context);
+        return harness.Presenter.State.ActiveDialog
+            ?? throw new AssertFailedException($"Expected an active dialog surface for {context}.");
+    }
+
+    private static void CloseActiveDialog(FlagshipUiHarness harness)
+    {
+        string[] availableActionIds = harness.DialogActionIds();
+        string? actionId = new[] { "cancel", "close", "add", "ok", "continue", "apply", "delete" }
+            .FirstOrDefault(candidate => availableActionIds.Contains(candidate, StringComparer.Ordinal));
+        if (actionId is not null)
+        {
+            harness.InvokeDialogAction(actionId);
+        }
+        else
+        {
+            harness.Presenter.CloseDialogAsync(CancellationToken.None).GetAwaiter().GetResult();
+        }
+
+        harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+    }
+
+    private static MuscleMemorySurfaceEvidence CaptureMenuRootSurfaceEvidence(string menuButtonName, MenuItem rootMenuItem)
+    {
+        string[] commandIds = SnapshotMenuCommands(rootMenuItem)
+            .Select(command => command.Tag?.ToString() ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+        string title = NormalizeEvidenceText(rootMenuItem.Header?.ToString());
+        return CaptureSurfaceEvidence(
+            "menuRoot",
+            menuButtonName,
+            string.IsNullOrWhiteSpace(title) ? menuButtonName : title,
+            menuButtonName,
+            rootMenuItem,
+            menuCommandIds: commandIds);
+    }
+
+    private static MuscleMemorySurfaceEvidence CaptureWorkspaceActionSurfaceEvidence(FlagshipUiHarness harness, string sectionId)
+    {
+        harness.SetActiveSectionForTesting(sectionId);
+        harness.WaitUntil(() => string.Equals(harness.Presenter.State.ActiveSectionId, sectionId, StringComparison.Ordinal));
+        Control sectionRoot = harness.FindControl<Control>("SectionHostControl");
+        harness.WaitUntil(() => CaptureVisibleSurfaceElements(sectionRoot).Length > 0);
+        return CaptureSurfaceEvidence(
+            "workspaceAction",
+            sectionId,
+            sectionId,
+            $"section:{sectionId}",
+            sectionRoot,
+            visibleTabLabels: FindDescendantOrDefault<TabStrip>(sectionRoot, "LoadedRunnerTabStrip") is { IsVisible: true } tabStrip
+                ? SnapshotLoadedRunnerTabs(tabStrip).Select(tab => NormalizeEvidenceText(tab.Label)).ToArray()
+                : [],
+            quickActionIds: sectionRoot.GetVisualDescendants()
+                .OfType<Control>()
+                .Where(control =>
+                    control.IsVisible
+                    && !string.IsNullOrWhiteSpace(control.Name)
+                    && control.Name.StartsWith("SectionQuickAction_", StringComparison.Ordinal))
+                .Select(control => control.Name!)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(static value => value, StringComparer.Ordinal)
+                .ToArray());
+    }
+
+    private static MuscleMemorySurfaceEvidence CaptureDialogSurfaceEvidence(
+        FlagshipUiHarness harness,
+        string surfaceKind,
+        string surfaceId,
+        DesktopDialogState dialogState)
+    {
+        Control root = harness.GetScreenshotRootControlForTesting();
+        return CaptureSurfaceEvidence(
+            surfaceKind,
+            surfaceId,
+            dialogState.Title,
+            harness.Window.PeekDialogWindowForTesting()?.BoundDialogId ?? dialogState.Id,
+            root,
+            dialogState,
+            harness.Window.PeekDialogWindowForTesting()?.BoundDialogId ?? dialogState.Id);
+    }
+
+    private static MuscleMemorySurfaceEvidence CaptureSurfaceEvidence(
+        string surfaceKind,
+        string surfaceId,
+        string title,
+        string route,
+        Control root,
+        DesktopDialogState? dialogState = null,
+        string? dialogId = null,
+        string[]? menuCommandIds = null,
+        string[]? visibleTabLabels = null,
+        string[]? quickActionIds = null)
+    {
+        MuscleMemoryElementEvidence[] elements = CaptureVisibleSurfaceElements(root);
+        string[] visibleNamedControlIds = elements
+            .Select(element => element.Name)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+        string[] visibleTextSamples = root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(textBlock => textBlock.IsVisible && textBlock.Bounds.Width > 0d && textBlock.Bounds.Height > 0d)
+            .Select(textBlock => NormalizeEvidenceText(textBlock.Text))
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        MuscleMemoryDialogFieldEvidence[] dialogFields = dialogState is null
+            ? []
+            : dialogState.Fields.Select(field => CaptureDialogFieldEvidence(root, field)).ToArray();
+        MuscleMemoryDialogActionEvidence[] dialogActions = dialogState is null
+            ? []
+            : dialogState.Actions.Select(action => CaptureDialogActionEvidence(root, action)).ToArray();
+
+        return new MuscleMemorySurfaceEvidence(
+            SurfaceKind: surfaceKind,
+            SurfaceId: surfaceId,
+            Title: title,
+            Route: route,
+            DialogId: dialogId ?? string.Empty,
+            VisibleElementCount: elements.Length,
+            InteractiveElementCount: elements.Count(element => element.Interactive),
+            VisibleTextSamples: visibleTextSamples,
+            VisibleNamedControlIds: visibleNamedControlIds,
+            MenuCommandIds: menuCommandIds ?? [],
+            VisibleTabLabels: visibleTabLabels ?? [],
+            QuickActionIds: quickActionIds ?? [],
+            Elements: elements,
+            DialogFields: dialogFields,
+            DialogActions: dialogActions);
+    }
+
+    private static MuscleMemoryDialogFieldEvidence CaptureDialogFieldEvidence(Control root, DesktopDialogField field)
+    {
+        TextBlock? labelBlock = FindDescendantOrDefault<TextBlock>(root, DesktopDialogAccessibility.BuildFieldLabelName(field.Id));
+        Control? inputControl = root.GetVisualDescendants()
+            .OfType<Control>()
+            .FirstOrDefault(control => string.Equals(control.Name, DesktopDialogAccessibility.BuildFieldInputName(field.Id), StringComparison.Ordinal));
+        bool isVisible = (labelBlock?.IsVisible ?? false) || (inputControl?.IsVisible ?? false);
+        string toolTip = TryReadToolTip(inputControl);
+        Rect inputBounds = inputControl is null ? default : GetBoundsRelativeToRoot(inputControl, root);
+        return new MuscleMemoryDialogFieldEvidence(
+            FieldId: field.Id,
+            ExpectedLabel: field.Label,
+            ExpectedInputType: field.InputType,
+            ExpectedVisualKind: field.VisualKind.ToString(),
+            ExpectedLayoutSlot: field.LayoutSlot,
+            OptionsCount: field.Options?.Count ?? 0,
+            IsVisible: isVisible,
+            RuntimeLabelText: ResolveRuntimeFieldLabelText(root, labelBlock, inputControl),
+            RuntimeControlType: inputControl?.GetType().Name ?? string.Empty,
+            RuntimeToolTip: toolTip,
+            RuntimeLayoutZone: inputControl is null ? "hidden" : ComputeLayoutZone(inputBounds, Math.Max(root.Bounds.Width, root.DesiredSize.Width)),
+            MouseRoutes: inputControl is null ? [] : InferMouseRoutes(inputControl, toolTip),
+            X: inputControl is null ? 0d : Math.Round(inputBounds.X, 2),
+            Y: inputControl is null ? 0d : Math.Round(inputBounds.Y, 2),
+            Width: inputControl is null ? 0d : Math.Round(inputBounds.Width, 2),
+            Height: inputControl is null ? 0d : Math.Round(inputBounds.Height, 2));
+    }
+
+    private static MuscleMemoryDialogActionEvidence CaptureDialogActionEvidence(Control root, DesktopDialogAction action)
+    {
+        Button? button = FindDescendantOrDefault<Button>(root, DesktopDialogAccessibility.BuildActionName(action.Id));
+        string toolTip = TryReadToolTip(button);
+        Rect buttonBounds = button is null ? default : GetBoundsRelativeToRoot(button, root);
+        return new MuscleMemoryDialogActionEvidence(
+            ActionId: action.Id,
+            ExpectedLabel: action.Label,
+            IsPrimary: action.IsPrimary,
+            IsVisible: button?.IsVisible ?? false,
+            RuntimeLabelText: NormalizeEvidenceText(button is null ? string.Empty : GetPrimaryButtonLabel(button)),
+            RuntimeControlType: button?.GetType().Name ?? string.Empty,
+            RuntimeToolTip: toolTip,
+            MouseRoutes: button is null ? [] : InferMouseRoutes(button, toolTip),
+            X: button is null ? 0d : Math.Round(buttonBounds.X, 2),
+            Y: button is null ? 0d : Math.Round(buttonBounds.Y, 2),
+            Width: button is null ? 0d : Math.Round(buttonBounds.Width, 2),
+            Height: button is null ? 0d : Math.Round(buttonBounds.Height, 2));
+    }
+
+    private static MuscleMemoryElementEvidence[] CaptureVisibleSurfaceElements(Control root)
+    {
+        double surfaceWidth = Math.Max(root.Bounds.Width, root.DesiredSize.Width);
+        int fallbackIndex = 0;
+        return root.GetVisualDescendants()
+            .OfType<Control>()
+            .Where(control =>
+                control.IsVisible
+                && control.Bounds.Width > 0d
+                && control.Bounds.Height > 0d
+                && IsMuscleMemoryRelevantControl(control))
+            .Select(control => BuildMuscleMemoryElementEvidence(control, root, surfaceWidth, fallbackIndex++))
+            .ToArray();
+    }
+
+    private static MuscleMemoryElementEvidence BuildMuscleMemoryElementEvidence(Control control, Control root, double surfaceWidth, int fallbackIndex)
+    {
+        string text = ExtractMuscleMemoryElementText(control);
+        string toolTip = TryReadToolTip(control);
+        string name = control.Name ?? string.Empty;
+        bool interactive = IsInteractiveControl(control);
+        bool hasContextMenu = HasContextMenu(control);
+        bool hasContextFlyout = HasContextFlyout(control);
+        string key = !string.IsNullOrWhiteSpace(name)
+            ? name
+            : $"{control.GetType().Name}:{fallbackIndex}:{text}";
+        Rect bounds = GetBoundsRelativeToRoot(control, root);
+
+        return new MuscleMemoryElementEvidence(
+            Key: key,
+            Name: name,
+            ControlType: control.GetType().Name,
+            Text: text,
+            ToolTip: toolTip,
+            Interactive: interactive,
+            HasContextMenu: hasContextMenu,
+            HasContextFlyout: hasContextFlyout,
+            LayoutZone: ComputeLayoutZone(bounds, surfaceWidth),
+            MouseRoutes: interactive ? InferMouseRoutes(control, toolTip) : [],
+            X: Math.Round(bounds.X, 2),
+            Y: Math.Round(bounds.Y, 2),
+            Width: Math.Round(bounds.Width, 2),
+            Height: Math.Round(bounds.Height, 2));
+    }
+
+    private static bool IsMuscleMemoryRelevantControl(Control control)
+        => !string.IsNullOrWhiteSpace(control.Name)
+            || control is TextBlock
+            || control is Button
+            || control is MenuItem
+            || control is TextBox
+            || control is NumericUpDown
+            || control is ComboBox
+            || control is CheckBox
+            || control is ListBox
+            || control is TreeView
+            || control is TabStrip
+            || control is Border
+            || control is Expander
+            || control is Panel;
+
+    private static bool IsInteractiveControl(Control control)
+        => control is Button
+            || control is MenuItem
+            || control is TextBox
+            || control is NumericUpDown
+            || control is ComboBox
+            || control is CheckBox
+            || control is ListBox
+            || control is TreeView
+            || control is TabStrip;
+
+    private static string ExtractMuscleMemoryElementText(Control control)
+    {
+        return control switch
+        {
+            TextBlock textBlock => NormalizeEvidenceText(textBlock.Text),
+            TextBox textBox => NormalizeEvidenceText(textBox.Text ?? textBox.Watermark?.ToString()),
+            NumericUpDown numericUpDown => NormalizeEvidenceText(
+                numericUpDown.Text
+                ?? numericUpDown.Value?.ToString()
+                ?? numericUpDown.Watermark?.ToString()),
+            CheckBox checkBox => NormalizeEvidenceText(checkBox.Content?.ToString()),
+            Button button => NormalizeEvidenceText(GetPrimaryButtonLabel(button)),
+            MenuItem menuItem => NormalizeEvidenceText(menuItem.Header?.ToString()),
+            ComboBox comboBox => NormalizeEvidenceText(
+                comboBox.SelectedItem switch
+                {
+                    DesktopDialogFieldOption option => option.Value,
+                    _ => comboBox.SelectedItem?.ToString()
+                }),
+            Expander expander => NormalizeEvidenceText(expander.Header?.ToString()),
+            _ => string.Empty,
+        };
+    }
+
+    private static string TryReadToolTip(Control? control)
+        => control is null
+            ? string.Empty
+            : NormalizeEvidenceText(ToolTip.GetTip(control)?.ToString());
+
+    private static string ResolveRuntimeFieldLabelText(Control root, TextBlock? labelBlock, Control? inputControl)
+    {
+        string directLabel = NormalizeLabelText(labelBlock?.Text);
+        if (!string.IsNullOrWhiteSpace(directLabel))
+        {
+            return directLabel;
+        }
+
+        if (inputControl is CheckBox checkBox)
+        {
+            string checkBoxContent = NormalizeLabelText(checkBox.Content?.ToString());
+            if (!string.IsNullOrWhiteSpace(checkBoxContent))
+            {
+                return checkBoxContent;
+            }
+        }
+
+        if (inputControl is null)
+        {
+            return string.Empty;
+        }
+
+        string toolTipLabel = ExtractLabelFromToolTip(TryReadToolTip(inputControl));
+        if (!string.IsNullOrWhiteSpace(toolTipLabel))
+        {
+            return toolTipLabel;
+        }
+
+        TextBlock? nearbyLabel = FindNearestFieldLabel(root, inputControl);
+        return NormalizeLabelText(nearbyLabel?.Text);
+    }
+
+    private static TextBlock? FindNearestFieldLabel(Control root, Control inputControl)
+    {
+        Rect inputBounds = GetBoundsRelativeToRoot(inputControl, root);
+        double inputCenterY = inputBounds.Y + (inputBounds.Height / 2d);
+        TextBlock[] candidates = root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(textBlock =>
+                textBlock.IsVisible
+                && textBlock.Bounds.Width > 0d
+                && textBlock.Bounds.Height > 0d
+                && !string.IsNullOrWhiteSpace(NormalizeEvidenceText(textBlock.Text)))
+            .ToArray();
+
+        TextBlock? leftAligned = candidates
+            .Select(textBlock => new
+            {
+                TextBlock = textBlock,
+                Bounds = GetBoundsRelativeToRoot(textBlock, root)
+            })
+            .Select(candidate => new
+            {
+                candidate.TextBlock,
+                candidate.Bounds,
+                VerticalDistance = Math.Abs((candidate.Bounds.Y + (candidate.Bounds.Height / 2d)) - inputCenterY),
+                HorizontalGap = inputBounds.X - (candidate.Bounds.X + candidate.Bounds.Width)
+            })
+            .Where(candidate =>
+                candidate.VerticalDistance <= Math.Max(18d, inputBounds.Height)
+                && candidate.HorizontalGap >= -8d
+                && candidate.HorizontalGap <= Math.Max(48d, inputBounds.Width))
+            .OrderBy(candidate => candidate.VerticalDistance)
+            .ThenBy(candidate => Math.Abs(candidate.HorizontalGap))
+            .Select(candidate => candidate.TextBlock)
+            .FirstOrDefault();
+        if (leftAligned is not null)
+        {
+            return leftAligned;
+        }
+
+        return candidates
+            .Select(textBlock => new
+            {
+                TextBlock = textBlock,
+                Bounds = GetBoundsRelativeToRoot(textBlock, root)
+            })
+            .Select(candidate => new
+            {
+                candidate.TextBlock,
+                candidate.Bounds,
+                VerticalGap = inputBounds.Y - (candidate.Bounds.Y + candidate.Bounds.Height),
+                HorizontalOverlap = Math.Min(inputBounds.X + inputBounds.Width, candidate.Bounds.X + candidate.Bounds.Width)
+                    - Math.Max(inputBounds.X, candidate.Bounds.X)
+            })
+            .Where(candidate => candidate.VerticalGap >= -12d
+                && candidate.VerticalGap <= 24d
+                && candidate.HorizontalOverlap >= Math.Min(48d, inputBounds.Width))
+            .OrderBy(candidate => Math.Abs(candidate.VerticalGap))
+            .ThenByDescending(candidate => candidate.HorizontalOverlap)
+            .Select(candidate => candidate.TextBlock)
+            .FirstOrDefault();
+    }
+
+    private static string NormalizeLabelText(string? text)
+    {
+        string normalized = NormalizeEvidenceText(text);
+        return normalized.TrimEnd(':').Trim();
+    }
+
+    private static string ExtractLabelFromToolTip(string toolTip)
+    {
+        string normalized = NormalizeEvidenceText(toolTip);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        int separatorIndex = normalized.IndexOf(':');
+        return separatorIndex > 0
+            ? NormalizeLabelText(normalized[..separatorIndex])
+            : NormalizeLabelText(normalized);
+    }
+
+    private static bool HasContextMenu(Control control)
+        => control.ContextMenu is not null;
+
+    private static bool HasContextFlyout(Control control)
+        => control.ContextFlyout is not null
+            || control.GetValue(FlyoutBase.AttachedFlyoutProperty) is not null;
+
+    private static string[] InferMouseRoutes(Control control, string toolTip)
+    {
+        List<string> routes = ["left_click"];
+        if (!string.IsNullOrWhiteSpace(toolTip))
+        {
+            routes.Add("hover");
+        }
+
+        if (control is MenuItem)
+        {
+            routes.Add("submenu_open");
+        }
+
+        if (control is ListBox or TreeView)
+        {
+            routes.Add("double_click");
+            routes.Add("wheel");
+        }
+
+        if (control is CheckBox)
+        {
+            routes.Add("toggle");
+        }
+
+        if (control is ComboBox)
+        {
+            routes.Add("wheel");
+            routes.Add("expand");
+        }
+
+        if (control is NumericUpDown)
+        {
+            routes.Add("wheel");
+            routes.Add("focus");
+            routes.Add("spin");
+        }
+
+        if (control is TextBox)
+        {
+            routes.Add("focus");
+            routes.Add("text_select");
+        }
+
+        if (control is TabStrip)
+        {
+            routes.Add("tab_select");
+        }
+
+        if (HasContextMenu(control))
+        {
+            routes.Add("right_click");
+        }
+
+        if (HasContextFlyout(control))
+        {
+            routes.Add("right_click");
+            routes.Add("secondary_expand");
+        }
+
+        return routes
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static Rect GetBoundsRelativeToRoot(Control control, Visual root)
+    {
+        Point origin = control.TranslatePoint(default, root) ?? default;
+        return new Rect(origin, control.Bounds.Size);
+    }
+
+    private static string ComputeLayoutZone(Rect bounds, double surfaceWidth)
+    {
+        if (surfaceWidth <= 0d)
+        {
+            return "unknown";
+        }
+
+        double center = bounds.X + (bounds.Width / 2d);
+        double third = surfaceWidth / 3d;
+        return center < third
+            ? "left"
+            : center < (third * 2d)
+                ? "center"
+                : "right";
+    }
+
+    private static MuscleMemoryInventoryReceipt BuildMuscleMemoryInventoryReceipt(
+        string contractName,
+        string successSummary,
+        string failureSummary,
+        ParityOracleInventory oracle,
+        IReadOnlyList<string> uiControlIds,
+        IReadOnlyList<MuscleMemorySurfaceEvidence> shellSurfaces,
+        IReadOnlyList<MuscleMemorySurfaceEvidence> menuRootSurfaces,
+        IReadOnlyList<MuscleMemorySurfaceEvidence> workspaceActionSurfaces,
+        IReadOnlyList<MuscleMemorySurfaceEvidence> dialogSurfaces)
+    {
+        List<string> surfaceCoverageReasons = [];
+        if (shellSurfaces.Count != 4)
+        {
+            surfaceCoverageReasons.Add($"Expected 4 shell surfaces but captured {shellSurfaces.Count}.");
+        }
+
+        string[] rootMenuLabels = menuRootSurfaces.Select(surface => surface.Title).ToArray();
+        if (!ClassicMenuLabels.SequenceEqual(rootMenuLabels, StringComparer.Ordinal))
+        {
+            surfaceCoverageReasons.Add("Classic root menu labels drifted from File/Tools/Windows/Help order.");
+        }
+
+        if (workspaceActionSurfaces.Count != oracle.WorkspaceActions.Length)
+        {
+            surfaceCoverageReasons.Add(
+                $"Expected {oracle.WorkspaceActions.Length} workspace-action surfaces but captured {workspaceActionSurfaces.Count}.");
+        }
+
+        string[] missingWorkspaceActions = oracle.WorkspaceActions
+            .Except(workspaceActionSurfaces.Select(surface => surface.SurfaceId), StringComparer.Ordinal)
+            .ToArray();
+        if (missingWorkspaceActions.Length > 0)
+        {
+            surfaceCoverageReasons.Add("Missing workspace-action surfaces: " + string.Join(", ", missingWorkspaceActions));
+        }
+
+        int expectedDialogSurfaceCount = uiControlIds.Count + RequiredMuscleMemoryCommandDialogIds.Length;
+        if (dialogSurfaces.Count != expectedDialogSurfaceCount)
+        {
+            surfaceCoverageReasons.Add(
+                $"Expected {expectedDialogSurfaceCount} dialog surfaces but captured {dialogSurfaces.Count}.");
+        }
+
+        string[] missingDialogSurfaces = uiControlIds
+            .Concat(RequiredMuscleMemoryCommandDialogIds)
+            .Except(dialogSurfaces.Select(surface => surface.SurfaceId), StringComparer.Ordinal)
+            .ToArray();
+        if (missingDialogSurfaces.Length > 0)
+        {
+            surfaceCoverageReasons.Add("Missing dialog surfaces: " + string.Join(", ", missingDialogSurfaces));
+        }
+
+        if (shellSurfaces.Concat(menuRootSurfaces).Concat(workspaceActionSurfaces).Concat(dialogSurfaces)
+            .Any(surface => surface.VisibleElementCount == 0
+                && !string.Equals(surface.SurfaceId, "summary_header", StringComparison.Ordinal)))
+        {
+            surfaceCoverageReasons.Add("One or more captured surfaces had zero visible UI elements.");
+        }
+
+        List<string> dialogWidgetReasons = [];
+        List<string> dialogLabelReasons = [];
+        List<string> dialogLayoutSlotReasons = [];
+        List<string> dialogFieldOrderReasons = [];
+        List<string> dialogActionOrderReasons = [];
+        List<string> pointerRouteReasons = [];
+        List<string> auxiliaryPointerRouteReasons = [];
+        List<string> tooltipCoverageReasons = [];
+        List<string> dialogGeometryReasons = [];
+
+        foreach (MuscleMemorySurfaceEvidence surface in shellSurfaces
+                     .Concat(menuRootSurfaces)
+                     .Concat(workspaceActionSurfaces)
+                     .Concat(dialogSurfaces))
+        {
+            foreach (MuscleMemoryElementEvidence element in surface.Elements.Where(element => element.Interactive))
+            {
+                if (element.HasContextMenu
+                    && !element.MouseRoutes.Contains("right_click", StringComparer.Ordinal))
+                {
+                    auxiliaryPointerRouteReasons.Add(
+                        $"{surface.SurfaceId}.{element.Key} exposes a context menu without a right-click route.");
+                }
+
+                if (element.HasContextFlyout
+                    && !element.MouseRoutes.Contains("secondary_expand", StringComparer.Ordinal))
+                {
+                    auxiliaryPointerRouteReasons.Add(
+                        $"{surface.SurfaceId}.{element.Key} exposes a flyout without a secondary-expand route.");
+                }
+            }
+        }
+
+        foreach (MuscleMemorySurfaceEvidence dialogSurface in dialogSurfaces)
+        {
+            foreach (MuscleMemoryDialogFieldEvidence field in dialogSurface.DialogFields.Where(field => field.IsVisible))
+            {
+                string[] expectedControlTypes = ResolveExpectedRuntimeControlTypes(field);
+                if (expectedControlTypes.Length > 0
+                    && !expectedControlTypes.Contains(field.RuntimeControlType, StringComparer.Ordinal))
+                {
+                    dialogWidgetReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} expected {string.Join('/', expectedControlTypes)} for {field.ExpectedInputType}/{field.ExpectedVisualKind} but rendered {field.RuntimeControlType}.");
+                }
+
+                if (!string.Equals(
+                        NormalizeLabelText(field.ExpectedLabel),
+                        NormalizeLabelText(field.RuntimeLabelText),
+                        StringComparison.Ordinal))
+                {
+                    dialogLabelReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} label drifted from '{field.ExpectedLabel}' to '{field.RuntimeLabelText}'.");
+                }
+
+                if (string.IsNullOrWhiteSpace(field.RuntimeToolTip))
+                {
+                    tooltipCoverageReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} is missing tooltip coverage.");
+                }
+
+                if (string.Equals(field.ExpectedLayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+                {
+                    dialogLayoutSlotReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} is visible even though its layout slot is hidden.");
+                }
+                else if (string.Equals(field.ExpectedLayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
+                         && string.Equals(field.RuntimeLayoutZone, "right", StringComparison.Ordinal))
+                {
+                    dialogLayoutSlotReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} drifted from left-slot posture into the right pane.");
+                }
+                else if (string.Equals(field.ExpectedLayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal)
+                         && string.Equals(field.RuntimeLayoutZone, "left", StringComparison.Ordinal))
+                {
+                    dialogLayoutSlotReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} drifted from right-slot posture into the left pane.");
+                }
+
+                if (field.MouseRoutes.Length == 0)
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} exposed no mouse-route hints.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(field.RuntimeToolTip)
+                    && !field.MouseRoutes.Contains("hover", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} exposed tooltip content without a hover route.");
+                }
+
+                if (string.Equals(field.RuntimeControlType, nameof(CheckBox), StringComparison.Ordinal)
+                    && !field.MouseRoutes.Contains("toggle", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} lost its checkbox toggle route.");
+                }
+
+                if (string.Equals(field.RuntimeControlType, nameof(ComboBox), StringComparison.Ordinal)
+                    && !field.MouseRoutes.Contains("expand", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} lost its combobox expand route.");
+                }
+
+                if (string.Equals(field.RuntimeControlType, nameof(NumericUpDown), StringComparison.Ordinal)
+                    && !field.MouseRoutes.Contains("spin", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} lost its numeric spinner route.");
+                }
+
+                if (string.Equals(field.RuntimeControlType, nameof(ListBox), StringComparison.Ordinal)
+                    && !field.MouseRoutes.Contains("double_click", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} lost its list double-click route.");
+                }
+
+                if (!string.Equals(field.RuntimeControlType, nameof(CheckBox), StringComparison.Ordinal)
+                    && field.Width < 96d)
+                {
+                    dialogGeometryReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} rendered too narrowly for stable mouse-target parity ({field.Width:0.##}px).");
+                }
+            }
+
+            foreach (string layoutSlot in new[] { DesktopDialogFieldLayoutSlots.Left, DesktopDialogFieldLayoutSlots.Right })
+            {
+                MuscleMemoryDialogFieldEvidence[] slotFields = dialogSurface.DialogFields
+                    .Where(field =>
+                        field.IsVisible
+                        && string.Equals(field.ExpectedLayoutSlot, layoutSlot, StringComparison.Ordinal))
+                    .ToArray();
+                if (slotFields.Length <= 1)
+                {
+                    continue;
+                }
+
+                string[] expectedFieldOrder = slotFields
+                    .Select(field => field.FieldId)
+                    .ToArray();
+                string[] runtimeFieldOrder = slotFields
+                    .OrderBy(field => Math.Round(field.Y / 18d, MidpointRounding.AwayFromZero))
+                    .ThenBy(field => field.X)
+                    .Select(field => field.FieldId)
+                    .ToArray();
+                if (!expectedFieldOrder.SequenceEqual(runtimeFieldOrder, StringComparer.Ordinal))
+                {
+                    dialogFieldOrderReasons.Add(
+                        $"{dialogSurface.SurfaceId} {layoutSlot.ToLowerInvariant()}-slot field order drifted from [{string.Join(", ", expectedFieldOrder)}] to [{string.Join(", ", runtimeFieldOrder)}].");
+                }
+            }
+
+            foreach (MuscleMemoryDialogActionEvidence action in dialogSurface.DialogActions.Where(action => action.IsVisible))
+            {
+                if (!string.Equals(
+                        NormalizeEvidenceText(action.ExpectedLabel),
+                        NormalizeEvidenceText(action.RuntimeLabelText),
+                        StringComparison.Ordinal))
+                {
+                    dialogLabelReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{action.ActionId} action label drifted from '{action.ExpectedLabel}' to '{action.RuntimeLabelText}'.");
+                }
+
+                if (string.IsNullOrWhiteSpace(action.RuntimeToolTip))
+                {
+                    tooltipCoverageReasons.Add($"{dialogSurface.SurfaceId}.{action.ActionId} is missing tooltip coverage.");
+                }
+
+                if (action.MouseRoutes.Length == 0)
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{action.ActionId} exposed no mouse-route hints.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(action.RuntimeToolTip)
+                    && !action.MouseRoutes.Contains("hover", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{action.ActionId} exposed tooltip content without a hover route.");
+                }
+            }
+
+            MuscleMemoryDialogActionEvidence[] visibleActions = dialogSurface.DialogActions
+                .Where(action => action.IsVisible)
+                .ToArray();
+            string[] expectedVisibleActionOrder = visibleActions
+                .Select(action => action.ActionId)
+                .ToArray();
+            string[] runtimeVisibleActionOrder = visibleActions
+                .OrderBy(action => action.X)
+                .Select(action => action.ActionId)
+                .ToArray();
+            if (!expectedVisibleActionOrder.SequenceEqual(runtimeVisibleActionOrder, StringComparer.Ordinal))
+            {
+                dialogActionOrderReasons.Add(
+                    $"{dialogSurface.SurfaceId} action order drifted from [{string.Join(", ", expectedVisibleActionOrder)}] to [{string.Join(", ", runtimeVisibleActionOrder)}].");
+            }
+
+            if (visibleActions.Length > 1)
+            {
+                double minY = visibleActions.Min(action => action.Y);
+                double maxY = visibleActions.Max(action => action.Y);
+                if ((maxY - minY) > 28d)
+                {
+                    dialogGeometryReasons.Add(
+                        $"{dialogSurface.SurfaceId} action strip drifted across multiple vertical bands ({minY:0.##}px..{maxY:0.##}px).");
+                }
+
+                MuscleMemoryDialogActionEvidence? primaryAction = visibleActions.FirstOrDefault(action => action.IsPrimary);
+                MuscleMemoryDialogActionEvidence? rightMostAction = visibleActions.OrderByDescending(action => action.X).FirstOrDefault();
+                if (primaryAction is not null
+                    && rightMostAction is not null
+                    && !string.Equals(primaryAction.ActionId, rightMostAction.ActionId, StringComparison.Ordinal))
+                {
+                    dialogGeometryReasons.Add(
+                        $"{dialogSurface.SurfaceId} primary action '{primaryAction.ActionId}' is no longer the right-most action target.");
+                }
+            }
+        }
+
+        ReviewResult surfaceCoverageReview = BuildReviewResult(surfaceCoverageReasons);
+        ReviewResult dialogWidgetClassReview = BuildReviewResult(dialogWidgetReasons);
+        ReviewResult dialogLabelReview = BuildReviewResult(dialogLabelReasons);
+        ReviewResult dialogLayoutSlotReview = BuildReviewResult(dialogLayoutSlotReasons);
+        ReviewResult dialogFieldOrderReview = BuildReviewResult(dialogFieldOrderReasons);
+        ReviewResult dialogActionOrderReview = BuildReviewResult(dialogActionOrderReasons);
+        ReviewResult pointerRouteReview = BuildReviewResult(pointerRouteReasons);
+        ReviewResult auxiliaryPointerRouteReview = BuildReviewResult(auxiliaryPointerRouteReasons);
+        ReviewResult tooltipCoverageReview = BuildReviewResult(tooltipCoverageReasons);
+        ReviewResult dialogGeometryReview = BuildReviewResult(dialogGeometryReasons);
+
+        string[] reasons =
+        [
+            .. surfaceCoverageReasons,
+            .. dialogWidgetReasons,
+            .. dialogLabelReasons,
+            .. dialogLayoutSlotReasons,
+            .. dialogFieldOrderReasons,
+            .. dialogActionOrderReasons,
+            .. pointerRouteReasons,
+            .. auxiliaryPointerRouteReasons,
+            .. tooltipCoverageReasons,
+            .. dialogGeometryReasons
+        ];
+
+        MuscleMemoryInventoryEvidence evidence = new(
+            ParityOraclePath: ResolveSourceFile("docs", "PARITY_ORACLE.json"),
+            ShellSurfaceCount: shellSurfaces.Count,
+            MenuRootCount: menuRootSurfaces.Count,
+            WorkspaceActionCount: workspaceActionSurfaces.Count,
+            DialogSurfaceCount: dialogSurfaces.Count,
+            UiControlSurfaceCount: dialogSurfaces.Count(surface => string.Equals(surface.SurfaceKind, "uiControl", StringComparison.Ordinal)),
+            CommandDialogSurfaceCount: dialogSurfaces.Count(surface => string.Equals(surface.SurfaceKind, "commandDialog", StringComparison.Ordinal)),
+            TotalVisibleElementCount: shellSurfaces.Sum(surface => surface.VisibleElementCount)
+                + menuRootSurfaces.Sum(surface => surface.VisibleElementCount)
+                + workspaceActionSurfaces.Sum(surface => surface.VisibleElementCount)
+                + dialogSurfaces.Sum(surface => surface.VisibleElementCount),
+            TooltipBearingFieldCount: dialogSurfaces.Sum(surface => surface.DialogFields.Count(field => field.IsVisible && !string.IsNullOrWhiteSpace(field.RuntimeToolTip))),
+            TooltipBearingActionCount: dialogSurfaces.Sum(surface => surface.DialogActions.Count(action => action.IsVisible && !string.IsNullOrWhiteSpace(action.RuntimeToolTip))),
+            ShellSurfaces: shellSurfaces.ToArray(),
+            MenuRootSurfaces: menuRootSurfaces.ToArray(),
+            WorkspaceActionSurfaces: workspaceActionSurfaces.ToArray(),
+            DialogSurfaces: dialogSurfaces.ToArray());
+
+        return new MuscleMemoryInventoryReceipt(
+            ContractName: contractName,
+            GeneratedAt: DateTime.UtcNow.ToString("O"),
+            Status: reasons.Length == 0 ? "pass" : "fail",
+            Summary: reasons.Length == 0 ? successSummary : failureSummary,
+            Reasons: reasons,
+            Evidence: evidence,
+            Reviews: new MuscleMemoryInventoryReviews(
+                SurfaceCoverageReview: surfaceCoverageReview,
+                DialogWidgetClassReview: dialogWidgetClassReview,
+                DialogLabelReview: dialogLabelReview,
+                DialogLayoutSlotReview: dialogLayoutSlotReview,
+                DialogFieldOrderReview: dialogFieldOrderReview,
+                DialogActionOrderReview: dialogActionOrderReview,
+                PointerRouteReview: pointerRouteReview,
+                AuxiliaryPointerRouteReview: auxiliaryPointerRouteReview,
+                TooltipCoverageReview: tooltipCoverageReview,
+                DialogGeometryReview: dialogGeometryReview));
+    }
+
+    private static ReviewResult BuildReviewResult(IReadOnlyList<string> reasons)
+        => new(
+            Status: reasons.Count == 0 ? "pass" : "fail",
+            ReasonCount: reasons.Count,
+            Reasons: reasons.ToArray());
+
+    private static string[] ResolveExpectedRuntimeControlTypes(MuscleMemoryDialogFieldEvidence field)
+    {
+        if (string.Equals(field.ExpectedInputType, "checkbox", StringComparison.Ordinal))
+        {
+            return [nameof(CheckBox)];
+        }
+
+        if (!string.Equals(field.ExpectedInputType, "select", StringComparison.Ordinal))
+        {
+            if (string.Equals(field.ExpectedInputType, "number", StringComparison.Ordinal))
+            {
+                return [nameof(TextBox), nameof(NumericUpDown)];
+            }
+
+            return [];
+        }
+
+        return field.ExpectedVisualKind.ToLowerInvariant() switch
+        {
+            "list" => [nameof(ListBox)],
+            "tree" => [nameof(TreeView)],
+            _ => [nameof(ComboBox)]
+        };
+    }
+
     private static void WithLoadedRunnerHarness(Action<FlagshipUiHarness> assertion)
     {
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -3814,6 +5364,42 @@ public sealed class AvaloniaFlagshipUiGateTests
                 File.Delete(targetPath);
             }
         }
+    }
+
+    private static void WithSr4LoadedRunnerHarness(Action<FlagshipUiHarness> assertion)
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            ComboBox rulesetCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId"));
+            DesktopDialogFieldOption sr4Option = rulesetCombo.ItemsSource
+                .OfType<DesktopDialogFieldOption>()
+                .First(option => string.Equals(option.Value, RulesetDefaults.Sr4, StringComparison.Ordinal));
+            rulesetCombo.SelectedItem = sr4Option;
+
+            harness.WaitUntil(() =>
+                harness.Presenter.DialogFieldUpdates.Any(update =>
+                    string.Equals(update.FieldId, "newCharacterRulesetId", StringComparison.Ordinal)
+                    && string.Equals(update.Value, RulesetDefaults.Sr4, StringComparison.Ordinal))
+                && string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "newCharacterBuildMethod"),
+                    "BP",
+                    StringComparison.Ordinal));
+
+            harness.ClickDialogAction("create_character");
+            harness.WaitUntil(() =>
+                harness.Presenter.ImportCalls > 0
+                && harness.Presenter.State.WorkspaceId is not null
+                && harness.Presenter.State.Session.OpenWorkspaces.Count > 0
+                && harness.Window.PeekDialogWindowForTesting() is null
+                && string.Equals(harness.Presenter.LastImportedDocument?.RulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal));
+
+            assertion(harness);
+        });
     }
 
     private static void WithRuntimeLoadedRunnerHarness(Action<RuntimeFlagshipUiHarness> assertion)
@@ -4135,16 +5721,96 @@ public sealed class AvaloniaFlagshipUiGateTests
                 return;
             }
 
+            Window pointerHost = ResolvePointerHost(control);
             Point? translated = control.TranslatePoint(
                 new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
-                Window);
+                pointerHost);
             Assert.IsNotNull(translated, $"Unable to translate control '{controlName}' to window coordinates.");
 
             Point location = translated!.Value;
-            Window.MouseMove(location, RawInputModifiers.None);
-            Window.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
-            Window.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+            pointerHost.MouseMove(location, RawInputModifiers.None);
+            pointerHost.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
+            pointerHost.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
             Pump();
+        }
+
+        public void DoubleTap(string controlName)
+        {
+            Control control = FindControl<Control>(controlName);
+            if (control is TreeView treeView && treeView.SelectedItem is not null)
+            {
+                WaitUntil(
+                    () => treeView.GetVisualDescendants()
+                        .OfType<TreeViewItem>()
+                        .Any(candidate => candidate.IsVisible && Equals(candidate.DataContext, treeView.SelectedItem)),
+                    timeoutMs: 1000,
+                    context: $"wait for realized selected tree view item for '{controlName}'");
+            }
+
+            Control pointerTarget = ResolvePointerTarget(control);
+            Window pointerHost = ResolvePointerHost(pointerTarget);
+            Point? translated = pointerTarget.TranslatePoint(
+                new Point(pointerTarget.Bounds.Width / 2d, pointerTarget.Bounds.Height / 2d),
+                pointerHost);
+            Assert.IsNotNull(translated, $"Unable to translate control '{controlName}' to window coordinates.");
+
+            Point location = translated!.Value;
+            global::Avalonia.Input.Pointer pointer = new(1, PointerType.Mouse, true);
+            PointerPressedEventArgs BuildPressedArgs(int clickCount) => new(
+                pointerTarget,
+                pointer,
+                pointerHost,
+                location,
+                (ulong)Environment.TickCount64,
+                new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed),
+                KeyModifiers.None,
+                clickCount);
+            PointerReleasedEventArgs BuildReleasedArgs() => new(
+                pointerTarget,
+                pointer,
+                pointerHost,
+                location,
+                (ulong)Environment.TickCount64,
+                new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased),
+                KeyModifiers.None,
+                MouseButton.Left);
+
+            if (ReferenceEquals(pointerHost, Window))
+            {
+                pointerHost.MouseMove(location, RawInputModifiers.None);
+                pointerHost.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
+                pointerHost.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+                pointerHost.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
+                pointerHost.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+            }
+            else
+            {
+                pointerTarget.RaiseEvent(BuildPressedArgs(1));
+                pointerTarget.RaiseEvent(BuildReleasedArgs());
+                pointerTarget.RaiseEvent(BuildPressedArgs(2));
+                pointerTarget.RaiseEvent(BuildReleasedArgs());
+            }
+
+            PointerPressedEventArgs pressedArgs = BuildPressedArgs(2);
+            pointerTarget.RaiseEvent(pressedArgs);
+            pointerTarget.RaiseEvent(new TappedEventArgs(InputElement.DoubleTappedEvent, pressedArgs));
+            Pump();
+        }
+
+        private Window ResolvePointerHost(Control control)
+            => control.GetVisualRoot() as Window ?? Window;
+
+        private static Control ResolvePointerTarget(Control control)
+        {
+            if (control is TreeView treeView && treeView.SelectedItem is not null)
+            {
+                return treeView.GetVisualDescendants()
+                    .OfType<TreeViewItem>()
+                    .FirstOrDefault(candidate => candidate.IsVisible && Equals(candidate.DataContext, treeView.SelectedItem))
+                    ?? control;
+            }
+
+            return control;
         }
 
         public void ClickLoadedRunnerTab(string labelFragment)
@@ -4659,7 +6325,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
         }
 
-        public void WaitUntil(Func<bool> predicate, int timeoutMs = 2000)
+        public void WaitUntil(Func<bool> predicate, int timeoutMs = 2000, string? context = null)
         {
             DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             while (DateTime.UtcNow < deadline)
@@ -4673,7 +6339,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Pump();
             }
 
-            Assert.Fail("Timed out waiting for UI condition.");
+            Assert.Fail(
+                string.IsNullOrWhiteSpace(context)
+                    ? "Timed out waiting for UI condition."
+                    : $"Timed out waiting for UI condition: {context}.");
         }
 
         private static void Pump()
@@ -4862,7 +6531,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
         }
 
-        public void WaitUntil(Func<bool> predicate, int timeoutMs = 4000)
+        public void WaitUntil(Func<bool> predicate, int timeoutMs = 4000, string? context = null)
         {
             DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             while (DateTime.UtcNow < deadline)
@@ -4876,7 +6545,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Pump();
             }
 
-            Assert.Fail("Timed out waiting for runtime-backed UI condition.");
+            Assert.Fail(
+                string.IsNullOrWhiteSpace(context)
+                    ? "Timed out waiting for runtime-backed UI condition."
+                    : $"Timed out waiting for runtime-backed UI condition: {context}.");
         }
 
         public void Dispose()
@@ -5089,6 +6761,28 @@ public sealed class AvaloniaFlagshipUiGateTests
             };
         }
 
+        private static string ResolveDialogRulesetId(CharacterOverviewState state)
+        {
+            if (state.WorkspaceId is { } workspaceId)
+            {
+                string? activeWorkspaceRulesetId = state.OpenWorkspaces
+                    .Where(workspace => workspace.Id.Equals(workspaceId))
+                    .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+                    .FirstOrDefault(static rulesetId => !string.IsNullOrWhiteSpace(rulesetId));
+                if (!string.IsNullOrWhiteSpace(activeWorkspaceRulesetId))
+                {
+                    return activeWorkspaceRulesetId;
+                }
+            }
+
+            return state.OpenWorkspaces
+                .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+                .Concat(state.Commands.Select(command => RulesetDefaults.NormalizeOptional(command.RulesetId)))
+                .Concat(state.NavigationTabs.Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId)))
+                .FirstOrDefault(static rulesetId => !string.IsNullOrWhiteSpace(rulesetId))
+                ?? RulesetDefaults.Sr5;
+        }
+
         public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
 
         public Task SaveAsync(CancellationToken ct)
@@ -5200,6 +6894,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     if (OverviewCommandPolicy.IsDialogCommand(commandId)
                         || OverviewCommandPolicy.IsImportHintCommand(commandId))
                     {
+                        string commandRulesetId = ResolveDialogRulesetId(_state);
                         Publish(_state with
                         {
                             LastCommandId = commandId,
@@ -5209,10 +6904,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                                 _state.Preferences,
                                 _state.ActiveSectionJson,
                                 _state.WorkspaceId,
-                                RulesetDefaults.Sr5,
+                                commandRulesetId,
                                 masterIndex: string.Equals(commandId, "master_index", StringComparison.Ordinal)
                                     ? CreateLinkedMasterIndexResponse()
-                                    : null),
+                                    : null,
+                                openWorkspaces: _state.OpenWorkspaces),
                             Error = null
                         });
                     }

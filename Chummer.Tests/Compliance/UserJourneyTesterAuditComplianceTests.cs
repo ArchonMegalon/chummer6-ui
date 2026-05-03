@@ -19,6 +19,7 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(scriptText, "chummer6-ui.user_journey_tester_trace");
         StringAssert.Contains(scriptText, "USER_JOURNEY_TESTER_AUDIT.generated.json");
         StringAssert.Contains(scriptText, "UI_LINUX_DESKTOP_EXIT_GATE.generated.json");
+        StringAssert.Contains(scriptText, "UI_FLAGSHIP_RELEASE_GATE.generated.json");
         StringAssert.Contains(scriptText, "master_index_search_focus_stability");
         StringAssert.Contains(scriptText, "file_new_character_visible_workspace");
         StringAssert.Contains(scriptText, "minimal_character_build_save_reload");
@@ -28,6 +29,8 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(scriptText, "new_character_action_opened_visible_workspace");
         StringAssert.Contains(scriptText, "starter_attributes_match_seeded_workspace");
         StringAssert.Contains(scriptText, "section_preview_omits_review_copy");
+        StringAssert.Contains(scriptText, "runtimeBackedNewCharacterFileWorkflow");
+        StringAssert.Contains(scriptText, "Runtime_backed_new_character_starter_attributes_match_seeded_workspace_and_omit_review_copy");
         StringAssert.Contains(scriptText, "tester_shard_id and fix_shard_id must both be present and different");
         StringAssert.Contains(scriptText, "used_internal_apis=false");
         StringAssert.Contains(scriptText, "PNG_SIGNATURE");

@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-05-03T09:20:19.708525Z",
+  "contractName": "chummer6-ui.chummer5a_muscle_memory_parity_gate",
+  "status": "pass",
+  "summary": "Muscle-memory parity policy, full-scope design, detailed seed checks, and release wiring are all present.",
+  "reasons": [],
+  "evidence": {
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json",
+    "policyPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER5A_MUSCLE_MEMORY_PARITY_POLICY.json",
+    "parityOraclePath": "/docker/chummercomplete/chummer-presentation/docs/PARITY_ORACLE.json",
+    "designDocPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER5A_MUSCLE_MEMORY_EXIT_TESTS.md",
+    "inventoryReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json",
+    "workspaceActionCount": 47,
+    "desktopControlCount": 70,
+    "tabCount": 17,
+    "detailedDialogCheckCount": 1,
+    "runtimeShellSurfaceCount": 4,
+    "runtimeMenuRootCount": 4,
+    "runtimeDialogSurfaceCount": 71,
+    "runtimeVisibleElementCount": 16928,
+    "detailedDialogResults": [
+      {
+        "dialogId": "gear_add",
+        "legacyDesignerPath": "/docker/chummer5a/Chummer/Forms/Selection Forms/SelectGear.Designer.cs",
+        "status": "pass",
+        "reasonCount": 0,
+        "reasons": []
+      }
+    ],
+    "missingDesignMarkers": [],
+    "reasonCount": 0,
+    "failureCount": 0
+  },
+  "reviews": {
+    "scopeInventoryReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "dialogWidgetClassReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "designReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "inventoryRuntimeReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "wiringReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    }
+  }
+}

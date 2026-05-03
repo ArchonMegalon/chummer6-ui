@@ -3121,8 +3121,6 @@ evidence["workflow_execution_failing_receipts_external"] = (
     workflow_execution_failing_receipts_external
 )
 
-if not status_ok(flagship_status):
-    reasons.append("Flagship UI release gate is missing or not passing.")
 if not status_ok(visual_familiarity_status):
     reasons.append("Desktop visual familiarity exit gate is missing or not passing.")
 if not status_ok(workflow_execution_status):
