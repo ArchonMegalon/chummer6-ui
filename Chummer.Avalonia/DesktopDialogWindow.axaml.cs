@@ -345,6 +345,7 @@ public partial class DesktopDialogWindow : Window
 
         ComboBox buildMethodCombo = BuildSelectComboBox(buildMethodField, minWidth: 220);
         buildMethodCombo.Name = DesktopDialogAccessibility.BuildFieldInputName("newCharacterBuildMethod");
+        ApplyAccessibility(buildMethodCombo, buildMethodField.AccessibleName, buildMethodField.ToolTip, buildMethodField.HelpText);
         Grid.SetColumn(buildMethodCombo, 1);
         settingRow.Children.Add(buildMethodCombo);
 
@@ -384,6 +385,7 @@ public partial class DesktopDialogWindow : Window
 
         ComboBox rulesetCombo = BuildSelectComboBox(rulesetField, minWidth: 180);
         rulesetCombo.Name = DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId");
+        ApplyAccessibility(rulesetCombo, rulesetField.AccessibleName, rulesetField.ToolTip, rulesetField.HelpText);
         Grid.SetColumn(rulesetCombo, 1);
         rulesetRow.Children.Add(rulesetCombo);
 
