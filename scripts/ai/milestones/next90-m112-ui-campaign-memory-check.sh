@@ -47,6 +47,13 @@ EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chu
 EXPECTED_DESIGN_QUEUE_PATH = "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
 
 SOURCE_MARKERS = {
+    "scripts/ai/verify.sh": [
+        "checking next-90 M112 campaign memory and return-loop desktop guard",
+        "bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh",
+    ],
+    "Chummer.Tests/Chummer.Tests.csproj": [
+        "Compliance\\Next90M112CampaignMemoryGuardTests.cs",
+    ],
     "Chummer.Avalonia/DesktopHomeWindow.cs": [
         "BuildCampaignConsequenceVisibilitySummary()",
         "BuildCampaignMemoryVisibilitySummary()",
@@ -206,6 +213,8 @@ receipt = {
     "proofFiles": [
         str(receipt_path),
         f"{repo_root}/scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh",
+        f"{repo_root}/scripts/ai/verify.sh",
+        f"{repo_root}/Chummer.Tests/Chummer.Tests.csproj",
         f"{repo_root}/Chummer.Avalonia/DesktopHomeWindow.cs",
         f"{repo_root}/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
         f"{repo_root}/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
@@ -214,7 +223,20 @@ receipt = {
     "failures": failed,
 }
 
-receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+if receipt_path.exists():
+    try:
+        existing_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        existing_receipt = None
+    if isinstance(existing_receipt, dict):
+        comparable_receipt = dict(receipt)
+        comparable_existing_receipt = dict(existing_receipt)
+        comparable_receipt.pop("generatedAt", None)
+        comparable_existing_receipt.pop("generatedAt", None)
+        if comparable_receipt == comparable_existing_receipt and isinstance(existing_receipt.get("generatedAt"), str):
+            receipt["generatedAt"] = existing_receipt["generatedAt"]
+
+receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 if failed:
     raise SystemExit("next90-m112 campaign-memory proof failed: " + "; ".join(failed))

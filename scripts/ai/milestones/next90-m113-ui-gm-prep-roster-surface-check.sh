@@ -41,6 +41,7 @@ EXPECTED_SURFACES = [
     "gm_prep_packets:desktop",
     "roster_movement:desktop",
 ]
+EXPECTED_WORK_TASK_ID = "113.3"
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh"
 EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests" --no-restore'
 EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter "FullyQualifiedName~AccessibilitySignoffSmokeTests" --no-restore'
@@ -105,6 +106,9 @@ SOURCE_MARKERS = {
     "Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs": [
         "public const string GmPrepPackets = \"gm_prep_packets\";",
         "public const string RosterMovement = \"roster_movement\";",
+    ],
+    "Chummer.Tests/Chummer.Tests.csproj": [
+        "Compliance\\Next90M113GmPrepRosterSurfaceGuardTests.cs",
     ],
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": [
         "DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement()",
@@ -172,8 +176,10 @@ checks = {
     "design_queue_package_unique": design_queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
     "queue_title_matches": f"title: {TITLE}" in queue_block,
     "queue_task_matches": f"task: {TASK}" in queue_block,
+    "queue_work_task_id_matches": f"work_task_id: {EXPECTED_WORK_TASK_ID}" in queue_block,
     "design_queue_title_matches": f"title: {TITLE}" in design_queue_block,
     "design_queue_task_matches": f"task: {TASK}" in design_queue_block,
+    "design_queue_work_task_id_matches": f"work_task_id: {EXPECTED_WORK_TASK_ID}" in design_queue_block,
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,
@@ -219,13 +225,27 @@ receipt = {
         f"{repo_root}/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
         f"{repo_root}/Chummer.Avalonia/App.axaml.cs",
         f"{repo_root}/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",
+        f"{repo_root}/Chummer.Tests/Chummer.Tests.csproj",
         f"{repo_root}/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         f"{repo_root}/Chummer.Tests/Compliance/Next90M113GmPrepRosterSurfaceGuardTests.cs",
     ],
     "failures": failed,
 }
 
-receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+if receipt_path.exists():
+    try:
+        existing_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        existing_receipt = None
+    if isinstance(existing_receipt, dict):
+        comparable_receipt = dict(receipt)
+        comparable_existing_receipt = dict(existing_receipt)
+        comparable_receipt.pop("generatedAt", None)
+        comparable_existing_receipt.pop("generatedAt", None)
+        if comparable_receipt == comparable_existing_receipt and isinstance(existing_receipt.get("generatedAt"), str):
+            receipt["generatedAt"] = existing_receipt["generatedAt"]
+
+receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 if failed:
     raise SystemExit("next90-m113 gm-prep/roster-surface proof failed: " + "; ".join(failed))

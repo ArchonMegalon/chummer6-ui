@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -16,6 +17,7 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
     {
         string repoRoot = FindRepoRoot();
         string verifyScript = File.ReadAllText(Path.Combine(repoRoot, "scripts", "ai", "verify.sh"));
+        string projectText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Tests", "Chummer.Tests.csproj"));
         string scriptPath = Path.Combine(
             repoRoot,
             "scripts",
@@ -26,6 +28,7 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
 
         StringAssert.Contains(verifyScript, "checking next-90 M113 GM prep and roster movement desktop surface guard");
         StringAssert.Contains(verifyScript, "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh");
+        StringAssert.Contains(projectText, "Compliance\\Next90M113GmPrepRosterSurfaceGuardTests.cs");
 
         StringAssert.Contains(scriptText, "PACKAGE_ID = \"next90-m113-ui-gm-prep-roster-surface\"");
         StringAssert.Contains(scriptText, "TITLE = \"Add GM prep and roster movement surfaces to the desktop workspace\"");
@@ -63,11 +66,15 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         StringAssert.Contains(scriptText, "\"Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs\": [");
         StringAssert.Contains(scriptText, "\"public const string GmPrepPackets = \\\"gm_prep_packets\\\";\"");
         StringAssert.Contains(scriptText, "\"public const string RosterMovement = \\\"roster_movement\\\";\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Tests/Chummer.Tests.csproj\": [");
+        StringAssert.Contains(scriptText, "\"Compliance\\\\Next90M113GmPrepRosterSurfaceGuardTests.cs\"");
         StringAssert.Contains(scriptText, "\"Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs\": [");
         StringAssert.Contains(scriptText, "\"DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement()\"");
         StringAssert.Contains(scriptText, "\"registry_has_m113_ui_task\"");
         StringAssert.Contains(scriptText, "\"queue_package_unique\"");
         StringAssert.Contains(scriptText, "\"design_queue_package_unique\"");
+        StringAssert.Contains(scriptText, "\"queue_work_task_id_matches\"");
+        StringAssert.Contains(scriptText, "\"design_queue_work_task_id_matches\"");
         StringAssert.Contains(scriptText, "\"allowed_paths_exact\"");
         StringAssert.Contains(scriptText, "\"owned_surfaces_exact\"");
         StringAssert.Contains(scriptText, "\"proofCommands\"");
@@ -95,8 +102,10 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         Assert.IsTrue(checks.GetProperty("design_queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_title_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_task_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_work_task_id_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_title_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_task_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_work_task_id_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("allowed_paths_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_allowed_paths_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("owned_surfaces_exact").GetBoolean());
@@ -110,6 +119,7 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/App.axaml.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Chummer.Tests.csproj"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"));
 
         CollectionAssert.AreEquivalent(
@@ -123,6 +133,7 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
                 Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ToolStripControl.axaml.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml.cs"),
                 Path.Combine(repoRoot, "Chummer.Desktop.Runtime", "DesktopStartupSurfaceCatalog.cs"),
+                Path.Combine(repoRoot, "Chummer.Tests", "Chummer.Tests.csproj"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "AccessibilitySignoffSmokeTests.cs"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Compliance", "Next90M113GmPrepRosterSurfaceGuardTests.cs"),
             },
@@ -138,6 +149,35 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         Assert.AreEqual(
             "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore",
             proofCommands.GetProperty("presentationTestCommand").GetString());
+    }
+
+    [TestMethod]
+    public void M113_gm_prep_roster_surface_receipt_keeps_generatedAt_when_semantics_are_unchanged()
+    {
+        string repoRoot = FindRepoRoot();
+        string tempDirectory = Path.Combine(Path.GetTempPath(), $"m113-proof-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            string receiptPath = Path.Combine(tempDirectory, "NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json");
+            string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m113-ui-gm-prep-roster-surface-check.sh");
+
+            RunProofScript(repoRoot, scriptPath, receiptPath);
+            string firstGeneratedAt = ReadGeneratedAt(receiptPath);
+
+            RunProofScript(repoRoot, scriptPath, receiptPath);
+            string secondGeneratedAt = ReadGeneratedAt(receiptPath);
+
+            Assert.AreEqual(firstGeneratedAt, secondGeneratedAt);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+            {
+                Directory.Delete(tempDirectory, recursive: true);
+            }
+        }
     }
 
     private static void AssertSourceMarkersPass(JsonElement sourceChecks)
@@ -177,5 +217,34 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         }
 
         return values.ToArray();
+    }
+
+    private static void RunProofScript(string repoRoot, string scriptPath, string receiptPath)
+    {
+        ProcessStartInfo startInfo = new("bash", scriptPath)
+        {
+            WorkingDirectory = repoRoot,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true
+        };
+        startInfo.Environment["CHUMMER_NEXT90_M113_UI_RECEIPT_PATH"] = receiptPath;
+
+        using Process process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Failed to start the M113 proof script.");
+        process.WaitForExit();
+
+        if (process.ExitCode != 0)
+        {
+            string stderr = process.StandardError.ReadToEnd();
+            string stdout = process.StandardOutput.ReadToEnd();
+            throw new AssertFailedException($"M113 proof script failed with exit code {process.ExitCode}. stdout: {stdout} stderr: {stderr}");
+        }
+    }
+
+    private static string ReadGeneratedAt(string receiptPath)
+    {
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        return document.RootElement.GetProperty("generatedAt").GetString()
+            ?? throw new AssertFailedException("Receipt missing generatedAt.");
     }
 }

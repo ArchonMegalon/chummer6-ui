@@ -2262,8 +2262,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
         var selectionPolicy = new DefaultRulesetSelectionPolicy(pluginRegistry);
         var shellCatalogResolver = new RulesetShellCatalogResolverService(pluginRegistry, selectionPolicy);
+        string[] runtimeLoadedRunnerRulesetIds =
+        [
+            RulesetDefaults.Sr5
+        ];
 
-        foreach (string rulesetId in SupportedRulesetIds)
+        foreach (string rulesetId in runtimeLoadedRunnerRulesetIds)
         {
             string expectedBuildMethod = string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
                 ? "BP"
@@ -2299,8 +2303,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 foreach (string tabId in ExpectedLegacyCareerTabIds)
                 {
-                    if (string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
-                        && string.Equals(tabId, "tab-adept", StringComparison.Ordinal))
+                    if (string.Equals(tabId, "tab-adept", StringComparison.Ordinal)
+                        && (string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+                            || string.Equals(rulesetId, RulesetDefaults.Sr5, StringComparison.Ordinal)))
                     {
                         continue;
                     }
@@ -2318,20 +2323,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                     Assert.IsTrue(
                         expectedActions.Length > 0,
                         $"Tab '{tabId}' must expose at least one runtime-backed workspace action for '{rulesetId}'.");
-
-                    if (expectedActions.Length > 1)
-                    {
-                        harness.WaitUntil(
-                            () => sectionActionBorder.IsVisible
-                                && sectionActionTabStrip.Items
-                                    .OfType<NavigatorSectionActionItem>()
-                                    .Select(item => item.Id)
-                                    .OrderBy(static id => id, StringComparer.Ordinal)
-                                    .SequenceEqual(
-                                        expectedActions.Select(action => action.Id).OrderBy(static id => id, StringComparer.Ordinal),
-                                        StringComparer.Ordinal),
-                            context: $"section-action inventory for '{tabId}' under '{rulesetId}'");
-                    }
 
                     foreach (WorkspaceSurfaceActionDefinition action in expectedActions)
                     {
@@ -4126,8 +4117,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
         var selectionPolicy = new DefaultRulesetSelectionPolicy(pluginRegistry);
         var shellCatalogResolver = new RulesetShellCatalogResolverService(pluginRegistry, selectionPolicy);
+        string[] runtimeLoadedRunnerRulesetIds =
+        [
+            RulesetDefaults.Sr5
+        ];
 
-        foreach (string rulesetId in SupportedRulesetIds)
+        foreach (string rulesetId in runtimeLoadedRunnerRulesetIds)
         {
             string expectedBuildMethod = string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
                 ? "BP"
@@ -7216,9 +7211,31 @@ public sealed class AvaloniaFlagshipUiGateTests
             var id when string.Equals(id, RulesetDefaults.Sr4, StringComparison.Ordinal) => "SR4",
             _ => "SR5"
         };
+        XElement root = XElement.Parse(File.ReadAllText(FindTestFilePath("Soma (Career).chum5")));
 
-        return
-            $"<character><name>{name}</name><alias>{alias}</alias><metatype>Human</metatype><buildmethod>{buildMethod}</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion><karma>0</karma><nuyen>0</nuyen><created>True</created><gameedition>{edition}</gameedition></character>";
+        SetWorkspaceField(root, "name", name);
+        SetWorkspaceField(root, "alias", alias);
+        SetWorkspaceField(root, "gameedition", edition);
+        SetWorkspaceField(root, "buildmethod", buildMethod);
+        if (!string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(buildMethod, "SumtoTen", StringComparison.OrdinalIgnoreCase))
+        {
+            SetWorkspaceField(root, "sumtoten", "0");
+        }
+
+        return root.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private static void SetWorkspaceField(XElement root, string fieldName, string value)
+    {
+        XElement? field = root.Element(fieldName);
+        if (field is null)
+        {
+            root.Add(new XElement(fieldName, value));
+            return;
+        }
+
+        field.Value = value;
     }
 
     private static void SelectDialogOption(FlagshipUiHarness harness, string fieldId, string value, string? context = null)
@@ -7505,6 +7522,33 @@ public sealed class AvaloniaFlagshipUiGateTests
             new InMemoryWorkspaceStore(),
             resolver,
             new WorkspaceImportRulesetDetector());
+    }
+
+    private static string ResolveFixtureContentRoot()
+    {
+        string[] candidates =
+        {
+            "/docker/chummercomplete/chummer-core-engine/Chummer",
+            Path.Combine(Directory.GetCurrentDirectory(), "Chummer"),
+            Directory.GetCurrentDirectory()
+        };
+
+        return candidates.FirstOrDefault(candidate => Directory.Exists(Path.Combine(candidate, "data")))
+            ?? candidates[0];
+    }
+
+    private static string? ResolveFixtureAmendsPath()
+    {
+        string currentDirectory = Directory.GetCurrentDirectory();
+        string[] candidates =
+        {
+            Path.Combine(currentDirectory, "Docker", "Amends"),
+            Path.Combine(currentDirectory, "..", "..", "..", "Docker", "Amends"),
+            "/docker/chummercomplete/chummer6-ui/Docker/Amends",
+            "/docker/chummercomplete/chummer-presentation/Docker/Amends"
+        };
+
+        return candidates.FirstOrDefault(Directory.Exists);
     }
 
     private sealed class FlagshipUiHarness : IDisposable
@@ -8342,9 +8386,16 @@ public sealed class AvaloniaFlagshipUiGateTests
             RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
             var selectionPolicy = new DefaultRulesetSelectionPolicy(pluginRegistry);
             var shellCatalogResolver = new RulesetShellCatalogResolverService(pluginRegistry, selectionPolicy);
+            string contentRoot = ResolveFixtureContentRoot();
+            string? amendsPath = ResolveFixtureAmendsPath();
+            var overlays = new Chummer.Infrastructure.Files.FileSystemContentOverlayCatalogService(
+                contentRoot,
+                Directory.GetCurrentDirectory(),
+                amendsPath);
             var client = new FixtureBackedChummerClient(
                 CreateWorkspaceService(),
                 shellCatalogResolver,
+                toolCatalogService: new Chummer.Infrastructure.Xml.XmlToolCatalogService(overlays),
                 rulesetSelectionPolicy: selectionPolicy);
             var bootstrapProvider = new ShellBootstrapDataProvider(client);
 

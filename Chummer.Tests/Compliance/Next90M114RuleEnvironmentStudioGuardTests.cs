@@ -44,7 +44,12 @@ public sealed class Next90M114RuleEnvironmentStudioGuardTests
         StringAssert.Contains(scriptText, "DesktopHomeWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)");
         StringAssert.Contains(scriptText, "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)");
         StringAssert.Contains(scriptText, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
+        StringAssert.Contains(scriptText, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)");
         StringAssert.Contains(scriptText, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
+        StringAssert.Contains(scriptText, "public event EventHandler? RuleEnvironmentStudioRequested;");
+        StringAssert.Contains(scriptText, "toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;");
+        StringAssert.Contains(scriptText, "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio");
+        StringAssert.Contains(scriptText, "DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, \"avalonia\")");
         StringAssert.Contains(scriptText, "Import explain receipt:");
     }
 
@@ -103,6 +108,10 @@ public sealed class Next90M114RuleEnvironmentStudioGuardTests
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignArtifactWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/MainWindow.EventHandlers.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/Controls/ToolStripControl.axaml"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/MainWindow.ControlBinding.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/App.axaml.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"));
     }
 

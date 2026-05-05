@@ -74,6 +74,7 @@
     <Compile Include="Compliance\Next90M116CreatorPublicationGuardTests.cs" />
     <Compile Include="Compliance\Next90M109BuildExplainArtifactsGuardTests.cs" />
     <Compile Include="Compliance\Next90M112CampaignMemoryGuardTests.cs" />
+    <Compile Include="Compliance\Next90M113GmPrepRosterSurfaceGuardTests.cs" />
     <Compile Include="Compliance\Next90M105PrimaryRouteDecisionGuardTests.cs" />
     <Compile Include="Compliance\Next90M105RestoreContinuityGuardTests.cs" />
     <Compile Include="Compliance\SectionHostRulesetParityComplianceTests.cs" />
