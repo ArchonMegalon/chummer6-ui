@@ -179,20 +179,24 @@ checks = {
     "design_queue_milestone_matches": yaml_scalar(design_queue_block, "milestone_id") == str(MILESTONE_ID),
     "queue_title_matches": f"title: {TITLE}" in queue_block,
     "queue_task_matches": f"task: {TASK}" in queue_block,
-    "queue_status_in_progress": "status: in_progress" in queue_block,
+    "queue_status_complete": "status: complete" in queue_block,
     "queue_wave_matches": yaml_scalar(queue_block, "wave") == WAVE,
     "design_queue_wave_matches": yaml_scalar(design_queue_block, "wave") == WAVE,
     "queue_repo_matches": yaml_scalar(queue_block, "repo") == "chummer6-ui",
     "design_queue_repo_matches": yaml_scalar(design_queue_block, "repo") == "chummer6-ui",
     "design_queue_title_matches": f"title: {TITLE}" in design_queue_block,
     "design_queue_task_matches": f"task: {TASK}" in design_queue_block,
-    "design_queue_status_in_progress": "status: in_progress" in design_queue_block,
+    "design_queue_status_complete": "status: complete" in design_queue_block,
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,
     "design_owned_surfaces_exact": yaml_list_after(design_queue_block, "owned_surfaces") == EXPECTED_SURFACES,
     "queue_design_block_parity": queue_block == design_queue_block,
     "design_queue_path_matches": str(design_queue_path) == EXPECTED_DESIGN_QUEUE_PATH,
+    "queue_completion_action_matches": yaml_scalar(queue_block, "completion_action") == "verify_closed_package_only",
+    "design_queue_completion_action_matches": yaml_scalar(design_queue_block, "completion_action") == "verify_closed_package_only",
+    "queue_has_do_not_reopen_reason": "do_not_reopen_reason:" in queue_block,
+    "design_queue_has_do_not_reopen_reason": "do_not_reopen_reason:" in design_queue_block,
 }
 
 source_checks: dict[str, dict[str, bool]] = {}
@@ -249,7 +253,20 @@ receipt = {
     },
 }
 
-receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+if receipt_path.exists():
+    try:
+        existing_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        existing_receipt = None
+    if isinstance(existing_receipt, dict):
+        comparable_receipt = dict(receipt)
+        comparable_existing_receipt = dict(existing_receipt)
+        comparable_receipt.pop("generatedAt", None)
+        comparable_existing_receipt.pop("generatedAt", None)
+        if comparable_receipt == comparable_existing_receipt and isinstance(existing_receipt.get("generatedAt"), str):
+            receipt["generatedAt"] = existing_receipt["generatedAt"]
+
+receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 if failed:
     raise SystemExit("next90-m114 rule-studio proof failed: " + "; ".join(failed))

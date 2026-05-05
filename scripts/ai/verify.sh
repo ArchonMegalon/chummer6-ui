@@ -995,11 +995,23 @@ bash scripts/ai/milestones/next90-m115-ui-portable-dossier-check.sh
 echo "[verify] checking next-90 M116 creator publication and moderation desktop actions guard..."
 bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh
 
+echo "[verify] checking next-90 M117 desktop artifact shelf entrypoint guard..."
+bash scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh
+
+echo "[verify] checking next-90 M118 organizer desktop operations guard..."
+bash scripts/ai/milestones/next90-m118-ui-organizer-ops-check.sh
+
+echo "[verify] checking next-90 M119 first playable session desktop flow guard..."
+bash scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh
+
 echo "[verify] checking next-90 M112 campaign memory and return-loop desktop guard..."
 bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh
 
 echo "[verify] checking next-90 M113 GM prep and roster movement desktop surface guard..."
 bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh
+
+echo "[verify] checking next-90 M114 rule-environment studio desktop surface guard..."
+bash scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh
 
 echo "[verify] checking next-90 M145 desktop explain drawer and bounded follow-up guard..."
 bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh

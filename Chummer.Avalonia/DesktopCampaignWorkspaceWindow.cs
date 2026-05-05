@@ -441,6 +441,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         List<string> lines =
         [
             F("desktop.home.next_safe_action", _campaignProjection.NextSafeAction),
+            BuildFirstPlayableSessionSummary(),
             _campaignProjection.Summary
         ];
 
@@ -484,10 +485,36 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         return string.Join("\n", lines);
     }
 
+    private string BuildFirstPlayableSessionSummary()
+    {
+        string? firstSession = FindCampaignHighlight("First session:");
+        if (string.IsNullOrWhiteSpace(firstSession))
+        {
+            return "First playable session: no starter-lane session packet is projected yet, so keep using the current workspace and campaign return surfaces.";
+        }
+
+        List<string> lines = [$"First playable session: {StripCampaignHighlightLabel(firstSession)}"];
+
+        string? starterLaneNext = FindCampaignHighlight("Starter lane next:");
+        if (!string.IsNullOrWhiteSpace(starterLaneNext))
+        {
+            lines.Add($"Starter lane next: {StripCampaignHighlightLabel(starterLaneNext)}");
+        }
+
+        string? firstSessionProof = FindCampaignHighlight("First-session proof:");
+        if (!string.IsNullOrWhiteSpace(firstSessionProof))
+        {
+            lines.Add($"Starter lane proof: {StripCampaignHighlightLabel(firstSessionProof)}");
+        }
+
+        return string.Join("\n", lines);
+    }
+
     private string BuildRestoreBody()
     {
         List<string> lines =
         [
+            BuildFirstPlayableSessionSummary(),
             _campaignProjection.RestoreSummary,
             _campaignProjection.DeviceRoleSummary,
             BuildCampaignConsequenceVisibilitySummary(),
@@ -659,6 +686,21 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         return $"Review next-session return action: {safeAction}";
     }
 
+    private bool HasFirstPlayableSession()
+        => FindCampaignHighlight("First session:") is not null;
+
+    private string? FindCampaignHighlight(string prefix)
+        => _campaignProjection.ReadinessHighlights
+            .FirstOrDefault(highlight => highlight.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+
+    private static string StripCampaignHighlightLabel(string highlight)
+    {
+        int separatorIndex = highlight.IndexOf(':');
+        return separatorIndex < 0 || separatorIndex == highlight.Length - 1
+            ? highlight
+            : highlight[(separatorIndex + 1)..].Trim();
+    }
+
     private string BuildRestoreConflictChoiceSummary()
     {
         if (_campaignProjection.Watchouts.Count > 0)
@@ -782,9 +824,16 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         {
             List<Button> actions =
             [
-                CreateButton(S("desktop.home.button.open_current_workspace"), OpenLeadWorkspace, isPrimary: true),
+                HasFirstPlayableSession() && DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                    ? CreateButton("Start First Playable Session", OpenFirstPlayableSessionAsync, isPrimary: true)
+                    : CreateButton(S("desktop.home.button.open_current_workspace"), OpenLeadWorkspace, isPrimary: true),
                 CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
             ];
+
+            if (HasFirstPlayableSession() && DesktopInstallLinkingRuntime.IsClaimed(_installState))
+            {
+                actions.Insert(1, CreateButton("Review Starter Lane", OpenStarterLaneReviewAsync));
+            }
 
             if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
             {
@@ -794,12 +843,14 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
                 actions.Insert(4, CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")));
                 actions.Insert(5, CreateButton("Open Creator Artifact Shelf", () => OpenArtifactShelfView("creator")));
                 actions.Insert(6, CreateButton("Open Creator Publication", OpenCreatorPublicationAsync));
-                actions.Insert(7, CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
-                actions.Insert(8, CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
+                actions.Insert(7, CreateButton("Open Organizer Operations", OpenOrganizerOperationsAsync));
+                actions.Insert(8, CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
+                actions.Insert(9, CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
+                actions.Insert(10, CreateButton("Review Organizer Roles", OpenOrganizerRolesAsync));
                 if (HasPortableExchangePreview())
                 {
-                    actions.Insert(9, CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
-                    actions.Insert(10, CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
+                    actions.Insert(11, CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
+                    actions.Insert(12, CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
                 }
             }
 
@@ -811,9 +862,16 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         {
             List<Button> actions =
             [
-                CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true),
+                HasFirstPlayableSession() && DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                    ? CreateButton("Start First Playable Session", OpenFirstPlayableSessionAsync, isPrimary: true)
+                    : CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true),
                 CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
             ];
+
+            if (HasFirstPlayableSession() && DesktopInstallLinkingRuntime.IsClaimed(_installState))
+            {
+                actions.Insert(1, CreateButton("Review Starter Lane", OpenStarterLaneReviewAsync));
+            }
 
             if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
             {
@@ -823,12 +881,14 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
                 actions.Insert(4, CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")));
                 actions.Insert(5, CreateButton("Open Creator Artifact Shelf", () => OpenArtifactShelfView("creator")));
                 actions.Insert(6, CreateButton("Open Creator Publication", OpenCreatorPublicationAsync));
-                actions.Insert(7, CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
-                actions.Insert(8, CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
+                actions.Insert(7, CreateButton("Open Organizer Operations", OpenOrganizerOperationsAsync));
+                actions.Insert(8, CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
+                actions.Insert(9, CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
+                actions.Insert(10, CreateButton("Review Organizer Roles", OpenOrganizerRolesAsync));
                 if (HasPortableExchangePreview())
                 {
-                    actions.Insert(9, CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
-                    actions.Insert(10, CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
+                    actions.Insert(11, CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
+                    actions.Insert(12, CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
                 }
             }
 
@@ -840,15 +900,19 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         {
             List<Button> claimedActions =
             [
-                CreateButton(S("desktop.home.button.open_campaign_followthrough"), OpenCampaignFollowThroughAsync, isPrimary: true),
+                HasFirstPlayableSession()
+                    ? CreateButton("Start First Playable Session", OpenFirstPlayableSessionAsync, isPrimary: true)
+                    : CreateButton(S("desktop.home.button.open_campaign_followthrough"), OpenCampaignFollowThroughAsync, isPrimary: true),
                 CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact),
                 CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact),
                 CreateButton("Open My Artifact Shelf", () => OpenArtifactShelfView("personal")),
                 CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")),
                 CreateButton("Open Creator Artifact Shelf", () => OpenArtifactShelfView("creator")),
                 CreateButton("Open Creator Publication", OpenCreatorPublicationAsync),
+                CreateButton("Open Organizer Operations", OpenOrganizerOperationsAsync),
                 CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")),
                 CreateButton("Review Moderation Flow", OpenCreatorModerationAsync),
+                CreateButton("Review Organizer Roles", OpenOrganizerRolesAsync),
                 CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync),
                 CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
             ];
@@ -874,11 +938,18 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     {
         List<Button> actions =
         [
-            DesktopInstallLinkingRuntime.IsClaimed(_installState)
+            HasFirstPlayableSession() && DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                ? CreateButton("Start First Playable Session", OpenFirstPlayableSessionAsync, isPrimary: true)
+                : DesktopInstallLinkingRuntime.IsClaimed(_installState)
                 ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
             CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
         ];
+
+        if (HasFirstPlayableSession() && DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Insert(1, CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync));
+        }
 
         if (HasPortableExchangePreview())
         {
@@ -909,8 +980,10 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")),
             CreateButton("Open Creator Artifact Shelf", () => OpenArtifactShelfView("creator")),
             CreateButton("Open Creator Publication", OpenCreatorPublicationAsync),
+            CreateButton("Open Organizer Operations", OpenOrganizerOperationsAsync),
             CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")),
             CreateButton("Review Moderation Flow", OpenCreatorModerationAsync),
+            CreateButton("Review Organizer Roles", OpenOrganizerRolesAsync),
             CreateButton("Open Replay After Action", OpenReplayAfterActionAsync),
             CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
         ];
@@ -1072,6 +1145,32 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             _leadPublication,
             _portabilityActivity);
 
+    private Task OpenOrganizerOperationsAsync()
+        => DesktopOrganizerOperationsWindow.ShowAsync(
+            this,
+            _installState,
+            _preferences,
+            _recentWorkspaces,
+            _campaignProjection,
+            _campaignServerPlane,
+            _portableExchangePreview,
+            _supportProjection,
+            _leadPublication,
+            _portabilityActivity);
+
+    private Task OpenOrganizerRolesAsync()
+        => DesktopOrganizerOperationsWindow.ShowRolesAsync(
+            this,
+            _installState,
+            _preferences,
+            _recentWorkspaces,
+            _campaignProjection,
+            _campaignServerPlane,
+            _portableExchangePreview,
+            _supportProjection,
+            _leadPublication,
+            _portabilityActivity);
+
     private bool OpenPortableExchangeRoute()
     {
         string? workspaceId = _campaignProjection.LeadWorkspaceId ?? _recentWorkspaces.FirstOrDefault()?.Id.Value;
@@ -1125,6 +1224,31 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             : _recentWorkspaces.Count > 0
                 ? OpenCurrentWorkspace()
                 : DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId);
+
+    private Task OpenFirstPlayableSessionAsync()
+    {
+        if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            return OpenCampaignFollowThroughAsync();
+        }
+
+        if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId) || _recentWorkspaces.Count > 0)
+        {
+            return OpenMissionBriefingArtifact();
+        }
+
+        return OpenCampaignPrimerArtifact();
+    }
+
+    private Task OpenStarterLaneReviewAsync()
+    {
+        if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            return OpenCampaignFollowThroughAsync();
+        }
+
+        return OpenCampaignPrimerArtifact();
+    }
 
     private bool OpenInstallSupport()
         => DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_installState);

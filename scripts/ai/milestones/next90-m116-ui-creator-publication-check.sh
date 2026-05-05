@@ -92,7 +92,7 @@ SOURCE_MARKERS = {
         "Trust ranking and lineage",
         "Moderation flow",
         "review discovery posture, trust ranking, lineage, and moderation flow",
-        'CreateButton("Open Creator Publication", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true)',
+        'CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true)',
         'CreateButton("Review Moderation Flow", OpenModerationSurfaceAsync)',
         "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",
@@ -134,7 +134,7 @@ def block_for_work_task(text: str, task_id: str) -> str:
     start = text.find(marker)
     if start == -1:
         raise AssertionError(f"missing work task row for {task_id}")
-    block_start = text.rfind("\n      - id:", 0, start)
+    block_start = text.rfind("\n", 0, start)
     block_start = 0 if block_start == -1 else block_start + 1
     next_start = text.find("\n      - id:", start + len(marker))
     if next_start == -1:
@@ -157,6 +157,9 @@ def yaml_list_after(block: str, key: str) -> list[str]:
             continue
         if line.startswith("          - "):
             items.append(line.removeprefix("          - ").strip())
+            continue
+        if items and line.startswith("    ") and not line.strip().endswith(":"):
+            items[-1] = f"{items[-1]} {line.strip()}"
             continue
         if line.startswith("    ") and not line.startswith("      "):
             break

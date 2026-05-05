@@ -12,6 +12,8 @@ public static class DesktopStartupSurfaceCatalog
     public const string MissionBriefing = "mission_briefing";
     public const string GmPrepPackets = "gm_prep_packets";
     public const string RosterMovement = "roster_movement";
+    public const string OrganizerOperations = "organizer_operations";
+    public const string OrganizerRoles = "organizer_roles";
     public const string RuleEnvironmentStudio = "rule_environment_studio";
     public const string ReportIssue = "report_issue";
     public const string CrashRecovery = "crash_recovery";

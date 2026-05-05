@@ -57,6 +57,15 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         StringAssert.Contains(scriptText, "\"Chummer.Avalonia/MainWindow.EventHandlers.cs\": [");
         StringAssert.Contains(scriptText, "\"ToolStrip_OnGmPrepRequested\"");
         StringAssert.Contains(scriptText, "\"ToolStrip_OnRosterMovementRequested\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Avalonia/MainWindow.axaml.cs\": [");
+        StringAssert.Contains(scriptText, "\"onGmPrepRequested: ToolStrip_OnGmPrepRequested,\"");
+        StringAssert.Contains(scriptText, "\"onRosterMovementRequested: ToolStrip_OnRosterMovementRequested,\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Avalonia/MainWindow.ControlBinding.cs\": [");
+        StringAssert.Contains(scriptText, "\"toolStrip.GmPrepRequested += onGmPrepRequested;\"");
+        StringAssert.Contains(scriptText, "\"toolStrip.RosterMovementRequested += onRosterMovementRequested;\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Avalonia/MainWindow.ShellFrameProjector.cs\": [");
+        StringAssert.Contains(scriptText, "\"ShowGmPrep: true,\"");
+        StringAssert.Contains(scriptText, "\"ShowRosterMovement: true,\"");
         StringAssert.Contains(scriptText, "\"Chummer.Avalonia/Controls/ToolStripControl.axaml.cs\": [");
         StringAssert.Contains(scriptText, "\"public event EventHandler? GmPrepRequested;\"");
         StringAssert.Contains(scriptText, "\"public event EventHandler? RosterMovementRequested;\"");
@@ -79,6 +88,13 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         StringAssert.Contains(scriptText, "\"owned_surfaces_exact\"");
         StringAssert.Contains(scriptText, "\"proofCommands\"");
         StringAssert.Contains(scriptText, "\"proofFiles\"");
+        StringAssert.Contains(scriptText, "\"scripts/e2e-portal.sh\": [");
+        StringAssert.Contains(scriptText, "\"NEXT90_M113_RECEIPT_PATH\"");
+        StringAssert.Contains(scriptText, "\"\\\"desktop_workspace_routes\\\": [\"");
+        StringAssert.Contains(scriptText, "\"local_release_proof_status_pass\"");
+        StringAssert.Contains(scriptText, "\"local_release_proof_receipt_path_present\"");
+        StringAssert.Contains(scriptText, "\"local_release_proof_package_present\"");
+        StringAssert.Contains(scriptText, "\"local_release_proof_surfaces_present\"");
         StringAssert.Contains(scriptText, "\"status\": \"pass\" if not failed else \"fail\"");
     }
 
@@ -111,25 +127,38 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         Assert.IsTrue(checks.GetProperty("owned_surfaces_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_owned_surfaces_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_path_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("local_release_proof_status_pass").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("local_release_proof_receipt_path_present").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("local_release_proof_package_present").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("local_release_proof_surfaces_present").GetBoolean());
 
         JsonElement sourceChecks = root.GetProperty("sourceChecks");
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopHomeWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/MainWindow.EventHandlers.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/MainWindow.axaml.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/MainWindow.ControlBinding.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/MainWindow.ShellFrameProjector.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/App.axaml.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Chummer.Tests.csproj"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("scripts/e2e-portal.sh"));
 
         CollectionAssert.AreEquivalent(
             new[]
             {
                 Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json"),
+                Path.Combine(repoRoot, ".codex-studio", "published", "UI_LOCAL_RELEASE_PROOF.generated.json"),
                 Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m113-ui-gm-prep-roster-surface-check.sh"),
+                Path.Combine(repoRoot, "scripts", "e2e-portal.sh"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.EventHandlers.cs"),
+                Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.axaml.cs"),
+                Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.ControlBinding.cs"),
+                Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ToolStripControl.axaml.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml.cs"),
                 Path.Combine(repoRoot, "Chummer.Desktop.Runtime", "DesktopStartupSurfaceCatalog.cs"),

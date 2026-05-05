@@ -8,6 +8,10 @@
     "design_queue_task_matches": true,
     "design_queue_title_matches": true,
     "design_queue_work_task_id_matches": true,
+    "local_release_proof_package_present": true,
+    "local_release_proof_receipt_path_present": true,
+    "local_release_proof_status_pass": true,
+    "local_release_proof_surfaces_present": true,
     "owned_surfaces_exact": true,
     "queue_package_unique": true,
     "queue_task_matches": true,
@@ -17,7 +21,7 @@
     "registry_task_unique": true
   },
   "failures": [],
-  "generatedAt": "2026-05-05T10:04:30Z",
+  "generatedAt": "2026-05-05T10:38:38Z",
   "packageId": "next90-m113-ui-gm-prep-roster-surface",
   "proofCommands": {
     "directProofCommand": "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
@@ -26,10 +30,15 @@
   },
   "proofFiles": [
     "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
     "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
+    "/docker/chummercomplete/chummer-presentation/scripts/e2e-portal.sh",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.EventHandlers.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.axaml.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.ControlBinding.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.ShellFrameProjector.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",
@@ -87,11 +96,23 @@
       "OpenGmPrepPacketsAsync": true,
       "OpenRosterMovementAsync": true
     },
+    "Chummer.Avalonia/MainWindow.ControlBinding.cs": {
+      "toolStrip.GmPrepRequested += onGmPrepRequested;": true,
+      "toolStrip.RosterMovementRequested += onRosterMovementRequested;": true
+    },
     "Chummer.Avalonia/MainWindow.EventHandlers.cs": {
       "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
       "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
       "ToolStrip_OnGmPrepRequested": true,
       "ToolStrip_OnRosterMovementRequested": true
+    },
+    "Chummer.Avalonia/MainWindow.ShellFrameProjector.cs": {
+      "ShowGmPrep: true,": true,
+      "ShowRosterMovement: true,": true
+    },
+    "Chummer.Avalonia/MainWindow.axaml.cs": {
+      "onGmPrepRequested: ToolStrip_OnGmPrepRequested,": true,
+      "onRosterMovementRequested: ToolStrip_OnRosterMovementRequested,": true
     },
     "Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs": {
       "public const string GmPrepPackets = \"gm_prep_packets\";": true,
@@ -110,6 +131,14 @@
       "RequireContains(homeSource, \"\\\"Review Roster Movement\\\"\")": true,
       "RequireContains(toolStripSource, \"\\\"Open GM Prep Packets\\\"\")": true,
       "RequireContains(toolStripSource, \"\\\"Review Roster Movement\\\"\")": true
+    },
+    "scripts/e2e-portal.sh": {
+      "\"Desktop campaign workspace keeps GM prep packets and roster movement as first-class successor surfaces.\"": true,
+      "\"desktop_workspace_routes\": [": true,
+      "\"gm_prep_packets:desktop\"": true,
+      "\"next90-m113-ui-gm-prep-roster-surface\"": true,
+      "\"roster_movement:desktop\"": true,
+      "NEXT90_M113_RECEIPT_PATH": true
     }
   },
   "sourceDesignQueuePath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",

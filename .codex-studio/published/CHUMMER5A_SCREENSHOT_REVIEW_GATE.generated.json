@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-02T14:05:08.068801Z",
+  "generatedAt": "2026-05-05T15:52:37.242320Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, and settings.",
@@ -35,7 +35,9 @@
       "interactionProofReview": "pass",
       "sourceAnchorReview": "pass",
       "screenCaptureReview": "pass",
-      "legacyFamiliarityReview": "pass"
+      "legacyFamiliarityReview": "pass",
+      "legacyEquivalentChromeReview": "pass",
+      "muscleMemoryParityReview": "pass"
     },
     "visualFailureCount": 0
   },
@@ -60,7 +62,10 @@
       "15-creation-section-light.png",
       "16-master-index-dialog-light.png",
       "17-character-roster-dialog-light.png",
-      "18-import-dialog-light.png"
+      "18-import-dialog-light.png",
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png"
     ],
     "missingScreenshots": [],
     "invalidScreenshots": [],
@@ -159,7 +164,9 @@
       "interactionProofReview",
       "sourceAnchorReview",
       "screenCaptureReview",
-      "legacyFamiliarityReview"
+      "legacyFamiliarityReview",
+      "legacyEquivalentChromeReview",
+      "muscleMemoryParityReview"
     ],
     "missingVisualReviewKeys": [],
     "failingVisualReviewKeys": [],

@@ -72,6 +72,8 @@
     <Compile Include="Compliance\Next90M114RuleEnvironmentStudioGuardTests.cs" />
     <Compile Include="Compliance\Next90M115PortableDossierGuardTests.cs" />
     <Compile Include="Compliance\Next90M116CreatorPublicationGuardTests.cs" />
+    <Compile Include="Compliance\Next90M118OrganizerOperationsGuardTests.cs" />
+    <Compile Include="Compliance\Next90M119FirstSessionFlowGuardTests.cs" />
     <Compile Include="Compliance\Next90M109BuildExplainArtifactsGuardTests.cs" />
     <Compile Include="Compliance\Next90M112CampaignMemoryGuardTests.cs" />
     <Compile Include="Compliance\Next90M113GmPrepRosterSurfaceGuardTests.cs" />

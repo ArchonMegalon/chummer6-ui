@@ -445,7 +445,7 @@ internal sealed class DesktopCreatorPublicationWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton("Open Creator Publication", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true));
+            actions.Add(CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true));
             actions.Add(CreateButton("Open My Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("personal"))));
             actions.Add(CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))));
         }
