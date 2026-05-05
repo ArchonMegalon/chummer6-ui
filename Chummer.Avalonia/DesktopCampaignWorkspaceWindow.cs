@@ -790,12 +790,14 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             {
                 actions.Insert(1, CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
                 actions.Insert(2, CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
-                actions.Insert(3, CreateButton("Open Creator Publication", OpenCreatorPublicationAsync));
-                actions.Insert(4, CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
+                actions.Insert(3, CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")));
+                actions.Insert(4, CreateButton("Open Creator Publication", OpenCreatorPublicationAsync));
+                actions.Insert(5, CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
+                actions.Insert(6, CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
                 if (HasPortableExchangePreview())
                 {
-                    actions.Insert(5, CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
-                    actions.Insert(6, CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
+                    actions.Insert(7, CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
+                    actions.Insert(8, CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
                 }
             }
 
@@ -815,12 +817,14 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             {
                 actions.Insert(1, CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
                 actions.Insert(2, CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
-                actions.Insert(3, CreateButton("Open Creator Publication", OpenCreatorPublicationAsync));
-                actions.Insert(4, CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
+                actions.Insert(3, CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")));
+                actions.Insert(4, CreateButton("Open Creator Publication", OpenCreatorPublicationAsync));
+                actions.Insert(5, CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
+                actions.Insert(6, CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
                 if (HasPortableExchangePreview())
                 {
-                    actions.Insert(5, CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
-                    actions.Insert(6, CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
+                    actions.Insert(7, CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
+                    actions.Insert(8, CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
                 }
             }
 
@@ -835,7 +839,9 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
                 CreateButton(S("desktop.home.button.open_campaign_followthrough"), OpenCampaignFollowThroughAsync, isPrimary: true),
                 CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact),
                 CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact),
+                CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")),
                 CreateButton("Open Creator Publication", OpenCreatorPublicationAsync),
+                CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")),
                 CreateButton("Review Moderation Flow", OpenCreatorModerationAsync),
                 CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync),
                 CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
@@ -893,7 +899,9 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         [
             CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact, isPrimary: true),
             CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact),
+            CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")),
             CreateButton("Open Creator Publication", OpenCreatorPublicationAsync),
+            CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")),
             CreateButton("Review Moderation Flow", OpenCreatorModerationAsync),
             CreateButton("Open Replay After Action", OpenReplayAfterActionAsync),
             CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
@@ -1067,6 +1075,10 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         return DesktopInstallLinkingRuntime.TryOpenRelativePortal(
             $"/account/work/workspaces/{Uri.EscapeDataString(workspaceId)}#portable-exchange");
     }
+
+    private bool OpenArtifactShelfView(string view)
+        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
+           && DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/artifacts?view={Uri.EscapeDataString(view)}");
 
     private Task OpenRuleEnvironmentStudioAsync()
         => DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity);

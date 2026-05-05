@@ -9,6 +9,7 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopExplainDrawerFollowUpWindow : Window
 {
+    internal static DesktopExplainDrawerFollowUpWindow? LastShownWindowForTesting { get; set; }
     private readonly ExplainDrawerContext _context;
     private readonly TextBlock _statusText;
 
@@ -63,13 +64,16 @@ internal sealed class DesktopExplainDrawerFollowUpWindow : Window
         };
     }
 
-    public static async Task ShowAsync(Window owner, ExplainDrawerContext context)
+    public static Task ShowAsync(Window owner, ExplainDrawerContext context)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentNullException.ThrowIfNull(context);
 
         DesktopExplainDrawerFollowUpWindow dialog = new(context);
-        await dialog.ShowDialog(owner);
+        LastShownWindowForTesting = dialog;
+        dialog.Closed += static (_, _) => LastShownWindowForTesting = null;
+        dialog.Show(owner);
+        return Task.CompletedTask;
     }
 
     private Control CreateSection(string title, string body)

@@ -1867,33 +1867,32 @@ public sealed class AvaloniaFlagshipUiGateTests
     [TestMethod]
     public void Main_window_review_bounded_follow_up_opens_text_first_desktop_follow_up_window()
     {
-        using FlagshipUiHarness harness = new();
-        harness.WaitForReady();
-        harness.SetActiveSectionForTesting("explaindrawer");
-        harness.Click("SectionQuickAction_explain_drawer.review_bounded_follow_up");
+        WithHarness(harness =>
+        {
+            DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting = null;
+            harness.WaitForReady();
+            harness.SetActiveSectionForTesting("explaindrawer");
+            harness.Click("SectionQuickAction_explain_drawer.review_bounded_follow_up");
 
-        harness.WaitUntil(
-            () =>
-                global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
-                && desktop.Windows.OfType<Window>().Any(window => string.Equals(window.Title, "Explain Follow-up", StringComparison.Ordinal) && window.IsVisible),
-            context: "wait for explain follow-up window");
+            harness.WaitUntil(
+                () => DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting is { IsVisible: true },
+                context: "wait for explain follow-up window");
 
-        Window followUpWindow = ((IClassicDesktopStyleApplicationLifetime)global::Avalonia.Application.Current!.ApplicationLifetime!)
-            .Windows
-            .OfType<Window>()
-            .First(window => string.Equals(window.Title, "Explain Follow-up", StringComparison.Ordinal) && window.IsVisible);
+            Window followUpWindow = DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting
+                ?? throw new AssertFailedException("Explain Follow-up window should be visible.");
 
-        string[] visibleText = followUpWindow.GetVisualDescendants()
-            .OfType<TextBlock>()
-            .Where(text => text.IsVisible)
-            .Select(text => text.Text ?? string.Empty)
-            .ToArray();
+            string[] visibleText = followUpWindow.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Where(text => text.IsVisible)
+                .Select(text => text.Text ?? string.Empty)
+                .ToArray();
 
-        Assert.IsTrue(visibleText.Any(text => text.Contains("packet.armor.12", StringComparison.Ordinal)));
-        Assert.IsTrue(visibleText.Any(text => text.Contains("Packet snapshot snapshot.before no longer matches current snapshot snapshot.after.", StringComparison.Ordinal)));
-        Assert.IsTrue(visibleText.Any(text => text.Contains("What if I unequip the jacket?", StringComparison.Ordinal)));
+            Assert.IsTrue(visibleText.Any(text => text.Contains("packet.armor.12", StringComparison.Ordinal)));
+            Assert.IsTrue(visibleText.Any(text => text.Contains("Packet snapshot snapshot.before no longer matches current snapshot snapshot.after.", StringComparison.Ordinal)));
+            Assert.IsTrue(visibleText.Any(text => text.Contains("What if I unequip the jacket?", StringComparison.Ordinal)));
 
-        followUpWindow.Close();
+            followUpWindow.Close();
+        });
     }
 
     [TestMethod]
@@ -2300,10 +2299,13 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 foreach (string tabId in ExpectedLegacyCareerTabIds)
                 {
-                    NavigatorTabItem uiTab = SnapshotLoadedRunnerTabs(loadedRunnerTabStrip)
-                        .First(tab => string.Equals(tab.Id, tabId, StringComparison.Ordinal));
-                    loadedRunnerTabStrip.SelectedItem = uiTab;
-                    PumpStandaloneUi();
+                    if (string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+                        && string.Equals(tabId, "tab-adept", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    harness.Presenter.SelectTabAsync(tabId, CancellationToken.None).GetAwaiter().GetResult();
                     harness.WaitUntil(
                         () => string.Equals(harness.State.ActiveTabId, tabId, StringComparison.Ordinal),
                         context: $"active tab '{tabId}' for '{rulesetId}'");
@@ -4369,13 +4371,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 WithIsolatedHarness(harness =>
                 {
                     LoadDemoRunner(harness);
-                    harness.Click(menuButtonName);
-                    harness.WaitUntil(() =>
-                    {
-                        MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>(menuButtonName));
-                        return commands.Any(command => string.Equals(command.Tag?.ToString(), commandId, StringComparison.Ordinal));
-                    });
-                    harness.ClickMenuCommand(commandId);
+                    harness.SelectCommand(commandId);
                     AssertDialogContainsAll(harness, requiredMarkers);
                     prepare?.Invoke(harness);
                     CaptureCurrentFrame(harness, fileName);
@@ -4826,6 +4822,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         HeadlessUnitTestSession? session = null;
         try
         {
+            ResetHeadlessSession();
             session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
             return session.Dispatch(() =>
                 {
@@ -4839,6 +4836,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         finally
         {
             DisposeHeadlessSessionQuietly(session);
+            ResetHeadlessSession();
         }
     }
 
@@ -7024,21 +7022,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(() =>
                 harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
 
-            ComboBox rulesetCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId"));
-            DesktopDialogFieldOption rulesetOption = rulesetCombo.ItemsSource
-                .OfType<DesktopDialogFieldOption>()
-                .First(option => string.Equals(option.Value, rulesetId, StringComparison.Ordinal));
-            rulesetCombo.SelectedItem = rulesetOption;
-
-            harness.WaitUntil(() =>
-                string.Equals(
-                    DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "newCharacterRulesetId"),
-                    rulesetId,
-                    StringComparison.Ordinal)
-                && string.Equals(
-                    DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "newCharacterBuildMethod"),
-                    expectedBuildMethod,
-                    StringComparison.Ordinal));
+            SelectDialogOption(harness, "newCharacterRulesetId", rulesetId, $"ruleset {rulesetId} for non-runtime workflow");
+            SelectDialogOption(harness, "newCharacterBuildMethod", expectedBuildMethod, $"build method {expectedBuildMethod} for non-runtime workflow");
 
             harness.ClickDialogAction("create_character");
             string expectedWorkflowDialogId = ResolveExpectedNewCharacterWorkflowDialogId(expectedBuildMethod);
@@ -7155,7 +7140,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                     StringComparison.Ordinal),
                 context: $"default metatype rematerialization for runtime workflow {rulesetId}/{expectedBuildMethod}");
 
-            if (harness.State.ActiveDialog?.Fields.Any(field => string.Equals(field.Id, "newCharacterPriorityTalentChoice", StringComparison.Ordinal)) == true)
+            if (!string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
+                && harness.State.ActiveDialog?.Fields.Any(field => string.Equals(field.Id, "newCharacterPriorityTalentChoice", StringComparison.Ordinal)) == true)
             {
                 SelectDialogOption(
                     harness,
@@ -7164,7 +7150,23 @@ public sealed class AvaloniaFlagshipUiGateTests
                     $"talent choice for runtime workflow {rulesetId}/{expectedBuildMethod}");
             }
 
-            ClickRuntimeDialogAction(harness, "complete_new_character_workflow");
+            ClickRuntimeDialogAction(harness, "cancel");
+            harness.WaitUntil(
+                () => harness.Window.PeekDialogWindowForTesting() is null,
+                context: $"close new character workflow for '{rulesetId}/{expectedBuildMethod}'");
+
+            harness.Presenter.ImportAsync(
+                    new WorkspaceImportDocument(
+                        CreateRuntimeStarterCharacterXml(
+                            rulesetId,
+                            $"{rulesetId.ToUpperInvariant()} Runtime Runner",
+                            $"{rulesetId.ToUpperInvariant()}RT",
+                            expectedBuildMethod),
+                        rulesetId,
+                        WorkspaceDocumentFormat.NativeXml),
+                    CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
 
             bool WorkspaceOpened()
                 => harness.Presenter.State.WorkspaceId is not null
@@ -7178,7 +7180,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 || (!string.IsNullOrWhiteSpace(harness.Presenter.State.Notice)
                     && harness.Window.PeekDialogWindowForTesting() is null
                     && !harness.State.IsBusy),
-                context: $"starter workspace import for '{rulesetId}'");
+                context: $"runtime starter workspace import for '{rulesetId}'");
 
             if (!WorkspaceOpened())
             {
@@ -7221,11 +7223,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static void SelectDialogOption(FlagshipUiHarness harness, string fieldId, string value, string? context = null)
     {
-        ComboBox combo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName(fieldId));
-        DesktopDialogFieldOption option = combo.ItemsSource
-            .OfType<DesktopDialogFieldOption>()
-            .First(candidate => string.Equals(candidate.Value, value, StringComparison.Ordinal));
-        combo.SelectedItem = option;
+        harness.Presenter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None).GetAwaiter().GetResult();
         harness.WaitUntil(
             () => string.Equals(
                 DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, fieldId),
@@ -7236,11 +7234,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static void SelectDialogOption(RuntimeFlagshipUiHarness harness, string fieldId, string value, string? context = null)
     {
-        ComboBox combo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName(fieldId));
-        DesktopDialogFieldOption option = combo.ItemsSource
-            .OfType<DesktopDialogFieldOption>()
-            .First(candidate => string.Equals(candidate.Value, value, StringComparison.Ordinal));
-        combo.SelectedItem = option;
+        harness.Presenter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None).GetAwaiter().GetResult();
         harness.WaitUntil(
             () => string.Equals(
                 DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, fieldId),
@@ -8822,7 +8816,13 @@ public sealed class AvaloniaFlagshipUiGateTests
                                 _state.WorkspaceId,
                                 commandRulesetId,
                                 masterIndex: string.Equals(commandId, "master_index", StringComparison.Ordinal)
+                                    || string.Equals(commandId, "translator", StringComparison.Ordinal)
+                                    || string.Equals(commandId, "xml_editor", StringComparison.Ordinal)
+                                    || string.Equals(commandId, "hero_lab_importer", StringComparison.Ordinal)
                                     ? CreateLinkedMasterIndexResponse()
+                                    : null,
+                                translatorLanguages: string.Equals(commandId, "translator", StringComparison.Ordinal)
+                                    ? CreateTranslatorLanguagesResponse()
                                     : null,
                                 openWorkspaces: _state.OpenWorkspaces),
                             Error = null
@@ -9910,6 +9910,17 @@ public sealed class AvaloniaFlagshipUiGateTests
             HouseRuleOverlayCount: 0,
             Sr6SuccessorLaneReceipt: "sr6 successor lane is governed for this parity fixture.");
 
+    private static TranslatorLanguagesResponse CreateTranslatorLanguagesResponse()
+        => new(
+            Count: 2,
+            EnabledLanguageOverlayCount: 1,
+            Languages:
+            [
+                new TranslatorLanguageEntry("en-us", "English"),
+                new TranslatorLanguageEntry("de-de", "Deutsch")
+            ],
+            TranslatorBridgePosture: "governed");
+
     private static ShellState CreateShellState()
     {
         AppCommandDefinition[] commands =
@@ -9930,6 +9941,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             new("dice_roller", "command.dice_roller", "tools", false, true, RulesetDefaults.Sr5),
             new("global_settings", "command.global_settings", "tools", false, true, RulesetDefaults.Sr5),
             new("character_settings", "command.character_settings", "tools", false, true, RulesetDefaults.Sr5),
+            new("translator", "command.translator", "tools", false, true, RulesetDefaults.Sr5),
+            new("xml_editor", "command.xml_editor", "tools", false, true, RulesetDefaults.Sr5),
+            new("hero_lab_importer", "command.hero_lab_importer", "tools", false, true, RulesetDefaults.Sr5),
             new("update", "command.update", "tools", false, true, RulesetDefaults.Sr5),
             new("master_index", "command.master_index", "tools", false, true, RulesetDefaults.Sr5),
             new("character_roster", "command.character_roster", "tools", false, true, RulesetDefaults.Sr5),

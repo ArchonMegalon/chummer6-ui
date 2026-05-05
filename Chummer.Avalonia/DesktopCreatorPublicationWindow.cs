@@ -446,6 +446,7 @@ internal sealed class DesktopCreatorPublicationWindow : Window
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
                 ? CreateButton("Open Creator Publication", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
+            CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
             CreateButton("Review Moderation Flow", OpenModerationSurfaceAsync),
             CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
         ];

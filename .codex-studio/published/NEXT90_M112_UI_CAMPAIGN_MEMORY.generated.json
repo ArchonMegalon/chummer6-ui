@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T08:08:15Z",
+  "generatedAt": "2026-05-05T09:36:05Z",
   "packageId": "next90-m112-ui-campaign-memory",
   "title": "Surface campaign memory and consequences on desktop",
   "task": "Make campaign consequences, stale state, and next-session return actions visible on the promoted desktop route.",
@@ -24,33 +24,67 @@
   },
   "sourceChecks": {
     "Chummer.Avalonia/DesktopHomeWindow.cs": {
+      "BuildCampaignConsequenceVisibilitySummary()": true,
+      "BuildCampaignMemoryVisibilitySummary()": true,
       "BuildCampaignConsequenceSummary()": true,
       "BuildCampaignConsequenceEvidenceSummary()": true,
       "BuildCampaignNextSessionReturnSummary()": true,
       "BuildCampaignReturnActionSummary()": true,
+      "BuildCampaignNextSessionReturnActionSummary()": true,
+      "BuildCampaignStaleStateVisibilitySummary()": true,
+      "CreateCampaignMemoryActions()": true,
       "ResolveCampaignMemoryEvidence()": true,
+      "\"Review Campaign Memory\"": true,
+      "OpenWorkspaceSupport": true,
+      "OpenCurrentWorkspace": true,
+      "OpenDevicesAccessWindowAsync": true,
       "Review campaign consequences": true,
       "Review next-session return": true,
-      "Campaign consequence proof:": true
+      "Campaign consequence proof:": true,
+      "Campaign memory stale-state check:": true,
+      "Next-session return actions:": true,
+      "Stale state: server continuity is unavailable": true
     },
     "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
+      "BuildCampaignConsequenceVisibilitySummary()": true,
+      "BuildCampaignMemoryVisibilitySummary()": true,
       "BuildCampaignConsequenceSummary()": true,
       "BuildCampaignConsequenceEvidenceSummary()": true,
       "BuildCampaignNextSessionReturnSummary()": true,
       "BuildCampaignNextSessionReturnActionSummary()": true,
+      "BuildRestoreStaleStateVisibilitySummary()": true,
+      "BuildRestoreConflictChoiceSummary()": true,
+      "CreateReadinessActions()": true,
+      "CreateRestoreActions()": true,
       "ResolveCampaignMemorySummary()": true,
       "ResolveCampaignMemoryReturnSummary()": true,
       "ResolveCampaignMemoryEvidence()": true,
+      "\"Open Rule Environment Studio\"": true,
+      "OpenWorkspaceSupport": true,
+      "OpenDevicesAccessWindowAsync": true,
       "Review campaign consequences": true,
       "Review next-session return": true,
-      "Campaign consequence proof:": true
+      "Campaign consequence proof:": true,
+      "Campaign memory stale-state check:": true,
+      "Next-session return actions:": true,
+      "Stale state: server continuity is unavailable": true,
+      "Conflict choices:": true
     },
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
+      "DesktopHome_promotes_campaign_memory_and_return_actions()": true,
+      "DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible()": true,
       "BuildCampaignConsequenceEvidenceSummary()": true,
       "ResolveCampaignMemoryEvidence()": true,
       "Campaign consequence proof:": true,
       "Review campaign consequences": true,
-      "BuildCampaignNextSessionReturnActionSummary()": true
+      "BuildCampaignNextSessionReturnActionSummary()": true,
+      "BuildCampaignStaleStateVisibilitySummary()": true,
+      "\"Review Campaign Memory\"": true,
+      "OpenWorkspaceSupport": true,
+      "OpenCurrentWorkspace": true,
+      "OpenDevicesAccessWindowAsync": true,
+      "Campaign memory stale-state check:": true,
+      "Conflict choices:": true
     }
   },
   "proofCommands": {

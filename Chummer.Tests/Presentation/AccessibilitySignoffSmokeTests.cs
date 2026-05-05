@@ -1094,7 +1094,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "BuildCampaignStaleStateVisibilitySummary()");
         RequireContains(source, "CreateCampaignMemoryActions()");
         RequireContains(source, "Review Campaign Memory");
+        RequireContains(source, "OpenCurrentWorkspace");
+        RequireContains(source, "OpenDevicesAccessWindowAsync");
         RequireContains(source, "OpenWorkspaceSupport");
+        RequireContains(source, "Campaign memory stale-state check:");
+        RequireContains(source, "Next-session return actions:");
+        RequireContains(source, "Stale state: server continuity is unavailable");
         RequireContains(source, "_campaignMemoryText");
         RequireContains(source, "_campaignMemoryActionsRow");
         RequireContains(source, "ResetActionRow(_campaignMemoryActionsRow, CreateCampaignMemoryActions())");
@@ -1124,6 +1129,11 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "Next-session return actions:");
         RequireContains(source, "Review before continuing:");
         RequireContains(source, "Support choice: open the tracked case");
+        RequireContains(source, "CreateReadinessActions()");
+        RequireContains(source, "CreateRestoreActions()");
+        RequireContains(source, "\"Open Rule Environment Studio\"");
+        RequireContains(source, "OpenWorkspaceSupport");
+        RequireContains(source, "OpenDevicesAccessWindowAsync");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
     }
 

@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-05-03T12:17:04.840411Z",
+  "generatedAt": "2026-05-05T08:37:19.547197Z",
   "contractName": "chummer6-ui.chummer5a_muscle_memory_parity_gate",
   "status": "pass",
   "summary": "Muscle-memory parity policy, full-scope design, detailed seed checks, and release wiring are all present.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json",
-    "policyPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER5A_MUSCLE_MEMORY_PARITY_POLICY.json",
-    "parityOraclePath": "/docker/chummercomplete/chummer-presentation/docs/PARITY_ORACLE.json",
-    "designDocPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER5A_MUSCLE_MEMORY_EXIT_TESTS.md",
-    "inventoryReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json",
+    "policyPath": "/docker/chummercomplete/chummer6-ui/docs/CHUMMER5A_MUSCLE_MEMORY_PARITY_POLICY.json",
+    "parityOraclePath": "/docker/chummercomplete/chummer6-ui/docs/PARITY_ORACLE.json",
+    "designDocPath": "/docker/chummercomplete/chummer6-ui/docs/CHUMMER5A_MUSCLE_MEMORY_EXIT_TESTS.md",
+    "inventoryReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json",
     "workspaceActionCount": 47,
     "desktopControlCount": 70,
     "tabCount": 17,
@@ -17,7 +17,7 @@
     "runtimeShellSurfaceCount": 4,
     "runtimeMenuRootCount": 4,
     "runtimeDialogSurfaceCount": 71,
-    "runtimeVisibleElementCount": 16966,
+    "runtimeVisibleElementCount": 17081,
     "detailedDialogResults": [
       {
         "dialogId": "gear_add",

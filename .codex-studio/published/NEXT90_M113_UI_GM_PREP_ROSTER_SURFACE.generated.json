@@ -1,0 +1,116 @@
+{
+  "generatedAt": "2026-05-05T09:39:56Z",
+  "packageId": "next90-m113-ui-gm-prep-roster-surface",
+  "title": "Add GM prep and roster movement surfaces to the desktop workspace",
+  "task": "Add GM prep and roster movement surfaces to the primary desktop workspace route.",
+  "status": "fail",
+  "sourceRegistryPath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml",
+  "sourceQueuePath": "/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
+  "sourceDesignQueuePath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
+  "checks": {
+    "registry_has_m113_ui_task": true,
+    "registry_task_unique": true,
+    "queue_package_unique": true,
+    "design_queue_package_unique": true,
+    "queue_title_matches": true,
+    "queue_task_matches": true,
+    "design_queue_title_matches": true,
+    "design_queue_task_matches": true,
+    "allowed_paths_exact": true,
+    "design_allowed_paths_exact": true,
+    "owned_surfaces_exact": true,
+    "design_owned_surfaces_exact": true,
+    "design_queue_path_matches": true
+  },
+  "sourceChecks": {
+    "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
+      "DesktopCampaignWorkspaceSurface.GmPrepPackets": true,
+      "DesktopCampaignWorkspaceSurface.RosterMovement": true,
+      "BuildGmPrepBody()": true,
+      "BuildRosterMovementBody()": true,
+      "CreateGmPrepActions()": true,
+      "CreateRosterMovementActions()": true,
+      "ShowGmPrepAsync": true,
+      "ShowRosterMovementAsync": true,
+      "GM prep packets:": true,
+      "Prep publication packet:": true,
+      "GM prep memory packet:": true,
+      "Roster movement:": true,
+      "Travel posture:": true,
+      "Roster movement inventory:": true,
+      "Workspace roster choices:": true,
+      "Roster movement follow-through:": true,
+      "\"Open Creator Publication\"": true,
+      "\"Review Moderation Flow\"": true,
+      "OpenCampaignPrimerArtifact": true,
+      "OpenMissionBriefingArtifact": true,
+      "OpenDevicesAccessWindowAsync": true
+    },
+    "Chummer.Avalonia/DesktopHomeWindow.cs": {
+      "\"Open GM Prep Packets\"": true,
+      "\"Review Roster Movement\"": true,
+      "\"Open Creator Publication\"": true,
+      "\"Review Moderation Flow\"": true,
+      "OpenGmPrepPacketsAsync": true,
+      "OpenRosterMovementAsync": true,
+      "OpenCreatorPublicationAsync()": true,
+      "OpenCreatorModerationAsync()": true,
+      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId, _portabilityActivity)": true,
+      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId, _portabilityActivity)": true
+    },
+    "Chummer.Avalonia/MainWindow.EventHandlers.cs": {
+      "ToolStrip_OnGmPrepRequested": true,
+      "ToolStrip_OnRosterMovementRequested": true,
+      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
+      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true
+    },
+    "Chummer.Avalonia/Controls/ToolStripControl.axaml.cs": {
+      "public event EventHandler? GmPrepRequested;": true,
+      "public event EventHandler? RosterMovementRequested;": true,
+      "ApplyVisibility(GmPrepButton, state.ShowGmPrep);": true,
+      "ApplyVisibility(RosterMovementButton, state.ShowRosterMovement);": true,
+      "SetButtonLabel(GmPrepButton, \"Open GM Prep Packets\", \"GM\");": true,
+      "SetButtonLabel(RosterMovementButton, \"Review Roster Movement\", \"Roster\");": true
+    },
+    "Chummer.Avalonia/App.axaml.cs": {
+      "DesktopStartupSurfaceCatalog.GmPrepPackets": true,
+      "DesktopStartupSurfaceCatalog.RosterMovement": true,
+      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(owner, \"avalonia\")": true,
+      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(owner, \"avalonia\")": true
+    },
+    "Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs": {
+      "public const string GmPrepPackets = \"gm_prep_packets\";": true,
+      "public const string RosterMovement = \"roster_movement\";": true
+    },
+    "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
+      "DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement()": true,
+      "DesktopStartupSurfaceCatalog.GmPrepPackets": true,
+      "DesktopStartupSurfaceCatalog.RosterMovement": true,
+      "\"Open GM Prep Packets\"": false,
+      "\"Review Roster Movement\"": false,
+      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId, _portabilityActivity)": true,
+      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId, _portabilityActivity)": true
+    }
+  },
+  "proofCommands": {
+    "directProofCommand": "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
+    "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests\" --no-restore",
+    "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore"
+  },
+  "proofFiles": [
+    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+    "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.EventHandlers.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M113GmPrepRosterSurfaceGuardTests.cs"
+  ],
+  "failures": [
+    "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs:\"Open GM Prep Packets\"",
+    "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs:\"Review Roster Movement\""
+  ]
+}

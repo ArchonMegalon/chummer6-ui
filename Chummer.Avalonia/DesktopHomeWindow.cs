@@ -1166,6 +1166,7 @@ internal sealed class DesktopHomeWindow : Window
             actions.Add(CreateButton(S("desktop.home.button.open_my_artifacts"), () => OpenArtifactShelfView("personal")));
             actions.Add(CreateButton(S("desktop.home.button.open_campaign_artifacts"), () => OpenArtifactShelfView("campaign")));
             actions.Add(CreateButton(S("desktop.home.button.open_published_artifacts"), () => OpenArtifactShelfView("creator")));
+            actions.Add(CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
         }
         else
         {
@@ -1214,7 +1215,9 @@ internal sealed class DesktopHomeWindow : Window
         {
             actions.Add(CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
             actions.Add(CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
+            actions.Add(CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")));
             actions.Add(CreateButton("Open Creator Publication", OpenCreatorPublicationAsync));
+            actions.Add(CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
             actions.Add(CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
             if (HasPortableExchangePreview())
             {

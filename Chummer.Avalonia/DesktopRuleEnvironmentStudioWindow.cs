@@ -246,20 +246,30 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
     private IReadOnlyList<Button> CreateLifecycleActions()
         => [
             CreateButton("Open Desktop Home", OpenDesktopHomeAsync, isPrimary: true),
+            CreateButton("Open My Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("personal"))),
+            CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
             CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
         ];
 
     private IReadOnlyList<Button> CreateDiffActions()
         => string.IsNullOrWhiteSpace(_leadWorkspaceId)
-            ? [CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync, isPrimary: true)]
+            ? [
+                CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync, isPrimary: true),
+                CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))),
+                CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public")))
+            ]
             : [
                 CreateButton("Open Workspace", OpenLeadWorkspaceAsync, isPrimary: true),
+                CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))),
+                CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
                 CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
             ];
 
     private IReadOnlyList<Button> CreateReceiptActions()
         => [
             CreateButton("Open Support", OpenSupportAsync, isPrimary: true),
+            CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))),
+            CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
             CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
         ];
 
@@ -295,6 +305,10 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
 
         DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId);
     }
+
+    private bool OpenArtifactShelfView(string view)
+        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
+           && DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/artifacts?view={Uri.EscapeDataString(view)}");
 
     private static Border CreateSection(string title, string body, Control? actionContent)
     {

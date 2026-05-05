@@ -1079,11 +1079,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
         if (string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal))
         {
-            SetCharacterElement(character, "prioritymetatype", ReadDialogValue(dialog, "newCharacterPriorityHeritage", "D").Trim());
-            SetCharacterElement(character, "priorityattributes", ReadDialogValue(dialog, "newCharacterPriorityAttributes", "B").Trim());
-            SetCharacterElement(character, "priorityspecial", ReadDialogValue(dialog, "newCharacterPriorityTalent", "E").Trim());
-            SetCharacterElement(character, "priorityskills", ReadDialogValue(dialog, "newCharacterPrioritySkills", "C").Trim());
-            SetCharacterElement(character, "priorityresources", ReadDialogValue(dialog, "newCharacterPriorityResources", "A").Trim());
+            SetCharacterElement(character, "prioritymetatype", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityHeritage", "D")));
+            SetCharacterElement(character, "priorityattributes", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityAttributes", "B")));
+            SetCharacterElement(character, "priorityspecial", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityTalent", "E")));
+            SetCharacterElement(character, "priorityskills", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPrioritySkills", "C")));
+            SetCharacterElement(character, "priorityresources", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityResources", "A")));
             string priorityTalentChoice = ReadDialogValue(dialog, "newCharacterPriorityTalentChoice", "Mundane").Trim();
             bool isAdept = string.Equals(priorityTalentChoice, "Adept", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(priorityTalentChoice, "Mystic Adept", StringComparison.OrdinalIgnoreCase);
@@ -1129,6 +1129,16 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
     private static string ReadCharacterElement(XElement character, string elementName, string fallback)
         => character.Element(elementName)?.Value ?? fallback;
+
+    private static string NormalizePrioritySelection(string priority)
+        => priority.Trim().ToUpperInvariant() switch
+        {
+            "A" => "A,4",
+            "B" => "B,3",
+            "C" => "C,2",
+            "D" => "D,1",
+            _ => "E,0"
+        };
 
     private static void SetCharacterElement(XElement character, string elementName, string value)
     {
