@@ -441,15 +441,22 @@ internal sealed class DesktopCreatorPublicationWindow : Window
 
     private IReadOnlyList<Button> CreatePublicationActions()
     {
-        List<Button> actions =
-        [
-            DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? CreateButton("Open Creator Publication", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true)
-                : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
-            CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
-            CreateButton("Review Moderation Flow", OpenModerationSurfaceAsync),
-            CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
-        ];
+        List<Button> actions = [];
+
+        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Add(CreateButton("Open Creator Publication", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true));
+            actions.Add(CreateButton("Open My Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("personal"))));
+            actions.Add(CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))));
+        }
+        else
+        {
+            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
+        }
+
+        actions.Add(CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))));
+        actions.Add(CreateButton("Review Moderation Flow", OpenModerationSurfaceAsync));
+        actions.Add(CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync));
 
         if (HasPortableExchangePreview())
         {

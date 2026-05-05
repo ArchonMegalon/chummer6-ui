@@ -247,6 +247,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         => [
             CreateButton("Open Desktop Home", OpenDesktopHomeAsync, isPrimary: true),
             CreateButton("Open My Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("personal"))),
+            CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))),
             CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
             CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
         ];

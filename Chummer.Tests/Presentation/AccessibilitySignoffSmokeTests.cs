@@ -1004,6 +1004,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)");
         RequireContains(source, "mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId, fragment: \"portable-exchange\")");
+        RequireContains(source, "\"Open My Artifact Shelf\"");
+        RequireContains(source, "\"Open Creator Artifact Shelf\"");
+        RequireContains(source, "\"Open Public Proof Shelf\"");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
         RequireContains(appSource, "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio");
@@ -1037,6 +1040,14 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "OpenPortableExchangeAsync()");
         RequireContains(source, "OpenReplayAfterActionAsync()");
         RequireContains(source, "OpenPortableExportAsync()");
+        RequireContains(source, "\"Open Campaign Artifact Shelf\"");
+        RequireContains(source, "\"Open My Artifact Shelf\"");
+        RequireContains(source, "\"Open Creator Artifact Shelf\"");
+        RequireContains(source, "\"Open Public Proof Shelf\"");
+        RequireContains(source, "OpenArtifactShelfView(\"campaign\")");
+        RequireContains(source, "OpenArtifactShelfView(\"personal\")");
+        RequireContains(source, "OpenArtifactShelfView(\"creator\")");
+        RequireContains(source, "OpenArtifactShelfView(\"public\")");
         RequireContains(source, "OpenWorkspaceCommandFromDesktopSurfaceAsync");
         RequireContains(source, "#portable-exchange");
         RequireContains(source, "/artifacts/replay-after-action");
@@ -1070,7 +1081,10 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "ReadCampaignWorkspaceServerPlaneAsync");
         RequireContains(source, "ReadPortableExchangePreviewAsync");
         RequireContains(source, "client.GetDesktopHomeSupportDigestsAsync");
-        RequireContains(source, "\"Open Creator Publication\"");
+        RequireContains(source, "\"Open Creator Artifact Shelf\"");
+        RequireContains(source, "\"Open My Artifact Shelf\"");
+        RequireContains(source, "\"Open Campaign Artifact Shelf\"");
+        RequireContains(source, "\"Open Public Proof Shelf\"");
         RequireContains(source, "\"Review Moderation Flow\"");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
         RequireContains(source, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
@@ -1167,12 +1181,18 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "OpenMissionBriefingArtifact");
         RequireContains(source, "\"Open Creator Publication\"");
         RequireContains(source, "\"Review Moderation Flow\"");
+        RequireContains(source, "\"Open My Artifact Shelf\"");
+        RequireContains(source, "\"Open Creator Artifact Shelf\"");
+        RequireContains(source, "\"Open Public Proof Shelf\"");
         RequireContains(source, "OpenCreatorPublicationAsync()");
         RequireContains(source, "OpenCreatorModerationAsync()");
         RequireContains(source, "OpenDevicesAccessWindowAsync");
         RequireContains(homeSource, "\"Open GM Prep Packets\"");
         RequireContains(homeSource, "\"Review Roster Movement\"");
         RequireContains(homeSource, "\"Open Creator Publication\"");
+        RequireContains(homeSource, "\"Open My Artifact Shelf\"");
+        RequireContains(homeSource, "\"Open Creator Artifact Shelf\"");
+        RequireContains(homeSource, "\"Open Public Proof Shelf\"");
         RequireContains(homeSource, "\"Review Moderation Flow\"");
         RequireContains(homeSource, "OpenGmPrepPacketsAsync");
         RequireContains(homeSource, "OpenRosterMovementAsync");
@@ -1441,6 +1461,10 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_buildExplainProjection.Watchouts");
         RequireContains(source, "CreateBuildExplainActions()");
         RequireContains(source, "actions.Add(CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync));");
+        RequireContains(source, "\"Open My Artifact Shelf\"");
+        RequireContains(source, "\"Open Campaign Artifact Shelf\"");
+        RequireContains(source, "\"Open Creator Artifact Shelf\"");
+        RequireContains(source, "\"Open Public Proof Shelf\"");
         RequireContains(source, "CreateWorkspaceActions()");
         RequireContains(source, "desktop.home.section.build_explain");
         RequireContains(source, "desktop.home.section.recent_workspaces");
