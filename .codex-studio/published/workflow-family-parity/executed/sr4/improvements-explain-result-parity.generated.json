@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-02T14:04:17.292848Z",
+  "generatedAt": "2026-05-04T20:31:22.139142Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family execution evidence is explicitly grounded for improvements-explain-result-parity.",
@@ -11,7 +11,9 @@
     "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
     "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
     "auditTests": [
-      "Avalonia_and_Blazor_workspace_action_summary_matches"
+      "Avalonia_and_Blazor_workspace_action_summary_matches",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
@@ -42,7 +44,9 @@
     },
     "external_blocker": "",
     "matchedPassedTests": [
-      "Avalonia_and_Blazor_workspace_action_summary_matches"
+      "Avalonia_and_Blazor_workspace_action_summary_matches",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity"
     ],
     "missingAuditTests": [],
     "failedAuditTests": {}

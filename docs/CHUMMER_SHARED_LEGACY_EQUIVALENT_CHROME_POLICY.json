@@ -1,0 +1,53 @@
+{
+  "contractName": "chummer6-ui.chummer_shared_legacy_equivalent_chrome_policy",
+  "summary": "Fail-closed runtime policy for shared desktop chrome that should stay stripped when legacy Chummer already exposed the same function directly.",
+  "inventoryContracts": {
+    "chummer5a": "chummer6-ui.chummer5a_muscle_memory_inventory",
+    "sr4": "chummer6-ui.chummer4_sr4_muscle_memory_inventory",
+    "sr6": "chummer6-ui.sr6_shared_muscle_memory_inventory"
+  },
+  "forbiddenRuntimeTokens": [
+    {
+      "id": "review_framing",
+      "mode": "regex_absence",
+      "value": "(?i)\\breview\\b",
+      "reason": "Shared workbench dialogs and promoted detail surfaces must not add review framing when classic Chummer already exposed the same function directly."
+    },
+    {
+      "id": "runner_summary",
+      "mode": "literal_absence",
+      "value": "Runner Summary",
+      "reason": "Synthetic Runner Summary chrome must stay stripped on the promoted shared desktop surface."
+    },
+    {
+      "id": "build_lab",
+      "mode": "literal_absence",
+      "value": "Build Lab",
+      "reason": "Build Lab branding must not leak into the parity-governed shared runner surface."
+    },
+    {
+      "id": "browse_workspace",
+      "mode": "literal_absence",
+      "value": "Browse Workspace",
+      "reason": "Browse Workspace helper chrome must not displace the legacy workbench posture on shared runtime surfaces."
+    },
+    {
+      "id": "npc_persona_studio",
+      "mode": "literal_absence",
+      "value": "NPC Persona Studio",
+      "reason": "NPC Persona Studio helper chrome must not appear on parity-governed shared surfaces."
+    },
+    {
+      "id": "contact_graph",
+      "mode": "literal_absence",
+      "value": "Contact Graph",
+      "reason": "Contact Graph chrome must not appear on shared surfaces until it is explicitly part of the parity oracle."
+    },
+    {
+      "id": "downtime_planner",
+      "mode": "literal_absence",
+      "value": "Downtime Planner",
+      "reason": "Downtime Planner chrome must not appear on shared surfaces until it is explicitly part of the parity oracle."
+    }
+  ]
+}

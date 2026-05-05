@@ -78,6 +78,24 @@ def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def collect_external_blockers(evidence_payload: Dict[str, Any]) -> List[str]:
+    return [
+        normalize_token(value)
+        for value in (
+            (evidence_payload.get("verificationExternalBlockers") or [])
+            + (evidence_payload.get("executionExternalBlockers") or [])
+            + ([evidence_payload.get("external_blocker")] if evidence_payload.get("external_blocker") else [])
+        )
+        if normalize_token(value)
+    ]
+
+
+def external_blockers_are_only_missing_api_surface_contract(external_blockers: List[str]) -> bool:
+    return bool(external_blockers) and all(
+        blocker == "missing_api_surface_contract" for blocker in external_blockers
+    )
+
+
 def reason_targets_sr4_sr6_workflow_oracle_backlog(reason: str) -> bool:
     normalized = normalize_token(reason)
     if not normalized:
@@ -354,6 +372,42 @@ def collect_family_state(ledger_payload: Dict[str, Any]) -> Dict[str, Dict[str, 
     return family_state
 
 
+def collect_release_channel_head_requirements(release_channel_payload: Dict[str, Any]) -> Dict[str, List[str]]:
+    tuple_coverage = (
+        release_channel_payload.get("desktopTupleCoverage")
+        if isinstance(release_channel_payload.get("desktopTupleCoverage"), dict)
+        else {}
+    )
+    required_heads: set[str] = set()
+    primary_heads: set[str] = set()
+    promoted_non_fallback_heads: set[str] = set()
+    for raw_head in tuple_coverage.get("requiredDesktopHeads") or []:
+        head = normalize_token(raw_head)
+        if head:
+            required_heads.add(head)
+    for route_truth_row in tuple_coverage.get("desktopRouteTruth") or []:
+        if not isinstance(route_truth_row, dict):
+            continue
+        head = normalize_token(route_truth_row.get("head"))
+        if not head:
+            continue
+        route_role = normalize_token(route_truth_row.get("routeRole"))
+        parity_posture = normalize_token(route_truth_row.get("parityPosture"))
+        promotion_state = normalize_token(route_truth_row.get("promotionState"))
+        if route_role == "primary" or parity_posture == "flagship_primary":
+            required_heads.add(head)
+            primary_heads.add(head)
+            continue
+        if promotion_state == "promoted" and route_role != "fallback" and parity_posture != "explicit_fallback":
+            required_heads.add(head)
+            promoted_non_fallback_heads.add(head)
+    return {
+        "required_heads": sorted(required_heads),
+        "primary_heads": sorted(primary_heads),
+        "promoted_non_fallback_heads": sorted(promoted_non_fallback_heads),
+    }
+
+
 (
     receipt_path_text,
     ui_workflow_parity_path_text,
@@ -485,6 +539,16 @@ if release_channel_generated_at is not None:
             "Desktop workflow execution gate release channel receipt is stale "
             f"({release_channel_age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
         )
+release_channel_head_requirements = collect_release_channel_head_requirements(release_channel)
+evidence["release_channel_required_desktop_heads"] = (
+    release_channel_head_requirements["required_heads"]
+)
+evidence["release_channel_primary_desktop_heads"] = (
+    release_channel_head_requirements["primary_heads"]
+)
+evidence["release_channel_promoted_non_fallback_desktop_heads"] = (
+    release_channel_head_requirements["promoted_non_fallback_heads"]
+)
 
 receipt_channel_ids: Dict[str, str] = {}
 for label, payload in (
@@ -505,22 +569,29 @@ for label, payload in (
         )
 evidence["workflow_parity_receipt_channel_ids"] = receipt_channel_ids
 flagship_head_proofs = flagship_gate.get("headProofs") if isinstance(flagship_gate.get("headProofs"), dict) else {}
-required_desktop_heads = sorted(
+flagship_primary_desktop_heads = {
+    normalize_token(item)
+    for item in (
+        flagship_gate.get("desktopHeads")
+        if isinstance(flagship_gate.get("desktopHeads"), list)
+        else []
+    )
+    + ([flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else [])
+    if normalize_token(item)
+}
+flagship_declared_desktop_fallback_heads = sorted(
     {
         normalize_token(item)
         for item in (
-            flagship_gate.get("desktopHeads")
-            if isinstance(flagship_gate.get("desktopHeads"), list)
-            else []
-        )
-        + (
             flagship_gate.get("desktopFallbackHeads")
             if isinstance(flagship_gate.get("desktopFallbackHeads"), list)
             else []
         )
-        + ([flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else [])
         if normalize_token(item)
     }
+)
+required_desktop_heads = sorted(
+    flagship_primary_desktop_heads.union(release_channel_head_requirements["required_heads"])
 )
 canonical_required_desktop_heads = ["avalonia"]
 missing_canonical_required_desktop_heads = [
@@ -650,6 +721,10 @@ for required_head in required_desktop_heads:
         reasons.append(
             f"Flagship UI release gate sourceTestFile for required desktop head '{required_head}' is missing/unreadable on disk."
         )
+evidence["flagship_primary_desktop_heads"] = sorted(flagship_primary_desktop_heads)
+evidence["flagship_declared_desktop_fallback_heads"] = (
+    flagship_declared_desktop_fallback_heads
+)
 evidence["flagship_required_desktop_heads"] = required_desktop_heads
 evidence["canonical_required_desktop_heads"] = canonical_required_desktop_heads
 evidence["flagship_missing_canonical_required_desktop_heads"] = (
@@ -700,11 +775,13 @@ missing_family_receipts: List[str] = []
 failing_family_receipts: List[str] = []
 failing_family_receipts_external: List[str] = []
 checked_family_receipts = 0
+workflow_family_receipts_outside_repo_root: List[str] = []
 missing_execution_receipts: List[str] = []
 failing_execution_receipts: List[str] = []
 failing_execution_receipts_external: List[str] = []
 weak_execution_receipts: List[str] = []
 checked_execution_receipts = 0
+workflow_execution_receipts_outside_repo_root: List[str] = []
 missing_required_family_ids: Dict[str, List[str]] = {}
 not_ready_required_family_ids: Dict[str, List[str]] = {}
 missing_required_family_audit_tests: Dict[str, List[str]] = {}
@@ -739,6 +816,11 @@ for edition, ledger_payload in (("sr4", sr4_ledger), ("sr6", sr6_ledger)):
         seen.add(key)
         candidate = (repo_root / rel_path).resolve()
         checked_family_receipts += 1
+        if not path_within_root(candidate, repo_root):
+            workflow_family_receipts_outside_repo_root.append(
+                f"{edition}:{family_id}:{rel_path}->{candidate}"
+            )
+            continue
         if not candidate.is_file():
             missing_family_receipts.append(f"{edition}:{family_id}:{rel_path}")
             continue
@@ -751,18 +833,8 @@ for edition, ledger_payload in (("sr4", sr4_ledger), ("sr6", sr6_ledger)):
                 if isinstance(payload.get("evidence"), dict)
                 else {}
             )
-            external_blockers = [
-                normalize_token(value)
-                for value in (
-                    (payload_evidence.get("verificationExternalBlockers") or [])
-                    + (payload_evidence.get("executionExternalBlockers") or [])
-                    + ([payload_evidence.get("external_blocker")] if payload_evidence.get("external_blocker") else [])
-                )
-                if normalize_token(value)
-            ]
-            if external_blockers and all(
-                blocker == "missing_api_surface_contract" for blocker in external_blockers
-            ):
+            external_blockers = collect_external_blockers(payload_evidence)
+            if external_blockers_are_only_missing_api_surface_contract(external_blockers):
                 failing_family_receipts_external.append(
                     f"{edition}:{family_id}:{rel_path}=external_blocker:missing_api_surface_contract"
                 )
@@ -779,6 +851,11 @@ for edition, ledger_payload, expected_proof_kind in (
         seen.add(key)
         checked_execution_receipts += 1
         candidate = (repo_root / rel_path).resolve()
+        if not path_within_root(candidate, repo_root):
+            workflow_execution_receipts_outside_repo_root.append(
+                f"{edition}:{family_id}:{rel_path}->{candidate}"
+            )
+            continue
         if not candidate.is_file():
             missing_execution_receipts.append(f"{edition}:{family_id}:{rel_path}")
             continue
@@ -802,10 +879,10 @@ for edition, ledger_payload, expected_proof_kind in (
 
         if not status_ok(status):
             failing_execution_receipts.append(f"{edition}:{family_id}:{rel_path}={status or 'missing'}")
-            external_blocker = normalize_token(evidence_payload.get("external_blocker"))
-            if external_blocker:
+            external_blockers = collect_external_blockers(evidence_payload)
+            if external_blockers_are_only_missing_api_surface_contract(external_blockers):
                 failing_execution_receipts_external.append(
-                    f"{edition}:{family_id}:{rel_path}=external_blocker:{external_blocker}"
+                    f"{edition}:{family_id}:{rel_path}=external_blocker:missing_api_surface_contract"
                 )
             continue
 
@@ -844,11 +921,17 @@ evidence["workflow_family_failing_receipts"] = failing_family_receipts
 evidence["workflow_family_failing_receipts_external"] = (
     failing_family_receipts_external
 )
+evidence["workflow_family_receipts_outside_repo_root"] = (
+    workflow_family_receipts_outside_repo_root
+)
 evidence["workflow_execution_receipt_count_checked"] = checked_execution_receipts
 evidence["workflow_execution_missing_receipts"] = missing_execution_receipts
 evidence["workflow_execution_failing_receipts"] = failing_execution_receipts
 evidence["workflow_execution_failing_receipts_external"] = (
     failing_execution_receipts_external
+)
+evidence["workflow_execution_receipts_outside_repo_root"] = (
+    workflow_execution_receipts_outside_repo_root
 )
 evidence["workflow_execution_weak_receipts"] = weak_execution_receipts
 evidence["legacy_execution_receipt_paths"] = legacy_execution_receipt_paths
@@ -887,6 +970,11 @@ if missing_family_receipts:
     reasons.append(
         "Missing SR4/SR6 family-level workflow receipts: " + ", ".join(sorted(missing_family_receipts))
     )
+if workflow_family_receipts_outside_repo_root:
+    reasons.append(
+        "SR4/SR6 family-level workflow receipts resolve outside this repo root: "
+        + ", ".join(sorted(workflow_family_receipts_outside_repo_root))
+    )
 if failing_family_receipts:
     all_failing_family_receipts_external = (
         len(failing_family_receipts_external) == len(failing_family_receipts)
@@ -906,6 +994,11 @@ if checked_execution_receipts == 0:
 if missing_execution_receipts:
     reasons.append(
         "Missing SR4/SR6 family-level execution receipts: " + ", ".join(sorted(missing_execution_receipts))
+    )
+if workflow_execution_receipts_outside_repo_root:
+    reasons.append(
+        "SR4/SR6 family-level execution receipts resolve outside this repo root: "
+        + ", ".join(sorted(workflow_execution_receipts_outside_repo_root))
     )
 if failing_execution_receipts:
     all_failing_execution_receipts_external = (
@@ -1013,6 +1106,9 @@ workflow_family_review_reasons.extend(
     [f"missing_receipt:{entry}" for entry in sorted(missing_family_receipts)]
 )
 workflow_family_review_reasons.extend(
+    [f"outside_repo_root:{entry}" for entry in sorted(workflow_family_receipts_outside_repo_root)]
+)
+workflow_family_review_reasons.extend(
     []
     if evidence.get("workflow_family_failures_external_only") is True
     else [f"failing_receipt:{entry}" for entry in sorted(failing_family_receipts)]
@@ -1023,6 +1119,9 @@ if checked_execution_receipts == 0:
     workflow_execution_review_reasons.append("checked_execution_receipts")
 workflow_execution_review_reasons.extend(
     [f"missing_execution:{entry}" for entry in sorted(missing_execution_receipts)]
+)
+workflow_execution_review_reasons.extend(
+    [f"outside_repo_root:{entry}" for entry in sorted(workflow_execution_receipts_outside_repo_root)]
 )
 workflow_execution_review_reasons.extend(
     []

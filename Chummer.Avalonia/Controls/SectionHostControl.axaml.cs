@@ -48,13 +48,14 @@ public partial class SectionHostControl : UserControl
         NavigatorTabItem[] visibleTabs = navigationTabs
             .Where(tab => tab.Enabled)
             .ToArray();
+        NavigatorTabItem[] renderedTabs = ReuseNavigationTabsIfUnchanged(visibleTabs);
 
-        LoadedRunnerTabStripBorder.IsVisible = visibleTabs.Length > 0;
+        LoadedRunnerTabStripBorder.IsVisible = renderedTabs.Length > 0;
         _suppressNavigationTabSelectionChanged = true;
         try
         {
-            LoadedRunnerTabStrip.ItemsSource = visibleTabs;
-            LoadedRunnerTabStrip.SelectedItem = visibleTabs.FirstOrDefault(tab =>
+            LoadedRunnerTabStrip.ItemsSource = renderedTabs;
+            LoadedRunnerTabStrip.SelectedItem = renderedTabs.FirstOrDefault(tab =>
                 string.Equals(tab.Id, activeTabId, StringComparison.Ordinal));
         }
         finally
@@ -68,15 +69,16 @@ public partial class SectionHostControl : UserControl
         NavigatorSectionActionItem[] visibleActions = sectionActions
             .Where(action => !string.IsNullOrWhiteSpace(action.Id))
             .ToArray();
+        NavigatorSectionActionItem[] renderedActions = ReuseSectionActionsIfUnchanged(visibleActions);
 
-        bool showSectionActions = visibleActions.Length > 1;
+        bool showSectionActions = renderedActions.Length > 1;
         SectionActionTabStripBorder.IsVisible = showSectionActions;
         _suppressSectionActionSelectionChanged = true;
         try
         {
-            SectionActionTabStrip.ItemsSource = showSectionActions ? visibleActions : Array.Empty<NavigatorSectionActionItem>();
+            SectionActionTabStrip.ItemsSource = showSectionActions ? renderedActions : Array.Empty<NavigatorSectionActionItem>();
             SectionActionTabStrip.SelectedItem = showSectionActions
-                ? visibleActions.FirstOrDefault(action => string.Equals(action.Id, activeActionId, StringComparison.Ordinal))
+                ? renderedActions.FirstOrDefault(action => string.Equals(action.Id, activeActionId, StringComparison.Ordinal))
                 : null;
         }
         finally
@@ -85,6 +87,26 @@ public partial class SectionHostControl : UserControl
         }
 
         UpdateSectionRowsHeight();
+    }
+
+    private NavigatorTabItem[] ReuseNavigationTabsIfUnchanged(NavigatorTabItem[] nextTabs)
+    {
+        NavigatorTabItem[] currentTabs = LoadedRunnerTabStrip.Items
+            .OfType<NavigatorTabItem>()
+            .ToArray();
+        return currentTabs.SequenceEqual(nextTabs)
+            ? currentTabs
+            : nextTabs;
+    }
+
+    private NavigatorSectionActionItem[] ReuseSectionActionsIfUnchanged(NavigatorSectionActionItem[] nextActions)
+    {
+        NavigatorSectionActionItem[] currentActions = SectionActionTabStrip.Items
+            .OfType<NavigatorSectionActionItem>()
+            .ToArray();
+        return currentActions.SequenceEqual(nextActions)
+            ? currentActions
+            : nextActions;
     }
 
     public void SetNotice(string notice)

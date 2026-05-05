@@ -16,6 +16,7 @@ The exit stack is intentionally layered.
 - Every `tab`, `workspaceAction`, and `desktopControl` from [PARITY_ORACLE.json](/docker/chummercomplete/chummer6-ui/docs/PARITY_ORACLE.json:1) is in scope.
 - No dialog, panel, grid, popup, or tooltip is allowed to escape the parity program by omission.
 - The runtime receipt must loop through every visible UI element on each captured surface and record control class, label text, tooltip text, layout zone, and mouse-route hints.
+- Tooltip-only hover help must not be miscounted as a right-click or secondary-expand host; if the promoted surface has no real context-menu or flyout host, the receipt must prove zero hosts instead of inferring them from tooltip wiring.
 - Expected left/right dialog slot ownership and within-slot field order must survive the migration; shuffling fields inside a surviving dialog still breaks muscle memory.
 
 2. Widget-class parity
@@ -38,6 +39,7 @@ The exit stack is intentionally layered.
 - Left click, double click, right click, middle click, and mouse-wheel behavior are all part of the contract.
 - Popup menus, tooltips, and source-open affordances must react on the same pointer route as legacy when the same route existed there.
 - If a control exposes a context menu or secondary flyout, the parity receipt must fail when the right-click route disappears or moves behind a different gesture.
+- Middle click is fail-closed: the promoted surface must either prove a real middle-click host or prove zero middle-click routes on the promoted head.
 
 6. Mouse-only macro replay
 - A veteran should be able to repeat a legacy click path from memory and reach the same result without reading helper chrome.
@@ -49,6 +51,6 @@ The runtime checker should loop through every UI element in scope, not only cura
 - every visible named control in the promoted visual tree
 - every menu item shown after a popup menu opens
 - every dialog field, action button, and grid header
-- every tooltip and context-menu surface that can change the user’s mouse path
+- every tooltip and every real context-menu or flyout surface that can change the user’s mouse path
 
 The current strict seed is the `SelectGear` category-selector regression because it is a clean example of the general rule: Chummer5A used a drop-down list, so the successor must not replace that with a free-form text box.

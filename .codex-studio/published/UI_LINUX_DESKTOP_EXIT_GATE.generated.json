@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.linux_desktop_exit_gate",
-  "generated_at": "2026-05-02T13:48:07Z",
+  "generated_at": "2026-05-05T03:54:10Z",
   "status": "passed",
   "reason": "linux desktop build, startup smoke, and unit tests passed",
   "reasons": [],
@@ -447,5 +447,6 @@
   "source_snapshot_finish_entry_count": 523,
   "source_snapshot_worktree_sha256": "629d0dea422377731542133ffc442717bb3c682ba6be7cbc741df0e05d8e9b0e",
   "source_snapshot_finish_worktree_sha256": "629d0dea422377731542133ffc442717bb3c682ba6be7cbc741df0e05d8e9b0e",
-  "source_snapshot_identity_stable": true
+  "source_snapshot_identity_stable": true,
+  "generatedAt": "2026-05-05T03:54:10Z"
 }

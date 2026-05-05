@@ -1,6 +1,46 @@
 {
   "version": 1,
   "scope": "sr4_desktop_head",
+  "recursiveWorkflowGate": {
+    "requiredTests": [
+      "Menu_dialog_workflows_are_exhaustively_classified",
+      "Legacy_ui_controls_are_exhaustively_classified",
+      "Quick_action_roots_are_exhaustively_classified",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity"
+    ],
+    "proofAreas": {
+      "recursiveMenuWorkflows": {
+        "requiredTests": [
+          "Menu_dialog_workflows_are_exhaustively_classified",
+          "Menu_dialog_workflows_keep_recursive_parity"
+        ],
+        "summary": "Recursive menu workflows stay explicitly classified and keep concrete continuation parity."
+      },
+      "legacyUiControlWorkflows": {
+        "requiredTests": [
+          "Legacy_ui_controls_are_exhaustively_classified",
+          "Legacy_ui_controls_keep_recursive_parity"
+        ],
+        "summary": "Legacy UI-control workflows stay exhaustively classified and keep recursive dialog parity."
+      },
+      "quickActionRoots": {
+        "requiredTests": [
+          "Quick_action_roots_are_exhaustively_classified",
+          "Legacy_ui_controls_keep_recursive_parity"
+        ],
+        "summary": "Quick-action roots stay exhaustively classified and remain wired through legacy workflow execution."
+      },
+      "returnSurfaceParityAfterExit": {
+        "requiredTests": [
+          "Menu_dialog_workflows_keep_recursive_parity",
+          "Legacy_ui_controls_keep_recursive_parity"
+        ],
+        "summary": "Workflow exit returns to the expected tab, section, and populated surface after dialogs close."
+      }
+    },
+    "returnSurfaceRequirement": "Recursive workflows must close any active dialog, clear errors, and restore the expected tab, section, and populated return surface before parity can pass."
+  },
   "requiredFamilies": [
     {
       "id": "create-open-import-save-save-as-print-export",
@@ -8,7 +48,8 @@
       "notes": "Executable SR4 parity is covered by dual-head import/save/export acceptance gates and the promoted desktop release gate.",
       "auditTests": [
         "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
-        "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts"
+        "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts",
+        "Menu_dialog_workflows_keep_recursive_parity"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json"
@@ -27,7 +68,10 @@
       "auditTests": [
         "Avalonia_and_Blazor_character_settings_save_updates_shared_state",
         "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
-        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        "Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6",
+        "Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults",
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+        "Menu_dialog_workflows_keep_recursive_parity"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json"
@@ -45,7 +89,10 @@
       "notes": "SR4 attribute and skill-family editing is executable in dual-head parity tests.",
       "auditTests": [
         "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-        "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+        "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+        "Legacy_ui_controls_keep_recursive_parity",
+        "Quick_action_roots_are_exhaustively_classified"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json"
@@ -64,7 +111,9 @@
       "auditTests": [
         "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
         "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections",
-        "Contacts_diary_and_support_routes_execute_with_public_path_visibility"
+        "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
+        "Legacy_ui_controls_keep_recursive_parity",
+        "Quick_action_roots_are_exhaustively_classified"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json"
@@ -83,7 +132,11 @@
       "auditTests": [
         "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
         "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
-        "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+        "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
+        "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+        "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
+        "Legacy_ui_controls_keep_recursive_parity",
+        "Quick_action_roots_are_exhaustively_classified"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json"
@@ -103,7 +156,9 @@
         "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
         "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
         "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
-        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+        "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+        "Legacy_ui_controls_keep_recursive_parity"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json"
@@ -122,8 +177,9 @@
       "auditTests": [
         "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
         "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
-        "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
-        "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+        "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+        "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+        "Legacy_ui_controls_keep_recursive_parity"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json"
@@ -140,7 +196,9 @@
       "status": "ready",
       "notes": "SR4 improvements/explain/result parity is covered by fixture and export/print receipt parity tests.",
       "auditTests": [
-        "Avalonia_and_Blazor_workspace_action_summary_matches"
+        "Avalonia_and_Blazor_workspace_action_summary_matches",
+        "Menu_dialog_workflows_keep_recursive_parity",
+        "Legacy_ui_controls_keep_recursive_parity"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json"
@@ -158,7 +216,9 @@
       "notes": "SR4 recovery/reload/migration roundtrips are executable in metadata and multi-workspace parity tests.",
       "auditTests": [
         "Avalonia_and_Blazor_metadata_save_roundtrip_match",
-        "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
+        "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section",
+        "Menu_dialog_workflows_keep_recursive_parity",
+        "Legacy_ui_controls_keep_recursive_parity"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json"
@@ -177,7 +237,12 @@
       "auditTests": [
         "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
         "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
-        "Menu_click_surfaces_visible_command_choices_in_shell"
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+        "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+        "Menu_click_surfaces_visible_command_choices_in_shell",
+        "Menu_dialog_workflows_keep_recursive_parity",
+        "Legacy_ui_controls_keep_recursive_parity",
+        "Quick_action_roots_are_exhaustively_classified"
       ],
       "parityReceipts": [
         ".codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json"

@@ -792,8 +792,21 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(workflowScriptText, "Desktop workflow execution gate release channel receipt is missing version.");
         StringAssert.Contains(workflowScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(workflowScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
+        StringAssert.Contains(workflowScriptText, "collect_release_channel_head_requirements");
+        StringAssert.Contains(workflowScriptText, "release_channel_required_desktop_heads");
+        StringAssert.Contains(workflowScriptText, "release_channel_primary_desktop_heads");
+        StringAssert.Contains(workflowScriptText, "release_channel_promoted_non_fallback_desktop_heads");
+        StringAssert.Contains(workflowScriptText, "flagship_primary_desktop_heads");
+        StringAssert.Contains(workflowScriptText, "flagship_declared_desktop_fallback_heads");
         StringAssert.Contains(workflowScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(workflowScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head workflow execution proof:");
+        StringAssert.Contains(workflowScriptText, "collect_external_blockers");
+        StringAssert.Contains(workflowScriptText, "external_blockers_are_only_missing_api_surface_contract");
+        StringAssert.Contains(workflowScriptText, "workflow_family_receipts_outside_repo_root");
+        StringAssert.Contains(workflowScriptText, "workflow_execution_receipts_outside_repo_root");
+        StringAssert.Contains(workflowScriptText, "SR4/SR6 family-level workflow receipts resolve outside this repo root:");
+        StringAssert.Contains(workflowScriptText, "SR4/SR6 family-level execution receipts resolve outside this repo root:");
+        StringAssert.Contains(workflowScriptText, "outside_repo_root:{entry}");
         Assert.IsFalse(
             executableScriptText.Contains("Flagship UI release gate is missing or not passing.", StringComparison.Ordinal),
             "Executable gate must not depend on the aggregate flagship gate already passing."

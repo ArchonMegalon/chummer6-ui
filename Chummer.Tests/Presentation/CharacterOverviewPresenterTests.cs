@@ -571,12 +571,17 @@ public class CharacterOverviewPresenterTests
         await presenter.UpdateDialogFieldAsync("newCharacterRulesetId", RulesetDefaults.Sr6, CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("newCharacterBuildMethod", "Karma", CancellationToken.None);
         await presenter.ExecuteDialogActionAsync("create_character", CancellationToken.None);
+        Assert.AreEqual("dialog.new_character.karma_workflow", presenter.State.ActiveDialog?.Id);
+        Assert.IsNull(client.LastImportedDocument);
+
+        await presenter.ExecuteDialogActionAsync("complete_new_character_workflow", CancellationToken.None);
 
         Assert.IsNotNull(client.LastImportedDocument);
         Assert.AreEqual(RulesetDefaults.Sr6, client.LastImportedDocument!.RulesetId);
         StringAssert.Contains(client.LastImportedDocument.Content, "<name>New Character</name>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<alias>Runner</alias>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<buildmethod>Karma</buildmethod>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<metatype>Human</metatype>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<attributes>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<newskills>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<qualities>");
@@ -612,6 +617,32 @@ public class CharacterOverviewPresenterTests
             presenter.State.ActiveSectionId is "inventory" or "gear",
             "Gear tab must land on a populated inventory-facing section.");
         Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task ExecuteDialogActionAsync_create_character_priority_branch_materializes_followup_and_imports_grounded_workspace()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ExecuteCommandAsync("new_character", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("newCharacterRulesetId", RulesetDefaults.Sr6, CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("newCharacterBuildMethod", "Priority", CancellationToken.None);
+        await presenter.ExecuteDialogActionAsync("create_character", CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.priority_workflow", presenter.State.ActiveDialog?.Id);
+        Assert.IsNull(client.LastImportedDocument);
+
+        await presenter.UpdateDialogFieldAsync("newCharacterMetatypeCategory", "Metahuman", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("newCharacterMetatype", "Elf", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("newCharacterPriorityTalentChoice", "Adept", CancellationToken.None);
+        await presenter.ExecuteDialogActionAsync("complete_new_character_workflow", CancellationToken.None);
+
+        Assert.IsNotNull(client.LastImportedDocument);
+        StringAssert.Contains(client.LastImportedDocument!.Content, "<metatype>Elf</metatype>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<metatypecategory>Metahuman</metatypecategory>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<prioritymetatype>D</prioritymetatype>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<prioritytalent>Adept</prioritytalent>");
     }
 
     [TestMethod]

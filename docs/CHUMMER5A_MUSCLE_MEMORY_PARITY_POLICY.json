@@ -5,6 +5,7 @@
   "runtimeInventoryContract": "chummer6-ui.chummer5a_muscle_memory_inventory",
   "requiredRuntimeTestMarkers": [
     "Runtime_backed_chummer5a_muscle_memory_inventory_receipt_covers_every_surface_and_element",
+    "Runtime_backed_chummer5a_muscle_memory_inventory_secondary_routes_distinguish_tooltip_hosts_from_real_auxiliary_routes",
     "Runtime_backed_mouse_only_master_index_source_click_executes_open_source_action",
     "Runtime_backed_mouse_only_character_roster_double_tap_opens_selected_runner"
   ],
@@ -13,7 +14,9 @@
     "workspaceActionsFromOracle": true,
     "desktopControlsFromOracle": true,
     "popupMenusInScope": true,
-    "tooltipsInScope": true
+    "tooltipsInScope": true,
+    "secondaryPointerHostTruthInScope": true,
+    "middleClickTruthInScope": true
   },
   "exitLayers": [
     {

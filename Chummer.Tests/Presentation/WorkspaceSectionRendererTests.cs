@@ -49,6 +49,30 @@ public class WorkspaceSectionRendererTests
     }
 
     [TestMethod]
+    public async Task RenderSectionAsync_backfills_section_identity_when_payload_marker_is_missing()
+    {
+        WorkspaceSectionRenderer renderer = new();
+        SectionRendererClientWithoutIdentityStub client = new();
+
+        WorkspaceSectionRenderResult result = await renderer.RenderSectionAsync(
+            client,
+            new CharacterWorkspaceId("ws-section"),
+            sectionId: "powers",
+            tabId: "tab-adept",
+            actionId: "tab-adept.powers",
+            currentTabId: null,
+            currentActionId: null,
+            ct: CancellationToken.None);
+
+        Assert.AreEqual("tab-adept", result.ActiveTabId);
+        Assert.AreEqual("tab-adept.powers", result.ActiveActionId);
+        Assert.AreEqual("powers", result.ActiveSectionId);
+        StringAssert.Contains(result.ActiveSectionJson, "\"sectionId\": \"powers\"");
+        StringAssert.Contains(result.ActiveSectionJson, "\"adeptPowers\"");
+        Assert.IsGreaterThan(0, result.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
     public async Task RenderSummaryAsync_projects_summary_payload()
     {
         WorkspaceSectionRenderer renderer = new();
@@ -439,6 +463,26 @@ public class WorkspaceSectionRendererTests
             };
 
             return Task.FromResult<JsonNode>(payload);
+        }
+    }
+
+    private sealed class SectionRendererClientWithoutIdentityStub : SectionRendererClientStub
+    {
+        public override Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
+        {
+            JsonObject section = new()
+            {
+                ["workspaceId"] = id.Value,
+                ["adeptPowers"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "Improved Reflexes",
+                        ["level"] = 1
+                    }
+                }
+            };
+            return Task.FromResult<JsonNode>(section);
         }
     }
 

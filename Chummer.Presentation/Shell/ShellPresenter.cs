@@ -348,7 +348,7 @@ public sealed class ShellPresenter : IShellPresenter
 
         Dictionary<string, string> nextWorkspaceTabs = BuildUpdatedWorkspaceTabMap(State.ActiveWorkspaceId, State.ActiveTabId);
         string? requestedActiveTabId = ResolveWorkspaceTab(nextWorkspaceTabs, resolvedActiveWorkspace);
-        string? fallbackCurrentActiveTabId = activeWorkspaceChanged ? null : State.ActiveTabId;
+        string? fallbackCurrentActiveTabId = State.ActiveTabId;
         string? resolvedActiveTabId = ResolveActiveTabId(
             tabs,
             requestedActiveTabId: requestedActiveTabId,

@@ -1017,7 +1017,7 @@ public partial class DesktopDialogWindow : Window
         ApplyAccessibility(
             detailTabsControl,
             "Character roster detail tabs",
-            "Review Description, Concept, Background, Character Notes, and Game Notes.",
+            "Description, Concept, Background, Character Notes, and Game Notes.",
             "Switch between the legacy Character Roster detail tabs.");
         Grid.SetRow(detailTabsControl, 2);
         right.Children.Add(detailTabsControl);

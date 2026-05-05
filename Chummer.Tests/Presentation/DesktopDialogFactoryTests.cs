@@ -641,7 +641,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryCommands"), "Group | Core Systems");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryCommands"), "Category | Bodyware");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryCommands"), "Data File | Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareResultCommands"), "Review source, cost, and essence for Wired Reflexes 2");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareResultCommands"), "Source, cost, and essence for Wired Reflexes 2");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareSelectionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareSelectionTrail", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.List, dialog.Fields.Single(field => string.Equals(field.Id, "uiCyberwareCategoryCommands", StringComparison.Ordinal)).VisualKind);
@@ -697,7 +697,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryCommands"), "Group | Firearms");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryCommands"), "Category | Pistols");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryCommands"), "Stack | On");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearResultCommands"), "Review price, rating, and legality for Ares Predator V");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearResultCommands"), "Price, rating, and legality for Ares Predator V");
         Assert.AreEqual("Core Rulebook p. 424", DesktopDialogFieldValueParser.GetValue(dialog, "uiGearSource"));
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearSelectionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiGearSelectionTrail", StringComparison.Ordinal)).VisualKind);
@@ -1082,7 +1082,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryCommands"), "Group | Ground Vehicles");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryCommands"), "Category | Cars");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryCommands"), "Show Drones | On");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleResultCommands"), "Review handling, armor, and source for Hyundai Shin-Hyung");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleResultCommands"), "Handling, armor, and source for Hyundai Shin-Hyung");
         Assert.AreEqual("Focus Cars", dialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Search All Categories", dialog.Actions.Single(action => string.Equals(action.Id, "toggle_search_scope", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Core Rulebook p. 465", DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleSource"));
@@ -1152,7 +1152,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryCommands"), "Group | Firearms");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryCommands"), "Category | Heavy Pistols");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryCommands"), "Data File | Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponResultCommands"), "Review damage, mode, and accessories for Colt M23");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponResultCommands"), "Damage, mode, and accessories for Colt M23");
         Assert.AreEqual("Core Rulebook p. 424", DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCandidateList"), "Ares Alpha");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiWeaponSelectionDetails", StringComparison.Ordinal)).VisualKind);
@@ -1193,7 +1193,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryCommands"), "Group | Protective Wear");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryCommands"), "Category | Armor");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryCommands"), "Data File | Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorResultCommands"), "Review armor value and source for Armor Jacket");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorResultCommands"), "Armor value and source for Armor Jacket");
         Assert.AreEqual("Focus Armor", dialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Search All Categories", dialog.Actions.Single(action => string.Equals(action.Id, "toggle_search_scope", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Core Rulebook p. 436", DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSource"));
@@ -1237,7 +1237,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryCommands"), "Group | Core Systems");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryCommands"), "Category | Headware");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareCategoryCommands"), "Data File | Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareResultCommands"), "Review source, cost, and essence for Cybereyes Rating 4");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareResultCommands"), "Source, cost, and essence for Cybereyes Rating 4");
         Assert.AreEqual("Add Cybereyes Rating 4", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Add & More Cybereyes Rating 4", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
@@ -1266,7 +1266,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryCommands"), "Group | General");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryCommands"), "Category | Medical");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearCategoryCommands"), "Stack | On");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearResultCommands"), "Review price, rating, and legality for Medkit Rating 6");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiGearResultCommands"), "Price, rating, and legality for Medkit Rating 6");
         Assert.AreEqual("Add Medkit Rating 6", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Add & More Medkit Rating 6", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Focus Medical", dialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label);
@@ -1296,7 +1296,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponSelectionTrail"), "Category Path | Weapons > Firearms > Shotguns > Defiance T-250");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryCommands"), "Group | Firearms");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponCategoryCommands"), "Category | Shotguns");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponResultCommands"), "Review damage, mode, and accessories for Defiance T-250");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiWeaponResultCommands"), "Damage, mode, and accessories for Defiance T-250");
         Assert.AreEqual("Add Defiance T-250", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Add & More Defiance T-250", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
     }
@@ -1324,7 +1324,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorSelectionTrail"), "Category Path | Armor > Protective Accessories > Shields > Ballistic Shield");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryCommands"), "Group | Protective Accessories");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorCategoryCommands"), "Category | Shields");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorResultCommands"), "Review armor value and source for Ballistic Shield");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiArmorResultCommands"), "Armor value and source for Ballistic Shield");
         Assert.AreEqual("Show All Categories", dialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Add Ballistic Shield", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Add & More Ballistic Shield", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
@@ -1357,7 +1357,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryCommands"), "Group | Drone Platforms");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryCommands"), "Category | Drones");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleCategoryCommands"), "Used Vehicle | On");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleResultCommands"), "Review handling, armor, and source for MCT Fly-Spy");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiVehicleResultCommands"), "Handling, armor, and source for MCT Fly-Spy");
         Assert.AreEqual("Focus Drones", dialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Add MCT Fly-Spy", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Add & More MCT Fly-Spy", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
@@ -1699,10 +1699,35 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Select Build Method", dialog.Title);
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
         Assert.AreEqual("Priority", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterHouseRulesEnabled"));
         Assert.IsNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterName", StringComparison.Ordinal)));
         Assert.IsNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterAlias", StringComparison.Ordinal)));
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)).Label);
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_new_character_prefers_saved_character_priority_and_house_rule_state()
+    {
+        DesktopDialogFactory factory = new();
+        DesktopPreferenceState preferences = DesktopPreferenceState.Default with
+        {
+            CharacterPriority = "Karma",
+            HouseRulesEnabled = true
+        };
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "new_character",
+            profile: null,
+            preferences,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr6);
+
+        Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod"));
+        Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPreferredBuildMethod"));
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterHouseRulesEnabled"));
+        StringAssert.Contains(dialog.Message ?? string.Empty, "House rules are enabled");
     }
 
     [TestMethod]
@@ -1781,6 +1806,46 @@ public class DesktopDialogFactoryTests
                 .Options!
                 .Select(option => option.Value)
                 .ToArray());
+    }
+
+    [TestMethod]
+    public void BuildNewCharacterContinuationDialog_uses_priority_route_for_priority_tables()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr6,
+            "SumToTen",
+            houseRulesEnabled: true,
+            name: "Nova",
+            alias: "Cipher");
+
+        Assert.AreEqual("dialog.new_character.priority_workflow", dialog.Id);
+        Assert.AreEqual("SumToTen", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowHouseRulesEnabled"));
+        Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
+        Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterPriorityHeritage", StringComparison.Ordinal)));
+        Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterPriorityTalentChoice", StringComparison.Ordinal)));
+        StringAssert.Contains(
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityWorkflowSummary"),
+            "Sum-to-Ten Total | 10");
+    }
+
+    [TestMethod]
+    public void BuildNewCharacterContinuationDialog_uses_karma_route_for_non_priority_builds()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr4,
+            "Karma",
+            houseRulesEnabled: false,
+            name: "Nova",
+            alias: "Cipher");
+
+        Assert.AreEqual("dialog.new_character.karma_workflow", dialog.Id);
+        Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
+        Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterMetatypeCategory", StringComparison.Ordinal)));
+        Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal)));
+        StringAssert.Contains(
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterKarmaWorkflowSummary"),
+            "Route | SR4 Karma");
     }
 
     [TestMethod]
@@ -2406,5 +2471,21 @@ public class DesktopDialogFactoryTests
 
         return (DesktopDialogState)(method.Invoke(null, [dialog, DesktopPreferenceState.Default])
             ?? throw new InvalidOperationException("RebuildDynamicDialog returned null."));
+    }
+
+    private static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string rulesetId,
+        string buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
+            "BuildNewCharacterContinuationDialog",
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
+
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias])
+            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
     }
 }

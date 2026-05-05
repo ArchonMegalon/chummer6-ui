@@ -93,6 +93,7 @@
     <Compile Include="Presentation\MainWindowShellFrameProjectorTests.cs" />
     <Compile Include="Presentation\RulesetUiDirectiveCatalogTests.cs" />
     <Compile Include="Presentation\SectionQuickActionCatalogTests.cs" />
+    <Compile Include="Presentation\WorkflowParityGateTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
