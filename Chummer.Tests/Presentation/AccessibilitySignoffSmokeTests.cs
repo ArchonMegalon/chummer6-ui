@@ -32,6 +32,7 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopCampaignArtifact_surface_keeps_memory_and_return_actions_visible();
             DesktopCreatorPublicationSurface_is_a_real_top_level_surface();
             DesktopCampaignWorkspace_is_a_real_top_level_surface();
+            DesktopCampaignWorkspace_promotes_gm_runboard_route();
             DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement();
             DesktopOrganizerOperationsSurface_is_a_real_top_level_surface();
             DesktopOrganizerOperations_keeps_role_boundaries_visible();
@@ -1291,6 +1292,44 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(binderSource, "toolStrip.RosterMovementRequested += onRosterMovementRequested;");
         RequireContains(shellFrameSource, "ShowGmPrep: true,");
         RequireContains(shellFrameSource, "ShowRosterMovement: true,");
+    }
+
+    private static void DesktopCampaignWorkspace_promotes_gm_runboard_route()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs");
+        string homeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        string organizerSource = ReadSource("Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs");
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        string runtimeSource = ReadSource("Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs");
+
+        RequireContains(source, "DesktopCampaignWorkspaceSurface.GmRunboard");
+        RequireContains(source, "ShowGmRunboardAsync");
+        RequireContains(source, "GmRunboardSurfaceSummary");
+        RequireContains(source, "BuildGmRunboardBody()");
+        RequireContains(source, "CreateGmRunboardActions()");
+        RequireContains(source, "ResolveRunboardInitiativeSummary()");
+        RequireContains(source, "ResolveRunboardActionBudgetSummary()");
+        RequireContains(source, "ResolveRunboardObjectiveSummary()");
+        RequireContains(source, "ResolveRunboardOppositionSummary()");
+        RequireContains(source, "ResolveRunboardResolutionReportSummary()");
+        RequireContains(source, "OpenResolutionReportEntryAsync()");
+        RequireContains(source, "GM Runboard:");
+        RequireContains(source, "Initiative lane:");
+        RequireContains(source, "Action budgets:");
+        RequireContains(source, "Scene objectives:");
+        RequireContains(source, "Heat posture:");
+        RequireContains(source, "Opposition refs:");
+        RequireContains(source, "ResolutionReport entry:");
+        RequireContains(source, "Runboard boundary:");
+        RequireContains(homeSource, "\"Open GM Runboard\"");
+        RequireContains(homeSource, "OpenGmRunboardAsync()");
+        RequireContains(homeSource, "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity)");
+        RequireContains(organizerSource, "\"Open GM Runboard\"");
+        RequireContains(organizerSource, "OpenGmRunboardAsync()");
+        RequireContains(organizerSource, "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity)");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.GmRunboard");
+        RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(owner, \"avalonia\")");
+        RequireContains(runtimeSource, "public const string GmRunboard = \"gm_runboard\";");
     }
 
     private static void DesktopCampaignArtifact_surface_keeps_memory_and_return_actions_visible()

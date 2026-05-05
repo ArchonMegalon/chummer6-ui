@@ -445,6 +445,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
         [
             CreateButton("Review Organizer Roles", OpenRolesSurfaceAsync, isPrimary: true),
             CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync),
+            CreateButton("Open GM Runboard", OpenGmRunboardAsync),
             CreateButton("Open GM Prep Packets", OpenGmPrepPacketsAsync),
             CreateButton("Review Roster Movement", OpenRosterMovementAsync)
         ];
@@ -533,6 +534,9 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
 
     private Task OpenCampaignWorkspaceAsync()
         => DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity);
+
+    private Task OpenGmRunboardAsync()
+        => DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity);
 
     private Task OpenGmPrepPacketsAsync()
         => DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId, _portabilityActivity);

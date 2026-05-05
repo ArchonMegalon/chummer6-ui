@@ -1004,6 +1004,9 @@ bash scripts/ai/milestones/next90-m118-ui-organizer-ops-check.sh
 echo "[verify] checking next-90 M119 first playable session desktop flow guard..."
 bash scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh
 
+echo "[verify] checking next-90 M121 desktop GM Runboard route guard..."
+bash scripts/ai/milestones/next90-m121-ui-gm-runboard-route-check.sh
+
 echo "[verify] checking next-90 M112 campaign memory and return-loop desktop guard..."
 bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh
 
@@ -1015,6 +1018,9 @@ bash scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh
 
 echo "[verify] checking next-90 M145 desktop explain drawer and bounded follow-up guard..."
 bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh
+
+echo "[verify] checking next-90 M135 desktop surface coverage closure guard..."
+bash scripts/ai/milestones/next90-m135-ui-desktop-surface-coverage-check.sh
 
 echo "[verify] checking B15 localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh

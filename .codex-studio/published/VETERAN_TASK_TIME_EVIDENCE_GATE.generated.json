@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-05T08:37:27.610687Z",
+  "generatedAt": "2026-05-05T19:43:26.993880Z",
   "contractName": "chummer6-ui.veteran_task_time_evidence_gate",
-  "status": "fail",
-  "summary": "Veteran task-time backlog still has blocking proof gaps.",
-  "reasons": [
-    "visualFamiliarityGate status is not pass/ready."
-  ],
+  "status": "pass",
+  "summary": "Veteran task-time backlog is closed by current executable UI evidence.",
+  "reasons": [],
   "frontierIdsClosed": [
     3515644054,
     1019154541,
@@ -40,10 +38,8 @@
     ]
   },
   "flagshipRouteReview": {
-    "status": "fail",
-    "reasons": [
-      "visualFamiliarityGate status is not pass/ready."
-    ],
+    "status": "pass",
+    "reasons": [],
     "supportingReceipts": {
       "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
       "layoutGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
@@ -232,7 +228,7 @@
       "39-xml-editor-dialog-light.png",
       "40-hero-lab-importer-dialog-light.png"
     ],
-    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots"
+    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots"
   },
   "supportingReceipts": {
     "flagship_gate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
@@ -285,7 +281,7 @@
     ],
     "failingJobs": [],
     "screenshotReviewFailingJobs": [],
-    "reasonCount": 1,
-    "failureCount": 1
+    "reasonCount": 0,
+    "failureCount": 0
   }
 }
