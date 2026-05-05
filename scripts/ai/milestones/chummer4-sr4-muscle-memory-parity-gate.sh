@@ -159,7 +159,7 @@ if policy.get("sr4WorkflowParityContract") != "chummer6-ui.sr4_desktop_workflow_
 if policy.get("runtimeInventoryContract") != "chummer6-ui.chummer4_sr4_muscle_memory_inventory":
     add_failure("Chummer4/SR4 policy must pin the runtime SR4 muscle-memory inventory contract.", policy_reasons)
 full_scope = policy.get("fullScope") or {}
-for key in ("promotedDialogsAndPanelsInScope", "menusInScope", "tooltipsInScope"):
+for key in ("promotedDialogsAndPanelsInScope", "menusInScope", "tooltipsInScope", "sharedBaselineComparisonInScope", "secondaryPointerHostTruthInScope"):
     if full_scope.get(key) is not True:
         add_failure(f"Chummer4/SR4 policy must keep fullScope.{key}=true.", policy_reasons)
 if str(oracle.get("scope") or "").strip() != "sr4_desktop_head":
@@ -198,8 +198,10 @@ else:
         "dialogActionOrderReview",
         "pointerRouteReview",
         "auxiliaryPointerRouteReview",
+        "auxiliaryPointerHostTruthReview",
         "tooltipCoverageReview",
         "dialogGeometryReview",
+        "sharedBaselineParityReview",
     ):
         review = inventory_reviews.get(review_key) or {}
         if not status_ok(review.get("status")):
@@ -259,6 +261,7 @@ for marker in [
     "full promoted SR4 dialog/panel/menu/tooltip surface inventory",
     "within-slot field order",
     "right-click secondary-menu posture",
+    "zero hosts",
     "spinner posture",
     "two-pane geography",
 ]:

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-02T14:04:17.291269Z",
+  "generatedAt": "2026-05-04T20:31:22.136757Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family execution evidence is explicitly grounded for attributes-skills-skill-groups-specializations-knowledge-languages.",
@@ -12,7 +12,10 @@
     "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
@@ -44,7 +47,10 @@
     "external_blocker": "",
     "matchedPassedTests": [
       "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "missingAuditTests": [],
     "failedAuditTests": {}

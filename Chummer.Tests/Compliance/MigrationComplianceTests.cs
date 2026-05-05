@@ -26,6 +26,45 @@ public class MigrationComplianceTests
     private static readonly Regex SectionEndpointRegex = new(@"/api/characters/sections/([a-z0-9]+)", RegexOptions.Compiled);
     private static readonly Regex SectionMapCallRegex = new(@"MapSection\(app,\s*""([a-z0-9]+)""", RegexOptions.Compiled);
     private static readonly string[] SummaryValidateMetadataTargets = ["summary", "validate", "metadata"];
+    private static readonly string[] RequiredRecursiveWorkflowGateTests =
+    [
+        "Menu_dialog_workflows_are_exhaustively_classified",
+        "Legacy_ui_controls_are_exhaustively_classified",
+        "Quick_action_roots_are_exhaustively_classified",
+        "Menu_dialog_workflows_keep_recursive_parity",
+        "Legacy_ui_controls_keep_recursive_parity"
+    ];
+    private static readonly string[] RequiredRecursiveWorkflowProofAreas =
+    [
+        "recursiveMenuWorkflows",
+        "legacyUiControlWorkflows",
+        "quickActionRoots",
+        "returnSurfaceParityAfterExit"
+    ];
+    private static readonly IReadOnlyDictionary<string, string[]> RequiredRecursiveWorkflowProofAreaTests =
+        new Dictionary<string, string[]>(StringComparer.Ordinal)
+        {
+            ["recursiveMenuWorkflows"] =
+            [
+                "Menu_dialog_workflows_are_exhaustively_classified",
+                "Menu_dialog_workflows_keep_recursive_parity"
+            ],
+            ["legacyUiControlWorkflows"] =
+            [
+                "Legacy_ui_controls_are_exhaustively_classified",
+                "Legacy_ui_controls_keep_recursive_parity"
+            ],
+            ["quickActionRoots"] =
+            [
+                "Quick_action_roots_are_exhaustively_classified",
+                "Legacy_ui_controls_keep_recursive_parity"
+            ],
+            ["returnSurfaceParityAfterExit"] =
+            [
+                "Menu_dialog_workflows_keep_recursive_parity",
+                "Legacy_ui_controls_keep_recursive_parity"
+            ]
+        };
 
     private static readonly HashSet<string> RequiredDesktopCommands = AppCommandCatalog.All
         .Select(command => command.Id)
@@ -4180,6 +4219,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "\"legacyMatrixWorkflowRhythm\": \"pass\"");
         StringAssert.Contains(flagshipGateScriptText, "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions");
         StringAssert.Contains(flagshipGateScriptText, "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6");
+        StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults");
         StringAssert.Contains(flagshipGateScriptText, "12-magic-dialog-light.png");
         StringAssert.Contains(flagshipGateScriptText, "13-matrix-dialog-light.png");
         StringAssert.Contains(flagshipGateScriptText, "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture");
@@ -4568,6 +4611,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "checklist_coverage_reasons");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "workflow_family_reasons");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "test_reference_reasons");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "workflow_gate_tests_path");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"workflowGateTestsPath\"");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"sourceArtifactReview\"");
@@ -4575,6 +4620,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"checklistCoverageReview\"");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"workflowFamilyReview\"");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"testReferenceReview\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"recursiveWorkflowGateReview\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"recursiveWorkflowGateTests\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"recursiveWorkflowGateProofAreas\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"recursiveWorkflowGateProofAreaTests\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"recursiveWorkflowGateReturnSurfaceRequirement\"");
+        StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"proofAreas\"");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"status\": \"pass\" if not source_artifact_reasons else \"fail\"");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"status\": \"pass\" if not release_channel_reasons else \"fail\"");
         StringAssert.Contains(chummer5aWorkflowParityScriptText, "\"status\": \"pass\" if not checklist_coverage_reasons else \"fail\"");
@@ -4595,6 +4646,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(sr4WorkflowParityScriptText, "source_repo_reasons");
         StringAssert.Contains(sr4WorkflowParityScriptText, "workflow_family_reasons");
         StringAssert.Contains(sr4WorkflowParityScriptText, "test_reference_reasons");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "workflow_gate_tests_path");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"workflowGateTestsPath\"");
         StringAssert.Contains(sr4WorkflowParityScriptText, "parity_receipt_reasons");
         StringAssert.Contains(sr4WorkflowParityScriptText, "materialization_reasons");
         StringAssert.Contains(sr4WorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
@@ -4604,6 +4657,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(sr4WorkflowParityScriptText, "\"sourceRepoReview\"");
         StringAssert.Contains(sr4WorkflowParityScriptText, "\"workflowFamilyReview\"");
         StringAssert.Contains(sr4WorkflowParityScriptText, "\"testReferenceReview\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"recursiveWorkflowGateReview\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"recursiveWorkflowGateTests\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"recursiveWorkflowGateProofAreas\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"recursiveWorkflowGateProofAreaTests\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"recursiveWorkflowGateReturnSurfaceRequirement\"");
+        StringAssert.Contains(sr4WorkflowParityScriptText, "\"proofAreas\"");
         StringAssert.Contains(sr4WorkflowParityScriptText, "\"parityReceiptReview\"");
         StringAssert.Contains(sr4WorkflowParityScriptText, "\"materializationReview\"");
         StringAssert.Contains(sr4WorkflowParityScriptText, "\"status\": \"pass\" if not source_artifact_reasons else \"fail\"");
@@ -4628,6 +4687,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(sr6WorkflowParityScriptText, "sr4_baseline_reasons");
         StringAssert.Contains(sr6WorkflowParityScriptText, "workflow_family_reasons");
         StringAssert.Contains(sr6WorkflowParityScriptText, "test_reference_reasons");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "workflow_gate_tests_path");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"workflowGateTestsPath\"");
         StringAssert.Contains(sr6WorkflowParityScriptText, "parity_receipt_reasons");
         StringAssert.Contains(sr6WorkflowParityScriptText, "materialization_reasons");
         StringAssert.Contains(sr6WorkflowParityScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
@@ -4637,6 +4698,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(sr6WorkflowParityScriptText, "\"sr4BaselineReview\"");
         StringAssert.Contains(sr6WorkflowParityScriptText, "\"workflowFamilyReview\"");
         StringAssert.Contains(sr6WorkflowParityScriptText, "\"testReferenceReview\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"recursiveWorkflowGateReview\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"recursiveWorkflowGateTests\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"recursiveWorkflowGateProofAreas\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"recursiveWorkflowGateProofAreaTests\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"recursiveWorkflowGateReturnSurfaceRequirement\"");
+        StringAssert.Contains(sr6WorkflowParityScriptText, "\"proofAreas\"");
         StringAssert.Contains(sr6WorkflowParityScriptText, "\"parityReceiptReview\"");
         StringAssert.Contains(sr6WorkflowParityScriptText, "\"materializationReview\"");
         StringAssert.Contains(sr6WorkflowParityScriptText, "\"status\": \"pass\" if not source_artifact_reasons else \"fail\"");
@@ -4648,6 +4715,28 @@ public class MigrationComplianceTests
         StringAssert.Contains(sr6WorkflowParityScriptText, "\"status\": \"pass\" if not materialization_reasons else \"fail\"");
         StringAssert.Contains(sr6WorkflowParityScriptText, "\"sourceArtifactChecks\"");
         StringAssert.Contains(sr6WorkflowParityScriptText, "payload[\"evidence\"][\"failureCount\"] = len(payload[\"reasons\"])", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Workflow_parity_ledgers_bind_recursive_menu_legacy_quick_action_and_return_surface_proof_areas()
+    {
+        AssertRecursiveWorkflowGateLedgerBound(FindPath("docs", "WORKFLOW_PARITY_LEDGER.json"));
+        AssertRecursiveWorkflowGateLedgerBound(FindPath("docs", "SR4_WORKFLOW_PARITY_LEDGER.json"));
+        AssertRecursiveWorkflowGateLedgerBound(FindPath("docs", "SR6_WORKFLOW_PARITY_LEDGER.json"));
+    }
+
+    [TestMethod]
+    public void Workflow_parity_receipts_publish_recursive_menu_legacy_quick_action_and_return_surface_proof()
+    {
+        AssertRecursiveWorkflowGateReceiptBound(
+            FindPath(".codex-studio", "published", "CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"),
+            "chummer6-ui.chummer5a_desktop_workflow_parity");
+        AssertRecursiveWorkflowGateReceiptBound(
+            FindPath(".codex-studio", "published", "SR4_DESKTOP_WORKFLOW_PARITY.generated.json"),
+            "chummer6-ui.sr4_desktop_workflow_parity");
+        AssertRecursiveWorkflowGateReceiptBound(
+            FindPath(".codex-studio", "published", "SR6_DESKTOP_WORKFLOW_PARITY.generated.json"),
+            "chummer6-ui.sr6_desktop_workflow_parity");
     }
 
     [TestMethod]
@@ -4745,12 +4834,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(scriptText, "\"dialogFieldOrderReview\"");
         StringAssert.Contains(scriptText, "\"tooltipCoverageReview\"");
         StringAssert.Contains(scriptText, "\"auxiliaryPointerRouteReview\"");
+        StringAssert.Contains(scriptText, "\"auxiliaryPointerHostTruthReview\"");
         StringAssert.Contains(scriptText, "\"dialogGeometryReview\"");
         StringAssert.Contains(scriptText, "\"designReview\"");
         StringAssert.Contains(scriptText, "\"inventoryRuntimeReview\"");
         StringAssert.Contains(scriptText, "\"wiringReview\"");
         StringAssert.Contains(scriptText, "CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json");
-        StringAssert.Contains(scriptText, "Runtime_backed_chummer5a_muscle_memory_inventory_receipt_covers_every_surface_and_element");
+        StringAssert.Contains(scriptText, "Runtime_backed_chummer5a_muscle_memory_inventory");
         StringAssert.Contains(scriptText, "Runtime_backed_mouse_only_");
         StringAssert.Contains(scriptText, "all_oracle_tabs_workspace_actions_and_desktop_controls");
 
@@ -4760,11 +4850,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(policyText, "\"requiredRuntimeTestMarkers\"");
         StringAssert.Contains(policyText, "\"popupMenusInScope\": true");
         StringAssert.Contains(policyText, "\"tooltipsInScope\": true");
+        StringAssert.Contains(policyText, "\"secondaryPointerHostTruthInScope\": true");
+        StringAssert.Contains(policyText, "\"middleClickTruthInScope\": true");
         StringAssert.Contains(policyText, "\"pointer_route_parity\"");
         StringAssert.Contains(policyText, "\"mouse_only_replay\"");
         StringAssert.Contains(policyText, "\"dialogId\": \"gear_add\"");
         StringAssert.Contains(policyText, "\"this.cboCategory.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;\"");
         StringAssert.Contains(policyText, "\"Runtime_backed_gear_add_dialog_uses_legacy_category_combobox_posture\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_chummer5a_muscle_memory_inventory_secondary_routes_distinguish_tooltip_hosts_from_real_auxiliary_routes\"");
         StringAssert.Contains(policyText, "\"Runtime_backed_mouse_only_master_index_source_click_executes_open_source_action\"");
         StringAssert.Contains(policyText, "\"Runtime_backed_mouse_only_character_roster_double_tap_opens_selected_runner\"");
 
@@ -4778,6 +4871,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(designDocText, "context menu or secondary flyout");
         StringAssert.Contains(designDocText, "right click");
         StringAssert.Contains(designDocText, "middle click");
+        StringAssert.Contains(designDocText, "zero hosts");
         StringAssert.Contains(designDocText, "Mouse-only macro replay");
         StringAssert.Contains(designDocText, "Master Index source link");
         StringAssert.Contains(designDocText, "Character Roster selection");
@@ -4808,6 +4902,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(scriptText, "\"runtimeReview\"");
         StringAssert.Contains(scriptText, "\"inventoryReview\"");
         StringAssert.Contains(scriptText, "\"wiringReview\"");
+        StringAssert.Contains(scriptText, "\"sharedBaselineParityReview\"");
+        StringAssert.Contains(scriptText, "\"auxiliaryPointerHostTruthReview\"");
         StringAssert.Contains(scriptText, "Runtime_backed_sr4_");
 
         StringAssert.Contains(policyText, "\"contractName\": \"chummer6-ui.chummer4_sr4_muscle_memory_parity_policy\"");
@@ -4817,6 +4913,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(policyText, "\"promotedDialogsAndPanelsInScope\": true");
         StringAssert.Contains(policyText, "\"menusInScope\": true");
         StringAssert.Contains(policyText, "\"tooltipsInScope\": true");
+        StringAssert.Contains(policyText, "\"sharedBaselineComparisonInScope\": true");
+        StringAssert.Contains(policyText, "\"secondaryPointerHostTruthInScope\": true");
         StringAssert.Contains(policyText, "\"Runtime_backed_sr4_chummer4_muscle_memory_inventory_receipt_covers_every_surface_and_element\"");
         StringAssert.Contains(policyText, "\"dialogId\": \"gear_add\"");
         StringAssert.Contains(policyText, "\"dialogId\": \"dice_roller\"");
@@ -4833,13 +4931,107 @@ public class MigrationComplianceTests
         StringAssert.Contains(designDocText, "switch-ruleset chooser");
         StringAssert.Contains(designDocText, "SR4 starter-runner follow-through");
         StringAssert.Contains(designDocText, "full promoted SR4 dialog/panel/menu/tooltip surface inventory");
+        StringAssert.Contains(designDocText, "shared desktop baseline");
         StringAssert.Contains(designDocText, "within-slot field order");
         StringAssert.Contains(designDocText, "right-click secondary-menu posture");
+        StringAssert.Contains(designDocText, "zero hosts");
         StringAssert.Contains(designDocText, "spinner posture");
         StringAssert.Contains(designDocText, "two-pane geography");
 
         StringAssert.Contains(verifyText, "checking Chummer4/SR4 muscle-memory parity gate");
         StringAssert.Contains(verifyText, "bash scripts/ai/milestones/chummer4-sr4-muscle-memory-parity-gate.sh");
+    }
+
+    [TestMethod]
+    public void Sr6_shared_muscle_memory_parity_gate_derives_policy_runtime_inventory_and_wiring_subproofs()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "sr6-shared-muscle-memory-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+        string policyPath = FindPath("docs", "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_POLICY.json");
+        string policyText = File.ReadAllText(policyPath);
+        string designDocPath = FindPath("docs", "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_EXIT_TESTS.md");
+        string designDocText = File.ReadAllText(designDocPath);
+        string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
+
+        StringAssert.Contains(scriptText, "chummer6-ui.chummer_sr6_shared_muscle_memory_parity_gate");
+        StringAssert.Contains(scriptText, "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_PARITY_GATE.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_POLICY.json");
+        StringAssert.Contains(scriptText, "SR6_DESKTOP_WORKFLOW_PARITY.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "\"policyReview\"");
+        StringAssert.Contains(scriptText, "\"workflowParityReview\"");
+        StringAssert.Contains(scriptText, "\"inventoryReview\"");
+        StringAssert.Contains(scriptText, "\"runtimeReview\"");
+        StringAssert.Contains(scriptText, "\"wiringReview\"");
+        StringAssert.Contains(scriptText, "\"sharedBaselineParityReview\"");
+        StringAssert.Contains(scriptText, "\"dialogLabelReview\"");
+        StringAssert.Contains(scriptText, "\"auxiliaryPointerHostTruthReview\"");
+        StringAssert.Contains(scriptText, "Runtime_backed_sr6_shared_muscle_memory_inventory_receipt_matches_promoted_surface_contract");
+
+        StringAssert.Contains(policyText, "\"contractName\": \"chummer6-ui.chummer_sr6_shared_muscle_memory_policy\"");
+        StringAssert.Contains(policyText, "\"scopeStrategy\": \"shared_promoted_desktop_posture_against_chummer5a_baseline\"");
+        StringAssert.Contains(policyText, "\"sr6WorkflowParityContract\": \"chummer6-ui.sr6_desktop_workflow_parity\"");
+        StringAssert.Contains(policyText, "\"runtimeInventoryContract\": \"chummer6-ui.sr6_shared_muscle_memory_inventory\"");
+        StringAssert.Contains(policyText, "\"sharedShellSurfacesInScope\": true");
+        StringAssert.Contains(policyText, "\"sharedDialogsAndPanelsInScope\": true");
+        StringAssert.Contains(policyText, "\"menusInScope\": true");
+        StringAssert.Contains(policyText, "\"tooltipsInScope\": true");
+        StringAssert.Contains(policyText, "\"sharedBaselineComparisonInScope\": true");
+        StringAssert.Contains(policyText, "\"dialogLabelReviewInScope\": true");
+        StringAssert.Contains(policyText, "\"secondaryPointerHostTruthInScope\": true");
+        StringAssert.Contains(policyText, "\"Runtime_backed_sr6_shared_muscle_memory_inventory_receipt_matches_promoted_surface_contract\"");
+        StringAssert.Contains(policyText, "\"Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks\"");
+
+        StringAssert.Contains(designDocText, "promoted desktop baseline");
+        StringAssert.Contains(designDocText, "SR6 workflow parity receipt");
+        StringAssert.Contains(designDocText, "runtime inventory receipt");
+        StringAssert.Contains(designDocText, "shared shell, workspace, dialog, and action routes");
+        StringAssert.Contains(designDocText, "tooltip and secondary-route posture");
+        StringAssert.Contains(designDocText, "zero hosts");
+
+        StringAssert.Contains(verifyText, "checking SR6 shared muscle-memory parity gate");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/sr6-shared-muscle-memory-gate.sh");
+    }
+
+    [TestMethod]
+    public void Shared_legacy_equivalent_chrome_gate_derives_runtime_receipt_and_wiring_subproofs()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "chummer-shared-legacy-equivalent-chrome-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+        string policyPath = FindPath("docs", "CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_POLICY.json");
+        string policyText = File.ReadAllText(policyPath);
+        string designDocPath = FindPath("docs", "CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_EXIT_TESTS.md");
+        string designDocText = File.ReadAllText(designDocPath);
+        string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
+
+        StringAssert.Contains(scriptText, "chummer6-ui.chummer_shared_legacy_equivalent_chrome_gate");
+        StringAssert.Contains(scriptText, "CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_GATE.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_POLICY_PATH");
+        StringAssert.Contains(scriptText, "CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "\"runtimeChromeReview\"");
+        StringAssert.Contains(scriptText, "\"wiringReview\"");
+        StringAssert.Contains(scriptText, "iter_receipt_strings");
+
+        StringAssert.Contains(policyText, "\"contractName\": \"chummer6-ui.chummer_shared_legacy_equivalent_chrome_policy\"");
+        StringAssert.Contains(policyText, "\"chummer5a\": \"chummer6-ui.chummer5a_muscle_memory_inventory\"");
+        StringAssert.Contains(policyText, "\"sr4\": \"chummer6-ui.chummer4_sr4_muscle_memory_inventory\"");
+        StringAssert.Contains(policyText, "\"sr6\": \"chummer6-ui.sr6_shared_muscle_memory_inventory\"");
+        StringAssert.Contains(policyText, "\"review_framing\"");
+        StringAssert.Contains(policyText, "\"Runner Summary\"");
+        StringAssert.Contains(policyText, "\"Build Lab\"");
+        StringAssert.Contains(policyText, "\"Browse Workspace\"");
+        StringAssert.Contains(policyText, "\"NPC Persona Studio\"");
+        StringAssert.Contains(policyText, "\"Contact Graph\"");
+        StringAssert.Contains(policyText, "\"Downtime Planner\"");
+
+        StringAssert.Contains(designDocText, "runtime inventory receipts from Chummer5A, SR4, and SR6");
+        StringAssert.Contains(designDocText, "review framing is forbidden");
+        StringAssert.Contains(designDocText, "Runner Summary, Build Lab, Browse Workspace, NPC Persona Studio, Contact Graph, and Downtime Planner are forbidden");
+
+        StringAssert.Contains(verifyText, "checking shared legacy-equivalent chrome gate");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/chummer-shared-legacy-equivalent-chrome-gate.sh");
     }
 
     [TestMethod]
@@ -8394,6 +8586,156 @@ public class MigrationComplianceTests
         }
 
         return false;
+    }
+
+    private static void AssertRecursiveWorkflowGateLedgerBound(string ledgerPath)
+    {
+        using JsonDocument ledger = JsonDocument.Parse(File.ReadAllText(ledgerPath));
+        JsonElement recursiveWorkflowGate = ledger.RootElement.GetProperty("recursiveWorkflowGate");
+
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowGateTests,
+            ReadStringArray(recursiveWorkflowGate.GetProperty("requiredTests")).ToArray(),
+            $"Ledger '{ledgerPath}' must bind the recursive workflow gate to the expected test set.");
+
+        string returnSurfaceRequirement = recursiveWorkflowGate.GetProperty("returnSurfaceRequirement").GetString() ?? string.Empty;
+        StringAssert.Contains(
+            returnSurfaceRequirement,
+            "close any active dialog",
+            $"Ledger '{ledgerPath}' must keep dialog-close parity explicit.");
+        StringAssert.Contains(
+            returnSurfaceRequirement,
+            "restore the expected tab, section, and populated return surface",
+            $"Ledger '{ledgerPath}' must keep returned-surface parity explicit.");
+
+        AssertRecursiveWorkflowProofAreasObject(
+            recursiveWorkflowGate.GetProperty("proofAreas"),
+            ledgerPath);
+    }
+
+    private static void AssertRecursiveWorkflowGateReceiptBound(string receiptPath, string expectedContractName)
+    {
+        using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        JsonElement root = receipt.RootElement;
+
+        Assert.AreEqual(expectedContractName, root.GetProperty("contract_name").GetString(), $"Receipt '{receiptPath}' drifted from its expected contract id.");
+        Assert.AreEqual("pass", root.GetProperty("status").GetString(), $"Receipt '{receiptPath}' must stay passing.");
+
+        JsonElement evidence = root.GetProperty("evidence");
+        Assert.AreEqual(0, evidence.GetProperty("workflowGateExit").GetInt32(), $"Receipt '{receiptPath}' must capture a passing workflow gate exit code.");
+        Assert.AreEqual(RequiredRecursiveWorkflowGateTests.Length, evidence.GetProperty("recursiveWorkflowGateTestCount").GetInt32(), $"Receipt '{receiptPath}' drifted from the expected recursive gate test count.");
+        Assert.AreEqual(RequiredRecursiveWorkflowProofAreas.Length, evidence.GetProperty("recursiveWorkflowGateProofAreaCount").GetInt32(), $"Receipt '{receiptPath}' drifted from the expected recursive proof-area count.");
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowGateTests,
+            ReadStringArray(evidence.GetProperty("recursiveWorkflowGateTests")).ToArray(),
+            $"Receipt '{receiptPath}' must publish the recursive workflow gate test set.");
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowProofAreas,
+            ReadStringArray(evidence.GetProperty("recursiveWorkflowGateProofAreas")).ToArray(),
+            $"Receipt '{receiptPath}' must publish every recursive workflow proof area.");
+        Assert.AreEqual(0, evidence.GetProperty("recursiveWorkflowGateMissingProofAreas").GetArrayLength(), $"Receipt '{receiptPath}' must not publish missing recursive proof areas.");
+        Assert.AreEqual(0, evidence.GetProperty("recursiveWorkflowGateMissingProofAreaTests").EnumerateObject().Count(), $"Receipt '{receiptPath}' must not publish unresolved recursive proof-area tests.");
+        Assert.AreEqual(0, evidence.GetProperty("recursiveWorkflowGateUnmappedTests").GetArrayLength(), $"Receipt '{receiptPath}' must not publish unmapped recursive gate tests.");
+        Assert.AreEqual(0, evidence.GetProperty("recursiveWorkflowGateUnexpectedProofAreaTests").GetArrayLength(), $"Receipt '{receiptPath}' must not publish unexpected recursive proof-area tests.");
+
+        string returnSurfaceRequirement = evidence.GetProperty("recursiveWorkflowGateReturnSurfaceRequirement").GetString() ?? string.Empty;
+        StringAssert.Contains(
+            returnSurfaceRequirement,
+            "restore the expected tab, section, and populated return surface",
+            $"Receipt '{receiptPath}' must keep returned-surface parity explicit.");
+
+        AssertRecursiveWorkflowProofAreaMaps(
+            evidence.GetProperty("recursiveWorkflowGateProofAreaTests"),
+            evidence.GetProperty("recursiveWorkflowGateProofAreaSummaries"),
+            receiptPath);
+
+        JsonElement review = root.GetProperty("recursiveWorkflowGateReview");
+        Assert.AreEqual("pass", review.GetProperty("status").GetString(), $"Receipt '{receiptPath}' must publish a passing recursive workflow gate review.");
+        Assert.AreEqual(0, review.GetProperty("workflowGateExit").GetInt32(), $"Receipt '{receiptPath}' recursive workflow review must preserve the passing exit code.");
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowGateTests,
+            ReadStringArray(review.GetProperty("requiredTests")).ToArray(),
+            $"Receipt '{receiptPath}' recursive workflow review drifted from the required test set.");
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowProofAreas,
+            ReadStringArray(review.GetProperty("proofAreas")).ToArray(),
+            $"Receipt '{receiptPath}' recursive workflow review drifted from the required proof areas.");
+        StringAssert.Contains(review.GetProperty("summary").GetString() ?? string.Empty, "recursive menu workflows", $"Receipt '{receiptPath}' must explicitly name recursive menu workflows in the review summary.");
+        StringAssert.Contains(review.GetProperty("summary").GetString() ?? string.Empty, "legacy UI-control workflows", $"Receipt '{receiptPath}' must explicitly name legacy UI-control workflows in the review summary.");
+        StringAssert.Contains(review.GetProperty("summary").GetString() ?? string.Empty, "quick-action roots", $"Receipt '{receiptPath}' must explicitly name quick-action roots in the review summary.");
+        StringAssert.Contains(review.GetProperty("summary").GetString() ?? string.Empty, "returned-surface parity", $"Receipt '{receiptPath}' must explicitly name returned-surface parity in the review summary.");
+
+        AssertRecursiveWorkflowProofAreaMaps(
+            review.GetProperty("proofAreaTests"),
+            review.GetProperty("proofAreaSummaries"),
+            receiptPath);
+    }
+
+    private static void AssertRecursiveWorkflowProofAreasObject(JsonElement proofAreas, string ownerPath)
+    {
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowProofAreas,
+            proofAreas.EnumerateObject().Select(property => property.Name).ToArray(),
+            $"Artifact '{ownerPath}' must declare every recursive workflow proof area.");
+
+        HashSet<string> union = new(StringComparer.Ordinal);
+        foreach ((string proofAreaId, string[] expectedTests) in RequiredRecursiveWorkflowProofAreaTests)
+        {
+            JsonElement proofArea = proofAreas.GetProperty(proofAreaId);
+            string[] actualTests = ReadStringArray(proofArea.GetProperty("requiredTests")).ToArray();
+            CollectionAssert.AreEquivalent(
+                expectedTests,
+                actualTests,
+                $"Artifact '{ownerPath}' proof area '{proofAreaId}' drifted from the expected recursive workflow tests.");
+            union.UnionWith(actualTests);
+            Assert.IsFalse(
+                string.IsNullOrWhiteSpace(proofArea.GetProperty("summary").GetString()),
+                $"Artifact '{ownerPath}' proof area '{proofAreaId}' must include a summary.");
+        }
+
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowGateTests,
+            union.OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+            $"Artifact '{ownerPath}' proof-area test union must match the recursive workflow gate.");
+    }
+
+    private static void AssertRecursiveWorkflowProofAreaMaps(
+        JsonElement proofAreaTests,
+        JsonElement proofAreaSummaries,
+        string ownerPath)
+    {
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowProofAreas,
+            proofAreaTests.EnumerateObject().Select(property => property.Name).ToArray(),
+            $"Artifact '{ownerPath}' must publish every recursive workflow proof-area test map.");
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowProofAreas,
+            proofAreaSummaries.EnumerateObject().Select(property => property.Name).ToArray(),
+            $"Artifact '{ownerPath}' must publish every recursive workflow proof-area summary.");
+
+        HashSet<string> union = new(StringComparer.Ordinal);
+        foreach ((string proofAreaId, string[] expectedTests) in RequiredRecursiveWorkflowProofAreaTests)
+        {
+            string[] actualTests = ReadStringArray(proofAreaTests.GetProperty(proofAreaId)).ToArray();
+            CollectionAssert.AreEquivalent(
+                expectedTests,
+                actualTests,
+                $"Artifact '{ownerPath}' proof-area test map for '{proofAreaId}' drifted from the expected recursive workflow tests.");
+            union.UnionWith(actualTests);
+            Assert.IsFalse(
+                string.IsNullOrWhiteSpace(proofAreaSummaries.GetProperty(proofAreaId).GetString()),
+                $"Artifact '{ownerPath}' proof-area summary for '{proofAreaId}' must not be blank.");
+        }
+
+        CollectionAssert.AreEquivalent(
+            RequiredRecursiveWorkflowGateTests,
+            union.OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+            $"Artifact '{ownerPath}' proof-area test-map union must match the recursive workflow gate.");
+    }
+
+    private static IEnumerable<string> ReadStringArray(JsonElement array)
+    {
+        return array.EnumerateArray().Select(element => element.GetString() ?? string.Empty);
     }
 
     private static string FindDirectory(params string[] parts)

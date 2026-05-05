@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-02T14:04:40.555033Z",
+  "generatedAt": "2026-05-04T20:33:28.420109Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family verification evidence is explicitly grounded for magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.",
@@ -13,8 +13,9 @@
     "auditTests": [
       "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
       "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
-      "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
-      "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+      "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+      "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+      "Legacy_ui_controls_keep_recursive_parity"
     ],
     "oracle": {
       "classification": "carry-forward",

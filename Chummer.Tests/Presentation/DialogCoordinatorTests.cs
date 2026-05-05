@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
+using System.Reflection;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Characters;
@@ -235,7 +236,7 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
-    public async Task CoordinateAsync_create_character_imports_workspace_and_closes_dialog_on_success()
+    public async Task CoordinateAsync_create_character_opens_conditional_workflow_dialog()
     {
         DialogCoordinator coordinator = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
@@ -282,19 +283,55 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("create_character", context, CancellationToken.None);
 
+        Assert.IsNull(imported);
+        Assert.AreEqual("dialog.new_character.karma_workflow", published.ActiveDialog?.Id);
+        Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowRulesetId"));
+        Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowBuildMethod"));
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_complete_new_character_workflow_imports_workspace_and_closes_dialog_on_success()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = BuildNewCharacterContinuationDialog(
+                RulesetDefaults.Sr6,
+                "Priority",
+                houseRulesEnabled: true,
+                name: "Nova",
+                alias: "Cipher")
+        };
+
+        WorkspaceImportDocument? imported = null;
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: (document, _) =>
+            {
+                imported = document;
+                published = published with
+                {
+                    Error = null,
+                    WorkspaceId = new CharacterWorkspaceId("ws-created")
+                };
+                return Task.CompletedTask;
+            },
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("complete_new_character_workflow", context, CancellationToken.None);
+
         Assert.IsNotNull(imported);
         Assert.AreEqual("sr6", imported!.RulesetId);
-        StringAssert.Contains(imported.Content, "<name>New Character</name>");
-        StringAssert.Contains(imported.Content, "<alias>Runner</alias>");
-        StringAssert.Contains(imported.Content, "<buildmethod>Karma</buildmethod>");
-        StringAssert.Contains(imported.Content, "<attributes>");
-        StringAssert.Contains(imported.Content, "<newskills>");
-        StringAssert.Contains(imported.Content, "<qualities>");
-        StringAssert.Contains(imported.Content, "<contacts>");
-        StringAssert.Contains(imported.Content, "<gears>");
-        StringAssert.Contains(imported.Content, "<weapons>");
+        StringAssert.Contains(imported.Content, "<name>Nova</name>");
+        StringAssert.Contains(imported.Content, "<alias>Cipher</alias>");
+        StringAssert.Contains(imported.Content, "<buildmethod>Priority</buildmethod>");
+        StringAssert.Contains(imported.Content, "<prioritymetatype>D</prioritymetatype>");
+        StringAssert.Contains(imported.Content, "<prioritytalent>Mundane</prioritytalent>");
+        StringAssert.Contains(imported.Content, "House rules enabled.");
         Assert.IsNull(published.ActiveDialog);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Created 'New Character' (Karma, SR6).");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Created 'Nova' (Priority, SR6) with house rules enabled.");
     }
 
     [TestMethod]
@@ -1750,6 +1787,22 @@ public class DialogCoordinatorTests
             HouseRuleLanePosture: "governed",
             HouseRuleOverlayCount: 3,
             Sr6SuccessorLaneReceipt: "sr6 successor lane is partial: supplement/governed designers/house-rule posture remains mixed.");
+    }
+
+    private static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string? rulesetId,
+        string? buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
+            "BuildNewCharacterContinuationDialog",
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
+
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias])
+            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
     }
 
     private sealed class SuccessfulDiceEvaluator : IEngineEvaluator

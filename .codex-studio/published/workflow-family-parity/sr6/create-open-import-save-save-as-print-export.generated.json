@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-02T14:04:40.553273Z",
+  "generatedAt": "2026-05-04T20:33:28.417376Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family verification evidence is explicitly grounded for create-open-import-save-save-as-print-export.",
@@ -12,7 +12,8 @@
     "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
-      "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts"
+      "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts",
+      "Menu_dialog_workflows_keep_recursive_parity"
     ],
     "oracle": {
       "classification": "carry-forward",

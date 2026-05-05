@@ -206,6 +206,12 @@ bash scripts/ai/milestones/chummer5a-muscle-memory-parity-gate.sh
 echo "[verify] checking Chummer4/SR4 muscle-memory parity gate..."
 bash scripts/ai/milestones/chummer4-sr4-muscle-memory-parity-gate.sh
 
+echo "[verify] checking SR6 shared muscle-memory parity gate..."
+bash scripts/ai/milestones/sr6-shared-muscle-memory-gate.sh
+
+echo "[verify] checking shared legacy-equivalent chrome gate..."
+bash scripts/ai/milestones/chummer-shared-legacy-equivalent-chrome-gate.sh
+
 echo "[verify] checking Chummer5a screenshot review gate..."
 bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh
 

@@ -2,6 +2,7 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Rulesets;
 
 namespace Chummer.Presentation.Shell;
 
@@ -43,6 +44,11 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
                 RulesetId: RulesetDefaults.NormalizeOptional(workspace.RulesetId) ?? string.Empty,
                 HasSavedWorkspace: workspace.HasSavedWorkspace))
             .ToArray();
+        bool hasOpenWorkspace = activeWorkspaceId is not null || openWorkspaces.Count > 0;
+        IReadOnlyList<NavigationTabDefinition> navigationTabs = FilterPresentedNavigationTabs(
+            shellState.NavigationTabs,
+            hasOpenWorkspace);
+        activeTabId = ResolvePresentedActiveTabId(activeTabId, navigationTabs, hasOpenWorkspace);
 
         WorkspaceSurfaceActionDefinition[] workspaceActions = string.IsNullOrWhiteSpace(activeRulesetId)
             ? []
@@ -58,7 +64,7 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
         ShellSurfaceState state = new(
             Commands: shellState.Commands,
             MenuRoots: shellState.MenuRoots,
-            NavigationTabs: shellState.NavigationTabs,
+            NavigationTabs: navigationTabs,
             WorkspaceActions: workspaceActions,
             ActiveWorkflowSurfaceActions: workflowSurfaceActions,
             OpenWorkspaces: openWorkspaces,
@@ -78,6 +84,67 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
             Notice = shellState.Notice,
             Error = shellState.Error
         };
+    }
+
+    private static IReadOnlyList<NavigationTabDefinition> FilterPresentedNavigationTabs(
+        IReadOnlyList<NavigationTabDefinition> navigationTabs,
+        bool hasOpenWorkspace)
+    {
+        if (!hasOpenWorkspace)
+        {
+            return navigationTabs;
+        }
+
+        return navigationTabs
+            .Where(tab => RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab(tab.Id))
+            .ToArray();
+    }
+
+    private static string? ResolvePresentedActiveTabId(
+        string? activeTabId,
+        IReadOnlyList<NavigationTabDefinition> navigationTabs,
+        bool hasOpenWorkspace)
+    {
+        if (!hasOpenWorkspace)
+        {
+            return activeTabId;
+        }
+
+        if (navigationTabs.Count == 0)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(activeTabId)
+            && navigationTabs.Any(tab => string.Equals(tab.Id, activeTabId, StringComparison.Ordinal)))
+        {
+            return activeTabId;
+        }
+
+        string[] preferredVisibleTabIds =
+        [
+            "tab-attributes",
+            "tab-skills",
+            "tab-info",
+            "tab-gear",
+            "tab-qualities"
+        ];
+
+        foreach (string preferredTabId in preferredVisibleTabIds)
+        {
+            string? matchingTabId = navigationTabs
+                .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, preferredTabId, StringComparison.Ordinal))
+                ?.Id;
+            if (!string.IsNullOrWhiteSpace(matchingTabId))
+            {
+                return matchingTabId;
+            }
+        }
+
+        return navigationTabs
+            .FirstOrDefault(tab => tab.EnabledByDefault)
+            ?.Id
+            ?? navigationTabs[0].Id;
     }
 
     private static string ResolveRulesetId(

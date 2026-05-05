@@ -7,7 +7,9 @@
   "fullScope": {
     "promotedDialogsAndPanelsInScope": true,
     "menusInScope": true,
-    "tooltipsInScope": true
+    "tooltipsInScope": true,
+    "sharedBaselineComparisonInScope": true,
+    "secondaryPointerHostTruthInScope": true
   },
   "requiredRuntimeTestMarkers": [
     "Runtime_backed_sr4_chummer4_muscle_memory_inventory_receipt_covers_every_surface_and_element",

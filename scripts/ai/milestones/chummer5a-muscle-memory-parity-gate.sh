@@ -15,7 +15,7 @@ verify_script_path="$repo_root/scripts/ai/verify.sh"
 visual_gate_path="$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh"
 screenshot_review_gate_path="$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh"
 inventory_receipt_path="${CHUMMER5A_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json}"
-inventory_test_marker="Runtime_backed_chummer5a_muscle_memory_inventory_receipt_covers_every_surface_and_element"
+inventory_test_marker="Runtime_backed_chummer5a_muscle_memory_inventory"
 mouse_only_test_marker="Runtime_backed_mouse_only_"
 
 mkdir -p "$(dirname "$receipt_path")"
@@ -171,7 +171,7 @@ if policy.get("runtimeInventoryContract") != "chummer6-ui.chummer5a_muscle_memor
     add_failure("Muscle-memory parity policy must pin the runtime inventory contract.", scope_inventory_reasons)
 
 full_scope = policy.get("fullScope") or {}
-for key in ("tabsFromOracle", "workspaceActionsFromOracle", "desktopControlsFromOracle", "popupMenusInScope", "tooltipsInScope"):
+for key in ("tabsFromOracle", "workspaceActionsFromOracle", "desktopControlsFromOracle", "popupMenusInScope", "tooltipsInScope", "secondaryPointerHostTruthInScope", "middleClickTruthInScope"):
     if full_scope.get(key) is not True:
         add_failure(f"Muscle-memory parity policy must keep fullScope.{key}=true.", scope_inventory_reasons)
 
@@ -226,6 +226,7 @@ else:
         "dialogActionOrderReview",
         "pointerRouteReview",
         "auxiliaryPointerRouteReview",
+        "auxiliaryPointerHostTruthReview",
         "tooltipCoverageReview",
         "dialogGeometryReview",
     ):
@@ -288,7 +289,8 @@ required_design_markers = [
     "Mouse-only macro replay",
     "loop through every UI element",
     "right click",
-    "middle click"
+    "middle click",
+    "zero hosts"
 ]
 missing_design_markers = [marker for marker in required_design_markers if marker not in design_doc_text]
 evidence["missingDesignMarkers"] = missing_design_markers

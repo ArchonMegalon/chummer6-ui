@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-05-03T12:19:54.813399Z",
+  "contractName": "chummer6-ui.chummer_sr6_shared_muscle_memory_parity_gate",
+  "status": "pass",
+  "summary": "SR6 shared muscle-memory policy, workflow parity receipt, runtime inventory, runtime markers, and verify wiring are present.",
+  "reasons": [],
+  "evidence": {
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_PARITY_GATE.generated.json",
+    "policyPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_POLICY.json",
+    "designDocPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_EXIT_TESTS.md",
+    "sr6WorkflowReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "inventoryReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY.generated.json",
+    "runtimeDialogSurfaceCount": 71,
+    "runtimeVisibleElementCount": 17098,
+    "reasonCount": 0,
+    "failureCount": 0
+  },
+  "reviews": {
+    "policyReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "workflowParityReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "inventoryReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "runtimeReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "wiringReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    }
+  }
+}
