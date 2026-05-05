@@ -1,6 +1,7 @@
 {
-  "generated_at": "2026-05-02T14:05:07.691499Z",
+  "generated_at": "2026-05-05T15:48:48.580323Z",
   "probe_kind": "ui_parity_audit",
+  "status": "pass",
   "scope_note": "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
   "summary": {
     "total_elements": 84,
@@ -11,10 +12,14 @@
     "chummer6_only_extra_present_count": 0,
     "removable_extra_present_count": 0,
     "coverage_gap_keys": [],
-    "active_runs_count": 4,
-    "productive_active_runs_count": 3,
-    "nonproductive_active_runs_count": 0
+    "active_runs_count": 10,
+    "productive_active_runs_count": 9,
+    "nonproductive_active_runs_count": 1
   },
+  "visualNoCount": 0,
+  "behavioralNoCount": 0,
+  "releaseBlockingNoCount": 0,
+  "coverageGapKeys": [],
   "findings": [],
   "notes": [
     "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
@@ -22,6 +27,1195 @@
     "No currently-audited Chummer6-only visible extras are present in the classic-parity disallow lists, so nothing in that category is presently marked removable."
   ],
   "elements": [
+    {
+      "id": "baseline:character_roster_multi_character_flow",
+      "label": "Character Roster Multi Character Flow",
+      "category": "baseline_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "baseline:first_launch_workbench_or_restore",
+      "label": "First Launch Workbench Or Restore",
+      "category": "baseline_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "baseline:master_index_dense_reference_flow",
+      "label": "Master Index Dense Reference Flow",
+      "category": "baseline_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "baseline:menu_file_open_save_import",
+      "label": "Menu File Open Save Import",
+      "category": "baseline_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "baseline:menu_tools_settings_masterindex_roster",
+      "label": "Menu Tools Settings Masterindex Roster",
+      "category": "baseline_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "baseline:menu_windows_help_liveness",
+      "label": "Menu Windows Help Liveness",
+      "category": "baseline_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:14-advancement-dialog-light.png",
+      "label": "Advancement dialog",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:17-character-roster-dialog-light.png",
+      "label": "Character Roster dialog",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:15-creation-section-light.png",
+      "label": "Character creation section",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:10-contacts-section-light.png",
+      "label": "Contacts section",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:08-cyberware-dialog-light.png",
+      "label": "Cyberware dialog",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:06-dense-section-dark.png",
+      "label": "Dense builder section (dark)",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:05-dense-section-light.png",
+      "label": "Dense builder section (light)",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:11-diary-dialog-light.png",
+      "label": "Diary dialog",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:02-menu-open-light.png",
+      "label": "File/open/import menu surface",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:18-import-dialog-light.png",
+      "label": "Import dialog",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:01-initial-shell-light.png",
+      "label": "Initial workbench shell",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:07-loaded-runner-tabs-light.png",
+      "label": "Loaded runner tab strip",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:04-loaded-runner-light.png",
+      "label": "Loaded runner workbench",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:12-magic-dialog-light.png",
+      "label": "Magic dialog",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:16-master-index-dialog-light.png",
+      "label": "Master Index dialog",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:13-matrix-dialog-light.png",
+      "label": "Matrix dialog",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:03-settings-open-light.png",
+      "label": "Settings surface",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "screenshot:09-vehicles-section-light.png",
+      "label": "Vehicles and drones section",
+      "category": "captured_surface",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:StatusStrip",
+      "label": "StatusStrip",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:pgbProgress",
+      "label": "pgbProgress",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:tabCharacterTabs",
+      "label": "tabCharacterTabs",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:tabInfo",
+      "label": "tabInfo",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:treArmor",
+      "label": "treArmor",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:treCyberware",
+      "label": "treCyberware",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:treGear",
+      "label": "treGear",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:treQualities",
+      "label": "treQualities",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:treVehicles",
+      "label": "treVehicles",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "legacy_marker:treWeapons",
+      "label": "treWeapons",
+      "category": "dense_workbench_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+      "evidence": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:character_roster_form_title",
+      "label": "Character Roster dialog title",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:character_roster_tree",
+      "label": "Character Roster tree",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:character_roster_route",
+      "label": "Character roster route",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:file_menu",
+      "label": "File menu",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:global_settings_route",
+      "label": "Global settings route",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Runtime-backed settings-route parity is directly covered by the current file/settings proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:help_menu",
+      "label": "Help menu",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:hero_lab_importer_route",
+      "label": "Hero Lab importer route",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Catalog, dialog-factory, and dialog-coordinator proofs directly cover the Hero Lab importer route.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:master_index_form_title",
+      "label": "Master Index dialog title",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:master_index_source_click_reminder",
+      "label": "Master Index source click reminder",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:master_index_route",
+      "label": "Master index route",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:open_for_export_route",
+      "label": "Open for export route",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Runtime-backed open-for-export route parity is directly covered by the current file-menu proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:open_route",
+      "label": "Open route",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Runtime-backed open-route parity is directly covered by the current file-menu proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:tools_menu",
+      "label": "Tools menu",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:translator_route",
+      "label": "Translator route",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Catalog, presenter, dialog-factory, and dual-head acceptance proofs directly cover the Translator route.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:windows_menu",
+      "label": "Windows menu",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "source:xml_amendment_editor_route",
+      "label": "XML amendment editor route",
+      "category": "legacy_source_anchor",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Catalog, presenter, dialog-factory, and dual-head acceptance proofs directly cover the XML Amendment Editor route.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "non_negotiable:character_roster_first_class",
+      "label": "Character Roster is first-class",
+      "category": "non_negotiable",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "non_negotiable:claim_restore_in_installer_or_in_app",
+      "label": "Claim restore is in-app or installer-backed",
+      "category": "non_negotiable",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "non_negotiable:file_menu_live",
+      "label": "File menu stays live",
+      "category": "non_negotiable",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "non_negotiable:guided_product_installer_happy_path",
+      "label": "Guided product installer happy path",
+      "category": "non_negotiable",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "non_negotiable:master_index_first_class",
+      "label": "Master Index is first-class",
+      "category": "non_negotiable",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "non_negotiable:no_browser_only_claim_code_ritual",
+      "label": "No browser-only claim code ritual",
+      "category": "non_negotiable",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "non_negotiable:no_generic_shell_or_dashboard_first",
+      "label": "No generic shell or dashboard first",
+      "category": "non_negotiable",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "non_negotiable:startup_is_workbench_or_restore",
+      "label": "Startup lands in workbench or restore",
+      "category": "non_negotiable",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:bottom_status_strip",
+      "label": "Bottom status strip",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:character_roster_route",
+      "label": "Character roster route",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:file_menu",
+      "label": "File menu",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:help_menu",
+      "label": "Help menu",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:immediate_toolstrip",
+      "label": "Immediate toolstrip",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:import_route",
+      "label": "Import route",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:master_index_route",
+      "label": "Master index route",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:save_or_open_route",
+      "label": "Save or open route",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:settings_route",
+      "label": "Settings route",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:tools_menu",
+      "label": "Tools menu",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "landmark:windows_menu",
+      "label": "Windows menu",
+      "category": "required_landmark",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "task:locate_master_index_and_roster",
+      "label": "Locate Master Index And Roster",
+      "category": "veteran_task",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "task:locate_save_import_settings",
+      "label": "Locate Save Import Settings",
+      "category": "veteran_task",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "task:reach_real_workbench",
+      "label": "Reach Real Workbench",
+      "category": "veteran_task",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "task:recover_section_rhythm",
+      "label": "Recover Section Rhythm",
+      "category": "veteran_task",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:custom_data_xml_and_translator_bridge",
+      "label": "Custom Data Xml And Translator Bridge",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:translator', 'menu:xml_editor'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:dense_builder_and_career_workflows",
+      "label": "Dense Builder And Career Workflows",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['oracle:tabs', 'oracle:workspace_actions', 'workflow:build_explain_publish'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:dice_initiative_and_table_utilities",
+      "label": "Dice Initiative And Table Utilities",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:dice_roller', 'workflow:initiative'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:identity_contacts_lifestyles_history",
+      "label": "Identity Contacts Lifestyles History",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['workflow:contacts', 'workflow:lifestyles', 'workflow:notes'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:legacy_and_adjacent_import_oracles",
+      "label": "Legacy And Adjacent Import Oracles",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:hero_lab_importer', 'workflow:import_oracle'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:roster_dashboards_and_multi_character_ops",
+      "label": "Roster Dashboards And Multi Character Ops",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:character_roster_multi_character_flow', 'workflow:multi_character'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:settings_and_rules_environment_authoring",
+      "label": "Settings And Rules Environment Authoring",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['workflow:rules', 'workflow:sources', 'baseline:menu_tools_settings_masterindex_roster'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:sheet_export_print_viewer_and_exchange",
+      "label": "Sheet Export Print Viewer And Exchange",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:open_for_printing', 'menu:open_for_export', 'menu:file_print_multiple'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:shell_workbench_orientation",
+      "label": "Shell Workbench Orientation",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:first_launch_workbench_or_restore', 'baseline:menu_windows_help_liveness'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:sourcebooks_reference_and_master_index",
+      "label": "Sourcebooks Reference And Master Index",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:master_index_dense_reference_flow', 'workflow:sources'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    },
+    {
+      "id": "family:sr6_supplements_designers_and_house_rules",
+      "label": "Sr6 Supplements Designers And House Rules",
+      "category": "workflow_family",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "present_in_chummer5a": "yes",
+      "removable_without_workflow_degradation": "no",
+      "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['workflow:sr6_supplements', 'workflow:house_rules'].",
+      "evidence": [
+        "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+      ]
+    }
+  ],
+  "rows": [
     {
       "id": "baseline:character_roster_multi_character_flow",
       "label": "Character Roster Multi Character Flow",

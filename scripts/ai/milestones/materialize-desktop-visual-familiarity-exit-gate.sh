@@ -30,6 +30,7 @@ ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGate
 desktop_shell_ruleset_tests_path="$repo_root/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs"
 legacy_frmcareer_designer_path="/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs"
 skip_release_gate_lock_wait="${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
+skip_prerequisite_receipt_refresh="${CHUMMER_DESKTOP_VISUAL_SKIP_PREREQUISITE_RECEIPT_REFRESH:-0}"
 release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
 release_gate_lock_poll_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS:-2}"
 release_gate_lock_stale_max_age_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-900}"
@@ -116,14 +117,21 @@ if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
   fi
 fi
 
-echo "[desktop-visual-familiarity-gate] running Chummer5a layout hard gate..."
-bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+if [[ "$skip_prerequisite_receipt_refresh" == "1" \
+  && -f "$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json" \
+  && -f "$legacy_equivalent_chrome_gate_receipt_path" \
+  && -f "$muscle_memory_parity_gate_receipt_path" ]]; then
+  echo "[desktop-visual-familiarity-gate] reusing existing prerequisite receipts for refresh-only pass..."
+else
+  echo "[desktop-visual-familiarity-gate] running Chummer5a layout hard gate..."
+  bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
 
-echo "[desktop-visual-familiarity-gate] running Chummer5a legacy-equivalent chrome gate..."
-bash scripts/ai/milestones/chummer5a-legacy-equivalent-chrome-gate.sh >/dev/null
+  echo "[desktop-visual-familiarity-gate] running Chummer5a legacy-equivalent chrome gate..."
+  bash scripts/ai/milestones/chummer5a-legacy-equivalent-chrome-gate.sh >/dev/null
 
-echo "[desktop-visual-familiarity-gate] running Chummer5a muscle-memory parity gate..."
-bash scripts/ai/milestones/chummer5a-muscle-memory-parity-gate.sh >/dev/null
+  echo "[desktop-visual-familiarity-gate] running Chummer5a muscle-memory parity gate..."
+  bash scripts/ai/milestones/chummer5a-muscle-memory-parity-gate.sh >/dev/null
+fi
 
 python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$legacy_equivalent_chrome_gate_receipt_path" "$muscle_memory_parity_gate_receipt_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$desktop_shell_ruleset_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
 from __future__ import annotations

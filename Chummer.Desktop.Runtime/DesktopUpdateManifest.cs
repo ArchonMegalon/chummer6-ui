@@ -73,12 +73,33 @@ public sealed record DesktopUpdateArtifact(
                 || (string.IsNullOrWhiteSpace(Kind) && string.Equals(Extension, ".msix", StringComparison.OrdinalIgnoreCase)));
 }
 
+public sealed record DesktopUpdateDesktopSurfaceRef(
+    string RegistryId,
+    string ArtifactId,
+    string ChannelId,
+    string ReleaseVersion,
+    string TupleId,
+    string HeadId,
+    string Platform,
+    string Rid,
+    string Arch,
+    string Kind,
+    string InstallAccessClass,
+    string DesktopChannelRef,
+    string InstallGuidanceRef,
+    string ParticipationReceiptRef,
+    string RewardPublicationRef,
+    string PublicationBindingId,
+    string? PublicInstallRoute,
+    string? Rationale);
+
 public sealed record DesktopUpdateChannelManifest(
     string ChannelId,
     string Version,
     string Status,
     DateTimeOffset? PublishedAt,
     IReadOnlyList<DesktopUpdateArtifact> Artifacts,
+    IReadOnlyList<DesktopUpdateDesktopSurfaceRef> DesktopSurfaceRefs,
     string? RolloutState,
     string? RolloutReason,
     string? SupportabilityState,
@@ -137,6 +158,40 @@ public static class DesktopUpdateManifestParser
             .FirstOrDefault();
     }
 
+    public static DesktopUpdateDesktopSurfaceRef? SelectPreferredDesktopSurfaceRef(
+        DesktopUpdateChannelManifest manifest,
+        string headId,
+        DesktopUpdatePlatformIdentity identity)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+        ArgumentNullException.ThrowIfNull(identity);
+
+        DesktopUpdateArtifact? preferredArtifact = SelectPreferredArtifact(manifest, headId, identity);
+        if (preferredArtifact is not null)
+        {
+            DesktopUpdateDesktopSurfaceRef? artifactMatch = manifest.DesktopSurfaceRefs
+                .FirstOrDefault(surface =>
+                    string.Equals(surface.ArtifactId, preferredArtifact.ArtifactId, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(surface.HeadId, preferredArtifact.HeadId, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(surface.Platform, preferredArtifact.Platform, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(surface.Arch, preferredArtifact.Arch, StringComparison.OrdinalIgnoreCase));
+            if (artifactMatch is not null)
+            {
+                return artifactMatch;
+            }
+        }
+
+        return manifest.DesktopSurfaceRefs
+            .Where(surface =>
+                string.Equals(surface.HeadId, headId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(surface.Platform, identity.Platform, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(surface.Arch, identity.Arch, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(surface => KindSortKey(surface.Kind))
+            .ThenBy(surface => surface.ArtifactId, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+    }
+
     private static DesktopUpdateChannelManifest ParseCanonicalManifest(
         JsonElement root,
         JsonElement artifactsElement,
@@ -184,6 +239,7 @@ public static class DesktopUpdateManifestParser
             Status: GetOptionalString(root, "status") ?? "published",
             PublishedAt: GetOptionalDateTimeOffset(root, "publishedAt"),
             Artifacts: artifacts,
+            DesktopSurfaceRefs: ParseDesktopSurfaceRefs(root),
             RolloutState: GetOptionalString(root, "rolloutState"),
             RolloutReason: GetOptionalString(root, "rolloutReason"),
             SupportabilityState: GetOptionalString(root, "supportabilityState"),
@@ -242,6 +298,7 @@ public static class DesktopUpdateManifestParser
             Status: GetOptionalString(root, "status") ?? "published",
             PublishedAt: GetOptionalDateTimeOffset(root, "publishedAt"),
             Artifacts: artifacts,
+            DesktopSurfaceRefs: ParseDesktopSurfaceRefs(root),
             RolloutState: GetOptionalString(root, "rolloutState"),
             RolloutReason: GetOptionalString(root, "rolloutReason"),
             SupportabilityState: GetOptionalString(root, "supportabilityState"),
@@ -251,6 +308,60 @@ public static class DesktopUpdateManifestParser
             ProofStatus: GetOptionalString(root, "releaseProof", "status"),
             ProofGeneratedAt: GetOptionalDateTimeOffset(root, "releaseProof", "generatedAt"),
             SourceUri: sourceUri);
+    }
+
+    private static IReadOnlyList<DesktopUpdateDesktopSurfaceRef> ParseDesktopSurfaceRefs(JsonElement root)
+    {
+        if (!root.TryGetProperty("desktopSurfaceRefs", out JsonElement refsElement) || refsElement.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<DesktopUpdateDesktopSurfaceRef>();
+        }
+
+        List<DesktopUpdateDesktopSurfaceRef> refs = [];
+        foreach (JsonElement element in refsElement.EnumerateArray())
+        {
+            if (element.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            string registryId = GetOptionalString(element, "registryId") ?? string.Empty;
+            string artifactId = GetOptionalString(element, "artifactId") ?? string.Empty;
+            string headId = GetOptionalString(element, "head") ?? "unknown";
+            string platform = GetOptionalString(element, "platform") ?? "unknown";
+            string arch = GetOptionalString(element, "arch") ?? "unknown";
+            string kind = GetOptionalString(element, "kind") ?? "artifact";
+            if (string.IsNullOrWhiteSpace(registryId)
+                || string.IsNullOrWhiteSpace(artifactId)
+                || string.IsNullOrWhiteSpace(headId)
+                || string.IsNullOrWhiteSpace(platform)
+                || string.IsNullOrWhiteSpace(arch))
+            {
+                continue;
+            }
+
+            refs.Add(new DesktopUpdateDesktopSurfaceRef(
+                RegistryId: registryId,
+                ArtifactId: artifactId,
+                ChannelId: GetOptionalString(element, "channelId") ?? "preview",
+                ReleaseVersion: GetOptionalString(element, "releaseVersion") ?? string.Empty,
+                TupleId: GetOptionalString(element, "tupleId") ?? string.Empty,
+                HeadId: headId,
+                Platform: platform,
+                Rid: GetOptionalString(element, "rid") ?? string.Empty,
+                Arch: arch,
+                Kind: kind,
+                InstallAccessClass: GetOptionalString(element, "installAccessClass") ?? string.Empty,
+                DesktopChannelRef: GetOptionalString(element, "desktopChannelRef") ?? string.Empty,
+                InstallGuidanceRef: GetOptionalString(element, "installGuidanceRef") ?? string.Empty,
+                ParticipationReceiptRef: GetOptionalString(element, "participationReceiptRef") ?? string.Empty,
+                RewardPublicationRef: GetOptionalString(element, "rewardPublicationRef") ?? string.Empty,
+                PublicationBindingId: GetOptionalString(element, "publicationBindingId") ?? string.Empty,
+                PublicInstallRoute: GetOptionalString(element, "publicInstallRoute"),
+                Rationale: GetOptionalString(element, "rationale")));
+        }
+
+        return refs;
     }
 
     private static int KindSortKey(string kind)

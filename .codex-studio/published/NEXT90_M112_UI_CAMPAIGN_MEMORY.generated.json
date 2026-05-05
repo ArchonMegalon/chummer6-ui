@@ -3,19 +3,28 @@
     "allowed_paths_exact": true,
     "design_allowed_paths_exact": true,
     "design_owned_surfaces_exact": true,
+    "design_queue_completion_action_matches": true,
+    "design_queue_do_not_reopen_reason_matches": true,
     "design_queue_package_unique": true,
     "design_queue_path_matches": true,
+    "design_queue_status_complete": true,
     "design_queue_task_matches": true,
     "design_queue_title_matches": true,
     "owned_surfaces_exact": true,
+    "queue_completion_action_matches": true,
+    "queue_do_not_reopen_reason_matches": true,
     "queue_package_unique": true,
+    "queue_status_complete": true,
     "queue_task_matches": true,
     "queue_title_matches": true,
+    "registry_completion_action_matches": true,
+    "registry_do_not_reopen_reason_matches": true,
     "registry_has_m112_ui_task": true,
+    "registry_status_complete": true,
     "registry_task_unique": true
   },
   "failures": [],
-  "generatedAt": "2026-05-05T10:05:18Z",
+  "generatedAt": "2026-05-05T10:29:01Z",
   "packageId": "next90-m112-ui-campaign-memory",
   "proofCommands": {
     "directProofCommand": "bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh",
@@ -29,10 +38,21 @@
     "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M112CampaignMemoryGuardTests.cs"
   ],
   "sourceChecks": {
+    "Chummer.Avalonia/App.axaml.cs": {
+      "DesktopCampaignWorkspaceWindow.ShowAsync(owner, \"avalonia\")": true,
+      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(owner, \"avalonia\")": true,
+      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(owner, \"avalonia\")": true,
+      "DesktopStartupSurfaceCatalog.EnvironmentVariableName": true,
+      "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CampaignWorkspace)": true,
+      "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.GmPrepPackets)": true,
+      "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RosterMovement)": true
+    },
     "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
       "\"Open Rule Environment Studio\"": true,
       "BuildCampaignConsequenceEvidenceSummary()": true,
@@ -79,6 +99,12 @@
       "Review campaign consequences": true,
       "Review next-session return": true,
       "Stale state: server continuity is unavailable": true
+    },
+    "Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs": {
+      "public const string CampaignWorkspace = \"campaign_workspace\";": true,
+      "public const string GmPrepPackets = \"gm_prep_packets\";": true,
+      "public const string RosterMovement = \"roster_movement\";": true,
+      "public static bool Matches(string? startupSurface, string expectedSurface)": true
     },
     "Chummer.Tests/Chummer.Tests.csproj": {
       "Compliance\\Next90M112CampaignMemoryGuardTests.cs": true

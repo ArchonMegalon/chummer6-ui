@@ -1,6 +1,6 @@
 {
   "contractName": "chummer6-ui.ui_flagship_release_gate.screenshot_control_evidence",
-  "screenshotDirectory": "/tmp/chummer-ui-flagship-gate-screenshots.5EuTsb",
+  "screenshotDirectory": "/tmp/chummer-ui-flagship-gate-screenshots.STfnRd",
   "entries": [
     {
       "screenshot": "01-initial-shell-light.png",
@@ -14,6 +14,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "CloseWorkspaceButton",
@@ -35,10 +36,12 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -54,6 +57,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionHostControl",
         "SectionPreviewBox",
@@ -79,6 +83,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -269,6 +282,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -303,6 +325,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -440,6 +471,15 @@
           "height": 229
         },
         {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
+        },
+        {
           "name": "SaveButton",
           "controlType": "Button",
           "text": "",
@@ -559,7 +599,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:49Z",
+          "text": "Time: 2026-05-05 12:52:32Z",
           "x": 203,
           "y": 0,
           "width": 159,
@@ -652,10 +692,12 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
-        "Runner Summary",
-        "Section Payload",
         "Section",
+        "Section Payload",
         "(none)",
         "New Character",
         "file",
@@ -674,7 +716,7 @@
         "Character: none",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:49Z",
+        "Time: 2026-05-05 12:52:32Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -695,6 +737,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "CloseWorkspaceButton",
@@ -716,10 +759,12 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -735,6 +780,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionHostControl",
         "SectionPreviewBox",
@@ -760,6 +806,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -950,6 +1005,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -984,6 +1048,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -1121,6 +1194,15 @@
           "height": 229
         },
         {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
+        },
+        {
           "name": "SaveButton",
           "controlType": "Button",
           "text": "",
@@ -1240,7 +1322,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:49Z",
+          "text": "Time: 2026-05-05 12:52:32Z",
           "x": 203,
           "y": 0,
           "width": 159,
@@ -1333,10 +1415,12 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
-        "Runner Summary",
-        "Section Payload",
         "Section",
+        "Section Payload",
         "(none)",
         "New Character",
         "file",
@@ -1355,7 +1439,7 @@
         "Character: none",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:49Z",
+        "Time: 2026-05-05 12:52:32Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -1832,6 +1916,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -1857,12 +1942,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -1879,6 +1966,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -1909,6 +1997,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -1957,7 +2054,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware Overview",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
           "width": 1268,
@@ -2135,6 +2232,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -2187,6 +2293,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -2331,6 +2446,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -2497,7 +2621,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:50Z",
+          "text": "Time: 2026-05-05 12:52:33Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -2590,6 +2714,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -2612,7 +2739,6 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -2670,7 +2796,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:50Z",
+        "Time: 2026-05-05 12:52:33Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -2697,6 +2823,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -2722,12 +2849,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -2744,6 +2873,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -2774,6 +2904,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -2822,7 +2961,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware Overview",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
           "width": 1268,
@@ -3000,6 +3139,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -3052,6 +3200,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -3196,6 +3353,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -3362,7 +3528,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:50Z",
+          "text": "Time: 2026-05-05 12:52:33Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -3455,6 +3621,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -3477,7 +3646,6 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -3535,7 +3703,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:50Z",
+        "Time: 2026-05-05 12:52:33Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -3564,6 +3732,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -3589,12 +3758,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -3611,6 +3782,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -3641,6 +3813,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -3689,7 +3870,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware Overview",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
           "width": 1268,
@@ -3867,6 +4048,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -3919,6 +4109,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -4063,6 +4262,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -4229,7 +4437,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:50Z",
+          "text": "Time: 2026-05-05 12:52:33Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -4322,6 +4530,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -4344,7 +4555,6 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -4402,7 +4612,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:50Z",
+        "Time: 2026-05-05 12:52:33Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -4431,6 +4641,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -4456,12 +4667,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -4478,6 +4691,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -4508,6 +4722,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -4556,7 +4779,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware Overview",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
           "width": 1268,
@@ -4734,6 +4957,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -4786,6 +5018,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -4932,6 +5173,15 @@
           "height": 176
         },
         {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
+        },
+        {
           "name": "SaveButton",
           "controlType": "Button",
           "text": "",
@@ -5096,7 +5346,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:52Z",
+          "text": "Time: 2026-05-05 12:52:35Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -5189,6 +5439,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -5209,7 +5462,6 @@
         "Vehicle Locations",
         "Sources",
         "Custom Data Dirs",
-        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -5267,7 +5519,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:52Z",
+        "Time: 2026-05-05 12:52:35Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -5286,7 +5538,7 @@
       "screenshot": "08-cyberware-dialog-light.png",
       "theme": "Light",
       "dialogTitle": "Add Cyberware",
-      "dialogMessage": "Search, filter, review source/cost/essence details, and confirm the selected implant.",
+      "dialogMessage": "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
       "dialogFieldLabels": [
         "Navigation",
         "[Cyberware] \u251C\u2500 Augmentation Frames \u2502 \u2514\u2500 Cyberlimbs \u2514\u2500 Core Systems \u251C\u2500 \u003E Bodyware \u2514\u2500 Headware",
@@ -5348,7 +5600,7 @@
         "Follow-through",
         "Add \u0026 More keeps the selector open",
         "Category Commands",
-        "Group | Core Systems Category | Bodyware Search Scope | current category only Data File | Core Rulebook Move the tree without losing grade or availability posture Review suites and accessories after picking the base implant",
+        "Group | Core Systems Category | Bodyware Search Scope | current category only Data File | Core Rulebook Move the tree without losing grade or availability posture Suites and accessories after picking the base implant",
         "Filter Summary",
         "Filtered Catalog | 4 shown / 4 total Category Path | Cyberware \u003E Core Systems \u003E Bodyware Filter Posture | grade, availability, and source stay live",
         "Live Recalculation",
@@ -5359,7 +5611,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Review source, cost, and essence for Wired Reflexes 2 Use OK once or Add \u0026 More for repeated bodyware picks Keep grade Standard and rating posture visible while browsing",
+        "Source, cost, and essence for Wired Reflexes 2 Use OK once or Add \u0026 More for repeated bodyware picks Keep grade Standard and rating posture visible while browsing",
         "Notes",
         "Grade modifiers, essence/cost deltas, and source details are surfaced here before the implant is added. Grade, book, and availability filters stay visible like the old selection form while Add \u0026 More remains available."
       ],
@@ -6386,7 +6638,7 @@
         {
           "name": "DialogMessageText",
           "controlType": "TextBlock",
-          "text": "Search, filter, review source/cost/essence details, and confirm the selected implant.",
+          "text": "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
           "x": 0,
           "y": 0,
           "width": 842,
@@ -6557,7 +6809,7 @@
       ],
       "visibleTextSamples": [
         "Add Cyberware",
-        "Search, filter, review source/cost/essence details, and confirm the selected implant.",
+        "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
         "Navigation",
         "[Cyberware] \u251C\u2500 Augmentation Frames \u2502 \u2514\u2500 Cyberlimbs \u2514\u2500 Core Systems \u251C\u2500 \u003E Bodyware \u2514\u2500 Headware",
         "Search",
@@ -6610,7 +6862,7 @@
         "Follow-through",
         "Add \u0026 More keeps the selector open",
         "Category Commands",
-        "Group | Core Systems Category | Bodyware Search Scope | current category only Data File | Core Rulebook Move the tree without losing grade or availability posture Review suites and accessories after picking the base implant",
+        "Group | Core Systems Category | Bodyware Search Scope | current category only Data File | Core Rulebook Move the tree without losing grade or availability posture Suites and accessories after picking the base implant",
         "Filter Summary",
         "Filtered Catalog | 4 shown / 4 total Category Path | Cyberware \u003E Core Systems \u003E Bodyware Filter Posture | grade, availability, and source stay live",
         "Live Recalculation",
@@ -6621,7 +6873,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Review source, cost, and essence for Wired Reflexes 2 Use OK once or Add \u0026 More for repeated bodyware picks Keep grade Standard and rating posture visible while browsing",
+        "Source, cost, and essence for Wired Reflexes 2 Use OK once or Add \u0026 More for repeated bodyware picks Keep grade Standard and rating posture visible while browsing",
         "Notes",
         "Grade modifiers, essence/cost deltas, and source details are surfaced here before the implant is added. Grade, book, and availability filters stay visible like the old selection form while Add \u0026 More remains available.",
         "Add Wired Reflexes 2",
@@ -6648,6 +6900,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -6672,12 +6925,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -6694,6 +6949,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -6727,6 +6983,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -6944,6 +7209,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -6996,6 +7270,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -7140,6 +7423,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -7333,7 +7625,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:52Z",
+          "text": "Time: 2026-05-05 12:52:36Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -7426,6 +7718,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -7469,7 +7764,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:52Z",
+        "Time: 2026-05-05 12:52:36Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -7498,6 +7793,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -7522,12 +7818,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -7544,6 +7842,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -7577,6 +7876,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -7794,6 +8102,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -7846,6 +8163,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -7990,6 +8316,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -8183,7 +8518,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:52Z",
+          "text": "Time: 2026-05-05 12:52:36Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -8276,6 +8611,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -8320,7 +8658,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:52Z",
+        "Time: 2026-05-05 12:52:36Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -10178,7 +10516,7 @@
       "screenshot": "14-advancement-dialog-light.png",
       "theme": "Light",
       "dialogTitle": "Add Initiation / Submersion",
-      "dialogMessage": "Choose the reward, review grade and track, then confirm the initiation or submersion step.",
+      "dialogMessage": "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
       "dialogFieldLabels": [
         "Navigation",
         "[Initiation] \u251C\u2500 Metamagics \u251C\u2500 Echos \u251C\u2500 Ordeals \u2514\u2500 Notes",
@@ -10535,7 +10873,7 @@
         {
           "name": "DialogMessageText",
           "controlType": "TextBlock",
-          "text": "Choose the reward, review grade and track, then confirm the initiation or submersion step.",
+          "text": "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
           "x": 0,
           "y": 0,
           "width": 842,
@@ -10670,7 +11008,7 @@
       ],
       "visibleTextSamples": [
         "Add Initiation / Submersion",
-        "Choose the reward, review grade and track, then confirm the initiation or submersion step.",
+        "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
         "Navigation",
         "[Initiation] \u251C\u2500 Metamagics \u251C\u2500 Echos \u251C\u2500 Ordeals \u2514\u2500 Notes",
         "Track",
@@ -10709,6 +11047,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -10733,12 +11072,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -10755,6 +11096,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -10785,6 +11127,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -10824,7 +11175,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Runner Summary",
+          "text": "Attributes",
           "x": 0,
           "y": 0,
           "width": 1268,
@@ -11002,6 +11353,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -11054,6 +11414,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -11198,6 +11567,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -11364,7 +11742,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:53Z",
+          "text": "Time: 2026-05-05 12:52:37Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -11457,6 +11835,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -11477,7 +11858,7 @@
         "Vehicle Locations",
         "Sources",
         "Custom Data Dirs",
-        "Runner Summary",
+        "Attributes",
         "BOD",
         "5",
         "AGI",
@@ -11502,7 +11883,6 @@
         "Attribute 2",
         "Agility \u00B7 Total 7",
         "Section Payload",
-        "Attributes",
         "(none)",
         "New Character",
         "file",
@@ -11521,7 +11901,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:53Z",
+        "Time: 2026-05-05 12:52:37Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -11818,6 +12198,7 @@
       "dialogMessage": "",
       "dialogFieldLabels": [
         "Open Characters",
+        "Demo \u00B7 Soma [sr5]",
         "Watch Folder",
         "Character Name:",
         "Soma",
@@ -11847,11 +12228,13 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "ChevronPath",
         "DialogFieldInput_rosterSelectedRunnerId",
         "DialogFieldsPanel",
         "DialogTitleText",
         "PART_BorderElement",
         "PART_ContentPresenter",
+        "PART_ExpandCollapseChevron",
         "PART_ExpandCollapseChevronContainer",
         "PART_Header",
         "PART_HeaderPresenter",
@@ -11867,6 +12250,15 @@
         "rosterDetailTabs"
       ],
       "visibleNamedControls": [
+        {
+          "name": "ChevronPath",
+          "controlType": "Path",
+          "text": "",
+          "x": 0,
+          "y": 3,
+          "width": 12,
+          "height": 6
+        },
         {
           "name": "DialogFieldInput_rosterSelectedRunnerId",
           "controlType": "TreeView",
@@ -11911,6 +12303,15 @@
           "y": 0,
           "width": 900,
           "height": 620
+        },
+        {
+          "name": "PART_ExpandCollapseChevron",
+          "controlType": "ToggleButton",
+          "text": "",
+          "x": 0,
+          "y": 5,
+          "width": 12,
+          "height": 12
         },
         {
           "name": "PART_ExpandCollapseChevronContainer",
@@ -12033,6 +12434,7 @@
       "visibleTextSamples": [
         "Character Roster",
         "Open Characters",
+        "Demo \u00B7 Soma [sr5]",
         "Watch Folder",
         "Character Name:",
         "Soma",
@@ -12070,6 +12472,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -12095,12 +12498,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -12117,6 +12522,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -12147,6 +12553,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -12195,7 +12610,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware Overview",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
           "width": 1268,
@@ -12373,6 +12788,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -12425,6 +12849,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -12569,6 +13002,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -12735,7 +13177,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:57Z",
+          "text": "Time: 2026-05-05 12:52:42Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -12828,6 +13270,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: Open Character File selection cancelled.",
         "Runner",
         "Gear \u0026 Ware",
@@ -12850,7 +13295,6 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -12908,7 +13352,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:57Z",
+        "Time: 2026-05-05 12:52:42Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -12924,6 +13368,1403 @@
       "previewText": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }"
     },
     {
+      "screenshot": "38-translator-dialog-light.png",
+      "theme": "Light",
+      "dialogTitle": "Translator",
+      "dialogMessage": "Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: en-us, de-de, fr-fr, ja-jp, pt-br, zh-cn",
+      "dialogFieldLabels": [
+        "Language Search",
+        "filter languages",
+        "Translator Lane",
+        "missing",
+        "Translator Bridge",
+        "Enabled Language Overlays",
+        "0",
+        "English",
+        "en-us",
+        "Deutsch",
+        "de-de"
+      ],
+      "dialogFieldIds": [
+        "lang1",
+        "lang2",
+        "translatorBridgePosture",
+        "translatorLanePosture",
+        "translatorOverlayCount",
+        "translatorSearch"
+      ],
+      "dialogFieldControlIds": [
+        "DialogFieldInput_lang1",
+        "DialogFieldInput_lang2",
+        "DialogFieldInput_translatorBridgePosture",
+        "DialogFieldInput_translatorLanePosture",
+        "DialogFieldInput_translatorOverlayCount",
+        "DialogFieldInput_translatorSearch",
+        "DialogFieldLabel_lang1",
+        "DialogFieldLabel_lang2",
+        "DialogFieldLabel_translatorBridgePosture",
+        "DialogFieldLabel_translatorLanePosture",
+        "DialogFieldLabel_translatorOverlayCount",
+        "DialogFieldLabel_translatorSearch",
+        "DialogField_lang1",
+        "DialogField_lang2",
+        "DialogField_translatorBridgePosture",
+        "DialogField_translatorLanePosture",
+        "DialogField_translatorOverlayCount",
+        "DialogField_translatorSearch"
+      ],
+      "dialogFieldInputValues": [
+        "governed",
+        "1",
+        "en-us",
+        "de-de"
+      ],
+      "dialogActionIds": [
+        "close"
+      ],
+      "dialogActionControlIds": [
+        "DialogAction_close"
+      ],
+      "visibleNamedControlIds": [
+        "DialogAction_close",
+        "DialogActionsBorder",
+        "DialogActionsPanel",
+        "DialogFieldInput_lang1",
+        "DialogFieldInput_lang2",
+        "DialogFieldInput_translatorBridgePosture",
+        "DialogFieldInput_translatorLanePosture",
+        "DialogFieldInput_translatorOverlayCount",
+        "DialogFieldInput_translatorSearch",
+        "DialogFieldLabel_lang1",
+        "DialogFieldLabel_lang2",
+        "DialogFieldLabel_translatorBridgePosture",
+        "DialogFieldLabel_translatorLanePosture",
+        "DialogFieldLabel_translatorOverlayCount",
+        "DialogFieldLabel_translatorSearch",
+        "DialogField_lang1",
+        "DialogField_lang2",
+        "DialogField_translatorBridgePosture",
+        "DialogField_translatorLanePosture",
+        "DialogField_translatorOverlayCount",
+        "DialogField_translatorSearch",
+        "DialogFieldsPanel",
+        "DialogMessageText",
+        "DialogTitleText",
+        "PART_BorderElement",
+        "PART_ContentPresenter",
+        "PART_InnerDockPanel",
+        "PART_ScrollViewer",
+        "PART_TextPresenter",
+        "PART_TransparencyFallback",
+        "PART_Watermark"
+      ],
+      "visibleNamedControls": [
+        {
+          "name": "DialogAction_close",
+          "controlType": "Button",
+          "text": "Close",
+          "x": 0,
+          "y": 0,
+          "width": 82,
+          "height": 22
+        },
+        {
+          "name": "DialogActionsBorder",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 527,
+          "width": 858,
+          "height": 31
+        },
+        {
+          "name": "DialogActionsPanel",
+          "controlType": "StackPanel",
+          "text": "",
+          "x": 770,
+          "y": 5,
+          "width": 82,
+          "height": 22
+        },
+        {
+          "name": "DialogFieldInput_lang1",
+          "controlType": "TextBox",
+          "text": "en-us",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_lang2",
+          "controlType": "TextBox",
+          "text": "de-de",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_translatorBridgePosture",
+          "controlType": "TextBox",
+          "text": "governed",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_translatorLanePosture",
+          "controlType": "TextBox",
+          "text": "governed",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_translatorOverlayCount",
+          "controlType": "TextBox",
+          "text": "1",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_translatorSearch",
+          "controlType": "TextBox",
+          "text": "",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldLabel_lang1",
+          "controlType": "TextBlock",
+          "text": "English",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_lang2",
+          "controlType": "TextBlock",
+          "text": "Deutsch",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_translatorBridgePosture",
+          "controlType": "TextBlock",
+          "text": "Translator Bridge",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_translatorLanePosture",
+          "controlType": "TextBlock",
+          "text": "Translator Lane",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_translatorOverlayCount",
+          "controlType": "TextBlock",
+          "text": "Enabled Language Overlays",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_translatorSearch",
+          "controlType": "TextBlock",
+          "text": "Language Search",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogField_lang1",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 120,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_lang2",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 150,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_translatorBridgePosture",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 60,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_translatorLanePosture",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 30,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_translatorOverlayCount",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 90,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_translatorSearch",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldsPanel",
+          "controlType": "StackPanel",
+          "text": "",
+          "x": 0,
+          "y": 19,
+          "width": 842,
+          "height": 174
+        },
+        {
+          "name": "DialogMessageText",
+          "controlType": "TextBlock",
+          "text": "Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: en-us, de-de, fr-fr, ja-jp, pt-br, zh-cn",
+          "x": 0,
+          "y": 0,
+          "width": 842,
+          "height": 13
+        },
+        {
+          "name": "DialogTitleText",
+          "controlType": "TextBlock",
+          "text": "Translator",
+          "x": 6,
+          "y": 3,
+          "width": 846,
+          "height": 14
+        },
+        {
+          "name": "PART_BorderElement",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "PART_ContentPresenter",
+          "controlType": "ContentPresenter",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 860,
+          "height": 560
+        },
+        {
+          "name": "PART_InnerDockPanel",
+          "controlType": "DockPanel",
+          "text": "",
+          "x": 3,
+          "y": 2,
+          "width": 670,
+          "height": 18
+        },
+        {
+          "name": "PART_ScrollViewer",
+          "controlType": "ScrollViewer",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 670,
+          "height": 18
+        },
+        {
+          "name": "PART_TextPresenter",
+          "controlType": "TextPresenter",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 670,
+          "height": 18
+        },
+        {
+          "name": "PART_TransparencyFallback",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 860,
+          "height": 560
+        },
+        {
+          "name": "PART_Watermark",
+          "controlType": "TextBlock",
+          "text": "filter languages",
+          "x": 0,
+          "y": 0,
+          "width": 670,
+          "height": 18
+        }
+      ],
+      "visibleTextSamples": [
+        "Translator",
+        "Shipping desktop locale set. Install, update, support, explain, and artifact trust flows should all reach parity for: en-us, de-de, fr-fr, ja-jp, pt-br, zh-cn",
+        "Language Search",
+        "filter languages",
+        "Translator Lane",
+        "Translator Bridge",
+        "Enabled Language Overlays",
+        "English",
+        "Deutsch",
+        "Close"
+      ],
+      "visibleMenuCommandIds": [],
+      "visibleTabLabels": [],
+      "visibleSectionQuickActionIds": [],
+      "selectedListRowTexts": [],
+      "previewText": ""
+    },
+    {
+      "screenshot": "39-xml-editor-dialog-light.png",
+      "theme": "Light",
+      "dialogTitle": "XML Editor",
+      "dialogMessage": "Edit/import flow stays file-first while XML bridge posture is governed with 0 enabled overlays and custom-data lane governed.",
+      "dialogFieldLabels": [
+        "XML Bridge",
+        "missing",
+        "Enabled XML Overlays",
+        "0",
+        "Custom Data Lane",
+        "Custom Data Directories",
+        "XML Bridge Receipt",
+        "XML",
+        "\u003Ccharacter /\u003E"
+      ],
+      "dialogFieldIds": [
+        "xmlEditorCustomDataDirectoryCount",
+        "xmlEditorCustomDataLanePosture",
+        "xmlEditorDialog",
+        "xmlEditorLanePosture",
+        "xmlEditorOverlayCount",
+        "xmlEditorReceipt"
+      ],
+      "dialogFieldControlIds": [
+        "DialogFieldInput_xmlEditorCustomDataDirectoryCount",
+        "DialogFieldInput_xmlEditorCustomDataLanePosture",
+        "DialogFieldInput_xmlEditorDialog",
+        "DialogFieldInput_xmlEditorLanePosture",
+        "DialogFieldInput_xmlEditorOverlayCount",
+        "DialogFieldInput_xmlEditorReceipt",
+        "DialogFieldLabel_xmlEditorCustomDataDirectoryCount",
+        "DialogFieldLabel_xmlEditorCustomDataLanePosture",
+        "DialogFieldLabel_xmlEditorDialog",
+        "DialogFieldLabel_xmlEditorLanePosture",
+        "DialogFieldLabel_xmlEditorOverlayCount",
+        "DialogFieldLabel_xmlEditorReceipt",
+        "DialogField_xmlEditorCustomDataDirectoryCount",
+        "DialogField_xmlEditorCustomDataLanePosture",
+        "DialogField_xmlEditorDialog",
+        "DialogField_xmlEditorLanePosture",
+        "DialogField_xmlEditorOverlayCount",
+        "DialogField_xmlEditorReceipt"
+      ],
+      "dialogFieldInputValues": [
+        "governed",
+        "0",
+        "xml bridge is governed for this parity fixture.",
+        "{ \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }"
+      ],
+      "dialogActionIds": [
+        "apply",
+        "cancel"
+      ],
+      "dialogActionControlIds": [
+        "DialogAction_apply",
+        "DialogAction_cancel"
+      ],
+      "visibleNamedControlIds": [
+        "DialogAction_apply",
+        "DialogAction_cancel",
+        "DialogActionsBorder",
+        "DialogActionsPanel",
+        "DialogFieldInput_xmlEditorCustomDataDirectoryCount",
+        "DialogFieldInput_xmlEditorCustomDataLanePosture",
+        "DialogFieldInput_xmlEditorDialog",
+        "DialogFieldInput_xmlEditorLanePosture",
+        "DialogFieldInput_xmlEditorOverlayCount",
+        "DialogFieldInput_xmlEditorReceipt",
+        "DialogFieldLabel_xmlEditorCustomDataDirectoryCount",
+        "DialogFieldLabel_xmlEditorCustomDataLanePosture",
+        "DialogFieldLabel_xmlEditorDialog",
+        "DialogFieldLabel_xmlEditorLanePosture",
+        "DialogFieldLabel_xmlEditorOverlayCount",
+        "DialogFieldLabel_xmlEditorReceipt",
+        "DialogField_xmlEditorCustomDataDirectoryCount",
+        "DialogField_xmlEditorCustomDataLanePosture",
+        "DialogField_xmlEditorDialog",
+        "DialogField_xmlEditorLanePosture",
+        "DialogField_xmlEditorOverlayCount",
+        "DialogField_xmlEditorReceipt",
+        "DialogFieldsPanel",
+        "DialogMessageText",
+        "DialogTitleText",
+        "PART_BorderElement",
+        "PART_ContentPresenter",
+        "PART_InnerDockPanel",
+        "PART_ScrollViewer",
+        "PART_TextPresenter",
+        "PART_TransparencyFallback"
+      ],
+      "visibleNamedControls": [
+        {
+          "name": "DialogAction_apply",
+          "controlType": "Button",
+          "text": "Apply",
+          "x": 0,
+          "y": 0,
+          "width": 82,
+          "height": 22
+        },
+        {
+          "name": "DialogAction_cancel",
+          "controlType": "Button",
+          "text": "Cancel",
+          "x": 88,
+          "y": 0,
+          "width": 82,
+          "height": 22
+        },
+        {
+          "name": "DialogActionsBorder",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 527,
+          "width": 858,
+          "height": 31
+        },
+        {
+          "name": "DialogActionsPanel",
+          "controlType": "StackPanel",
+          "text": "",
+          "x": 682,
+          "y": 5,
+          "width": 170,
+          "height": 22
+        },
+        {
+          "name": "DialogFieldInput_xmlEditorCustomDataDirectoryCount",
+          "controlType": "TextBox",
+          "text": "0",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_xmlEditorCustomDataLanePosture",
+          "controlType": "TextBox",
+          "text": "governed",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_xmlEditorDialog",
+          "controlType": "TextBox",
+          "text": "{ \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
+          "x": 0,
+          "y": 18,
+          "width": 842,
+          "height": 286
+        },
+        {
+          "name": "DialogFieldInput_xmlEditorLanePosture",
+          "controlType": "TextBox",
+          "text": "governed",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_xmlEditorOverlayCount",
+          "controlType": "TextBox",
+          "text": "0",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_xmlEditorReceipt",
+          "controlType": "TextBox",
+          "text": "xml bridge is governed for this parity fixture.",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldLabel_xmlEditorCustomDataDirectoryCount",
+          "controlType": "TextBlock",
+          "text": "Custom Data Directories",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_xmlEditorCustomDataLanePosture",
+          "controlType": "TextBlock",
+          "text": "Custom Data Lane",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_xmlEditorDialog",
+          "controlType": "TextBlock",
+          "text": "XML",
+          "x": 0,
+          "y": 0,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_xmlEditorLanePosture",
+          "controlType": "TextBlock",
+          "text": "XML Bridge",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_xmlEditorOverlayCount",
+          "controlType": "TextBlock",
+          "text": "Enabled XML Overlays",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_xmlEditorReceipt",
+          "controlType": "TextBlock",
+          "text": "XML Bridge Receipt",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogField_xmlEditorCustomDataDirectoryCount",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 90,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_xmlEditorCustomDataLanePosture",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 60,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_xmlEditorDialog",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 150,
+          "width": 842,
+          "height": 304
+        },
+        {
+          "name": "DialogField_xmlEditorLanePosture",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_xmlEditorOverlayCount",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 30,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_xmlEditorReceipt",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 120,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldsPanel",
+          "controlType": "StackPanel",
+          "text": "",
+          "x": 0,
+          "y": 19,
+          "width": 842,
+          "height": 454
+        },
+        {
+          "name": "DialogMessageText",
+          "controlType": "TextBlock",
+          "text": "Edit/import flow stays file-first while XML bridge posture is governed with 0 enabled overlays and custom-data lane governed.",
+          "x": 0,
+          "y": 0,
+          "width": 842,
+          "height": 13
+        },
+        {
+          "name": "DialogTitleText",
+          "controlType": "TextBlock",
+          "text": "XML Editor",
+          "x": 6,
+          "y": 3,
+          "width": 846,
+          "height": 14
+        },
+        {
+          "name": "PART_BorderElement",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "PART_ContentPresenter",
+          "controlType": "ContentPresenter",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 860,
+          "height": 560
+        },
+        {
+          "name": "PART_InnerDockPanel",
+          "controlType": "DockPanel",
+          "text": "",
+          "x": 3,
+          "y": 2,
+          "width": 670,
+          "height": 18
+        },
+        {
+          "name": "PART_ScrollViewer",
+          "controlType": "ScrollViewer",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 670,
+          "height": 18
+        },
+        {
+          "name": "PART_TextPresenter",
+          "controlType": "TextPresenter",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 670,
+          "height": 18
+        },
+        {
+          "name": "PART_TransparencyFallback",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 860,
+          "height": 560
+        }
+      ],
+      "visibleTextSamples": [
+        "XML Editor",
+        "Edit/import flow stays file-first while XML bridge posture is governed with 0 enabled overlays and custom-data lane governed.",
+        "XML Bridge",
+        "Enabled XML Overlays",
+        "Custom Data Lane",
+        "Custom Data Directories",
+        "XML Bridge Receipt",
+        "XML",
+        "Apply",
+        "Cancel"
+      ],
+      "visibleMenuCommandIds": [],
+      "visibleTabLabels": [],
+      "visibleSectionQuickActionIds": [],
+      "selectedListRowTexts": [],
+      "previewText": ""
+    },
+    {
+      "screenshot": "40-hero-lab-importer-dialog-light.png",
+      "theme": "Light",
+      "dialogTitle": "Hero Lab Importer",
+      "dialogMessage": "Paste Hero Lab XML payload to import while import-oracle posture is governed across 1/1 route families with adjacent SR6 oracle current.",
+      "dialogFieldLabels": [
+        "Input File",
+        ".por/.xml",
+        "Ruleset",
+        "SR5",
+        "Import Oracle Lane",
+        "missing",
+        "Import Oracle Coverage",
+        "0/4 \u00B7 0%",
+        "Hero Lab Fixtures",
+        "0",
+        "Import Oracle Matrix",
+        "Import Oracle Receipt",
+        "Adjacent SR6 Oracle",
+        "Hero Lab XML",
+        "\u003Ccharacter\u003E\u003Cname\u003EHero Lab Import\u003C/name\u003E\u003C/character\u003E"
+      ],
+      "dialogFieldIds": [
+        "heroLabAdjacentSr6OracleReceipt",
+        "heroLabFixtureCount",
+        "heroLabImportOracleCoverage",
+        "heroLabImportOracleLanePosture",
+        "heroLabImportOracleMatrix",
+        "heroLabImportOracleReceipt",
+        "heroLabSource",
+        "heroLabXml",
+        "importRulesetId"
+      ],
+      "dialogFieldControlIds": [
+        "DialogFieldInput_heroLabAdjacentSr6OracleReceipt",
+        "DialogFieldInput_heroLabFixtureCount",
+        "DialogFieldInput_heroLabImportOracleCoverage",
+        "DialogFieldInput_heroLabImportOracleLanePosture",
+        "DialogFieldInput_heroLabImportOracleMatrix",
+        "DialogFieldInput_heroLabImportOracleReceipt",
+        "DialogFieldInput_heroLabSource",
+        "DialogFieldInput_heroLabXml",
+        "DialogFieldInput_importRulesetId",
+        "DialogFieldLabel_heroLabAdjacentSr6OracleReceipt",
+        "DialogFieldLabel_heroLabFixtureCount",
+        "DialogFieldLabel_heroLabImportOracleCoverage",
+        "DialogFieldLabel_heroLabImportOracleLanePosture",
+        "DialogFieldLabel_heroLabImportOracleMatrix",
+        "DialogFieldLabel_heroLabImportOracleReceipt",
+        "DialogFieldLabel_heroLabSource",
+        "DialogFieldLabel_heroLabXml",
+        "DialogFieldLabel_importRulesetId",
+        "DialogField_heroLabAdjacentSr6OracleReceipt",
+        "DialogField_heroLabFixtureCount",
+        "DialogField_heroLabImportOracleCoverage",
+        "DialogField_heroLabImportOracleLanePosture",
+        "DialogField_heroLabImportOracleMatrix",
+        "DialogField_heroLabImportOracleReceipt",
+        "DialogField_heroLabSource",
+        "DialogField_heroLabXml",
+        "DialogField_importRulesetId"
+      ],
+      "dialogFieldInputValues": [
+        ".por/.xml",
+        "DesktopDialogFieldOption { Value = sr5, Label = SR5 }",
+        "governed",
+        "1/1 \u00B7 100%",
+        "0",
+        "Chummer4 fixtures 0, Chummer5a fixtures 1, Hero Lab fixtures 0, adjacent SR6 sources 1/1.",
+        "import oracle is governed for this parity fixture.",
+        "adjacent SR6 oracle lane is current for this parity fixture.",
+        "\u003Ccharacter\u003E\u003Cname\u003EHero Lab Import\u003C/name\u003E\u003C/character\u003E"
+      ],
+      "dialogActionIds": [
+        "import",
+        "cancel"
+      ],
+      "dialogActionControlIds": [
+        "DialogAction_cancel",
+        "DialogAction_import"
+      ],
+      "visibleNamedControlIds": [
+        "Background",
+        "ContentPresenter",
+        "DialogAction_cancel",
+        "DialogAction_import",
+        "DialogActionsBorder",
+        "DialogActionsPanel",
+        "DialogFieldInput_heroLabAdjacentSr6OracleReceipt",
+        "DialogFieldInput_heroLabFixtureCount",
+        "DialogFieldInput_heroLabImportOracleCoverage",
+        "DialogFieldInput_heroLabImportOracleLanePosture",
+        "DialogFieldInput_heroLabImportOracleMatrix",
+        "DialogFieldInput_heroLabImportOracleReceipt",
+        "DialogFieldInput_heroLabSource",
+        "DialogFieldInput_heroLabXml",
+        "DialogFieldInput_importRulesetId",
+        "DialogFieldLabel_heroLabAdjacentSr6OracleReceipt",
+        "DialogFieldLabel_heroLabFixtureCount",
+        "DialogFieldLabel_heroLabImportOracleCoverage",
+        "DialogFieldLabel_heroLabImportOracleLanePosture",
+        "DialogFieldLabel_heroLabImportOracleMatrix",
+        "DialogFieldLabel_heroLabImportOracleReceipt",
+        "DialogFieldLabel_heroLabSource",
+        "DialogFieldLabel_heroLabXml",
+        "DialogFieldLabel_importRulesetId",
+        "DialogField_heroLabAdjacentSr6OracleReceipt",
+        "DialogField_heroLabFixtureCount",
+        "DialogField_heroLabImportOracleCoverage",
+        "DialogField_heroLabImportOracleLanePosture",
+        "DialogField_heroLabImportOracleMatrix",
+        "DialogField_heroLabImportOracleReceipt",
+        "DialogField_heroLabSource",
+        "DialogField_heroLabXml",
+        "DialogField_importRulesetId",
+        "DialogFieldsPanel",
+        "DialogMessageText",
+        "DialogTitleText",
+        "DropDownGlyph",
+        "PART_BorderElement",
+        "PART_ContentPresenter",
+        "PART_InnerDockPanel",
+        "PART_LineDownButton",
+        "PART_LineUpButton",
+        "PART_PageUpButton",
+        "PART_Popup",
+        "PART_ScrollViewer",
+        "PART_TextPresenter",
+        "PART_TransparencyFallback",
+        "PART_VerticalScrollBar",
+        "Root",
+        "TrackRect",
+        "VerticalRoot"
+      ],
+      "visibleNamedControls": [
+        {
+          "name": "Background",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 180,
+          "height": 24
+        },
+        {
+          "name": "ContentPresenter",
+          "controlType": "ContentControl",
+          "text": "",
+          "x": 12,
+          "y": 1,
+          "width": 136,
+          "height": 20
+        },
+        {
+          "name": "DialogAction_cancel",
+          "controlType": "Button",
+          "text": "Cancel",
+          "x": 88,
+          "y": 0,
+          "width": 82,
+          "height": 22
+        },
+        {
+          "name": "DialogAction_import",
+          "controlType": "Button",
+          "text": "Import",
+          "x": 0,
+          "y": 0,
+          "width": 82,
+          "height": 22
+        },
+        {
+          "name": "DialogActionsBorder",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 527,
+          "width": 858,
+          "height": 31
+        },
+        {
+          "name": "DialogActionsPanel",
+          "controlType": "StackPanel",
+          "text": "",
+          "x": 682,
+          "y": 5,
+          "width": 170,
+          "height": 22
+        },
+        {
+          "name": "DialogFieldInput_heroLabAdjacentSr6OracleReceipt",
+          "controlType": "TextBox",
+          "text": "adjacent SR6 oracle lane is current for this parity fixture.",
+          "x": 0,
+          "y": 18,
+          "width": 842,
+          "height": 104
+        },
+        {
+          "name": "DialogFieldInput_heroLabFixtureCount",
+          "controlType": "TextBox",
+          "text": "0",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_heroLabImportOracleCoverage",
+          "controlType": "TextBox",
+          "text": "1/1 \u00B7 100%",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_heroLabImportOracleLanePosture",
+          "controlType": "TextBox",
+          "text": "governed",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_heroLabImportOracleMatrix",
+          "controlType": "TextBox",
+          "text": "Chummer4 fixtures 0, Chummer5a fixtures 1, Hero Lab fixtures 0, adjacent SR6 sources 1/1.",
+          "x": 0,
+          "y": 18,
+          "width": 842,
+          "height": 104
+        },
+        {
+          "name": "DialogFieldInput_heroLabImportOracleReceipt",
+          "controlType": "TextBox",
+          "text": "import oracle is governed for this parity fixture.",
+          "x": 0,
+          "y": 18,
+          "width": 842,
+          "height": 104
+        },
+        {
+          "name": "DialogFieldInput_heroLabSource",
+          "controlType": "TextBox",
+          "text": ".por/.xml",
+          "x": 164,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldInput_heroLabXml",
+          "controlType": "TextBox",
+          "text": "\u003Ccharacter\u003E\u003Cname\u003EHero Lab Import\u003C/name\u003E\u003C/character\u003E",
+          "x": 0,
+          "y": 18,
+          "width": 842,
+          "height": 104
+        },
+        {
+          "name": "DialogFieldInput_importRulesetId",
+          "controlType": "ComboBox",
+          "text": "",
+          "x": 164,
+          "y": 0,
+          "width": 180,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldLabel_heroLabAdjacentSr6OracleReceipt",
+          "controlType": "TextBlock",
+          "text": "Adjacent SR6 Oracle",
+          "x": 0,
+          "y": 0,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_heroLabFixtureCount",
+          "controlType": "TextBlock",
+          "text": "Hero Lab Fixtures",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_heroLabImportOracleCoverage",
+          "controlType": "TextBlock",
+          "text": "Import Oracle Coverage",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_heroLabImportOracleLanePosture",
+          "controlType": "TextBlock",
+          "text": "Import Oracle Lane",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_heroLabImportOracleMatrix",
+          "controlType": "TextBlock",
+          "text": "Import Oracle Matrix",
+          "x": 0,
+          "y": 0,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_heroLabImportOracleReceipt",
+          "controlType": "TextBlock",
+          "text": "Import Oracle Receipt",
+          "x": 0,
+          "y": 0,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_heroLabSource",
+          "controlType": "TextBlock",
+          "text": "Input File",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_heroLabXml",
+          "controlType": "TextBlock",
+          "text": "Hero Lab XML",
+          "x": 0,
+          "y": 0,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogFieldLabel_importRulesetId",
+          "controlType": "TextBlock",
+          "text": "Ruleset",
+          "x": 0,
+          "y": 5,
+          "width": 156,
+          "height": 14
+        },
+        {
+          "name": "DialogField_heroLabAdjacentSr6OracleReceipt",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 406,
+          "width": 842,
+          "height": 122
+        },
+        {
+          "name": "DialogField_heroLabFixtureCount",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 120,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_heroLabImportOracleCoverage",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 90,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_heroLabImportOracleLanePosture",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 60,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_heroLabImportOracleMatrix",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 150,
+          "width": 842,
+          "height": 122
+        },
+        {
+          "name": "DialogField_heroLabImportOracleReceipt",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 278,
+          "width": 842,
+          "height": 122
+        },
+        {
+          "name": "DialogField_heroLabSource",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogField_heroLabXml",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 534,
+          "width": 842,
+          "height": 122
+        },
+        {
+          "name": "DialogField_importRulesetId",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 30,
+          "width": 842,
+          "height": 24
+        },
+        {
+          "name": "DialogFieldsPanel",
+          "controlType": "StackPanel",
+          "text": "",
+          "x": 0,
+          "y": 19,
+          "width": 842,
+          "height": 656
+        },
+        {
+          "name": "DialogMessageText",
+          "controlType": "TextBlock",
+          "text": "Paste Hero Lab XML payload to import while import-oracle posture is governed across 1/1 route families with adjacent SR6 oracle current.",
+          "x": 0,
+          "y": 0,
+          "width": 842,
+          "height": 13
+        },
+        {
+          "name": "DialogTitleText",
+          "controlType": "TextBlock",
+          "text": "Hero Lab Importer",
+          "x": 6,
+          "y": 3,
+          "width": 846,
+          "height": 14
+        },
+        {
+          "name": "DropDownGlyph",
+          "controlType": "PathIcon",
+          "text": "",
+          "x": 158,
+          "y": 6,
+          "width": 12,
+          "height": 12
+        },
+        {
+          "name": "PART_BorderElement",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 678,
+          "height": 24
+        },
+        {
+          "name": "PART_ContentPresenter",
+          "controlType": "ContentPresenter",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 860,
+          "height": 560
+        },
+        {
+          "name": "PART_InnerDockPanel",
+          "controlType": "DockPanel",
+          "text": "",
+          "x": 3,
+          "y": 2,
+          "width": 670,
+          "height": 18
+        },
+        {
+          "name": "PART_LineDownButton",
+          "controlType": "RepeatButton",
+          "text": "",
+          "x": 0,
+          "y": 490,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "name": "PART_LineUpButton",
+          "controlType": "RepeatButton",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "name": "PART_PageUpButton",
+          "controlType": "RepeatButton",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 113
+        },
+        {
+          "name": "PART_Popup",
+          "controlType": "Popup",
+          "text": "",
+          "x": -16,
+          "y": 0,
+          "width": 180,
+          "height": 24
+        },
+        {
+          "name": "PART_ScrollViewer",
+          "controlType": "ScrollViewer",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 670,
+          "height": 18
+        },
+        {
+          "name": "PART_TextPresenter",
+          "controlType": "TextPresenter",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 670,
+          "height": 18
+        },
+        {
+          "name": "PART_TransparencyFallback",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 860,
+          "height": 560
+        },
+        {
+          "name": "PART_VerticalScrollBar",
+          "controlType": "ScrollBar",
+          "text": "",
+          "x": 842,
+          "y": 0,
+          "width": 16,
+          "height": 506
+        },
+        {
+          "name": "Root",
+          "controlType": "Grid",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 506
+        },
+        {
+          "name": "TrackRect",
+          "controlType": "Rectangle",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 506
+        },
+        {
+          "name": "VerticalRoot",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 506
+        }
+      ],
+      "visibleTextSamples": [
+        "Hero Lab Importer",
+        "Paste Hero Lab XML payload to import while import-oracle posture is governed across 1/1 route families with adjacent SR6 oracle current.",
+        "Input File",
+        "Ruleset",
+        "SR5",
+        "Import Oracle Lane",
+        "Import Oracle Coverage",
+        "Hero Lab Fixtures",
+        "Import Oracle Matrix",
+        "Import Oracle Receipt",
+        "Adjacent SR6 Oracle",
+        "Hero Lab XML",
+        "Import",
+        "Cancel"
+      ],
+      "visibleMenuCommandIds": [],
+      "visibleTabLabels": [],
+      "visibleSectionQuickActionIds": [],
+      "selectedListRowTexts": [],
+      "previewText": ""
+    },
+    {
       "screenshot": "19-workflow-file-menu-loaded-light.png",
       "theme": "Light",
       "dialogTitle": "(none)",
@@ -12935,6 +14776,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -12960,12 +14802,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -12982,6 +14826,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -13012,6 +14857,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -13060,7 +14914,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware Overview",
+          "text": "Cyberware",
           "x": 0,
           "y": 0,
           "width": 1268,
@@ -13238,6 +15092,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -13290,6 +15153,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -13434,6 +15306,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -13600,7 +15481,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:50Z",
+          "text": "Time: 2026-05-05 12:52:33Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -13693,6 +15574,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -13715,7 +15599,6 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -13773,7 +15656,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:50Z",
+        "Time: 2026-05-05 12:52:33Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -13795,8 +15678,8 @@
       "dialogMessage": "",
       "dialogFieldLabels": [
         "Select Build Method",
-        "Use Setting:",
-        "Priority",
+        "Build Method:",
+        "Sum-to-Ten",
         "Modify...",
         "Ruleset:",
         "SR5",
@@ -13814,7 +15697,7 @@
         "DialogFieldLabel_newCharacterRulesetId"
       ],
       "dialogFieldInputValues": [
-        "DesktopDialogFieldOption { Value = Priority, Label = Priority }",
+        "DesktopDialogFieldOption { Value = SumToTen, Label = Sum-to-Ten }",
         "DesktopDialogFieldOption { Value = sr5, Label = SR5 }"
       ],
       "dialogActionIds": [
@@ -13903,7 +15786,7 @@
           "name": "DialogFieldInput_newCharacterBuildMethod",
           "controlType": "ComboBox",
           "text": "",
-          "x": 92,
+          "x": 103,
           "y": 0,
           "width": 220,
           "height": 24
@@ -13920,10 +15803,10 @@
         {
           "name": "DialogFieldLabel_newCharacterBuildMethod",
           "controlType": "TextBlock",
-          "text": "Use Setting:",
+          "text": "Build Method:",
           "x": 0,
           "y": 5,
-          "width": 84,
+          "width": 95,
           "height": 14
         },
         {
@@ -14001,8 +15884,8 @@
       ],
       "visibleTextSamples": [
         "Select Build Method",
-        "Use Setting:",
-        "Priority",
+        "Build Method:",
+        "Sum-to-Ten",
         "Modify...",
         "Ruleset:",
         "SR5",
@@ -14029,6 +15912,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -14052,12 +15936,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -14074,6 +15960,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -14107,6 +15994,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -14315,6 +16211,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -14367,6 +16272,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -14511,6 +16425,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -14704,7 +16627,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:53Z",
+          "text": "Time: 2026-05-05 12:52:37Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -14797,6 +16720,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -14843,7 +16769,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:53Z",
+        "Time: 2026-05-05 12:52:37Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -15556,6 +17482,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -15579,12 +17506,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -15601,6 +17530,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -15634,6 +17564,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -15842,6 +17781,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -15894,6 +17842,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -16038,6 +17995,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -16231,7 +18197,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:54Z",
+          "text": "Time: 2026-05-05 12:52:37Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -16324,6 +18290,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -16370,7 +18339,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:54Z",
+        "Time: 2026-05-05 12:52:37Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -17079,6 +19048,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicCharacterFactsPanel",
@@ -17102,12 +19072,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -17124,6 +19096,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -17155,6 +19128,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -17363,6 +19345,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -17415,6 +19406,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -17559,6 +19559,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -17734,7 +19743,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:55Z",
+          "text": "Time: 2026-05-05 12:52:40Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -17827,6 +19836,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -17870,7 +19882,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:55Z",
+        "Time: 2026-05-05 12:52:40Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -17897,6 +19909,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -17920,12 +19933,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -17942,6 +19957,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -17975,6 +19991,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -18183,6 +20208,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -18235,6 +20269,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -18379,6 +20422,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -18572,7 +20624,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:54Z",
+          "text": "Time: 2026-05-05 12:52:37Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -18665,6 +20717,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -18711,7 +20766,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:54Z",
+        "Time: 2026-05-05 12:52:37Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -18797,7 +20852,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Review price, rating, and legality for Ares Predator V Use OK once or Add \u0026 More to keep shopping in Pistols Keep quantity, markup, and source visible while confirming",
+        "Price, rating, and legality for Ares Predator V Use OK once or Add \u0026 More to keep shopping in Pistols Keep quantity, markup, and source visible while confirming",
         "Notes",
         "Use gear details to confirm legality, source, rating, and discount posture before adding."
       ],
@@ -18896,8 +20951,8 @@
         "DialogField_uiGearSource"
       ],
       "dialogFieldInputValues": [
-        "Show All",
-        "All Books",
+        "DesktopDialogFieldOption { Value = Show All, Label = Show All }",
+        "DesktopDialogFieldOption { Value = All Books, Label = All Books }",
         "Ares Predator V",
         "0",
         "1",
@@ -18919,7 +20974,9 @@
         "DialogAction_toggle_search_scope"
       ],
       "visibleNamedControlIds": [
+        "Background",
         "CheckGlyph",
+        "ContentPresenter",
         "DialogAction_add",
         "DialogAction_add_more",
         "DialogAction_cancel",
@@ -18994,6 +21051,7 @@
         "DialogFieldsPanel",
         "DialogMessageText",
         "DialogTitleText",
+        "DropDownGlyph",
         "NormalRectangle",
         "PART_Border",
         "PART_BorderElement",
@@ -19002,6 +21060,7 @@
         "PART_LineDownButton",
         "PART_LineUpButton",
         "PART_PageDownButton",
+        "PART_Popup",
         "PART_ScrollViewer",
         "PART_TextPresenter",
         "PART_TransparencyFallback",
@@ -19014,6 +21073,15 @@
       ],
       "visibleNamedControls": [
         {
+          "name": "Background",
+          "controlType": "Border",
+          "text": "",
+          "x": 0,
+          "y": 0,
+          "width": 180,
+          "height": 24
+        },
+        {
           "name": "CheckGlyph",
           "controlType": "Path",
           "text": "",
@@ -19021,6 +21089,15 @@
           "y": 4.66,
           "width": 9,
           "height": 6.69
+        },
+        {
+          "name": "ContentPresenter",
+          "controlType": "ContentControl",
+          "text": "",
+          "x": 12,
+          "y": 1,
+          "width": 136,
+          "height": 20
         },
         {
           "name": "DialogAction_add",
@@ -19096,11 +21173,11 @@
         },
         {
           "name": "DialogFieldInput_uiGearBookFilter",
-          "controlType": "TextBox",
-          "text": "All Books",
+          "controlType": "ComboBox",
+          "text": "",
           "x": 164,
           "y": 0,
-          "width": 678,
+          "width": 180,
           "height": 24
         },
         {
@@ -19123,11 +21200,11 @@
         },
         {
           "name": "DialogFieldInput_uiGearCategory",
-          "controlType": "TextBox",
-          "text": "Show All",
+          "controlType": "ComboBox",
+          "text": "",
           "x": 164,
           "y": 0,
-          "width": 678,
+          "width": 180,
           "height": 24
         },
         {
@@ -19689,6 +21766,15 @@
           "height": 14
         },
         {
+          "name": "DropDownGlyph",
+          "controlType": "PathIcon",
+          "text": "",
+          "x": 158,
+          "y": 6,
+          "width": 12,
+          "height": 12
+        },
+        {
           "name": "NormalRectangle",
           "controlType": "Border",
           "text": "",
@@ -19759,6 +21845,15 @@
           "y": 140,
           "width": 16,
           "height": 334
+        },
+        {
+          "name": "PART_Popup",
+          "controlType": "Popup",
+          "text": "",
+          "x": -16,
+          "y": 0,
+          "width": 180,
+          "height": 24
         },
         {
           "name": "PART_ScrollViewer",
@@ -19850,8 +21945,10 @@
         "Search",
         "Search gear",
         "Category",
+        "Show All",
         "Search In Category Only",
         "Data File",
+        "All Books",
         "Gear Name",
         "Available Gear",
         "\u003E Ares Predator V \u00B7 Pistol \u00B7 \u00A5725 Armor Jacket \u00B7 Armor \u00B7 \u00A51,000 Medkit Rating 6 \u00B7 Gear \u00B7 \u00A51,500 Micro Trid Projector \u00B7 Electronics \u00B7 \u00A52,100",
@@ -19902,7 +21999,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Review price, rating, and legality for Ares Predator V Use OK once or Add \u0026 More to keep shopping in Pistols Keep quantity, markup, and source visible while confirming",
+        "Price, rating, and legality for Ares Predator V Use OK once or Add \u0026 More to keep shopping in Pistols Keep quantity, markup, and source visible while confirming",
         "Notes",
         "Use gear details to confirm legality, source, rating, and discount posture before adding.",
         "Add Ares Predator V",
@@ -19929,6 +22026,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -19952,12 +22050,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -19974,6 +22074,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -20007,6 +22108,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -20215,6 +22325,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -20267,6 +22386,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -20411,6 +22539,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -20604,7 +22741,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:54Z",
+          "text": "Time: 2026-05-05 12:52:38Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -20697,6 +22834,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -20740,7 +22880,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:54Z",
+        "Time: 2026-05-05 12:52:38Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -20818,7 +22958,7 @@
         "Follow-through",
         "Add \u0026 More keeps the selector open",
         "Category Commands",
-        "Group | Firearms Category | Heavy Pistols Search Scope | current category only Data File | Core Rulebook Black Market | Off Review accessories and ammo follow-through after choosing the base weapon",
+        "Group | Firearms Category | Heavy Pistols Search Scope | current category only Data File | Core Rulebook Black Market | Off Accessories and ammo follow-through after choosing the base weapon",
         "Filter Summary",
         "Filtered Catalog | 4 shown / 4 total Category Path | Weapons \u003E Firearms \u003E Heavy Pistols Filter Posture | availability, discounts, and source stay live",
         "Live Recalculation",
@@ -20828,7 +22968,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Review damage, mode, and accessories for Colt M23 Use OK for one add or Add \u0026 More to keep the selector open Keep ammo, source, and legality visible while confirming Colt M23",
+        "Damage, mode, and accessories for Colt M23 Use OK for one add or Add \u0026 More to keep the selector open Keep ammo, source, and legality visible while confirming Colt M23",
         "Notes",
         "Damage, AP, firing mode, source, and pricing filters remain visible before confirmation."
       ],
@@ -21901,7 +24041,7 @@
         "Follow-through",
         "Add \u0026 More keeps the selector open",
         "Category Commands",
-        "Group | Firearms Category | Heavy Pistols Search Scope | current category only Data File | Core Rulebook Black Market | Off Review accessories and ammo follow-through after choosing the base weapon",
+        "Group | Firearms Category | Heavy Pistols Search Scope | current category only Data File | Core Rulebook Black Market | Off Accessories and ammo follow-through after choosing the base weapon",
         "Filter Summary",
         "Filtered Catalog | 4 shown / 4 total Category Path | Weapons \u003E Firearms \u003E Heavy Pistols Filter Posture | availability, discounts, and source stay live",
         "Live Recalculation",
@@ -21912,7 +24052,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Review damage, mode, and accessories for Colt M23 Use OK for one add or Add \u0026 More to keep the selector open Keep ammo, source, and legality visible while confirming Colt M23",
+        "Damage, mode, and accessories for Colt M23 Use OK for one add or Add \u0026 More to keep the selector open Keep ammo, source, and legality visible while confirming Colt M23",
         "Notes",
         "Damage, AP, firing mode, source, and pricing filters remain visible before confirmation.",
         "Add Colt M23",
@@ -21939,6 +24079,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -21962,12 +24103,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -21984,6 +24127,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -22017,6 +24161,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -22225,6 +24378,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -22277,6 +24439,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -22421,6 +24592,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -22614,7 +24794,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:54Z",
+          "text": "Time: 2026-05-05 12:52:38Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -22707,6 +24887,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -22750,7 +24933,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:54Z",
+        "Time: 2026-05-05 12:52:38Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -22831,7 +25014,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Review armor value and source for Armor Jacket Use OK for one add or Add \u0026 More to keep the selector open Keep free-item and cost posture visible while confirming Armor Jacket",
+        "Armor value and source for Armor Jacket Use OK for one add or Add \u0026 More to keep the selector open Keep free-item and cost posture visible while confirming Armor Jacket",
         "Notes",
         "Armor rating, legality, source, and pricing filters remain visible before confirmation."
       ],
@@ -23874,7 +26057,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Review armor value and source for Armor Jacket Use OK for one add or Add \u0026 More to keep the selector open Keep free-item and cost posture visible while confirming Armor Jacket",
+        "Armor value and source for Armor Jacket Use OK for one add or Add \u0026 More to keep the selector open Keep free-item and cost posture visible while confirming Armor Jacket",
         "Notes",
         "Armor rating, legality, source, and pricing filters remain visible before confirmation.",
         "Add Armor Jacket",
@@ -23901,6 +26084,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -23924,12 +26108,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -23946,6 +26132,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -23979,6 +26166,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -24187,6 +26383,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -24239,6 +26444,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -24383,6 +26597,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -24576,7 +26799,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:55Z",
+          "text": "Time: 2026-05-05 12:52:39Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -24669,6 +26892,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -24712,7 +26938,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:55Z",
+        "Time: 2026-05-05 12:52:39Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -24741,6 +26967,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -24764,12 +26991,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -24786,6 +27015,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -24819,6 +27049,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -25027,6 +27266,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -25079,6 +27327,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -25223,6 +27480,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -25416,7 +27682,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:55Z",
+          "text": "Time: 2026-05-05 12:52:39Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -25509,6 +27775,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -25553,7 +27822,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:55Z",
+        "Time: 2026-05-05 12:52:39Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -26724,6 +28993,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicAttributeFactsPanel",
@@ -26747,12 +29017,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -26769,6 +29041,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -26800,6 +29073,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -27008,6 +29290,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -27060,6 +29351,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -27204,6 +29504,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -27379,7 +29688,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:55Z",
+          "text": "Time: 2026-05-05 12:52:40Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -27472,6 +29781,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -27517,7 +29829,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:55Z",
+        "Time: 2026-05-05 12:52:40Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -27544,6 +29856,7 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
+        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterStateText",
         "ClassicCharacterFactsPanel",
@@ -27568,12 +29881,14 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
+        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
         "LoadedRunnerTabStripBorder",
         "MenuBarPanel",
         "MenuBarRegion",
+        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -27590,6 +29905,7 @@
         "PART_VerticalScrollBar",
         "PrintButton",
         "Root",
+        "RosterMovementButton",
         "SaveButton",
         "SectionActionTabStrip",
         "SectionActionTabStripBorder",
@@ -27620,6 +29936,15 @@
         "border"
       ],
       "visibleNamedControls": [
+        {
+          "name": "CampaignWorkspaceButton",
+          "controlType": "Button",
+          "text": "Campaign",
+          "x": 309,
+          "y": 3,
+          "width": 73,
+          "height": 22
+        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -27659,7 +29984,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Rules Overview",
+          "text": "Rules",
           "x": 0,
           "y": 0,
           "width": 1268,
@@ -27837,6 +30162,15 @@
           "height": 32
         },
         {
+          "name": "GmPrepButton",
+          "controlType": "Button",
+          "text": "GM",
+          "x": 203,
+          "y": 3,
+          "width": 42,
+          "height": 22
+        },
+        {
           "name": "HelpMenuButton",
           "controlType": "MenuItem",
           "text": "Help",
@@ -27889,6 +30223,15 @@
           "y": 0,
           "width": 1280,
           "height": 34
+        },
+        {
+          "name": "OpenForExportButton",
+          "controlType": "Button",
+          "text": "",
+          "x": 174,
+          "y": 2,
+          "width": 26,
+          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -28033,6 +30376,15 @@
           "y": 0,
           "width": 16,
           "height": 176
+        },
+        {
+          "name": "RosterMovementButton",
+          "controlType": "Button",
+          "text": "Roster",
+          "x": 248,
+          "y": 3,
+          "width": 58,
+          "height": 22
         },
         {
           "name": "SaveButton",
@@ -28199,7 +30551,7 @@
         {
           "name": "TimeStateText",
           "controlType": "TextBlock",
-          "text": "Time: 2026-05-02 14:02:55Z",
+          "text": "Time: 2026-05-05 12:52:40Z",
           "x": 213,
           "y": 0,
           "width": 159,
@@ -28292,6 +30644,9 @@
         "Tools",
         "Windows",
         "Help",
+        "GM",
+        "Roster",
+        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "Runner",
         "Gear \u0026 Ware",
@@ -28312,7 +30667,7 @@
         "Vehicle Locations",
         "Sources",
         "Custom Data Dirs",
-        "Rules Overview",
+        "Rules",
         "Ruleset",
         "SR5",
         "Gameedition",
@@ -28321,7 +30676,6 @@
         "Provider",
         "fixture-backed",
         "Section Payload",
-        "Rules",
         "(none)",
         "New Character",
         "file",
@@ -28340,7 +30694,7 @@
         "Character: loaded",
         "|",
         "Service: online",
-        "Time: 2026-05-02 14:02:55Z",
+        "Time: 2026-05-05 12:52:40Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -28363,9 +30717,10 @@
       "screenshotFiles": [
         "19-workflow-file-menu-loaded-light.png",
         "36-workflow-new-character-dialog-light.png",
-        "18-import-dialog-light.png"
+        "18-import-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png"
       ],
-      "screenshotCount": 3
+      "screenshotCount": 4
     },
     {
       "workflowFamilyId": "metatype-priorities-karma-entry",

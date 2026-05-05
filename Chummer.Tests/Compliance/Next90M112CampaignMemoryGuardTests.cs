@@ -42,10 +42,14 @@ public sealed class Next90M112CampaignMemoryGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_SURFACES = [");
         StringAssert.Contains(scriptText, "\"campaign_workspace:memory\"");
         StringAssert.Contains(scriptText, "\"campaign_return_loop:desktop\"");
+        StringAssert.Contains(scriptText, "EXPECTED_STATUS = \"complete\"");
+        StringAssert.Contains(scriptText, "EXPECTED_COMPLETION_ACTION = \"verify_closed_package_only\"");
+        StringAssert.Contains(scriptText, "EXPECTED_DO_NOT_REOPEN_REASON = \"M112 chummer6-ui campaign memory desktop surfacing is complete; future shards must verify the desktop route proof, focused guard tests, canonical registry row, and queue mirrors instead of reopening this slice.\"");
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh\"");
         StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M112CampaignMemoryGuardTests\" --no-restore'");
         StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore'");
         StringAssert.Contains(scriptText, "EXPECTED_DESIGN_QUEUE_PATH = \"/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml\"");
+        StringAssert.Contains(scriptText, "def block_for_work_task(text: str, work_task_id: str) -> str:");
         StringAssert.Contains(scriptText, "\"scripts/ai/verify.sh\": [");
         StringAssert.Contains(scriptText, "\"checking next-90 M112 campaign memory and return-loop desktop guard\"");
         StringAssert.Contains(scriptText, "\"bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh\"");
@@ -87,6 +91,19 @@ public sealed class Next90M112CampaignMemoryGuardTests
         StringAssert.Contains(scriptText, "\"Next-session return actions:\"");
         StringAssert.Contains(scriptText, "\"Stale state: server continuity is unavailable\"");
         StringAssert.Contains(scriptText, "\"Conflict choices:\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Avalonia/App.axaml.cs\": [");
+        StringAssert.Contains(scriptText, "\"DesktopStartupSurfaceCatalog.EnvironmentVariableName\"");
+        StringAssert.Contains(scriptText, "\"DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CampaignWorkspace)\"");
+        StringAssert.Contains(scriptText, "\"DesktopCampaignWorkspaceWindow.ShowAsync(owner, \\\"avalonia\\\")\"");
+        StringAssert.Contains(scriptText, "\"DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.GmPrepPackets)\"");
+        StringAssert.Contains(scriptText, "\"DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(owner, \\\"avalonia\\\")\"");
+        StringAssert.Contains(scriptText, "\"DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RosterMovement)\"");
+        StringAssert.Contains(scriptText, "\"DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(owner, \\\"avalonia\\\")\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs\": [");
+        StringAssert.Contains(scriptText, "\"public const string CampaignWorkspace = \\\"campaign_workspace\\\";\"");
+        StringAssert.Contains(scriptText, "\"public const string GmPrepPackets = \\\"gm_prep_packets\\\";\"");
+        StringAssert.Contains(scriptText, "\"public const string RosterMovement = \\\"roster_movement\\\";\"");
+        StringAssert.Contains(scriptText, "\"public static bool Matches(string? startupSurface, string expectedSurface)\"");
         StringAssert.Contains(scriptText, "\"Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs\": [");
         StringAssert.Contains(scriptText, "\"DesktopHome_promotes_campaign_memory_and_return_actions()\"");
         StringAssert.Contains(scriptText, "\"DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible()\"");
@@ -102,6 +119,15 @@ public sealed class Next90M112CampaignMemoryGuardTests
         StringAssert.Contains(scriptText, "\"registry_has_m112_ui_task\"");
         StringAssert.Contains(scriptText, "\"queue_package_unique\"");
         StringAssert.Contains(scriptText, "\"design_queue_package_unique\"");
+        StringAssert.Contains(scriptText, "\"registry_status_complete\"");
+        StringAssert.Contains(scriptText, "\"registry_completion_action_matches\"");
+        StringAssert.Contains(scriptText, "\"registry_do_not_reopen_reason_matches\"");
+        StringAssert.Contains(scriptText, "\"queue_status_complete\"");
+        StringAssert.Contains(scriptText, "\"queue_completion_action_matches\"");
+        StringAssert.Contains(scriptText, "\"queue_do_not_reopen_reason_matches\"");
+        StringAssert.Contains(scriptText, "\"design_queue_status_complete\"");
+        StringAssert.Contains(scriptText, "\"design_queue_completion_action_matches\"");
+        StringAssert.Contains(scriptText, "\"design_queue_do_not_reopen_reason_matches\"");
         StringAssert.Contains(scriptText, "\"allowed_paths_exact\"");
         StringAssert.Contains(scriptText, "\"owned_surfaces_exact\"");
         StringAssert.Contains(scriptText, "\"design_queue_path_matches\"");
@@ -129,10 +155,19 @@ public sealed class Next90M112CampaignMemoryGuardTests
         JsonElement checks = root.GetProperty("checks");
         Assert.IsTrue(checks.GetProperty("registry_has_m112_ui_task").GetBoolean());
         Assert.IsTrue(checks.GetProperty("registry_task_unique").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_status_complete").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_completion_action_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_do_not_reopen_reason_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_package_unique").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_status_complete").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_completion_action_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_do_not_reopen_reason_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_title_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_task_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_status_complete").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_completion_action_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_do_not_reopen_reason_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_title_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_task_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("allowed_paths_exact").GetBoolean());
@@ -146,6 +181,8 @@ public sealed class Next90M112CampaignMemoryGuardTests
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Chummer.Tests.csproj"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopHomeWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/App.axaml.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"));
 
         CollectionAssert.AreEquivalent(
@@ -157,6 +194,8 @@ public sealed class Next90M112CampaignMemoryGuardTests
                 Path.Combine(repoRoot, "Chummer.Tests", "Chummer.Tests.csproj"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),
+                Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml.cs"),
+                Path.Combine(repoRoot, "Chummer.Desktop.Runtime", "DesktopStartupSurfaceCatalog.cs"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "AccessibilitySignoffSmokeTests.cs"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Compliance", "Next90M112CampaignMemoryGuardTests.cs"),
             },

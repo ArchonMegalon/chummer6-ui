@@ -180,6 +180,28 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop roster movement window: {ex}");
             }
         }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.OrganizerOperations))
+        {
+            try
+            {
+                await DesktopOrganizerOperationsWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop organizer operations window: {ex}");
+            }
+        }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.OrganizerRoles))
+        {
+            try
+            {
+                await DesktopOrganizerOperationsWindow.ShowRolesAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop organizer roles window: {ex}");
+            }
+        }
         else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RuleEnvironmentStudio))
         {
             try

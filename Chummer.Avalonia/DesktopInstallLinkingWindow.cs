@@ -10,6 +10,7 @@ namespace Chummer.Avalonia;
 internal sealed class DesktopInstallLinkingWindow : Window
 {
     private DesktopInstallLinkingState _state;
+    private readonly DesktopUpdateClientStatus _updateStatus;
     private readonly string _language;
     private readonly TextBlock _summaryText;
     private readonly TextBlock _statusText;
@@ -21,6 +22,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         ArgumentNullException.ThrowIfNull(context);
 
         _state = context.State;
+        _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(context.State.HeadId);
         _language = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId).Language;
         Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language);
         Width = 700;
@@ -31,7 +33,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         _summaryText = new TextBlock
         {
-            Text = BuildSummary(_state, _language),
+            Text = BuildSummary(_state, _updateStatus, _language),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -114,7 +116,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                                     CreateButton(
                                         DesktopInstallLinkingRuntime.IsClaimed(_state)
                                             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
-                                            : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language),
+                                            : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language),
                                         OpenFollowThroughAsync),
                                     CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _language), LinkAsync, isDefault: true),
                                     CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_guest", _language), ContinueAsGuestAsync)
@@ -211,16 +213,14 @@ internal sealed class DesktopInstallLinkingWindow : Window
             return DesktopCampaignWorkspaceWindow.ShowAsync(this, _state.HeadId);
         }
 
-        if (DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state))
+        Window? followThroughOwner = Owner as Window;
+        if (followThroughOwner is not null)
         {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
-        }
-        else
-        {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
+            Close();
+            return DesktopDevicesAccessWindow.ShowAsync(followThroughOwner, _state.HeadId);
         }
 
-        return Task.CompletedTask;
+        return DesktopDevicesAccessWindow.ShowAsync(this, _state.HeadId);
     }
 
     private Task OpenDownloadsAsync()
@@ -295,7 +295,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private void RefreshSummary()
     {
-        _summaryText.Text = BuildSummary(_state, _language);
+        _summaryText.Text = BuildSummary(_state, _updateStatus, _language);
     }
 
     private void SetStatus(string message)
@@ -304,7 +304,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _statusText.IsVisible = !string.IsNullOrWhiteSpace(message);
     }
 
-    private static string BuildSummary(DesktopInstallLinkingState state, string language)
+    private static string BuildSummary(DesktopInstallLinkingState state, DesktopUpdateClientStatus updateStatus, string language)
     {
         string claimStatus = DesktopInstallLinkingRuntime.IsClaimed(state)
             ? DesktopLocalizationCatalog.GetRequiredFormattedString(
@@ -341,6 +341,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             lines.Add(DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.claim_error", language, state.LastClaimError));
         }
 
+        lines.AddRange(DesktopSurfacePostureText.BuildLines(updateStatus));
         lines.Add(
             DesktopInstallLinkingRuntime.IsClaimed(state)
                 ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.next_safe_action_claimed", language)

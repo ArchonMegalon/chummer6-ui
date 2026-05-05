@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,6 +12,26 @@ namespace Chummer.Tests.Compliance;
 [TestClass]
 public sealed class Next90M114RuleEnvironmentStudioGuardTests
 {
+    [TestMethod]
+    public void M114_rule_environment_studio_guard_is_wired_into_standard_verify()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScript = File.ReadAllText(Path.Combine(repoRoot, "scripts", "ai", "verify.sh"));
+        string scriptPath = Path.Combine(
+            repoRoot,
+            "scripts",
+            "ai",
+            "milestones",
+            "next90-m114-ui-rule-studio-check.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(verifyScript, "checking next-90 M114 rule-environment studio desktop surface guard");
+        StringAssert.Contains(verifyScript, "bash scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh");
+        StringAssert.Contains(scriptText, "sort_keys=True");
+        StringAssert.Contains(scriptText, "comparable_receipt.pop(\"generatedAt\", None)");
+        StringAssert.Contains(scriptText, "comparable_existing_receipt.pop(\"generatedAt\", None)");
+    }
+
     [TestMethod]
     public void M114_rule_environment_studio_guard_pins_queue_identity_and_desktop_markers()
     {
@@ -93,14 +114,18 @@ public sealed class Next90M114RuleEnvironmentStudioGuardTests
         Assert.IsTrue(checks.GetProperty("design_allowed_paths_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("owned_surfaces_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_owned_surfaces_exact").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("queue_status_in_progress").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("design_queue_status_in_progress").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_status_complete").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_status_complete").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_wave_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_wave_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_repo_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_repo_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_design_block_parity").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_path_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_completion_action_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_completion_action_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_has_do_not_reopen_reason").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_has_do_not_reopen_reason").GetBoolean());
 
         JsonElement sourceChecks = evidence.GetProperty("sourceChecks");
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopHomeWindow.cs"));
@@ -113,6 +138,35 @@ public sealed class Next90M114RuleEnvironmentStudioGuardTests
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/MainWindow.ControlBinding.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/App.axaml.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"));
+    }
+
+    [TestMethod]
+    public void M114_rule_environment_studio_receipt_keeps_generatedAt_when_semantics_are_unchanged()
+    {
+        string repoRoot = FindRepoRoot();
+        string tempDirectory = Path.Combine(Path.GetTempPath(), $"m114-proof-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            string receiptPath = Path.Combine(tempDirectory, "NEXT90_M114_UI_RULE_STUDIO.generated.json");
+            string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m114-ui-rule-studio-check.sh");
+
+            RunProofScript(repoRoot, scriptPath, receiptPath);
+            string firstGeneratedAt = ReadGeneratedAt(receiptPath);
+
+            RunProofScript(repoRoot, scriptPath, receiptPath);
+            string secondGeneratedAt = ReadGeneratedAt(receiptPath);
+
+            Assert.AreEqual(firstGeneratedAt, secondGeneratedAt);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+            {
+                Directory.Delete(tempDirectory, recursive: true);
+            }
+        }
     }
 
     private static void AssertSourceMarkersPass(JsonElement sourceChecks)
@@ -152,5 +206,34 @@ public sealed class Next90M114RuleEnvironmentStudioGuardTests
         }
 
         return values.ToArray();
+    }
+
+    private static void RunProofScript(string repoRoot, string scriptPath, string receiptPath)
+    {
+        ProcessStartInfo startInfo = new("bash", scriptPath)
+        {
+            WorkingDirectory = repoRoot,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true
+        };
+        startInfo.Environment["CHUMMER_NEXT90_M114_UI_RECEIPT_PATH"] = receiptPath;
+
+        using Process process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Failed to start the M114 proof script.");
+        process.WaitForExit();
+
+        if (process.ExitCode != 0)
+        {
+            string stderr = process.StandardError.ReadToEnd();
+            string stdout = process.StandardOutput.ReadToEnd();
+            throw new AssertFailedException($"M114 proof script failed with exit code {process.ExitCode}. stdout: {stdout} stderr: {stderr}");
+        }
+    }
+
+    private static string ReadGeneratedAt(string receiptPath)
+    {
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        return document.RootElement.GetProperty("generatedAt").GetString()
+            ?? throw new AssertFailedException("Receipt missing generatedAt.");
     }
 }

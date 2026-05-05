@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T10:12:34Z",
+  "generatedAt": "2026-05-05T11:22:42Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m116_ui_creator_publication",
@@ -86,7 +86,7 @@
         "Trust ranking and lineage": true,
         "Moderation flow": true,
         "review discovery posture, trust ranking, lineage, and moderation flow": true,
-        "CreateButton(\"Open Creator Publication\", () => Task.FromResult(OpenArtifactShelfView(\"creator\")), isPrimary: true)": true,
+        "CreateButton(\"Open Creator Artifact Shelf\", () => Task.FromResult(OpenArtifactShelfView(\"creator\")), isPrimary: true)": true,
         "CreateButton(\"Review Moderation Flow\", OpenModerationSurfaceAsync)": true,
         "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
