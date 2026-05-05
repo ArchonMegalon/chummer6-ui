@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T07:05:34Z",
+  "generatedAt": "2026-05-05T10:09:50Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m114_ui_rule_studio",
@@ -82,7 +82,26 @@
         "DesktopHomeWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)": true,
         "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)": true,
         "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
-        "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true
+        "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true
+      },
+      "Chummer.Avalonia/Controls/ToolStripControl.axaml": {
+        "x:Name=\"RuleEnvironmentStudioButton\"": true,
+        "Content=\"Rules\"": true,
+        "RuleEnvironmentStudioButton_OnClick": true
+      },
+      "Chummer.Avalonia/Controls/ToolStripControl.axaml.cs": {
+        "public event EventHandler? RuleEnvironmentStudioRequested;": true,
+        "SetButtonLabel(RuleEnvironmentStudioButton, \"Open Rule Environment Studio\", \"Rules\");": true,
+        "RuleEnvironmentStudioRequested?.Invoke(this, EventArgs.Empty);": true
+      },
+      "Chummer.Avalonia/MainWindow.ControlBinding.cs": {
+        "EventHandler onRuleEnvironmentStudioRequested,": true,
+        "toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;": true
+      },
+      "Chummer.Avalonia/App.axaml.cs": {
+        "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, \"avalonia\")": true
       },
       "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
         "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)": true,
@@ -104,6 +123,10 @@
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.EventHandlers.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.ControlBinding.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M114RuleEnvironmentStudioGuardTests.cs"
     ]

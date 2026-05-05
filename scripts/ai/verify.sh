@@ -995,6 +995,9 @@ bash scripts/ai/milestones/next90-m115-ui-portable-dossier-check.sh
 echo "[verify] checking next-90 M116 creator publication and moderation desktop actions guard..."
 bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh
 
+echo "[verify] checking next-90 M112 campaign memory and return-loop desktop guard..."
+bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh
+
 echo "[verify] checking next-90 M113 GM prep and roster movement desktop surface guard..."
 bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh
 

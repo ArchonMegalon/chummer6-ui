@@ -83,6 +83,25 @@ SOURCE_MARKERS = {
         'DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia", _adapter.State.LatestPortabilityActivity)',
         "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)",
         "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)",
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)",
+    ],
+    "Chummer.Avalonia/Controls/ToolStripControl.axaml": [
+        'x:Name="RuleEnvironmentStudioButton"',
+        'Content="Rules"',
+        "RuleEnvironmentStudioButton_OnClick",
+    ],
+    "Chummer.Avalonia/Controls/ToolStripControl.axaml.cs": [
+        "public event EventHandler? RuleEnvironmentStudioRequested;",
+        'SetButtonLabel(RuleEnvironmentStudioButton, "Open Rule Environment Studio", "Rules");',
+        "RuleEnvironmentStudioRequested?.Invoke(this, EventArgs.Empty);",
+    ],
+    "Chummer.Avalonia/MainWindow.ControlBinding.cs": [
+        "EventHandler onRuleEnvironmentStudioRequested,",
+        "toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;",
+    ],
+    "Chummer.Avalonia/App.axaml.cs": [
+        "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio",
+        'DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, "avalonia")',
     ],
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": [
         "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)",
@@ -220,6 +239,10 @@ receipt = {
             f"{repo_root}/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
             f"{repo_root}/Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
             f"{repo_root}/Chummer.Avalonia/MainWindow.EventHandlers.cs",
+            f"{repo_root}/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+            f"{repo_root}/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+            f"{repo_root}/Chummer.Avalonia/MainWindow.ControlBinding.cs",
+            f"{repo_root}/Chummer.Avalonia/App.axaml.cs",
             f"{repo_root}/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
             f"{repo_root}/Chummer.Tests/Compliance/Next90M114RuleEnvironmentStudioGuardTests.cs",
         ],

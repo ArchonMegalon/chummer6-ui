@@ -1665,6 +1665,22 @@ milestones:
       - id: 109.3
         owner: chummer6-media-factory
         title: Render build explainer video, audio, preview-card, and packet siblings from approved explain packets.
+        status: complete
+        landed_commit: 7d5a0167
+        evidence:
+          - /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Factory.Runtime/Assets/BuildExplainCompanionRenderingService.cs renders approved explain packet siblings through media-factory job execution only while preserving approved-packet scope, asset urls, grouped receipt rows, lifecycle truth, and replay-safe dedupe.
+          - /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Compatibility/RunServices/MediaFactoryContracts.cs defines BuildExplainCompanionRenderRequest, BuildExplainCompanionRenderReceipt, BuildExplainCompanionArtifactReceipt, BuildExplainCompanionReadyRef, BuildExplainCompanionRoleReceiptGroup, BuildExplainCompanionRefReceipt, BuildExplainCaptionRefReceipt, and BuildExplainPreviewRefReceipt as package-owned render receipt truth.
+          - /docker/fleet/repos/chummer-media-factory/tests/BuildExplainCompanionSmoke/Program.cs proves required video/audio/preview-card/packet siblings, approved-packet scope enforcement, duplicate companion-ref rejection, delimiter-safe receipt hashing, and stable rendered timestamps for deduped retries.
+          - /docker/fleet/repos/chummer-media-factory/tests/test_build_explain_companion_rendering.py, /docker/fleet/repos/chummer-media-factory/tests/test_m109_build_explain_proof.py, and /docker/fleet/repos/chummer-media-factory/tests/test_m109_successor_package_authority.py fail-close contract drift, proof drift, and canonical queue plus registry drift for the completed package.
+          - /docker/fleet/repos/chummer-media-factory/docs/NEXT90_M109_BUILD_EXPLAIN_COMPANION_PROOF_FLOOR.md records the repo-local M109 proof floor, owned surfaces, guard conditions, and worker-safe closure posture for the completed package.
+          - /docker/fleet/repos/chummer-media-factory/scripts/ai/materialize_media_release_proof.py emits the M109 package into /docker/fleet/repos/chummer-media-factory/.codex-studio/published/MEDIA_LOCAL_RELEASE_PROOF.generated.json and /docker/fleet/repos/chummer-media-factory/.codex-studio/published/ARTIFACT_PUBLICATION_CERTIFICATION.generated.json with the current complete status, repo-local proof anchors, and the one-queue-row-per-mirror plus one-registry-task package-authority guard.
+          - /docker/fleet/repos/chummer-media-factory/scripts/ai/verify_m109_build_explain_companion.sh gives the package one repo-local verifier entrypoint for the authority tests and smoke proof.
+          - /docker/fleet/repos/chummer-media-factory/scripts/ai/verify.sh calls the dedicated M109 verifier as part of the standard media-factory verify lane, so completed-package proof cannot drift away from the normal repo-local release gate.
+          - /docker/fleet/repos/chummer-media-factory commit 7d5a0167 pins the M109 build explain companion proof floor.
+          - python3 -m unittest tests.test_m109_successor_package_authority tests.test_m109_build_explain_proof tests.test_build_explain_companion_rendering exits 0.
+          - dotnet run --project tests/BuildExplainCompanionSmoke/Chummer.Media.Factory.BuildExplainCompanionSmoke.csproj --configuration Release --nologo --verbosity quiet exits 0.
+          - bash /docker/fleet/repos/chummer-media-factory/scripts/ai/verify_m109_build_explain_companion.sh exits 0.
+          - bash /docker/fleet/repos/chummer-media-factory/scripts/ai/verify.sh exits 0.
       - id: 109.4
         owner: chummer6-design
         title: Keep Build and Explain artifact policy grounded in inspectable engine truth.
@@ -1842,16 +1858,18 @@ milestones:
       - id: 111.3
         owner: chummer6-media-factory
         title: Render release explainer, support closure, and public concierge companion bundles with captions, previews, and sibling notes.
-        status: in_progress
+        status: complete
+        landed_commit: 7d5a0167
         evidence:
           - /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Factory.Runtime/Assets/InstallAwareConciergeBundleService.cs renders release explainer, support closure, and public concierge companions through media-factory job execution only while preserving caption, preview, sibling-note, asset-url, and grouped receipt truth.
           - /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Compatibility/RunServices/MediaFactoryContracts.cs defines InstallAwareConciergeRenderRequest, InstallAwareConciergeBundleReceipt, InstallAwareConciergeArtifactReceipt, InstallAwareConciergeCompanionReadyRef, InstallAwareConciergeRoleReceiptGroup, InstallAwareConciergeCompanionRefReceipt, InstallAwareConciergeCaptionRefReceipt, InstallAwareConciergePreviewRefReceipt, and InstallAwareConciergeSiblingNoteReceipt.
           - /docker/fleet/repos/chummer-media-factory/tests/InstallAwareConciergeSmoke/Program.cs proves every install-aware bundle kind requires video, audio, and preview-card siblings, delimiter-heavy refs cannot collapse job dedupe or receipt ids, duplicate companion refs fail closed, payload scope stays install-aware, bounded sibling notes stay enforced, and replay-safe dedupe keeps rendered timestamps stable.
           - /docker/fleet/repos/chummer-media-factory/tests/test_install_aware_concierge_rendering.py, /docker/fleet/repos/chummer-media-factory/tests/test_m111_install_aware_concierge_proof.py, and /docker/fleet/repos/chummer-media-factory/tests/test_m111_successor_package_authority.py fail-close contract drift, repo-local proof drift, and canonical package-assignment drift for this slice.
-          - /docker/fleet/repos/chummer-media-factory/docs/NEXT90_M111_INSTALL_AWARE_CONCIERGE_PROOF_FLOOR.md records the repo-local M111 proof floor, owned surfaces, guard conditions, and worker-safe evidence posture while the package remains open for clean landed-commit closure.
-          - /docker/fleet/repos/chummer-media-factory/scripts/ai/materialize_media_release_proof.py emits the M111 package into /docker/fleet/repos/chummer-media-factory/.codex-studio/published/MEDIA_LOCAL_RELEASE_PROOF.generated.json and /docker/fleet/repos/chummer-media-factory/.codex-studio/published/ARTIFACT_PUBLICATION_CERTIFICATION.generated.json with the current in-progress status, repo-local proof anchors, and the one-queue-row-per-mirror plus one-registry-task package-authority guard.
+          - /docker/fleet/repos/chummer-media-factory/docs/NEXT90_M111_INSTALL_AWARE_CONCIERGE_PROOF_FLOOR.md records the repo-local M111 proof floor, owned surfaces, guard conditions, and worker-safe evidence posture for the closed package.
+          - /docker/fleet/repos/chummer-media-factory/scripts/ai/materialize_media_release_proof.py emits the M111 package into /docker/fleet/repos/chummer-media-factory/.codex-studio/published/MEDIA_LOCAL_RELEASE_PROOF.generated.json and /docker/fleet/repos/chummer-media-factory/.codex-studio/published/ARTIFACT_PUBLICATION_CERTIFICATION.generated.json with the current complete status, repo-local proof anchors, and the one-queue-row-per-mirror plus one-registry-task package-authority guard.
           - /docker/fleet/repos/chummer-media-factory/scripts/ai/verify_m111_install_aware_concierge.sh gives the package one repo-local verifier entrypoint for the authority tests and smoke proof.
           - /docker/fleet/repos/chummer-media-factory/scripts/ai/verify.sh calls the dedicated M111 verifier as part of the standard media-factory verify lane, so package proof cannot drift away from the normal repo-local release gate.
+          - /docker/fleet/repos/chummer-media-factory commit 7d5a0167 pins the M111 install-aware concierge proof floor.
           - python3 -m unittest tests.test_m111_successor_package_authority tests.test_m111_install_aware_concierge_proof tests.test_install_aware_concierge_rendering exits 0.
           - dotnet run --project tests/InstallAwareConciergeSmoke/Chummer.Media.Factory.InstallAwareConciergeSmoke.csproj --configuration Release --nologo --verbosity quiet exits 0.
           - bash /docker/fleet/repos/chummer-media-factory/scripts/ai/verify_m111_install_aware_concierge.sh exits 0.
@@ -2049,9 +2067,29 @@ milestones:
       - id: 114.3
         owner: chummer6-hub
         title: Keep campaign, support, and install-aware diagnostics tied to the same rule-environment receipts.
+        status: complete
+        evidence:
+          - /docker/chummercomplete/chummer.run-services/Chummer.Run.Api/Services/Community/CampaignSpineService.cs projects rules navigator answers with stable ExplainEntryId values, before/after diffs, and rule-environment studio lifecycle posture on signed-in campaign surfaces.
+          - /docker/chummercomplete/chummer.run-services/Chummer.Run.Api/Services/Support/SupportAssistantService.cs forwards shared ExplainEntryId values into support and install-aware build citations so assistant answers stay grounded in the same campaign and build receipt lane.
+          - /docker/chummercomplete/chummer.run-services/tests/RunServicesSmoke/Program.cs proves campaign rules, signed-in support answers, and install-aware build questions reuse the same explain receipt ids and return rails.
+          - /docker/chummercomplete/chummer.run-services/scripts/materialize_hub_local_release_proof.py closes the successor proof package and publishes the campaign_rule_environment_receipts, support_rule_environment_receipts, and install_aware_support_receipts rows as verify-only evidence.
+          - /docker/chummercomplete/chummer.run-services/scripts/verify_next90_m114_hub_rule_environment_receipts.py and /docker/chummercomplete/chummer.run-services/tests/test_next90_m114_hub_rule_environment_receipts.py fail closed on queue, registry, source, and release-proof drift for the shared rule-environment receipt lane.
+          - /docker/chummercomplete/chummer.run-services/tests/test_hub_local_release_proof_native_support_route.py keeps the generated release proof pinned to the closed M114 package state.
+          - python3 scripts/verify_next90_m114_hub_rule_environment_receipts.py exits 0.
+          - python3 -m unittest tests/test_next90_m114_hub_rule_environment_receipts.py exits 0 with ran=8 failed=0.
       - id: 114.4
         owner: chummer6-design
         title: Tighten rules and explain canon so media companions can cite but never replace engine truth.
+        status: complete
+        evidence:
+          - /docker/chummercomplete/chummer-design/products/chummer/RULE_ENVIRONMENT_GROUNDED_MEDIA_POLICY.md defines the product promise, truth order, receipt floor, fallback posture, and forbidden outcomes for grounded rule-environment media.
+          - /docker/chummercomplete/chummer-design/products/chummer/RULE_ENVIRONMENT_AND_AMEND_SYSTEM.md binds media companions to the same activation and diff receipts that govern rule-environment truth.
+          - /docker/chummercomplete/chummer-design/products/chummer/COMPANION_PACKET.md and /docker/chummercomplete/chummer-design/products/chummer/COMPANION_TRIGGER_REGISTRY.yaml now keep rule-environment companion launches subordinate to packet, receipt, and text-fallback truth.
+          - /docker/chummercomplete/chummer-design/products/chummer/PUBLIC_VIDEO_BRIEFS.yaml and /docker/chummercomplete/chummer-design/products/chummer/STRUCTURED_VIDEO_AND_NARRATED_MEDIA_MODEL.md now define the optional rule-environment grounded-media family with explicit truth order, fallback siblings, and forbidden modes.
+          - /docker/chummercomplete/chummer-design/products/chummer/LOCALIZATION_AND_LANGUAGE_SYSTEM.md now prevents locale fallback from paraphrasing away rule-environment receipt identity or recovery posture.
+          - /docker/chummercomplete/chummer-design/products/chummer/maintenance/feedback_archive/2026-05-05-next90-m114-design-rule-environment-policy-closeout.md records the shipped canon, proof anchors, and do-not-reopen scope for this package.
+          - /docker/chummercomplete/chummer-design/scripts/ai/validate_next90_m114_design_rule_environment_policy.py fail-closes missing policy markers, queue or registry drift, and missing machine-readable video or trigger truth fields for `next90-m114-design-rule-environment-policy`.
+          - /docker/chummercomplete/chummer-design/scripts/ai/verify.sh now includes the M114 validator in standard design verification.
 
   - id: 115
     title: Portable dossier, campaign federation, replay, recap, and external exchange
@@ -2062,7 +2100,7 @@ milestones:
       - chummer6-hub-registry
       - chummer6-ui
       - chummer6-media-factory
-    status: in_progress
+    status: complete
     dependencies:
       - 107
       - 112
@@ -2115,12 +2153,29 @@ milestones:
       - id: 116.3
         owner: chummer6-ui
         title: Surface creator publication and discovery flows on desktop without bypassing registry truth.
+        status: complete
+        evidence:
+          - /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs and /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs now surface desktop entrypoints for creator publication and moderation actions from the home and workspace shells.
+          - /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs now provides the desktop creator-publication surface with publication, trust-ranking and lineage, and moderation sections plus direct followthrough actions.
+          - /docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs keeps the creator-publication desktop surface on the accessibility and top-level-surface signoff path.
+          - /docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M116CreatorPublicationGuardTests.cs and /docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh fail closed when the queue, registry, desktop entrypoints, creator-publication window, or generated proof receipt drift from the closed package contract.
+          - /docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json records the closed-package receipt for `next90-m116-ui-creator-publication`.
       - id: 116.4
         owner: chummer6-media-factory
         title: Render creator promo kits from approved manifests with preview, captions, and receipts.
       - id: 116.5
         owner: chummer6-design
         title: Keep creator publication language honest about trust ranking, moderation, and compatibility.
+        status: complete
+        evidence:
+          - /docker/chummercomplete/chummer-design/products/chummer/CREATOR_PUBLICATION_TRUST_AND_COMPATIBILITY_POLICY.md defines the truth order, claim vocabulary, required labels, fallback posture, and forbidden claims for creator publication trust, moderation, and compatibility.
+          - /docker/chummercomplete/chummer-design/products/chummer/CREATOR_OPERATING_SYSTEM.md now keeps compatibility posture, moderation status, and trust-ranking posture distinct and routes creator surfaces back to the honesty policy.
+          - /docker/chummercomplete/chummer-design/products/chummer/CREATOR_DASHBOARD_AND_ADOPTION_ANALYTICS.md now requires lineage, receipt-backed compatibility posture, moderation posture, trust-ranking reason chips, and banded support or update pressure without implying endorsement.
+          - /docker/chummercomplete/chummer-design/products/chummer/CREATOR_PUBLICATION_ANALYTICS_SCHEMA.yaml now defines trust-ranking posture, reason chips, lineage refs, and claim guards so machine-readable analytics cannot collapse moderation, compatibility, and discoverability into one score.
+          - /docker/chummercomplete/chummer-design/products/chummer/README.md now places the creator-publication honesty policy on the main canon reading path beside the dashboard, analytics schema, and creator operating system docs.
+          - /docker/chummercomplete/chummer-design/products/chummer/maintenance/feedback_archive/2026-05-05-next90-m116-design-creator-publication-policy-closeout.md records the shipped canon, proof anchors, and do-not-reopen scope for this package.
+          - /docker/chummercomplete/chummer-design/scripts/ai/validate_next90_m116_design_creator_publication_policy.py fail-closes missing policy markers, linked creator canon drift, analytics-schema claim-guard drift, and registry or queue proof drift for `next90-m116-design-creator-publication-policy`.
+          - /docker/chummercomplete/chummer-design/scripts/ai/verify.sh now includes the M116 validator in standard design verification.
 
   - id: 117
     title: Artifact shelf v2 for personal, campaign, creator, and public views
@@ -2157,6 +2212,17 @@ milestones:
       - id: 117.5
         owner: chummer6-design
         title: Keep shelf policy tied to audience, locale, retention, and inspectable source truth.
+        status: complete
+        evidence:
+          - /docker/chummercomplete/chummer-design/products/chummer/ARTIFACT_SHELF_POLICY.md now defines artifact-shelf truth order, required shelf facets, audience rules, locale rules, retention rules, inspectable sibling actions, and forbidden modes for personal, campaign, creator, and public shelf views.
+          - /docker/chummercomplete/chummer-design/products/chummer/CAMPAIGN_WORKSPACE_AND_DEVICE_ROLES.md now routes workspace publication shelves through the artifact-shelf policy so safer audience fallback, retention posture, and inspectable source actions remain visible.
+          - /docker/chummercomplete/chummer-design/products/chummer/CREATOR_OPERATING_SYSTEM.md now points creator-owned shelves back to the artifact-shelf policy whenever locale, retention, inspectable source truth, or public-versus-creator audience boundaries matter.
+          - /docker/chummercomplete/chummer-design/products/chummer/PUBLIC_DOWNLOADS_POLICY.md now requires proof-gallery artifacts beside install truth to keep audience, locale, retention, and inspectable-source posture visible instead of blurring into release authority.
+          - /docker/chummercomplete/chummer-design/products/chummer/LOCALIZATION_AND_LANGUAGE_SYSTEM.md now binds artifact-shelf labels, captions, packet siblings, retention badges, and inspectable sibling actions to one deterministic locale chain and blocks fallback copy from hiding shelf truth posture.
+          - /docker/chummercomplete/chummer-design/products/chummer/README.md now places the artifact shelf policy on the main canon reading path beside the downloads and localization policy.
+          - /docker/chummercomplete/chummer-design/products/chummer/maintenance/feedback_archive/2026-05-05-next90-m117-design-artifact-shelf-policy-closeout.md records the shipped canon, proof anchors, and do-not-reopen scope for this package.
+          - /docker/chummercomplete/chummer-design/scripts/ai/validate_next90_m117_design_artifact_shelf_policy.py fail-closes missing policy markers, linked campaign/creator/public/localization canon drift, and registry or queue proof drift for `next90-m117-design-artifact-shelf-policy`.
+          - /docker/chummercomplete/chummer-design/scripts/ai/verify.sh now includes the M117 validator in standard design verification.
 
   - id: 118
     title: Organizer, league, convention, and season operations
@@ -3531,12 +3597,35 @@ milestones:
     - id: '145.1'
       owner: chummer6-core
       title: Emit explanation packets, coverage-registry truth, and bounded counterfactual packets for every visible mechanical result.
+      status: complete
+      evidence:
+      - /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/Diagnostics/ExplainValuePacketContracts.cs defines the first-party packet, coverage-registry, and bounded counterfactual contracts for promoted visible mechanical results.
+      - /docker/chummercomplete/chummer-core-engine/Chummer.Application/Explain/DefaultExplainValuePacketService.cs normalizes explain traces, deduplicates source anchors, emits coverage rows for result or legality or warning or delta surfaces, and trims counterfactual output to the bounded promoted kinds.
+      - /docker/chummercomplete/chummer-core-engine/Chummer.CoreEngine.Tests/Program.cs proves deterministic packet ordering, overflow trimming, promoted counterfactual kind rejection, and headless DI registration through the `explain-value-packets` filter.
+      - /docker/chummercomplete/chummer-core-engine/scripts/verify-explain-value-packets.py and /docker/chummercomplete/chummer-core-engine/.codex-studio/published/EXPLAIN_VALUE_PACKETS.generated.json fail-close the package receipt against the canonical successor registry and staged queue rows for `145.1`.
     - id: '145.2'
       owner: chummer6-ui
       title: Wire the desktop explain drawer, source-anchor launch, stale-state handling, and text-first follow-up on promoted workbench routes.
+      status: complete
+      evidence:
+      - /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/SectionHostControl.axaml.cs now projects packet-backed explain drawer summaries, source-anchor launch actions, stale snapshot posture, and bounded follow-up actions directly from promoted workbench section payloads.
+      - /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopExplainDrawerFollowUpWindow.cs keeps explain packet, source-anchor, stale-state, and bounded follow-up review text-first and opens the cited source anchor without widening beyond the active desktop snapshot.
+      - /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.SelectionHandlers.cs and /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.FeedbackCoordinator.cs route the explain drawer quick actions into rule-environment review or bounded follow-up review and keep missing-packet posture explicit on the desktop toolstrip.
+      - /docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs proves explain drawer summary copy, canonical packet-field parsing, source-anchor launching, quick-action projection, and the text-first follow-up window on the promoted desktop head.
+      - /docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M145DesktopExplainDrawerGuardTests.cs, /docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh, and /docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M145_UI_DESKTOP_EXPLAIN_DRAWER_AND_FOLLOW_UP.generated.json fail-close the canonical queue, design-queue, registry, and repo-local verify wiring for `145.2`.
+      - bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh exited 0 on 2026-05-05.
     - id: '145.3'
       owner: chummer6-mobile
       title: Bring quick explain, source-anchor context, and bounded follow-up to mobile and live-play shells.
+      status: complete
+      evidence:
+      - /docker/chummercomplete/chummer-play/src/Chummer.Play.Core/Application/PlayCampaignWorkspaceLiteProjector.cs now keeps QuickExplainSummary, QuickExplainLabels, SourceAnchorSummary, SourceAnchorLabels, StaleStatePosture, GroundedFollowUpSummary, and GroundedFollowUpLabels packet-backed inside the mobile workspace-lite projection.
+      - /docker/chummercomplete/chummer-play/src/Chummer.Play.Web/wwwroot/index.html now exposes dedicated workspace-quick-explain, workspace-source-anchor, workspace-stale-posture, and workspace-grounded-follow-up shell regions so mobile and live-play shells keep the claimed explain/follow-up context visible without widening into a workbench surface.
+      - /docker/chummercomplete/chummer-play/src/Chummer.Play.RegressionChecks/Program.cs proves the quick explain, source-anchor, stale-state posture, grounded follow-up, and shell-binding regressions for the mobile/live-play shell.
+      - /docker/chummercomplete/chummer-play/docs/next90-m145-mobile-quick-explain-and-follow-up.proof.md records the package scope, canonical queue/registry closure anchors, and do-not-reopen proof for future shards.
+      - /docker/chummercomplete/chummer-play/scripts/verify_next90_m145_mobile_quick_explain_and_follow_up.py fail-closes canonical queue, design queue, registry, generated-proof package receipt, and worker-unsafe proof drift for this completed package.
+      - /docker/chummercomplete/chummer-play/scripts/materialize_mobile_local_release_proof.py and /docker/chummercomplete/chummer-play/.codex-studio/published/MOBILE_LOCAL_RELEASE_PROOF.generated.json now publish the quick_explain_follow_up journey plus the package receipt for next90-m145-mobile-quick-explain-and-follow-up.
+      - /docker/chummercomplete/chummer-play/scripts/ai/verify.sh runs the M145 closure verifier together with the repo-local release-proof generation path.
     - id: '145.4'
       owner: executive-assistant
       title: Compile grounded narration and follow-up packs strictly from explanation-packet and counterfactual truth.
@@ -3550,9 +3639,32 @@ milestones:
     - id: '145.5'
       owner: chummer6-media-factory
       title: Render optional audio or presenter siblings from approved explanation packets without becoming calculation authority.
+      status: complete
+      completion_action: verify_closed_package_only
+      landed_commit: 7d5a0167
+      do_not_reopen_reason: M145 chummer6-media-factory explain presenter siblings is complete; future shards must verify the render-only evidence, proof floor, registry/queue rows, and closure commands before reopening this package.
+      evidence:
+      - /docker/chummercomplete/chummer6-media-factory/src/Chummer.Media.Factory.Runtime/Assets/ExplainPresenterSiblingRenderingService.cs
+      - /docker/chummercomplete/chummer6-media-factory/src/Chummer.Media.Contracts/Compatibility/RunServices/MediaFactoryContracts.cs
+      - /docker/chummercomplete/chummer6-media-factory/src/Chummer.Media.Contracts/README.md
+      - /docker/chummercomplete/chummer6-media-factory/tests/ExplainPresenterSiblingSmoke/Program.cs
+      - /docker/chummercomplete/chummer6-media-factory/tests/test_explain_presenter_sibling_rendering.py
+      - /docker/chummercomplete/chummer6-media-factory/tests/test_m145_successor_package_authority.py
+      - /docker/chummercomplete/chummer6-media-factory/tests/test_m145_explain_presenter_proof.py
+      - /docker/chummercomplete/chummer6-media-factory/docs/NEXT90_M145_EXPLAIN_PRESENTER_SIBLINGS_PROOF_FLOOR.md
+      - /docker/chummercomplete/chummer6-media-factory/scripts/ai/materialize_media_release_proof.py
+      - /docker/chummercomplete/chummer6-media-factory/scripts/ai/verify.sh
+      - /docker/chummercomplete/chummer6-media-factory/scripts/ai/verify_m145_explain_presenter_siblings.sh
     - id: '145.6'
       owner: fleet
       title: Fail closeout when visible values, warnings, or bounded what-if answers ship without explain coverage and fallback proof.
+      status: complete
+      evidence:
+      - /docker/fleet/scripts/materialize_next90_m145_fleet_explain_coverage_gate.py now materializes one closure packet that verifies canonical queue or design-queue or registry truth plus the shipped sibling proof for core packets, desktop explain drawer follow-up, mobile quick explain, EA text-first narration packs, design canon, and any shipped presenter siblings.
+      - /docker/fleet/scripts/verify_next90_m145_fleet_explain_coverage_gate.py and /docker/fleet/tests/test_verify_next90_m145_fleet_explain_coverage_gate.py fail-close the Fleet packet when this package's own queue or registry closure outruns canon or when any shipped sibling drifts on source-anchor, coverage-registry, deterministic-packet, or text-first fallback proof.
+      - /docker/fleet/.codex-studio/published/NEXT90_M145_FLEET_EXPLAIN_COVERAGE_GATE.generated.json now publishes a pass receipt only after the canonical design-owned queue mirror closes the shipped `145.1` core packet row and the Fleet package row itself is closed in both queue mirrors and the successor registry.
+      - /docker/fleet/tests/test_fleet_script_bootstrap_without_pythonpath.py and /docker/fleet/scripts/verify_script_bootstrap_no_pythonpath.py keep the closure guard bootstrap-safe without ambient `PYTHONPATH` state.
+      - /docker/fleet/feedback/2026-05-05-next90-m145-fleet-explain-coverage-gate-progress.md records the shipped proof anchors, the queue-mirror reconciliation, and the do-not-reopen posture for this Fleet-owned closure slice.
     - id: '145.7'
       owner: chummer6-design
       title: Canonize explain-every-value truth order, source-anchor linkage, and bounded follow-up or presenter posture.
