@@ -39,6 +39,8 @@ public sealed class Next90M116CreatorPublicationGuardTests
         StringAssert.Contains(scriptText, "\"scripts\"");
         StringAssert.Contains(scriptText, "\"creator_publication:desktop\"");
         StringAssert.Contains(scriptText, "\"moderation_flow:desktop\"");
+        StringAssert.Contains(scriptText, "EXPECTED_COMPLETION_ACTION = \"verify_closed_package_only\"");
+        StringAssert.Contains(scriptText, "EXPECTED_DO_NOT_REOPEN_REASON = \"M116 chummer6-ui creator publication desktop surface is complete; future shards must verify the\"");
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh\"");
         StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore'");
         StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
@@ -79,24 +81,36 @@ public sealed class Next90M116CreatorPublicationGuardTests
         JsonElement checks = evidence.GetProperty("queueChecks");
         Assert.IsTrue(checks.GetProperty("registry_has_m116_ui_task").GetBoolean());
         Assert.IsTrue(checks.GetProperty("registry_task_unique").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_title_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_owner_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_status_complete").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_evidence_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_package_id_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_package_id_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_work_task_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_work_task_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_frontier_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_frontier_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_milestone_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_milestone_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("allowed_paths_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_allowed_paths_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("owned_surfaces_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_owned_surfaces_exact").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("queue_status_in_progress").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("design_queue_status_in_progress").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_status_complete").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_status_complete").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_wave_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_wave_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_repo_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_repo_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_completion_action_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_completion_action_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_do_not_reopen_reason_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_do_not_reopen_reason_matches").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("queue_proof_exact").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("design_queue_proof_exact").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_design_block_parity").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_path_matches").GetBoolean());
 
@@ -118,6 +132,25 @@ public sealed class Next90M116CreatorPublicationGuardTests
                 Path.Combine(repoRoot, "Chummer.Tests", "Compliance", "Next90M116CreatorPublicationGuardTests.cs"),
             },
             ReadStringArray(evidence.GetProperty("proofFiles")));
+
+        JsonElement closedPackage = evidence.GetProperty("closedPackage");
+        Assert.AreEqual("verify_closed_package_only", closedPackage.GetProperty("completionAction").GetString());
+        StringAssert.Contains(closedPackage.GetProperty("doNotReopenReason").GetString(), "M116 chummer6-ui creator publication desktop surface is complete");
+        CollectionAssert.AreEquivalent(
+            new[]
+            {
+                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"),
+                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),
+                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCreatorPublicationWindow.cs"),
+                Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "AccessibilitySignoffSmokeTests.cs"),
+                Path.Combine(repoRoot, "Chummer.Tests", "Compliance", "Next90M116CreatorPublicationGuardTests.cs"),
+                Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json"),
+                Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m116-ui-creator-publication-check.sh"),
+                "bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh",
+                "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
+                "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
+            },
+            ReadStringArray(closedPackage.GetProperty("proof")));
     }
 
     private static void AssertSourceMarkersPass(JsonElement sourceChecks)

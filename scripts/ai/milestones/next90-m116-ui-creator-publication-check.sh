@@ -46,9 +46,27 @@ EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m116-ui-creat
 EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M116CreatorPublicationGuardTests" --no-restore'
 EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter "AccessibilitySignoffSmokeTests" --no-restore'
 EXPECTED_DESIGN_QUEUE_PATH = "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
-MILESTONE_TASK_ANCHOR = """- id: 116.3
-        owner: chummer6-ui
-        title: Surface creator publication and discovery flows on desktop without bypassing registry truth."""
+EXPECTED_COMPLETION_ACTION = "verify_closed_package_only"
+EXPECTED_DO_NOT_REOPEN_REASON = "M116 chummer6-ui creator publication desktop surface is complete; future shards must verify the"
+EXPECTED_PROOF = [
+    f"{repo_root}/Chummer.Avalonia/DesktopHomeWindow.cs",
+    f"{repo_root}/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+    f"{repo_root}/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
+    f"{repo_root}/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+    f"{repo_root}/Chummer.Tests/Compliance/Next90M116CreatorPublicationGuardTests.cs",
+    f"{repo_root}/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json",
+    f"{repo_root}/scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh",
+    EXPECTED_DIRECT_PROOF_COMMAND,
+    EXPECTED_TARGETED_TEST_COMMAND,
+    EXPECTED_PRESENTATION_TEST_COMMAND,
+]
+EXPECTED_REGISTRY_EVIDENCE = [
+    f"{repo_root}/Chummer.Avalonia/DesktopHomeWindow.cs and {repo_root}/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs now surface desktop entrypoints for creator publication and moderation actions from the home and workspace shells.",
+    f"{repo_root}/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs now provides the desktop creator-publication surface with publication, trust-ranking and lineage, and moderation sections plus direct followthrough actions.",
+    f"{repo_root}/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs keeps the creator-publication desktop surface on the accessibility and top-level-surface signoff path.",
+    f"{repo_root}/Chummer.Tests/Compliance/Next90M116CreatorPublicationGuardTests.cs and {repo_root}/scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh fail closed when the queue, registry, desktop entrypoints, creator-publication window, or generated proof receipt drift from the closed package contract.",
+    f"{repo_root}/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json records the closed-package receipt for `next90-m116-ui-creator-publication`.",
+]
 
 SOURCE_MARKERS = {
     "Chummer.Avalonia/DesktopHomeWindow.cs": [
@@ -111,6 +129,19 @@ def block_for_package(text: str, package_id: str) -> str:
     return text[block_start:] if next_start == -1 else text[block_start:next_start]
 
 
+def block_for_work_task(text: str, task_id: str) -> str:
+    marker = f"- id: {task_id}"
+    start = text.find(marker)
+    if start == -1:
+        raise AssertionError(f"missing work task row for {task_id}")
+    block_start = text.rfind("\n      - id:", 0, start)
+    block_start = 0 if block_start == -1 else block_start + 1
+    next_start = text.find("\n      - id:", start + len(marker))
+    if next_start == -1:
+        next_start = text.find("\n  - id:", start + len(marker))
+    return text[block_start:] if next_start == -1 else text[block_start:next_start]
+
+
 def yaml_list_after(block: str, key: str) -> list[str]:
     marker = f"{key}:"
     start = block.find(marker)
@@ -124,7 +155,12 @@ def yaml_list_after(block: str, key: str) -> list[str]:
         if line.startswith("      - "):
             items.append(line.removeprefix("      - ").strip())
             continue
+        if line.startswith("          - "):
+            items.append(line.removeprefix("          - ").strip())
+            continue
         if line.startswith("    ") and not line.startswith("      "):
+            break
+        if line.startswith("        ") and not line.startswith("          "):
             break
         if items:
             break
@@ -145,28 +181,41 @@ queue_text = read_text(queue_path)
 design_queue_text = read_text(design_queue_path)
 queue_block = block_for_package(queue_text, PACKAGE_ID)
 design_queue_block = block_for_package(design_queue_text, PACKAGE_ID)
+registry_task_block = block_for_work_task(registry_text, WORK_TASK_ID)
 
 checks = {
-    "registry_has_m116_ui_task": MILESTONE_TASK_ANCHOR in registry_text,
-    "registry_task_unique": registry_text.count(MILESTONE_TASK_ANCHOR) == 1,
+    "registry_has_m116_ui_task": f"- id: {WORK_TASK_ID}" in registry_text,
+    "registry_task_unique": registry_text.count(f"- id: {WORK_TASK_ID}") == 1,
+    "registry_task_title_matches": "title: Surface creator publication and discovery flows on desktop without bypassing registry truth." in registry_task_block,
+    "registry_task_owner_matches": "owner: chummer6-ui" in registry_task_block,
+    "registry_task_status_complete": "status: complete" in registry_task_block,
+    "registry_task_evidence_exact": yaml_list_after(registry_task_block, "evidence") == EXPECTED_REGISTRY_EVIDENCE,
     "queue_package_unique": queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
     "design_queue_package_unique": design_queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
     "queue_package_id_matches": yaml_scalar(queue_block, "package_id") == PACKAGE_ID,
     "design_queue_package_id_matches": yaml_scalar(design_queue_block, "package_id") == PACKAGE_ID,
     "queue_work_task_matches": yaml_scalar(queue_block, "work_task_id") == WORK_TASK_ID,
     "design_queue_work_task_matches": yaml_scalar(design_queue_block, "work_task_id") == WORK_TASK_ID,
+    "queue_frontier_matches": yaml_scalar(queue_block, "frontier_id") == str(FRONTIER_ID),
+    "design_queue_frontier_matches": yaml_scalar(design_queue_block, "frontier_id") == str(FRONTIER_ID),
     "queue_milestone_matches": yaml_scalar(queue_block, "milestone_id") == str(MILESTONE_ID),
     "design_queue_milestone_matches": yaml_scalar(design_queue_block, "milestone_id") == str(MILESTONE_ID),
     "queue_title_matches": f"title: {TITLE}" in queue_block,
     "queue_task_matches": f"task: {TASK}" in queue_block,
-    "queue_status_in_progress": "status: in_progress" in queue_block,
+    "queue_status_complete": "status: complete" in queue_block,
     "queue_wave_matches": yaml_scalar(queue_block, "wave") == WAVE,
     "design_queue_wave_matches": yaml_scalar(design_queue_block, "wave") == WAVE,
     "queue_repo_matches": yaml_scalar(queue_block, "repo") == "chummer6-ui",
     "design_queue_repo_matches": yaml_scalar(design_queue_block, "repo") == "chummer6-ui",
     "design_queue_title_matches": f"title: {TITLE}" in design_queue_block,
     "design_queue_task_matches": f"task: {TASK}" in design_queue_block,
-    "design_queue_status_in_progress": "status: in_progress" in design_queue_block,
+    "design_queue_status_complete": "status: complete" in design_queue_block,
+    "queue_completion_action_matches": yaml_scalar(queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
+    "design_queue_completion_action_matches": yaml_scalar(design_queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
+    "queue_do_not_reopen_reason_matches": EXPECTED_DO_NOT_REOPEN_REASON in yaml_scalar(queue_block, "do_not_reopen_reason"),
+    "design_queue_do_not_reopen_reason_matches": EXPECTED_DO_NOT_REOPEN_REASON in yaml_scalar(design_queue_block, "do_not_reopen_reason"),
+    "queue_proof_exact": yaml_list_after(queue_block, "proof") == EXPECTED_PROOF,
+    "design_queue_proof_exact": yaml_list_after(design_queue_block, "proof") == EXPECTED_PROOF,
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,
@@ -210,6 +259,12 @@ receipt = {
             "directProofCommand": EXPECTED_DIRECT_PROOF_COMMAND,
             "targetedTestCommand": EXPECTED_TARGETED_TEST_COMMAND,
             "presentationTestCommand": EXPECTED_PRESENTATION_TEST_COMMAND,
+        },
+        "closedPackage": {
+            "completionAction": EXPECTED_COMPLETION_ACTION,
+            "doNotReopenReason": EXPECTED_DO_NOT_REOPEN_REASON,
+            "proof": EXPECTED_PROOF,
+            "registryEvidence": EXPECTED_REGISTRY_EVIDENCE,
         },
         "proofFiles": [
             str(receipt_path),

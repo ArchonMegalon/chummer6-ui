@@ -91,6 +91,7 @@ public sealed partial class CharacterOverviewPresenter : ICharacterOverviewPrese
             ShellBootstrapData bootstrap = TryCreateBootstrapFromShellState(out ShellBootstrapData shellBootstrap)
                 ? shellBootstrap
                 : await _bootstrapDataProvider.GetAsync(ct);
+            bootstrap = NormalizeBootstrapData(bootstrap);
             WorkspaceSessionState session = _workspaceSessionPresenter.Restore(
                 bootstrap.Workspaces,
                 bootstrap.ActiveWorkspaceId);
@@ -185,5 +186,119 @@ public sealed partial class CharacterOverviewPresenter : ICharacterOverviewPrese
             WorkflowSurfaces: shellState.WorkflowSurfaces ?? [],
             ActiveRuntime: shellState.ActiveRuntime);
         return true;
+    }
+
+    private ShellBootstrapData NormalizeBootstrapData(ShellBootstrapData bootstrap, string? fallbackRulesetId = null)
+    {
+        string effectiveRulesetId = ResolveBootstrapRulesetId(bootstrap, fallbackRulesetId);
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(bootstrap.RulesetId) ?? effectiveRulesetId;
+        string normalizedPreferredRulesetId = RulesetDefaults.NormalizeOptional(bootstrap.PreferredRulesetId) ?? effectiveRulesetId;
+        string normalizedActiveRulesetId = RulesetDefaults.NormalizeOptional(bootstrap.ActiveRulesetId) ?? effectiveRulesetId;
+
+        return bootstrap with
+        {
+            RulesetId = normalizedRulesetId,
+            PreferredRulesetId = normalizedPreferredRulesetId,
+            ActiveRulesetId = normalizedActiveRulesetId,
+            Commands = MergeBootstrapCommands(normalizedActiveRulesetId, bootstrap.Commands),
+            NavigationTabs = MergeBootstrapNavigationTabs(normalizedActiveRulesetId, bootstrap.NavigationTabs)
+        };
+    }
+
+    private string ResolveBootstrapRulesetId(ShellBootstrapData bootstrap, string? fallbackRulesetId = null)
+    {
+        return RulesetDefaults.NormalizeOptional(fallbackRulesetId)
+            ?? RulesetDefaults.NormalizeOptional(bootstrap.ActiveRulesetId)
+            ?? RulesetDefaults.NormalizeOptional(bootstrap.PreferredRulesetId)
+            ?? RulesetDefaults.NormalizeOptional(bootstrap.RulesetId)
+            ?? bootstrap.Workspaces
+                .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+                .FirstOrDefault(rulesetId => rulesetId is not null)
+            ?? bootstrap.Commands
+                .Select(command => RulesetDefaults.NormalizeOptional(command.RulesetId))
+                .FirstOrDefault(rulesetId => rulesetId is not null)
+            ?? bootstrap.NavigationTabs
+                .Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId))
+                .FirstOrDefault(rulesetId => rulesetId is not null)
+            ?? State.OpenWorkspaces
+                .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+                .FirstOrDefault(rulesetId => rulesetId is not null)
+            ?? State.Commands
+                .Select(command => RulesetDefaults.NormalizeOptional(command.RulesetId))
+                .FirstOrDefault(rulesetId => rulesetId is not null)
+            ?? State.NavigationTabs
+                .Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId))
+                .FirstOrDefault(rulesetId => rulesetId is not null)
+            ?? RulesetDefaults.Sr5;
+    }
+
+    private IReadOnlyList<AppCommandDefinition> MergeBootstrapCommands(
+        string rulesetId,
+        IReadOnlyList<AppCommandDefinition> commands)
+    {
+        IReadOnlyList<AppCommandDefinition> compatibilityCommands = _shellCatalogResolver.ResolveCommands(rulesetId);
+        Dictionary<string, AppCommandDefinition> commandsById = new(StringComparer.Ordinal);
+        List<AppCommandDefinition> merged = new(commands.Count + compatibilityCommands.Count);
+
+        foreach (AppCommandDefinition command in commands)
+        {
+            AppCommandDefinition normalized = command with
+            {
+                RulesetId = RulesetDefaults.NormalizeOptional(command.RulesetId) ?? rulesetId
+            };
+            if (commandsById.TryAdd(normalized.Id, normalized))
+            {
+                merged.Add(normalized);
+            }
+        }
+
+        foreach (AppCommandDefinition compatibilityCommand in compatibilityCommands)
+        {
+            AppCommandDefinition normalized = compatibilityCommand with
+            {
+                RulesetId = RulesetDefaults.NormalizeOptional(compatibilityCommand.RulesetId) ?? rulesetId
+            };
+            if (commandsById.TryAdd(normalized.Id, normalized))
+            {
+                merged.Add(normalized);
+            }
+        }
+
+        return merged;
+    }
+
+    private IReadOnlyList<NavigationTabDefinition> MergeBootstrapNavigationTabs(
+        string rulesetId,
+        IReadOnlyList<NavigationTabDefinition> navigationTabs)
+    {
+        IReadOnlyList<NavigationTabDefinition> compatibilityTabs = _shellCatalogResolver.ResolveNavigationTabs(rulesetId);
+        Dictionary<string, NavigationTabDefinition> tabsById = new(StringComparer.Ordinal);
+        List<NavigationTabDefinition> merged = new(navigationTabs.Count + compatibilityTabs.Count);
+
+        foreach (NavigationTabDefinition tab in navigationTabs)
+        {
+            NavigationTabDefinition normalized = tab with
+            {
+                RulesetId = RulesetDefaults.NormalizeOptional(tab.RulesetId) ?? rulesetId
+            };
+            if (tabsById.TryAdd(normalized.Id, normalized))
+            {
+                merged.Add(normalized);
+            }
+        }
+
+        foreach (NavigationTabDefinition compatibilityTab in compatibilityTabs)
+        {
+            NavigationTabDefinition normalized = compatibilityTab with
+            {
+                RulesetId = RulesetDefaults.NormalizeOptional(compatibilityTab.RulesetId) ?? rulesetId
+            };
+            if (tabsById.TryAdd(normalized.Id, normalized))
+            {
+                merged.Add(normalized);
+            }
+        }
+
+        return merged;
     }
 }

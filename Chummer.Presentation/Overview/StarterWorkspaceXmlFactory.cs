@@ -31,11 +31,11 @@ internal static class StarterWorkspaceXmlFactory
             || string.Equals(resolvedBuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase);
         object[] priorityElements = usesPriorityWorkflow
             ? [
-                new XElement("prioritymetatype", "D"),
-                new XElement("priorityattributes", "B"),
-                new XElement("priorityspecial", "E"),
-                new XElement("priorityskills", "C"),
-                new XElement("priorityresources", "A"),
+                new XElement("prioritymetatype", ResolvePriorityPersistedValue("D")),
+                new XElement("priorityattributes", ResolvePriorityPersistedValue("B")),
+                new XElement("priorityspecial", ResolvePriorityPersistedValue("E")),
+                new XElement("priorityskills", ResolvePriorityPersistedValue("C")),
+                new XElement("priorityresources", ResolvePriorityPersistedValue("A")),
                 new XElement("prioritytalent", "D")
             ]
             : [];
@@ -132,6 +132,16 @@ internal static class StarterWorkspaceXmlFactory
 
         return normalized;
     }
+
+    private static string ResolvePriorityPersistedValue(string priority)
+        => priority.Trim().ToUpperInvariant() switch
+        {
+            "A" => "A,4",
+            "B" => "B,3",
+            "C" => "C,2",
+            "D" => "D,1",
+            _ => "E,0"
+        };
 
     private static XElement BuildAttributes()
     {

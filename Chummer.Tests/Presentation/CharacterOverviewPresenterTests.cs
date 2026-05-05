@@ -94,6 +94,41 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task InitializeAsync_supplements_sparse_bootstrap_with_compatibility_commands_and_tabs()
+    {
+        var client = new FakeChummerClient();
+        var bootstrap = new ShellBootstrapData(
+            RulesetId: RulesetDefaults.Sr6,
+            Commands:
+            [
+                new AppCommandDefinition("open_character", "command.open_character", "file", false, true, string.Empty)
+            ],
+            NavigationTabs:
+            [
+                new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, string.Empty)
+            ],
+            Workspaces: [],
+            PreferredRulesetId: RulesetDefaults.Sr6,
+            ActiveRulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(
+            client,
+            bootstrapDataProvider: new ShellBootstrapDataProviderStub(bootstrap));
+
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        CollectionAssert.Contains(presenter.State.Commands.Select(command => command.Id).ToArray(), "translator");
+        CollectionAssert.Contains(presenter.State.Commands.Select(command => command.Id).ToArray(), "xml_editor");
+        CollectionAssert.Contains(presenter.State.Commands.Select(command => command.Id).ToArray(), "hero_lab_importer");
+        CollectionAssert.Contains(presenter.State.NavigationTabs.Select(tab => tab.Id).ToArray(), "tab-attributes");
+        Assert.AreEqual(
+            RulesetDefaults.Sr6,
+            presenter.State.Commands.First(command => string.Equals(command.Id, "translator", StringComparison.Ordinal)).RulesetId);
+        Assert.AreEqual(
+            RulesetDefaults.Sr6,
+            presenter.State.NavigationTabs.First(tab => string.Equals(tab.Id, "tab-attributes", StringComparison.Ordinal)).RulesetId);
+    }
+
+    [TestMethod]
     public async Task LoadAsync_populates_profile_progress_and_skills()
     {
         var client = new FakeChummerClient();
@@ -641,7 +676,7 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(client.LastImportedDocument);
         StringAssert.Contains(client.LastImportedDocument!.Content, "<metatype>Elf</metatype>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<metatypecategory>Metahuman</metatypecategory>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<prioritymetatype>D</prioritymetatype>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<prioritymetatype>D,1</prioritymetatype>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<prioritytalent>Adept</prioritytalent>");
     }
 
@@ -2455,6 +2490,36 @@ public class CharacterOverviewPresenterTests
         public void SyncOverviewFeedback(ShellOverviewFeedback feedback)
         {
             LastOverviewFeedback = feedback;
+        }
+    }
+
+    private sealed class ShellBootstrapDataProviderStub : IShellBootstrapDataProvider
+    {
+        private readonly ShellBootstrapData _bootstrap;
+
+        public ShellBootstrapDataProviderStub(ShellBootstrapData bootstrap)
+        {
+            _bootstrap = bootstrap;
+        }
+
+        public Task<ShellBootstrapData> GetAsync(CancellationToken ct)
+        {
+            return Task.FromResult(_bootstrap);
+        }
+
+        public Task<ShellBootstrapData> GetAsync(string? rulesetId, CancellationToken ct)
+        {
+            string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId)
+                ?? RulesetDefaults.NormalizeOptional(_bootstrap.ActiveRulesetId)
+                ?? RulesetDefaults.NormalizeOptional(_bootstrap.PreferredRulesetId)
+                ?? RulesetDefaults.NormalizeOptional(_bootstrap.RulesetId)
+                ?? RulesetDefaults.Sr5;
+            return Task.FromResult(_bootstrap with
+            {
+                RulesetId = normalizedRulesetId,
+                PreferredRulesetId = normalizedRulesetId,
+                ActiveRulesetId = normalizedRulesetId
+            });
         }
     }
 }
