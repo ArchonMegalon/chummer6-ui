@@ -540,6 +540,11 @@ internal sealed class DesktopCampaignArtifactWindow : Window
             actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync));
         }
 
+        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Add(CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))));
+        }
+
         if (_portableExchangePreview is not null)
         {
             actions.Add(CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
@@ -562,6 +567,12 @@ internal sealed class DesktopCampaignArtifactWindow : Window
             actions.Add(CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
         }
 
+        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Add(CreateButton("Open My Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("personal"))));
+            actions.Add(CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))));
+        }
+
         actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));
         actions.Add(CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupportAsync));
         return actions;
@@ -582,6 +593,11 @@ internal sealed class DesktopCampaignArtifactWindow : Window
         if (TryResolveWorkspaceId(out _))
         {
             actions.Add(CreateButton("Open Portable Export", OpenPortableExportAsync));
+        }
+
+        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Add(CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))));
         }
 
         actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));
@@ -687,6 +703,10 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 
     private Task OpenReportIssueWindowAsync()
         => DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId);
+
+    private bool OpenArtifactShelfView(string view)
+        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
+           && DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/artifacts?view={Uri.EscapeDataString(view)}");
 
     private Task OpenWorkspaceSupportAsync()
     {
