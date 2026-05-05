@@ -281,14 +281,30 @@ public static class DesktopInstallLinkingRuntime
         return TryOpenPublicPortal("/account/work");
     }
 
-    public static bool TryOpenWorkspacePortal(string workspaceId)
+    public static string BuildWorkspacePortalRelativePath(string workspaceId, string? fragment = null)
     {
         if (string.IsNullOrWhiteSpace(workspaceId))
         {
-            return TryOpenWorkPortal();
+            return "/account/work";
         }
 
-        return TryOpenPublicPortal($"/account/work/workspaces/{Uri.EscapeDataString(workspaceId.Trim())}");
+        string path = $"/account/work/workspaces/{Uri.EscapeDataString(workspaceId.Trim())}";
+        if (string.IsNullOrWhiteSpace(fragment))
+        {
+            return path;
+        }
+
+        return $"{path}#{Uri.EscapeDataString(fragment.Trim())}";
+    }
+
+    public static bool TryOpenWorkspacePortal(string workspaceId)
+    {
+        return TryOpenPublicPortal(BuildWorkspacePortalRelativePath(workspaceId));
+    }
+
+    public static bool TryOpenWorkspacePortal(string workspaceId, string? fragment)
+    {
+        return TryOpenPublicPortal(BuildWorkspacePortalRelativePath(workspaceId, fragment));
     }
 
     public static string BuildSupportPortalRelativePathForInstall(DesktopInstallLinkingState state)

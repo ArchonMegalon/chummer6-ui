@@ -1995,6 +1995,19 @@ milestones:
       - id: 113.4
         owner: chummer6-media-factory
         title: Render opposition and prep packets into governed packet, preview, and optional briefing artifacts.
+        status: complete
+        landed_commit: TBD_COMMIT
+        evidence:
+          - /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Factory.Runtime/Assets/GmPrepPacketBundleService.cs renders governed opposition, scene, and prep-library entries into packet, preview, and optional briefing artifacts through media-factory job execution only.
+          - /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Compatibility/RunServices/MediaFactoryContracts.cs defines GmPrepPacketRenderRequest, GmPrepPacketBundleReceipt, GmPrepPacketEntryReceipt, GmPrepPacketSubjectReceiptGroup, and GmPrepPacketArtifactReceipt.
+          - /docker/fleet/repos/chummer-media-factory/tests/GmPrepPacketSmoke/Program.cs proves opposition entries stay mandatory, packet refs stay unique, governed source-pack plus sibling packet/source-entry scope stays enforced, optional briefings stay bounded per entry, and delimiter-heavy variants cannot collapse dedupe or receipt ids.
+          - /docker/fleet/repos/chummer-media-factory/tests/test_gm_prep_packet_rendering.py, /docker/fleet/repos/chummer-media-factory/tests/test_m113_gm_prep_packet_proof.py, and /docker/fleet/repos/chummer-media-factory/tests/test_m113_successor_package_authority.py fail-close contract drift, repo-local proof drift, queue and registry closure drift, and do-not-reopen proof drift.
+          - /docker/fleet/repos/chummer-media-factory/docs/NEXT90_M113_GM_PREP_PACKET_PROOF_FLOOR.md records the repo-local M113 proof floor.
+          - /docker/fleet/repos/chummer-media-factory/scripts/ai/materialize_media_release_proof.py emits the M113 package into MEDIA_LOCAL_RELEASE_PROOF.generated.json and ARTIFACT_PUBLICATION_CERTIFICATION.generated.json with the current complete status.
+          - python3 -m unittest tests.test_m113_successor_package_authority tests.test_m113_gm_prep_packet_proof tests.test_gm_prep_packet_rendering exits 0.
+          - dotnet run --project tests/GmPrepPacketSmoke/Chummer.Media.Factory.GmPrepPacketSmoke.csproj --configuration Release --nologo --verbosity quiet exits 0.
+          - ./scripts/ai/verify_m113_gm_prep_packets.sh exits 0.
+          - ./scripts/ai/verify.sh exits 0.
       - id: 113.5
         owner: executive-assistant
         title: Produce operator-safe GM prep and roster movement packets from governed campaign truth.
@@ -3527,6 +3540,13 @@ milestones:
     - id: '145.4'
       owner: executive-assistant
       title: Compile grounded narration and follow-up packs strictly from explanation-packet and counterfactual truth.
+      status: done
+      evidence:
+      - /docker/EA/docs/chummer_explain_narration_packs/CHUMMER_EXPLAIN_NARRATION_PACKET_PACK.yaml defines the EA compile contract, packet requirements, fail-closed posture, and no-arithmetic-authority rule for optional narration and bounded follow-up wording.
+      - /docker/EA/docs/chummer_explain_narration_packs/GROUNDED_FOLLOW_UP_SPECIMENS.yaml captures desktop, mobile, source-anchor, diff, and refusal-path specimen packs that stay subordinate to explanation-packet and counterfactual truth.
+      - /docker/EA/skills/chummer_grounded_explain_narration/SKILL.md gives workers one bounded compile workflow that stays packet-grounded, privacy-bounded, and text-first.
+      - /docker/EA/docs/chummer_explain_narration_packs/SUCCESSOR_HANDOFF_CLOSEOUT.yaml keeps the EA package worker-safe and scoped to skills, tests, feedback, and docs while sibling repos finish packet emitters and presenter surfaces.
+      - /docker/EA/tests/test_next90_m145_grounded_explain_narration_packs.py verifies pack identity, refusal posture, queue and registry alignment, and worker-safe boundaries.
     - id: '145.5'
       owner: chummer6-media-factory
       title: Render optional audio or presenter siblings from approved explanation packets without becoming calculation authority.
@@ -3536,10 +3556,13 @@ milestones:
     - id: '145.7'
       owner: chummer6-design
       title: Canonize explain-every-value truth order, source-anchor linkage, and bounded follow-up or presenter posture.
-      status: in_progress
+      status: done
       evidence:
       - /docker/chummercomplete/chummer-design/products/chummer/EXPLAIN_EVERY_VALUE_AND_GROUNDED_FOLLOW_UP.md defines the
         product promise, truth order, packet contract, coverage-registry floor, and release-gated explain-every-value posture.
+      - /docker/chummercomplete/chummer-design/products/chummer/FLAGSHIP_READINESS_PLANES.yaml now binds rules explainability to
+        the explain-every-value canon, source-anchor posture, and Fleet closeout evidence instead of leaving release-health drift
+        implicit.
       - /docker/chummercomplete/chummer-design/products/chummer/SOURCE_AWARE_EXPLAIN_PUBLIC_TRUST_HOOK.md now promotes
         explain-every-value plus source-anchor proof from a curated hook to a promoted-route coverage floor.
       - /docker/chummercomplete/chummer-design/products/chummer/BUILD_LAB_PRODUCT_MODEL.md now treats visible compare values,
@@ -3548,5 +3571,7 @@ milestones:
         routes to treat missing explain coverage for visible computed or warning states as release-blocking.
       - /docker/chummercomplete/chummer-design/products/chummer/README.md and /docker/chummercomplete/chummer-design/products/chummer/sync/sync-manifest.yaml
         now place the explain-every-value canon on the main read paths and repo-local mirror set.
+      - /docker/chummercomplete/chummer-design/products/chummer/maintenance/feedback_archive/2026-05-05-next90-m145-design-explain-every-value-canon-closeout.md
+        records the shipped canon, proof anchors, and do-not-reopen scope for the design-owned slice.
       - /docker/chummercomplete/chummer-design/scripts/ai/verify.sh now checks the new canon doc and README reference so the
         contract cannot quietly disappear from standard design verification.

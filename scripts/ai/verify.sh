@@ -989,6 +989,15 @@ bash scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh
 echo "[verify] checking next-90 M109 build explain artifact companion closure guard..."
 bash scripts/ai/milestones/next90-m109-ui-build-explain-artifacts-check.sh
 
+echo "[verify] checking next-90 M115 portable dossier desktop actions guard..."
+bash scripts/ai/milestones/next90-m115-ui-portable-dossier-check.sh
+
+echo "[verify] checking next-90 M116 creator publication and moderation desktop actions guard..."
+bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh
+
+echo "[verify] checking next-90 M145 desktop explain drawer and bounded follow-up guard..."
+bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh
+
 echo "[verify] checking B15 localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh
 

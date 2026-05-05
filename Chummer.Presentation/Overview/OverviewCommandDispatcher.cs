@@ -157,7 +157,8 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
     private static bool RequiresMasterIndex(string commandId)
         => string.Equals(commandId, "master_index", StringComparison.Ordinal)
             || string.Equals(commandId, "translator", StringComparison.Ordinal)
-            || string.Equals(commandId, "xml_editor", StringComparison.Ordinal);
+            || string.Equals(commandId, "xml_editor", StringComparison.Ordinal)
+            || string.Equals(commandId, "hero_lab_importer", StringComparison.Ordinal);
 
     private static async Task OpenRuntimeInspectorDialogAsync(OverviewCommandExecutionContext context, CancellationToken ct)
     {

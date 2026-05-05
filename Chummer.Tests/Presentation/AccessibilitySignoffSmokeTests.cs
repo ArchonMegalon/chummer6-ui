@@ -30,6 +30,7 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHome_promotes_campaign_memory_and_return_actions();
             DesktopCampaignArtifactSurface_is_a_real_top_level_surface();
             DesktopCampaignArtifact_surface_keeps_memory_and_return_actions_visible();
+            DesktopCreatorPublicationSurface_is_a_real_top_level_surface();
             DesktopCampaignWorkspace_is_a_real_top_level_surface();
             DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement();
             DesktopRuleEnvironmentStudioSurface_is_a_real_top_level_surface();
@@ -802,6 +803,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.home.button.open_my_artifacts");
         RequireContains(source, "desktop.home.button.open_campaign_artifacts");
         RequireContains(source, "desktop.home.button.open_published_artifacts");
+        RequireContains(source, "\"Open Creator Publication\"");
+        RequireContains(source, "\"Review Moderation Flow\"");
+        RequireContains(source, "OpenCreatorPublicationAsync()");
+        RequireContains(source, "OpenCreatorModerationAsync()");
+        RequireContains(source, "DesktopCreatorPublicationWindow.ShowAsync(");
+        RequireContains(source, "DesktopCreatorPublicationWindow.ShowModerationAsync(");
         RequireContains(source, "client.GetAccountCampaignSummaryAsync");
         RequireContains(source, "client.GetCampaignWorkspaceDigestsAsync");
         RequireContains(source, "ReadCampaignWorkspaceDigestsAsync");
@@ -809,6 +816,16 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "GetCampaignWorkspaceServerPlaneAsync");
         RequireContains(source, "ReadPortableExchangePreviewAsync");
         RequireContains(source, "GetPortableExchangePreviewAsync");
+        RequireContains(source, "_portableExchangePreview");
+        RequireContains(source, "\"Review Portable Exchange\"");
+        RequireContains(source, "\"Open Replay After Action\"");
+        RequireContains(source, "\"Open Portable Export\"");
+        RequireContains(source, "OpenPortableExchangeAsync()");
+        RequireContains(source, "OpenReplayAfterActionAsync()");
+        RequireContains(source, "OpenPortableExportAsync()");
+        RequireContains(source, "OpenWorkspaceCommandFromDesktopSurfaceAsync");
+        RequireContains(source, "#portable-exchange");
+        RequireContains(source, "/artifacts/replay-after-action");
         RequireContains(source, "OpenCampaignWorkspaceAsync()");
         RequireContains(source, "ResolveSupportWorkspace()");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
@@ -822,6 +839,14 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "BuildCampaignConsequenceVisibilitySummary()");
         RequireContains(source, "BuildCampaignMemoryVisibilitySummary()");
         RequireContains(source, "BuildCampaignNextSessionReturnActionSummary()");
+        RequireContains(source, "BuildCampaignConsequenceSummary()");
+        RequireContains(source, "BuildCampaignConsequenceEvidenceSummary()");
+        RequireContains(source, "BuildCampaignNextSessionReturnSummary()");
+        RequireContains(source, "BuildCampaignReturnActionSummary()");
+        RequireContains(source, "ResolveCampaignMemoryEvidence()");
+        RequireContains(source, "Review campaign consequences");
+        RequireContains(source, "Review next-session return");
+        RequireContains(source, "Campaign consequence proof:");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal($\"/artifacts?view={Uri.EscapeDataString(view)}\")");
         RequireContains(source, "DesktopCampaignArtifactWindow.ShowPrimerAsync(");
@@ -859,7 +884,7 @@ internal static class AccessibilitySignoffSmokeTests
     private static void DesktopCampaignWorkspace_is_a_real_top_level_surface()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs");
-        RequireContains(source, "public static async Task ShowAsync(Window owner, string headId)");
+        RequireContains(source, "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)");
         RequireContains(source, "desktop.campaign.title");
         RequireContains(source, "desktop.campaign.heading");
         RequireContains(source, "desktop.campaign.section.runboard");
@@ -876,6 +901,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "ReadCampaignSummaryAsync");
         RequireContains(source, "ReadCampaignWorkspaceDigestsAsync");
         RequireContains(source, "ReadCampaignWorkspaceServerPlaneAsync");
+        RequireContains(source, "ResolveLeadCampaignId");
+        RequireContains(source, "ReadPortableExchangePreviewAsync");
         RequireContains(source, "ReadSupportProjectionAsync");
         RequireContains(source, "DesktopHomeCampaignProjector.Create");
         RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
@@ -891,8 +918,27 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall");
         RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
+        RequireContains(source, "_portabilityActivity");
+        RequireContains(source, "_portableExchangePreview");
+        RequireContains(source, "\"Review Portable Exchange\"");
+        RequireContains(source, "\"Open Replay After Action\"");
+        RequireContains(source, "\"Open Portable Export\"");
+        RequireContains(source, "OpenPortableExchangeAsync()");
+        RequireContains(source, "OpenReplayAfterActionAsync()");
+        RequireContains(source, "OpenPortableExportAsync()");
+        RequireContains(source, "OpenWorkspaceCommandFromDesktopSurfaceAsync");
+        RequireContains(source, "#portable-exchange");
+        RequireContains(source, "/artifacts/replay-after-action");
+        RequireContains(source, "CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync)");
+        RequireContains(source, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
         RequireContains(source, "desktop.home.button.open_campaign_primer");
         RequireContains(source, "desktop.home.button.open_mission_briefing");
+        RequireContains(source, "\"Open Creator Publication\"");
+        RequireContains(source, "\"Review Moderation Flow\"");
+        RequireContains(source, "OpenCreatorPublicationAsync()");
+        RequireContains(source, "OpenCreatorModerationAsync()");
+        RequireContains(source, "DesktopCreatorPublicationWindow.ShowAsync(");
+        RequireContains(source, "DesktopCreatorPublicationWindow.ShowModerationAsync(");
         RequireContains(source, "OpenCampaignPrimerArtifact");
         RequireContains(source, "OpenMissionBriefingArtifact");
         RequireContains(source, "CampaignArtifactLaunchSummary");
@@ -902,12 +948,23 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "BuildCampaignConsequenceVisibilitySummary()");
         RequireContains(source, "BuildCampaignMemoryVisibilitySummary()");
         RequireContains(source, "BuildCampaignNextSessionReturnActionSummary()");
+        RequireContains(source, "BuildCampaignConsequenceSummary()");
+        RequireContains(source, "BuildCampaignConsequenceEvidenceSummary()");
+        RequireContains(source, "BuildCampaignNextSessionReturnSummary()");
+        RequireContains(source, "ResolveCampaignMemorySummary()");
+        RequireContains(source, "ResolveCampaignMemoryReturnSummary()");
+        RequireContains(source, "ResolveCampaignMemoryEvidence()");
+        RequireContains(source, "Review campaign consequences");
+        RequireContains(source, "Review next-session return");
+        RequireContains(source, "Campaign consequence proof:");
         RequireContains(source, "DesktopCampaignArtifactWindow.ShowPrimerAsync(");
         RequireContains(source, "DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(");
 
         string navigationSource = ReadSource("Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs");
         RequireContains(navigationSource, "OpenWorkspaceFromDesktopSurfaceAsync");
+        RequireContains(navigationSource, "OpenWorkspaceCommandFromDesktopSurfaceAsync");
         RequireContains(navigationSource, "_interactionCoordinator.SwitchWorkspaceAsync");
+        RequireContains(navigationSource, "_interactionCoordinator.ExecuteCommandAsync");
         RequireContains(navigationSource, "RunUiActionAsync");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
@@ -940,11 +997,13 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "client.GetBuildPathPreviewAsync");
         RequireContains(source, "client.GetBuildAsync");
         RequireContains(source, "client.GetRulesAsync");
-        RequireContains(source, "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId)");
+        RequireContains(source, "_portabilityActivity");
+        RequireContains(source, "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)");
+        RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)");
         RequireContains(source, "DesktopSupportWindow.ShowAsync(owner, _installState.HeadId)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)");
         RequireContains(source, "mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId)");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId, fragment: \"portable-exchange\")");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
         RequireContains(appSource, "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio");
@@ -962,6 +1021,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "client.GetAccountCampaignSummaryAsync");
         RequireContains(source, "client.GetCampaignWorkspaceDigestsAsync");
         RequireContains(source, "GetCampaignWorkspaceServerPlaneAsync");
+        RequireContains(source, "ResolveLeadCampaignId");
+        RequireContains(source, "ReadPortableExchangePreviewAsync");
         RequireContains(source, "client.GetDesktopHomeSupportDigestsAsync");
         RequireContains(source, "Campaign Primer");
         RequireContains(source, "Mission Briefing");
@@ -969,6 +1030,16 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
+        RequireContains(source, "_portableExchangePreview");
+        RequireContains(source, "\"Review Portable Exchange\"");
+        RequireContains(source, "\"Open Replay After Action\"");
+        RequireContains(source, "\"Open Portable Export\"");
+        RequireContains(source, "OpenPortableExchangeAsync()");
+        RequireContains(source, "OpenReplayAfterActionAsync()");
+        RequireContains(source, "OpenPortableExportAsync()");
+        RequireContains(source, "OpenWorkspaceCommandFromDesktopSurfaceAsync");
+        RequireContains(source, "#portable-exchange");
+        RequireContains(source, "/artifacts/replay-after-action");
         RequireContains(source, "mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId)");
         RequireContains(source, "new ScrollViewer");
 
@@ -979,6 +1050,37 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(appSource, "DesktopStartupSurfaceCatalog.MissionBriefing");
         RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.MissionBriefing)");
         RequireContains(appSource, "DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(owner, \"avalonia\")");
+    }
+
+    private static void DesktopCreatorPublicationSurface_is_a_real_top_level_surface()
+    {
+        string source = ReadSource("Chummer.Avalonia/DesktopCreatorPublicationWindow.cs");
+        RequireContains(source, "internal sealed class DesktopCreatorPublicationWindow : Window");
+        RequireContains(source, "public static Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)");
+        RequireContains(source, "public static Task ShowModerationAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)");
+        RequireContains(source, "Desktop creator publication surface requires an IChummerClient instance.");
+        RequireContains(source, "DesktopCreatorPublicationSurface.Moderation");
+        RequireContains(source, "Creator publication");
+        RequireContains(source, "Trust ranking and lineage");
+        RequireContains(source, "Moderation flow");
+        RequireContains(source, "review discovery posture, trust ranking, lineage, and moderation flow");
+        RequireContains(source, "client.ListWorkspacesAsync");
+        RequireContains(source, "client.GetAccountCampaignSummaryAsync");
+        RequireContains(source, "client.GetCampaignWorkspaceDigestsAsync");
+        RequireContains(source, "ReadCampaignWorkspaceServerPlaneAsync");
+        RequireContains(source, "ReadPortableExchangePreviewAsync");
+        RequireContains(source, "client.GetDesktopHomeSupportDigestsAsync");
+        RequireContains(source, "\"Open Creator Publication\"");
+        RequireContains(source, "\"Review Moderation Flow\"");
+        RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
+        RequireContains(source, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
+        RequireContains(source, "DesktopCampaignArtifactWindow.ShowPrimerAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(this, _installState.HeadId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())");
+        RequireContains(source, "\"Review Portable Exchange\"");
+        RequireContains(source, "\"Open Portable Export\"");
+        RequireContains(source, "#portable-exchange");
+        RequireContains(source, "new ScrollViewer");
     }
 
     private static void DesktopHome_promotes_campaign_memory_and_return_actions()
@@ -1008,6 +1110,12 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "BuildCampaignConsequenceVisibilitySummary()");
         RequireContains(source, "BuildCampaignMemoryVisibilitySummary()");
         RequireContains(source, "BuildCampaignNextSessionReturnActionSummary()");
+        RequireContains(source, "BuildCampaignConsequenceSummary()");
+        RequireContains(source, "BuildCampaignConsequenceEvidenceSummary()");
+        RequireContains(source, "BuildCampaignNextSessionReturnSummary()");
+        RequireContains(source, "Review campaign consequences");
+        RequireContains(source, "Review next-session return");
+        RequireContains(source, "Campaign consequence proof:");
         RequireContains(source, "Restore choice: open the current campaign workspace");
         RequireContains(source, "Stale state: server continuity is unavailable");
         RequireContains(source, "Conflict choices:");
@@ -1047,11 +1155,21 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "Roster movement follow-through:");
         RequireContains(source, "OpenCampaignPrimerArtifact");
         RequireContains(source, "OpenMissionBriefingArtifact");
+        RequireContains(source, "\"Open Creator Publication\"");
+        RequireContains(source, "\"Review Moderation Flow\"");
+        RequireContains(source, "OpenCreatorPublicationAsync()");
+        RequireContains(source, "OpenCreatorModerationAsync()");
         RequireContains(source, "OpenDevicesAccessWindowAsync");
         RequireContains(homeSource, "\"Open GM Prep Packets\"");
         RequireContains(homeSource, "\"Review Roster Movement\"");
+        RequireContains(homeSource, "\"Open Creator Publication\"");
+        RequireContains(homeSource, "\"Review Moderation Flow\"");
         RequireContains(homeSource, "OpenGmPrepPacketsAsync");
         RequireContains(homeSource, "OpenRosterMovementAsync");
+        RequireContains(homeSource, "OpenCreatorPublicationAsync()");
+        RequireContains(homeSource, "OpenCreatorModerationAsync()");
+        RequireContains(homeSource, "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId, _portabilityActivity)");
+        RequireContains(homeSource, "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId, _portabilityActivity)");
         RequireContains(appSource, "DesktopStartupSurfaceCatalog.GmPrepPackets");
         RequireContains(appSource, "DesktopStartupSurfaceCatalog.RosterMovement");
         RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(owner, \"avalonia\")");
@@ -1071,6 +1189,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "Campaign memory return:");
         RequireContains(source, "Open Campaign Workspace");
         RequireContains(source, "OpenCampaignWorkspaceAsync");
+        RequireContains(source, "_portabilityActivity");
+        RequireContains(source, "CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync)");
+        RequireContains(source, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
     }
 
     private static void DesktopUpdateSurface_is_a_real_top_level_surface()
@@ -1293,6 +1414,12 @@ internal static class AccessibilitySignoffSmokeTests
         string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
         RequireContains(source, "ReadBuildExplainProjectionAsync");
         RequireContains(source, "BuildBuildExplainBody()");
+        RequireContains(source, "_portabilityActivity");
+        RequireContains(source, "Import rule environment:");
+        RequireContains(source, "Import environment before:");
+        RequireContains(source, "Import environment after:");
+        RequireContains(source, "Import explain receipt:");
+        RequireContains(source, "Support reuse:");
         RequireContains(source, "_buildExplainProjection.NextSafeAction");
         RequireContains(source, "_buildExplainProjection.RulesetSpotlight");
         RequireContains(source, "_buildExplainProjection.ExplainFocus");
@@ -1303,6 +1430,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_buildExplainProjection.BuildPathComparisons");
         RequireContains(source, "_buildExplainProjection.Watchouts");
         RequireContains(source, "CreateBuildExplainActions()");
+        RequireContains(source, "actions.Add(CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync));");
         RequireContains(source, "CreateWorkspaceActions()");
         RequireContains(source, "desktop.home.section.build_explain");
         RequireContains(source, "desktop.home.section.recent_workspaces");
@@ -1324,7 +1452,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "OpenWorkspaceFollowThroughAsync");
         RequireContains(source, "OpenWorkspaceInDesktopShellAsync");
         RequireContains(source, "mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId)");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId, fragment: \"portable-exchange\")");
         RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "client.GetShellBootstrapAsync");
@@ -1447,6 +1575,11 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(avaloniaSectionHostSource, "Before:");
         RequireContains(avaloniaSectionHostSource, "After:");
         RequireContains(avaloniaSectionHostSource, "Support reuse:");
+        RequireContains(avaloniaSectionHostSource, "Explain drawer");
+        RequireContains(avaloniaSectionHostSource, "Source anchor:");
+        RequireContains(avaloniaSectionHostSource, "Source launch:");
+        RequireContains(avaloniaSectionHostSource, "Stale state:");
+        RequireContains(avaloniaSectionHostSource, "Follow-up:");
         RequireContains(avaloniaSectionHostSource, "BuildBuildBlockerBefore(buildLab)");
         RequireContains(avaloniaSectionHostSource, "BuildBuildBlockerAfter(buildLab)");
         RequireContains(avaloniaSectionHostSource, "BuildBuildBlockerSupport(buildLab)");
@@ -1573,13 +1706,13 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(eventHandlerSource, "ToolStrip_OnSupportRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnReportIssueRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnSettingsRequested");
-        RequireContains(eventHandlerSource, "DesktopHomeWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "DesktopHomeWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)");
         RequireContains(eventHandlerSource, "MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip)");
-        RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId)");
-        RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId)");
+        RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)");
+        RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)");
         RequireContains(eventHandlerSource, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)");
         RequireContains(eventHandlerSource, "MainWindowFeedbackCoordinator.ShowRuleEnvironmentStudioReviewed(_controls.ToolStrip)");
-        RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)");
         RequireContains(eventHandlerSource, "DesktopUpdateWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopSupportWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopReportIssueWindow.ShowAsync(this, \"avalonia\")");
@@ -1587,13 +1720,14 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(eventHandlerSource, "_interactionCoordinator.ExecuteCommandAsync(\"global_settings\", CancellationToken.None)");
 
         string desktopHomeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
-        RequireContains(desktopHomeSource, "public static async Task ShowAsync(Window owner, string headId)");
+        RequireContains(desktopHomeSource, "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)");
         RequireContains(desktopHomeSource, "DesktopLocalizationCatalog.GetRequiredString(\"desktop.home.title\"");
         RequireContains(desktopHomeSource, "new ScrollViewer");
         RequireContains(desktopHomeSource, "CreateLanguageActions()");
         RequireContains(desktopHomeSource, "desktop.home.button.open_settings");
         RequireContains(desktopHomeSource, "Open Rule Environment Studio");
         RequireContains(desktopHomeSource, "OpenRuleEnvironmentStudioAsync");
+        RequireContains(desktopHomeSource, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
         RequireContains(desktopHomeSource, "mainWindow.OpenDesktopCommandFromSurfaceAsync(\"global_settings\", \"open global settings\")");
 
         string installLinkSource = ReadSource("Chummer.Avalonia/DesktopInstallLinkingWindow.cs");

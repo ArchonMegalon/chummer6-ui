@@ -129,6 +129,22 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public void BuildWorkspacePortalRelativePath_includes_portable_exchange_anchor()
+    {
+        string path = DesktopInstallLinkingRuntime.BuildWorkspacePortalRelativePath("workspace-redmond", "portable-exchange");
+
+        Assert.AreEqual("/account/work/workspaces/workspace-redmond#portable-exchange", path);
+    }
+
+    [TestMethod]
+    public void BuildWorkspacePortalRelativePath_defaults_to_work_portal_when_workspace_is_missing()
+    {
+        string path = DesktopInstallLinkingRuntime.BuildWorkspacePortalRelativePath(string.Empty, "portable-exchange");
+
+        Assert.AreEqual("/account/work", path);
+    }
+
+    [TestMethod]
     public void DesktopStartupCompanionRuntime_CreateProjection_defaults_to_text_only_voice_prompt()
     {
         DesktopStartupCompanionProjection projection = DesktopStartupCompanionRuntime.CreateProjection(CreateState());

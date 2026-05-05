@@ -1087,6 +1087,9 @@ required_screenshots = [
     "16-master-index-dialog-light.png",
     "17-character-roster-dialog-light.png",
     "18-import-dialog-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -1111,7 +1114,7 @@ undersized_screenshots = {
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png"}
+            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png", "38-translator-dialog-light.png", "39-xml-editor-dialog-light.png", "40-hero-lab-importer-dialog-light.png"}
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )

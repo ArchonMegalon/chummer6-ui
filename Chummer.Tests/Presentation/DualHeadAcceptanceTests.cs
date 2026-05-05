@@ -1103,6 +1103,31 @@ public class DualHeadAcceptanceTests
     }
 
     [TestMethod]
+    public async Task Avalonia_and_Blazor_hero_lab_importer_dialog_preserves_matching_import_oracle_posture()
+    {
+        string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
+        byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
+        string[] commandIds = ["hero_lab_importer"];
+
+        Dictionary<string, CommandDialogSnapshot> avaloniaSnapshots = await CaptureAvaloniaCommandDialogSnapshotsAsync(documentBytes, commandIds);
+        Dictionary<string, CommandDialogSnapshot> blazorSnapshots = await CaptureBlazorCommandDialogSnapshotsAsync(documentBytes, commandIds);
+
+        Assert.IsTrue(avaloniaSnapshots.TryGetValue("hero_lab_importer", out CommandDialogSnapshot? avalonia), "Missing Avalonia dialog snapshot for command 'hero_lab_importer'.");
+        Assert.IsTrue(blazorSnapshots.TryGetValue("hero_lab_importer", out CommandDialogSnapshot? blazor), "Missing Blazor dialog snapshot for command 'hero_lab_importer'.");
+        AssertCommandDialogSnapshotEqual(avalonia, blazor, "hero_lab_importer");
+
+        DialogFieldSnapshot[] heroLabFields = avaloniaSnapshots["hero_lab_importer"].Fields;
+        CollectionAssert.IsSubsetOf(
+            new[] { "heroLabImportOracleLanePosture", "heroLabImportOracleCoverage", "heroLabFixtureCount", "heroLabImportOracleMatrix", "heroLabImportOracleReceipt", "heroLabAdjacentSr6OracleReceipt", "heroLabXml" },
+            heroLabFields.Select(field => field.Id).ToArray());
+        Assert.AreEqual("governed", heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleLanePosture", StringComparison.Ordinal)).Value);
+        Assert.AreEqual("1/1 · 100%", heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleCoverage", StringComparison.Ordinal)).Value);
+        Assert.AreEqual("0", heroLabFields.Single(field => string.Equals(field.Id, "heroLabFixtureCount", StringComparison.Ordinal)).Value);
+        StringAssert.Contains(heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleMatrix", StringComparison.Ordinal)).Value, "Hero Lab fixtures 0");
+        StringAssert.Contains(heroLabFields.Single(field => string.Equals(field.Id, "heroLabAdjacentSr6OracleReceipt", StringComparison.Ordinal)).Value, "current for this parity fixture");
+    }
+
+    [TestMethod]
     public async Task Avalonia_and_Blazor_character_settings_save_updates_shared_state()
     {
         string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));

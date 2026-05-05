@@ -1,0 +1,122 @@
+{
+  "generatedAt": "2026-05-05T08:12:56Z",
+  "status": "pass",
+  "unresolved": [],
+  "contract_name": "chummer6-ui.next90_m115_ui_portable_dossier",
+  "evidence": {
+    "packageId": "next90-m115-ui-portable-dossier",
+    "title": "Surface exchange, replay, and portability actions on desktop",
+    "task": "Surface exchange, replay, and portability actions on desktop.",
+    "milestoneId": 115,
+    "workTaskId": "115.4",
+    "wave": "W12",
+    "repo": "chummer6-ui",
+    "allowedPaths": [
+      "Chummer.Avalonia",
+      "Chummer.Desktop.Runtime",
+      "Chummer.Tests",
+      "scripts"
+    ],
+    "ownedSurfaces": [
+      "exchange_replay_ui",
+      "portable_dossier_export_ui"
+    ],
+    "queueChecks": {
+      "registry_has_m115_ui_task": true,
+      "registry_task_unique": true,
+      "queue_package_unique": true,
+      "design_queue_package_unique": true,
+      "queue_title_matches": true,
+      "queue_task_matches": true,
+      "queue_status_complete": true,
+      "queue_completion_action_matches": true,
+      "queue_do_not_reopen_reason_matches": true,
+      "design_queue_title_matches": true,
+      "design_queue_task_matches": true,
+      "design_queue_status_complete": true,
+      "design_queue_completion_action_matches": true,
+      "design_queue_do_not_reopen_reason_matches": true,
+      "allowed_paths_exact": true,
+      "design_allowed_paths_exact": true,
+      "owned_surfaces_exact": true,
+      "design_owned_surfaces_exact": true,
+      "proof_items_exact": true,
+      "design_proof_items_exact": true,
+      "queue_design_block_parity": true,
+      "design_queue_path_matches": true
+    },
+    "sourceChecks": {
+      "Chummer.Avalonia/DesktopHomeWindow.cs": {
+        "_portableExchangePreview": true,
+        "\"Review Portable Exchange\"": true,
+        "\"Open Replay After Action\"": true,
+        "\"Open Portable Export\"": true,
+        "OpenPortableExchangeAsync()": true,
+        "OpenReplayAfterActionAsync()": true,
+        "OpenPortableExportAsync()": true,
+        "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
+        "/artifacts/replay-after-action": true,
+        "#portable-exchange": true
+      },
+      "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
+        "_portableExchangePreview": true,
+        "ResolveLeadCampaignId": true,
+        "ReadPortableExchangePreviewAsync": true,
+        "\"Review Portable Exchange\"": true,
+        "\"Open Replay After Action\"": true,
+        "\"Open Portable Export\"": true,
+        "OpenPortableExchangeAsync()": true,
+        "OpenReplayAfterActionAsync()": true,
+        "OpenPortableExportAsync()": true,
+        "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
+        "/artifacts/replay-after-action": true,
+        "#portable-exchange": true
+      },
+      "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs": {
+        "_portableExchangePreview": true,
+        "ResolveLeadCampaignId": true,
+        "ReadPortableExchangePreviewAsync": true,
+        "\"Review Portable Exchange\"": true,
+        "\"Open Replay After Action\"": true,
+        "\"Open Portable Export\"": true,
+        "OpenPortableExchangeAsync()": true,
+        "OpenReplayAfterActionAsync()": true,
+        "OpenPortableExportAsync()": true,
+        "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
+        "/artifacts/replay-after-action": true,
+        "#portable-exchange": true
+      },
+      "Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs": {
+        "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
+        "_interactionCoordinator.SwitchWorkspaceAsync": true,
+        "_interactionCoordinator.ExecuteCommandAsync": true
+      },
+      "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
+        "Review Portable Exchange": true,
+        "Open Replay After Action": true,
+        "Open Portable Export": true,
+        "OpenPortableExchangeAsync()": true,
+        "OpenReplayAfterActionAsync()": true,
+        "OpenPortableExportAsync()": true,
+        "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
+        "/artifacts/replay-after-action": true,
+        "#portable-exchange": true
+      }
+    },
+    "proofCommands": {
+      "directProofCommand": "bash scripts/ai/milestones/next90-m115-ui-portable-dossier-check.sh",
+      "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M115PortableDossierGuardTests\" --no-restore",
+      "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+    },
+    "proofFiles": [
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M115PortableDossierGuardTests.cs",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m115-ui-portable-dossier-check.sh",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M115_UI_PORTABLE_DOSSIER.generated.json"
+    ]
+  }
+}

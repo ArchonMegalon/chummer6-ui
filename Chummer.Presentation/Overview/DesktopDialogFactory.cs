@@ -244,10 +244,47 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "hero_lab_importer" => new DesktopDialogState(
                 "dialog.hero_lab_importer",
                 "Hero Lab Importer",
-                "Paste Hero Lab XML payload to import using compatibility mode.",
+                masterIndex is null
+                    ? "Paste Hero Lab XML payload to import while keeping the import-oracle lane visible."
+                    : $"Paste Hero Lab XML payload to import while import-oracle posture is {masterIndex.ImportOracleLanePosture} across {masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} route families with adjacent SR6 oracle {masterIndex.AdjacentSr6OracleReceiptPosture}.",
                 [
                     new DesktopDialogField("heroLabSource", "Input File", ".por/.xml", ".por/.xml"),
                     CreateRulesetField("importRulesetId", rulesetId),
+                    new DesktopDialogField("heroLabImportOracleLanePosture", "Import Oracle Lane", masterIndex?.ImportOracleLanePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleCoverage",
+                        "Import Oracle Coverage",
+                        masterIndex is null
+                            ? "0/4 · 0%"
+                            : $"{masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} · {masterIndex.ImportOracleCoveragePercent}%",
+                        "0/4 · 0%",
+                        IsReadOnly: true),
+                    new DesktopDialogField("heroLabFixtureCount", "Hero Lab Fixtures", (masterIndex?.HeroLabFixtureCount ?? 0).ToString(), "0", IsReadOnly: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleMatrix",
+                        "Import Oracle Matrix",
+                        masterIndex is null ? "missing" : BuildImportOracleMatrix(masterIndex),
+                        "missing",
+                        IsReadOnly: true,
+                        IsMultiline: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleReceipt",
+                        "Import Oracle Receipt",
+                        masterIndex is null
+                            ? "missing"
+                            : NormalizeMasterIndexValue(masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleReceiptPosture),
+                        "missing",
+                        IsReadOnly: true,
+                        IsMultiline: true),
+                    new DesktopDialogField(
+                        "heroLabAdjacentSr6OracleReceipt",
+                        "Adjacent SR6 Oracle",
+                        masterIndex is null
+                            ? "missing"
+                            : NormalizeMasterIndexValue(masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleReceiptPosture),
+                        "missing",
+                        IsReadOnly: true,
+                        IsMultiline: true),
                     new DesktopDialogField(
                         "heroLabXml",
                         "Hero Lab XML",

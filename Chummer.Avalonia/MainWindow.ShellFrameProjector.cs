@@ -68,7 +68,11 @@ internal static class MainWindowShellFrameProjector
         return new MainWindowShellFrame(
             HeaderState: new MainWindowHeaderState(
                 ToolStrip: new ToolStripState(
-                    BuildToolStripStatusText(state, shellSurface, workspaceContext, language)),
+                    BuildToolStripStatusText(state, shellSurface, workspaceContext, language),
+                    ShowOpenForExport: true,
+                    ShowGmPrep: true,
+                    ShowRosterMovement: true,
+                    ShowCampaignWorkspace: true),
                 MenuBar: new MenuBarState(
                     OpenMenuId: shellSurface.OpenMenuId,
                     KnownMenuIds: shellSurface.MenuRoots.Select(menu => menu.Id).ToArray(),
