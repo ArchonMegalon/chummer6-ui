@@ -13,16 +13,20 @@ namespace Chummer.Avalonia;
 internal enum DesktopCampaignWorkspaceSurface
 {
     Overview,
+    CampaignAdoption,
+    GmRunboard,
     GmPrepPackets,
     RosterMovement
 }
 
 internal sealed class DesktopCampaignWorkspaceWindow : Window
 {
+    private const string CampaignAdoptionSurfaceSummary = "Campaign adoption keeps table import confidence, runner-goal pins, ResolutionReport closeout, and BLACK LEDGER consequence proof visible on the promoted desktop route without inventing a second campaign truth source.";
     private const string CampaignArtifactLaunchSummary = "Artifact launch: open the campaign primer or mission briefing directly from this desktop campaign route instead of browsing the shelf first.";
     private const string CampaignConsequenceVisibilitySummary = "Campaign consequences: downtime, heat, faction, contact, reputation, and aftermath state stay visible on the desktop campaign route before the next session.";
     private const string CampaignMemoryStaleStateSummary = "Campaign memory stale-state check: desktop compares the server-generated campaign memory packet with the local workspace timestamp and keeps both visible when they disagree.";
     private const string CampaignNextSessionReturnActionSummary = "Next-session return actions: review Campaign Workspace, open the current workspace, review devices/access, or open Workspace Support before continuing play.";
+    private const string GmRunboardSurfaceSummary = "GM Runboard keeps initiative pressure, action budgets, scene objectives, heat posture, opposition refs, and ResolutionReport follow-through visible without pretending to be the combat truth source.";
     private const string GmPrepPacketSurfaceSummary = "GM prep packets keep the player-safe briefing, GM-only notes, source refs, share card, narrator brief, and approval state together before publication.";
     private const string RosterMovementSurfaceSummary = "Roster movement keeps workspace roster choices, travel posture, device readiness, and handoff follow-through visible before a runner moves between campaign seats.";
     private DesktopInstallLinkingState _installState;
@@ -36,13 +40,17 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     private readonly TextBlock _introText;
     private readonly TextBlock _statusText;
     private readonly TextBlock _readinessText;
+    private readonly TextBlock _adoptionText;
     private readonly TextBlock _restoreText;
+    private readonly TextBlock _gmRunboardText;
     private readonly TextBlock _gmPrepText;
     private readonly TextBlock _rosterMovementText;
     private readonly TextBlock _supportText;
     private readonly TextBlock _workspaceText;
     private readonly StackPanel _readinessActionsRow;
+    private readonly StackPanel _adoptionActionsRow;
     private readonly StackPanel _restoreActionsRow;
+    private readonly StackPanel _gmRunboardActionsRow;
     private readonly StackPanel _gmPrepActionsRow;
     private readonly StackPanel _rosterMovementActionsRow;
     private readonly StackPanel _supportActionsRow;
@@ -97,9 +105,21 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _adoptionText = new TextBlock
+        {
+            Text = BuildCampaignAdoptionBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
         _restoreText = new TextBlock
         {
             Text = BuildRestoreBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _gmRunboardText = new TextBlock
+        {
+            Text = BuildGmRunboardBody(),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -128,12 +148,22 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         };
 
         _readinessActionsRow = CreateActionRow(CreateReadinessActions());
+        _adoptionActionsRow = CreateActionRow(CreateCampaignAdoptionActions());
         _restoreActionsRow = CreateActionRow(CreateRestoreActions());
+        _gmRunboardActionsRow = CreateActionRow(CreateGmRunboardActions());
         _gmPrepActionsRow = CreateActionRow(CreateGmPrepActions());
         _rosterMovementActionsRow = CreateActionRow(CreateRosterMovementActions());
         _supportActionsRow = CreateActionRow(CreateSupportActions());
         _workspaceActionsRow = CreateActionRow(CreateWorkspaceActions());
 
+        Border adoptionSection = CreateSection(
+            "Campaign adoption and runner goals",
+            _adoptionText,
+            _adoptionActionsRow);
+        Border gmRunboardSection = CreateSection(
+            "GM Runboard",
+            _gmRunboardText,
+            _gmRunboardActionsRow);
         Border gmPrepSection = CreateSection(
             "GM prep packets",
             _gmPrepText,
@@ -144,6 +174,8 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             _rosterMovementActionsRow);
         Border? focusSection = initialSurface switch
         {
+            DesktopCampaignWorkspaceSurface.CampaignAdoption => adoptionSection,
+            DesktopCampaignWorkspaceSurface.GmRunboard => gmRunboardSection,
             DesktopCampaignWorkspaceSurface.GmPrepPackets => gmPrepSection,
             DesktopCampaignWorkspaceSurface.RosterMovement => rosterMovementSection,
             _ => null
@@ -171,6 +203,8 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
                             S("desktop.campaign.section.runboard"),
                             _readinessText,
                             _readinessActionsRow),
+                        adoptionSection,
+                        gmRunboardSection,
                         CreateSection(
                             S("desktop.campaign.section.restore"),
                             _restoreText,
@@ -212,12 +246,30 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         await dialog.ShowDialog(owner);
     }
 
+    public static async Task ShowCampaignAdoptionAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopCampaignWorkspaceWindow dialog = await CreateAsync(headId, DesktopCampaignWorkspaceSurface.CampaignAdoption, portabilityActivity).ConfigureAwait(true);
+        await dialog.ShowDialog(owner);
+    }
+
     public static async Task ShowGmPrepAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
         DesktopCampaignWorkspaceWindow dialog = await CreateAsync(headId, DesktopCampaignWorkspaceSurface.GmPrepPackets, portabilityActivity).ConfigureAwait(true);
+        await dialog.ShowDialog(owner);
+    }
+
+    public static async Task ShowGmRunboardAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopCampaignWorkspaceWindow dialog = await CreateAsync(headId, DesktopCampaignWorkspaceSurface.GmRunboard, portabilityActivity).ConfigureAwait(true);
         await dialog.ShowDialog(owner);
     }
 
@@ -734,6 +786,40 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         return string.Join("\n", lines);
     }
 
+    private string BuildCampaignAdoptionBody()
+    {
+        List<string> lines =
+        [
+            $"Campaign adoption: {CampaignAdoptionSurfaceSummary}",
+            $"Adoption receipt: {ResolveCampaignAdoptionSummary()}",
+            $"Adoption conflict receipt: {ResolveCampaignAdoptionConflictSummary()}",
+            $"Runner goal pins: {ResolveRunnerGoalPinSummary()}",
+            $"Goal receipt trail: {ResolveRunnerGoalProofSummary()}",
+            $"ResolutionReport closeout: {ResolveResolutionReportCloseoutSummary()}",
+            $"BLACK LEDGER consequence proof: {ResolveBlackLedgerConsequenceProofSummary()}",
+            "Adoption boundary: keep import confidence, world consequence proof, and goal-pin follow-through grounded in governed receipts instead of desktop-only table notes."
+        ];
+
+        return string.Join("\n", lines);
+    }
+
+    private string BuildGmRunboardBody()
+    {
+        List<string> lines =
+        [
+            $"GM Runboard: {GmRunboardSurfaceSummary}",
+            $"Initiative lane: {ResolveRunboardInitiativeSummary()}",
+            $"Action budgets: {ResolveRunboardActionBudgetSummary()}",
+            $"Scene objectives: {ResolveRunboardObjectiveSummary()}",
+            $"Heat posture: {ResolveRunboardHeatSummary()}",
+            $"Opposition refs: {ResolveRunboardOppositionSummary()}",
+            $"ResolutionReport entry: {ResolveRunboardResolutionReportSummary()}",
+            "Runboard boundary: keep action math and final turn truth in governed receipts; this desktop surface stays a review-and-handoff route instead of becoming a second combat ledger."
+        ];
+
+        return string.Join("\n", lines);
+    }
+
     private string BuildRosterMovementBody()
     {
         string rosterChoices = _recentWorkspaces.Count == 0
@@ -996,6 +1082,60 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         return actions;
     }
 
+    private IReadOnlyList<Button> CreateCampaignAdoptionActions()
+    {
+        List<Button> actions =
+        [
+            _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+                ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenLeadWorkspace, isPrimary: true)
+                : CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true),
+            CreateButton("Open ResolutionReport Entry", OpenResolutionReportEntryAsync),
+            CreateButton("Open GM Runboard", OpenGmRunboardSurfaceAsync),
+            CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
+        ];
+
+        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Insert(1, CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
+            actions.Insert(2, CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
+        }
+
+        if (HasPortableExchangePreview())
+        {
+            actions.Add(CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
+        }
+
+        return actions;
+    }
+
+    private IReadOnlyList<Button> CreateGmRunboardActions()
+    {
+        List<Button> actions =
+        [
+            _recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+                ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenLeadWorkspace, isPrimary: true)
+                : CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true),
+            CreateButton("Open ResolutionReport Entry", OpenResolutionReportEntryAsync),
+            CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
+        ];
+
+        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Insert(1, CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
+            actions.Insert(2, CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
+            actions.Add(CreateButton("Open Organizer Operations", OpenOrganizerOperationsAsync));
+        }
+
+        actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));
+
+        if (HasPortableExchangePreview())
+        {
+            actions.Add(CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
+        }
+
+        return actions;
+    }
+
     private IReadOnlyList<Button> CreateRosterMovementActions()
     {
         List<Button> actions =
@@ -1116,8 +1256,14 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     private Task OpenPortableExchangeAsync()
         => Task.FromResult(OpenPortableExchangeRoute());
 
+    private Task OpenResolutionReportEntryAsync()
+        => Task.FromResult(DesktopInstallLinkingRuntime.TryOpenRelativePortal("/artifacts/replay-after-action"));
+
     private Task OpenReplayAfterActionAsync()
         => Task.FromResult(DesktopInstallLinkingRuntime.TryOpenRelativePortal("/artifacts/replay-after-action"));
+
+    private Task OpenGmRunboardSurfaceAsync()
+        => ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity);
 
     private Task OpenCreatorPublicationAsync()
         => DesktopCreatorPublicationWindow.ShowAsync(
@@ -1368,13 +1514,17 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         _introText.Text = BuildIntro();
         _statusText.Text = BuildStatus();
         _readinessText.Text = BuildReadinessBody();
+        _adoptionText.Text = BuildCampaignAdoptionBody();
         _restoreText.Text = BuildRestoreBody();
+        _gmRunboardText.Text = BuildGmRunboardBody();
         _gmPrepText.Text = BuildGmPrepBody();
         _rosterMovementText.Text = BuildRosterMovementBody();
         _supportText.Text = BuildSupportBody();
         _workspaceText.Text = BuildWorkspaceSummary();
         ResetActionRow(_readinessActionsRow, CreateReadinessActions());
+        ResetActionRow(_adoptionActionsRow, CreateCampaignAdoptionActions());
         ResetActionRow(_restoreActionsRow, CreateRestoreActions());
+        ResetActionRow(_gmRunboardActionsRow, CreateGmRunboardActions());
         ResetActionRow(_gmPrepActionsRow, CreateGmPrepActions());
         ResetActionRow(_rosterMovementActionsRow, CreateRosterMovementActions());
         ResetActionRow(_supportActionsRow, CreateSupportActions());
@@ -1383,6 +1533,151 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
     private static string FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value)) ?? "pending";
+
+    private string ResolveRunboardInitiativeSummary()
+    {
+        string? initiativeHighlight = FindCampaignHighlight("Initiative:");
+        if (!string.IsNullOrWhiteSpace(initiativeHighlight))
+        {
+            return StripCampaignHighlightLabel(initiativeHighlight);
+        }
+
+        return "Initiative preview is pending governed turn-ledger receipts, so keep the active workspace, next safe action, and rule-environment follow-through visible from the same route.";
+    }
+
+    private string ResolveRunboardActionBudgetSummary()
+    {
+        string? campaignReadyLane = FindCampaignHighlight("Campaign-ready lane:");
+        if (!string.IsNullOrWhiteSpace(campaignReadyLane))
+        {
+            return $"Budget follow-through stays bounded to {StripCampaignHighlightLabel(campaignReadyLane)} until the governed action-budget receipt arrives.";
+        }
+
+        return $"Action-budget receipts are not projected yet, so the desktop keeps the next safe action visible: {_campaignProjection.NextSafeAction}";
+    }
+
+    private string ResolveCampaignAdoptionSummary()
+    {
+        string? currentScene = FindCampaignHighlight("Current scene:");
+        if (!string.IsNullOrWhiteSpace(currentScene) && !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
+        {
+            return $"Existing table state can reattach to workspace {_campaignProjection.LeadWorkspaceId} with {StripCampaignHighlightLabel(currentScene)} as the adopted scene anchor.";
+        }
+
+        if (_recentWorkspaces.Count > 0)
+        {
+            WorkspaceListItem workspace = _recentWorkspaces[0];
+            return $"Use {workspace.Summary} [{workspace.RulesetId}] as the adoption anchor, then confirm the claimed-device restore and mission lane before you trust imported table state.";
+        }
+
+        return "No workspace adoption anchor is pinned yet, so use devices/access and campaign support before accepting imported table state.";
+    }
+
+    private string ResolveCampaignAdoptionConflictSummary()
+    {
+        if (_campaignProjection.Watchouts.Count > 0)
+        {
+            return _campaignProjection.Watchouts[0];
+        }
+
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.RestoreSummary))
+        {
+            return _campaignServerPlane.RestoreSummary;
+        }
+
+        return "No adoption conflict receipt is currently projected, so the desktop keeps the restore lane and support follow-through visible as the bounded fallback.";
+    }
+
+    private string ResolveRunnerGoalPinSummary()
+    {
+        string? starterLaneNext = FindCampaignHighlight("Starter lane next:");
+        if (!string.IsNullOrWhiteSpace(starterLaneNext))
+        {
+            return $"{StripCampaignHighlightLabel(starterLaneNext)} stays pinned as the current runner-goal follow-through after reward or downtime changes.";
+        }
+
+        string? campaignReadyLane = FindCampaignHighlight("Campaign-ready lane:");
+        if (!string.IsNullOrWhiteSpace(campaignReadyLane))
+        {
+            return $"{StripCampaignHighlightLabel(campaignReadyLane)} stays visible as the pinned runner-goal lane until a governed goal-update receipt replaces it.";
+        }
+
+        return $"No explicit runner-goal receipt is projected yet, so the desktop pins the current next safe action instead: {_campaignProjection.NextSafeAction}";
+    }
+
+    private string ResolveRunnerGoalProofSummary()
+    {
+        string? firstSessionProof = FindCampaignHighlight("First-session proof:");
+        if (!string.IsNullOrWhiteSpace(firstSessionProof))
+        {
+            return $"Goal proof stays attached to {StripCampaignHighlightLabel(firstSessionProof)} so the same receipt trail can survive reward and downtime updates.";
+        }
+
+        return ResolveCampaignMemoryEvidence();
+    }
+
+    private string ResolveRunboardObjectiveSummary()
+    {
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.RunboardSummary))
+        {
+            return _campaignServerPlane.RunboardSummary;
+        }
+
+        string? currentScene = FindCampaignHighlight("Current scene:");
+        if (!string.IsNullOrWhiteSpace(currentScene))
+        {
+            return StripCampaignHighlightLabel(currentScene);
+        }
+
+        return "No governed scene-objective packet is available yet; keep the campaign workspace and mission briefing side by side before handoff.";
+    }
+
+    private string ResolveRunboardHeatSummary()
+    {
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemorySummary))
+        {
+            return _campaignServerPlane.CampaignMemorySummary;
+        }
+
+        string? watchout = _campaignProjection.Watchouts.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(watchout))
+        {
+            return watchout;
+        }
+
+        return "Heat posture is currently calm enough that no separate server-side escalation cue is projected.";
+    }
+
+    private string ResolveRunboardOppositionSummary()
+    {
+        string? rulesFollowThrough = FindCampaignHighlight("Rules follow-through:");
+        if (!string.IsNullOrWhiteSpace(rulesFollowThrough))
+        {
+            return $"Use {StripCampaignHighlightLabel(rulesFollowThrough)} as the current opposition source anchor until dedicated opposition packet refs land.";
+        }
+
+        return "Opposition packet refs are still bounded to source anchors and mission artifacts; review Rule Environment Studio when the table needs exact challenge framing.";
+    }
+
+    private string ResolveRunboardResolutionReportSummary()
+    {
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemoryReturnSummary))
+        {
+            return $"{_campaignServerPlane.CampaignMemoryReturnSummary} Use the ResolutionReport entry to hand the closeout packet back into the same campaign lane.";
+        }
+
+        return $"ResolutionReport stays a one-click handoff into replay-after-action follow-through while the current next step remains {_campaignProjection.NextSafeAction}";
+    }
+
+    private string ResolveResolutionReportCloseoutSummary()
+        => $"{ResolveRunboardResolutionReportSummary()} GM approval closes the same packet instead of sending campaign closeout into a separate desktop-only note lane.";
+
+    private string ResolveBlackLedgerConsequenceProofSummary()
+    {
+        string consequenceProof = ResolveCampaignMemoryEvidence();
+        string consequenceReturn = ResolveCampaignMemoryReturnSummary();
+        return $"{consequenceProof} {consequenceReturn} This keeps the first BLACK LEDGER proof bounded to one governed world consequence and one player-safe follow-through lane.";
+    }
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {

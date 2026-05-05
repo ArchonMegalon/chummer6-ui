@@ -1274,6 +1274,8 @@ internal sealed class DesktopHomeWindow : Window
             actions.Add(CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
             actions.Add(CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
             actions.Add(CreateButton("Review Organizer Roles", OpenOrganizerRolesAsync));
+            actions.Add(CreateButton("Review Campaign Adoption", OpenCampaignAdoptionAsync));
+            actions.Add(CreateButton("Open GM Runboard", OpenGmRunboardAsync));
             if (HasPortableExchangePreview())
             {
                 actions.Add(CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
@@ -1530,6 +1532,9 @@ internal sealed class DesktopHomeWindow : Window
     private Task OpenCampaignWorkspaceAsync()
         => DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity);
 
+    private Task OpenCampaignAdoptionAsync()
+        => DesktopCampaignWorkspaceWindow.ShowCampaignAdoptionAsync(this, _installState.HeadId, _portabilityActivity);
+
     private Task OpenCreatorPublicationAsync()
         => DesktopCreatorPublicationWindow.ShowAsync(
             this,
@@ -1584,6 +1589,9 @@ internal sealed class DesktopHomeWindow : Window
 
     private Task OpenGmPrepPacketsAsync()
         => DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId, _portabilityActivity);
+
+    private Task OpenGmRunboardAsync()
+        => DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity);
 
     private Task OpenRosterMovementAsync()
         => DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId, _portabilityActivity);

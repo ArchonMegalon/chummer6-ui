@@ -158,6 +158,17 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop campaign workspace window: {ex}");
             }
         }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CampaignAdoption))
+        {
+            try
+            {
+                await DesktopCampaignWorkspaceWindow.ShowCampaignAdoptionAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop campaign adoption window: {ex}");
+            }
+        }
         else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.GmPrepPackets))
         {
             try
@@ -167,6 +178,17 @@ public partial class App : global::Avalonia.Application
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Failed to display the desktop GM prep packets window: {ex}");
+            }
+        }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.GmRunboard))
+        {
+            try
+            {
+                await DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop GM Runboard window: {ex}");
             }
         }
         else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RosterMovement))
