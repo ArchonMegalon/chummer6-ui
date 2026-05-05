@@ -964,6 +964,46 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture()
+    {
+        var client = new FakeChummerClient();
+        client.SeedToolCatalog(
+            new MasterIndexResponse(
+                Count: 1,
+                GeneratedUtc: DateTimeOffset.UtcNow,
+                Files: [],
+                ReferenceLanePosture: "governed",
+                SourcebookCount: 1,
+                Sourcebooks: [],
+                ImportOracleLanePosture: "partial",
+                ImportOracleReceiptPosture: "stale",
+                LegacyChummer4FixtureCount: 18,
+                LegacyChummer5FixtureCount: 31,
+                HeroLabFixtureCount: 0,
+                AdjacentSr6OracleReceiptPosture: "partial",
+                AdjacentSr6OracleSourcesCovered: 1,
+                AdjacentSr6OracleSourcesExpected: 2,
+                ImportOracleSourcesCovered: 3,
+                ImportOracleSourcesExpected: 4,
+                ImportOracleCoveragePercent: 75,
+                ImportOracleMissingSources: ["Hero Lab"],
+                ImportOracleLaneReceipt: "import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.",
+                AdjacentSr6OracleLaneReceipt: "adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink."),
+            new TranslatorLanguagesResponse(0, []));
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ExecuteCommandAsync("hero_lab_importer", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("dialog.hero_lab_importer", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabImportOracleLanePosture"));
+        Assert.AreEqual("3/4 · 75%", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabImportOracleCoverage"));
+        Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabFixtureCount"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabImportOracleMatrix"), "Hero Lab fixtures 0");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabAdjacentSr6OracleReceipt"), "1/2 covered");
+    }
+
+    [TestMethod]
     public async Task ExecuteCommandAsync_switch_ruleset_opens_dialog()
     {
         var presenter = new CharacterOverviewPresenter(new FakeChummerClient());

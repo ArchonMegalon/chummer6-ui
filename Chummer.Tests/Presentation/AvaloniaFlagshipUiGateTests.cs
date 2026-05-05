@@ -63,10 +63,8 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly string[] HiddenWorkbenchToolbarButtons =
     [
         "OpenForPrintingButton",
-        "OpenForExportButton",
         "ImportRawButton",
         "LoadDemoRunnerButton",
-        "CampaignWorkspaceButton",
         "UpdateStatusButton",
         "InstallLinkingButton",
         "SupportButton",
@@ -75,9 +73,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly string[] HiddenRuntimeLoadedToolbarButtons =
     [
         "OpenForPrintingButton",
-        "OpenForExportButton",
         "LoadDemoRunnerButton",
-        "CampaignWorkspaceButton",
         "UpdateStatusButton",
         "InstallLinkingButton",
         "SupportButton",
@@ -214,7 +210,25 @@ public sealed class AvaloniaFlagshipUiGateTests
             "18-import-dialog-light.png",
             "Click LoadDemoRunnerButton, then open File > Open Character and capture import familiarity.",
             "Chummer5a File/Open and Hero Lab Importer import route lineage.",
-            ["Open Character"])];
+            ["Open Character"]),
+        new(
+            "translator",
+            "38-translator-dialog-light.png",
+            "Execute translator and capture the governed language-lane dialog.",
+            "Chummer5a Translator utility lineage.",
+            ["Translator", "Translator Lane", "Translator Bridge"]),
+        new(
+            "xml_editor",
+            "39-xml-editor-dialog-light.png",
+            "Execute xml_editor and capture the XML amendment editor posture.",
+            "Chummer5a XML editor and custom-data bridge lineage.",
+            ["XML Editor", "XML Bridge", "Custom Data Lane"]),
+        new(
+            "hero_lab_importer",
+            "40-hero-lab-importer-dialog-light.png",
+            "Execute hero_lab_importer and capture import-oracle plus adjacent SR6 proof.",
+            "Chummer5a Hero Lab Importer and adjacent import-oracle lineage.",
+            ["Hero Lab Importer", "Import Oracle Lane", "Adjacent SR6 Oracle"])];
     private static readonly string[] RequiredWorkflowFamilyIds =
     [
         "create-open-import-save-save-as-print-export",
@@ -236,7 +250,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             [
                 "19-workflow-file-menu-loaded-light.png",
                 "36-workflow-new-character-dialog-light.png",
-                "18-import-dialog-light.png"
+                "18-import-dialog-light.png",
+                "40-hero-lab-importer-dialog-light.png"
             ]),
         new(
             "metatype-priorities-karma-entry",
@@ -865,6 +880,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "DesktopHomeButton",
                 "ImportFileButton",
                 "CloseWorkspaceButton",
+                "OpenForExportButton",
+                "GmPrepButton",
+                "RosterMovementButton",
+                "CampaignWorkspaceButton",
             ];
 
             foreach (string buttonName in primaryButtons)
@@ -1100,6 +1119,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "DesktopHomeButton",
                 "ImportFileButton",
                 "CloseWorkspaceButton",
+                "OpenForExportButton",
+                "GmPrepButton",
+                "RosterMovementButton",
+                "CampaignWorkspaceButton",
             ];
 
             foreach (string menuName in menuButtons)
@@ -1268,6 +1291,17 @@ public sealed class AvaloniaFlagshipUiGateTests
             control.ImportFileRequested += (_, _) => raisedEvents.Add("import_file");
             control.DesktopHomeRequested += (_, _) => raisedEvents.Add("desktop_home");
             control.CloseWorkspaceRequested += (_, _) => raisedEvents.Add("close_workspace");
+            control.OpenForExportRequested += (_, _) => raisedEvents.Add("open_for_export");
+            control.GmPrepRequested += (_, _) => raisedEvents.Add("gm_prep");
+            control.RosterMovementRequested += (_, _) => raisedEvents.Add("roster_movement");
+            control.CampaignWorkspaceRequested += (_, _) => raisedEvents.Add("campaign_workspace");
+
+            control.SetState(new ToolStripState(
+                "State: ready",
+                ShowOpenForExport: true,
+                ShowGmPrep: true,
+                ShowRosterMovement: true,
+                ShowCampaignWorkspace: true));
 
             (string ButtonName, string EventId)[] buttonMap =
             [
@@ -1277,6 +1311,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ("DesktopHomeButton", "desktop_home"),
                 ("ImportFileButton", "import_file"),
                 ("CloseWorkspaceButton", "close_workspace"),
+                ("OpenForExportButton", "open_for_export"),
+                ("GmPrepButton", "gm_prep"),
+                ("RosterMovementButton", "roster_movement"),
+                ("CampaignWorkspaceButton", "campaign_workspace"),
             ];
 
             foreach ((string buttonName, _) in buttonMap)
@@ -1285,7 +1323,6 @@ public sealed class AvaloniaFlagshipUiGateTests
             }
 
             CollectionAssert.AreEqual(buttonMap.Select(item => item.EventId).ToArray(), raisedEvents.ToArray());
-            Assert.IsFalse(FindDescendant<Button>(control, "CampaignWorkspaceButton").IsVisible);
             Assert.IsFalse(FindDescendant<Button>(control, "UpdateStatusButton").IsVisible);
             Assert.IsFalse(FindDescendant<Button>(control, "InstallLinkingButton").IsVisible);
             Assert.IsFalse(FindDescendant<Button>(control, "SupportButton").IsVisible);
@@ -1524,6 +1561,339 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             CollectionAssert.AreEqual(new[] { "tab-info.profile" }, selectedActions.ToArray());
         });
+    }
+
+    [TestMethod]
+    public void Standalone_section_context_surfaces_text_first_explain_drawer_summary_when_packet_metadata_is_present()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            const string previewJson =
+                """
+{
+  "section": "weapons",
+  "weapons": [
+    {
+      "name": "Ares Alpha",
+      "damage": "11P",
+      "ap": "-2",
+      "explainEntryId": "explain.weapon.ares-alpha",
+      "sourceAnchor": "Street Grimoire p. 42",
+      "sourceAnchorLaunchSummary": "Open the local rulebook anchor from this desktop route.",
+      "staleSnapshotSummary": "Refresh before trusting a what-if answer from an older packet.",
+      "followUpSummary": "Why not burst fire now? stays bounded to the current packet."
+    }
+  ]
+}
+""";
+
+            control.SetState(new SectionHostState(
+                SectionId: "weapons",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: null,
+                Notice: string.Empty,
+                PreviewJson: previewJson,
+                Rows:
+                [
+                    new SectionRowDisplayItem("weapons[0]", "Ares Alpha · 11P AP -2")
+                ],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            TextBlock contextSummary = FindDescendant<TextBlock>(control, "SectionContextSummaryText");
+            TextBox preview = FindDescendant<TextBox>(control, "SectionPreviewBox");
+
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Explain: explain.weapon.ares-alpha");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Source anchor: Street Grimoire p. 42");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Source launch: Open the local rulebook anchor from this desktop route.");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Stale state: Refresh before trusting a what-if answer from an older packet.");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Follow-up: Why not burst fire now? stays bounded to the current packet.");
+
+            StringAssert.Contains(preview.Text ?? string.Empty, "Explain drawer");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Explain packet: explain.weapon.ares-alpha");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Source anchor: Street Grimoire p. 42");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Source launch: Open the local rulebook anchor from this desktop route.");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Stale state: Refresh before trusting a what-if answer from an older packet.");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Follow-up: Why not burst fire now? stays bounded to the current packet.");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_section_context_reads_canonical_explanation_packet_fields_for_text_first_drawer_copy()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            const string previewJson =
+                """
+{
+  "section": "attributes",
+  "cards": [
+    {
+      "label": "Defense Rating",
+      "value": "9",
+      "details": {
+        "explanationPacket": {
+          "packet_id": "packet.defense-rating.9",
+          "value_ref": "combat.defense_rating",
+          "source_anchors": [
+            {
+              "book": "Core Rulebook",
+              "page": "111",
+              "section": "Defense Rating",
+              "localBindingAvailable": true
+            }
+          ],
+          "stale_if_snapshot_changes": {
+            "snapshot_ref": "snapshot.before",
+            "current_snapshot_ref": "snapshot.after"
+          },
+          "counterfactual_actions": [
+            {
+              "question": "Why not add the shield bonus?"
+            },
+            {
+              "summary": "What if I unequip the jacket?"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+""";
+
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: null,
+                Notice: string.Empty,
+                PreviewJson: previewJson,
+                Rows:
+                [
+                    new SectionRowDisplayItem("cards[0]", "Defense Rating · 9")
+                ],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            TextBlock contextSummary = FindDescendant<TextBlock>(control, "SectionContextSummaryText");
+            TextBox preview = FindDescendant<TextBox>(control, "SectionPreviewBox");
+
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Explain: packet.defense-rating.9");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Source anchor: Core Rulebook p. 111 · Defense Rating");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Source launch: Open the bound local rulebook anchor from this desktop route.");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Stale state: Packet snapshot snapshot.before no longer matches current snapshot snapshot.after. Refresh before trusting this value.");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Follow-up: Why not add the shield bonus? ; What if I unequip the jacket?");
+
+            StringAssert.Contains(preview.Text ?? string.Empty, "Explain drawer");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Explain packet: packet.defense-rating.9");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Source anchor: Core Rulebook p. 111 · Defense Rating");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Source launch: Open the bound local rulebook anchor from this desktop route.");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Stale state: Packet snapshot snapshot.before no longer matches current snapshot snapshot.after. Refresh before trusting this value.");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Follow-up: Why not add the shield bonus? ; What if I unequip the jacket?");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_section_context_projects_packet_backed_explain_drawer_actions_for_desktop_launch_and_follow_up()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            List<string> requestedActions = [];
+            control.QuickActionRequested += (_, actionId) => requestedActions.Add(actionId);
+
+            const string previewJson =
+                """
+{
+  "section": "attributes",
+  "cards": [
+    {
+      "label": "Defense Rating",
+      "value": "9",
+      "details": {
+        "explanationPacket": {
+          "packet_id": "packet.defense-rating.9",
+          "source_anchors": [
+            {
+              "book": "Core Rulebook",
+              "page": "111",
+              "section": "Defense Rating",
+              "localPdfPath": "/tmp/core-rulebook.pdf"
+            }
+          ],
+          "counterfactual_actions": [
+            {
+              "question": "Why not add the shield bonus?"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+""";
+
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: null,
+                Notice: string.Empty,
+                PreviewJson: previewJson,
+                Rows:
+                [
+                    new SectionRowDisplayItem("cards[0]", "Defense Rating · 9")
+                ],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            Assert.IsTrue(FindDescendant<Control>(control, "SectionQuickActionsBorder").IsVisible);
+            Assert.AreEqual("Open Rule Environment Studio", FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.open_rule_environment_studio").Content);
+            Assert.AreEqual("Open Source Anchor", FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.open_source_anchor").Content);
+            Assert.AreEqual("Review Bounded Follow-up", FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.review_bounded_follow_up").Content);
+
+            RaiseClick(FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.open_rule_environment_studio"));
+            RaiseClick(FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.review_bounded_follow_up"));
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "explain_drawer.open_rule_environment_studio",
+                    "explain_drawer.review_bounded_follow_up"
+                },
+                requestedActions);
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_section_context_launches_source_anchor_from_packet_backed_explain_drawer()
+    {
+        string? launchedTarget = null;
+        Func<string, bool>? originalLauncher = SectionHostControl.ExplainDrawerSourceAnchorLauncherOverrideForTesting;
+        SectionHostControl.ExplainDrawerSourceAnchorLauncherOverrideForTesting = target =>
+        {
+            launchedTarget = target;
+            return true;
+        };
+
+        try
+        {
+            WithStandaloneControl<SectionHostControl>(control =>
+            {
+                const string previewJson =
+                    """
+{
+  "section": "attributes",
+  "cards": [
+    {
+      "label": "Defense Rating",
+      "value": "9",
+      "details": {
+        "explanationPacket": {
+          "packet_id": "packet.defense-rating.9",
+          "source_anchors": [
+            {
+              "book": "Core Rulebook",
+              "page": "111",
+              "section": "Defense Rating",
+              "localPdfPath": "/tmp/core-rulebook.pdf"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+""";
+
+                control.SetState(new SectionHostState(
+                    SectionId: "attributes",
+                    NavigationTabs: [],
+                    ActiveTabId: null,
+                    SectionActions: [],
+                    ActiveActionId: null,
+                    Notice: string.Empty,
+                    PreviewJson: previewJson,
+                    Rows:
+                    [
+                        new SectionRowDisplayItem("cards[0]", "Defense Rating · 9")
+                    ],
+                    QuickActions: [],
+                    BuildLab: null,
+                    BrowseWorkspace: null,
+                    ContactGraph: null,
+                    DowntimePlanner: null,
+                    NpcPersonaStudio: null));
+                control.Measure(new Size(1440d, 960d));
+                control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+                PumpStandaloneUi();
+
+                RaiseClick(FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.open_source_anchor"));
+            });
+
+            Assert.AreEqual("/tmp/core-rulebook.pdf", launchedTarget);
+        }
+        finally
+        {
+            SectionHostControl.ExplainDrawerSourceAnchorLauncherOverrideForTesting = originalLauncher;
+        }
+    }
+
+    [TestMethod]
+    public void Main_window_review_bounded_follow_up_opens_text_first_desktop_follow_up_window()
+    {
+        using FlagshipUiHarness harness = new();
+        harness.WaitForReady();
+        harness.SetActiveSectionForTesting("explaindrawer");
+        harness.Click("SectionQuickAction_explain_drawer.review_bounded_follow_up");
+
+        harness.WaitUntil(
+            () =>
+                global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+                && desktop.Windows.OfType<Window>().Any(window => string.Equals(window.Title, "Explain Follow-up", StringComparison.Ordinal) && window.IsVisible),
+            context: "wait for explain follow-up window");
+
+        Window followUpWindow = ((IClassicDesktopStyleApplicationLifetime)global::Avalonia.Application.Current!.ApplicationLifetime!)
+            .Windows
+            .OfType<Window>()
+            .First(window => string.Equals(window.Title, "Explain Follow-up", StringComparison.Ordinal) && window.IsVisible);
+
+        string[] visibleText = followUpWindow.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(text => text.IsVisible)
+            .Select(text => text.Text ?? string.Empty)
+            .ToArray();
+
+        Assert.IsTrue(visibleText.Any(text => text.Contains("packet.armor.12", StringComparison.Ordinal)));
+        Assert.IsTrue(visibleText.Any(text => text.Contains("Packet snapshot snapshot.before no longer matches current snapshot snapshot.after.", StringComparison.Ordinal)));
+        Assert.IsTrue(visibleText.Any(text => text.Contains("What if I unequip the jacket?", StringComparison.Ordinal)));
+
+        followUpWindow.Close();
     }
 
     [TestMethod]
@@ -2750,6 +3120,46 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("translator");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.translator" });
+            DesktopDialogState translatorDialog = harness.Presenter.State.ActiveDialog
+                ?? throw new AssertFailedException("Translator dialog should be active.");
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(translatorDialog, "translatorLanePosture"));
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(translatorDialog, "translatorBridgePosture"));
+            harness.ClickDialogAction("close");
+            harness.WaitUntil(() => harness.Window.PeekDialogWindowForTesting() is null);
+
+            harness.SelectCommand("xml_editor");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.xml_editor" });
+            DesktopDialogState xmlEditorDialog = harness.Presenter.State.ActiveDialog
+                ?? throw new AssertFailedException("XML Editor dialog should be active.");
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(xmlEditorDialog, "xmlEditorLanePosture"));
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(xmlEditorDialog, "xmlEditorCustomDataLanePosture"));
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(xmlEditorDialog, "xmlEditorReceipt"), "governed for this parity fixture");
+            harness.ClickDialogAction("cancel");
+            harness.WaitUntil(() => harness.Window.PeekDialogWindowForTesting() is null);
+
+            harness.SelectCommand("hero_lab_importer");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.hero_lab_importer" });
+            DesktopDialogState heroLabDialog = harness.Presenter.State.ActiveDialog
+                ?? throw new AssertFailedException("Hero Lab Importer dialog should be active.");
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabImportOracleLanePosture"));
+            Assert.AreEqual("1/1 · 100%", DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabImportOracleCoverage"));
+            Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabFixtureCount"));
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabImportOracleMatrix"), "Hero Lab fixtures 0");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabImportOracleReceipt"), "governed for this parity fixture");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabAdjacentSr6OracleReceipt"), "current for this parity fixture");
+        });
+    }
+
+    [TestMethod]
     public void Runtime_backed_mouse_only_master_index_source_click_executes_open_source_action()
     {
         WithLoadedRunnerHarness(harness =>
@@ -3848,7 +4258,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             "15-creation-section-light.png",
             GetVeteranCertificationReviewStep("master_index").ScreenshotFileName,
             GetVeteranCertificationReviewStep("roster").ScreenshotFileName,
-            GetVeteranCertificationReviewStep("import").ScreenshotFileName
+            GetVeteranCertificationReviewStep("import").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("translator").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("xml_editor").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("hero_lab_importer").ScreenshotFileName
         ];
         string[] expectedFiles =
         [
@@ -4302,6 +4715,27 @@ public sealed class AvaloniaFlagshipUiGateTests
                     CaptureCurrentFrame(harness, GetVeteranCertificationReviewStep("import").ScreenshotFileName);
                     return true;
                 });
+
+                CaptureDialogFrameInFreshHarness(
+                    GetVeteranCertificationReviewStep("translator").ScreenshotFileName,
+                    "ToolsMenuButton",
+                    "translator",
+                    "close",
+                    GetVeteranCertificationReviewStep("translator").RequiredDialogMarkers);
+
+                CaptureDialogFrameInFreshHarness(
+                    GetVeteranCertificationReviewStep("xml_editor").ScreenshotFileName,
+                    "ToolsMenuButton",
+                    "xml_editor",
+                    "cancel",
+                    GetVeteranCertificationReviewStep("xml_editor").RequiredDialogMarkers);
+
+                CaptureDialogFrameInFreshHarness(
+                    GetVeteranCertificationReviewStep("hero_lab_importer").ScreenshotFileName,
+                    "ToolsMenuButton",
+                    "hero_lab_importer",
+                    "cancel",
+                    GetVeteranCertificationReviewStep("hero_lab_importer").RequiredDialogMarkers);
             }
             finally
             {
@@ -8949,6 +9383,47 @@ public sealed class AvaloniaFlagshipUiGateTests
                             new SectionRowState("attributes[3]", "Strength · Total 4"),
                             new SectionRowState("attributes[4]", "Willpower · Total 3"),
                             new SectionRowState("attributes[5]", "Logic · Total 3")
+                        ]);
+                case "explaindrawer":
+                    return (
+                        """
+{
+  "section": "attributes",
+  "cards": [
+    {
+      "label": "Armor",
+      "value": "12",
+      "details": {
+        "explanationPacket": {
+          "packet_id": "packet.armor.12",
+          "source_anchors": [
+            {
+              "book": "Core Rulebook",
+              "page": "438",
+              "section": "Armor Jacket",
+              "localPdfPath": "/tmp/core-rulebook.pdf"
+            }
+          ],
+          "stale_if_snapshot_changes": {
+            "snapshot_ref": "snapshot.before",
+            "current_snapshot_ref": "snapshot.after"
+          },
+          "counterfactual_actions": [
+            {
+              "question": "Why not stack a shield?"
+            },
+            {
+              "summary": "What if I unequip the jacket?"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("cards[0]", "Armor Jacket · 12")
                         ]);
                 case "skills":
                     return (

@@ -1849,7 +1849,7 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
-    public void CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields()
+    public void CreateCommandDialog_hero_lab_importer_surfaces_import_oracle_and_adjacent_sr6_posture()
     {
         DesktopDialogFactory factory = new();
 
@@ -1859,9 +1859,16 @@ public class DesktopDialogFactoryTests
             DesktopPreferenceState.Default,
             activeSectionJson: null,
             currentWorkspace: null,
-            rulesetId: "sr6");
+            rulesetId: "sr6",
+            masterIndex: CreateMasterIndexResponse());
 
         Assert.AreEqual("dialog.hero_lab_importer", dialog.Id);
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleLanePosture"));
+        Assert.AreEqual("3/4 · 75%", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleCoverage"));
+        Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabFixtureCount"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleMatrix"), "Hero Lab fixtures 0");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleReceipt"), "3/4 fixture families covered");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabAdjacentSr6OracleReceipt"), "1/2 covered");
         Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "heroLabXml", StringComparison.Ordinal)));
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "importRulesetId"));
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "import", StringComparison.Ordinal)));

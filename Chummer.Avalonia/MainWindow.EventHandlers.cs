@@ -92,7 +92,7 @@ public partial class MainWindow
         await RunUiActionAsync(
             async () =>
             {
-                await DesktopHomeWindow.ShowAsync(this, "avalonia");
+                await DesktopHomeWindow.ShowAsync(this, "avalonia", _adapter.State.LatestPortabilityActivity);
                 MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip);
             },
             "open desktop home");
@@ -103,7 +103,7 @@ public partial class MainWindow
         await RunUiActionAsync(
             async () =>
             {
-                await DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId);
+                await DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity);
                 MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
             },
             "open GM prep packets");
@@ -114,7 +114,7 @@ public partial class MainWindow
         await RunUiActionAsync(
             async () =>
             {
-                await DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId);
+                await DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity);
                 MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
             },
             "review roster movement");
@@ -143,7 +143,7 @@ public partial class MainWindow
         await RunUiActionAsync(
             async () =>
             {
-                await DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia");
+                await DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia", _adapter.State.LatestPortabilityActivity);
                 MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
             },
             "open campaign workspace");

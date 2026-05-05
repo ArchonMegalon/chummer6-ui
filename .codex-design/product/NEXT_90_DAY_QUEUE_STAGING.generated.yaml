@@ -2588,10 +2588,31 @@ items:
   task: Produce packet, preview, and optional briefing artifacts for opposition, scenes, and prep-library entries.
   package_id: next90-m113-media-factory-gm-prep-packets
   work_task_id: 113.4
+  frontier_id: 3813748639
   milestone_id: 113
-  status: in_progress
+  status: complete
   wave: W11
   repo: chummer6-media-factory
+  landed_commit: TBD_COMMIT
+  completion_action: verify_closed_package_only
+  do_not_reopen_reason: M113 chummer6-media-factory GM prep packet bundles are complete; future shards must verify the
+    GM prep render service, contract lane, smoke proof, generated media proof, canonical registry row, and queue mirrors
+    instead of reopening the governed packet bundle package.
+  proof:
+  - /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Factory.Runtime/Assets/GmPrepPacketBundleService.cs
+  - /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Compatibility/RunServices/MediaFactoryContracts.cs
+  - /docker/fleet/repos/chummer-media-factory/tests/GmPrepPacketSmoke/Program.cs
+  - /docker/fleet/repos/chummer-media-factory/tests/test_gm_prep_packet_rendering.py
+  - /docker/fleet/repos/chummer-media-factory/tests/test_m113_gm_prep_packet_proof.py
+  - /docker/fleet/repos/chummer-media-factory/tests/test_m113_successor_package_authority.py
+  - /docker/fleet/repos/chummer-media-factory/docs/NEXT90_M113_GM_PREP_PACKET_PROOF_FLOOR.md
+  - /docker/fleet/repos/chummer-media-factory/scripts/ai/materialize_media_release_proof.py
+  - /docker/fleet/repos/chummer-media-factory/scripts/ai/verify_m113_gm_prep_packets.sh
+  - /docker/fleet/repos/chummer-media-factory/scripts/ai/verify.sh
+  - python3 -m unittest tests.test_m113_successor_package_authority tests.test_m113_gm_prep_packet_proof tests.test_gm_prep_packet_rendering exits 0.
+  - dotnet run --project tests/GmPrepPacketSmoke/Chummer.Media.Factory.GmPrepPacketSmoke.csproj --configuration Release --nologo --verbosity quiet exits 0.
+  - ./scripts/ai/verify_m113_gm_prep_packets.sh exits 0.
+  - ./scripts/ai/verify.sh exits 0.
   allowed_paths:
   - src
   - tests
@@ -2716,9 +2737,24 @@ items:
   package_id: next90-m115-hub-dossier-federation-orchestration
   work_task_id: 115.2
   milestone_id: 115
-  status: in_progress
+  status: complete
   wave: W12
   repo: chummer6-hub
+  landed_commit: 9c25a2b2
+  completion_action: verify_closed_package_only
+  do_not_reopen_reason: M115 chummer6-hub dossier federation orchestration is complete; future shards must verify this receipt,
+    registry row, queue row, and design-queue row instead of reopening the campaign federation source-pack package.
+  proof:
+  - /docker/chummercomplete/chummer.run-services/Chummer.Run.Api/Contracts/CampaignFederationContracts.cs
+  - /docker/chummercomplete/chummer.run-services/Chummer.Run.Api/Controllers/CampaignSpineController.cs
+  - /docker/chummercomplete/chummer.run-services/Chummer.Run.Api/Services/Community/CampaignFederationOrchestrationService.cs
+  - /docker/chummercomplete/chummer.run-services/tests/RunServicesSmoke/Program.cs
+  - /docker/chummercomplete/chummer.run-services/scripts/verify_next90_m115_hub_dossier_federation.py
+  - /docker/chummercomplete/chummer.run-services/tests/test_next90_m115_hub_dossier_federation.py
+  - /docker/chummercomplete/chummer.run-services commit 9c25a2b2 adds campaign federation source-pack orchestration.
+  - python3 scripts/verify_next90_m115_hub_dossier_federation.py
+  - python3 -m unittest tests/test_next90_m115_hub_dossier_federation.py
+  - bash scripts/ai/run_services_smoke.sh
   allowed_paths:
   - Chummer.Run.Api
   - scripts
@@ -3964,9 +4000,18 @@ items:
   work_task_id: '145.4'
   frontier_id: 1454045404
   milestone_id: 145
-  status: not_started
+  status: done
   wave: W28
   repo: executive-assistant
+  proof:
+  - /docker/EA/docs/chummer_explain_narration_packs/CHUMMER_EXPLAIN_NARRATION_PACKET_PACK.yaml
+  - /docker/EA/docs/chummer_explain_narration_packs/GROUNDED_FOLLOW_UP_SPECIMENS.yaml
+  - /docker/EA/docs/chummer_explain_narration_packs/README.md
+  - /docker/EA/docs/chummer_explain_narration_packs/SUCCESSOR_HANDOFF_CLOSEOUT.yaml
+  - /docker/EA/skills/chummer_grounded_explain_narration/SKILL.md
+  - /docker/EA/tests/test_next90_m145_grounded_explain_narration_packs.py
+  - /docker/EA/feedback/2026-05-05-ea-grounded-explain-narration-packs-package-closeout.md
+  - python3 tests/test_next90_m145_grounded_explain_narration_packs.py exits 0 with ran=8 failed=0
   allowed_paths:
   - skills
   - tests
@@ -4019,7 +4064,7 @@ items:
   work_task_id: '145.7'
   frontier_id: 1457045707
   milestone_id: 145
-  status: in_progress
+  status: done
   wave: W28
   repo: chummer6-design
   allowed_paths:

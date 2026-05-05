@@ -1,0 +1,111 @@
+{
+  "generatedAt": "2026-05-05T07:05:34Z",
+  "status": "pass",
+  "unresolved": [],
+  "contract_name": "chummer6-ui.next90_m114_ui_rule_studio",
+  "evidence": {
+    "packageId": "next90-m114-ui-rule-studio",
+    "title": "Add rule-environment studio entry points to desktop workflows",
+    "task": "Surface amend-package lifecycle, before-after diffs, and explain receipts in mechanical desktop workflows.",
+    "frontierId": 3253425842,
+    "milestoneId": 114,
+    "workTaskId": "114.2",
+    "wave": "W12",
+    "repo": "chummer6-ui",
+    "allowedPaths": [
+      "Chummer.Avalonia",
+      "Chummer.Desktop.Runtime",
+      "Chummer.Tests",
+      "scripts"
+    ],
+    "ownedSurfaces": [
+      "rule_environment_studio:desktop",
+      "explain_receipts:desktop"
+    ],
+    "queueChecks": {
+      "registry_has_m114_ui_task": true,
+      "registry_task_unique": true,
+      "queue_package_unique": true,
+      "design_queue_package_unique": true,
+      "queue_package_id_matches": true,
+      "design_queue_package_id_matches": true,
+      "queue_work_task_matches": true,
+      "design_queue_work_task_matches": true,
+      "queue_milestone_matches": true,
+      "design_queue_milestone_matches": true,
+      "queue_title_matches": true,
+      "queue_task_matches": true,
+      "queue_status_in_progress": true,
+      "queue_wave_matches": true,
+      "design_queue_wave_matches": true,
+      "queue_repo_matches": true,
+      "design_queue_repo_matches": true,
+      "design_queue_title_matches": true,
+      "design_queue_task_matches": true,
+      "design_queue_status_in_progress": true,
+      "allowed_paths_exact": true,
+      "design_allowed_paths_exact": true,
+      "owned_surfaces_exact": true,
+      "design_owned_surfaces_exact": true,
+      "queue_design_block_parity": true,
+      "design_queue_path_matches": true
+    },
+    "sourceChecks": {
+      "Chummer.Avalonia/DesktopHomeWindow.cs": {
+        "_portabilityActivity": true,
+        "Import rule environment:": true,
+        "Import environment before:": true,
+        "Import environment after:": true,
+        "Import explain receipt:": true,
+        "Support reuse:": true,
+        "actions.Add(CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync));": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true
+      },
+      "Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs": {
+        "_portabilityActivity": true,
+        "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)": true,
+        "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)": true
+      },
+      "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
+        "_portabilityActivity": true,
+        "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)": true,
+        "CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync)": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true
+      },
+      "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs": {
+        "_portabilityActivity": true,
+        "CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync)": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
+        "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true
+      },
+      "Chummer.Avalonia/MainWindow.EventHandlers.cs": {
+        "DesktopHomeWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)": true,
+        "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)": true,
+        "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
+        "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true
+      },
+      "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
+        "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)": true,
+        "DesktopHomeWindow.ShowAsync(this, \\\"avalonia\\\", _adapter.State.LatestPortabilityActivity)": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
+        "Import explain receipt:": true
+      }
+    },
+    "proofCommands": {
+      "directProofCommand": "bash scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh",
+      "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M114RuleEnvironmentStudioGuardTests\" --no-restore",
+      "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+    },
+    "proofFiles": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.EventHandlers.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M114RuleEnvironmentStudioGuardTests.cs"
+    ]
+  }
+}
