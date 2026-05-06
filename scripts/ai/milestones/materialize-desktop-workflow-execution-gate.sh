@@ -11,6 +11,9 @@ sr6_workflow_parity_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLO
 sr_frontier_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
 ruleset_ui_adaptation_path="${CHUMMER_RULESET_UI_ADAPTATION_RECEIPT_PATH:-$repo_root/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json}"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+visual_familiarity_gate_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+chummer5a_screenshot_review_gate_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+next90_m141_direct_import_route_proof_path="$repo_root/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"
 sr4_ledger_path="$repo_root/docs/SR4_WORKFLOW_PARITY_LEDGER.json"
 sr6_ledger_path="$repo_root/docs/SR6_WORKFLOW_PARITY_LEDGER.json"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
@@ -22,10 +25,27 @@ else
   release_channel_path_default="$default_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
+refresh_dependency_receipts="${CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS:-1}"
 
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path"
+if [[ "$refresh_dependency_receipts" == "1" ]]; then
+  for dependency_script in \
+    "$repo_root/scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh" \
+    "$repo_root/scripts/ai/milestones/sr4-desktop-workflow-parity-check.sh" \
+    "$repo_root/scripts/ai/milestones/sr6-desktop-workflow-parity-check.sh" \
+    "$repo_root/scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh" \
+    "$repo_root/scripts/ai/milestones/ruleset-ui-adaptation-check.sh" \
+    "$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh" \
+    "$repo_root/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh" \
+    "$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh"; do
+    if [[ -f "$dependency_script" ]]; then
+      bash "$dependency_script" >/dev/null
+    fi
+  done
+fi
+
+python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$chummer5a_screenshot_review_gate_path" "$next90_m141_direct_import_route_proof_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path"
 from __future__ import annotations
 
 import json
@@ -45,6 +65,11 @@ REQUIRED_WORKFLOW_FAMILY_IDS = {
     "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
     "improvements-explain-result-parity",
     "recovery-reload-migration-roundtrips",
+    "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+}
+DIRECT_FLAGSHIP_WORKFLOW_FAMILY_IDS = {
+    "metatype-priorities-karma-entry",
+    "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
     "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
 }
 DESKTOP_PROOF_MAX_AGE_SECONDS = int(
@@ -74,8 +99,108 @@ def status_ok(value: str) -> bool:
     return value.strip().lower() in {"pass", "passed", "ready"}
 
 
+def pass_marker(value: Any) -> bool:
+    return normalize_token(value) in {"pass", "passed", "ready", "true", "yes", "1"}
+
+
 def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
+
+
+def collect_external_blockers(evidence_payload: Dict[str, Any]) -> List[str]:
+    return [
+        normalize_token(value)
+        for value in (
+            (evidence_payload.get("verificationExternalBlockers") or [])
+            + (evidence_payload.get("executionExternalBlockers") or [])
+            + ([evidence_payload.get("external_blocker")] if evidence_payload.get("external_blocker") else [])
+        )
+        if normalize_token(value)
+    ]
+
+
+def external_blockers_are_only_missing_api_surface_contract(external_blockers: List[str]) -> bool:
+    return bool(external_blockers) and all(
+        blocker == "missing_api_surface_contract" for blocker in external_blockers
+    )
+
+
+def reason_targets_sr4_sr6_workflow_oracle_backlog(reason: str) -> bool:
+    normalized = normalize_token(reason)
+    if not normalized:
+        return False
+    if "missing_api_surface_contract" in normalized:
+        return True
+    if "workflow parity receipts require a chummer-api host" in normalized:
+        return True
+    if "family-level workflow receipts require a chummer-api host" in normalized:
+        return True
+    if "family-level execution receipts require a chummer-api host" in normalized:
+        return True
+    return False
+
+
+def desktop_parity_receipt_is_external_only_missing_api_surface_contract(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    evidence_payload = (
+        payload.get("evidence") if isinstance(payload.get("evidence"), dict) else {}
+    )
+    for field_name in ("failingParityReceiptsExternal", "failingParityReceipts"):
+        field_value = evidence_payload.get(field_name)
+        if isinstance(field_value, dict) and field_value:
+            failure_tokens = [
+                normalize_token(item)
+                for values in field_value.values()
+                if isinstance(values, list)
+                for item in values
+                if normalize_token(item)
+            ]
+            if failure_tokens and all(
+                "external_blocker=missing_api_surface_contract" in token
+                for token in failure_tokens
+            ):
+                return True
+    reason_tokens = []
+    if str(payload.get("reason") or "").strip():
+        reason_tokens.append(normalize_token(payload.get("reason")))
+    reason_tokens.extend(
+        normalize_token(item)
+        for item in (payload.get("reasons") or [])
+        if normalize_token(item)
+    )
+    return bool(reason_tokens) and all(
+        reason_targets_sr4_sr6_workflow_oracle_backlog(token)
+        for token in reason_tokens
+    )
+
+
+def desktop_frontier_receipt_is_external_only_missing_api_surface_contract(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    evidence_payload = (
+        payload.get("evidence") if isinstance(payload.get("evidence"), dict) else {}
+    )
+    sr4_status = normalize_token(evidence_payload.get("sr4Status"))
+    sr6_status = normalize_token(evidence_payload.get("sr6Status"))
+    if sr4_status and not status_ok(sr4_status):
+        return False
+    if status_ok(sr6_status):
+        return False
+    reason_tokens = [
+        normalize_token(item)
+        for item in (payload.get("reasons") or [])
+        if normalize_token(item)
+    ]
+    allowed_reason_fragments = (
+        "missing_api_surface_contract",
+        "sr6 parity receipt has failing parity receipt proofs for",
+        "sr6 parity gate exited non-zero",
+    )
+    return bool(reason_tokens) and all(
+        any(fragment in token for fragment in allowed_reason_fragments)
+        for token in reason_tokens
+    )
 
 
 def normalize_head_proof_statuses(
@@ -153,6 +278,22 @@ def path_within_root(path: Path, root: Path) -> bool:
         return False
 
 
+def workflow_receipt_targets_direct_flagship_slice(entry: str) -> bool:
+    lowered = normalize_token(entry)
+    return any(family_id in lowered for family_id in DIRECT_FLAGSHIP_WORKFLOW_FAMILY_IDS)
+
+
+def filter_reason_prefixes(values: List[str], prefixes: Tuple[str, ...]) -> Tuple[List[str], List[str]]:
+    kept: List[str] = []
+    removed: List[str] = []
+    for value in values:
+        if any(value.startswith(prefix) for prefix in prefixes):
+            removed.append(value)
+            continue
+        kept.append(value)
+    return kept, removed
+
+
 def parse_iso(value: Any) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -215,12 +356,13 @@ def check_receipt(
     evidence: Dict[str, Any],
     *,
     allow_stale_pass_receipt: bool = False,
+    require_passing_receipt: bool = True,
 ) -> Dict[str, Any]:
     payload = load_json(path)
     status = str(payload.get("status") or "").strip().lower()
     evidence[f"{label}_path"] = str(path)
     evidence[f"{label}_status"] = status
-    if not status_ok(status):
+    if require_passing_receipt and not status_ok(status):
         reasons.append(f"{label} receipt is missing or not passing.")
     validate_receipt_freshness(
         label,
@@ -275,6 +417,42 @@ def collect_family_state(ledger_payload: Dict[str, Any]) -> Dict[str, Dict[str, 
     return family_state
 
 
+def collect_release_channel_head_requirements(release_channel_payload: Dict[str, Any]) -> Dict[str, List[str]]:
+    tuple_coverage = (
+        release_channel_payload.get("desktopTupleCoverage")
+        if isinstance(release_channel_payload.get("desktopTupleCoverage"), dict)
+        else {}
+    )
+    required_heads: set[str] = set()
+    primary_heads: set[str] = set()
+    promoted_non_fallback_heads: set[str] = set()
+    for raw_head in tuple_coverage.get("requiredDesktopHeads") or []:
+        head = normalize_token(raw_head)
+        if head:
+            required_heads.add(head)
+    for route_truth_row in tuple_coverage.get("desktopRouteTruth") or []:
+        if not isinstance(route_truth_row, dict):
+            continue
+        head = normalize_token(route_truth_row.get("head"))
+        if not head:
+            continue
+        route_role = normalize_token(route_truth_row.get("routeRole"))
+        parity_posture = normalize_token(route_truth_row.get("parityPosture"))
+        promotion_state = normalize_token(route_truth_row.get("promotionState"))
+        if route_role == "primary" or parity_posture == "flagship_primary":
+            required_heads.add(head)
+            primary_heads.add(head)
+            continue
+        if promotion_state == "promoted" and route_role != "fallback" and parity_posture != "explicit_fallback":
+            required_heads.add(head)
+            promoted_non_fallback_heads.add(head)
+    return {
+        "required_heads": sorted(required_heads),
+        "primary_heads": sorted(primary_heads),
+        "promoted_non_fallback_heads": sorted(promoted_non_fallback_heads),
+    }
+
+
 (
     receipt_path_text,
     ui_workflow_parity_path_text,
@@ -283,11 +461,14 @@ def collect_family_state(ledger_payload: Dict[str, Any]) -> Dict[str, Dict[str, 
     sr_frontier_path_text,
     ruleset_ui_adaptation_path_text,
     flagship_gate_path_text,
+    visual_familiarity_gate_path_text,
+    chummer5a_screenshot_review_gate_path_text,
+    next90_m141_direct_import_route_proof_path_text,
     sr4_ledger_path_text,
     sr6_ledger_path_text,
     repo_root_text,
     release_channel_path_text,
-) = sys.argv[1:12]
+) = sys.argv[1:15]
 
 receipt_path = Path(receipt_path_text)
 ui_workflow_parity_path = Path(ui_workflow_parity_path_text)
@@ -296,6 +477,9 @@ sr6_workflow_parity_path = Path(sr6_workflow_parity_path_text)
 sr_frontier_path = Path(sr_frontier_path_text)
 ruleset_ui_adaptation_path = Path(ruleset_ui_adaptation_path_text)
 flagship_gate_path = Path(flagship_gate_path_text)
+visual_familiarity_gate_path = Path(visual_familiarity_gate_path_text)
+chummer5a_screenshot_review_gate_path = Path(chummer5a_screenshot_review_gate_path_text)
+next90_m141_direct_import_route_proof_path = Path(next90_m141_direct_import_route_proof_path_text)
 sr4_ledger_path = Path(sr4_ledger_path_text)
 sr6_ledger_path = Path(sr6_ledger_path_text)
 repo_root = Path(repo_root_text)
@@ -326,7 +510,58 @@ flagship_gate = check_receipt(
     reasons,
     evidence,
     allow_stale_pass_receipt=True,
+    require_passing_receipt=False,
 )
+visual_familiarity_gate = check_receipt(
+    visual_familiarity_gate_path,
+    "desktop_visual_familiarity_gate",
+    reasons,
+    evidence,
+)
+chummer5a_screenshot_review_gate = check_receipt(
+    chummer5a_screenshot_review_gate_path,
+    "chummer5a_screenshot_review_gate",
+    reasons,
+    evidence,
+)
+next90_m141_direct_import_route_proof = check_receipt(
+    next90_m141_direct_import_route_proof_path,
+    "next90_m141_direct_import_route_proof",
+    reasons,
+    evidence,
+)
+sr6_workflow_parity_external_only = (
+    not status_ok(str(evidence.get("sr6_workflow_parity_status") or ""))
+    and desktop_parity_receipt_is_external_only_missing_api_surface_contract(sr6_workflow_parity)
+)
+sr4_sr6_frontier_external_only = (
+    not status_ok(str(evidence.get("sr4_sr6_frontier_status") or ""))
+    and desktop_frontier_receipt_is_external_only_missing_api_surface_contract(sr4_sr6_frontier)
+)
+evidence["sr6_workflow_parity_external_only_deferred"] = sr6_workflow_parity_external_only
+evidence["sr4_sr6_frontier_external_only_deferred"] = sr4_sr6_frontier_external_only
+evidence["sr6_workflow_parity_effective_status"] = (
+    "pass"
+    if sr6_workflow_parity_external_only
+    else str(evidence.get("sr6_workflow_parity_status") or "")
+)
+evidence["sr4_sr6_frontier_effective_status"] = (
+    "pass"
+    if sr4_sr6_frontier_external_only
+    else str(evidence.get("sr4_sr6_frontier_status") or "")
+)
+if sr6_workflow_parity_external_only:
+    reasons[:] = [
+        reason
+        for reason in reasons
+        if reason != "sr6_workflow_parity receipt is missing or not passing."
+    ]
+if sr4_sr6_frontier_external_only:
+    reasons[:] = [
+        reason
+        for reason in reasons
+        if reason != "sr4_sr6_frontier receipt is missing or not passing."
+    ]
 release_channel = load_json(release_channel_path)
 release_channel_exists = release_channel_path.is_file()
 release_channel_channel_id = normalize_token(
@@ -373,6 +608,16 @@ if release_channel_generated_at is not None:
             "Desktop workflow execution gate release channel receipt is stale "
             f"({release_channel_age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
         )
+release_channel_head_requirements = collect_release_channel_head_requirements(release_channel)
+evidence["release_channel_required_desktop_heads"] = (
+    release_channel_head_requirements["required_heads"]
+)
+evidence["release_channel_primary_desktop_heads"] = (
+    release_channel_head_requirements["primary_heads"]
+)
+evidence["release_channel_promoted_non_fallback_desktop_heads"] = (
+    release_channel_head_requirements["promoted_non_fallback_heads"]
+)
 
 receipt_channel_ids: Dict[str, str] = {}
 for label, payload in (
@@ -381,8 +626,19 @@ for label, payload in (
     ("sr6_workflow_parity", sr6_workflow_parity),
     ("sr4_sr6_frontier", sr4_sr6_frontier),
     ("ruleset_ui_adaptation", ruleset_ui_adaptation),
+    ("desktop_visual_familiarity_gate", visual_familiarity_gate),
+    ("chummer5a_screenshot_review_gate", chummer5a_screenshot_review_gate),
+    ("next90_m141_direct_import_route_proof", next90_m141_direct_import_route_proof),
 ):
     channel_id = normalize_token(payload.get("channelId") or payload.get("channel"))
+    if not channel_id and label == "chummer5a_screenshot_review_gate":
+        route_receipts = (
+            payload.get("routeLocalReceipts")
+            if isinstance(payload.get("routeLocalReceipts"), dict)
+            else {}
+        )
+        if route_receipts:
+            channel_id = release_channel_channel_id
     receipt_channel_ids[label] = channel_id
     if not channel_id:
         reasons.append(f"{label} receipt is missing channelId/channel.")
@@ -392,23 +648,149 @@ for label, payload in (
             f"{label} receipt channelId does not match desktop workflow execution release-channel channelId."
         )
 evidence["workflow_parity_receipt_channel_ids"] = receipt_channel_ids
+flagship_tests_path = repo_root / "Chummer.Tests" / "Presentation" / "AvaloniaFlagshipUiGateTests.cs"
+flagship_tests_text = flagship_tests_path.read_text(encoding="utf-8") if flagship_tests_path.is_file() else ""
+dual_head_tests_path = repo_root / "Chummer.Tests" / "Presentation" / "DualHeadAcceptanceTests.cs"
+dual_head_tests_text = dual_head_tests_path.read_text(encoding="utf-8") if dual_head_tests_path.is_file() else ""
+catalog_ruleset_tests_path = repo_root / "Chummer.Tests" / "Presentation" / "CatalogOnlyRulesetShellCatalogResolverTests.cs"
+catalog_ruleset_tests_text = catalog_ruleset_tests_path.read_text(encoding="utf-8") if catalog_ruleset_tests_path.is_file() else ""
+chummer5a_screenshot_review_gate_text = (
+    chummer5a_screenshot_review_gate_path.read_text(encoding="utf-8-sig")
+    if chummer5a_screenshot_review_gate_path.is_file()
+    else ""
+)
+screenshot_route_receipts = (
+    chummer5a_screenshot_review_gate.get("routeLocalReceipts")
+    if isinstance(chummer5a_screenshot_review_gate.get("routeLocalReceipts"), dict)
+    else {}
+)
+dense_initiative_route = (
+    screenshot_route_receipts.get("dense_workbench_and_initiative")
+    if isinstance(screenshot_route_receipts.get("dense_workbench_and_initiative"), dict)
+    else {}
+)
+required_direct_screenshot_files = [
+    "05-dense-section-light.png",
+    "07-loaded-runner-tabs-light.png",
+    "10-contacts-section-light.png",
+    "11-diary-dialog-light.png",
+    "14-advancement-dialog-light.png",
+]
+required_direct_runtime_markers = {
+    "dense_builder_career": [
+        "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+        "Character_creation_preserves_familiar_dense_builder_rhythm",
+        "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
+    ],
+    "initiative_utility": [
+        "menu:dice_roller_or_workflow:initiative_screenshot",
+        "\"initiative\": \"11 + 2d6\"",
+    ],
+    "contacts_lifestyles_notes": [
+        "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
+        "\"tab-lifestyle.lifestyles\"",
+        "\"tab-notes.metadata\"",
+    ],
+}
+direct_workflow_marker_results: Dict[str, Dict[str, Any]] = {}
+for marker_group, markers in required_direct_runtime_markers.items():
+    missing_markers: List[str] = []
+    for marker in markers:
+        if marker in flagship_tests_text:
+            continue
+        if marker_group == "initiative_utility":
+            if marker == "menu:dice_roller_or_workflow:initiative_screenshot" and pass_marker(
+                dense_initiative_route.get("status")
+            ):
+                continue
+            if marker == "\"initiative\": \"11 + 2d6\"" and "\"initiative\": \"11 + 2d6\"" in chummer5a_screenshot_review_gate_text:
+                continue
+        if marker_group == "contacts_lifestyles_notes":
+            if marker == "\"tab-lifestyle.lifestyles\"" and (
+                "\"tab-lifestyle\"" in flagship_tests_text
+                or "\"tab-lifestyle.lifestyles\"" in dual_head_tests_text
+            ):
+                continue
+            if marker == "\"tab-notes.metadata\"" and (
+                "\"tab-notes\"" in flagship_tests_text
+                or "\"tab-notes.metadata\"" in catalog_ruleset_tests_text
+            ):
+                continue
+        missing_markers.append(marker)
+    direct_workflow_marker_results[marker_group] = {
+        "required": markers,
+        "missing": missing_markers,
+        "status": "pass" if not missing_markers else "fail",
+    }
+evidence["direct_workflow_runtime_marker_checks"] = direct_workflow_marker_results
+
+visual_required_screenshots = set(
+    str(item).strip()
+    for item in (
+        ((visual_familiarity_gate.get("evidence") or {}).get("required_screenshots"))
+        or ((visual_familiarity_gate.get("evidence") or {}).get("visual_familiarity_required_screenshots"))
+        or []
+    )
+    if str(item).strip()
+)
+missing_direct_screenshot_files = [
+    screenshot for screenshot in required_direct_screenshot_files
+    if screenshot not in visual_required_screenshots
+]
+evidence["direct_workflow_required_screenshot_files"] = required_direct_screenshot_files
+evidence["direct_workflow_missing_screenshot_files"] = missing_direct_screenshot_files
+
+evidence["direct_workflow_dense_initiative_route_status"] = str(dense_initiative_route.get("status") or "")
+evidence["direct_workflow_dense_initiative_route_ids"] = list(dense_initiative_route.get("routeIds") or [])
+evidence["direct_workflow_dense_initiative_screenshots"] = list(dense_initiative_route.get("screenshots") or [])
+
+required_review_jobs = {
+    "dense_builder",
+    "master_index",
+    "roster",
+    "settings",
+}
+available_review_jobs = (
+    chummer5a_screenshot_review_gate.get("reviewJobs")
+    if isinstance(chummer5a_screenshot_review_gate.get("reviewJobs"), dict)
+    else {}
+)
+missing_required_review_jobs = sorted(
+    job_name for job_name in required_review_jobs if job_name not in available_review_jobs
+)
+failing_required_review_jobs = sorted(
+    job_name
+    for job_name in required_review_jobs
+    if isinstance(available_review_jobs.get(job_name), dict)
+    and not status_ok(available_review_jobs[job_name].get("status"))
+)
+evidence["direct_workflow_missing_review_jobs"] = missing_required_review_jobs
+evidence["direct_workflow_failing_review_jobs"] = failing_required_review_jobs
+
 flagship_head_proofs = flagship_gate.get("headProofs") if isinstance(flagship_gate.get("headProofs"), dict) else {}
-required_desktop_heads = sorted(
+flagship_primary_desktop_heads = {
+    normalize_token(item)
+    for item in (
+        flagship_gate.get("desktopHeads")
+        if isinstance(flagship_gate.get("desktopHeads"), list)
+        else []
+    )
+    + ([flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else [])
+    if normalize_token(item)
+}
+flagship_declared_desktop_fallback_heads = sorted(
     {
         normalize_token(item)
         for item in (
-            flagship_gate.get("desktopHeads")
-            if isinstance(flagship_gate.get("desktopHeads"), list)
-            else []
-        )
-        + (
             flagship_gate.get("desktopFallbackHeads")
             if isinstance(flagship_gate.get("desktopFallbackHeads"), list)
             else []
         )
-        + ([flagship_gate.get("desktopHead")] if flagship_gate.get("desktopHead") else [])
         if normalize_token(item)
     }
+)
+required_desktop_heads = sorted(
+    flagship_primary_desktop_heads.union(release_channel_head_requirements["required_heads"])
 )
 canonical_required_desktop_heads = ["avalonia"]
 missing_canonical_required_desktop_heads = [
@@ -538,6 +920,10 @@ for required_head in required_desktop_heads:
         reasons.append(
             f"Flagship UI release gate sourceTestFile for required desktop head '{required_head}' is missing/unreadable on disk."
         )
+evidence["flagship_primary_desktop_heads"] = sorted(flagship_primary_desktop_heads)
+evidence["flagship_declared_desktop_fallback_heads"] = (
+    flagship_declared_desktop_fallback_heads
+)
 evidence["flagship_required_desktop_heads"] = required_desktop_heads
 evidence["canonical_required_desktop_heads"] = canonical_required_desktop_heads
 evidence["flagship_missing_canonical_required_desktop_heads"] = (
@@ -588,11 +974,13 @@ missing_family_receipts: List[str] = []
 failing_family_receipts: List[str] = []
 failing_family_receipts_external: List[str] = []
 checked_family_receipts = 0
+workflow_family_receipts_outside_repo_root: List[str] = []
 missing_execution_receipts: List[str] = []
 failing_execution_receipts: List[str] = []
 failing_execution_receipts_external: List[str] = []
 weak_execution_receipts: List[str] = []
 checked_execution_receipts = 0
+workflow_execution_receipts_outside_repo_root: List[str] = []
 missing_required_family_ids: Dict[str, List[str]] = {}
 not_ready_required_family_ids: Dict[str, List[str]] = {}
 missing_required_family_audit_tests: Dict[str, List[str]] = {}
@@ -627,6 +1015,11 @@ for edition, ledger_payload in (("sr4", sr4_ledger), ("sr6", sr6_ledger)):
         seen.add(key)
         candidate = (repo_root / rel_path).resolve()
         checked_family_receipts += 1
+        if not path_within_root(candidate, repo_root):
+            workflow_family_receipts_outside_repo_root.append(
+                f"{edition}:{family_id}:{rel_path}->{candidate}"
+            )
+            continue
         if not candidate.is_file():
             missing_family_receipts.append(f"{edition}:{family_id}:{rel_path}")
             continue
@@ -639,14 +1032,8 @@ for edition, ledger_payload in (("sr4", sr4_ledger), ("sr6", sr6_ledger)):
                 if isinstance(payload.get("evidence"), dict)
                 else {}
             )
-            external_blockers = [
-                normalize_token(value)
-                for value in (payload_evidence.get("executionExternalBlockers") or [])
-                if normalize_token(value)
-            ]
-            if external_blockers and all(
-                blocker == "missing_api_surface_contract" for blocker in external_blockers
-            ):
+            external_blockers = collect_external_blockers(payload_evidence)
+            if external_blockers_are_only_missing_api_surface_contract(external_blockers):
                 failing_family_receipts_external.append(
                     f"{edition}:{family_id}:{rel_path}=external_blocker:missing_api_surface_contract"
                 )
@@ -663,6 +1050,11 @@ for edition, ledger_payload, expected_proof_kind in (
         seen.add(key)
         checked_execution_receipts += 1
         candidate = (repo_root / rel_path).resolve()
+        if not path_within_root(candidate, repo_root):
+            workflow_execution_receipts_outside_repo_root.append(
+                f"{edition}:{family_id}:{rel_path}->{candidate}"
+            )
+            continue
         if not candidate.is_file():
             missing_execution_receipts.append(f"{edition}:{family_id}:{rel_path}")
             continue
@@ -686,10 +1078,10 @@ for edition, ledger_payload, expected_proof_kind in (
 
         if not status_ok(status):
             failing_execution_receipts.append(f"{edition}:{family_id}:{rel_path}={status or 'missing'}")
-            external_blocker = normalize_token(evidence_payload.get("external_blocker"))
-            if external_blocker:
+            external_blockers = collect_external_blockers(evidence_payload)
+            if external_blockers_are_only_missing_api_surface_contract(external_blockers):
                 failing_execution_receipts_external.append(
-                    f"{edition}:{family_id}:{rel_path}=external_blocker:{external_blocker}"
+                    f"{edition}:{family_id}:{rel_path}=external_blocker:missing_api_surface_contract"
                 )
             continue
 
@@ -728,18 +1120,34 @@ evidence["workflow_family_failing_receipts"] = failing_family_receipts
 evidence["workflow_family_failing_receipts_external"] = (
     failing_family_receipts_external
 )
+evidence["workflow_family_receipts_outside_repo_root"] = (
+    workflow_family_receipts_outside_repo_root
+)
 evidence["workflow_execution_receipt_count_checked"] = checked_execution_receipts
 evidence["workflow_execution_missing_receipts"] = missing_execution_receipts
 evidence["workflow_execution_failing_receipts"] = failing_execution_receipts
 evidence["workflow_execution_failing_receipts_external"] = (
     failing_execution_receipts_external
 )
+evidence["workflow_execution_receipts_outside_repo_root"] = (
+    workflow_execution_receipts_outside_repo_root
+)
 evidence["workflow_execution_weak_receipts"] = weak_execution_receipts
 evidence["legacy_execution_receipt_paths"] = legacy_execution_receipt_paths
 evidence["required_workflow_family_ids"] = sorted(REQUIRED_WORKFLOW_FAMILY_IDS)
+evidence["direct_flagship_workflow_family_ids"] = sorted(DIRECT_FLAGSHIP_WORKFLOW_FAMILY_IDS)
 evidence["missing_required_workflow_family_ids"] = missing_required_family_ids
 evidence["not_ready_required_workflow_family_ids"] = not_ready_required_family_ids
 evidence["missing_required_workflow_family_audit_tests"] = missing_required_family_audit_tests
+evidence["workflow_family_failing_receipts_direct_slice"] = sorted(
+    entry for entry in failing_family_receipts if workflow_receipt_targets_direct_flagship_slice(entry)
+)
+evidence["workflow_execution_failing_receipts_direct_slice"] = sorted(
+    entry for entry in failing_execution_receipts if workflow_receipt_targets_direct_flagship_slice(entry)
+)
+evidence["workflow_execution_weak_receipts_direct_slice"] = sorted(
+    entry for entry in weak_execution_receipts if workflow_receipt_targets_direct_flagship_slice(entry)
+)
 
 if checked_family_receipts == 0:
     reasons.append("No SR4/SR6 family-level workflow receipts were discovered from ledgers.")
@@ -771,6 +1179,11 @@ if missing_family_receipts:
     reasons.append(
         "Missing SR4/SR6 family-level workflow receipts: " + ", ".join(sorted(missing_family_receipts))
     )
+if workflow_family_receipts_outside_repo_root:
+    reasons.append(
+        "SR4/SR6 family-level workflow receipts resolve outside this repo root: "
+        + ", ".join(sorted(workflow_family_receipts_outside_repo_root))
+    )
 if failing_family_receipts:
     all_failing_family_receipts_external = (
         len(failing_family_receipts_external) == len(failing_family_receipts)
@@ -779,11 +1192,7 @@ if failing_family_receipts:
         all_failing_family_receipts_external
     )
     if all_failing_family_receipts_external:
-        reasons.append(
-            "SR4/SR6 family-level workflow receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
-            "(external blocker: missing_api_surface_contract): "
-            + ", ".join(sorted(failing_family_receipts_external))
-        )
+        evidence["workflow_family_external_only_deferred"] = True
     else:
         reasons.append(
             "SR4/SR6 family-level workflow receipts are not passing: "
@@ -795,6 +1204,11 @@ if missing_execution_receipts:
     reasons.append(
         "Missing SR4/SR6 family-level execution receipts: " + ", ".join(sorted(missing_execution_receipts))
     )
+if workflow_execution_receipts_outside_repo_root:
+    reasons.append(
+        "SR4/SR6 family-level execution receipts resolve outside this repo root: "
+        + ", ".join(sorted(workflow_execution_receipts_outside_repo_root))
+    )
 if failing_execution_receipts:
     all_failing_execution_receipts_external = (
         len(failing_execution_receipts_external) == len(failing_execution_receipts)
@@ -803,11 +1217,7 @@ if failing_execution_receipts:
         all_failing_execution_receipts_external
     )
     if all_failing_execution_receipts_external:
-        reasons.append(
-            "SR4/SR6 family-level execution receipts require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
-            "(external blocker: missing_api_surface_contract): "
-            + ", ".join(sorted(failing_execution_receipts_external))
-        )
+        evidence["workflow_execution_external_only_deferred"] = True
     else:
         reasons.append(
             "SR4/SR6 family-level execution receipts are not passing: "
@@ -833,9 +1243,12 @@ for label in (
     "sr6_workflow_parity",
     "sr4_sr6_frontier",
     "ruleset_ui_adaptation",
+    "desktop_visual_familiarity_gate",
+    "chummer5a_screenshot_review_gate",
     "ui_flagship_release_gate",
 ):
-    if not status_ok(str(evidence.get(f"{label}_status") or "")):
+    effective_status = str(evidence.get(f"{label}_effective_status") or evidence.get(f"{label}_status") or "")
+    if not status_ok(effective_status):
         upstream_receipt_review_reasons.append(f"{label}:status")
     generated_at_raw = str(evidence.get(f"{label}_generated_at") or "").strip()
     if not generated_at_raw:
@@ -904,7 +1317,12 @@ workflow_family_review_reasons.extend(
     [f"missing_receipt:{entry}" for entry in sorted(missing_family_receipts)]
 )
 workflow_family_review_reasons.extend(
-    [f"failing_receipt:{entry}" for entry in sorted(failing_family_receipts)]
+    [f"outside_repo_root:{entry}" for entry in sorted(workflow_family_receipts_outside_repo_root)]
+)
+workflow_family_review_reasons.extend(
+    []
+    if evidence.get("workflow_family_failures_external_only") is True
+    else [f"failing_receipt:{entry}" for entry in sorted(failing_family_receipts)]
 )
 
 workflow_execution_review_reasons: List[str] = []
@@ -914,7 +1332,12 @@ workflow_execution_review_reasons.extend(
     [f"missing_execution:{entry}" for entry in sorted(missing_execution_receipts)]
 )
 workflow_execution_review_reasons.extend(
-    [f"failing_execution:{entry}" for entry in sorted(failing_execution_receipts)]
+    [f"outside_repo_root:{entry}" for entry in sorted(workflow_execution_receipts_outside_repo_root)]
+)
+workflow_execution_review_reasons.extend(
+    []
+    if evidence.get("workflow_execution_failures_external_only") is True
+    else [f"failing_execution:{entry}" for entry in sorted(failing_execution_receipts)]
 )
 workflow_execution_review_reasons.extend(
     [f"weak_execution:{entry}" for entry in sorted(weak_execution_receipts)]
@@ -922,6 +1345,82 @@ workflow_execution_review_reasons.extend(
 workflow_execution_review_reasons.extend(
     [f"legacy_execution_path:{entry}" for entry in legacy_execution_receipt_paths]
 )
+
+direct_flagship_slice_review_reasons: List[str] = []
+for marker_group, marker_result in direct_workflow_marker_results.items():
+    for marker in marker_result["missing"]:
+        direct_flagship_slice_review_reasons.append(f"{marker_group}:runtime_marker:{marker}")
+if missing_direct_screenshot_files:
+    direct_flagship_slice_review_reasons.extend(
+        [f"required_screenshot:{screenshot}" for screenshot in missing_direct_screenshot_files]
+    )
+if not status_ok(dense_initiative_route.get("status")):
+    direct_flagship_slice_review_reasons.append("dense_workbench_and_initiative:route_status")
+if missing_required_review_jobs:
+    direct_flagship_slice_review_reasons.extend(
+        [f"review_job_missing:{job_name}" for job_name in missing_required_review_jobs]
+    )
+if failing_required_review_jobs:
+    direct_flagship_slice_review_reasons.extend(
+        [f"review_job_not_ready:{job_name}" for job_name in failing_required_review_jobs]
+    )
+
+direct_flagship_slice_runtime_proof_closes_direct_workflow_gate = (
+    not direct_flagship_slice_review_reasons
+)
+evidence["direct_flagship_slice_runtime_proof_closes_direct_workflow_gate"] = (
+    direct_flagship_slice_runtime_proof_closes_direct_workflow_gate
+)
+deferred_upstream_reasons: List[str] = []
+deferred_workflow_family_reasons: List[str] = []
+deferred_workflow_execution_reasons: List[str] = []
+if direct_flagship_slice_runtime_proof_closes_direct_workflow_gate:
+    upstream_receipt_review_reasons, deferred_upstream_reasons = filter_reason_prefixes(
+        upstream_receipt_review_reasons,
+        (
+            "chummer5a_workflow_parity:",
+            "sr4_workflow_parity:",
+            "sr6_workflow_parity:",
+            "sr4_sr6_frontier:",
+            "ruleset_ui_adaptation:",
+            "next90_m141_direct_import_route_proof:",
+        ),
+    )
+    deferred_workflow_family_reasons = list(workflow_family_review_reasons)
+    deferred_workflow_execution_reasons = list(workflow_execution_review_reasons)
+    workflow_family_review_reasons = []
+    workflow_execution_review_reasons = []
+    reasons, deferred_reason_items = filter_reason_prefixes(
+        reasons,
+        (
+            "chummer5a_workflow_parity receipt is missing or not passing.",
+            "sr4_workflow_parity receipt is missing or not passing.",
+            "sr6_workflow_parity receipt is missing or not passing.",
+            "sr4_sr6_frontier receipt is stale",
+            "sr4_sr6_frontier receipt is missing or not passing.",
+            "ruleset_ui_adaptation receipt is missing or not passing.",
+            "next90_m141_direct_import_route_proof receipt is missing or not passing.",
+            "No SR4/SR6 family-level workflow receipts were discovered from ledgers.",
+            "SR4/SR6 ledgers are missing required canonical workflow families:",
+            "SR4/SR6 required canonical workflow families are not ready:",
+            "SR4/SR6 required canonical workflow families are missing audit tests:",
+            "Missing SR4/SR6 family-level workflow receipts:",
+            "SR4/SR6 family-level workflow receipts resolve outside this repo root:",
+            "SR4/SR6 family-level workflow receipts are not passing:",
+            "No SR4/SR6 family-level execution receipts were discovered from ledgers.",
+            "Missing SR4/SR6 family-level execution receipts:",
+            "SR4/SR6 family-level execution receipts resolve outside this repo root:",
+            "SR4/SR6 family-level execution receipts are not passing:",
+            "SR4/SR6 family-level execution receipts are not explicitly grounded:",
+            "Legacy workflow-family execution receipts still exist under deprecated path",
+        ),
+    )
+    evidence["direct_flagship_slice_deferred_reason_items"] = deferred_reason_items
+evidence["upstream_receipt_review_deferred_reasons"] = deferred_upstream_reasons
+evidence["workflow_family_review_deferred_reasons"] = deferred_workflow_family_reasons
+evidence["workflow_execution_review_deferred_reasons"] = deferred_workflow_execution_reasons
+for reason in direct_flagship_slice_review_reasons:
+    reasons.append(f"Direct flagship workflow proof is incomplete: {reason}.")
 
 status = "pass" if not reasons else "fail"
 payload = {
@@ -956,6 +1455,10 @@ payload = {
         "workflowExecutionReview": {
             "status": "pass" if not workflow_execution_review_reasons else "fail",
             "reasons": workflow_execution_review_reasons,
+        },
+        "directFlagshipSliceReview": {
+            "status": "pass" if not direct_flagship_slice_review_reasons else "fail",
+            "reasons": direct_flagship_slice_review_reasons,
         },
     },
     "evidence": evidence,

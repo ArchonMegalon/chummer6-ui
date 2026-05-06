@@ -28,7 +28,7 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveTabId: tabId ?? currentTabId,
             ActiveActionId: actionId ?? currentActionId,
             ActiveSectionId: sectionId,
-            ActiveSectionJson: section.ToJsonString(WriteIndentedOptions),
+            ActiveSectionJson: SerializeSectionPreviewJson(sectionId, section),
             ActiveSectionRows: SectionRowProjector.BuildRows(sectionId, section),
             ActiveBuildLab: buildLab,
             ActiveBrowseWorkspace: browseWorkspace,
@@ -71,5 +71,38 @@ public sealed class WorkspaceSectionRenderer : IWorkspaceSectionRenderer
             ActiveBuildLab: null,
             ActiveBrowseWorkspace: null,
             ActiveNpcPersonaStudio: null);
+    }
+
+    private static string SerializeSectionPreviewJson(string sectionId, JsonNode section)
+    {
+        JsonNode normalized = section.DeepClone();
+        if (normalized is JsonObject root)
+        {
+            if (!HasNonBlankString(root, "sectionId"))
+            {
+                root["sectionId"] = sectionId;
+            }
+
+            return normalized.ToJsonString(WriteIndentedOptions);
+        }
+
+        JsonObject wrapped = new()
+        {
+            ["sectionId"] = sectionId,
+            ["payload"] = normalized
+        };
+        return wrapped.ToJsonString(WriteIndentedOptions);
+    }
+
+    private static bool HasNonBlankString(JsonObject root, string propertyName)
+    {
+        if (!root.TryGetPropertyValue(propertyName, out JsonNode? node))
+        {
+            return false;
+        }
+
+        return node is JsonValue value
+            && value.TryGetValue(out string? text)
+            && !string.IsNullOrWhiteSpace(text);
     }
 }

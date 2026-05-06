@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-05-06T15:34:52.7278057Z",
+  "contract_name": "chummer6-ui.chummer5a_fixture_ui_reconstruction",
+  "status": "pass",
+  "summary": "UI reconstruction parity passed for Ghile Mear.chum5.",
+  "fixtureName": "Ghile Mear.chum5",
+  "characterName": "Se\u00E1n Cl\u00E1rach",
+  "linux_binary_under_test": true,
+  "used_internal_apis": false,
+  "screenshots": [
+    "Ghile Mear.chum5-opened.png",
+    "Ghile Mear.chum5-reloaded.png"
+  ],
+  "assertions": {
+    "openedByUi": true,
+    "savedByUi": true,
+    "reloadedByUi": true,
+    "roundTripPreservedIdentity": true
+  },
+  "reasons": [],
+  "evidence": {
+    "fixturePath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/TestFiles/Ghile Mear.chum5",
+    "savedFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/chummer5a-fixture-ui-reconstruction/Ghile Mear.chum5.roundtrip.chum5",
+    "pickerTitles": [
+      "Open Character File",
+      "Open Character File"
+    ],
+    "sourceIdentity": {
+      "characterName": "Se\u00E1n Cl\u00E1rach",
+      "primaryToken": "Se\u00E1n Cl\u00E1rach",
+      "alias": "Ghile Mear",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "openedIdentity": {
+      "characterName": "Se\u00E1n Cl\u00E1rach",
+      "primaryToken": "Se\u00E1n Cl\u00E1rach",
+      "alias": "Ghile Mear",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "savedIdentity": {
+      "characterName": "Se\u00E1n Cl\u00E1rach",
+      "primaryToken": "Se\u00E1n Cl\u00E1rach",
+      "alias": "Ghile Mear",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "reloadedIdentity": {
+      "characterName": "Se\u00E1n Cl\u00E1rach",
+      "primaryToken": "Se\u00E1n Cl\u00E1rach",
+      "alias": "Ghile Mear",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    }
+  }
+}

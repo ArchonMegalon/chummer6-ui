@@ -1,0 +1,1 @@
+Ensure campaign consequences are surfaced on the desktop within /docker/chummercomplete/chummer-presentation codebase

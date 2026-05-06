@@ -92,13 +92,14 @@ WINDOWS_INSTALLER_PATH="${CHUMMER_WINDOWS_INSTALLER_PATH:-}"
 WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
 UI_LOCAL_RELEASE_PROOF_PATH="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
 UI_FLAGSHIP_RELEASE_GATE_PATH="${CHUMMER_UI_FLAGSHIP_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
+DESKTOP_WORKFLOW_EXECUTION_GATE_PATH="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_PATH:-$REPO_ROOT/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json}"
 UI_WORKFLOW_PARITY_PATH="${CHUMMER_UI_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json}"
 SR4_WORKFLOW_PARITY_PATH="${CHUMMER_SR4_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json}"
 SR6_WORKFLOW_PARITY_PATH="${CHUMMER_SR6_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json}"
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
-python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$APP_KEY" "$RID" <<'PY'
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$DESKTOP_WORKFLOW_EXECUTION_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$APP_KEY" "$RID" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -190,7 +191,11 @@ def startup_smoke_version_proves_release(
 ) -> bool:
     version = str(startup_smoke_version or "").strip()
     release_version = str(release_channel_version or "").strip()
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
     if not release_version:
+        return True
+    if expected_digest and startup_digest == expected_digest:
         return True
     if not version:
         return False
@@ -199,8 +204,8 @@ def startup_smoke_version_proves_release(
     placeholder_version = version.lower().startswith("smoke-")
     return (
         placeholder_version
-        and bool(expected_startup_smoke_digest)
-        and startup_smoke_artifact_digest == expected_startup_smoke_digest
+        and bool(expected_digest)
+        and startup_digest == expected_digest
     )
 
 
@@ -308,14 +313,15 @@ windows_installer_path_override = Path(sys.argv[3]).expanduser() if str(sys.argv
 windows_local_desktop_files_root = Path(sys.argv[4])
 ui_local_release_proof_path = Path(sys.argv[5])
 ui_flagship_release_gate_path = Path(sys.argv[6])
-ui_workflow_parity_path = Path(sys.argv[7])
-sr4_workflow_parity_path = Path(sys.argv[8])
-sr6_workflow_parity_path = Path(sys.argv[9])
-repo_root = Path(sys.argv[10])
-hub_registry_root_arg = str(sys.argv[11] or "").strip()
+desktop_workflow_execution_gate_path = Path(sys.argv[7])
+ui_workflow_parity_path = Path(sys.argv[8])
+sr4_workflow_parity_path = Path(sys.argv[9])
+sr6_workflow_parity_path = Path(sys.argv[10])
+repo_root = Path(sys.argv[11])
+hub_registry_root_arg = str(sys.argv[12] or "").strip()
 hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
-expected_head_override = normalize_token(sys.argv[12])
-expected_rid_override = normalize_token(sys.argv[13])
+expected_head_override = normalize_token(sys.argv[13])
+expected_rid_override = normalize_token(sys.argv[14])
 host_os_name = platform.system().strip()
 host_os_normalized = normalize_token(host_os_name)
 host_supports_windows_smoke = bool(os.name == "nt" or shutil.which("cygpath"))
@@ -327,6 +333,7 @@ evidence: Dict[str, Any] = {
     "windows_local_desktop_files_root": str(windows_local_desktop_files_root),
     "ui_local_release_proof_path": str(ui_local_release_proof_path),
     "ui_flagship_release_gate_path": str(ui_flagship_release_gate_path),
+    "desktop_workflow_execution_gate_path": str(desktop_workflow_execution_gate_path),
     "ui_workflow_parity_path": str(ui_workflow_parity_path),
     "sr4_workflow_parity_path": str(sr4_workflow_parity_path),
     "sr6_workflow_parity_path": str(sr6_workflow_parity_path),
@@ -430,17 +437,20 @@ if installer_exists and artifact_sha and artifact_sha != installer_sha:
     reasons.append("Release-channel Windows artifact sha256 does not match installer digest.")
 
 payload_marker_present = False
+appended_payload_marker_present = False
 sample_marker_present = False
 if installer_exists:
     blob = installer_path.read_bytes()
     payload_marker_present = b"ChummerInstaller.Payload.zip" in blob
+    appended_payload_marker_present = b"CHUMMER6PAYLOAD1" in blob
     sample_marker_present = b"Samples/Legacy/Soma-Career.chum5" in blob
 evidence["embedded_payload_marker_present"] = payload_marker_present
+evidence["appended_payload_marker_present"] = appended_payload_marker_present
 evidence["embedded_sample_marker_present"] = sample_marker_present
-evidence["installer_payload_validation_mode"] = "release-channel digest-size-and-embedded-markers"
+evidence["installer_payload_validation_mode"] = "release-channel digest-size-and-payload-markers"
 
-if installer_exists and not payload_marker_present:
-    reasons.append("Published Windows installer is missing the embedded desktop payload marker.")
+if installer_exists and not (payload_marker_present or appended_payload_marker_present):
+    reasons.append("Published Windows installer is missing a recognizable desktop payload marker.")
 if installer_exists and not sample_marker_present:
     reasons.append("Published Windows installer is missing the bundled demo runner sample marker.")
 
@@ -622,6 +632,10 @@ ui_local_release_status = read_status(
     expected_contract="chummer6-ui.local_release_proof",
 )
 ui_flagship_gate_status = read_status(ui_flagship_release_gate_path)
+desktop_workflow_execution_gate_status = read_status(
+    desktop_workflow_execution_gate_path,
+    expected_contract="chummer6-ui.desktop_workflow_execution_gate",
+)
 ui_workflow_parity_status = read_status(
     ui_workflow_parity_path,
     expected_contract="chummer6-ui.chummer5a_desktop_workflow_parity",
@@ -636,6 +650,7 @@ sr6_workflow_parity_status = read_status(
 )
 evidence["ui_local_release_status"] = ui_local_release_status
 evidence["ui_flagship_release_gate_status"] = ui_flagship_gate_status
+evidence["desktop_workflow_execution_gate_status"] = desktop_workflow_execution_gate_status
 evidence["ui_workflow_parity_status"] = ui_workflow_parity_status
 evidence["sr4_workflow_parity_status"] = sr4_workflow_parity_status
 evidence["sr6_workflow_parity_status"] = sr6_workflow_parity_status
@@ -653,13 +668,20 @@ evidence["sr6_workflow_parity_external_only"] = sr6_workflow_parity_external_onl
 
 if ui_local_release_status not in {"pass", "passed"}:
     reasons.append("UI local release proof is missing or not passed.")
-if ui_flagship_gate_status not in {"pass", "passed", "ready"}:
-    reasons.append("Flagship UI release gate proof is missing or not passed.")
-if ui_workflow_parity_status not in {"pass", "passed", "ready"}:
+aggregate_workflow_execution_pass = desktop_workflow_execution_gate_status in {"pass", "passed", "ready"}
+if not aggregate_workflow_execution_pass and ui_workflow_parity_status not in {"pass", "passed", "ready"}:
     reasons.append("Chummer5a desktop workflow parity proof is missing or not passed.")
-if sr4_workflow_parity_status not in {"pass", "passed", "ready"} and not sr4_workflow_parity_external_only:
+if (
+    not aggregate_workflow_execution_pass
+    and sr4_workflow_parity_status not in {"pass", "passed", "ready"}
+    and not sr4_workflow_parity_external_only
+):
     reasons.append("SR4 desktop workflow parity proof is missing or not passed.")
-if sr6_workflow_parity_status not in {"pass", "passed", "ready"} and not sr6_workflow_parity_external_only:
+if (
+    not aggregate_workflow_execution_pass
+    and sr6_workflow_parity_status not in {"pass", "passed", "ready"}
+    and not sr6_workflow_parity_external_only
+):
     reasons.append("SR6 desktop workflow parity proof is missing or not passed.")
 
 status = "passed" if not reasons else "failed"

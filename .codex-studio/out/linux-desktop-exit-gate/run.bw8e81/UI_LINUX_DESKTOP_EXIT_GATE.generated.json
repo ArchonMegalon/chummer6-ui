@@ -1,0 +1,307 @@
+{
+  "contract_name": "chummer6-ui.linux_desktop_exit_gate",
+  "generated_at": "2026-04-30T15:09:57Z",
+  "status": "failed",
+  "reason": "stage flagship_ui_screenshot_gate failed",
+  "reasons": [
+    "stage flagship_ui_screenshot_gate failed"
+  ],
+  "stage": "flagship_ui_screenshot_gate",
+  "exit_code": 1,
+  "run_root": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81",
+  "head": {
+    "app_key": "avalonia",
+    "project_path": "Chummer.Avalonia/Chummer.Avalonia.csproj",
+    "launch_target": "Chummer.Avalonia",
+    "platform": "linux",
+    "rid": "linux-x64",
+    "version": "run-20260430-150422",
+    "channel": "preview",
+    "ready_checkpoint": "pre_ui_event_loop"
+  },
+  "channelId": "preview",
+  "releaseVersion": "run-20260430-150422",
+  "checks": {
+    "release_channel_id": "preview",
+    "release_channel_version": "run-20260430-150422",
+    "release_channel_linux_artifact": {},
+    "startup_smoke_receipt_found": false,
+    "startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+    "startup_smoke_external_blocker": "",
+    "flagship_ui_screenshot_gate_status": "pass",
+    "flagship_ui_screenshot_gate_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "flagship_ui_screenshot_count": 37
+  },
+  "build": {
+    "output_base_root": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate",
+    "publish_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/publish/avalonia-linux-x64",
+    "dist_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/dist",
+    "binary_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/publish/avalonia-linux-x64/Chummer.Avalonia",
+    "binary_exists": false,
+    "binary_sha256": "",
+    "binary_bytes": 0,
+    "binary_executable": false,
+    "publish_exists": true,
+    "self_contained": true,
+    "single_file": true,
+    "primary_package_kind": "deb",
+    "fallback_package_kind": "archive",
+    "archive_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/dist/chummer-avalonia-linux-x64.tar.gz",
+    "archive_exists": false,
+    "archive_sha256": "",
+    "archive_bytes": 0,
+    "installer_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/dist/chummer-avalonia-linux-x64-installer.deb",
+    "installer_exists": false,
+    "installer_sha256": "",
+    "installer_bytes": 0
+  },
+  "release_channel": {
+    "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "local_desktop_files_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
+    "use_promoted_installer": true,
+    "installer_smoke_artifact_path": "",
+    "promoted_installer_path": "",
+    "host_operating_system": "Linux",
+    "host_operating_system_normalized": "linux",
+    "host_supports_linux_startup_smoke": true,
+    "startup_smoke_external_blocker": ""
+  },
+  "startup_smoke": {
+    "primary": {
+      "package_kind": "deb",
+      "artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/dist/chummer-avalonia-linux-x64-installer.deb",
+      "receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+      "status": "not_built",
+      "receipt": null
+    },
+    "fallback": {
+      "package_kind": "archive",
+      "artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/dist/chummer-avalonia-linux-x64.tar.gz",
+      "receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/startup-smoke-archive/startup-smoke-avalonia-linux-x64.receipt.json",
+      "status": "not_built",
+      "receipt": null
+    }
+  },
+  "unit_tests": {
+    "project_path": "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
+    "framework": "net10.0",
+    "results_directory": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/test-results",
+    "trx_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.bw8e81/test-results/desktop-runtime-tests.trx",
+    "status": "missing",
+    "summary": {
+      "total": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    "assembly_name": "Chummer.Desktop.Runtime.Tests.dll"
+  },
+  "flagship_ui_screenshot_gate": {
+    "enabled": true,
+    "script": "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
+    "receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "receipt_status": "pass",
+    "screenshot_directory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "screenshot_count": 37,
+    "screenshot_files": [
+      "01-initial-shell-light.png",
+      "02-menu-open-light.png",
+      "03-settings-open-light.png",
+      "04-loaded-runner-light.png",
+      "05-dense-section-light.png",
+      "06-dense-section-dark.png",
+      "07-loaded-runner-tabs-light.png",
+      "08-cyberware-dialog-light.png",
+      "09-vehicles-section-light.png",
+      "10-contacts-section-light.png",
+      "11-diary-dialog-light.png",
+      "12-magic-dialog-light.png",
+      "13-matrix-dialog-light.png",
+      "14-advancement-dialog-light.png",
+      "15-creation-section-light.png",
+      "16-master-index-dialog-light.png",
+      "17-character-roster-dialog-light.png",
+      "18-import-dialog-light.png",
+      "19-workflow-file-menu-loaded-light.png",
+      "20-workflow-skills-section-light.png",
+      "21-workflow-skill-add-dialog-light.png",
+      "22-workflow-qualities-section-light.png",
+      "23-workflow-quality-add-dialog-light.png",
+      "24-workflow-gear-section-light.png",
+      "25-workflow-gear-add-dialog-light.png",
+      "26-workflow-weapons-section-light.png",
+      "27-workflow-weapon-add-dialog-light.png",
+      "28-workflow-armor-section-light.png",
+      "29-workflow-armor-add-dialog-light.png",
+      "30-workflow-cyberware-section-light.png",
+      "31-workflow-powers-section-light.png",
+      "32-workflow-adept-power-dialog-light.png",
+      "33-workflow-complex-form-dialog-light.png",
+      "34-workflow-validate-section-light.png",
+      "35-workflow-rules-section-light.png",
+      "36-workflow-new-character-dialog-light.png",
+      "37-workflow-calendar-section-light.png"
+    ],
+    "workflow_screenshot_coverage_status": "pass",
+    "required_workflow_family_ids": [
+      "create-open-import-save-save-as-print-export",
+      "metatype-priorities-karma-entry",
+      "attributes-skills-skill-groups-specializations-knowledge-languages",
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+      "cyberware-bioware-modular-hierarchies-nested-plugins",
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+      "improvements-explain-result-parity",
+      "recovery-reload-migration-roundtrips",
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare"
+    ],
+    "workflow_screenshot_coverage": [
+      {
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a File menu New/Open/Save/Save As/Print/Export handoff lineage.",
+        "screenshotFiles": [
+          "19-workflow-file-menu-loaded-light.png",
+          "36-workflow-new-character-dialog-light.png",
+          "18-import-dialog-light.png"
+        ],
+        "screenshotCount": 3
+      },
+      {
+        "workflowFamilyId": "metatype-priorities-karma-entry",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a character creation priority and karma journal lineage.",
+        "screenshotFiles": [
+          "15-creation-section-light.png",
+          "11-diary-dialog-light.png",
+          "36-workflow-new-character-dialog-light.png"
+        ],
+        "screenshotCount": 3
+      },
+      {
+        "workflowFamilyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a Attributes and Skills tab edit-list lineage.",
+        "screenshotFiles": [
+          "15-creation-section-light.png",
+          "20-workflow-skills-section-light.png",
+          "21-workflow-skill-add-dialog-light.png"
+        ],
+        "screenshotCount": 3
+      },
+      {
+        "workflowFamilyId": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a qualities, contacts, diary, notes, and source review lineage.",
+        "screenshotFiles": [
+          "10-contacts-section-light.png",
+          "22-workflow-qualities-section-light.png",
+          "23-workflow-quality-add-dialog-light.png",
+          "37-workflow-calendar-section-light.png"
+        ],
+        "screenshotCount": 4
+      },
+      {
+        "workflowFamilyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a gear, armor, weapon, vehicle, drone, mod, and location list lineage.",
+        "screenshotFiles": [
+          "09-vehicles-section-light.png",
+          "24-workflow-gear-section-light.png",
+          "25-workflow-gear-add-dialog-light.png",
+          "26-workflow-weapons-section-light.png",
+          "27-workflow-weapon-add-dialog-light.png",
+          "28-workflow-armor-section-light.png",
+          "29-workflow-armor-add-dialog-light.png"
+        ],
+        "screenshotCount": 7
+      },
+      {
+        "workflowFamilyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a cyberware/bioware nested selection and plugin lineage.",
+        "screenshotFiles": [
+          "08-cyberware-dialog-light.png",
+          "30-workflow-cyberware-section-light.png"
+        ],
+        "screenshotCount": 2
+      },
+      {
+        "workflowFamilyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a magic, adept, resonance, initiation, and matrix form lineage.",
+        "screenshotFiles": [
+          "12-magic-dialog-light.png",
+          "13-matrix-dialog-light.png",
+          "14-advancement-dialog-light.png",
+          "31-workflow-powers-section-light.png",
+          "32-workflow-adept-power-dialog-light.png",
+          "33-workflow-complex-form-dialog-light.png"
+        ],
+        "screenshotCount": 6
+      },
+      {
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a validation, explain, source, and applied-result review lineage.",
+        "screenshotFiles": [
+          "14-advancement-dialog-light.png",
+          "16-master-index-dialog-light.png",
+          "34-workflow-validate-section-light.png",
+          "35-workflow-rules-section-light.png"
+        ],
+        "screenshotCount": 4
+      },
+      {
+        "workflowFamilyId": "recovery-reload-migration-roundtrips",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a open/import/reload/recovery roundtrip lineage.",
+        "screenshotFiles": [
+          "04-loaded-runner-light.png",
+          "18-import-dialog-light.png",
+          "19-workflow-file-menu-loaded-light.png"
+        ],
+        "screenshotCount": 3
+      },
+      {
+        "workflowFamilyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+        "legacyBehaviorLineage": "Chummer4/Chummer5a dense list, quick action, preview, drill-in, and compare workbench lineage.",
+        "screenshotFiles": [
+          "05-dense-section-light.png",
+          "06-dense-section-dark.png",
+          "07-loaded-runner-tabs-light.png",
+          "24-workflow-gear-section-light.png",
+          "25-workflow-gear-add-dialog-light.png"
+        ],
+        "screenshotCount": 5
+      }
+    ]
+  },
+  "git": {
+    "repo_root": "/docker/chummercomplete/chummer6-ui",
+    "available": true,
+    "head": "e5fb35374d9dda87f7f9a3890b88b457e564332a",
+    "tracked_diff_sha256": "7efd61f13ecc85bb04cc7095aa41646f4d2b7cf3fd606450498845fe408b9de9",
+    "tracked_diff_line_count": 454,
+    "start": {
+      "available": false
+    },
+    "finish": {
+      "repo_root": "/docker/chummercomplete/chummer-presentation",
+      "available": true,
+      "head": "e5fb35374d9dda87f7f9a3890b88b457e564332a",
+      "tracked_diff_sha256": "a682a4080da1439dd66da84ad3f318d13435d97b95df9f56e9fa19723b6efad5",
+      "tracked_diff_line_count": 522
+    },
+    "identity_stable": false
+  },
+  "source_snapshot": {},
+  "current_git_available": true,
+  "current_git_head": "e5fb35374d9dda87f7f9a3890b88b457e564332a",
+  "current_tracked_diff_sha256": "7efd61f13ecc85bb04cc7095aa41646f4d2b7cf3fd606450498845fe408b9de9",
+  "proof_git_available": true,
+  "proof_git_head": "e5fb35374d9dda87f7f9a3890b88b457e564332a",
+  "proof_git_start_head": "",
+  "proof_git_finish_head": "e5fb35374d9dda87f7f9a3890b88b457e564332a",
+  "proof_git_start_tracked_diff_sha256": "",
+  "proof_git_finish_tracked_diff_sha256": "a682a4080da1439dd66da84ad3f318d13435d97b95df9f56e9fa19723b6efad5",
+  "proof_git_identity_stable": false,
+  "proof_git_head_matches_current": true,
+  "proof_tracked_diff_sha256": "a682a4080da1439dd66da84ad3f318d13435d97b95df9f56e9fa19723b6efad5",
+  "source_snapshot_entry_count": 0,
+  "source_snapshot_finish_entry_count": 0,
+  "source_snapshot_worktree_sha256": "",
+  "source_snapshot_finish_worktree_sha256": "",
+  "source_snapshot_identity_stable": false
+}

@@ -9,6 +9,8 @@ namespace Chummer.Avalonia;
 
 public partial class MainWindow
 {
+    private const string ExplainDrawerOpenRuleEnvironmentStudioActionId = "explain_drawer.open_rule_environment_studio";
+    private const string ExplainDrawerReviewBoundedFollowUpActionId = "explain_drawer.review_bounded_follow_up";
     internal static Func<MainWindow>? NewWindowFactoryForTesting { get; set; }
     internal static Action<MainWindow>? NewWindowCreatedForTesting { get; set; }
 
@@ -61,9 +63,49 @@ public partial class MainWindow
 
     private async void SectionHost_OnQuickActionRequested(object? sender, string controlId)
     {
+        if (await TryHandleExplainDrawerQuickActionAsync(controlId).ConfigureAwait(true))
+        {
+            return;
+        }
+
         await RunUiActionAsync(
             () => _interactionCoordinator.HandleUiControlAsync(controlId, CancellationToken.None),
             $"execute section quick action '{controlId}'");
+    }
+
+    private async Task<bool> TryHandleExplainDrawerQuickActionAsync(string controlId)
+    {
+        if (!string.Equals(controlId, ExplainDrawerOpenRuleEnvironmentStudioActionId, StringComparison.Ordinal)
+            && !string.Equals(controlId, ExplainDrawerReviewBoundedFollowUpActionId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        string operationName = string.Equals(controlId, ExplainDrawerReviewBoundedFollowUpActionId, StringComparison.Ordinal)
+            ? "review bounded follow-up"
+            : "open rule environment studio";
+        await RunUiActionAsync(
+            async () =>
+            {
+                if (string.Equals(controlId, ExplainDrawerReviewBoundedFollowUpActionId, StringComparison.Ordinal))
+                {
+                    ExplainDrawerContext? explainContext = _controls.SectionHost.GetCurrentExplainDrawerContext();
+                    if (explainContext is null)
+                    {
+                        MainWindowFeedbackCoordinator.ShowExplainFollowUpUnavailable(_controls.ToolStrip);
+                        return;
+                    }
+
+                    await DesktopExplainDrawerFollowUpWindow.ShowAsync(this, explainContext).ConfigureAwait(true);
+                    MainWindowFeedbackCoordinator.ShowExplainFollowUpReviewed(_controls.ToolStrip);
+                    return;
+                }
+
+                await DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity).ConfigureAwait(true);
+                MainWindowFeedbackCoordinator.ShowRuleEnvironmentStudioReviewed(_controls.ToolStrip);
+            },
+            operationName);
+        return true;
     }
 
     private async void CommandDialogPane_OnDialogActionSelected(object? sender, string actionId)

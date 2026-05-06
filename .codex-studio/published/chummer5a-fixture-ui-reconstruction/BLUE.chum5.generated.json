@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-05-06T15:34:41.4731977Z",
+  "contract_name": "chummer6-ui.chummer5a_fixture_ui_reconstruction",
+  "status": "pass",
+  "summary": "UI reconstruction parity passed for BLUE.chum5.",
+  "fixtureName": "BLUE.chum5",
+  "characterName": "Troy Simmons",
+  "linux_binary_under_test": true,
+  "used_internal_apis": false,
+  "screenshots": [
+    "BLUE.chum5-opened.png",
+    "BLUE.chum5-reloaded.png"
+  ],
+  "assertions": {
+    "openedByUi": true,
+    "savedByUi": true,
+    "reloadedByUi": true,
+    "roundTripPreservedIdentity": true
+  },
+  "reasons": [],
+  "evidence": {
+    "fixturePath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/TestFiles/BLUE.chum5",
+    "savedFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/chummer5a-fixture-ui-reconstruction/BLUE.chum5.roundtrip.chum5",
+    "pickerTitles": [
+      "Open Character File",
+      "Open Character File"
+    ],
+    "sourceIdentity": {
+      "characterName": "Troy Simmons",
+      "primaryToken": "Troy Simmons",
+      "alias": "BLUE",
+      "buildMethod": "SumtoTen",
+      "metatype": "Ork",
+      "rulesetId": "sr5"
+    },
+    "openedIdentity": {
+      "characterName": "Troy Simmons",
+      "primaryToken": "Troy Simmons",
+      "alias": "BLUE",
+      "buildMethod": "SumtoTen",
+      "metatype": "Ork",
+      "rulesetId": "sr5"
+    },
+    "savedIdentity": {
+      "characterName": "Troy Simmons",
+      "primaryToken": "Troy Simmons",
+      "alias": "BLUE",
+      "buildMethod": "SumtoTen",
+      "metatype": "Ork",
+      "rulesetId": "sr5"
+    },
+    "reloadedIdentity": {
+      "characterName": "Troy Simmons",
+      "primaryToken": "Troy Simmons",
+      "alias": "BLUE",
+      "buildMethod": "SumtoTen",
+      "metatype": "Ork",
+      "rulesetId": "sr5"
+    }
+  }
+}

@@ -27,12 +27,18 @@ internal static class StarterWorkspaceXmlFactory
             ? $"Starter {edition} critter dossier"
             : $"{edition} street operator starter dossier";
         string metatype = isCritter ? "Critter" : "Human";
-        string priorityMetatype = string.Equals(resolvedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase) ? "D" : string.Empty;
-        string priorityAttributes = string.Equals(resolvedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase) ? "B" : string.Empty;
-        string prioritySpecial = string.Equals(resolvedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase) ? "E" : string.Empty;
-        string prioritySkills = string.Equals(resolvedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase) ? "C" : string.Empty;
-        string priorityResources = string.Equals(resolvedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase) ? "A" : string.Empty;
-        string priorityTalent = string.Equals(resolvedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase) ? "D" : string.Empty;
+        bool usesPriorityWorkflow = string.Equals(resolvedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(resolvedBuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase);
+        object[] priorityElements = usesPriorityWorkflow
+            ? [
+                new XElement("prioritymetatype", ResolvePriorityPersistedValue("D")),
+                new XElement("priorityattributes", ResolvePriorityPersistedValue("B")),
+                new XElement("priorityspecial", ResolvePriorityPersistedValue("E")),
+                new XElement("priorityskills", ResolvePriorityPersistedValue("C")),
+                new XElement("priorityresources", ResolvePriorityPersistedValue("A")),
+                new XElement("prioritytalent", "D")
+            ]
+            : [];
 
         XDocument document = new(
             new XElement(
@@ -76,12 +82,7 @@ internal static class StarterWorkspaceXmlFactory
                 new XElement("maxnuyen", "50000"),
                 new XElement("maxkarma", "50"),
                 new XElement("contactmultiplier", "3"),
-                new XElement("prioritymetatype", priorityMetatype),
-                new XElement("priorityattributes", priorityAttributes),
-                new XElement("priorityspecial", prioritySpecial),
-                new XElement("priorityskills", prioritySkills),
-                new XElement("priorityresources", priorityResources),
-                new XElement("prioritytalent", priorityTalent),
+                priorityElements,
                 new XElement("sumtoten", string.Equals(resolvedBuildMethod, "Sum-to-Ten", StringComparison.OrdinalIgnoreCase) ? "10" : "0"),
                 new XElement("special", "2"),
                 new XElement("totalspecial", "2"),
@@ -131,6 +132,16 @@ internal static class StarterWorkspaceXmlFactory
 
         return normalized;
     }
+
+    private static string ResolvePriorityPersistedValue(string priority)
+        => priority.Trim().ToUpperInvariant() switch
+        {
+            "A" => "A,4",
+            "B" => "B,3",
+            "C" => "C,2",
+            "D" => "D,1",
+            _ => "E,0"
+        };
 
     private static XElement BuildAttributes()
     {

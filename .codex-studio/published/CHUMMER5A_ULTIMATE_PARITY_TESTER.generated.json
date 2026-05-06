@@ -1,0 +1,48 @@
+{
+  "generatedAt": "2026-05-06T15:35:18.027705Z",
+  "contract_name": "chummer6-ui.chummer5a_ultimate_parity_tester",
+  "status": "pass",
+  "summary": "Ultimate parity gate passed across all 34 available Chummer5a fixtures with UI-driven reconstruction and recursive proof.",
+  "fixtureCount": 34,
+  "proofScope": {
+    "fixtureScope": "all_available_fixtures_explicit",
+    "selectedFixtureCount": 34,
+    "availableFixtureCount": 34,
+    "uiReconstructionExecuted": true,
+    "perFixtureRoundTripExecuted": true,
+    "legacyReferenceScreenshotsCaptured": false,
+    "pixelDiffsGenerated": false,
+    "certifiesSelectedFixturesCanBeRebuiltOnlyUsingUi": true,
+    "certifiesEveryFixtureCanBeRebuiltOnlyUsingUi": true,
+    "recursiveSettingsAndElementsCertified": true,
+    "desktopWorkflowParityCertified": true,
+    "generatedDialogElementParityCertified": true,
+    "uiElementParityAuditCertified": true
+  },
+  "proofClaims": [
+    "Selected Chummer5a fixtures were parsed as structural oracle inputs.",
+    "Published Chummer6 workflow receipts, screenshot control evidence, and release gates covered the workflow families inferred from the selected fixtures.",
+    "Recursive menu workflows, legacy UI controls, quick-action roots, and generated dialog inventories are exhaustively classified and certified by published Chummer5a desktop workflow and element-parity receipts.",
+    "Each selected fixture had a passing per-fixture UI reconstruction receipt proving UI-driven open, save, reload, and identity-preserving roundtrip coverage."
+  ],
+  "proofLimitations": [
+    "This tester run validated published proof artifacts; it did not itself drive the Chummer6 UI end-to-end.",
+    "Legacy Chummer5a reference screenshots were not captured in this tester run.",
+    "Pixel diff images were not generated in this tester run."
+  ],
+  "fixtureReconstructionReview": {
+    "status": "pass",
+    "summary": "Selected fixtures have passing per-fixture UI reconstruction receipts.",
+    "missingReconstructionDirReason": "",
+    "fixtureFailures": {}
+  },
+  "recursiveParityReceiptReview": {
+    "status": "pass",
+    "summary": "Recursive settings, dialog, and element parity receipts are passing.",
+    "desktopWorkflowParityReasons": [],
+    "generatedDialogElementParityReasons": [],
+    "uiElementParityAuditReasons": []
+  },
+  "strictFailureReasons": [],
+  "sourceRunMetadata": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/chummer5a-ultimate-parity-tester/live/run-metadata.json"
+}

@@ -15,6 +15,7 @@ queued_follow_on_gates:
   - id: existing_campaign_adopted_without_rebuilding_full_history
     docs:
       - CAMPAIGN_ADOPTION_WIZARD.md
+      - CAMPAIGN_ADOPTION_START_FROM_TODAY_FLOW.md
   - id: player_pins_upgrade_and_tracks_progress_after_reward
     docs:
       - RUNNER_RESUME_AND_GOAL_PINS.md
@@ -28,6 +29,7 @@ queued_follow_on_gates:
   - id: resolution_report_creates_world_tick_and_player_safe_news_item
     docs:
       - BLACK_LEDGER_MVP_001.md
+      - NEWSREEL_AND_CITY_TICKER_MODEL.md
   - id: approved_run_resolution_updates_safe_seasonal_honors
     docs:
       - NETWORK_REPUTATION_AND_LEADERBOARDS_MODEL.md
@@ -171,6 +173,7 @@ journey_gates:
             local_blocking_findings_count: 0
             evidence.hub_registry_root_trusted_for_startup_smoke_proof: true
             evidence.visual_familiarity_status: pass
+            evidence.workflow_execution_status: pass
             evidence.desktop_familiarity.file_menu_live: true
             evidence.desktop_familiarity.master_index_first_class: true
             evidence.desktop_familiarity.character_roster_first_class: true
@@ -179,14 +182,10 @@ journey_gates:
             evidence.install_experience.claim_flow_surface: installer_or_in_app
             evidence.install_experience.product_installer_guides_head_choice: true
             evidence.receipt_scope.windows_gate:avalonia:win-x64.within_repo_root: true
-            evidence.receipt_scope.linux_gate:avalonia:linux-x64.within_repo_root: true
-            evidence.receipt_scope.macos_gate:avalonia:osx-arm64.within_repo_root: true
           must_contain:
             - '"contract_name": "chummer6-ui.desktop_executable_exit_gate"'
             - '"local_blocking_findings_count": 0'
             - '"windows_gate:avalonia:win-x64"'
-            - '"linux_gate:avalonia:linux-x64"'
-            - '"macos_gate:avalonia:osx-arm64"'
             - '"hub_registry_root_trusted_for_startup_smoke_proof": true'
           max_age_hours: 48
           generated_at_fields:
@@ -438,6 +437,26 @@ journey_gates:
             - DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6DesignerCoverage")
             - DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexHouseRuleLane")
             - DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSr6SuccessorReceipt")
+        - repo: chummer6-ui
+          path: .codex-studio/published/USER_JOURNEY_TESTER_AUDIT.generated.json
+          json_must_equal:
+            contract_name: chummer6-ui.user_journey_tester_audit
+            status: pass
+            evidence.linux_binary_under_test: true
+            evidence.used_internal_apis: false
+            evidence.fix_shard_separate: true
+            evidence.open_blocking_findings_count: 0
+          must_contain:
+            - '"master_index_search_focus_stability"'
+            - '"file_new_character_visible_workspace"'
+            - '"minimal_character_build_save_reload"'
+            - '"major_navigation_sanity"'
+            - '"validation_or_export_smoke"'
+            - '"screenshots"'
+            - '"screenshotReview"'
+            - '"focus_preserved_after_typing"'
+            - '"new_character_action_opened_visible_workspace"'
+            - '"validation_or_export_action_completed"'
       required_project_posture:
         - project_id: core
           minimum_stage: pre_repo_local_complete

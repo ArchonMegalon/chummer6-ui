@@ -25,6 +25,7 @@ public sealed partial class CharacterOverviewPresenter
             WorkspaceImportDocument resolvedDocument = await ResolveImportDocumentAsync(document, ct);
             WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.ImportAsync(State, resolvedDocument, ct);
             Publish(result.State);
+            await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
         }
         catch (Exception ex)
@@ -125,11 +126,51 @@ public sealed partial class CharacterOverviewPresenter
         ShellBootstrapData bootstrap = TryCreateBootstrapFromShellState(out ShellBootstrapData shellBootstrap)
             ? shellBootstrap
             : await _bootstrapDataProvider.GetAsync(rulesetId, ct);
+        bootstrap = NormalizeBootstrapData(bootstrap, rulesetId);
         Publish(State with
         {
             Error = null,
             Commands = bootstrap.Commands ?? commands,
             NavigationTabs = bootstrap.NavigationTabs ?? navigationTabs
+        });
+    }
+
+    private async Task RefreshNavigationContextForCurrentWorkspaceAsync(CancellationToken ct)
+    {
+        CharacterWorkspaceId? currentWorkspaceId = ResolveCurrentWorkspaceId();
+        if (currentWorkspaceId is null)
+        {
+            return;
+        }
+
+        string? rulesetId = ResolveWorkspaceRulesetId(currentWorkspaceId.Value);
+        if (string.IsNullOrWhiteSpace(rulesetId))
+        {
+            return;
+        }
+
+        string? commandRulesetId = State.Commands
+            .Select(command => RulesetDefaults.NormalizeOptional(command.RulesetId))
+            .FirstOrDefault(candidate => candidate is not null);
+        string? tabRulesetId = State.NavigationTabs
+            .Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId))
+            .FirstOrDefault(candidate => candidate is not null);
+        bool needsRefresh = State.Commands.Count == 0
+            || State.NavigationTabs.Count == 0
+            || !string.Equals(commandRulesetId, rulesetId, StringComparison.Ordinal)
+            || !string.Equals(tabRulesetId, rulesetId, StringComparison.Ordinal);
+        if (!needsRefresh)
+        {
+            return;
+        }
+
+        ShellBootstrapData bootstrap = await _bootstrapDataProvider.GetAsync(rulesetId, ct);
+        bootstrap = NormalizeBootstrapData(bootstrap, rulesetId);
+        Publish(State with
+        {
+            Error = null,
+            Commands = bootstrap.Commands,
+            NavigationTabs = bootstrap.NavigationTabs
         });
     }
 
@@ -145,10 +186,7 @@ public sealed partial class CharacterOverviewPresenter
         IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
         string? defaultTabId = !string.IsNullOrWhiteSpace(State.ActiveTabId)
             ? State.ActiveTabId
-            : navigationTabs
-                .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
-                ?.Id
-                ?? navigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
+            : ResolveDefaultWorkspaceTabId(navigationTabs, State.LastCommandId);
         if (string.IsNullOrWhiteSpace(defaultTabId))
         {
             return;
@@ -156,6 +194,47 @@ public sealed partial class CharacterOverviewPresenter
 
         await SelectTabAsync(defaultTabId, ct);
     }
+
+    private static string? ResolveDefaultWorkspaceTabId(
+        IReadOnlyList<NavigationTabDefinition> navigationTabs,
+        string? lastCommandId)
+    {
+        if (IsNewWorkspaceCommand(lastCommandId))
+        {
+            string[] visibleNewWorkspaceTabPreference =
+            [
+                "tab-attributes",
+                "tab-skills",
+                "tab-info",
+                "tab-gear",
+                "tab-qualities"
+            ];
+            foreach (string preferredTabId in visibleNewWorkspaceTabPreference)
+            {
+                string? matchingTabId = navigationTabs
+                    .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, preferredTabId, StringComparison.Ordinal))
+                    ?.Id;
+                if (!string.IsNullOrWhiteSpace(matchingTabId))
+                {
+                    return matchingTabId;
+                }
+            }
+
+            return navigationTabs
+                .FirstOrDefault(tab => tab.EnabledByDefault
+                    && !string.Equals(tab.SectionId, "build-lab", StringComparison.Ordinal))?.Id
+                ?? navigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
+        }
+
+        return navigationTabs
+            .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
+            ?.Id
+            ?? navigationTabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
+    }
+
+    private static bool IsNewWorkspaceCommand(string? commandId)
+        => string.Equals(commandId, "new_character", StringComparison.Ordinal)
+            || string.Equals(commandId, "new_critter", StringComparison.Ordinal);
 
     public async Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
@@ -169,6 +248,7 @@ public sealed partial class CharacterOverviewPresenter
         {
             WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.LoadAsync(State, id, ct);
             Publish(result.State);
+            await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
         }
         catch (Exception ex)
@@ -185,6 +265,7 @@ public sealed partial class CharacterOverviewPresenter
     {
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.SwitchAsync(State, id, ct);
         Publish(result.State);
+        await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
     }
 
     public async Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)

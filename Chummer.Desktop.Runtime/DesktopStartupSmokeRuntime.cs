@@ -49,6 +49,7 @@ public static class DesktopStartupSmokeRuntime
             }
 
             DesktopStartupSmokeReceipt receipt = new(
+                Status: "pass",
                 HeadId: context.HeadId,
                 Version: context.Version,
                 ReleaseVersion: context.ReleaseVersion,
@@ -214,6 +215,12 @@ public static class DesktopStartupSmokeRuntime
 
     private static string ResolveReleaseVersion(Assembly assembly, string fallbackVersion)
     {
+        string? overrideVersion = Environment.GetEnvironmentVariable(StartupSmokeReleaseVersionEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(overrideVersion))
+        {
+            return overrideVersion.Trim();
+        }
+
         string? metadataVersion = ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion");
         if (!string.IsNullOrWhiteSpace(metadataVersion))
         {
@@ -372,6 +379,7 @@ public static class DesktopStartupSmokeRuntime
     }
 
     public sealed record DesktopStartupSmokeReceipt(
+        string Status,
         string HeadId,
         string Version,
         string ReleaseVersion,

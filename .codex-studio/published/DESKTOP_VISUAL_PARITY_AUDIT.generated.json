@@ -1,0 +1,79 @@
+{
+  "contract_name": "chummer6-ui.desktop_visual_parity_audit",
+  "status": "pass",
+  "generated_at": "2026-04-27T12:09:08.500399Z",
+  "tester_user_shard": {
+    "shard_id": "shard-14",
+    "role": "dedicated tester-user shard / audit_shard",
+    "source_artifact": ".codex-studio/published/USER_JOURNEY_TESTER_AUDIT.generated.json",
+    "user_journey_status": "pass",
+    "linux_binary_under_test": true,
+    "used_internal_apis": false,
+    "fix_shard_separate": true,
+    "open_blocking_findings_count": 0
+  },
+  "summary": "Desktop visual parity is approved for the current generated proof chain. The GM prep, roster movement, and rule-environment studio blockers are wired into the Avalonia shell, B13 passes, B14 regenerates rich flagship proof, and the visual familiarity, layout, screenshot, dense workbench, and veteran task-time gates are green.",
+  "manual_visual_review": {
+    "screenshot_contact_sheet": "/tmp/chummer_visual_parity_contact_sheet.jpg",
+    "observed_strengths": [
+      "Classic Chummer5a File/Tools/Windows/Help menu rhythm and compact icon toolstrip remain visible in the generated desktop screenshots.",
+      "Loaded-runner, dense section, master index, roster, import, and add/edit screenshots retain compact grid/list/dialog density rather than public-web landing-page posture.",
+      "Workflow evidence now includes 37 generated screenshots and 37 control entries with 10 workflow coverage groups.",
+      "GM prep, roster movement, campaign memory return, and rule-environment studio routes have source anchors and startup-surface coverage without changing the visible classic toolstrip order."
+    ],
+    "polish_notes": [
+      "The newly added GM/rules toolbar buttons are hidden shell-action anchors, preserving the hard-gated Chummer5a visible toolstrip order while keeping routes auditable.",
+      "Desktop startup intentionally does not reopen the home cockpit by default; the layout hard gate requires the single-runner chrome to stay collapsed at startup.",
+      "Dark-mode visual parity remains represented by the dense-section frame; broader dark workflow screenshots can be expanded in a future non-blocking audit."
+    ]
+  },
+  "machine_gate_review": {
+    "ui_flagship_release_gate_status": "pass",
+    "ui_flagship_has_interaction_proof": true,
+    "ui_flagship_has_head_proofs": true,
+    "desktop_heads_count": 1,
+    "desktop_visual_familiarity_status": "pass",
+    "chummer5a_layout_hard_gate_status": "pass",
+    "screenshot_review_status": "pass",
+    "classic_dense_workbench_status": "pass",
+    "veteran_task_time_status": "pass",
+    "blocking_failure_count": 0,
+    "required_screenshot_count": 37,
+    "control_entry_count": 37,
+    "workflow_coverage_count": 10
+  },
+  "resolved_blockers": [
+    {
+      "id": "visual-proof-schema-gap",
+      "resolution": "B14 now publishes UI_FLAGSHIP_RELEASE_GATE.generated.json with interactionProof, headProofs, and desktopHeads fields."
+    },
+    {
+      "id": "visual-review-jobs-not-approved",
+      "resolution": "DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE and CHUMMER5A_SCREENSHOT_REVIEW_GATE both pass after proof regeneration."
+    },
+    {
+      "id": "gm-prep-roster-surface-blocks-full-b14-refresh",
+      "resolution": "Avalonia shell now exposes GM prep, roster movement, and rule-environment studio source anchors; B13 and B14 pass."
+    },
+    {
+      "id": "startup-home-layout-blocker",
+      "resolution": "Avalonia startup remains aligned with the Chummer5a layout hard gate by not reopening the desktop home cockpit by default."
+    }
+  ],
+  "blocking_findings": [],
+  "commands_run": [
+    "bash scripts/ai/milestones/b13-accessibility-signoff-check.sh -> pass",
+    "bash scripts/ai/milestones/b14-flagship-ui-release-gate.sh -> pass after removing startup-home layout blocker",
+    "jq status checks for UI_FLAGSHIP_RELEASE_GATE, DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE, CHUMMER5A_LAYOUT_HARD_GATE, CHUMMER5A_SCREENSHOT_REVIEW_GATE, CLASSIC_DENSE_WORKBENCH_POSTURE_GATE, VETERAN_TASK_TIME_EVIDENCE_GATE -> all pass"
+  ],
+  "source_receipts": {
+    "user_journey_tester_audit": ".codex-studio/published/USER_JOURNEY_TESTER_AUDIT.generated.json",
+    "ui_flagship_release_gate": ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "desktop_visual_familiarity_exit_gate": ".codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "chummer5a_layout_hard_gate": ".codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
+    "chummer5a_screenshot_review_gate": ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "classic_dense_workbench_posture_gate": ".codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+    "veteran_task_time_evidence_gate": ".codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+    "screenshot_control_evidence": ".codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json"
+  }
+}

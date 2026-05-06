@@ -1,0 +1,2 @@
+Pixel diff images were not generated for this run.
+The tester used element-aware structural checks backed by screenshot control evidence.

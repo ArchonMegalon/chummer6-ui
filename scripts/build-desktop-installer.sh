@@ -605,6 +605,33 @@ print(target)
 PY
 }
 
+append_payload_zip_to_windows_installer() {
+  local installer_path="$1"
+  local payload_zip="$2"
+  python3 - "$installer_path" "$payload_zip" <<'PY'
+import struct
+import sys
+from pathlib import Path
+
+installer = Path(sys.argv[1])
+payload = Path(sys.argv[2])
+magic = b"CHUMMER6PAYLOAD1"
+
+if not installer.is_file():
+    raise SystemExit(f"installer not found: {installer}")
+if not payload.is_file():
+    raise SystemExit(f"payload zip not found: {payload}")
+
+payload_bytes = payload.read_bytes()
+with installer.open("ab") as handle:
+    handle.write(payload_bytes)
+    handle.write(struct.pack("<q", len(payload_bytes)))
+    handle.write(magic)
+
+print(installer)
+PY
+}
+
 build_payload_tar_gz() {
   local target="$1"
   python3 - "$PUBLISH_DIR" "$target" <<'PY'
@@ -960,7 +987,7 @@ build_windows_installer() {
     -p:EnableCompressionInSingleFile=true \
     -p:IncludeNativeLibrariesForSelfExtract=true \
     -p:IncludeAllContentForSelfExtract=true \
-    -p:ChummerInstallerEmbedPayload=true \
+    -p:ChummerInstallerEmbedPayload=false \
     -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
     -p:InstallerPayloadZip="$payload_zip" \
     -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
@@ -983,6 +1010,7 @@ build_windows_installer() {
   fi
 
   cp "$installer_source" "$DIST_DIR/$installer_name"
+  append_payload_zip_to_windows_installer "$DIST_DIR/$installer_name" "$payload_zip"
   rm -f "$payload_zip"
   if [[ -n "$stage_root" ]]; then
     rm -rf "$stage_root"

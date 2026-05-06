@@ -1,0 +1,87 @@
+{
+  "generatedAt": "2026-05-06T16:00:31.1041652Z",
+  "contract_name": "chummer6-ui.chummer5a_fixture_ui_reconstruction",
+  "status": "fail",
+  "summary": "UI reconstruction parity failed for Tenshi.chum5.",
+  "fixtureName": "Tenshi.chum5",
+  "characterName": "Felicia Marz",
+  "linux_binary_under_test": true,
+  "used_internal_apis": false,
+  "screenshots": [
+    "Tenshi.chum5-opened.png"
+  ],
+  "assertions": {
+    "openedByUi": true,
+    "savedByUi": true,
+    "exportedByUi": false,
+    "printedByUi": false,
+    "pdfArtifactProducedByUiPrintRoute": false,
+    "outputArtifactsProducedByUi": false,
+    "reloadedByUi": false,
+    "roundTripPreservedIdentity": false
+  },
+  "reasons": [
+    "Assert.Fail failed. Timed out waiting for runtime-backed UI condition: runtime menu command \u0027export_character\u0027 in \u0027FileMenuButton\u0027.",
+    "Expected two host file-open picker calls for \u0027Tenshi.chum5\u0027, but saw: Open Character File",
+    "\u0027Tenshi.chum5\u0027 did not complete a UI export route.",
+    "\u0027Tenshi.chum5\u0027 did not complete a UI print-preview route.",
+    "\u0027Tenshi.chum5\u0027 did not materialize a PDF artifact from the UI print route.",
+    "\u0027Tenshi.chum5\u0027 did not publish the full save/export/print output artifact set.",
+    "\u0027Tenshi.chum5\u0027 did not complete a UI reload route.",
+    "\u0027Tenshi.chum5\u0027 identity drifted across the open/save/reload roundtrip. Source=primary=Felicia Marz, alias=Tenshi, build=SumtoTen, metatype=Human, ruleset=sr5; Opened=primary=Felicia Marz, alias=Tenshi, build=SumtoTen, metatype=Human, ruleset=sr5; Saved=primary=Felicia Marz, alias=Tenshi, build=SumtoTen, metatype=Human, ruleset=sr5; Reloaded=primary=Felicia Marz, alias=Tenshi, build=SumtoTen, metatype=Human, ruleset=sr5.",
+    "\u0027Tenshi.chum5\u0027 did not publish the expected UI reconstruction screenshots."
+  ],
+  "evidence": {
+    "fixturePath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/TestFiles/Tenshi.chum5",
+    "savedFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/070adf16d59746f6b2ace025ba3c634d/Tenshi.chum5.roundtrip.chum5",
+    "exportFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/070adf16d59746f6b2ace025ba3c634d/Tenshi.chum5.export.json",
+    "printPreviewFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/070adf16d59746f6b2ace025ba3c634d/Tenshi.chum5.print.html",
+    "pdfArtifactPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/070adf16d59746f6b2ace025ba3c634d/Tenshi.chum5.print.pdf",
+    "pickerTitles": [
+      "Open Character File"
+    ],
+    "outputRouteFacts": {
+      "exportCallCount": 0,
+      "exportFileName": "",
+      "exportByteCount": 0,
+      "printCallCount": 0,
+      "printFileName": "",
+      "printMimeType": "",
+      "printTitle": "",
+      "printPreviewByteCount": 0,
+      "pdfArtifactByteCount": 0
+    },
+    "sourceIdentity": {
+      "characterName": "Felicia Marz",
+      "primaryToken": "Felicia Marz",
+      "alias": "Tenshi",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "openedIdentity": {
+      "characterName": "Felicia Marz",
+      "primaryToken": "Felicia Marz",
+      "alias": "Tenshi",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "savedIdentity": {
+      "characterName": "Felicia Marz",
+      "primaryToken": "Felicia Marz",
+      "alias": "Tenshi",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "reloadedIdentity": {
+      "characterName": "Felicia Marz",
+      "primaryToken": "Felicia Marz",
+      "alias": "Tenshi",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    }
+  }
+}

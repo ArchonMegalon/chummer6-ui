@@ -1,0 +1,20 @@
+{
+  "contractName": "chummer6-ui.chummer_sr6_shared_muscle_memory_policy",
+  "scopeStrategy": "shared_promoted_desktop_posture_against_chummer5a_baseline",
+  "summary": "SR6 shared muscle-memory policy that keeps the experimental SR6 lane on the same desktop posture as the promoted Chummer desktop baseline.",
+  "sr6WorkflowParityContract": "chummer6-ui.sr6_desktop_workflow_parity",
+  "runtimeInventoryContract": "chummer6-ui.sr6_shared_muscle_memory_inventory",
+  "requiredRuntimeTestMarkers": [
+    "Runtime_backed_sr6_shared_muscle_memory_inventory_receipt_matches_promoted_surface_contract",
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"
+  ],
+  "fullScope": {
+    "sharedShellSurfacesInScope": true,
+    "sharedDialogsAndPanelsInScope": true,
+    "menusInScope": true,
+    "tooltipsInScope": true,
+    "sharedBaselineComparisonInScope": true,
+    "dialogLabelReviewInScope": true,
+    "secondaryPointerHostTruthInScope": true
+  }
+}

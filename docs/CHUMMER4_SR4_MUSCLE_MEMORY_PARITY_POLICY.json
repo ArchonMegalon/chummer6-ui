@@ -1,0 +1,66 @@
+{
+  "contractName": "chummer6-ui.chummer4_sr4_muscle_memory_parity_policy",
+  "scopeStrategy": "promoted_sr4_surfaces_with_chummer4_dialog_oracles",
+  "summary": "SR4 muscle-memory parity policy that uses Chummer4 as the legacy oracle for the promoted SR4 desktop lane.",
+  "sr4WorkflowParityContract": "chummer6-ui.sr4_desktop_workflow_parity",
+  "runtimeInventoryContract": "chummer6-ui.chummer4_sr4_muscle_memory_inventory",
+  "fullScope": {
+    "promotedDialogsAndPanelsInScope": true,
+    "menusInScope": true,
+    "tooltipsInScope": true,
+    "sharedBaselineComparisonInScope": true,
+    "secondaryPointerHostTruthInScope": true
+  },
+  "requiredRuntimeTestMarkers": [
+    "Runtime_backed_sr4_chummer4_muscle_memory_inventory_receipt_covers_every_surface_and_element",
+    "Runtime_backed_sr4_switch_ruleset_dialog_preserves_compact_combo_posture",
+    "Runtime_backed_sr4_new_character_dialog_preserves_chummer4_build_method_combo_posture",
+    "Runtime_backed_sr4_new_character_preserves_modify_button_row_order_and_footer_posture",
+    "Runtime_backed_sr4_dice_roller_preserves_chummer4_checkbox_copy",
+    "Runtime_backed_sr4_dice_roller_preserves_chummer4_spinner_posture_and_topbar_geography",
+    "Runtime_backed_sr4_starter_runner_gear_add_uses_chummer4_category_combobox_posture",
+    "Runtime_backed_sr4_starter_runner_gear_add_preserves_two_pane_geography_and_primary_action_band"
+  ],
+  "detailedDialogChecks": [
+    {
+      "dialogId": "gear_add",
+      "legacyDesignerPath": "/docker/fleet/repos/chummer4/Chummer/frmSelectGear.Designer.cs",
+      "legacyRequiredPatterns": [
+        "this.lblCategory.Text = \"Category:\";",
+        "this.cboCategory.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;"
+      ],
+      "currentRequiredPatterns": [
+        "new DesktopDialogField(\"uiGearCategory\", \"Category\", \"Show All\", \"Show All\", InputType: \"select\"",
+        "new DesktopDialogField(\"uiGearBookFilter\", \"Data File\", \"All Books\", \"All Books\", InputType: \"select\"",
+        "\"Pistols\"",
+        "\"Medical\""
+      ],
+      "requiredTestMarkers": [
+        "Runtime_backed_sr4_starter_runner_gear_add_uses_chummer4_category_combobox_posture"
+      ]
+    },
+    {
+      "dialogId": "dice_roller",
+      "legacyDesignerPath": "/docker/fleet/repos/chummer4/Chummer/frmDiceRoller.Designer.cs",
+      "legacyRequiredPatterns": [
+        "this.cboMethod.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;",
+        "this.chkRuleOf6.Text = \"using Rule of 6\";",
+        "this.chkCinematicGameplay.Text = \"Hit on 4, 5, or 6\";",
+        "this.cmdReroll.Text = \"Re-Roll Misses\";",
+        "this.chkRushJob.Text = \"Rushed Job (Glitch on 1 or 2)\";"
+      ],
+      "currentRequiredPatterns": [
+        "\"Re-Roll Misses\"",
+        "\"Build Method\"",
+        "\"using Rule of 6\"",
+        "\"Hit on 4, 5, or 6\"",
+        "\"Rushed Job (Glitch on 1 or 2)\"",
+        "BuildLegacyInlineNumericUpDown"
+      ],
+      "requiredTestMarkers": [
+        "Runtime_backed_sr4_dice_roller_preserves_chummer4_checkbox_copy",
+        "Runtime_backed_sr4_dice_roller_preserves_chummer4_spinner_posture_and_topbar_geography"
+      ]
+    }
+  ]
+}

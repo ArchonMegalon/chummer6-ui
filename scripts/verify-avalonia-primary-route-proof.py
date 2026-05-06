@@ -1,6 +1,91 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+
+PACKAGE_ID = "next90-m113-ui-gm-prep-roster-surface"
+REQUIRED_ROUTE_KEYWORDS = (
+    "gm",
+    "prep",
+    "packet",
+    "roster",
+    "movement",
+    "desktop",
+    "workspace",
+)
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(payload, dict):
+        raise SystemExit(f"expected JSON object in {path}")
+    return payload
+
+
+def iter_strings(value: Any) -> list[str]:
+    strings: list[str] = []
+    if isinstance(value, str):
+        strings.append(value)
+    elif isinstance(value, list):
+        for item in value:
+            strings.extend(iter_strings(item))
+    elif isinstance(value, dict):
+        for item in value.values():
+            strings.extend(iter_strings(item))
+    return strings
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        raise SystemExit("usage: verify-avalonia-primary-route-proof.py <proof-json>")
+
+    proof_path = Path(sys.argv[1]).resolve()
+    proof = load_json(proof_path)
+
+    evidence = []
+    evidence.extend(iter_strings(proof.get("routes")))
+    evidence.extend(iter_strings(proof.get("proof_routes")))
+    evidence.extend(iter_strings(proof.get("screens")))
+    evidence.extend(iter_strings(proof.get("notes")))
+    evidence.extend(iter_strings(proof.get("summary")))
+    evidence.extend(iter_strings(proof.get("receipts")))
+    evidence.extend(iter_strings(proof.get("explainReceipts")))
+
+    normalized = "\n".join(item.strip().lower() for item in evidence if str(item).strip())
+    if PACKAGE_ID not in normalized and "gm prep" not in normalized and "roster movement" not in normalized:
+        raise SystemExit(
+            f"{proof_path} does not cite {PACKAGE_ID}, gm prep, or roster movement"
+        )
+
+    missing = [token for token in REQUIRED_ROUTE_KEYWORDS if token not in normalized]
+    if missing:
+        raise SystemExit(
+            f"{proof_path} is missing required GM prep/roster movement proof markers: {', '.join(missing)}"
+        )
+
+    print(
+        json.dumps(
+            {
+                "ok": True,
+                "package_id": PACKAGE_ID,
+                "verified_keywords": list(REQUIRED_ROUTE_KEYWORDS),
+                "proof": str(proof_path),
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+#!/usr/bin/env python3
+from __future__ import annotations
+
 import argparse
 import json
 import os
