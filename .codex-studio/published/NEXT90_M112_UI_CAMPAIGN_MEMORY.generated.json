@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-05-05T05:49:07Z",
+  "packageId": "next90-m112-ui-campaign-memory",
+  "title": "Surface campaign memory and consequences on desktop",
+  "task": "Make campaign consequences, stale state, and next-session return actions visible on the promoted desktop route.",
+  "status": "pass",
+  "sourceRegistryPath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml",
+  "sourceQueuePath": "/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
+  "sourceDesignQueuePath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
+  "checks": {
+    "registry_has_m112_ui_task": true,
+    "registry_task_unique": true,
+    "queue_package_unique": true,
+    "design_queue_package_unique": true,
+    "queue_title_matches": true,
+    "queue_task_matches": true,
+    "design_queue_title_matches": true,
+    "design_queue_task_matches": true,
+    "allowed_paths_exact": true,
+    "design_allowed_paths_exact": true,
+    "owned_surfaces_exact": true,
+    "design_owned_surfaces_exact": true,
+    "design_queue_path_matches": true
+  },
+  "sourceChecks": {
+    "Chummer.Avalonia/DesktopHomeWindow.cs": {
+      "BuildCampaignConsequenceSummary()": true,
+      "BuildCampaignConsequenceEvidenceSummary()": true,
+      "BuildCampaignNextSessionReturnSummary()": true,
+      "BuildCampaignReturnActionSummary()": true,
+      "ResolveCampaignMemoryEvidence()": true,
+      "Review campaign consequences": true,
+      "Review next-session return": true,
+      "Campaign consequence proof:": true
+    },
+    "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
+      "BuildCampaignConsequenceSummary()": true,
+      "BuildCampaignConsequenceEvidenceSummary()": true,
+      "BuildCampaignNextSessionReturnSummary()": true,
+      "BuildCampaignNextSessionReturnActionSummary()": true,
+      "ResolveCampaignMemorySummary()": true,
+      "ResolveCampaignMemoryReturnSummary()": true,
+      "ResolveCampaignMemoryEvidence()": true,
+      "ResolveCampaignMemoryNextSafeAction()": true,
+      "Review campaign consequences": true,
+      "Review next-session return": true,
+      "Campaign consequence proof:": true
+    },
+    "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
+      "BuildCampaignConsequenceEvidenceSummary()": true,
+      "ResolveCampaignMemoryEvidence()": true,
+      "Campaign consequence proof:": true,
+      "Review campaign consequences": true,
+      "BuildCampaignNextSessionReturnActionSummary()": true
+    }
+  },
+  "proofCommands": {
+    "directProofCommand": "bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh",
+    "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"Next90M112CampaignMemoryGuardTests\" --no-restore",
+    "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+  },
+  "proofFiles": [
+    "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M112_UI_CAMPAIGN_MEMORY.generated.json",
+    "/docker/chummercomplete/chummer6-ui-finish/scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh",
+    "/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/DesktopHomeWindow.cs",
+    "/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+    "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+    "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Compliance/Next90M112CampaignMemoryGuardTests.cs"
+  ],
+  "failures": []
+}
