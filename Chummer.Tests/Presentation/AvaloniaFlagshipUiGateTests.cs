@@ -9167,6 +9167,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             Pump();
         }
 
+        public void SelectCommand(string commandId)
+        {
+            ListBox commandsList = FindControl<ListBox>("CommandsList");
+            CommandPaletteItem command = SnapshotListBoxItems(commandsList)
+                .OfType<CommandPaletteItem>()
+                .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
+                ?? throw new AssertFailedException($"Command '{commandId}' was not found in the command list.");
+            commandsList.SelectedItem = null;
+            Pump();
+            commandsList.SelectedItem = command;
+            Pump();
+        }
+
+
         public T FindControl<T>(string name)
             where T : Control
         {
