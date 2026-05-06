@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T20:52:29.467521Z",
+  "generatedAt": "2026-04-26T04:17:47.513581Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family verification evidence is explicitly grounded for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
@@ -8,8 +8,8 @@
     "edition": "sr6",
     "familyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
     "proofKind": "sr6_family_carry_forward",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
       "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
@@ -25,7 +25,7 @@
       ]
     },
     "executionReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json"
+      "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/workflow-family-parity/executed/sr6/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json"
     ],
     "executionFailures": [],
     "executionExternalBlockers": []

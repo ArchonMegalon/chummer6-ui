@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-04-21T20:38:27.037247Z",
+  "generatedAt": "2026-04-26T04:18:02.862602Z",
   "contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
   "channelId": "docker",
   "status": "pass",
   "summary": "SR4 and SR6 desktop parity frontier closure is explicitly proven by executable workflow, coverage, ruleset-adaptation, release-channel, and gate-execution subreviews.",
   "reasons": [],
   "evidence": {
-    "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "sr6ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "chummer5aReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "rulesetUiAdaptationReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
+    "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr6ReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "chummer5aReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "rulesetUiAdaptationReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "docker",
-    "releaseChannelGeneratedAt": "2026-04-21T15:36:03Z",
-    "releaseChannelAgeSeconds": 18144,
+    "releaseChannelGeneratedAt": "2026-04-25T11:38:04Z",
+    "releaseChannelAgeSeconds": 59998,
     "releaseChannelFutureSkewSeconds": 0,
     "sr4Status": "pass",
     "sr6Status": "pass",
@@ -35,8 +35,8 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "docker",
-    "generatedAt": "2026-04-21T15:36:03Z",
-    "ageSeconds": 18144,
+    "generatedAt": "2026-04-25T11:38:04Z",
+    "ageSeconds": 59998,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -52,10 +52,10 @@
       "rulesetUiAdaptation": "pass"
     },
     "receiptGeneratedAts": {
-      "sr4": "2026-04-21T20:37:49.958574Z",
-      "sr6": "2026-04-21T20:38:09.063629Z",
-      "chummer5a": "2026-04-21T20:38:09.139898Z",
-      "rulesetUiAdaptation": "2026-04-21T20:38:27.008690Z"
+      "sr4": "2026-04-26T04:17:26.948815Z",
+      "sr6": "2026-04-26T04:17:47.582024Z",
+      "chummer5a": "2026-04-26T04:17:47.651513Z",
+      "rulesetUiAdaptation": "2026-04-26T04:18:02.831148Z"
     }
   },
   "workflowCoverageReview": {
@@ -131,10 +131,10 @@
       "rulesetUiAdaptation": "docker"
     },
     "receiptReleaseChannelGeneratedAts": {
-      "sr4": "2026-04-21T15:36:03Z",
-      "sr6": "2026-04-21T15:36:03Z",
-      "chummer5a": "2026-04-21T15:36:03Z",
-      "rulesetUiAdaptation": "2026-04-21T15:36:03Z"
+      "sr4": "2026-04-25T11:38:04Z",
+      "sr6": "2026-04-25T11:38:04Z",
+      "chummer5a": "2026-04-25T11:38:04Z",
+      "rulesetUiAdaptation": "2026-04-25T11:38:04Z"
     }
   },
   "gateExecutionReview": {

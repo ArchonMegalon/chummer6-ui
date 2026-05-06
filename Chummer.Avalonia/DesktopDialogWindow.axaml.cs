@@ -23,6 +23,8 @@ public partial class DesktopDialogWindow : Window
     private readonly StackPanel _dialogFieldsPanel;
     private readonly Border _dialogActionsBorder;
     private readonly StackPanel _dialogActionsPanel;
+    private string? _preferredFocusControlName;
+    private int? _preferredFocusSelectionStart;
     private bool _suppressCloseNotification;
 
     public DesktopDialogWindow()
@@ -53,6 +55,7 @@ public partial class DesktopDialogWindow : Window
 
     public void BindDialog(DesktopDialogState dialog)
     {
+        CapturePreferredFocusState();
         BoundDialogId = dialog.Id;
         ApplyDialogSizing(dialog.Id);
         Title = dialog.Title;
@@ -1907,6 +1910,28 @@ public partial class DesktopDialogWindow : Window
         FocusPreferredControl();
     }
 
+    private void CapturePreferredFocusState()
+    {
+        _preferredFocusControlName = null;
+        _preferredFocusSelectionStart = null;
+
+        if (FocusManager.GetFocusedElement() is not Control focusedControl)
+        {
+            return;
+        }
+
+        if (focusedControl.GetVisualRoot() is not DesktopDialogWindow)
+        {
+            return;
+        }
+
+        _preferredFocusControlName = focusedControl.Name;
+        if (focusedControl is TextBox textBox)
+        {
+            _preferredFocusSelectionStart = textBox.CaretIndex;
+        }
+    }
+
     private async void QueueDialogFieldUpdate(string fieldId, string value)
     {
         if (_adapter is null)
@@ -1980,6 +2005,11 @@ public partial class DesktopDialogWindow : Window
 
     private void FocusPreferredControl()
     {
+        if (TryRestorePreferredFocus())
+        {
+            return;
+        }
+
         Button? primaryAction = _dialogActionsPanel.Children
             .OfType<Button>()
             .FirstOrDefault(button => button.FontWeight == FontWeight.SemiBold);
@@ -1997,6 +2027,33 @@ public partial class DesktopDialogWindow : Window
             .OfType<InputElement>()
             .FirstOrDefault(control => control.Focusable && control.IsEnabled)?
             .Focus();
+    }
+
+    private bool TryRestorePreferredFocus()
+    {
+        if (string.IsNullOrWhiteSpace(_preferredFocusControlName))
+        {
+            return false;
+        }
+
+        Control? control = this.GetVisualDescendants()
+            .OfType<Control>()
+            .FirstOrDefault(candidate =>
+                string.Equals(candidate.Name, _preferredFocusControlName, StringComparison.Ordinal));
+        if (control is not InputElement inputElement
+            || !inputElement.Focusable
+            || !control.IsEnabled)
+        {
+            return false;
+        }
+
+        bool focused = inputElement.Focus();
+        if (focused && control is TextBox textBox && _preferredFocusSelectionStart is int caretIndex)
+        {
+            textBox.CaretIndex = Math.Clamp(caretIndex, 0, textBox.Text?.Length ?? 0);
+        }
+
+        return focused;
     }
 }
 

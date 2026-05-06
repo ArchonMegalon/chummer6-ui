@@ -144,14 +144,6 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop install linking window: {ex}");
             }
 
-            try
-            {
-                await DesktopHomeWindow.ShowIfNeededAsync(owner, "avalonia", installLinkingContext);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to display the desktop home window: {ex}");
-            }
         }
 
         string? startupSurface = Environment.GetEnvironmentVariable(DesktopStartupSurfaceCatalog.EnvironmentVariableName);
@@ -164,6 +156,39 @@ public partial class App : global::Avalonia.Application
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Failed to display the desktop campaign workspace window: {ex}");
+            }
+        }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.GmPrepPackets))
+        {
+            try
+            {
+                await DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop GM prep packets window: {ex}");
+            }
+        }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RosterMovement))
+        {
+            try
+            {
+                await DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop roster movement window: {ex}");
+            }
+        }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RuleEnvironmentStudio))
+        {
+            try
+            {
+                await DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop rule environment studio window: {ex}");
             }
         }
         else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.Update))

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T20:52:29.501834Z",
+  "generatedAt": "2026-04-26T04:17:47.548596Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family parity evidence is explicitly grounded for metatype-priorities-karma-entry.",
@@ -8,8 +8,8 @@
     "edition": "sr6",
     "familyId": "metatype-priorities-karma-entry",
     "proofKind": "sr6_family_carry_forward",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_character_settings_save_updates_shared_state",
       "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
@@ -25,7 +25,7 @@
       ]
     },
     "verificationReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/metatype-priorities-karma-entry.generated.json"
+      "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/workflow-family-parity/sr6/metatype-priorities-karma-entry.generated.json"
     ],
     "verificationFailures": [],
     "verificationExternalBlockers": []

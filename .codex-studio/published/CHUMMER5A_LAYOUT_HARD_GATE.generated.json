@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-23T16:12:08.801083Z",
+  "generatedAt": "2026-04-26T04:18:09.173850Z",
   "contract_name": "chummer6-ui.chummer5a_layout_hard_gate",
   "status": "pass",
   "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
@@ -52,7 +52,7 @@
       "Windows",
       "Help"
     ],
-    "blazorRoot": "/docker/chummercomplete/chummer-presentation/Chummer.Blazor",
+    "blazorRoot": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Blazor",
     "toolstripButtonPositions": {
       "SaveButton": 430,
       "PrintButton": 583,
