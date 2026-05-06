@@ -1,0 +1,249 @@
+{
+  "generatedAt": "2026-05-05T19:43:48Z",
+  "status": "pass",
+  "unresolved": [],
+  "contract_name": "chummer6-ui.next90_m135_ui_desktop_surface_coverage",
+  "evidence": {
+    "packageId": "next90-m135-ui-close-desktop-workbench-build-lab-gm-runboard-publicatio",
+    "title": "Close desktop workbench, Build Lab, GM Runboard, publication, restore, support, and veteran-familiarity surface coverage.",
+    "task": "Close desktop workbench, Build Lab, GM Runboard, publication, restore, support, and veteran-familiarity surface coverage.",
+    "frontierId": 8351771106,
+    "milestoneId": 135,
+    "workTaskId": "135.6",
+    "wave": "W22",
+    "repo": "chummer6-ui",
+    "allowedPaths": [
+      "Chummer.Avalonia",
+      "Chummer.Desktop.Runtime",
+      "Chummer.Tests",
+      "scripts"
+    ],
+    "ownedSurfaces": [
+      "close_desktop_workbench_build_lab:ui"
+    ],
+    "queueChecks": {
+      "registry_has_m135_ui_task": true,
+      "registry_task_unique": true,
+      "registry_task_title_matches": true,
+      "registry_task_owner_matches": true,
+      "registry_task_status_complete": true,
+      "registry_task_evidence_exact": true,
+      "queue_package_unique": true,
+      "design_queue_package_unique": true,
+      "queue_package_id_matches": true,
+      "design_queue_package_id_matches": true,
+      "queue_work_task_matches": true,
+      "design_queue_work_task_matches": true,
+      "queue_frontier_matches": true,
+      "design_queue_frontier_matches": true,
+      "queue_milestone_matches": true,
+      "design_queue_milestone_matches": true,
+      "queue_title_matches": true,
+      "design_queue_title_matches": true,
+      "queue_task_matches": true,
+      "design_queue_task_matches": true,
+      "queue_status_complete": true,
+      "design_queue_status_complete": true,
+      "queue_wave_matches": true,
+      "design_queue_wave_matches": true,
+      "queue_repo_matches": true,
+      "design_queue_repo_matches": true,
+      "queue_completion_action_matches": true,
+      "design_queue_completion_action_matches": true,
+      "queue_do_not_reopen_reason_matches": true,
+      "design_queue_do_not_reopen_reason_matches": true,
+      "queue_proof_exact": true,
+      "design_queue_proof_exact": true,
+      "allowed_paths_exact": true,
+      "design_allowed_paths_exact": true,
+      "owned_surfaces_exact": true,
+      "design_owned_surfaces_exact": true,
+      "queue_design_block_parity": true,
+      "design_queue_path_matches": true
+    },
+    "sourceChecks": {
+      "Chummer.Avalonia/DesktopHomeWindow.cs": {
+        "\"Open Creator Publication\"": true,
+        "\"Open GM Runboard\"": true,
+        "\"Open Rule Environment Studio\"": true,
+        "desktop.home.button.open_support_center": true,
+        "DesktopCreatorPublicationWindow.ShowAsync(": true,
+        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity);": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity);": true,
+        "DesktopSupportWindow.ShowAsync(this, _installState.HeadId);": true,
+        "DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics": true
+      },
+      "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
+        "DesktopCampaignWorkspaceSurface.GmRunboard": true,
+        "ResolveRunboardInitiativeSummary()": true,
+        "ResolveRunboardActionBudgetSummary()": true,
+        "ResolveRunboardObjectiveSummary()": true,
+        "Restore choice:": true,
+        "DesktopSupportWindow.ShowAsync(this, _installState.HeadId);": true
+      },
+      "Chummer.Avalonia/DesktopCreatorPublicationWindow.cs": {
+        "Creator publication": true,
+        "review discovery posture, trust ranking, lineage, and moderation flow": true,
+        "CreateButton(\"Review Moderation Flow\", OpenModerationSurfaceAsync)": true,
+        "CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync, isPrimary: true)": true,
+        "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())": true
+      },
+      "Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs": {
+        "Desktop organizer operations surface requires an IChummerClient instance.": true,
+        "CreateButton(\"Open Organizer Operations\", OpenOrganizerOperationsSurfaceAsync": true,
+        "CreateButton(\"Open Creator Publication\", OpenCreatorPublicationAsync)": true,
+        "CreateButton(\"Review Moderation Flow\", OpenCreatorModerationAsync)": true,
+        "CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync)": true,
+        "CreateButton(\"Open GM Runboard\", OpenGmRunboardAsync)": true,
+        "Publication boundary:": true,
+        "Support escalation:": true,
+        "Proof shelf:": true
+      },
+      "Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs": {
+        "CreateSection(\"Amend-package lifecycle\", BuildLifecycleBody(), CreateActionRow(CreateLifecycleActions()))": true,
+        "CreateSection(\"Before-after diffs\", BuildDiffBody(), CreateActionRow(CreateDiffActions()))": true,
+        "CreateSection(\"Explain receipts\", BuildReceiptBody(), CreateActionRow(CreateReceiptActions()))": true,
+        "GetBuildPathSuggestionsAsync": true,
+        "GetBuildPathPreviewAsync": true,
+        "Build path:": true,
+        "CreateButton(\"Open Support\", OpenSupportAsync, isPrimary: true)": true
+      },
+      "Chummer.Avalonia/DesktopSupportWindow.cs": {
+        "Desktop support requires an IChummerClient instance.": true,
+        "BuildCaseBody()": true,
+        "BuildReleaseBody()": true,
+        "BuildDiagnosticsBody()": true,
+        "BuildFollowThroughBody()": true,
+        "DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection);": true
+      },
+      "Chummer.Avalonia/App.axaml.cs": {
+        "DesktopStartupSurfaceCatalog.GmRunboard": true,
+        "DesktopStartupSurfaceCatalog.OrganizerOperations": true,
+        "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio": true,
+        "DesktopStartupSurfaceCatalog.Support": true,
+        "DesktopStartupSurfaceCatalog.SupportCase": true,
+        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(owner, \"avalonia\")": true,
+        "DesktopOrganizerOperationsWindow.ShowAsync(owner, \"avalonia\")": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, \"avalonia\")": true,
+        "DesktopSupportWindow.ShowAsync(owner, \"avalonia\")": true
+      },
+      "Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs": {
+        "public const string Support = \"support\";": true,
+        "public const string SupportCase = \"support_case\";": true,
+        "public const string GmRunboard = \"gm_runboard\";": true,
+        "public const string OrganizerOperations = \"organizer_operations\";": true,
+        "public const string RuleEnvironmentStudio = \"rule_environment_studio\";": true
+      },
+      "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
+        "DesktopCreatorPublicationSurface_is_a_real_top_level_surface();": true,
+        "DesktopCampaignWorkspace_is_a_real_top_level_surface();": true,
+        "DesktopCampaignWorkspace_promotes_gm_runboard_route();": true,
+        "DesktopOrganizerOperationsSurface_is_a_real_top_level_surface();": true,
+        "DesktopRuleEnvironmentStudioSurface_is_a_real_top_level_surface();": true,
+        "DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible();": true,
+        "DesktopSupportSurface_is_a_real_top_level_surface();": true,
+        "DesktopHome_exposes_claim_aware_install_and_update_actions();": true
+      },
+      "scripts/ai/verify.sh": {
+        "checking veteran task-time evidence gate": true,
+        "bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh": true,
+        "checking next-90 M135 desktop surface coverage closure guard": true,
+        "bash scripts/ai/milestones/next90-m135-ui-desktop-surface-coverage-check.sh": true
+      }
+    },
+    "subReceiptChecks": {
+      "restoreContinuity": {
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
+        "exists": true,
+        "statusPass": true,
+        "contractName": "chummer6-ui.next90_m105_ui_restore_continuity"
+      },
+      "ruleStudio": {
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+        "exists": true,
+        "statusPass": true,
+        "contractName": "chummer6-ui.next90_m114_ui_rule_studio"
+      },
+      "creatorPublication": {
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json",
+        "exists": true,
+        "statusPass": true,
+        "contractName": "chummer6-ui.next90_m116_ui_creator_publication"
+      },
+      "organizerOperations": {
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M118_UI_ORGANIZER_OPS.generated.json",
+        "exists": true,
+        "statusPass": true,
+        "contractName": "chummer6-ui.next90_m118_ui_organizer_ops"
+      },
+      "gmRunboard": {
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "exists": true,
+        "statusPass": true,
+        "contractName": "chummer6-ui.next90_m121_ui_gm_runboard_route"
+      },
+      "desktopExplainFollowUp": {
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M145_UI_DESKTOP_EXPLAIN_DRAWER_AND_FOLLOW_UP.generated.json",
+        "exists": true,
+        "statusPass": true,
+        "contractName": "chummer6-ui.next90_m145_ui_desktop_explain_drawer_and_follow_up"
+      }
+    },
+    "proofCommands": {
+      "veteranGateCommand": "bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
+      "directProofCommand": "bash scripts/ai/milestones/next90-m135-ui-desktop-surface-coverage-check.sh",
+      "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M135DesktopSurfaceCoverageGuardTests\" --no-restore",
+      "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore"
+    },
+    "proofFiles": [
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopSupportWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M135DesktopSurfaceCoverageGuardTests.cs",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M118_UI_ORGANIZER_OPS.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M145_UI_DESKTOP_EXPLAIN_DRAWER_AND_FOLLOW_UP.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M135_UI_DESKTOP_SURFACE_COVERAGE.generated.json",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m135-ui-desktop-surface-coverage-check.sh"
+    ],
+    "closedPackage": {
+      "completionAction": "verify_closed_package_only",
+      "doNotReopenReason": "M135 chummer6-ui desktop surface coverage is complete; future shards must verify the closure receipt, veteran-familiarity gate, focused desktop guards, canonical registry row, and queue mirrors instead of reopening the workbench/publication/restore/support surface bundle.",
+      "proof": [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopSupportWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M135DesktopSurfaceCoverageGuardTests.cs",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M118_UI_ORGANIZER_OPS.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M145_UI_DESKTOP_EXPLAIN_DRAWER_AND_FOLLOW_UP.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M135_UI_DESKTOP_SURFACE_COVERAGE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
+        "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m135-ui-desktop-surface-coverage-check.sh",
+        "bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
+        "bash scripts/ai/milestones/next90-m135-ui-desktop-surface-coverage-check.sh",
+        "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M135DesktopSurfaceCoverageGuardTests\" --no-restore",
+        "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore"
+      ]
+    }
+  }
+}

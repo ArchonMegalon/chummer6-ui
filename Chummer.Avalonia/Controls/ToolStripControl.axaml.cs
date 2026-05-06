@@ -26,6 +26,9 @@ public partial class ToolStripControl : UserControl
     public event EventHandler? PrintRequested;
     public event EventHandler? CopyRequested;
     public event EventHandler? DesktopHomeRequested;
+    public event EventHandler? GmPrepRequested;
+    public event EventHandler? RosterMovementRequested;
+    public event EventHandler? RuleEnvironmentStudioRequested;
     public event EventHandler? CloseWorkspaceRequested;
     public event EventHandler? GmPrepRequested;
     public event EventHandler? RosterMovementRequested;
@@ -41,12 +44,26 @@ public partial class ToolStripControl : UserControl
     public void SetState(ToolStripState state)
     {
         SetStatusText(state.StatusText);
+        ApplyVisibility(OpenForExportButton, state.ShowOpenForExport);
+        ApplyVisibility(GmPrepButton, state.ShowGmPrep);
+        ApplyVisibility(RosterMovementButton, state.ShowRosterMovement);
+        ApplyVisibility(CampaignWorkspaceButton, state.ShowCampaignWorkspace);
     }
 
     public void SetStatusText(string statusText)
     {
         StatusText.Text = statusText;
         StatusTextBorder.IsVisible = !string.IsNullOrWhiteSpace(statusText);
+    }
+
+    private static void ApplyVisibility(Control control, bool? isVisible)
+    {
+        if (!isVisible.HasValue)
+        {
+            return;
+        }
+
+        control.IsVisible = isVisible.Value;
     }
 
     private void ApplyLocalization()
@@ -156,6 +173,21 @@ public partial class ToolStripControl : UserControl
         DesktopHomeRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    private void GmPrepButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        GmPrepRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RosterMovementButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        RosterMovementRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RuleEnvironmentStudioButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        RuleEnvironmentStudioRequested?.Invoke(this, EventArgs.Empty);
+    }
+
     private void CloseWorkspaceButton_OnClick(object? sender, RoutedEventArgs e)
     {
         CloseWorkspaceRequested?.Invoke(this, EventArgs.Empty);
@@ -227,4 +259,9 @@ public partial class ToolStripControl : UserControl
     }
 }
 
-public sealed record ToolStripState(string StatusText);
+public sealed record ToolStripState(
+    string StatusText,
+    bool? ShowOpenForExport = null,
+    bool? ShowGmPrep = null,
+    bool? ShowRosterMovement = null,
+    bool? ShowCampaignWorkspace = null);

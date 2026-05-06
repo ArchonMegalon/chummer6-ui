@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Chummer.Contracts.Presentation;
+using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using System.Globalization;
 using System.Text;
@@ -13,8 +14,13 @@ namespace Chummer.Avalonia.Controls;
 
 public partial class SectionHostControl : UserControl
 {
+    private const string ExplainDrawerOpenRuleEnvironmentStudioActionId = "explain_drawer.open_rule_environment_studio";
+    private const string ExplainDrawerOpenSourceAnchorActionId = "explain_drawer.open_source_anchor";
+    private const string ExplainDrawerReviewBoundedFollowUpActionId = "explain_drawer.review_bounded_follow_up";
+    internal static Func<string, bool>? ExplainDrawerSourceAnchorLauncherOverrideForTesting { get; set; }
     private bool _suppressNavigationTabSelectionChanged;
     private bool _suppressSectionActionSelectionChanged;
+    private ExplainDrawerContext? _currentExplainDrawerContext;
 
     public event EventHandler<string>? NavigationTabSelected;
     public event EventHandler<string>? SectionActionSelected;
@@ -27,6 +33,9 @@ public partial class SectionHostControl : UserControl
 
     public string XmlInputText => XmlInputBox.Text ?? string.Empty;
 
+    internal ExplainDrawerContext? GetCurrentExplainDrawerContext()
+        => _currentExplainDrawerContext;
+
     public void SetState(SectionHostState state)
     {
         SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
@@ -34,13 +43,13 @@ public partial class SectionHostControl : UserControl
         SetNotice(state.Notice);
         SetClassicCharacterSheet(state.SectionId, state.PreviewJson, state.Rows);
         SetSectionPreview(state.SectionId, state.PreviewJson, state.Rows);
-        SetSectionQuickActions(state.QuickActions);
         SetBuildLab(state.BuildLab);
         SetBrowseWorkspace(state.BrowseWorkspace);
         SetContactGraph(state.ContactGraph);
         SetDowntimePlanner(state.DowntimePlanner);
         SetNpcPersonaStudio(state.NpcPersonaStudio);
         SetSectionContext(state.SectionId, state.PreviewJson, state.Rows, state.QuickActions);
+        SetSectionQuickActions(state.PreviewJson, state.QuickActions);
     }
 
     public void SetNavigationTabs(IReadOnlyList<NavigatorTabItem> navigationTabs, string? activeTabId)
@@ -48,13 +57,14 @@ public partial class SectionHostControl : UserControl
         NavigatorTabItem[] visibleTabs = navigationTabs
             .Where(tab => tab.Enabled)
             .ToArray();
+        NavigatorTabItem[] renderedTabs = ReuseNavigationTabsIfUnchanged(visibleTabs);
 
-        LoadedRunnerTabStripBorder.IsVisible = visibleTabs.Length > 0;
+        LoadedRunnerTabStripBorder.IsVisible = renderedTabs.Length > 0;
         _suppressNavigationTabSelectionChanged = true;
         try
         {
-            LoadedRunnerTabStrip.ItemsSource = visibleTabs;
-            LoadedRunnerTabStrip.SelectedItem = visibleTabs.FirstOrDefault(tab =>
+            LoadedRunnerTabStrip.ItemsSource = renderedTabs;
+            LoadedRunnerTabStrip.SelectedItem = renderedTabs.FirstOrDefault(tab =>
                 string.Equals(tab.Id, activeTabId, StringComparison.Ordinal));
         }
         finally
@@ -68,15 +78,16 @@ public partial class SectionHostControl : UserControl
         NavigatorSectionActionItem[] visibleActions = sectionActions
             .Where(action => !string.IsNullOrWhiteSpace(action.Id))
             .ToArray();
+        NavigatorSectionActionItem[] renderedActions = ReuseSectionActionsIfUnchanged(visibleActions);
 
-        bool showSectionActions = visibleActions.Length > 1;
+        bool showSectionActions = renderedActions.Length > 1;
         SectionActionTabStripBorder.IsVisible = showSectionActions;
         _suppressSectionActionSelectionChanged = true;
         try
         {
-            SectionActionTabStrip.ItemsSource = showSectionActions ? visibleActions : Array.Empty<NavigatorSectionActionItem>();
+            SectionActionTabStrip.ItemsSource = showSectionActions ? renderedActions : Array.Empty<NavigatorSectionActionItem>();
             SectionActionTabStrip.SelectedItem = showSectionActions
-                ? visibleActions.FirstOrDefault(action => string.Equals(action.Id, activeActionId, StringComparison.Ordinal))
+                ? renderedActions.FirstOrDefault(action => string.Equals(action.Id, activeActionId, StringComparison.Ordinal))
                 : null;
         }
         finally
@@ -85,6 +96,26 @@ public partial class SectionHostControl : UserControl
         }
 
         UpdateSectionRowsHeight();
+    }
+
+    private NavigatorTabItem[] ReuseNavigationTabsIfUnchanged(NavigatorTabItem[] nextTabs)
+    {
+        NavigatorTabItem[] currentTabs = LoadedRunnerTabStrip.Items
+            .OfType<NavigatorTabItem>()
+            .ToArray();
+        return currentTabs.SequenceEqual(nextTabs)
+            ? currentTabs
+            : nextTabs;
+    }
+
+    private NavigatorSectionActionItem[] ReuseSectionActionsIfUnchanged(NavigatorSectionActionItem[] nextActions)
+    {
+        NavigatorSectionActionItem[] currentActions = SectionActionTabStrip.Items
+            .OfType<NavigatorSectionActionItem>()
+            .ToArray();
+        return currentActions.SequenceEqual(nextActions)
+            ? currentActions
+            : nextActions;
     }
 
     public void SetNotice(string notice)
@@ -129,7 +160,7 @@ public partial class SectionHostControl : UserControl
 
         IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts = BuildCharacterSummaryFacts(previewJson);
         IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts = BuildCharacterAttributeFacts(previewJson, rows);
-        ClassicCharacterSummaryTitle.Text = BuildClassicSheetTitle(sectionId, summaryFacts, attributeFacts);
+        ClassicCharacterSummaryTitle.Text = BuildClassicSheetTitle(sectionId, previewJson);
 
         foreach (ClassicSheetFactDisplayItem fact in summaryFacts)
         {
@@ -145,17 +176,60 @@ public partial class SectionHostControl : UserControl
         UpdateSectionRowsHeight();
     }
 
-    public void SetSectionQuickActions(IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+    public void SetSectionQuickActions(string previewJson, IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
     {
+        _currentExplainDrawerContext = ReadExplainDrawerContext(TryParseRootObject(previewJson));
+        IReadOnlyList<SectionQuickActionDisplayItem> renderedActions = BuildRenderedQuickActions(quickActions, _currentExplainDrawerContext);
         SectionQuickActionsHost.Children.Clear();
 
-        foreach (SectionQuickActionDisplayItem quickAction in quickActions)
+        foreach (SectionQuickActionDisplayItem quickAction in renderedActions)
         {
             SectionQuickActionsHost.Children.Add(CreateQuickActionButton(quickAction));
         }
 
-        SectionQuickActionsBorder.IsVisible = quickActions.Count > 0;
+        SectionQuickActionsBorder.IsVisible = renderedActions.Count > 0;
         UpdateSectionRowsHeight();
+    }
+
+    private static IReadOnlyList<SectionQuickActionDisplayItem> BuildRenderedQuickActions(
+        IReadOnlyList<SectionQuickActionDisplayItem> quickActions,
+        ExplainDrawerContext? explainContext)
+    {
+        List<SectionQuickActionDisplayItem> renderedActions = new(quickActions.Count + 3);
+        renderedActions.AddRange(quickActions);
+
+        if (explainContext is null)
+        {
+            return renderedActions;
+        }
+
+        if (!renderedActions.Any(static action => string.Equals(action.ControlId, ExplainDrawerOpenRuleEnvironmentStudioActionId, StringComparison.Ordinal)))
+        {
+            renderedActions.Add(new SectionQuickActionDisplayItem(
+                ExplainDrawerOpenRuleEnvironmentStudioActionId,
+                "Open Rule Environment Studio",
+                renderedActions.Count == 0));
+        }
+
+        if (!string.IsNullOrWhiteSpace(explainContext.SourceLaunchTarget)
+            && !renderedActions.Any(static action => string.Equals(action.ControlId, ExplainDrawerOpenSourceAnchorActionId, StringComparison.Ordinal)))
+        {
+            renderedActions.Add(new SectionQuickActionDisplayItem(
+                ExplainDrawerOpenSourceAnchorActionId,
+                "Open Source Anchor",
+                false));
+        }
+
+        if (!string.IsNullOrWhiteSpace(explainContext.FollowUp)
+            && !renderedActions.Any(static action => string.Equals(action.ControlId, ExplainDrawerReviewBoundedFollowUpActionId, StringComparison.Ordinal)))
+        {
+            renderedActions.Add(new SectionQuickActionDisplayItem(
+                ExplainDrawerReviewBoundedFollowUpActionId,
+                "Review Bounded Follow-up",
+                false));
+        }
+
+        return renderedActions;
     }
 
     private void LoadedRunnerTabStrip_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -686,8 +760,22 @@ public partial class SectionHostControl : UserControl
     {
         if (sender is Button { Tag: string controlId })
         {
+            if (string.Equals(controlId, ExplainDrawerOpenSourceAnchorActionId, StringComparison.Ordinal)
+                && TryOpenExplainDrawerSourceAnchor())
+            {
+                return;
+            }
+
             QuickActionRequested?.Invoke(this, controlId);
         }
+    }
+
+    private bool TryOpenExplainDrawerSourceAnchor()
+    {
+        string? target = _currentExplainDrawerContext?.SourceLaunchTarget;
+        return !string.IsNullOrWhiteSpace(target)
+            && (ExplainDrawerSourceAnchorLauncherOverrideForTesting?.Invoke(target)
+                ?? DesktopCrashRuntime.TryOpenPathInShell(target));
     }
 
     private static IReadOnlyList<ClassicSheetFactDisplayItem> BuildCharacterSummaryFacts(string previewJson)
@@ -811,7 +899,6 @@ public partial class SectionHostControl : UserControl
         string rawSection = string.IsNullOrWhiteSpace(sectionId) ? previewSection ?? "Section" : sectionId;
         return rawSection.Trim().ToLowerInvariant() switch
         {
-            "summary" => "Runner Summary",
             "profile" => "Profile",
             "cyberwares" => "Cyberware",
             "attributedetails" => "Attributes",
@@ -863,6 +950,11 @@ public partial class SectionHostControl : UserControl
             }
 
             parts.Add($"Actions: {actionSummary}");
+        }
+
+        if (TryBuildExplainDrawerSummary(root) is { } explainSummary)
+        {
+            parts.Add(explainSummary);
         }
 
         return parts.Count == 0
@@ -931,11 +1023,30 @@ public partial class SectionHostControl : UserControl
             ? node as JsonObject
             : null;
 
+    private static JsonNode? ReadNode(JsonObject? source, string propertyName)
+        => source is not null
+            && TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
+            ? node
+            : null;
+
     private static JsonArray? ReadArray(JsonObject? source, string propertyName)
         => source is not null
             && TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node)
             ? node as JsonArray
             : null;
+
+    private static bool IsTruthy(JsonObject source, string propertyName)
+    {
+        if (!TryGetPropertyValueIgnoreCase(source, propertyName, out JsonNode? node))
+        {
+            return false;
+        }
+
+        string normalized = SanitizeJsonValue(node)?.Trim() ?? string.Empty;
+        return normalized.Equals("true", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("1", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("yes", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool TryGetPropertyValueIgnoreCase(JsonObject source, string propertyName, out JsonNode? node)
     {
@@ -981,24 +1092,10 @@ public partial class SectionHostControl : UserControl
 
     private static string BuildClassicSheetTitle(
         string? sectionId,
-        IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts,
-        IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts)
+        string previewJson)
     {
-        string title = string.IsNullOrWhiteSpace(sectionId)
-            ? "Runner Summary"
-            : BuildSectionTitle(sectionId, "{}");
-        if (attributeFacts.Count > 0
-            && (string.Equals(sectionId, "profile", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(sectionId, "summary", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(sectionId, "attributes", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(sectionId, "attributedetails", StringComparison.OrdinalIgnoreCase)))
-        {
-            return "Runner Summary";
-        }
-
-        return summaryFacts.Count > 0 || attributeFacts.Count > 0
-            ? $"{title} Overview"
-            : title;
+        string title = BuildSectionTitle(sectionId, previewJson);
+        return string.IsNullOrWhiteSpace(title) ? "Section" : title;
     }
 
     private static string BuildSectionPreviewText(
@@ -1066,6 +1163,8 @@ public partial class SectionHostControl : UserControl
             lines.Add(BuildEmptySectionReviewLine(sectionId));
         }
 
+        AppendExplainDrawerLines(lines, root);
+
         string normalizedPayload = previewJson.Trim();
         if (!string.IsNullOrWhiteSpace(normalizedPayload))
         {
@@ -1084,15 +1183,7 @@ public partial class SectionHostControl : UserControl
     private static string BuildSectionPreviewHeader(string? sectionId, string previewJson)
     {
         string title = BuildSectionTitle(sectionId, previewJson);
-        return sectionId?.Trim().ToLowerInvariant() switch
-        {
-            "summary" or "profile" or "attributes" or "attributedetails" => $"{title} Review",
-            "skills" or "qualities" or "contacts" => $"{title} Review",
-            "gear" or "inventory" or "weapons" or "armors" or "cyberwares" or "vehicles" => $"{title} Loadout Review",
-            "progress" or "calendar" or "expenses" or "improvements" => $"{title} Journal Review",
-            "rules" => $"{title} Snapshot",
-            _ => $"{title} Review"
-        };
+        return string.IsNullOrWhiteSpace(title) ? "Section" : title;
     }
 
     private static string BuildEmptySectionSummary(
@@ -1157,6 +1248,383 @@ public partial class SectionHostControl : UserControl
             _ => "No recorded entries yet."
         };
     }
+
+    private static void AppendExplainDrawerLines(List<string> lines, JsonObject? root)
+    {
+        ExplainDrawerContext? explainContext = ReadExplainDrawerContext(root);
+        if (explainContext is null)
+        {
+            return;
+        }
+
+        if (lines.Count > 0)
+        {
+            lines.Add(string.Empty);
+        }
+
+        lines.Add("Explain drawer");
+        lines.Add($"Explain packet: {explainContext.ExplainPacket}");
+
+        if (!string.IsNullOrWhiteSpace(explainContext.SourceAnchor))
+        {
+            lines.Add($"Source anchor: {explainContext.SourceAnchor}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(explainContext.SourceLaunch))
+        {
+            lines.Add($"Source launch: {explainContext.SourceLaunch}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(explainContext.StaleState))
+        {
+            lines.Add($"Stale state: {explainContext.StaleState}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(explainContext.FollowUp))
+        {
+            lines.Add($"Follow-up: {explainContext.FollowUp}");
+        }
+    }
+
+    private static string? TryBuildExplainDrawerSummary(JsonObject? root)
+    {
+        ExplainDrawerContext? explainContext = ReadExplainDrawerContext(root);
+        if (explainContext is null)
+        {
+            return null;
+        }
+
+        List<string> parts = [$"Explain: {explainContext.ExplainPacket}"];
+        if (!string.IsNullOrWhiteSpace(explainContext.SourceAnchor))
+        {
+            parts.Add($"Source anchor: {explainContext.SourceAnchor}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(explainContext.SourceLaunch))
+        {
+            parts.Add($"Source launch: {explainContext.SourceLaunch}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(explainContext.StaleState))
+        {
+            parts.Add($"Stale state: {explainContext.StaleState}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(explainContext.FollowUp))
+        {
+            parts.Add($"Follow-up: {explainContext.FollowUp}");
+        }
+
+        return string.Join(" · ", parts);
+    }
+
+    private static ExplainDrawerContext? ReadExplainDrawerContext(JsonObject? root)
+    {
+        if (root is null)
+        {
+            return null;
+        }
+
+        JsonObject? explainNode = ReadObject(root, "explain")
+            ?? ReadObject(root, "explanation")
+            ?? ReadObject(root, "explanationPacket")
+            ?? ReadObject(root, "explanation_packet")
+            ?? FindFirstExplainableItem(root);
+        if (explainNode is null)
+        {
+            return null;
+        }
+
+        string explainPacket = FirstNonBlank(
+            ReadString(explainNode, "packet_id"),
+            ReadString(explainNode, "packetId"),
+            ReadString(explainNode, "explainEntryId"),
+            ReadString(explainNode, "explanationPacketId"),
+            ReadString(explainNode, "packetId"),
+            ReadString(explainNode, "explainPacket"),
+            ReadString(explainNode, "value_ref"),
+            ReadString(explainNode, "valueRef"));
+        if (string.IsNullOrWhiteSpace(explainPacket))
+        {
+            return null;
+        }
+
+        string sourceAnchor = FirstNonBlank(
+            ReadString(explainNode, "sourceAnchor"),
+            ReadString(explainNode, "sourceAnchorId"),
+            ReadString(explainNode, "sourceDocumentId"),
+            ReadString(explainNode, "rulebookPage"),
+            ReadString(explainNode, "rulebookAnchor"),
+            TryBuildSourceAnchorSummary(explainNode));
+        string sourceLaunch = FirstNonBlank(
+            ReadString(explainNode, "sourceAnchorLaunchSummary"),
+            ReadString(explainNode, "sourceLaunchSummary"),
+            ReadString(explainNode, "localRulebookLaunchSummary"),
+            TryBuildSourceLaunchSummary(explainNode));
+        string sourceLaunchTarget = TryBuildSourceLaunchTarget(explainNode) ?? string.Empty;
+        string staleState = FirstNonBlank(
+            ReadString(explainNode, "staleSnapshotSummary"),
+            ReadString(explainNode, "staleStateSummary"),
+            ReadString(explainNode, "staleSummary"),
+            ReadString(explainNode, "staleSnapshotPosture"),
+            TryBuildStaleSnapshotSummary(explainNode));
+        string followUp = FirstNonBlank(
+            ReadString(explainNode, "followUpSummary"),
+            ReadString(explainNode, "boundedFollowUpSummary"),
+            ReadString(explainNode, "counterfactualSummary"),
+            ReadString(explainNode, "nextSafeAction"),
+            TryBuildCounterfactualFollowUpSummary(explainNode));
+
+        return new ExplainDrawerContext(explainPacket, sourceAnchor, sourceLaunch, sourceLaunchTarget, staleState, followUp);
+    }
+
+    private static JsonObject? FindFirstExplainableItem(JsonObject root)
+    {
+        foreach ((string _, JsonNode? value) in root)
+        {
+            if (value is JsonObject obj
+                && HasExplainDrawerFields(obj))
+            {
+                return obj;
+            }
+
+            if (value is JsonObject nestedObject
+                && FindFirstExplainableItem(nestedObject) is { } nestedMatch)
+            {
+                return nestedMatch;
+            }
+
+            if (value is not JsonArray array)
+            {
+                continue;
+            }
+
+            foreach (JsonNode? item in array)
+            {
+                if (item is JsonObject itemObject
+                    && HasExplainDrawerFields(itemObject))
+                {
+                    return itemObject;
+                }
+
+                if (item is JsonObject nestedItemObject
+                    && FindFirstExplainableItem(nestedItemObject) is { } nestedItemMatch)
+                {
+                    return nestedItemMatch;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static bool HasExplainDrawerFields(JsonObject obj)
+        => obj.Count > 0
+            && (
+                !string.IsNullOrWhiteSpace(ReadString(obj, "packet_id"))
+                || !string.IsNullOrWhiteSpace(ReadString(obj, "value_ref"))
+                || !string.IsNullOrWhiteSpace(ReadString(obj, "sourceAnchor"))
+                || !string.IsNullOrWhiteSpace(ReadString(obj, "followUpSummary"))
+                || !string.IsNullOrWhiteSpace(ReadString(obj, "boundedFollowUpSummary"))
+                || ReadNode(obj, "source_anchors") is not null
+                || ReadNode(obj, "counterfactual_actions") is not null
+                || HasLegacyExplainDrawerFields(obj));
+
+    private static bool HasLegacyExplainDrawerFields(JsonObject obj)
+        => !string.IsNullOrWhiteSpace(ReadString(obj, "explainEntryId"))
+            || !string.IsNullOrWhiteSpace(ReadString(obj, "explanationPacketId"))
+            || !string.IsNullOrWhiteSpace(ReadString(obj, "packetId"))
+            || !string.IsNullOrWhiteSpace(ReadString(obj, "explainPacket"));
+
+    private static string? TryBuildSourceAnchorSummary(JsonObject explainNode)
+    {
+        JsonNode? anchorNode = ReadNode(explainNode, "source_anchors")
+            ?? ReadNode(explainNode, "sourceAnchors")
+            ?? ReadNode(explainNode, "sourceAnchor")
+            ?? ReadNode(explainNode, "primarySourceAnchor");
+        return anchorNode switch
+        {
+            JsonObject anchorObject => FormatSourceAnchorSummary(anchorObject),
+            JsonArray anchorArray => anchorArray
+                .OfType<JsonObject>()
+                .Select(FormatSourceAnchorSummary)
+                .FirstOrDefault(static summary => !string.IsNullOrWhiteSpace(summary)),
+            _ => null
+        };
+    }
+
+    private static string? FormatSourceAnchorSummary(JsonObject anchorObject)
+    {
+        string book = FirstNonBlank(
+            ReadString(anchorObject, "book"),
+            ReadString(anchorObject, "sourceBook"),
+            ReadString(anchorObject, "title"),
+            ReadString(anchorObject, "sourceTitle"),
+            ReadString(anchorObject, "documentId"));
+        string page = FirstNonBlank(
+            ReadString(anchorObject, "page"),
+            ReadString(anchorObject, "pageNumber"),
+            ReadString(anchorObject, "rulebookPage"));
+        string section = FirstNonBlank(
+            ReadString(anchorObject, "section"),
+            ReadString(anchorObject, "sectionHint"),
+            ReadString(anchorObject, "ruleId"),
+            ReadString(anchorObject, "anchorId"),
+            ReadString(anchorObject, "id"));
+
+        List<string> parts = [];
+        if (!string.IsNullOrWhiteSpace(book))
+        {
+            parts.Add(string.IsNullOrWhiteSpace(page) ? book : $"{book} p. {page}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(section) && !string.Equals(section, book, StringComparison.OrdinalIgnoreCase))
+        {
+            parts.Add(section);
+        }
+
+        return parts.Count == 0 ? null : string.Join(" · ", parts);
+    }
+
+    private static string? TryBuildSourceLaunchSummary(JsonObject explainNode)
+    {
+        JsonNode? anchorNode = ReadNode(explainNode, "source_anchors")
+            ?? ReadNode(explainNode, "sourceAnchors")
+            ?? ReadNode(explainNode, "sourceAnchor")
+            ?? ReadNode(explainNode, "primarySourceAnchor");
+        JsonObject? anchorObject = anchorNode switch
+        {
+            JsonObject obj => obj,
+            JsonArray array => array.OfType<JsonObject>().FirstOrDefault(),
+            _ => null
+        };
+        if (anchorObject is null)
+        {
+            return null;
+        }
+
+        string explicitLaunch = FirstNonBlank(
+            ReadString(anchorObject, "sourceAnchorLaunchSummary"),
+            ReadString(anchorObject, "sourceLaunchSummary"),
+            ReadString(anchorObject, "localRulebookLaunchSummary"),
+            ReadString(anchorObject, "local_rulebook_launch_summary"),
+            ReadString(anchorObject, "openLocalRulebookSummary"));
+        if (!string.IsNullOrWhiteSpace(explicitLaunch))
+        {
+            return explicitLaunch;
+        }
+
+        bool hasLocalBinding = IsTruthy(anchorObject, "localBindingAvailable")
+            || IsTruthy(anchorObject, "local_binding_available")
+            || IsTruthy(anchorObject, "isLocallyBound")
+            || !string.IsNullOrWhiteSpace(ReadString(anchorObject, "localPdfPath"));
+        if (hasLocalBinding)
+        {
+            return "Open the bound local rulebook anchor from this desktop route.";
+        }
+
+        if (!string.IsNullOrWhiteSpace(ReadString(anchorObject, "referenceUrl"))
+            || !string.IsNullOrWhiteSpace(ReadString(anchorObject, "uri")))
+        {
+            return "Open the cited source anchor from this desktop route.";
+        }
+
+        return null;
+    }
+
+    private static string? TryBuildSourceLaunchTarget(JsonObject explainNode)
+    {
+        JsonNode? anchorNode = ReadNode(explainNode, "source_anchors")
+            ?? ReadNode(explainNode, "sourceAnchors")
+            ?? ReadNode(explainNode, "sourceAnchor")
+            ?? ReadNode(explainNode, "primarySourceAnchor");
+        JsonObject? anchorObject = anchorNode switch
+        {
+            JsonObject obj => obj,
+            JsonArray array => array.OfType<JsonObject>().FirstOrDefault(),
+            _ => null
+        };
+        if (anchorObject is null)
+        {
+            return null;
+        }
+
+        return FirstNonBlank(
+            ReadString(anchorObject, "localPdfPath"),
+            ReadString(anchorObject, "referenceUrl"),
+            ReadString(anchorObject, "uri"));
+    }
+
+    private static string? TryBuildStaleSnapshotSummary(JsonObject explainNode)
+    {
+        JsonNode? staleNode = ReadNode(explainNode, "stale_if_snapshot_changes")
+            ?? ReadNode(explainNode, "staleIfSnapshotChanges")
+            ?? ReadNode(explainNode, "staleSnapshot");
+        if (staleNode is JsonValue)
+        {
+            return SanitizeJsonValue(staleNode);
+        }
+
+        if (staleNode is not JsonObject staleObject)
+        {
+            return null;
+        }
+
+        string explicitSummary = FirstNonBlank(
+            ReadString(staleObject, "summary"),
+            ReadString(staleObject, "reason"),
+            ReadString(staleObject, "message"),
+            ReadString(staleObject, "posture"));
+        if (!string.IsNullOrWhiteSpace(explicitSummary))
+        {
+            return explicitSummary;
+        }
+
+        string packetSnapshot = FirstNonBlank(
+            ReadString(staleObject, "snapshot_ref"),
+            ReadString(staleObject, "snapshotRef"),
+            ReadString(staleObject, "packetSnapshotRef"));
+        string currentSnapshot = FirstNonBlank(
+            ReadString(staleObject, "current_snapshot_ref"),
+            ReadString(staleObject, "currentSnapshotRef"),
+            ReadString(staleObject, "activeSnapshotRef"));
+        if (!string.IsNullOrWhiteSpace(packetSnapshot) && !string.IsNullOrWhiteSpace(currentSnapshot))
+        {
+            return $"Packet snapshot {packetSnapshot} no longer matches current snapshot {currentSnapshot}. Refresh before trusting this value.";
+        }
+
+        return string.IsNullOrWhiteSpace(packetSnapshot)
+            ? null
+            : $"Refresh before trusting this value after the snapshot changes ({packetSnapshot}).";
+    }
+
+    private static string? TryBuildCounterfactualFollowUpSummary(JsonObject explainNode)
+    {
+        JsonNode? followUpNode = ReadNode(explainNode, "counterfactual_actions")
+            ?? ReadNode(explainNode, "counterfactualActions")
+            ?? ReadNode(explainNode, "followUpActions");
+        return followUpNode switch
+        {
+            JsonValue value => SanitizeJsonValue(value),
+            JsonObject obj => FormatCounterfactualActionSummary(obj),
+            JsonArray array => string.Join(
+                " ; ",
+                array.OfType<JsonObject>()
+                    .Select(FormatCounterfactualActionSummary)
+                    .Where(static summary => !string.IsNullOrWhiteSpace(summary))
+                    .Take(2)),
+            _ => null
+        };
+    }
+
+    private static string? FormatCounterfactualActionSummary(JsonObject actionObject)
+        => FirstNonBlank(
+            ReadString(actionObject, "summary"),
+            ReadString(actionObject, "label"),
+            ReadString(actionObject, "title"),
+            ReadString(actionObject, "question"),
+            ReadString(actionObject, "description"),
+            ReadString(actionObject, "action"));
 
     private static string? NormalizeSectionId(string? sectionId)
     {
@@ -1481,6 +1949,14 @@ public sealed record BrowseResultDisplayItem(string ItemId, string Label)
         return Label;
     }
 }
+
+internal sealed record ExplainDrawerContext(
+    string ExplainPacket,
+    string? SourceAnchor,
+    string? SourceLaunch,
+    string? SourceLaunchTarget,
+    string? StaleState,
+    string? FollowUp);
 
 public sealed record SectionQuickActionDisplayItem(string ControlId, string Label, bool IsPrimary);
 

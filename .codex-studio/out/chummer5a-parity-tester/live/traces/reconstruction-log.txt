@@ -1,0 +1,5 @@
+[2026-05-06T15:18:00.029639Z] start Chummer5a parity tester
+selected fixtures: Bastion.chum5, Fuzzy-chargen.chum5, Soma.chum5, Tenshi.chum5, Popstar.chum5
+required workflow families: armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers, attributes-skills-skill-groups-specializations-knowledge-languages, create-open-import-save-save-as-print-export, cyberware-bioware-modular-hierarchies-nested-plugins, dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare, improvements-explain-result-parity, magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms, metatype-priorities-karma-entry, qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources, recovery-reload-migration-roundtrips
+result: pass
+failure count: 0

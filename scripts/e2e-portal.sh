@@ -6,6 +6,7 @@ PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS="${CHUMMER_PORTAL_E2E_TIMEOUT_SECONDS:-240}"
 PORTAL_EDGE_COMPOSE_FILE="${CHUMMER_PORTAL_EDGE_COMPOSE_FILE:-/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml}"
 PORTAL_BASE_URL="${CHUMMER_PORTAL_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_EDGE_PORT:-8091}}"
 PORTAL_LOCAL_PROOF_PATH="${CHUMMER_PORTAL_LOCAL_PROOF_PATH:-.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
+NEXT90_M113_RECEIPT_PATH="${CHUMMER_NEXT90_M113_RECEIPT_PATH:-.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json}"
 PORTAL_SKIP_EDGE_REBUILD="${CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD:-0}"
 if [[ -n "${CHUMMER_PORTAL_PLAYWRIGHT:-}" ]]; then
   RUN_PORTAL_PLAYWRIGHT="$CHUMMER_PORTAL_PLAYWRIGHT"
@@ -94,13 +95,27 @@ else
 fi
 
 mkdir -p "$(dirname "$PORTAL_LOCAL_PROOF_PATH")"
-python3 - "$PORTAL_LOCAL_PROOF_PATH" "$PORTAL_BASE_URL" "$PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS" "$RUN_PORTAL_PLAYWRIGHT" "$PORTAL_EDGE_COMPOSE_FILE" "$PORTAL_SKIP_EDGE_REBUILD" <<'PY'
+python3 - "$PORTAL_LOCAL_PROOF_PATH" "$PORTAL_BASE_URL" "$PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS" "$RUN_PORTAL_PLAYWRIGHT" "$PORTAL_EDGE_COMPOSE_FILE" "$PORTAL_SKIP_EDGE_REBUILD" "$NEXT90_M113_RECEIPT_PATH" <<'PY'
 import datetime as dt
 import json
 import sys
+from pathlib import Path
 
-out_path, base_url, timeout_seconds, run_portal_playwright, compose_file, skip_edge_rebuild = sys.argv[1:]
+out_path, base_url, timeout_seconds, run_portal_playwright, compose_file, skip_edge_rebuild, next90_m113_receipt_path = sys.argv[1:]
 route_probe_executed = run_portal_playwright == "1"
+receipt_path = Path(next90_m113_receipt_path)
+receipt_status = "missing"
+receipt_package_id = ""
+if receipt_path.is_file():
+    try:
+        receipt_payload = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        receipt_payload = {}
+        receipt_status = "invalid"
+    else:
+        receipt_status = str(receipt_payload.get("status") or "").strip().lower() or "missing"
+        receipt_package_id = str(receipt_payload.get("packageId") or "").strip()
+
 payload = {
     "contract_name": "chummer6-ui.local_release_proof",
     "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
@@ -117,6 +132,10 @@ payload = {
         "report_cluster_release_notify",
         "organize_community_and_close_loop",
     ],
+    "desktop_workspace_routes": [
+        "gm_prep_packets:desktop",
+        "roster_movement:desktop",
+    ],
     "proof_routes": [
         "/downloads/install/avalonia-linux-x64-installer",
         "/home/access",
@@ -126,6 +145,21 @@ payload = {
         "/contact",
         "/downloads/install/avalonia-osx-arm64-installer",
         "/downloads/install/avalonia-win-x64-installer",
+    ],
+    "receipts": [
+        {
+            "path": str(receipt_path),
+            "package_id": receipt_package_id or "next90-m113-ui-gm-prep-roster-surface",
+            "status": receipt_status,
+            "surface_routes": [
+                "gm_prep_packets:desktop",
+                "roster_movement:desktop",
+            ],
+        }
+    ],
+    "notes": [
+        "Desktop campaign workspace keeps GM prep packets and roster movement as first-class successor surfaces.",
+        "next90-m113-ui-gm-prep-roster-surface anchors the desktop workspace proof shelf for GM prep and roster movement.",
     ],
 }
 with open(out_path, "w", encoding="utf-8") as handle:

@@ -1,0 +1,38 @@
+{
+  "contract_name": "chummer6-ui.chummer5a_absolute_parity_tester",
+  "status": "fail",
+  "summary": "Absolute parity gate failed because the repo still lacks at least one literal every-detail proof lane.",
+  "proofScope": {
+    "fixtureScope": "all_available_fixtures_explicit",
+    "selectedFixtureCount": 34,
+    "availableFixtureCount": 34,
+    "uiReconstructionExecuted": true,
+    "perFixtureRoundTripExecuted": true,
+    "legacyReferenceScreenshotsCaptured": false,
+    "pixelDiffsGenerated": false,
+    "certifiesSelectedFixturesCanBeRebuiltOnlyUsingUi": true,
+    "certifiesEveryFixtureCanBeRebuiltOnlyUsingUi": true,
+    "recursiveSettingsAndElementsCertified": true,
+    "desktopWorkflowParityCertified": true,
+    "generatedDialogElementParityCertified": true,
+    "uiElementParityAuditCertified": true,
+    "visualParityAuditCertified": true,
+    "screenshotReviewCertified": true,
+    "visualFamiliarityCertified": true,
+    "visualDifferenceLedgerPresent": true,
+    "visualDifferenceLedgerCoverageComplete": false,
+    "perControlPixelDiffCorpusCertified": false
+  },
+  "strictFailureReasons": [
+    "Visual difference ledger is missing required screenshot coverage: 38-translator-dialog-light.png, 39-xml-editor-dialog-light.png, 40-hero-lab-importer-dialog-light.png.",
+    "The repo does not contain a true dual-product per-control pixel diff for literally every window control on every dialog; items without direct screenshot/runtime proof are scored `no` even when broader readiness artifacts pass."
+  ],
+  "evidenceSources": {
+    "ultimateParityReceipt": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_ULTIMATE_PARITY_TESTER.generated.json",
+    "desktopVisualParityAudit": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_PARITY_AUDIT.generated.json",
+    "screenshotReviewGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "uiElementParityAudit": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "visualDifferenceLedger": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER5A_VISUAL_DIFFERENCE_LEDGER.json"
+  }
+}

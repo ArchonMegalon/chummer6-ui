@@ -17,7 +17,7 @@ The canonical promoted release record is `RELEASE_CHANNEL.generated.json`, mater
 5. Startup-smoke receipts copied during publish must be fresh and not future-skewed (default max age: `86400` seconds, default max future skew: `300` seconds). Override with `CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_AGE_SECONDS` / `CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS` (or shared `CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS` / `CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS`) only when the release lane explicitly approves adjusted evidence windows.
 6. Set repository variable `CHUMMER_DESKTOP_RELEASE_CHANNEL` to one of `preview`, `release_candidate`, or `public_stable`.
 7. Set `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true` only when you are intentionally publishing an unsigned public build. Without that override, `release_candidate` and `public_stable` fail closed unless the workflow can emit signing receipts:
-`CHUMMER_WINDOWS_SIGN_PFX_BASE64` / `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD` for Windows Authenticode, plus either a preconfigured mac keychain identity/profile or `CHUMMER_MAC_CERTIFICATE_P12_BASE64` / `CHUMMER_MAC_CERTIFICATE_PASSWORD` / `CHUMMER_MAC_KEYCHAIN_PASSWORD` / `CHUMMER_MAC_APPLE_ID` / `CHUMMER_MAC_APPLE_APP_PASSWORD` / `CHUMMER_MAC_TEAM_ID` for macOS codesign and notarization.
+`CHUMMER_WINDOWS_SIGN_PFX_BASE64` / `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD` for Windows Authenticode, plus either a preconfigured mac keychain identity/profile, a hosted-signing P12 (`CHUMMER_MAC_CERTIFICATE_P12_BASE64` / `CHUMMER_MAC_CERTIFICATE_PASSWORD` / `CHUMMER_MAC_KEYCHAIN_PASSWORD` / `CHUMMER_MAC_APPLE_ID` / `CHUMMER_MAC_APPLE_APP_PASSWORD` / `CHUMMER_MAC_TEAM_ID`), or the persistent local-keychain fallback for Mac-hosted preview lanes (`CHUMMER_MAC_KEYCHAIN_PATH`, `CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_LOCAL_CERT_COMMON_NAME`).
 
 ## Recommended Production Topology
 
@@ -84,6 +84,12 @@ Repository variables and secrets:
 6. Windows public release secrets: `CHUMMER_WINDOWS_SIGN_PFX_BASE64`, `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD`
 7. macOS public release secrets/vars for hosted signing: `CHUMMER_MAC_CERTIFICATE_P12_BASE64`, `CHUMMER_MAC_CERTIFICATE_PASSWORD`, `CHUMMER_MAC_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_APPLE_ID`, `CHUMMER_MAC_APPLE_APP_PASSWORD`, `CHUMMER_MAC_TEAM_ID`
 8. Optional preconfigured mac runner vars: `CHUMMER_MAC_APP_SIGN_IDENTITY`, `CHUMMER_MAC_NOTARY_PROFILE`
+9. Optional persistent local-preview vars on a Mac host when no P12 is configured: `CHUMMER_MAC_KEYCHAIN_PATH`, `CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_LOCAL_CERT_COMMON_NAME`
+
+Local-preview note:
+1. `scripts/prepare-macos-signing-keychain.sh` now defaults the local bootstrap keychain to `~/Library/Keychains/chummer-signing.keychain-db` on macOS.
+2. When no P12 and no preconfigured `CHUMMER_MAC_APP_SIGN_IDENTITY` are present, the script reuses or creates a self-signed local code-signing identity in that persistent keychain.
+3. This preserves the signing identity across upgrades on a stable Mac host so app-permission prompts do not churn between preview installs.
 
 Workflow path:
 1. Push the release-ready source to `main` or run workflow `Desktop Downloads Matrix` from `main`.

@@ -10,6 +10,9 @@ internal static class MainWindowDesktopFileCoordinator
     private const string BundledDemoRelativePath = "Samples/Legacy/Soma-Career.chum5";
     internal static Func<IStorageProvider, string, CancellationToken, Task<DesktopImportFileResult>>? OpenImportFileOverride { get; set; }
     internal static Func<IStorageProvider, string, CancellationToken, Task<string?>>? OpenFolderPickerOverride { get; set; }
+    internal static Func<IStorageProvider, PendingDownloadDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? SaveDownloadOverride { get; set; }
+    internal static Func<IStorageProvider, PendingExportDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? SaveExportOverride { get; set; }
+    internal static Func<IStorageProvider, PendingPrintDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? SavePrintOverride { get; set; }
 
     public static async Task<DesktopImportFileResult> OpenImportFileAsync(
         IStorageProvider storageProvider,
@@ -112,6 +115,11 @@ internal static class MainWindowDesktopFileCoordinator
         PendingDownloadDispatchRequest request,
         CancellationToken ct)
     {
+        if (SaveDownloadOverride is not null)
+        {
+            return await SaveDownloadOverride(storageProvider, request, ct);
+        }
+
         if (!storageProvider.CanSave)
         {
             return new DesktopDownloadSaveResult(DesktopFileOperationOutcome.Unavailable, Notice: null);
@@ -170,6 +178,11 @@ internal static class MainWindowDesktopFileCoordinator
         PendingExportDispatchRequest request,
         CancellationToken ct)
     {
+        if (SaveExportOverride is not null)
+        {
+            return await SaveExportOverride(storageProvider, request, ct);
+        }
+
         return await SaveBase64PayloadAsync(
             storageProvider,
             pickerTitle: "Save Export Bundle",
@@ -192,6 +205,11 @@ internal static class MainWindowDesktopFileCoordinator
         PendingPrintDispatchRequest request,
         CancellationToken ct)
     {
+        if (SavePrintOverride is not null)
+        {
+            return await SavePrintOverride(storageProvider, request, ct);
+        }
+
         return await SaveBase64PayloadAsync(
             storageProvider,
             pickerTitle: "Save Print Preview",

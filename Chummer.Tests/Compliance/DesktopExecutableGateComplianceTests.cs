@@ -423,6 +423,26 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_fail_closes_stale_passing_startup_smoke_receipts_that_do_not_match_published_artifacts()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "def startup_smoke_receipt_matches_any_published_artifact(");
+        StringAssert.Contains(scriptText, "published_desktop_artifacts_by_tuple");
+        StringAssert.Contains(scriptText, "published_startup_smoke_roots");
+        StringAssert.Contains(scriptText, "collect_stale_passing_startup_smoke_receipts_against_published_artifacts(");
+        StringAssert.Contains(scriptText, "stale_linux_startup_smoke_receipts_against_published_artifacts");
+        StringAssert.Contains(scriptText, "stale_windows_startup_smoke_receipts_against_published_artifacts");
+        StringAssert.Contains(scriptText, "stale_macos_startup_smoke_receipts_against_published_artifacts");
+        StringAssert.Contains(scriptText, "stale_passing_startup_smoke_receipts_against_published_artifacts");
+        StringAssert.Contains(scriptText, "matchesPublishedArtifact");
+        StringAssert.Contains(scriptText, "artifactRelativePath");
+        StringAssert.Contains(scriptText, "Stale passing startup smoke receipts exist for non-promoted or artifact-drifted desktop proof:");
+    }
+
+    [TestMethod]
     public void Desktop_executable_gate_emits_blocking_findings_aliases_aligned_with_reasons()
     {
         string repoRoot = FindRepoRoot();
@@ -487,10 +507,12 @@ public sealed class DesktopExecutableGateComplianceTests
         string executableScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
         string visualScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
         string workflowScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string windowsGateScriptPath = Path.Combine(repoRoot, "scripts", "materialize-windows-desktop-exit-gate.sh");
 
         string executableScriptText = File.ReadAllText(executableScriptPath);
         string visualScriptText = File.ReadAllText(visualScriptPath);
         string workflowScriptText = File.ReadAllText(workflowScriptPath);
+        string windowsGateScriptText = File.ReadAllText(windowsGateScriptPath);
 
         StringAssert.Contains(executableScriptText, "visual_familiarity.release_channel_channel_id");
         StringAssert.Contains(executableScriptText, "workflow_execution.release_channel_channel_id");
@@ -538,6 +560,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Linux desktop exit gate checks.startup_smoke_receipt_path disagrees with startup_smoke.primary.receipt_path for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt is missing version for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt version does not match release channel version for promoted head");
+        StringAssert.Contains(executableScriptText, "startup_smoke_version_proves_release(");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting channelId/channel alias values for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head");
         StringAssert.Contains(executableScriptText, "Linux installer startup smoke receipt carries conflicting completedAtUtc/recordedAtUtc alias values for promoted head");
@@ -778,6 +801,10 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(visualScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
         StringAssert.Contains(visualScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(visualScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head visual proof:");
+        Assert.IsFalse(
+            visualScriptText.Contains("Flagship UI release gate is missing or not passing.", StringComparison.Ordinal),
+            "Visual gate must not depend on the aggregate flagship gate already passing."
+        );
 
         StringAssert.Contains(workflowScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(workflowScriptText, "release_channel_channel_id");
@@ -786,8 +813,29 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(workflowScriptText, "Desktop workflow execution gate release channel receipt is missing version.");
         StringAssert.Contains(workflowScriptText, "\"releaseVersion\": release_channel_version");
         StringAssert.Contains(workflowScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
+        StringAssert.Contains(workflowScriptText, "collect_release_channel_head_requirements");
+        StringAssert.Contains(workflowScriptText, "release_channel_required_desktop_heads");
+        StringAssert.Contains(workflowScriptText, "release_channel_primary_desktop_heads");
+        StringAssert.Contains(workflowScriptText, "release_channel_promoted_non_fallback_desktop_heads");
+        StringAssert.Contains(workflowScriptText, "flagship_primary_desktop_heads");
+        StringAssert.Contains(workflowScriptText, "flagship_declared_desktop_fallback_heads");
         StringAssert.Contains(workflowScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(workflowScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head workflow execution proof:");
+        StringAssert.Contains(workflowScriptText, "collect_external_blockers");
+        StringAssert.Contains(workflowScriptText, "external_blockers_are_only_missing_api_surface_contract");
+        StringAssert.Contains(workflowScriptText, "workflow_family_receipts_outside_repo_root");
+        StringAssert.Contains(workflowScriptText, "workflow_execution_receipts_outside_repo_root");
+        StringAssert.Contains(workflowScriptText, "SR4/SR6 family-level workflow receipts resolve outside this repo root:");
+        StringAssert.Contains(workflowScriptText, "SR4/SR6 family-level execution receipts resolve outside this repo root:");
+        StringAssert.Contains(workflowScriptText, "outside_repo_root:{entry}");
+        Assert.IsFalse(
+            executableScriptText.Contains("Flagship UI release gate is missing or not passing.", StringComparison.Ordinal),
+            "Executable gate must not depend on the aggregate flagship gate already passing."
+        );
+        Assert.IsFalse(
+            windowsGateScriptText.Contains("Flagship UI release gate proof is missing or not passed.", StringComparison.Ordinal),
+            "Windows gate must not depend on the aggregate flagship gate already passing."
+        );
     }
 
     [TestMethod]
@@ -811,6 +859,23 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"kind\")) == \"installer\"");
         StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"head\")) == normalize_token(app_key)");
         StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"rid\")) == normalize_token(rid)");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_validates_flagship_screenshot_pack_without_recursing_into_b14()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH=");
+        StringAssert.Contains(scriptText, "control_evidence_path = pathlib.Path(sys.argv[3])");
+        StringAssert.Contains(scriptText, "control_evidence = json.loads(control_evidence_path.read_text(encoding=\"utf-8-sig\"))");
+        StringAssert.Contains(scriptText, "workflow_coverage = control_evidence.get(\"workflowCoverage\") or []");
+        StringAssert.Contains(scriptText, "for entry in control_evidence.get(\"entries\") or []");
+        Assert.IsFalse(
+            scriptText.Contains("bash \"$FLAGSHIP_UI_GATE_SCRIPT\"", StringComparison.Ordinal),
+            "Linux exit gate must validate screenshot proof directly instead of recursing through b14 and deadlocking on desktop executable coverage.");
     }
 
     [TestMethod]

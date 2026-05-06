@@ -1,0 +1,143 @@
+{
+  "generatedAt": "2026-05-05T11:22:42Z",
+  "status": "pass",
+  "unresolved": [],
+  "contract_name": "chummer6-ui.next90_m116_ui_creator_publication",
+  "evidence": {
+    "packageId": "next90-m116-ui-creator-publication",
+    "title": "Surface creator publication and moderation actions on desktop",
+    "task": "Surface creator publication and moderation actions on desktop.",
+    "frontierId": 1446581929,
+    "milestoneId": 116,
+    "workTaskId": "116.3",
+    "wave": "W13",
+    "repo": "chummer6-ui",
+    "allowedPaths": [
+      "Chummer.Avalonia",
+      "Chummer.Desktop.Runtime",
+      "Chummer.Tests",
+      "scripts"
+    ],
+    "ownedSurfaces": [
+      "creator_publication:desktop",
+      "moderation_flow:desktop"
+    ],
+    "queueChecks": {
+      "registry_has_m116_ui_task": true,
+      "registry_task_unique": true,
+      "registry_task_title_matches": true,
+      "registry_task_owner_matches": true,
+      "registry_task_status_complete": true,
+      "registry_task_evidence_exact": true,
+      "queue_package_unique": true,
+      "design_queue_package_unique": true,
+      "queue_package_id_matches": true,
+      "design_queue_package_id_matches": true,
+      "queue_work_task_matches": true,
+      "design_queue_work_task_matches": true,
+      "queue_frontier_matches": true,
+      "design_queue_frontier_matches": true,
+      "queue_milestone_matches": true,
+      "design_queue_milestone_matches": true,
+      "queue_title_matches": true,
+      "queue_task_matches": true,
+      "queue_status_complete": true,
+      "queue_wave_matches": true,
+      "design_queue_wave_matches": true,
+      "queue_repo_matches": true,
+      "design_queue_repo_matches": true,
+      "design_queue_title_matches": true,
+      "design_queue_task_matches": true,
+      "design_queue_status_complete": true,
+      "queue_completion_action_matches": true,
+      "design_queue_completion_action_matches": true,
+      "queue_do_not_reopen_reason_matches": true,
+      "design_queue_do_not_reopen_reason_matches": true,
+      "queue_proof_exact": true,
+      "design_queue_proof_exact": true,
+      "allowed_paths_exact": true,
+      "design_allowed_paths_exact": true,
+      "owned_surfaces_exact": true,
+      "design_owned_surfaces_exact": true,
+      "queue_design_block_parity": true,
+      "design_queue_path_matches": true
+    },
+    "sourceChecks": {
+      "Chummer.Avalonia/DesktopHomeWindow.cs": {
+        "\"Open Creator Publication\"": true,
+        "\"Review Moderation Flow\"": true,
+        "OpenCreatorPublicationAsync()": true,
+        "OpenCreatorModerationAsync()": true,
+        "DesktopCreatorPublicationWindow.ShowAsync(": true,
+        "DesktopCreatorPublicationWindow.ShowModerationAsync(": true
+      },
+      "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
+        "\"Open Creator Publication\"": true,
+        "\"Review Moderation Flow\"": true,
+        "OpenCreatorPublicationAsync()": true,
+        "OpenCreatorModerationAsync()": true,
+        "DesktopCreatorPublicationWindow.ShowAsync(": true,
+        "DesktopCreatorPublicationWindow.ShowModerationAsync(": true
+      },
+      "Chummer.Avalonia/DesktopCreatorPublicationWindow.cs": {
+        "internal sealed class DesktopCreatorPublicationWindow : Window": true,
+        "DesktopCreatorPublicationSurface.Moderation": true,
+        "Creator publication": true,
+        "Trust ranking and lineage": true,
+        "Moderation flow": true,
+        "review discovery posture, trust ranking, lineage, and moderation flow": true,
+        "CreateButton(\"Open Creator Artifact Shelf\", () => Task.FromResult(OpenArtifactShelfView(\"creator\")), isPrimary: true)": true,
+        "CreateButton(\"Review Moderation Flow\", OpenModerationSurfaceAsync)": true,
+        "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
+        "DesktopCampaignArtifactWindow.ShowPrimerAsync(this, _installState.HeadId)": true,
+        "DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(this, _installState.HeadId)": true,
+        "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())": true
+      },
+      "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
+        "DesktopCreatorPublicationSurface_is_a_real_top_level_surface();": true,
+        "private static void DesktopCreatorPublicationSurface_is_a_real_top_level_surface()": true,
+        "Desktop creator publication surface requires an IChummerClient instance.": true,
+        "DesktopCreatorPublicationWindow.ShowAsync(": true,
+        "DesktopCreatorPublicationWindow.ShowModerationAsync(": true
+      }
+    },
+    "proofCommands": {
+      "directProofCommand": "bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh",
+      "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
+      "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+    },
+    "closedPackage": {
+      "completionAction": "verify_closed_package_only",
+      "doNotReopenReason": "M116 chummer6-ui creator publication desktop surface is complete; future shards must verify the",
+      "proof": [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M116CreatorPublicationGuardTests.cs",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json",
+        "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh",
+        "bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh",
+        "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
+        "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+      ],
+      "registryEvidence": [
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs and /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs now surface desktop entrypoints for creator publication and moderation actions from the home and workspace shells.",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs now provides the desktop creator-publication surface with publication, trust-ranking and lineage, and moderation sections plus direct followthrough actions.",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs keeps the creator-publication desktop surface on the accessibility and top-level-surface signoff path.",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M116CreatorPublicationGuardTests.cs and /docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh fail closed when the queue, registry, desktop entrypoints, creator-publication window, or generated proof receipt drift from the closed package contract.",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json records the closed-package receipt for `next90-m116-ui-creator-publication`."
+      ]
+    },
+    "proofFiles": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M116CreatorPublicationGuardTests.cs"
+    ]
+  }
+}

@@ -24,6 +24,9 @@ internal static class MainWindowControlBinder
         EventHandler onPrintRequested,
         EventHandler onCopyRequested,
         EventHandler onDesktopHomeRequested,
+        EventHandler onGmPrepRequested,
+        EventHandler onRosterMovementRequested,
+        EventHandler onRuleEnvironmentStudioRequested,
         EventHandler onCloseWorkspaceRequested,
         EventHandler onGmPrepRequested,
         EventHandler onRosterMovementRequested,
@@ -57,6 +60,9 @@ internal static class MainWindowControlBinder
         toolStrip.PrintRequested += onPrintRequested;
         toolStrip.CopyRequested += onCopyRequested;
         toolStrip.DesktopHomeRequested += onDesktopHomeRequested;
+        toolStrip.GmPrepRequested += onGmPrepRequested;
+        toolStrip.RosterMovementRequested += onRosterMovementRequested;
+        toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;
         toolStrip.CloseWorkspaceRequested += onCloseWorkspaceRequested;
         toolStrip.GmPrepRequested += onGmPrepRequested;
         toolStrip.RosterMovementRequested += onRosterMovementRequested;

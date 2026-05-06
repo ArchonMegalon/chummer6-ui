@@ -20,6 +20,7 @@ The point is to answer a small number of high-value product questions honestly:
 
 Privacy, retention, and redaction boundaries still live in `PRIVACY_AND_RETENTION_BOUNDARIES.md`.
 Concrete event names, rollup shapes, and install-level settings live in `PRODUCT_USAGE_TELEMETRY_EVENT_SCHEMA.md`.
+Golden-journey proof across install, open runs, BLACK LEDGER, ProductLift, KARMA FORGE, public campaigns, and closure loops is defined in `PRODUCT_ANALYTICS_AND_JOURNEY_PROOF_MODEL.md` and `JOURNEY_PROOF_EVENTS.yaml`.
 
 ## Non-goals
 
@@ -267,10 +268,16 @@ This is how Chummer separates "the app is slow" from "the app is slow on very la
 Gather bounded funnel facts for high-value journeys:
 
 * install -> first launch -> claim/skip -> first successful open or build
+* first playable session funnel: onboarding entry -> lane selection -> runner-ready -> primer -> briefing -> table handoff -> first playable session
 * open existing character -> edit -> save
 * import legacy file -> repair prompts -> successful open
 * update available -> update start -> relaunch success
 * crash -> recovery -> successful reopen
+* open run -> apply -> accepted -> scheduled -> played -> resolved
+* intel submitted -> reviewed -> adopted -> generated job or world-tick input
+* ProductLift idea -> discovery -> accepted or rejected -> shipped or closed out -> voter notified
+* KARMA FORGE request -> interview -> packet -> candidate -> prototype decision
+* world tick -> map/newsreel -> Signitic/Taja/Emailit distribution -> first-party landing conversion
 
 For each funnel, gather:
 
@@ -279,6 +286,14 @@ For each funnel, gather:
 * abandon count
 * failure count
 * median time-to-complete
+
+For first-playable-session onboarding as a first-class funnel, also gather:
+
+* lane-scoped completion rate
+* stage-specific drop-off rate
+* blocker-recovery rate after a typed next-safe-action or support-safe recovery prompt
+* primer and briefing coverage for completed starts when the lane requires them
+* no-desktop escalations that ask for desktop only after preflight already passed
 
 ### 8. Feature adoption
 
@@ -477,6 +492,22 @@ One row per journey/day with:
 * abandoned
 * failed
 * median duration bucket
+
+### `first_playable_session_daily`
+
+One row per onboarding lane, install, and day with:
+
+* `onboarding_lane`
+* `entry_visible_count`
+* `runner_ready_count`
+* `primer_seen_count`
+* `briefing_seen_count`
+* `table_handoff_ready_count`
+* `first_playable_session_started_count`
+* `blocked_count`
+* `recovered_after_block_count`
+* `top_blocker_family`
+* `median_time_to_first_playable_bucket_minutes`
 
 ### `search_usage_daily`
 

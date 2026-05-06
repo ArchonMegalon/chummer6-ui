@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-05-06T15:15:59.3503859Z",
+  "contract_name": "chummer6-ui.chummer5a_fixture_ui_reconstruction",
+  "status": "pass",
+  "summary": "UI reconstruction parity passed for Tenshi.chum5.",
+  "fixtureName": "Tenshi.chum5",
+  "characterName": "Felicia Marz",
+  "linux_binary_under_test": true,
+  "used_internal_apis": false,
+  "screenshots": [
+    "Tenshi.chum5-opened.png",
+    "Tenshi.chum5-reloaded.png"
+  ],
+  "assertions": {
+    "openedByUi": true,
+    "savedByUi": true,
+    "reloadedByUi": true,
+    "roundTripPreservedIdentity": true
+  },
+  "reasons": [],
+  "evidence": {
+    "fixturePath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/TestFiles/Tenshi.chum5",
+    "savedFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/23ab45da696547dbab508fbc8419b997/Tenshi.chum5.roundtrip.chum5",
+    "pickerTitles": [
+      "Open Character File",
+      "Open Character File"
+    ],
+    "sourceIdentity": {
+      "characterName": "Felicia Marz",
+      "primaryToken": "Felicia Marz",
+      "alias": "Tenshi",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "openedIdentity": {
+      "characterName": "Felicia Marz",
+      "primaryToken": "Felicia Marz",
+      "alias": "Tenshi",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "savedIdentity": {
+      "characterName": "Felicia Marz",
+      "primaryToken": "Felicia Marz",
+      "alias": "Tenshi",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "reloadedIdentity": {
+      "characterName": "Felicia Marz",
+      "primaryToken": "Felicia Marz",
+      "alias": "Tenshi",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    }
+  }
+}

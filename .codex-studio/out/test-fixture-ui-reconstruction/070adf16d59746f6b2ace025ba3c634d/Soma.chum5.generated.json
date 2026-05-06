@@ -1,0 +1,87 @@
+{
+  "generatedAt": "2026-05-06T16:00:26.3636884Z",
+  "contract_name": "chummer6-ui.chummer5a_fixture_ui_reconstruction",
+  "status": "fail",
+  "summary": "UI reconstruction parity failed for Soma.chum5.",
+  "fixtureName": "Soma.chum5",
+  "characterName": "Soma",
+  "linux_binary_under_test": true,
+  "used_internal_apis": false,
+  "screenshots": [
+    "Soma.chum5-opened.png"
+  ],
+  "assertions": {
+    "openedByUi": true,
+    "savedByUi": true,
+    "exportedByUi": false,
+    "printedByUi": false,
+    "pdfArtifactProducedByUiPrintRoute": false,
+    "outputArtifactsProducedByUi": false,
+    "reloadedByUi": false,
+    "roundTripPreservedIdentity": false
+  },
+  "reasons": [
+    "Assert.Fail failed. Timed out waiting for runtime-backed UI condition: runtime menu command \u0027export_character\u0027 in \u0027FileMenuButton\u0027.",
+    "Expected two host file-open picker calls for \u0027Soma.chum5\u0027, but saw: Open Character File",
+    "\u0027Soma.chum5\u0027 did not complete a UI export route.",
+    "\u0027Soma.chum5\u0027 did not complete a UI print-preview route.",
+    "\u0027Soma.chum5\u0027 did not materialize a PDF artifact from the UI print route.",
+    "\u0027Soma.chum5\u0027 did not publish the full save/export/print output artifact set.",
+    "\u0027Soma.chum5\u0027 did not complete a UI reload route.",
+    "\u0027Soma.chum5\u0027 identity drifted across the open/save/reload roundtrip. Source=primary=Soma, alias=Soma, build=SumtoTen, metatype=Human, ruleset=sr5; Opened=primary=Soma, alias=Soma, build=SumtoTen, metatype=Human, ruleset=sr5; Saved=primary=Soma, alias=Soma, build=SumtoTen, metatype=Human, ruleset=sr5; Reloaded=primary=Soma, alias=Soma, build=SumtoTen, metatype=Human, ruleset=sr5.",
+    "\u0027Soma.chum5\u0027 did not publish the expected UI reconstruction screenshots."
+  ],
+  "evidence": {
+    "fixturePath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/TestFiles/Soma.chum5",
+    "savedFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/070adf16d59746f6b2ace025ba3c634d/Soma.chum5.roundtrip.chum5",
+    "exportFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/070adf16d59746f6b2ace025ba3c634d/Soma.chum5.export.json",
+    "printPreviewFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/070adf16d59746f6b2ace025ba3c634d/Soma.chum5.print.html",
+    "pdfArtifactPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/070adf16d59746f6b2ace025ba3c634d/Soma.chum5.print.pdf",
+    "pickerTitles": [
+      "Open Character File"
+    ],
+    "outputRouteFacts": {
+      "exportCallCount": 0,
+      "exportFileName": "",
+      "exportByteCount": 0,
+      "printCallCount": 0,
+      "printFileName": "",
+      "printMimeType": "",
+      "printTitle": "",
+      "printPreviewByteCount": 0,
+      "pdfArtifactByteCount": 0
+    },
+    "sourceIdentity": {
+      "characterName": "Soma",
+      "primaryToken": "Soma",
+      "alias": "Soma",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "openedIdentity": {
+      "characterName": "Soma",
+      "primaryToken": "Soma",
+      "alias": "Soma",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "savedIdentity": {
+      "characterName": "Soma",
+      "primaryToken": "Soma",
+      "alias": "Soma",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "reloadedIdentity": {
+      "characterName": "Soma",
+      "primaryToken": "Soma",
+      "alias": "Soma",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    }
+  }
+}

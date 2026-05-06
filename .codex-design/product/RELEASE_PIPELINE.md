@@ -136,6 +136,14 @@ These are updater-facing artifacts consumed by desktop clients:
 
 The registry is the canonical source for both classes after promotion. The UI repo is the owner of how clients consume machine update payloads.
 
+## Public distribution rule
+
+`chummer.run` is the only official source for downloading the Chummer client.
+
+Release automation must never publish build artifacts directly to GitHub releases, GitHub Actions artifact shelves, repo attachments, or any repo-hosted binary channel as a user-facing client download. GitHub remains source and development evidence infrastructure only. If a user can acquire an installer, archive, update payload, or preview client, that acquisition path must start from `chummer.run` and resolve through registry-backed release truth.
+
+Repo-local build outputs may exist only as private CI/staging evidence until they are promoted into the registry-backed `chummer.run` download or install handoff surface.
+
 ## Claimable install rule
 
 Chummer makes installs claimable and account-aware without personalizing the delivered binary.
@@ -158,13 +166,12 @@ Forbidden posture:
 
 1. `chummer6-core` produces runtime-bundle outputs and fingerprints.
 2. `chummer6-ui` produces installer-ready desktop bundles for Windows `.exe`, macOS `.dmg`, and Linux `.deb`, plus any machine update payloads needed by the updater lane.
-3. When a self-hosted downloads target or live `chummer.run` upload target is configured, the successful mainline desktop build automatically replaces the previous public downloads bundle and prunes superseded desktop artifacts so `/downloads` stays latest-only. Manual republish debt after a green build is release-pipeline failure, not operator folklore.
-4. `CHUMMER_DESKTOP_RELEASE_CHANNEL` is the mainline publication switch: `preview` keeps signing/notarization optional. `release_candidate` and `public_stable` normally require Windows signing receipts and macOS signing/notarization receipts from the same bundle, but the lane may deliberately publish an unsigned public build only when `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=1` is set and the resulting public-promotion evidence records `unsigned_public_release` instead of pretending the artifacts are signed.
-5. `fleet` expands the release matrix, runs verify/promotion/signoff/signing/notarization orchestration, and prepares a registry publication payload.
-6. `chummer6-hub-registry` becomes the source of truth for promoted channels, installer/download records, desktop release heads, update-feed metadata, compatibility, and runtime-bundle heads.
-7. `chummer6-hub` reads registry truth, serves `/downloads`, mints optional download receipts and install-claim tickets, and renders account-aware install UX without changing the underlying artifact.
-8. Desktop clients poll registry-backed channel/feed truth and apply updates through UI-owned helpers.
-9. `Chummer6` and other downstream guide surfaces read registry-backed release projections; they do not become build authorities.
+3. When a self-hosted downloads target is configured, the successful desktop build automatically replaces the previous public downloads bundle and prunes superseded desktop artifacts so `/downloads` stays latest-only.
+4. `fleet` expands the release matrix, runs verify/promotion/signoff/signing/notarization orchestration, and prepares a registry publication payload.
+5. `chummer6-hub-registry` becomes the source of truth for promoted channels, installer/download records, desktop release heads, update-feed metadata, compatibility, and runtime-bundle heads.
+6. `chummer6-hub` reads registry truth, serves `/downloads`, mints optional download receipts and install-claim tickets, and renders account-aware install UX without changing the underlying artifact.
+7. Desktop clients poll registry-backed channel/feed truth and apply updates through UI-owned helpers.
+8. `Chummer6` and other downstream guide surfaces read registry-backed release projections; they do not become build authorities.
 
 ## Canonical release-manifest rule
 
@@ -183,12 +190,14 @@ Authority rule:
 
 * Fleet prepares and verifies the candidate manifest during promotion.
 * `chummer6-hub-registry` publishes the promoted manifest as canonical release truth.
-* GitHub releases, `/downloads`, updater feeds, and downstream guide/status surfaces are projections from that registry-owned manifest.
+* `/downloads`, updater feeds, and downstream guide/status surfaces are projections from that registry-owned manifest.
+* GitHub must not be a binary release projection for client acquisition; it may reference source, evidence, or the `chummer.run` download route only.
 
 Failure rule:
 
-* promotion must fail if GitHub release notes, public downloads, updater metadata, or guide projections disagree with the canonical registry manifest for the same promoted head
-* GitHub releases and public file shelves must never be treated as the authority that overrides registry channel truth
+* promotion must fail if public downloads, updater metadata, or guide projections disagree with the canonical registry manifest for the same promoted head
+* promotion must fail if a workflow attempts to publish client binaries directly to GitHub instead of routing acquisition through `chummer.run`
+* GitHub release notes and repo README links must never be treated as download authority; they may point to `chummer.run` and must not override registry channel truth
 
 ## Initial ship rule
 
