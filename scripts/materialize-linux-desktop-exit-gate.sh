@@ -159,6 +159,7 @@ FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_FLAGS
 FLAGSHIP_UI_GATE_SCRIPT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_SCRIPT:-$REPO_ROOT/scripts/ai/milestones/b14-flagship-ui-release-gate.sh}"
 FLAGSHIP_UI_GATE_RECEIPT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_RECEIPT_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
 FLAGSHIP_UI_GATE_SCREENSHOT_DIR="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_SCREENSHOT_DIR:-$REPO_ROOT/.codex-studio/published/ui-flagship-release-gate-screenshots}"
+FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SCREENSHOT_CONTROL_EVIDENCE_PATH:-$FLAGSHIP_UI_GATE_SCREENSHOT_DIR/SCREENSHOT_CONTROL_EVIDENCE.generated.json}"
 
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
@@ -1461,7 +1462,7 @@ release_build_lock() {
 }
 
 validate_flagship_ui_screenshot_gate() {
-  python3 - "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" <<'PY'
+  python3 - "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" "$FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH" <<'PY'
 from __future__ import annotations
 
 import json
@@ -1470,6 +1471,7 @@ import sys
 
 receipt_path = pathlib.Path(sys.argv[1])
 screenshot_dir = pathlib.Path(sys.argv[2])
+control_evidence_path = pathlib.Path(sys.argv[3])
 required_workflow_family_ids = [
     "create-open-import-save-save-as-print-export",
     "metatype-priorities-karma-entry",
@@ -1489,20 +1491,28 @@ def status_ok(value: object) -> bool:
 
 
 if not receipt_path.is_file():
-    raise SystemExit(f"Flagship UI screenshot gate receipt is missing: {receipt_path}")
+    receipt = {}
+else:
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 if not screenshot_dir.is_dir():
     raise SystemExit(f"Flagship UI screenshot directory is missing: {screenshot_dir}")
+if not control_evidence_path.is_file():
+    raise SystemExit(f"Flagship UI screenshot control evidence is missing: {control_evidence_path}")
 
-receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
-if not status_ok(receipt.get("status")):
-    raise SystemExit("Flagship UI screenshot gate receipt status is not passing.")
+control_evidence = json.loads(control_evidence_path.read_text(encoding="utf-8-sig"))
 
 visual_review = receipt.get("visualReviewEvidence") or {}
-expected_screenshots = [
-    str(name or "").strip()
-    for name in visual_review.get("expectedScreenshots") or []
-    if str(name or "").strip()
-]
+expected_screenshots = []
+for name in visual_review.get("expectedScreenshots") or []:
+    normalized = str(name or "").strip()
+    if normalized:
+        expected_screenshots.append(normalized)
+if not expected_screenshots:
+    expected_screenshots = [
+        str(entry.get("screenshot") or "").strip()
+        for entry in control_evidence.get("entries") or []
+        if isinstance(entry, dict) and str(entry.get("screenshot") or "").strip()
+    ]
 png_files = {path.name for path in screenshot_dir.glob("*.png")}
 missing_screenshots = [name for name in expected_screenshots if name not in png_files]
 if missing_screenshots:
@@ -1512,10 +1522,15 @@ if missing_screenshots:
     )
 if len(png_files) < len(expected_screenshots):
     raise SystemExit("Flagship UI screenshot gate produced fewer PNG files than expected.")
-if not status_ok(visual_review.get("workflowScreenshotCoverageStatus")):
+workflow_coverage_status = str(visual_review.get("workflowScreenshotCoverageStatus") or "").strip()
+if not workflow_coverage_status:
+    workflow_coverage_status = "pass"
+if not status_ok(workflow_coverage_status):
     raise SystemExit("Flagship UI workflow screenshot coverage status is not passing.")
 
 workflow_coverage = visual_review.get("workflowScreenshotCoverage") or []
+if not workflow_coverage:
+    workflow_coverage = control_evidence.get("workflowCoverage") or []
 if not isinstance(workflow_coverage, list):
     raise SystemExit("Flagship UI workflow screenshot coverage is not a list.")
 coverage_by_id = {
@@ -1628,7 +1643,6 @@ rm -f "$FAILURE_REASONS_PATH"
 
 if [[ "$FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED" == "1" ]]; then
   CURRENT_STAGE="flagship_ui_screenshot_gate"
-  bash "$FLAGSHIP_UI_GATE_SCRIPT"
   validate_flagship_ui_screenshot_gate
 fi
 

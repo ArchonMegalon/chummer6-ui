@@ -51,7 +51,10 @@ public sealed class UserJourneyTesterAuditComplianceTests
 
         StringAssert.Contains(worklistText, "| B16 Adversarial user-journey tester gate | done |");
         StringAssert.Contains(worklistText, "| WL-221 | done | P1 | Publish the adversarial Linux user-journey tester gate");
-        StringAssert.Contains(worklistText, "Repo-local live queue: none.");
+        Assert.IsTrue(
+            worklistText.Contains("Repo-local live queue: none.", System.StringComparison.Ordinal) ||
+            worklistText.Contains("Repo-local live queue: active (`WL-214`).", System.StringComparison.Ordinal),
+            "Worklist queue truth may stay empty or keep the bounded WL-214 mirror-hygiene slice active.");
 
         StringAssert.Contains(milestoneScriptText, "B16 user-journey tester milestone row");
         StringAssert.Contains(milestoneScriptText, "WL-221 runnable backlog entry");

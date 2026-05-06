@@ -656,7 +656,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
     }
 
     private Task OpenCampaignWorkspaceAsync()
-        => DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity);
+        => DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId);
 
     private Task OpenRuleEnvironmentStudioAsync()
         => DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity);

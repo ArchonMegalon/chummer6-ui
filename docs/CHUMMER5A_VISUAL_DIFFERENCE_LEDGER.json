@@ -760,6 +760,117 @@
           "whyItDiffers": "Desktop file integration and in-shell import confirmation are intentionally separated in the current architecture."
         }
       ]
+    },
+    {
+      "screenshot": "38-translator-dialog-light.png",
+      "surface": "translator_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Translator/TranslatorMain.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Translator remains a named localization workstation while the promoted shell makes lane posture and overlays explicit.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs opens FileMenuButton -> translator and captures the dialog in Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture().",
+        "DesktopDialogFactory.BuildTranslatorFields creates translatorSearch, translatorLanePosture, translatorBridgePosture, translatorOverlayCount, and per-language langN fields.",
+        "The dialog title and message come from desktop.dialog.translator.title and desktop.dialog.translator.message so the promoted head stays localization-aware.",
+        "The translator dialog closes through the shared dialog host instead of a separate translator executable frame."
+      ],
+      "differences": [
+        {
+          "uiElement": "FileMenuButton -> translator / dialog.translator",
+          "category": "utility_route",
+          "legacyPosture": "Classic translator work lived in its own dedicated Translator tool window and project surface.",
+          "currentPosture": "The promoted shell keeps Translator as a named runtime-backed route, but it opens inside the shared desktop dialog host.",
+          "whyItDiffers": "The route stays veteran-recognizable while hosting is consolidated into one governed shell."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.translatorSearch/langN fields",
+          "category": "language_inventory",
+          "legacyPosture": "The old translator centered on form-specific search and language lists with standalone utility wiring.",
+          "currentPosture": "The promoted dialog exposes search plus a deterministic list of shipping or runtime languages as named shared fields.",
+          "whyItDiffers": "Shared field ids make translator coverage auditable across heads without losing the recognizable language-workbench rhythm."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.translatorLanePosture/translatorBridgePosture/translatorOverlayCount",
+          "category": "governance_fields",
+          "legacyPosture": "Legacy translator tooling did not surface modern lane posture and overlay governance as first-class UI facts.",
+          "currentPosture": "The promoted shell shows translator lane, bridge posture, and enabled overlay count directly in the dialog.",
+          "whyItDiffers": "Current parity has to prove localization readiness and overlay truth, not just that translation editing exists."
+        }
+      ]
+    },
+    {
+      "screenshot": "39-xml-editor-dialog-light.png",
+      "surface": "xml_editor_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/EditXmlData.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "XML amendment/editor posture stays available while the promoted shell makes bridge, overlay, and custom-data truth explicit.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs opens FileMenuButton -> xml_editor and captures the dialog in Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture().",
+        "DesktopDialogFactory.CreateCommandDialog(\"xml_editor\", ...) creates xmlEditorLanePosture, xmlEditorOverlayCount, xmlEditorCustomDataLanePosture, xmlEditorCustomDataDirectoryCount, xmlEditorReceipt, and xmlEditorDialog.",
+        "The promoted dialog message explicitly states that edit/import flow is file-first while the XML bridge posture remains visible.",
+        "The dialog uses shared apply/cancel actions instead of a dedicated legacy amendment-editor window frame."
+      ],
+      "differences": [
+        {
+          "uiElement": "dialog.xml_editor title/message and apply/cancel action bar",
+          "category": "utility_route",
+          "legacyPosture": "The classic XML Amendment Editor was a standalone power-user form with its own save/apply chrome.",
+          "currentPosture": "The promoted shell keeps XML editing as a named route inside the shared dialog host and standard action bar.",
+          "whyItDiffers": "Window hosting is unified, but the XML-editing posture remains explicit and reachable."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.xmlEditorLanePosture/xmlEditorOverlayCount/xmlEditorCustomDataLanePosture/xmlEditorCustomDataDirectoryCount",
+          "category": "bridge_governance",
+          "legacyPosture": "Legacy XML tooling focused on raw amendment authoring and did not foreground bridge posture or custom-data coverage counts.",
+          "currentPosture": "The promoted dialog surfaces bridge posture, overlay counts, and custom-data directory coverage before the user edits XML.",
+          "whyItDiffers": "The current shell must explain whether the XML bridge is governed before parity claims can be trusted."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.xmlEditorReceipt/xmlEditorDialog",
+          "category": "editor_surface",
+          "legacyPosture": "The old editor showed base XML, amendment XML, and result XML through form-specific text areas.",
+          "currentPosture": "The promoted dialog keeps a receipt field plus one shared XML field that exposes the current bridge preview payload.",
+          "whyItDiffers": "The promoted head optimizes for route proof and deterministic shell fields rather than mirroring every legacy textbox split exactly."
+        }
+      ]
+    },
+    {
+      "screenshot": "40-hero-lab-importer-dialog-light.png",
+      "surface": "hero_lab_importer_dialog",
+      "surfaceKind": "dialog",
+      "legacyReference": "/docker/chummer5a/Chummer/Forms/Utility Forms/HeroLabImporter.Designer.cs",
+      "currentReference": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "parityIntent": "Hero Lab import remains a named utility while the promoted shell exposes import-oracle coverage and adjacent SR6 proof.",
+      "evidenceAnchors": [
+        "AvaloniaFlagshipUiGateTests.cs opens FileMenuButton -> hero_lab_importer and captures the dialog in Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture().",
+        "DesktopDialogFactory.CreateCommandDialog(\"hero_lab_importer\", ...) creates heroLabSource, importRulesetId, heroLabImportOracleLanePosture, heroLabImportOracleCoverage, heroLabFixtureCount, heroLabImportOracleMatrix, heroLabImportOracleReceipt, heroLabAdjacentSr6OracleReceipt, and heroLabXml.",
+        "The dialog summary text reports import-oracle posture, coverage counts, and adjacent SR6 oracle posture when master-index data is available.",
+        "The importer uses shared import/cancel actions instead of a separate Hero Lab utility form frame."
+      ],
+      "differences": [
+        {
+          "uiElement": "FileMenuButton -> hero_lab_importer / dialog.hero_lab_importer",
+          "category": "utility_route",
+          "legacyPosture": "Classic Hero Lab import opened as a dedicated importer utility from the desktop toolset.",
+          "currentPosture": "The promoted shell keeps Hero Lab Importer as a named route, but hosts it in the shared dialog layer.",
+          "whyItDiffers": "The route remains familiar while the shell standardizes utility hosting."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.heroLabSource/importRulesetId/heroLabXml",
+          "category": "import_surface",
+          "legacyPosture": "The legacy importer focused on source file selection and payload-specific form widgets.",
+          "currentPosture": "The promoted dialog keeps source, ruleset, and XML payload fields explicit inside the shared dialog contract.",
+          "whyItDiffers": "The shared shell needs deterministic field ids for import proof and auditability."
+        },
+        {
+          "uiElement": "DesktopDialogFactory.heroLabImportOracleLanePosture/heroLabImportOracleCoverage/heroLabImportOracleMatrix/heroLabImportOracleReceipt/heroLabAdjacentSr6OracleReceipt",
+          "category": "oracle_governance",
+          "legacyPosture": "The old importer did not publish import-oracle coverage, matrix, or adjacent SR6 proof as first-class form facts.",
+          "currentPosture": "The promoted shell surfaces import-oracle posture, coverage, receipt text, and adjacent SR6 oracle evidence directly in the dialog.",
+          "whyItDiffers": "Current parity has to prove governed import truth instead of merely exposing an importer entry point."
+        }
+      ]
     }
   ]
 }

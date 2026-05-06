@@ -3224,25 +3224,28 @@ public class MigrationComplianceTests
     {
         string guardPath = FindPath("scripts", "ai", "milestones", "ui-design-mirror-hygiene-check.sh");
         string guardText = File.ReadAllText(guardPath);
+        string syncPath = FindPath("scripts", "ai", "sync-ui-design-mirror.sh");
+        string syncText = File.ReadAllText(syncPath);
         string worklistPath = FindPath("WORKLIST.md");
         string worklistText = File.ReadAllText(worklistPath);
 
-        StringAssert.Contains(guardText, "latest_repeat_marker");
-        StringAssert.Contains(guardText, "latest_repeat_detail");
-        StringAssert.Contains(guardText, "feedback/2026-04-21-154433-audit-task-11708.md");
+        StringAssert.Contains(guardText, "matching_items");
+        StringAssert.Contains(guardText, "\"package_id\") == \"audit-task-11708\"");
+        StringAssert.Contains(guardText, "Repair with `bash scripts/ai/sync-ui-design-mirror.sh`.");
         StringAssert.Contains(
             guardText,
-            "WORKLIST.md must record the latest audit-task-11708 publication wave so repeated mirror-drift observations stay closed as bounded hygiene instead of becoming orphaned feedback.");
+            "WORKLIST.md must record the latest applied audit-task-11708 publication so repeated mirror-drift observations stay closed as bounded hygiene instead of becoming orphaned feedback.");
+        StringAssert.Contains(syncText, "syncing canonical UI mirror subset");
+        StringAssert.Contains(syncText, "products\" and parts[1] == \"chummer\"");
+        StringAssert.Contains(syncText, "repo_source");
+        StringAssert.Contains(syncText, "review_source");
 
         StringAssert.Contains(
             worklistText,
-            "Auditor publication incorporation (2026-04-21 /fast system re-entry, latest 11708 wave):");
-        StringAssert.Contains(worklistText, "feedback/2026-04-21-154433-audit-task-11708.md");
-        StringAssert.Contains(worklistText, "3821 repeated observations");
-        StringAssert.Contains(
-            worklistText,
-            "/docker/chummercomplete/chummer-presentation/.codex-design/product/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml");
-        StringAssert.Contains(worklistText, "the live queue stays `items: []`");
+            "Auditor publication incorporation (2026-05-06 /fast system re-entry, latest 11708 wave):");
+        StringAssert.Contains(worklistText, "feedback/2026-05-05-230220-audit-task-11708.md");
+        StringAssert.Contains(worklistText, "converted `WL-214` from closed to active");
+        StringAssert.Contains(worklistText, "Repo-local live queue: active (`WL-214`).");
     }
 
     [TestMethod]
@@ -4306,12 +4309,51 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "flagship_readiness_open_coverage_keys");
         StringAssert.Contains(flagshipGateScriptText, "desktop_client_coverage_status");
         StringAssert.Contains(flagshipGateScriptText, "desktop_executable_exit_gate_status");
+        StringAssert.Contains(flagshipGateScriptText, "family:dense_builder_and_career_workflows");
+        StringAssert.Contains(flagshipGateScriptText, "required_dense_builder_route_local_evidence_suffixes");
+        StringAssert.Contains(flagshipGateScriptText, "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json");
+        StringAssert.Contains(flagshipGateScriptText, "UI_LOCAL_RELEASE_PROOF.generated.json");
+        StringAssert.Contains(flagshipGateScriptText, "Dense builder parity audit row is missing route-local proof evidence:");
         StringAssert.Contains(flagshipGateScriptText, "\"blockingFindings\": blocking_findings");
         StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while parity matrix still has no-parity rows.");
         StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while flagship readiness is not passed.");
         StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.");
         StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while desktop executable exit gate is not passed.");
         StringAssert.Contains(flagshipGateScriptText, "[b14] FAIL: flagship UI release gate is not passed:");
+    }
+
+    [TestMethod]
+    public void Dense_builder_parity_audit_row_cites_route_local_dense_and_release_proof_artifacts()
+    {
+        string receiptPath = FindPath(".codex-studio", "published", "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json");
+
+        using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        JsonElement denseBuilderRow = receipt.RootElement
+            .GetProperty("rows")
+            .EnumerateArray()
+            .First(row => string.Equals(row.GetProperty("id").GetString(), "family:dense_builder_and_career_workflows", StringComparison.Ordinal));
+
+        string[] evidence = denseBuilderRow.GetProperty("evidence")
+            .EnumerateArray()
+            .Select(entry => entry.GetString() ?? string.Empty)
+            .ToArray();
+
+        string[] requiredSuffixes =
+        [
+            "SECTION_HOST_RULESET_PARITY.generated.json",
+            "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+            "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+            "UI_FLAGSHIP_RELEASE_GATE.generated.json",
+            "UI_LOCAL_RELEASE_PROOF.generated.json",
+            "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+        ];
+
+        foreach (string suffix in requiredSuffixes)
+        {
+            Assert.IsTrue(
+                evidence.Any(path => path.EndsWith(suffix, StringComparison.Ordinal)),
+                $"Dense builder parity row is missing route-local proof evidence '{suffix}'.");
+        }
     }
 
     [TestMethod]
@@ -4541,6 +4583,50 @@ public class MigrationComplianceTests
         StringAssert.Contains(receiptText, "\"interactionProofReview\": \"pass\"");
         StringAssert.Contains(receiptText, "\"screenCaptureReview\": \"pass\"");
         StringAssert.Contains(receiptText, "\"legacyFamiliarityReview\": \"pass\"");
+    }
+
+    [TestMethod]
+    public void Screenshot_review_gate_receipt_keeps_release_identity_and_direct_import_route_local_receipts()
+    {
+        string receiptPath = FindPath(".codex-studio", "published", "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json");
+
+        using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        JsonElement root = receipt.RootElement;
+
+        Assert.AreEqual("preview", root.GetProperty("channelId").GetString());
+        Assert.IsFalse(string.IsNullOrWhiteSpace(root.GetProperty("releaseVersion").GetString()));
+
+        JsonElement routeLocalReceipts = root.GetProperty("routeLocalReceipts");
+        JsonElement translatorXmlRoute = routeLocalReceipts.GetProperty("translator_xml_custom_data");
+        JsonElement heroLabRoute = routeLocalReceipts.GetProperty("hero_lab_import_oracle");
+
+        Assert.AreEqual("pass", translatorXmlRoute.GetProperty("status").GetString());
+        CollectionAssert.AreEquivalent(
+            new[]
+            {
+                "translator",
+                "xml_editor",
+                "source:translator_route",
+                "source:xml_amendment_editor_route",
+                "family:custom_data_xml_and_translator_bridge"
+            },
+            translatorXmlRoute.GetProperty("routeIds").EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray());
+        CollectionAssert.AreEquivalent(
+            new[] { "38-translator-dialog-light.png", "39-xml-editor-dialog-light.png" },
+            translatorXmlRoute.GetProperty("screenshots").EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray());
+
+        Assert.AreEqual("pass", heroLabRoute.GetProperty("status").GetString());
+        CollectionAssert.AreEquivalent(
+            new[]
+            {
+                "hero_lab_importer",
+                "source:hero_lab_importer_route",
+                "family:legacy_and_adjacent_import_oracles"
+            },
+            heroLabRoute.GetProperty("routeIds").EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray());
+        CollectionAssert.AreEquivalent(
+            new[] { "40-hero-lab-importer-dialog-light.png" },
+            heroLabRoute.GetProperty("screenshots").EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray());
     }
 
     [TestMethod]
@@ -5312,7 +5398,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "failedAuditTests");
         StringAssert.Contains(workflowGateScriptText, "expected_proof_kind");
         StringAssert.Contains(workflowGateScriptText, "REQUIRED_WORKFLOW_FAMILY_IDS");
+        StringAssert.Contains(workflowGateScriptText, "DIRECT_FLAGSHIP_WORKFLOW_FAMILY_IDS");
         StringAssert.Contains(workflowGateScriptText, "missing_required_workflow_family_ids");
+        StringAssert.Contains(workflowGateScriptText, "workflow_receipt_targets_direct_flagship_slice");
+        StringAssert.Contains(workflowGateScriptText, "direct_flagship_workflow_family_ids");
+        StringAssert.Contains(workflowGateScriptText, "workflow_family_failing_receipts_direct_slice");
+        StringAssert.Contains(workflowGateScriptText, "workflow_execution_failing_receipts_direct_slice");
+        StringAssert.Contains(workflowGateScriptText, "workflow_execution_weak_receipts_direct_slice");
         StringAssert.Contains(workflowGateScriptText, "required_head_contract_markers = {");
         StringAssert.Contains(workflowGateScriptText, "\"requiredRuntimeBackedTests\"");
         StringAssert.Contains(workflowGateScriptText, "\"requiredLifecycleTests\"");
@@ -5341,11 +5433,20 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "release_channel_age_seconds");
         StringAssert.Contains(workflowGateScriptText, "release channel receipt generatedAt is in the future");
         StringAssert.Contains(workflowGateScriptText, "release channel receipt is stale");
+        StringAssert.Contains(workflowGateScriptText, "next90_m141_direct_import_route_proof_path");
+        StringAssert.Contains(workflowGateScriptText, "next90-m141-ui-direct-import-route-proof-check.sh");
+        StringAssert.Contains(workflowGateScriptText, "\"next90_m141_direct_import_route_proof\", next90_m141_direct_import_route_proof");
         StringAssert.Contains(workflowGateScriptText, "upstream_receipt_review_reasons");
         StringAssert.Contains(workflowGateScriptText, "release_channel_review_reasons");
         StringAssert.Contains(workflowGateScriptText, "flagship_head_review_reasons");
         StringAssert.Contains(workflowGateScriptText, "workflow_family_review_reasons");
         StringAssert.Contains(workflowGateScriptText, "workflow_execution_review_reasons");
+        StringAssert.Contains(workflowGateScriptText, "filter_reason_prefixes");
+        StringAssert.Contains(workflowGateScriptText, "direct_flagship_slice_runtime_proof_closes_direct_workflow_gate");
+        StringAssert.Contains(workflowGateScriptText, "direct_flagship_slice_deferred_reason_items");
+        StringAssert.Contains(workflowGateScriptText, "upstream_receipt_review_deferred_reasons");
+        StringAssert.Contains(workflowGateScriptText, "workflow_family_review_deferred_reasons");
+        StringAssert.Contains(workflowGateScriptText, "workflow_execution_review_deferred_reasons");
         StringAssert.Contains(workflowGateScriptText, "\"upstreamReceiptReview\"");
         StringAssert.Contains(workflowGateScriptText, "\"releaseChannelReview\"");
         StringAssert.Contains(workflowGateScriptText, "\"flagshipHeadReview\"");

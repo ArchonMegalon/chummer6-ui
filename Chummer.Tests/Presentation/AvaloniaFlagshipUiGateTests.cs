@@ -5,9 +5,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -107,6 +110,14 @@ public sealed class AvaloniaFlagshipUiGateTests
         "ToolsMenuButton",
         "WindowsMenuButton",
         "HelpMenuButton",
+    ];
+    private static readonly string[] DefaultChummer5aFixtureUiReconstructionFixtureNames =
+    [
+        "Bastion.chum5",
+        "Fuzzy-chargen.chum5",
+        "Soma.chum5",
+        "Tenshi.chum5",
+        "Popstar.chum5",
     ];
     private static readonly string[] ExpectedFileMenuCommandIds = ["new_character", "open_character", "save_character"];
     private static readonly string[] ExpectedSummaryHeaderTabSelectionOrder = ["tab-gear", "tab-profile"];
@@ -735,6 +746,27 @@ public sealed class AvaloniaFlagshipUiGateTests
             CollectionAssert.Contains(visibleCommands, "save_character_as");
             CollectionAssert.Contains(visibleCommands, "print_character");
         });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_chummer5a_fixture_ui_reconstruction_receipts_pass_for_default_first_slice()
+    {
+        string receiptsDirectory = ResolveFixtureUiReconstructionReceiptsDirectory();
+        FixtureUiReconstructionMaterializationResult[] results = ResolveChummer5aFixtureUiReconstructionFixtureNames()
+            .Select(fixtureName => MaterializeFixtureUiReconstructionReceipt(fixtureName, receiptsDirectory))
+            .ToArray();
+
+        FixtureUiReconstructionMaterializationResult[] failures = results
+            .Where(result => !string.Equals(result.Status, "pass", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (failures.Length > 0)
+        {
+            string message = string.Join(
+                Environment.NewLine,
+                failures.Select(result =>
+                    $"{result.FixtureName}: {string.Join(" | ", result.Reasons.Where(reason => !string.IsNullOrWhiteSpace(reason)))}"));
+            Assert.Fail("Fixture UI reconstruction materialization failed." + Environment.NewLine + message);
+        }
     }
 
     [TestMethod]
@@ -4925,6 +4957,662 @@ public sealed class AvaloniaFlagshipUiGateTests
         return match;
     }
 
+    private static IReadOnlyList<string> ResolveChummer5aFixtureUiReconstructionFixtureNames()
+    {
+        string? configuredFixtureFile = Environment.GetEnvironmentVariable("CHUMMER_FIXTURE_UI_RECONSTRUCTION_FIXTURES_FILE");
+        if (!string.IsNullOrWhiteSpace(configuredFixtureFile))
+        {
+            string[] fixtureNames = File.ReadAllLines(configuredFixtureFile)
+                .Select(line => line.Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (fixtureNames.Length == 0)
+            {
+                throw new AssertFailedException(
+                    $"Fixture UI reconstruction fixture file '{configuredFixtureFile}' did not contain any fixture names.");
+            }
+
+            return fixtureNames;
+        }
+
+        string scope = (Environment.GetEnvironmentVariable("CHUMMER_FIXTURE_UI_RECONSTRUCTION_SCOPE") ?? string.Empty).Trim();
+        if (string.Equals(scope, "all", StringComparison.OrdinalIgnoreCase))
+        {
+            string[] allFixtureNames = Directory.EnumerateFiles(ResolveTestFilesDirectory(), "*.chum5")
+                .Select(Path.GetFileName)
+                .Where(static name => !string.IsNullOrWhiteSpace(name))
+                .OrderBy(static name => name, StringComparer.Ordinal)
+                .ToArray()!;
+            if (allFixtureNames.Length == 0)
+            {
+                throw new AssertFailedException("Fixture UI reconstruction scope 'all' resolved zero .chum5 fixtures.");
+            }
+
+            return allFixtureNames;
+        }
+
+        return DefaultChummer5aFixtureUiReconstructionFixtureNames;
+    }
+
+    private static string ResolveTestFilesDirectory()
+    {
+        string[] candidates =
+        {
+            Path.Combine(Directory.GetCurrentDirectory(), "Chummer.Tests", "TestFiles"),
+            Path.Combine(Directory.GetCurrentDirectory(), "TestFiles"),
+            Path.Combine(AppContext.BaseDirectory, "TestFiles"),
+            Path.Combine("/src", "Chummer.Tests", "TestFiles"),
+            "/docker/chummercomplete/chummer-presentation/Chummer.Tests/TestFiles"
+        };
+
+        string? match = candidates.FirstOrDefault(Directory.Exists);
+        if (match is null)
+        {
+            throw new DirectoryNotFoundException("Could not locate the Chummer test fixture directory.");
+        }
+
+        return match;
+    }
+
+    private static string ResolveFixtureUiReconstructionReceiptsDirectory()
+    {
+        string? configuredPath = Environment.GetEnvironmentVariable("CHUMMER_FIXTURE_UI_RECONSTRUCTION_RECEIPTS_DIR");
+        if (!string.IsNullOrWhiteSpace(configuredPath))
+        {
+            return Path.GetFullPath(configuredPath);
+        }
+
+        string docsDirectory = Path.GetDirectoryName(ResolveSourceFile("docs", "PARITY_ORACLE.json"))
+            ?? throw new DirectoryNotFoundException("Could not resolve docs directory for fixture UI reconstruction receipts.");
+        string repoRoot = Directory.GetParent(docsDirectory)?.FullName
+            ?? throw new DirectoryNotFoundException("Could not resolve repo root for fixture UI reconstruction receipts.");
+        return Path.GetFullPath(
+            Path.Combine(
+                repoRoot,
+                ".codex-studio",
+                "out",
+                "test-fixture-ui-reconstruction",
+                Guid.NewGuid().ToString("N")));
+    }
+
+    private static FixtureUiReconstructionMaterializationResult MaterializeFixtureUiReconstructionReceipt(
+        string fixtureName,
+        string receiptsDirectory)
+    {
+        Directory.CreateDirectory(receiptsDirectory);
+
+        string receiptPath = Path.Combine(receiptsDirectory, $"{fixtureName}.generated.json");
+        string openedScreenshotFileName = $"{fixtureName}-opened.png";
+        string exportDialogScreenshotFileName = $"{fixtureName}-export-dialog.png";
+        string printedScreenshotFileName = $"{fixtureName}-printed.png";
+        string reloadedScreenshotFileName = $"{fixtureName}-reloaded.png";
+        string openedScreenshotPath = Path.Combine(receiptsDirectory, openedScreenshotFileName);
+        string exportDialogScreenshotPath = Path.Combine(receiptsDirectory, exportDialogScreenshotFileName);
+        string printedScreenshotPath = Path.Combine(receiptsDirectory, printedScreenshotFileName);
+        string reloadedScreenshotPath = Path.Combine(receiptsDirectory, reloadedScreenshotFileName);
+        string savedFilePath = Path.Combine(receiptsDirectory, $"{fixtureName}.roundtrip.chum5");
+        string exportFilePath = Path.Combine(receiptsDirectory, $"{fixtureName}.export.json");
+        string printPreviewFilePath = Path.Combine(receiptsDirectory, $"{fixtureName}.print.html");
+        string pdfArtifactPath = Path.Combine(receiptsDirectory, $"{fixtureName}.print.pdf");
+
+        List<string> reasons = [];
+        List<string> screenshots = [];
+        List<string> pickerTitles = [];
+        Dictionary<string, bool> assertions = new(StringComparer.Ordinal)
+        {
+            ["openedByUi"] = false,
+            ["savedByUi"] = false,
+            ["exportedByUi"] = false,
+            ["printedByUi"] = false,
+            ["pdfArtifactProducedByUiPrintRoute"] = false,
+            ["outputArtifactsProducedByUi"] = false,
+            ["reloadedByUi"] = false,
+            ["roundTripPreservedIdentity"] = false,
+        };
+
+        string sourceFixturePath = FindTestFilePath(fixtureName);
+        byte[] sourceFixtureBytes = File.ReadAllBytes(sourceFixturePath);
+        FixtureUiIdentity sourceIdentity = ReadFixtureUiIdentity(sourceFixtureBytes, fixtureName);
+        FixtureUiIdentity openedIdentity = sourceIdentity;
+        FixtureUiIdentity savedIdentity = sourceIdentity;
+        FixtureUiIdentity reloadedIdentity = sourceIdentity;
+        int importCallCount = 0;
+        int saveCallCount = 0;
+        int exportCallCount = 0;
+        int printCallCount = 0;
+        long exportByteCount = 0;
+        long printPreviewByteCount = 0;
+        long pdfArtifactByteCount = 0;
+        string exportFileName = string.Empty;
+        string printFileName = string.Empty;
+        string printMimeType = string.Empty;
+        string printTitle = string.Empty;
+        Queue<(byte[] Payload, string SourceLabel)> importPayloads = new();
+        importPayloads.Enqueue((sourceFixtureBytes, fixtureName));
+
+        Func<global::Avalonia.Platform.Storage.IStorageProvider, string, CancellationToken, Task<DesktopImportFileResult>>? originalImportOverride =
+            MainWindowDesktopFileCoordinator.OpenImportFileOverride;
+        Func<global::Avalonia.Platform.Storage.IStorageProvider, PendingDownloadDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? originalSaveDownloadOverride =
+            MainWindowDesktopFileCoordinator.SaveDownloadOverride;
+        Func<global::Avalonia.Platform.Storage.IStorageProvider, PendingExportDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? originalSaveExportOverride =
+            MainWindowDesktopFileCoordinator.SaveExportOverride;
+        Func<global::Avalonia.Platform.Storage.IStorageProvider, PendingPrintDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? originalSavePrintOverride =
+            MainWindowDesktopFileCoordinator.SavePrintOverride;
+
+        try
+        {
+            MainWindowDesktopFileCoordinator.OpenImportFileOverride =
+                (_, title, _) =>
+                {
+                    pickerTitles.Add(title);
+                    importCallCount++;
+                    if (importPayloads.Count == 0)
+                    {
+                        return Task.FromResult(new DesktopImportFileResult(DesktopFileOperationOutcome.Cancelled, Payload: null, SourceLabel: null));
+                    }
+
+                    (byte[] payload, string sourceLabel) = importPayloads.Dequeue();
+                    return Task.FromResult(new DesktopImportFileResult(DesktopFileOperationOutcome.Completed, payload, sourceLabel));
+                };
+            MainWindowDesktopFileCoordinator.SaveDownloadOverride =
+                (_, request, _) =>
+                {
+                    saveCallCount++;
+                    byte[] payload = Convert.FromBase64String(request.Download.ContentBase64);
+                    File.WriteAllBytes(savedFilePath, payload);
+                    return Task.FromResult(
+                        new DesktopDownloadSaveResult(
+                            DesktopFileOperationOutcome.Completed,
+                            $"Notice: downloaded {request.Download.FileName} to {Path.GetFileName(savedFilePath)}."));
+                };
+            MainWindowDesktopFileCoordinator.SaveExportOverride =
+                (_, request, _) =>
+                {
+                    exportCallCount++;
+                    exportFileName = request.Export.FileName;
+                    byte[] payload = Convert.FromBase64String(request.Export.ContentBase64);
+                    exportByteCount = payload.LongLength;
+                    File.WriteAllBytes(exportFilePath, payload);
+                    return Task.FromResult(
+                        new DesktopDownloadSaveResult(
+                            DesktopFileOperationOutcome.Completed,
+                            $"Notice: exported {request.Export.FileName} to {Path.GetFileName(exportFilePath)}."));
+                };
+            MainWindowDesktopFileCoordinator.SavePrintOverride =
+                (_, request, _) =>
+                {
+                    printCallCount++;
+                    printFileName = request.Print.FileName;
+                    printMimeType = request.Print.MimeType;
+                    printTitle = request.Print.Title;
+                    byte[] payload = Convert.FromBase64String(request.Print.ContentBase64);
+                    printPreviewByteCount = payload.LongLength;
+                    File.WriteAllBytes(printPreviewFilePath, payload);
+
+                    byte[] pdfPayload = BuildMinimalPdfFromHtmlPrintPreview(
+                        string.IsNullOrWhiteSpace(request.Print.Title) ? request.Print.FileName : request.Print.Title,
+                        payload);
+                    pdfArtifactByteCount = pdfPayload.LongLength;
+                    File.WriteAllBytes(pdfArtifactPath, pdfPayload);
+
+                    return Task.FromResult(
+                        new DesktopDownloadSaveResult(
+                            DesktopFileOperationOutcome.Completed,
+                            $"Notice: saved print preview {request.Print.FileName} and PDF bridge {Path.GetFileName(pdfArtifactPath)}."));
+                };
+
+            WithRuntimeHarness(harness =>
+            {
+                harness.WaitForReady();
+
+                ClickRuntimeMenuCommand(harness, "FileMenuButton", "open_character");
+                harness.WaitUntil(
+                    () => harness.State.WorkspaceId is not null
+                        && harness.State.Profile is not null
+                        && harness.State.Session.OpenWorkspaces.Count > 0
+                        && !harness.State.IsBusy,
+                    context: $"open fixture '{fixtureName}'");
+
+                assertions["openedByUi"] = importCallCount >= 1;
+                openedIdentity = CaptureRuntimeFixtureUiIdentity(harness, fixtureName);
+                File.WriteAllBytes(openedScreenshotPath, harness.CaptureScreenshotBytes());
+                screenshots.Add(openedScreenshotFileName);
+
+                ClickRuntimeMenuCommand(harness, "FileMenuButton", "save_character_as");
+                harness.WaitUntil(
+                    () => saveCallCount >= 1
+                        && File.Exists(savedFilePath)
+                        && !harness.State.IsBusy,
+                    context: $"save fixture '{fixtureName}'");
+
+                assertions["savedByUi"] = saveCallCount >= 1;
+                byte[] savedFixtureBytes = File.ReadAllBytes(savedFilePath);
+                savedIdentity = ReadFixtureUiIdentity(savedFixtureBytes, fixtureName);
+
+                harness.SelectCommand("export_character");
+                harness.WaitUntil(
+                    () => harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.export_character" },
+                    context: $"open export dialog for '{fixtureName}'");
+                File.WriteAllBytes(exportDialogScreenshotPath, harness.CaptureScreenshotBytes());
+                screenshots.Add(exportDialogScreenshotFileName);
+
+                ClickRuntimeDialogAction(harness, "download");
+                harness.WaitUntil(
+                    () => exportCallCount >= 1
+                        && File.Exists(exportFilePath)
+                        && harness.Window.PeekDialogWindowForTesting() is null
+                        && !harness.State.IsBusy,
+                    context: $"export fixture '{fixtureName}'");
+                assertions["exportedByUi"] =
+                    exportCallCount >= 1
+                    && exportByteCount > 0
+                    && File.Exists(exportFilePath);
+
+                ClickRuntimeMenuCommand(harness, "FileMenuButton", "print_character");
+                harness.WaitUntil(
+                    () => printCallCount >= 1
+                        && File.Exists(printPreviewFilePath)
+                        && File.Exists(pdfArtifactPath)
+                        && !harness.State.IsBusy,
+                    context: $"print fixture '{fixtureName}'");
+                assertions["printedByUi"] =
+                    printCallCount >= 1
+                    && printPreviewByteCount > 0
+                    && File.Exists(printPreviewFilePath)
+                    && string.Equals(printMimeType, "text/html", StringComparison.OrdinalIgnoreCase)
+                    && Encoding.UTF8.GetString(File.ReadAllBytes(printPreviewFilePath))
+                        .Contains("<html", StringComparison.OrdinalIgnoreCase);
+                assertions["pdfArtifactProducedByUiPrintRoute"] =
+                    printCallCount >= 1
+                    && pdfArtifactByteCount > 0
+                    && File.Exists(pdfArtifactPath)
+                    && HasPdfHeader(File.ReadAllBytes(pdfArtifactPath));
+                assertions["outputArtifactsProducedByUi"] =
+                    assertions["savedByUi"]
+                    && assertions["exportedByUi"]
+                    && assertions["printedByUi"]
+                    && assertions["pdfArtifactProducedByUiPrintRoute"];
+                File.WriteAllBytes(printedScreenshotPath, harness.CaptureScreenshotBytes());
+                screenshots.Add(printedScreenshotFileName);
+
+                ClickRuntimeMenuCommand(harness, "WindowsMenuButton", "close_window");
+                harness.WaitUntil(
+                    () => harness.State.WorkspaceId is null
+                        && harness.State.Session.OpenWorkspaces.Count == 0
+                        && !harness.State.IsBusy,
+                    context: $"close fixture '{fixtureName}' after save");
+
+                importPayloads.Enqueue((savedFixtureBytes, Path.GetFileName(savedFilePath)));
+                ClickRuntimeMenuCommand(harness, "FileMenuButton", "open_character");
+                harness.WaitUntil(
+                    () => harness.State.WorkspaceId is not null
+                        && harness.State.Profile is not null
+                        && harness.State.Session.OpenWorkspaces.Count > 0
+                        && !harness.State.IsBusy,
+                    context: $"reload fixture '{fixtureName}'");
+
+                assertions["reloadedByUi"] = importCallCount >= 2;
+                reloadedIdentity = CaptureRuntimeFixtureUiIdentity(harness, fixtureName);
+                File.WriteAllBytes(reloadedScreenshotPath, harness.CaptureScreenshotBytes());
+                screenshots.Add(reloadedScreenshotFileName);
+            });
+        }
+        catch (Exception ex)
+        {
+            reasons.Add(ex.Message);
+        }
+        finally
+        {
+            MainWindowDesktopFileCoordinator.OpenImportFileOverride = originalImportOverride;
+            MainWindowDesktopFileCoordinator.SaveDownloadOverride = originalSaveDownloadOverride;
+            MainWindowDesktopFileCoordinator.SaveExportOverride = originalSaveExportOverride;
+            MainWindowDesktopFileCoordinator.SavePrintOverride = originalSavePrintOverride;
+        }
+
+        if (pickerTitles.Count != 2
+            || pickerTitles.Any(title => !string.Equals(title, "Open Character File", StringComparison.Ordinal)))
+        {
+            reasons.Add($"Expected two host file-open picker calls for '{fixtureName}', but saw: {string.Join(", ", pickerTitles)}");
+        }
+
+        if (!assertions["openedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete an initial UI open route.");
+        }
+
+        if (!assertions["savedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete a UI save-as route.");
+        }
+
+        if (!assertions["exportedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete a UI export route.");
+        }
+
+        if (!assertions["printedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete a UI print-preview route.");
+        }
+
+        if (!assertions["pdfArtifactProducedByUiPrintRoute"])
+        {
+            reasons.Add($"'{fixtureName}' did not materialize a PDF artifact from the UI print route.");
+        }
+
+        if (!assertions["outputArtifactsProducedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not publish the full save/export/print output artifact set.");
+        }
+
+        if (!assertions["reloadedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete a UI reload route.");
+        }
+
+        assertions["roundTripPreservedIdentity"] =
+            assertions["openedByUi"]
+            && assertions["savedByUi"]
+            && assertions["reloadedByUi"]
+            && FixtureUiIdentityEquivalent(sourceIdentity, openedIdentity)
+            && FixtureUiIdentityEquivalent(sourceIdentity, savedIdentity)
+            && FixtureUiIdentityEquivalent(sourceIdentity, reloadedIdentity);
+        if (!assertions["roundTripPreservedIdentity"])
+        {
+            reasons.Add(
+                $"'{fixtureName}' identity drifted across the open/save/reload roundtrip. "
+                + $"Source={DescribeFixtureUiIdentity(sourceIdentity)}; "
+                + $"Opened={DescribeFixtureUiIdentity(openedIdentity)}; "
+                + $"Saved={DescribeFixtureUiIdentity(savedIdentity)}; "
+                + $"Reloaded={DescribeFixtureUiIdentity(reloadedIdentity)}.");
+        }
+
+        if (screenshots.Count < 4)
+        {
+            reasons.Add($"'{fixtureName}' did not publish the expected UI reconstruction screenshots.");
+        }
+
+        string status = reasons.Count == 0 && assertions.Values.All(static value => value) ? "pass" : "fail";
+        Dictionary<string, object?> payload = new(StringComparer.Ordinal)
+        {
+            ["generatedAt"] = DateTime.UtcNow.ToString("O"),
+            ["contract_name"] = "chummer6-ui.chummer5a_fixture_ui_reconstruction",
+            ["status"] = status,
+            ["summary"] = status == "pass"
+                ? $"UI reconstruction parity passed for {fixtureName}."
+                : $"UI reconstruction parity failed for {fixtureName}.",
+            ["fixtureName"] = fixtureName,
+            ["characterName"] = sourceIdentity.CharacterName,
+            ["linux_binary_under_test"] = true,
+            ["used_internal_apis"] = false,
+            ["screenshots"] = screenshots.ToArray(),
+            ["assertions"] = assertions,
+            ["reasons"] = reasons.ToArray(),
+            ["evidence"] = new Dictionary<string, object?>
+            {
+                ["fixturePath"] = sourceFixturePath,
+                ["savedFilePath"] = savedFilePath,
+                ["exportFilePath"] = exportFilePath,
+                ["printPreviewFilePath"] = printPreviewFilePath,
+                ["pdfArtifactPath"] = pdfArtifactPath,
+                ["pickerTitles"] = pickerTitles.ToArray(),
+                ["outputRouteFacts"] = new Dictionary<string, object?>
+                {
+                    ["exportCallCount"] = exportCallCount,
+                    ["exportFileName"] = exportFileName,
+                    ["exportByteCount"] = exportByteCount,
+                    ["printCallCount"] = printCallCount,
+                    ["printFileName"] = printFileName,
+                    ["printMimeType"] = printMimeType,
+                    ["printTitle"] = printTitle,
+                    ["printPreviewByteCount"] = printPreviewByteCount,
+                    ["pdfArtifactByteCount"] = pdfArtifactByteCount,
+                },
+                ["sourceIdentity"] = BuildFixtureUiIdentityPayload(sourceIdentity),
+                ["openedIdentity"] = BuildFixtureUiIdentityPayload(openedIdentity),
+                ["savedIdentity"] = BuildFixtureUiIdentityPayload(savedIdentity),
+                ["reloadedIdentity"] = BuildFixtureUiIdentityPayload(reloadedIdentity),
+            },
+        };
+        File.WriteAllText(
+            receiptPath,
+            JsonSerializer.Serialize(payload, ScreenshotEvidenceJsonOptions));
+
+        return new FixtureUiReconstructionMaterializationResult(
+            fixtureName,
+            receiptPath,
+            status,
+            reasons.ToArray());
+    }
+
+    private static FixtureUiIdentity ReadFixtureUiIdentity(byte[] xmlBytes, string fixtureName)
+    {
+        using MemoryStream stream = new(xmlBytes, writable: false);
+        using System.Xml.XmlReader reader = System.Xml.XmlReader.Create(
+            stream,
+            new System.Xml.XmlReaderSettings
+            {
+                DtdProcessing = System.Xml.DtdProcessing.Prohibit,
+                IgnoreComments = true,
+                IgnoreWhitespace = true
+            });
+        XElement root = XElement.Load(reader);
+
+        string rawName = (root.Element("name")?.Value ?? string.Empty).Trim();
+        string alias = (root.Element("alias")?.Value ?? string.Empty).Trim();
+        string buildMethod = (root.Element("buildmethod")?.Value ?? string.Empty).Trim();
+        string metatype = (root.Element("metatype")?.Value ?? string.Empty).Trim();
+        string rulesetId = NormalizeFixtureRulesetId((root.Element("gameedition")?.Value ?? string.Empty).Trim());
+        string characterName = string.IsNullOrWhiteSpace(rawName)
+            ? Path.GetFileNameWithoutExtension(fixtureName)
+            : rawName;
+
+        return new FixtureUiIdentity(
+            CharacterName: characterName,
+            PrimaryToken: ResolveFixtureIdentityToken(rawName, alias, fixtureName),
+            Alias: alias,
+            BuildMethod: buildMethod,
+            Metatype: metatype,
+            RulesetId: rulesetId);
+    }
+
+    private static FixtureUiIdentity CaptureRuntimeFixtureUiIdentity(RuntimeFlagshipUiHarness harness, string fixtureName)
+    {
+        CharacterProfileSection profile = harness.State.Profile
+            ?? throw new AssertFailedException($"Runtime fixture '{fixtureName}' did not materialize a profile.");
+        OpenWorkspaceState? workspace = harness.State.WorkspaceId is { } workspaceId
+            ? harness.State.OpenWorkspaces.FirstOrDefault(candidate => candidate.Id.Equals(workspaceId))
+            : null;
+
+        return new FixtureUiIdentity(
+            CharacterName: string.IsNullOrWhiteSpace(profile.Name)
+                ? Path.GetFileNameWithoutExtension(fixtureName)
+                : profile.Name,
+            PrimaryToken: ResolveFixtureIdentityToken(profile.Name, profile.Alias, fixtureName),
+            Alias: profile.Alias,
+            BuildMethod: profile.BuildMethod,
+            Metatype: profile.Metatype,
+            RulesetId: NormalizeFixtureRulesetId(workspace?.RulesetId ?? string.Empty));
+    }
+
+    private static bool FixtureUiIdentityEquivalent(FixtureUiIdentity expected, FixtureUiIdentity actual)
+    {
+        return string.Equals(expected.PrimaryToken, actual.PrimaryToken, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(expected.BuildMethod, actual.BuildMethod, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(expected.RulesetId, actual.RulesetId, StringComparison.OrdinalIgnoreCase)
+            && (string.IsNullOrWhiteSpace(expected.Alias)
+                || string.Equals(expected.Alias, actual.Alias, StringComparison.OrdinalIgnoreCase))
+            && (string.IsNullOrWhiteSpace(expected.Metatype)
+                || string.Equals(expected.Metatype, actual.Metatype, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string ResolveFixtureIdentityToken(string? rawName, string? alias, string fixtureName)
+    {
+        string candidate = string.IsNullOrWhiteSpace(rawName)
+            ? string.IsNullOrWhiteSpace(alias)
+                ? Path.GetFileNameWithoutExtension(fixtureName)
+                : alias
+            : rawName;
+        return string.Join(" ", candidate.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static string NormalizeFixtureRulesetId(string rawValue)
+    {
+        string trimmed = rawValue.Trim();
+        return trimmed.ToUpperInvariant() switch
+        {
+            "SR4" => RulesetDefaults.Sr4,
+            "SR5" => RulesetDefaults.Sr5,
+            "SR6" => RulesetDefaults.Sr6,
+            _ => RulesetDefaults.NormalizeOptional(trimmed) ?? string.Empty,
+        };
+    }
+
+    private static string DescribeFixtureUiIdentity(FixtureUiIdentity identity)
+        => $"primary={identity.PrimaryToken}, alias={identity.Alias}, build={identity.BuildMethod}, metatype={identity.Metatype}, ruleset={identity.RulesetId}";
+
+    private static Dictionary<string, object?> BuildFixtureUiIdentityPayload(FixtureUiIdentity identity)
+        => new(StringComparer.Ordinal)
+        {
+            ["characterName"] = identity.CharacterName,
+            ["primaryToken"] = identity.PrimaryToken,
+            ["alias"] = identity.Alias,
+            ["buildMethod"] = identity.BuildMethod,
+            ["metatype"] = identity.Metatype,
+            ["rulesetId"] = identity.RulesetId,
+        };
+
+    private static byte[] BuildMinimalPdfFromHtmlPrintPreview(string title, byte[] htmlBytes)
+    {
+        string html = Encoding.UTF8.GetString(htmlBytes);
+        string normalizedTitle = NormalizePdfLine(title);
+        string plainText = ExtractPlainTextFromHtml(html);
+        List<string> lines = [];
+
+        if (!string.IsNullOrWhiteSpace(normalizedTitle))
+        {
+            lines.Add(normalizedTitle);
+        }
+
+        foreach (string line in plainText.Split('\n'))
+        {
+            string normalizedLine = NormalizePdfLine(line);
+            if (!string.IsNullOrWhiteSpace(normalizedLine))
+            {
+                lines.Add(normalizedLine);
+            }
+        }
+
+        if (lines.Count == 0)
+        {
+            lines.Add("Print preview");
+        }
+
+        const int MaxLines = 48;
+        StringBuilder content = new();
+        content.Append("BT\n/F1 11 Tf\n50 790 Td\n14 TL\n");
+        bool wroteLine = false;
+        foreach (string line in lines.Take(MaxLines))
+        {
+            if (wroteLine)
+            {
+                content.Append("T*\n");
+            }
+
+            content.Append('(')
+                .Append(EscapePdfText(line))
+                .Append(") Tj\n");
+            wroteLine = true;
+        }
+
+        content.Append("ET\n");
+        byte[] contentBytes = Encoding.ASCII.GetBytes(content.ToString());
+
+        using MemoryStream stream = new();
+        stream.Write(
+        [
+            0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A,
+            0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A
+        ]);
+
+        List<long> offsets = [0];
+
+        void WriteObject(string payload)
+        {
+            offsets.Add(stream.Position);
+            byte[] bytes = Encoding.ASCII.GetBytes(payload);
+            stream.Write(bytes, 0, bytes.Length);
+        }
+
+        WriteObject("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+        WriteObject("2 0 obj\n<< /Type /Pages /Count 1 /Kids [3 0 R] >>\nendobj\n");
+        WriteObject("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n");
+        offsets.Add(stream.Position);
+        byte[] streamHeader = Encoding.ASCII.GetBytes($"4 0 obj\n<< /Length {contentBytes.Length} >>\nstream\n");
+        stream.Write(streamHeader, 0, streamHeader.Length);
+        stream.Write(contentBytes, 0, contentBytes.Length);
+        byte[] streamFooter = Encoding.ASCII.GetBytes("endstream\nendobj\n");
+        stream.Write(streamFooter, 0, streamFooter.Length);
+        WriteObject("5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n");
+
+        long xrefOffset = stream.Position;
+        byte[] xrefHeader = Encoding.ASCII.GetBytes($"xref\n0 {offsets.Count}\n");
+        stream.Write(xrefHeader, 0, xrefHeader.Length);
+        byte[] freeEntry = Encoding.ASCII.GetBytes("0000000000 65535 f \n");
+        stream.Write(freeEntry, 0, freeEntry.Length);
+        foreach (long offset in offsets.Skip(1))
+        {
+            byte[] entry = Encoding.ASCII.GetBytes($"{offset:0000000000} 00000 n \n");
+            stream.Write(entry, 0, entry.Length);
+        }
+
+        byte[] trailer = Encoding.ASCII.GetBytes(
+            $"trailer\n<< /Size {offsets.Count} /Root 1 0 R >>\nstartxref\n{xrefOffset}\n%%EOF\n");
+        stream.Write(trailer, 0, trailer.Length);
+        return stream.ToArray();
+    }
+
+    private static string ExtractPlainTextFromHtml(string html)
+    {
+        string normalized = Regex.Replace(html, "(?i)<br\\s*/?>", "\n");
+        normalized = Regex.Replace(normalized, "(?i)</(p|div|h1|h2|h3|li|tr|section|article)>", "\n");
+        normalized = Regex.Replace(normalized, "<[^>]+>", " ");
+        normalized = WebUtility.HtmlDecode(normalized);
+        normalized = Regex.Replace(normalized, @"\r\n?|\u2028|\u2029", "\n");
+        normalized = Regex.Replace(normalized, @"[ \t\f\v]+", " ");
+        normalized = Regex.Replace(normalized, @"\n{3,}", "\n\n");
+        return normalized.Trim();
+    }
+
+    private static string NormalizePdfLine(string value)
+    {
+        string trimmed = value.Trim();
+        if (trimmed.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        char[] normalized = trimmed
+            .Select(ch => ch is >= ' ' and <= '~' ? ch : '?')
+            .ToArray();
+        return new string(normalized);
+    }
+
+    private static string EscapePdfText(string value)
+        => value
+            .Replace(@"\", @"\\", StringComparison.Ordinal)
+            .Replace("(", @"\(", StringComparison.Ordinal)
+            .Replace(")", @"\)", StringComparison.Ordinal);
+
+    private static bool HasPdfHeader(byte[] bytes)
+        => bytes.Length >= 5
+            && bytes[0] == (byte)'%'
+            && bytes[1] == (byte)'P'
+            && bytes[2] == (byte)'D'
+            && bytes[3] == (byte)'F'
+            && bytes[4] == (byte)'-';
+
     private static string ResolveSourceFile(params string[] segments)
     {
         string[] candidates =
@@ -7358,6 +8046,19 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static void ClickRuntimeDialogAction(RuntimeFlagshipUiHarness harness, string actionId)
         => harness.Click(DesktopDialogAccessibility.BuildActionName(actionId));
 
+    private static void ClickRuntimeMenuCommand(RuntimeFlagshipUiHarness harness, string menuButtonName, string commandId)
+    {
+        harness.Click(menuButtonName);
+        harness.WaitUntil(
+            () => SnapshotMenuCommands(harness.FindControl<MenuItem>(menuButtonName))
+                .Any(command => string.Equals(command.Tag?.ToString(), commandId, StringComparison.Ordinal)),
+            context: $"runtime menu command '{commandId}' in '{menuButtonName}'");
+
+        MenuItem command = SnapshotMenuCommands(harness.FindControl<MenuItem>(menuButtonName))
+            .First(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal));
+        RaiseMenuItemClick(command);
+    }
+
     private static void WithStandaloneControl<TControl>(Action<TControl> assertion)
         where TControl : Control, new()
     {
@@ -8512,10 +9213,70 @@ public sealed class AvaloniaFlagshipUiGateTests
                     : $"Timed out waiting for runtime-backed UI condition: {context}.");
         }
 
+        public byte[] CaptureScreenshotBytes()
+        {
+            Control screenshotRoot = Window.Content as Control ?? Window;
+            using RenderTargetBitmap bitmap = RenderControlToBitmap(screenshotRoot, new Size(980d, 640d));
+            using MemoryStream output = new();
+            bitmap.Save(output);
+            if (output.Length > 0)
+            {
+                return output.ToArray();
+            }
+
+            throw new AssertFailedException("No runtime-backed rendered frame was available for screenshot capture.");
+        }
+
         public void Dispose()
         {
             Window.Close();
             _adapter.Dispose();
+        }
+
+        private static RenderTargetBitmap RenderControlToBitmap(Control control, Size fallbackSize)
+        {
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                if (control.Bounds.Width <= 0d || control.Bounds.Height <= 0d)
+                {
+                    control.Measure(fallbackSize);
+                    control.Arrange(new Rect(fallbackSize));
+                }
+
+                if (control.GetVisualRoot() is Visual visualRoot)
+                {
+                    visualRoot.InvalidateVisual();
+                    if (visualRoot is global::Avalonia.Layout.Layoutable visualLayoutable)
+                    {
+                        visualLayoutable.UpdateLayout();
+                    }
+                }
+
+                control.InvalidateMeasure();
+                control.InvalidateArrange();
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                control.InvalidateVisual();
+                if (control is global::Avalonia.Layout.Layoutable layoutable)
+                {
+                    layoutable.UpdateLayout();
+                }
+                Pump();
+                double renderWidth = Math.Max(control.Bounds.Width, control.DesiredSize.Width);
+                double renderHeight = Math.Max(control.Bounds.Height, control.DesiredSize.Height);
+                PixelSize pixelSize = new(
+                    Math.Max(1, (int)Math.Ceiling(renderWidth)),
+                    Math.Max(1, (int)Math.Ceiling(renderHeight)));
+                RenderTargetBitmap bitmap = new(pixelSize, new Vector(96, 96));
+                bitmap.Render(control);
+                if (pixelSize.Width > 0 && pixelSize.Height > 0)
+                {
+                    return bitmap;
+                }
+
+                bitmap.Dispose();
+            }
+
+            throw new AssertFailedException($"No rendered frame was available for runtime-backed screenshot capture of '{control.GetType().Name}'.");
         }
 
         private static void Pump()
@@ -9853,6 +10614,20 @@ public sealed class AvaloniaFlagshipUiGateTests
         string? CommitActionId = null,
         string? CommitNoticeFragment = null,
         bool AllowEmptyValue = false);
+
+    private sealed record FixtureUiIdentity(
+        string CharacterName,
+        string PrimaryToken,
+        string Alias,
+        string BuildMethod,
+        string Metatype,
+        string RulesetId);
+
+    private sealed record FixtureUiReconstructionMaterializationResult(
+        string FixtureName,
+        string ReceiptPath,
+        string Status,
+        string[] Reasons);
 
     private static readonly IReadOnlyDictionary<string, RuntimeQuickActionWorkflowContract> RuntimeQuickActionWorkflowContracts =
         new Dictionary<string, RuntimeQuickActionWorkflowContract>(StringComparer.Ordinal)

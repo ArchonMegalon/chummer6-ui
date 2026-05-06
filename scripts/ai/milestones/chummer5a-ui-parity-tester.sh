@@ -12,6 +12,15 @@ if [[ "${CHUMMER5A_UI_PARITY_TESTER_RUN_USER_JOURNEY_AUDIT:-1}" == "1" ]]; then
   bash "$repo_root/scripts/ai/milestones/user-journey-tester-audit.sh" >/dev/null || true
 fi
 
+if [[ "${CHUMMER5A_UI_PARITY_TESTER_REFRESH_RECONSTRUCTION_PROOF:-1}" == "1" ]]; then
+  bash "$repo_root/scripts/ai/milestones/chummer5a-fixture-ui-reconstruction.sh" >/dev/null || true
+fi
+
+if [[ "${CHUMMER5A_UI_PARITY_TESTER_REFRESH_RECURSIVE_PROOF:-1}" == "1" ]]; then
+  bash "$repo_root/scripts/ai/milestones/generated-dialog-element-parity-check.sh" >/dev/null || true
+  bash "$repo_root/scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh" >/dev/null || true
+fi
+
 set +e
 python3 "$repo_root/scripts/chummer5a_parity_tester.py" --artifacts "$artifacts_path" "$@"
 tester_exit_code=$?

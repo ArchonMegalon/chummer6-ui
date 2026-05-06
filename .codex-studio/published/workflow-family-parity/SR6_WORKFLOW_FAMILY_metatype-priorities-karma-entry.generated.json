@@ -1,9 +1,11 @@
 {
-  "generatedAt": "2026-05-04T20:33:28.461662Z",
+  "generatedAt": "2026-05-05T23:37:22.296197Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family parity evidence is explicitly grounded for metatype-priorities-karma-entry.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family parity evidence is incomplete for metatype-priorities-karma-entry.",
+  "reasons": [
+    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/metatype-priorities-karma-entry.generated.json (fail)"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "metatype-priorities-karma-entry",
@@ -27,10 +29,10 @@
         "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
       ]
     },
-    "verificationReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/metatype-priorities-karma-entry.generated.json"
+    "verificationReceipts": [],
+    "verificationFailures": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/metatype-priorities-karma-entry.generated.json (fail)"
     ],
-    "verificationFailures": [],
     "verificationExternalBlockers": []
   }
 }
