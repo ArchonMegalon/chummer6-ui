@@ -1,0 +1,209 @@
+{
+  "generatedAt": "2026-05-06T02:00:37Z",
+  "status": "pass",
+  "unresolved": [],
+  "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
+  "channelId": "preview",
+  "version": "run-20260503-163502",
+  "evidence": {
+    "packageId": "next90-m141-ui-capture-direct-screenshot-and-runtime-proof-for-translator-xml-amendment",
+    "title": "Capture direct screenshot and runtime proof for translator, XML amendment editor, Hero Lab importer, and adjacent import-oracle routes.",
+    "task": "Capture direct screenshot and runtime proof for translator, XML amendment editor, Hero Lab importer, and adjacent import-oracle routes.",
+    "frontierId": 2354698282,
+    "milestoneId": 141,
+    "workTaskId": "141.1",
+    "wave": "W22P",
+    "repo": "chummer6-ui",
+    "allowedPaths": [
+      "Chummer.Avalonia",
+      "Chummer.Desktop.Runtime",
+      "Chummer.Tests",
+      "scripts"
+    ],
+    "ownedSurfaces": [
+      "capture_direct_screenshot_and_runtime_proof_for_translat:ui"
+    ],
+    "queueChecks": {
+      "registry_markers_present": true,
+      "registry_milestone_present": true,
+      "registry_milestone_title_matches": true,
+      "registry_task_unique": true,
+      "registry_task_owner_matches": true,
+      "registry_task_title_matches": true,
+      "registry_task_status_complete": true,
+      "registry_task_completion_action_matches": true,
+      "registry_task_do_not_reopen_reason_matches": true,
+      "registry_task_evidence_exact": true,
+      "queue_package_unique": true,
+      "design_queue_package_unique": true,
+      "queue_title_matches": true,
+      "design_queue_title_matches": true,
+      "queue_task_matches": true,
+      "design_queue_task_matches": true,
+      "queue_frontier_matches": true,
+      "design_queue_frontier_matches": true,
+      "queue_work_task_matches": true,
+      "design_queue_work_task_matches": true,
+      "queue_status_complete": true,
+      "design_queue_status_complete": true,
+      "queue_wave_matches": true,
+      "design_queue_wave_matches": true,
+      "queue_repo_matches": true,
+      "design_queue_repo_matches": true,
+      "queue_completion_action_matches": true,
+      "design_queue_completion_action_matches": true,
+      "queue_do_not_reopen_reason_matches": true,
+      "design_queue_do_not_reopen_reason_matches": true,
+      "queue_proof_exact": true,
+      "design_queue_proof_exact": true,
+      "allowed_paths_exact": true,
+      "design_allowed_paths_exact": true,
+      "owned_surfaces_exact": true,
+      "design_owned_surfaces_exact": true,
+      "queue_design_block_parity": true,
+      "design_queue_path_matches": true,
+      "queue_worker_safe": true,
+      "design_queue_worker_safe": true
+    },
+    "flagshipFrontierId": 1922169755,
+    "flagshipFrontierChecks": {
+      "frontier_artifact_present": true,
+      "frontier_artifact_path_under_root": true,
+      "frontier_artifact_uses_shard_generated_yaml": true,
+      "frontier_id_present": true,
+      "queue_package_present": true,
+      "title_present": true,
+      "owned_surface_present": true,
+      "allowed_paths_exact": true,
+      "worker_safe": true
+    },
+    "sourceChecks": {
+      "Chummer.Presentation/Overview/OverviewCommandDispatcher.cs": {
+        "if (string.Equals(commandId, \"translator\", StringComparison.Ordinal))": true,
+        "|| string.Equals(commandId, \"translator\", StringComparison.Ordinal)": true,
+        "|| string.Equals(commandId, \"xml_editor\", StringComparison.Ordinal)": true,
+        "|| string.Equals(commandId, \"hero_lab_importer\", StringComparison.Ordinal)": true
+      },
+      "Chummer.Presentation/Overview/DesktopDialogFactory.cs": {
+        "\"dialog.translator\"": true,
+        "\"translatorLanePosture\"": true,
+        "\"dialog.xml_editor\"": true,
+        "\"xmlEditorLanePosture\"": true,
+        "\"dialog.hero_lab_importer\"": true,
+        "\"heroLabImportOracleLanePosture\"": true,
+        "\"heroLabAdjacentSr6OracleReceipt\"": true
+      },
+      "Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs": {
+        "Command(\"translator\", \"command.translator\", \"tools\", false)": true,
+        "Command(\"xml_editor\", \"command.xml_editor\", \"tools\", false)": true,
+        "Command(\"hero_lab_importer\", \"command.hero_lab_importer\", \"tools\", false)": true
+      },
+      "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs": {
+        "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture": true,
+        "ExecuteCommandAsync_xml_editor_opens_dialog_with_xml_bridge_posture": true,
+        "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture": true
+      },
+      "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs": {
+        "CreateCommandDialog_translator_prefers_catalog_languages_and_surfaces_lane_posture": true,
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture": true,
+        "CreateCommandDialog_hero_lab_importer_surfaces_import_oracle_and_adjacent_sr6_posture": true
+      },
+      "Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs": {
+        "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture": true,
+        "Avalonia_and_Blazor_hero_lab_importer_dialog_preserves_matching_import_oracle_posture": true
+      },
+      "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs": {
+        "\"38-translator-dialog-light.png\"": true,
+        "\"39-xml-editor-dialog-light.png\"": true,
+        "\"40-hero-lab-importer-dialog-light.png\"": true,
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture": true,
+        "GetVeteranCertificationReviewStep(\"translator\").ScreenshotFileName": true,
+        "GetVeteranCertificationReviewStep(\"xml_editor\").ScreenshotFileName": true,
+        "GetVeteranCertificationReviewStep(\"hero_lab_importer\").ScreenshotFileName": true
+      },
+      "scripts/ai/milestones/b14-flagship-ui-release-gate.sh": {
+        "\"38-translator-dialog-light.png\"": true,
+        "\"39-xml-editor-dialog-light.png\"": true,
+        "\"40-hero-lab-importer-dialog-light.png\"": true
+      },
+      "scripts/ai/milestones/chummer5a-screenshot-review-gate.sh": {
+        "\"translator_xml_custom_data\"": true,
+        "\"hero_lab_import_oracle\"": true,
+        "\"38-translator-dialog-light.png\"": true,
+        "\"39-xml-editor-dialog-light.png\"": true,
+        "\"40-hero-lab-importer-dialog-light.png\"": true
+      },
+      "scripts/ai/verify.sh": {
+        "checking next-90 M141 direct import-route proof guard": true,
+        "bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh": true
+      }
+    },
+    "supportingReceipts": {
+      "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+      "screenshotReviewGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+      "veteranTaskTimeGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+      "uiFlagshipReleaseGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+      "flagshipFrontier": "/docker/fleet/.codex-studio/published/full-product-frontiers/shard-2.generated.yaml"
+    },
+    "receiptChecks": {
+      "release_channel_is_preview": true,
+      "release_channel_version_present": true,
+      "visual_familiarity_gate_pass": true,
+      "visual_required_screenshots_present": true,
+      "visual_missing_screenshots_clear": true,
+      "visual_screenshot_dir_exists": true,
+      "screenshot_review_gate_pass": true,
+      "screenshot_review_jobs_present": true,
+      "veteran_task_gate_pass": true,
+      "veteran_task_jobs_present": true,
+      "veteran_task_screenshot_jobs_present": true,
+      "ui_flagship_gate_pass": true,
+      "ui_flagship_gate_tokens_present": true
+    },
+    "routeReceiptChecks": {
+      "translator_xml_custom_data": {
+        "exists": true,
+        "status_pass": true,
+        "route_ids_exact": true,
+        "workflow_family_matches": true,
+        "screenshots_exact": true
+      },
+      "hero_lab_import_oracle": {
+        "exists": true,
+        "status_pass": true,
+        "route_ids_exact": true,
+        "workflow_family_matches": true,
+        "screenshots_exact": true
+      }
+    },
+    "expectedScreenshots": [
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png"
+    ],
+    "screenshotFiles": {
+      "38-translator-dialog-light.png": true,
+      "39-xml-editor-dialog-light.png": true,
+      "40-hero-lab-importer-dialog-light.png": true
+    },
+    "proofFiles": [
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M141DirectImportRouteProofGuardTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"
+    ],
+    "proofCommands": [
+      "bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh",
+      "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M141DirectImportRouteProofGuardTests\" --no-restore"
+    ]
+  }
+}

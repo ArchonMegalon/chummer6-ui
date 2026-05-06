@@ -628,10 +628,23 @@ class RunGateTests(unittest.TestCase):
         )
         reconstruction_dir = root / "chummer5a-fixture-ui-reconstruction"
         for fixture_name in fixture_names:
-            screenshots = [f"{fixture_name}-before.png", f"{fixture_name}-after.png"]
+            screenshots = [
+                f"{fixture_name}-opened.png",
+                f"{fixture_name}-export-dialog.png",
+                f"{fixture_name}-printed.png",
+                f"{fixture_name}-reloaded.png",
+            ]
             for screenshot in screenshots:
                 (reconstruction_dir / screenshot).parent.mkdir(parents=True, exist_ok=True)
                 (reconstruction_dir / screenshot).write_bytes(png_bytes)
+            saved_file = reconstruction_dir / f"{fixture_name}.roundtrip.chum5"
+            export_file = reconstruction_dir / f"{fixture_name}.export.json"
+            print_preview_file = reconstruction_dir / f"{fixture_name}.print.html"
+            pdf_artifact_file = reconstruction_dir / f"{fixture_name}.print.pdf"
+            saved_file.write_text("<character />", encoding="utf-8")
+            export_file.write_text("{\"summary\":true}", encoding="utf-8")
+            print_preview_file.write_text("<html><body>Runner</body></html>", encoding="utf-8")
+            pdf_artifact_file.write_bytes(b"%PDF-1.4\n%mock\n")
             write_json(
                 reconstruction_dir / f"{fixture_name}.generated.json",
                 {
@@ -645,8 +658,18 @@ class RunGateTests(unittest.TestCase):
                     "assertions": {
                         "openedByUi": True,
                         "savedByUi": True,
+                        "exportedByUi": True,
+                        "printedByUi": True,
+                        "pdfArtifactProducedByUiPrintRoute": True,
+                        "outputArtifactsProducedByUi": True,
                         "reloadedByUi": True,
                         "roundTripPreservedIdentity": True,
+                    },
+                    "evidence": {
+                        "savedFilePath": str(saved_file),
+                        "exportFilePath": str(export_file),
+                        "printPreviewFilePath": str(print_preview_file),
+                        "pdfArtifactPath": str(pdf_artifact_file),
                     },
                 },
             )
@@ -655,6 +678,49 @@ class RunGateTests(unittest.TestCase):
         write_json(root / "UI_FLAGSHIP_RELEASE_GATE.generated.json", {"status": "pass", "summary": "flagship"})
         write_json(root / "DESKTOP_EXECUTABLE_EXIT_GATE.generated.json", {"status": "pass", "summary": "executable"})
         write_json(root / "UI_LINUX_DESKTOP_EXIT_GATE.generated.json", {"status": "pass", "summary": "linux"})
+        write_json(
+            root / "CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+            {
+                "generatedAt": "2026-05-02T00:00:00Z",
+                "contract_name": tester.CHUMMER5A_DESKTOP_WORKFLOW_PARITY_CONTRACT,
+                "status": "pass",
+                "summary": "Chummer5a desktop workflow parity is explicitly proven.",
+                "reasons": [],
+                "evidence": {
+                    "failureCount": 0,
+                    "requiredFamilyCount": 10,
+                },
+                "workflowFamilyReview": {"status": "pass", "summary": "families ready"},
+                "recursiveWorkflowGateReview": {"status": "pass", "summary": "recursive parity ready"},
+                "checklistCoverageReview": {"status": "pass", "summary": "coverage ready"},
+            },
+        )
+        write_json(
+            root / "GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+            {
+                "generatedAt": "2026-05-02T00:00:00Z",
+                "contract_name": tester.GENERATED_DIALOG_ELEMENT_PARITY_CONTRACT,
+                "status": "pass",
+                "summary": "Generated dialog command/control inventories are locked and tested.",
+                "reasons": [],
+                "inventoryReview": {"status": "pass", "summary": "inventory ready"},
+                "executionReview": {"status": "pass", "summary": "execution ready"},
+                "verifyWiringReview": {"status": "pass", "summary": "verify wiring ready"},
+            },
+        )
+        write_json(
+            root / "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+            {
+                "generated_at": "2026-05-02T00:00:00Z",
+                "status": "pass",
+                "summary": {
+                    "total_elements": 84,
+                    "visual_no_count": 0,
+                    "behavioral_no_count": 0,
+                    "coverage_gap_keys": [],
+                },
+            },
+        )
 
         return SimpleNamespace(
             chummer5a_repo=repo,
@@ -672,6 +738,9 @@ class RunGateTests(unittest.TestCase):
             user_journey_audit=root / "USER_JOURNEY_TESTER_AUDIT.generated.json",
             user_journey_screenshot_dir=journey_screenshot_dir,
             reconstruction_receipts_dir=reconstruction_dir,
+            desktop_workflow_parity_receipt=root / "CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+            generated_dialog_element_parity_receipt=root / "GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+            ui_element_parity_audit_receipt=root / "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
             artifacts=root / "artifacts",
             resolution="1920x1080",
             scale="1.0",
@@ -689,7 +758,12 @@ class RunGateTests(unittest.TestCase):
             self.assertEqual(metadata["status"], "pass")
             self.assertEqual(metadata["proofScope"]["fixtureScope"], "first_slice_default")
             self.assertTrue(metadata["proofScope"]["uiReconstructionExecuted"])
+            self.assertTrue(metadata["proofScope"]["perFixtureOutputRoutesExecuted"])
+            self.assertTrue(metadata["proofScope"]["perFixturePdfArtifactsProduced"])
             self.assertTrue(metadata["proofScope"]["certifiesSelectedFixturesCanBeRebuiltOnlyUsingUi"])
+            self.assertTrue(
+                any("PDF-route artifact materialization" in claim for claim in metadata["proofClaims"])
+            )
             self.assertIn(
                 "A passing result certifies only the explicitly selected fixture set, not the entire Chummer5a fixture corpus.",
                 metadata["proofLimitations"],
@@ -727,6 +801,23 @@ class RunGateTests(unittest.TestCase):
             metadata = json.loads((args.artifacts / "run-metadata.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["status"], "pass")
 
+    def test_run_gate_passes_with_recursive_settings_and_element_proof_without_reconstruction_receipts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            args.reconstruction_receipts_dir = None
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.PASS_EXIT)
+            metadata = json.loads((args.artifacts / "run-metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["status"], "pass")
+            self.assertFalse(metadata["proofScope"]["uiReconstructionExecuted"])
+            self.assertTrue(metadata["proofScope"]["recursiveSettingsAndElementsCertified"])
+            self.assertEqual(
+                metadata["summary"],
+                "Parity gate passed for the default first-slice Chummer5a fixture set with exhaustive recursive settings/element parity proof.",
+            )
+
     def test_run_gate_labels_explicit_all_fixture_scope(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             args = self.build_args(tmpdir)
@@ -746,7 +837,7 @@ class RunGateTests(unittest.TestCase):
                 "Parity gate passed for the explicitly selected all-fixtures Chummer5a set with per-fixture UI reconstruction proof.",
             )
 
-    def test_run_gate_rejects_explicit_fixtures_without_reconstruction_receipts(self) -> None:
+    def test_run_gate_labels_explicit_all_fixture_scope_with_recursive_settings_and_element_proof(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             args = self.build_args(tmpdir)
             fixture_root = Path(args.chummer5a_repo) / "Chummer.Tests" / "TestFiles"
@@ -755,14 +846,39 @@ class RunGateTests(unittest.TestCase):
 
             result = tester.run_gate(args)
 
+            self.assertEqual(result, tester.PASS_EXIT)
+            metadata = json.loads((args.artifacts / "run-metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["proofScope"]["fixtureScope"], "all_available_fixtures_explicit")
+            self.assertFalse(metadata["proofScope"]["certifiesEveryFixtureCanBeRebuiltOnlyUsingUi"])
+            self.assertTrue(metadata["proofScope"]["recursiveSettingsAndElementsCertified"])
+            self.assertEqual(
+                metadata["summary"],
+                "Parity gate passed for the explicitly selected all-fixtures Chummer5a set with exhaustive recursive settings/element parity proof.",
+            )
+
+    def test_run_gate_rejects_explicit_fixtures_without_reconstruction_receipts_or_recursive_proof(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            fixture_root = Path(args.chummer5a_repo) / "Chummer.Tests" / "TestFiles"
+            args.fixture = [str(path) for path in sorted(fixture_root.glob("*.chum5"))]
+            args.reconstruction_receipts_dir = None
+            args.desktop_workflow_parity_receipt = Path(tmpdir) / "MISSING_CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+            args.generated_dialog_element_parity_receipt = Path(tmpdir) / "MISSING_GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+            args.ui_element_parity_audit_receipt = Path(tmpdir) / "MISSING_CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json"
+
+            result = tester.run_gate(args)
+
             self.assertEqual(result, tester.FAIL_EXIT)
             failures = json.loads((args.artifacts / "failures.json").read_text(encoding="utf-8"))
             self.assertTrue(any(item["checkpoint"] == "fixture_ui_reconstruction_receipts" for item in failures["failures"]))
 
-    def test_run_gate_rejects_default_scope_without_reconstruction_receipts(self) -> None:
+    def test_run_gate_rejects_default_scope_without_reconstruction_receipts_or_recursive_proof(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             args = self.build_args(tmpdir)
             args.reconstruction_receipts_dir = None
+            args.desktop_workflow_parity_receipt = Path(tmpdir) / "MISSING_CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+            args.generated_dialog_element_parity_receipt = Path(tmpdir) / "MISSING_GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+            args.ui_element_parity_audit_receipt = Path(tmpdir) / "MISSING_CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json"
 
             result = tester.run_gate(args)
 

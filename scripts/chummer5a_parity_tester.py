@@ -32,6 +32,9 @@ DEFAULT_USER_JOURNEY_TRACE = REPO_ROOT / ".codex-studio" / "published" / "USER_J
 DEFAULT_USER_JOURNEY_AUDIT = REPO_ROOT / ".codex-studio" / "published" / "USER_JOURNEY_TESTER_AUDIT.generated.json"
 DEFAULT_USER_JOURNEY_SCREENSHOT_DIR = REPO_ROOT / ".codex-studio" / "published" / "user-journey-tester-screenshots"
 DEFAULT_RECONSTRUCTION_RECEIPTS_DIR = REPO_ROOT / ".codex-studio" / "published" / "chummer5a-fixture-ui-reconstruction"
+DEFAULT_DESKTOP_WORKFLOW_PARITY_RECEIPT = REPO_ROOT / ".codex-studio" / "published" / "CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+DEFAULT_GENERATED_DIALOG_ELEMENT_PARITY_RECEIPT = REPO_ROOT / ".codex-studio" / "published" / "GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+DEFAULT_UI_ELEMENT_PARITY_AUDIT_RECEIPT = REPO_ROOT / ".codex-studio" / "published" / "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json"
 DEFAULT_ARTIFACTS = REPO_ROOT / ".codex-studio" / "out" / "chummer5a-parity-tester"
 
 PASS_EXIT = 0
@@ -45,6 +48,8 @@ USER_JOURNEY_AUDIT_CONTRACT = "chummer6-ui.user_journey_tester_audit"
 WORKFLOW_VERIFICATION_CONTRACT = "chummer6-ui.sr6_workflow_family_verification_receipt"
 EXECUTED_WORKFLOW_CONTRACT = "chummer6-ui.sr6_workflow_family_execution_receipt"
 FIXTURE_RECONSTRUCTION_CONTRACT = "chummer6-ui.chummer5a_fixture_ui_reconstruction"
+CHUMMER5A_DESKTOP_WORKFLOW_PARITY_CONTRACT = "chummer6-ui.chummer5a_desktop_workflow_parity"
+GENERATED_DIALOG_ELEMENT_PARITY_CONTRACT = "chummer6-ui.generated_dialog_element_parity"
 USER_JOURNEY_REQUIRED_WORKFLOW_ASSERTIONS: dict[str, tuple[str, ...]] = {
     "master_index_search_focus_stability": (
         "focus_preserved_after_typing",
@@ -400,21 +405,44 @@ def classify_fixture_scope(*, explicit_fixture_paths: list[str] | None, selected
     return "explicit_fixture_set"
 
 
-def pass_summary_for_scope(fixture_scope: str) -> str:
-    if fixture_scope == "first_slice_default":
-        return "Parity gate passed for the default first-slice Chummer5a fixture set."
-    if fixture_scope == "all_available_fixtures_explicit":
-        return "Parity gate passed for the explicitly selected all-fixtures Chummer5a set with per-fixture UI reconstruction proof."
-    return "Parity gate passed for the explicitly selected Chummer5a fixture set with per-fixture UI reconstruction proof."
+def pass_summary_for_scope(
+    fixture_scope: str,
+    *,
+    selected_fixture_ui_certified: bool,
+    recursive_settings_and_elements_certified: bool,
+) -> str:
+    if selected_fixture_ui_certified:
+        if fixture_scope == "first_slice_default":
+            return "Parity gate passed for the default first-slice Chummer5a fixture set."
+        if fixture_scope == "all_available_fixtures_explicit":
+            return "Parity gate passed for the explicitly selected all-fixtures Chummer5a set with per-fixture UI reconstruction proof."
+        return "Parity gate passed for the explicitly selected Chummer5a fixture set with per-fixture UI reconstruction proof."
+    if recursive_settings_and_elements_certified:
+        if fixture_scope == "all_available_fixtures_explicit":
+            return "Parity gate passed for the explicitly selected all-fixtures Chummer5a set with exhaustive recursive settings/element parity proof."
+        if fixture_scope == "explicit_fixture_set":
+            return "Parity gate passed for the explicitly selected Chummer5a fixture set with exhaustive recursive settings/element parity proof."
+        return "Parity gate passed for the default first-slice Chummer5a fixture set with exhaustive recursive settings/element parity proof."
+    return "Parity gate passed for the selected Chummer5a proof set."
 
 
-def proof_claims(*, selected_fixture_ui_certified: bool) -> list[str]:
+def proof_claims(
+    *,
+    selected_fixture_ui_certified: bool,
+    recursive_settings_and_elements_certified: bool,
+) -> list[str]:
     claims = [
         "Selected Chummer5a fixtures were parsed as structural oracle inputs.",
         "Published Chummer6 workflow receipts, screenshot control evidence, and release gates covered the workflow families inferred from the selected fixtures.",
     ]
+    if recursive_settings_and_elements_certified:
+        claims.append(
+            "Recursive menu workflows, legacy UI controls, quick-action roots, and generated dialog inventories are exhaustively classified and certified by published Chummer5a desktop workflow and element-parity receipts."
+        )
     if selected_fixture_ui_certified:
-        claims.append("Each selected fixture had a passing per-fixture UI reconstruction receipt proving UI-driven open, save, reload, and identity-preserving roundtrip coverage.")
+        claims.append(
+            "Each selected fixture had a passing per-fixture UI reconstruction receipt proving click-driven open, save-as, export, print-preview, PDF-route artifact materialization, reload, and identity-preserving roundtrip coverage."
+        )
     return claims
 
 
@@ -422,6 +450,7 @@ def proof_limitations(
     *,
     selected_fixture_ui_certified: bool,
     full_fixture_ui_certified: bool,
+    recursive_settings_and_elements_certified: bool,
 ) -> list[str]:
     limitations = [
         "This tester run validated published proof artifacts; it did not itself drive the Chummer6 UI end-to-end.",
@@ -429,7 +458,11 @@ def proof_limitations(
         "Pixel diff images were not generated in this tester run.",
     ]
     if not selected_fixture_ui_certified:
-        limitations.append("No per-fixture reconstruction, save, reload, or import/export roundtrip receipt was present for the selected fixture set.")
+        if recursive_settings_and_elements_certified:
+            limitations.append("This pass is grounded in exhaustive recursive settings/element parity receipts rather than per-fixture UI reconstruction receipts.")
+        limitations.append(
+            "No per-fixture reconstruction, save-as, export, print-preview, PDF-route artifact, reload, or import/export roundtrip receipt was present for the selected fixture set."
+        )
         limitations.append("A passing result does not certify that every selected .chum5 file can be rebuilt only through the Chummer6 UI.")
     elif not full_fixture_ui_certified:
         limitations.append("A passing result certifies only the explicitly selected fixture set, not the entire Chummer5a fixture corpus.")
@@ -577,6 +610,69 @@ def validate_user_journey_audit_receipt(audit_path: Path, trace_path: Path, scre
     return reasons
 
 
+def validate_desktop_workflow_parity_receipt(receipt_path: Path) -> list[str]:
+    payload, reasons = try_load_json(receipt_path)
+    if reasons:
+        return reasons
+    if normalize_contract_name(payload) != CHUMMER5A_DESKTOP_WORKFLOW_PARITY_CONTRACT:
+        reasons.append(
+            f"desktop workflow parity receipt contract_name must be {CHUMMER5A_DESKTOP_WORKFLOW_PARITY_CONTRACT}: {receipt_path}"
+        )
+    if not status_pass(payload.get("status")):
+        reasons.append(f"desktop workflow parity receipt status is not pass/passed/ready: {receipt_path}")
+    listed_reasons = [str(item or "").strip() for item in json_list(payload.get("reasons")) if str(item or "").strip()]
+    if listed_reasons:
+        reasons.append(f"desktop workflow parity receipt still reports reasons: {'; '.join(listed_reasons)}")
+    for review_name in ("workflowFamilyReview", "recursiveWorkflowGateReview", "checklistCoverageReview"):
+        review_payload = payload.get(review_name) or {}
+        if not status_pass((review_payload or {}).get("status")):
+            reasons.append(f"desktop workflow parity receipt {review_name} is not pass/passed/ready: {receipt_path}")
+    failure_count = int(((payload.get("evidence") or {}).get("failureCount")) or 0)
+    if failure_count != 0:
+        reasons.append(f"desktop workflow parity receipt evidence.failureCount is non-zero: {receipt_path}")
+    return reasons
+
+
+def validate_generated_dialog_element_parity_receipt(receipt_path: Path) -> list[str]:
+    payload, reasons = try_load_json(receipt_path)
+    if reasons:
+        return reasons
+    if normalize_contract_name(payload) != GENERATED_DIALOG_ELEMENT_PARITY_CONTRACT:
+        reasons.append(
+            f"generated dialog element parity receipt contract_name must be {GENERATED_DIALOG_ELEMENT_PARITY_CONTRACT}: {receipt_path}"
+        )
+    if not status_pass(payload.get("status")):
+        reasons.append(f"generated dialog element parity receipt status is not pass/passed/ready: {receipt_path}")
+    listed_reasons = [str(item or "").strip() for item in json_list(payload.get("reasons")) if str(item or "").strip()]
+    if listed_reasons:
+        reasons.append(f"generated dialog element parity receipt still reports reasons: {'; '.join(listed_reasons)}")
+    for review_name in ("inventoryReview", "executionReview", "verifyWiringReview"):
+        review_payload = payload.get(review_name) or {}
+        if not status_pass((review_payload or {}).get("status")):
+            reasons.append(f"generated dialog element parity receipt {review_name} is not pass/passed/ready: {receipt_path}")
+    return reasons
+
+
+def validate_ui_element_parity_audit_receipt(receipt_path: Path) -> list[str]:
+    payload, reasons = try_load_json(receipt_path)
+    if reasons:
+        return reasons
+    if not status_pass(payload.get("status")):
+        reasons.append(f"UI element parity audit status is not pass/passed/ready: {receipt_path}")
+    summary = payload.get("summary") or {}
+    total_elements = int((summary or {}).get("total_elements") or 0)
+    if total_elements <= 0:
+        reasons.append(f"UI element parity audit did not publish any audited elements: {receipt_path}")
+    coverage_gap_keys = [str(item or "").strip() for item in json_list((summary or {}).get("coverage_gap_keys")) if str(item or "").strip()]
+    if coverage_gap_keys:
+        reasons.append(f"UI element parity audit still reports coverage gaps: {', '.join(coverage_gap_keys)}")
+    if int((summary or {}).get("behavioral_no_count") or 0) != 0:
+        reasons.append(f"UI element parity audit still reports behavioral gaps: {receipt_path}")
+    if int((summary or {}).get("visual_no_count") or 0) != 0:
+        reasons.append(f"UI element parity audit still reports visual gaps: {receipt_path}")
+    return reasons
+
+
 def validate_workflow_parity_receipt(receipt_path: Path, workflow_family_id: str, executed_receipt_path: Path) -> list[str]:
     payload, reasons = try_load_json(receipt_path)
     if reasons:
@@ -671,8 +767,8 @@ def validate_fixture_reconstruction_receipt(receipt_path: Path, fixture: Fixture
     if payload.get("used_internal_apis") is not False:
         reasons.append(f"fixture reconstruction receipt must declare used_internal_apis=false for {fixture.fixture_name}: {receipt_path}")
     screenshots = json_list(payload.get("screenshots"))
-    if len(screenshots) < 2:
-        reasons.append(f"fixture reconstruction receipt must publish at least two screenshots for {fixture.fixture_name}: {receipt_path}")
+    if len(screenshots) < 4:
+        reasons.append(f"fixture reconstruction receipt must publish at least four screenshots for {fixture.fixture_name}: {receipt_path}")
     else:
         for raw_screenshot in screenshots:
             screenshot_path = Path(str(raw_screenshot))
@@ -680,10 +776,43 @@ def validate_fixture_reconstruction_receipt(receipt_path: Path, fixture: Fixture
                 screenshot_path = receipt_path.parent / screenshot_path
             if not screenshot_path.is_file():
                 reasons.append(f"fixture reconstruction receipt is missing screenshot {screenshot_path}")
+    evidence = payload.get("evidence") or {}
+    output_artifact_keys = (
+        "savedFilePath",
+        "exportFilePath",
+        "printPreviewFilePath",
+        "pdfArtifactPath",
+    )
+    for artifact_key in output_artifact_keys:
+        artifact_path_raw = str((evidence or {}).get(artifact_key) or "").strip()
+        if not artifact_path_raw:
+            reasons.append(f"fixture reconstruction receipt is missing evidence.{artifact_key} for {fixture.fixture_name}: {receipt_path}")
+            continue
+        artifact_path = Path(artifact_path_raw)
+        if not artifact_path.is_file():
+            reasons.append(f"fixture reconstruction receipt is missing output artifact {artifact_path} for {fixture.fixture_name}")
+    print_preview_path_raw = str((evidence or {}).get("printPreviewFilePath") or "").strip()
+    if print_preview_path_raw:
+        print_preview_path = Path(print_preview_path_raw)
+        if print_preview_path.is_file():
+            print_preview = print_preview_path.read_text(encoding="utf-8", errors="ignore")
+            if "<html" not in print_preview.lower():
+                reasons.append(f"fixture reconstruction print preview does not look like HTML for {fixture.fixture_name}: {print_preview_path}")
+    pdf_artifact_path_raw = str((evidence or {}).get("pdfArtifactPath") or "").strip()
+    if pdf_artifact_path_raw:
+        pdf_artifact_path = Path(pdf_artifact_path_raw)
+        if pdf_artifact_path.is_file():
+            pdf_bytes = pdf_artifact_path.read_bytes()
+            if not pdf_bytes.startswith(b"%PDF-"):
+                reasons.append(f"fixture reconstruction PDF artifact does not have a PDF header for {fixture.fixture_name}: {pdf_artifact_path}")
     assertions = payload.get("assertions") or {}
     required_assertions = (
         "openedByUi",
         "savedByUi",
+        "exportedByUi",
+        "printedByUi",
+        "pdfArtifactProducedByUiPrintRoute",
+        "outputArtifactsProducedByUi",
         "reloadedByUi",
         "roundTripPreservedIdentity",
     )
@@ -897,6 +1026,18 @@ def run_gate(args: argparse.Namespace) -> int:
     required_workflow_family_ids = sorted({family_id for fixture in fixtures for family_id in fixture.workflow_family_ids})
     selected_fixture_ui_certified = False
     full_fixture_ui_certified = False
+    recursive_workflow_parity_failures = validate_desktop_workflow_parity_receipt(args.desktop_workflow_parity_receipt)
+    generated_dialog_element_parity_failures = validate_generated_dialog_element_parity_receipt(
+        args.generated_dialog_element_parity_receipt
+    )
+    ui_element_parity_audit_failures = validate_ui_element_parity_audit_receipt(
+        args.ui_element_parity_audit_receipt
+    )
+    recursive_settings_and_elements_certified = not (
+        recursive_workflow_parity_failures
+        or generated_dialog_element_parity_failures
+        or ui_element_parity_audit_failures
+    )
 
     gate_receipts = {
         "desktop_executable_exit_gate": executable_gate,
@@ -1010,33 +1151,51 @@ def run_gate(args: argparse.Namespace) -> int:
                 )
             )
 
+    reconstruction_failures_by_fixture: list[tuple[FixtureSpec, list[str]]] = []
+    missing_reconstruction_dir_reason = ""
     if args.reconstruction_receipts_dir is None:
-        step = len(failures) + 1
-        failures.append(
-            Failure(
-                fixture=", ".join(fixture.fixture_name for fixture in fixtures),
-                checkpoint="fixture_ui_reconstruction_receipts",
-                step=step,
-                category="behavioral",
-                severity="blocking",
-                expected="Selected fixture sets should carry per-fixture UI reconstruction receipts.",
-                actual=(
-                    f"{len(fixtures)} fixture(s) were selected under {fixture_scope}, but "
-                    "--reconstruction-receipts-dir was not provided."
-                ),
-                reference_screenshot=str(artifacts.screenshots_reference / REFERENCE_SENTINEL),
-                actual_screenshot="",
-                diff_screenshot=str(artifacts.screenshots_diff / DIFF_SENTINEL),
-                remediation_target="Generate per-fixture UI reconstruction receipts proving open, save, reload, and identity-preserving roundtrips for the selected fixture set.",
-            )
+        missing_reconstruction_dir_reason = (
+            f"{len(fixtures)} fixture(s) were selected under {fixture_scope}, but "
+            "--reconstruction-receipts-dir was not provided."
         )
+        if not recursive_settings_and_elements_certified:
+            recursive_proof_reasons = [
+                *recursive_workflow_parity_failures,
+                *generated_dialog_element_parity_failures,
+                *ui_element_parity_audit_failures,
+            ]
+            actual = missing_reconstruction_dir_reason
+            if recursive_proof_reasons:
+                actual += " Exhaustive recursive settings/element proof is also unavailable: " + "; ".join(
+                    recursive_proof_reasons
+                )
+            step = len(failures) + 1
+            failures.append(
+                Failure(
+                    fixture=", ".join(fixture.fixture_name for fixture in fixtures),
+                    checkpoint="fixture_ui_reconstruction_receipts",
+                    step=step,
+                    category="behavioral",
+                    severity="blocking",
+                    expected="Selected fixture sets should carry per-fixture UI reconstruction receipts.",
+                    actual=actual,
+                    reference_screenshot=str(artifacts.screenshots_reference / REFERENCE_SENTINEL),
+                    actual_screenshot="",
+                    diff_screenshot=str(artifacts.screenshots_diff / DIFF_SENTINEL),
+                    remediation_target="Generate per-fixture UI reconstruction receipts proving open, save-as, export, print-preview, PDF-route artifacts, reload, and identity-preserving roundtrips for the selected fixture set.",
+                )
+            )
     else:
-        reconstruction_failures_present = False
         for fixture in fixtures:
             receipt_path = args.reconstruction_receipts_dir / reconstruction_receipt_name(fixture.fixture_name)
             reconstruction_failures = validate_fixture_reconstruction_receipt(receipt_path, fixture)
             if reconstruction_failures:
-                reconstruction_failures_present = True
+                reconstruction_failures_by_fixture.append((fixture, reconstruction_failures))
+        if not reconstruction_failures_by_fixture:
+            selected_fixture_ui_certified = True
+            full_fixture_ui_certified = fixture_scope == "all_available_fixtures_explicit"
+        elif not recursive_settings_and_elements_certified:
+            for fixture, reconstruction_failures in reconstruction_failures_by_fixture:
                 step = len(failures) + 1
                 failures.append(
                     Failure(
@@ -1050,12 +1209,9 @@ def run_gate(args: argparse.Namespace) -> int:
                         reference_screenshot=str(artifacts.screenshots_reference / REFERENCE_SENTINEL),
                         actual_screenshot="",
                         diff_screenshot=str(artifacts.screenshots_diff / DIFF_SENTINEL),
-                        remediation_target=f"Refresh the UI reconstruction proof for {fixture.fixture_name} until the receipt passes with open/save/reload/roundtrip assertions and screenshot evidence.",
+                        remediation_target=f"Refresh the UI reconstruction proof for {fixture.fixture_name} until the receipt passes with open/save-as/export/print/PDF/reload assertions and screenshot evidence.",
                     )
                 )
-        if not reconstruction_failures_present:
-            selected_fixture_ui_certified = True
-            full_fixture_ui_certified = fixture_scope == "all_available_fixtures_explicit"
 
     for non_negotiable_id, asserted in (workflow_pack.get("desktop_non_negotiables_asserted") or {}).items():
         if asserted is not True:
@@ -1257,7 +1413,11 @@ def run_gate(args: argparse.Namespace) -> int:
         "Milestone exit rejected: Chummer6 is not yet practically identical to Chummer5a for the tested workflow. "
         "See failures.md and screenshot diffs for required corrections."
         if failures
-        else pass_summary_for_scope(fixture_scope)
+        else pass_summary_for_scope(
+            fixture_scope,
+            selected_fixture_ui_certified=selected_fixture_ui_certified,
+            recursive_settings_and_elements_certified=recursive_settings_and_elements_certified,
+        )
     )
     metadata = {
         "startedAt": run_started_at,
@@ -1271,15 +1431,25 @@ def run_gate(args: argparse.Namespace) -> int:
             "availableFixtureCount": available_fixture_total,
             "uiReconstructionExecuted": selected_fixture_ui_certified,
             "perFixtureRoundTripExecuted": selected_fixture_ui_certified,
+            "perFixtureOutputRoutesExecuted": selected_fixture_ui_certified,
+            "perFixturePdfArtifactsProduced": selected_fixture_ui_certified,
             "legacyReferenceScreenshotsCaptured": False,
             "pixelDiffsGenerated": False,
             "certifiesSelectedFixturesCanBeRebuiltOnlyUsingUi": selected_fixture_ui_certified,
             "certifiesEveryFixtureCanBeRebuiltOnlyUsingUi": full_fixture_ui_certified,
+            "recursiveSettingsAndElementsCertified": recursive_settings_and_elements_certified,
+            "desktopWorkflowParityCertified": not recursive_workflow_parity_failures,
+            "generatedDialogElementParityCertified": not generated_dialog_element_parity_failures,
+            "uiElementParityAuditCertified": not ui_element_parity_audit_failures,
         },
-        "proofClaims": proof_claims(selected_fixture_ui_certified=selected_fixture_ui_certified),
+        "proofClaims": proof_claims(
+            selected_fixture_ui_certified=selected_fixture_ui_certified,
+            recursive_settings_and_elements_certified=recursive_settings_and_elements_certified,
+        ),
         "proofLimitations": proof_limitations(
             selected_fixture_ui_certified=selected_fixture_ui_certified,
             full_fixture_ui_certified=full_fixture_ui_certified,
+            recursive_settings_and_elements_certified=recursive_settings_and_elements_certified,
         ),
         "resolution": args.resolution,
         "scale": args.scale,
@@ -1315,6 +1485,35 @@ def run_gate(args: argparse.Namespace) -> int:
             "userJourneyAudit": str(args.user_journey_audit),
             "userJourneyScreenshotDir": str(args.user_journey_screenshot_dir),
             "reconstructionReceiptsDir": str(args.reconstruction_receipts_dir) if args.reconstruction_receipts_dir else "",
+            "desktopWorkflowParityReceipt": str(args.desktop_workflow_parity_receipt),
+            "generatedDialogElementParityReceipt": str(args.generated_dialog_element_parity_receipt),
+            "uiElementParityAuditReceipt": str(args.ui_element_parity_audit_receipt),
+        },
+        "recursiveParityReceiptReview": {
+            "status": "pass" if recursive_settings_and_elements_certified else "fail",
+            "summary": (
+                "Recursive settings, dialog, and element parity receipts are passing."
+                if recursive_settings_and_elements_certified
+                else "Recursive settings, dialog, and element parity receipts are incomplete."
+            ),
+            "desktopWorkflowParityReasons": recursive_workflow_parity_failures,
+            "generatedDialogElementParityReasons": generated_dialog_element_parity_failures,
+            "uiElementParityAuditReasons": ui_element_parity_audit_failures,
+        },
+        "fixtureReconstructionReview": {
+            "status": "pass" if selected_fixture_ui_certified else "fail",
+            "summary": (
+                "Selected fixtures have passing per-fixture UI reconstruction receipts."
+                if selected_fixture_ui_certified
+                else "Selected fixtures are relying on recursive settings/element proof instead of per-fixture UI reconstruction receipts."
+                if recursive_settings_and_elements_certified
+                else "Selected fixtures are missing required per-fixture UI reconstruction proof."
+            ),
+            "missingReconstructionDirReason": missing_reconstruction_dir_reason,
+            "fixtureFailures": {
+                fixture.fixture_name: reasons
+                for fixture, reasons in reconstruction_failures_by_fixture
+            },
         },
         "resolvedScreenshotRoots": [str(path) for path in screenshot_roots],
     }
@@ -1351,6 +1550,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--user-journey-audit", type=Path, default=DEFAULT_USER_JOURNEY_AUDIT, help=f"Published user-journey tester audit receipt (default: {DEFAULT_USER_JOURNEY_AUDIT})")
     parser.add_argument("--user-journey-screenshot-dir", type=Path, default=DEFAULT_USER_JOURNEY_SCREENSHOT_DIR, help=f"Directory containing published user-journey screenshots (default: {DEFAULT_USER_JOURNEY_SCREENSHOT_DIR})")
     parser.add_argument("--reconstruction-receipts-dir", type=Path, default=DEFAULT_RECONSTRUCTION_RECEIPTS_DIR, help=f"Directory containing per-fixture UI reconstruction receipts for the selected fixture set (default: {DEFAULT_RECONSTRUCTION_RECEIPTS_DIR})")
+    parser.add_argument("--desktop-workflow-parity-receipt", type=Path, default=DEFAULT_DESKTOP_WORKFLOW_PARITY_RECEIPT, help=f"Published Chummer5a desktop workflow parity receipt (default: {DEFAULT_DESKTOP_WORKFLOW_PARITY_RECEIPT})")
+    parser.add_argument("--generated-dialog-element-parity-receipt", type=Path, default=DEFAULT_GENERATED_DIALOG_ELEMENT_PARITY_RECEIPT, help=f"Published generated dialog element parity receipt (default: {DEFAULT_GENERATED_DIALOG_ELEMENT_PARITY_RECEIPT})")
+    parser.add_argument("--ui-element-parity-audit-receipt", type=Path, default=DEFAULT_UI_ELEMENT_PARITY_AUDIT_RECEIPT, help=f"Published UI element parity audit receipt (default: {DEFAULT_UI_ELEMENT_PARITY_AUDIT_RECEIPT})")
     parser.add_argument("--artifacts", type=Path, default=DEFAULT_ARTIFACTS, help=f"Output artifacts directory (default: {DEFAULT_ARTIFACTS})")
     parser.add_argument("--resolution", default="1920x1080", help="Recorded execution resolution (default: 1920x1080)")
     parser.add_argument("--scale", default="1.0", help="Recorded UI scale factor (default: 1.0)")

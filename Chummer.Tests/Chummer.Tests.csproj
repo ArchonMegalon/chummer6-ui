@@ -68,6 +68,9 @@
 	    <Compile Include="Compliance\MigrationComplianceTests.cs" />
     <Compile Include="Compliance\Next90M103VeteranCertificationGuardTests.cs" />
     <Compile Include="Compliance\Next90M104ExplainReceiptsGuardTests.cs" />
+    <Compile Include="Compliance\Next90M141DirectImportRouteProofGuardTests.cs" />
+    <Compile Include="Compliance\Next90M142DirectWorkflowProofGuardTests.cs" />
+    <Compile Include="Compliance\Next90M143DirectOutputProofGuardTests.cs" />
     <Compile Include="Compliance\Next90M135DesktopSurfaceCoverageGuardTests.cs" />
     <Compile Include="Compliance\Next90M145DesktopExplainDrawerGuardTests.cs" />
     <Compile Include="Compliance\Next90M114RuleEnvironmentStudioGuardTests.cs" />

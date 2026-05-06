@@ -1,8 +1,10 @@
 {
-  "generatedAt": "2026-05-05T15:52:37.242320Z",
+  "generatedAt": "2026-05-06T01:39:08.583719Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
+  "channelId": "preview",
+  "releaseVersion": "run-20260503-163502",
   "status": "pass",
-  "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, and settings.",
+  "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML amendment, and Hero Lab.",
   "reasons": [],
   "frontierIdsClosed": [
     3782970110,
@@ -72,23 +74,25 @@
     "undersizedScreenshots": [],
     "staleScreenshots": [],
     "screenshotsOlderThanFlagshipReceipt": [],
-    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots"
+    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots"
   },
   "reviewJobsSummary": {
     "status": "pass",
     "failingJobs": [],
     "reviewedJobs": [
       "dense_builder",
+      "hero_lab_import_oracle",
       "master_index",
       "roster",
-      "settings"
+      "settings",
+      "translator_xml_custom_data"
     ]
   },
   "supportingReceipts": {
     "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
     "flagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
   },
-  "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+  "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
   "reviewJobs": {
     "dense_builder": {
       "frontierId": 3782970110,
@@ -146,6 +150,111 @@
         "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
       ],
       "reasons": []
+    },
+    "translator_xml_custom_data": {
+      "frontierId": 4147587006,
+      "status": "pass",
+      "screenshots": [
+        "38-translator-dialog-light.png",
+        "39-xml-editor-dialog-light.png"
+      ],
+      "evidenceKeys": [
+        "runtime_backed_file_menu_routes"
+      ],
+      "testMarkers": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+      ],
+      "reasons": []
+    },
+    "hero_lab_import_oracle": {
+      "frontierId": 4147587006,
+      "status": "pass",
+      "screenshots": [
+        "40-hero-lab-importer-dialog-light.png"
+      ],
+      "evidenceKeys": [
+        "runtime_backed_file_menu_routes"
+      ],
+      "testMarkers": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+      ],
+      "reasons": []
+    }
+  },
+  "routeLocalReceipts": {
+    "dense_workbench_and_initiative": {
+      "status": "pass",
+      "routeIds": [
+        "menu:dice_roller_or_workflow:initiative_screenshot",
+        "dice_roller",
+        "initiative_screenshot"
+      ],
+      "workflowFamilyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+      "screenshots": [
+        "05-dense-section-light.png",
+        "07-loaded-runner-tabs-light.png"
+      ],
+      "legacyBehaviorLineage": "Chummer4/Chummer5a dense workbench and utility-lane continuity."
+    },
+    "print_export_exchange": {
+      "status": "pass",
+      "routeIds": [
+        "screenshot:print_export_exchange",
+        "print_export_exchange",
+        "open_for_printing_menu_route",
+        "open_for_export_menu_route",
+        "print_multiple_menu_route"
+      ],
+      "workflowFamilyId": "create-open-import-save-save-as-print-export",
+      "screenshots": [
+        "19-workflow-file-menu-loaded-light.png",
+        "18-import-dialog-light.png"
+      ],
+      "legacyBehaviorLineage": "Chummer4/Chummer5a File menu print/export exchange continuity."
+    },
+    "sr6_supplements_and_house_rules": {
+      "status": "pass",
+      "routeIds": [
+        "screenshot:sr6_supplements_and_house_rules",
+        "sr6_rule_environment",
+        "sr6_supplements",
+        "house_rules"
+      ],
+      "workflowFamilyId": "improvements-explain-result-parity",
+      "screenshots": [
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png"
+      ],
+      "legacyBehaviorLineage": "Chummer4/Chummer5a rule-environment and explain continuity."
+    },
+    "translator_xml_custom_data": {
+      "status": "pass",
+      "routeIds": [
+        "translator",
+        "xml_editor",
+        "source:translator_route",
+        "source:xml_amendment_editor_route",
+        "family:custom_data_xml_and_translator_bridge"
+      ],
+      "workflowFamilyId": "improvements-explain-result-parity",
+      "screenshots": [
+        "38-translator-dialog-light.png",
+        "39-xml-editor-dialog-light.png"
+      ],
+      "legacyBehaviorLineage": "Chummer5a Translator and XML editor bridge continuity."
+    },
+    "hero_lab_import_oracle": {
+      "status": "pass",
+      "routeIds": [
+        "hero_lab_importer",
+        "source:hero_lab_importer_route",
+        "family:legacy_and_adjacent_import_oracles"
+      ],
+      "workflowFamilyId": "create-open-import-save-save-as-print-export",
+      "screenshots": [
+        "40-hero-lab-importer-dialog-light.png"
+      ],
+      "legacyBehaviorLineage": "Chummer5a Hero Lab importer and adjacent import-oracle continuity."
     }
   },
   "evidence": {
@@ -157,7 +266,8 @@
       "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
       "flagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
     },
-    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "controlEvidencePath": "",
+    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -173,11 +283,89 @@
     "visualFailureCount": 0,
     "reviewedJobs": [
       "dense_builder",
+      "hero_lab_import_oracle",
       "master_index",
       "roster",
-      "settings"
+      "settings",
+      "translator_xml_custom_data"
     ],
     "failingJobs": [],
+    "routeLocalReceipts": {
+      "dense_workbench_and_initiative": {
+        "status": "pass",
+        "routeIds": [
+          "menu:dice_roller_or_workflow:initiative_screenshot",
+          "dice_roller",
+          "initiative_screenshot"
+        ],
+        "workflowFamilyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+        "screenshots": [
+          "05-dense-section-light.png",
+          "07-loaded-runner-tabs-light.png"
+        ],
+        "legacyBehaviorLineage": "Chummer4/Chummer5a dense workbench and utility-lane continuity."
+      },
+      "print_export_exchange": {
+        "status": "pass",
+        "routeIds": [
+          "screenshot:print_export_exchange",
+          "print_export_exchange",
+          "open_for_printing_menu_route",
+          "open_for_export_menu_route",
+          "print_multiple_menu_route"
+        ],
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "screenshots": [
+          "19-workflow-file-menu-loaded-light.png",
+          "18-import-dialog-light.png"
+        ],
+        "legacyBehaviorLineage": "Chummer4/Chummer5a File menu print/export exchange continuity."
+      },
+      "sr6_supplements_and_house_rules": {
+        "status": "pass",
+        "routeIds": [
+          "screenshot:sr6_supplements_and_house_rules",
+          "sr6_rule_environment",
+          "sr6_supplements",
+          "house_rules"
+        ],
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "screenshots": [
+          "34-workflow-validate-section-light.png",
+          "35-workflow-rules-section-light.png"
+        ],
+        "legacyBehaviorLineage": "Chummer4/Chummer5a rule-environment and explain continuity."
+      },
+      "translator_xml_custom_data": {
+        "status": "pass",
+        "routeIds": [
+          "translator",
+          "xml_editor",
+          "source:translator_route",
+          "source:xml_amendment_editor_route",
+          "family:custom_data_xml_and_translator_bridge"
+        ],
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "screenshots": [
+          "38-translator-dialog-light.png",
+          "39-xml-editor-dialog-light.png"
+        ],
+        "legacyBehaviorLineage": "Chummer5a Translator and XML editor bridge continuity."
+      },
+      "hero_lab_import_oracle": {
+        "status": "pass",
+        "routeIds": [
+          "hero_lab_importer",
+          "source:hero_lab_importer_route",
+          "family:legacy_and_adjacent_import_oracles"
+        ],
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "screenshots": [
+          "40-hero-lab-importer-dialog-light.png"
+        ],
+        "legacyBehaviorLineage": "Chummer5a Hero Lab importer and adjacent import-oracle continuity."
+      }
+    },
     "reasonCount": 0,
     "failureCount": 0
   }

@@ -480,6 +480,9 @@ expected_screenshots = [
     "35-workflow-rules-section-light.png",
     "36-workflow-new-character-dialog-light.png",
     "37-workflow-calendar-section-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
 ]
 required_workflow_family_ids = [
     "create-open-import-save-save-as-print-export",
@@ -695,6 +698,33 @@ ui_element_coverage_gap_keys = [
     for key in ui_element_parity_summary.get("coverage_gap_keys") or []
     if str(key or "").strip()
 ]
+ui_element_rows = ui_element_parity_audit_receipt.get("rows") or []
+dense_builder_parity_row = next(
+    (
+        row
+        for row in ui_element_rows
+        if str(row.get("id") or "").strip() == "family:dense_builder_and_career_workflows"
+    ),
+    {},
+)
+dense_builder_route_local_evidence = [
+    str(entry or "").strip()
+    for entry in dense_builder_parity_row.get("evidence") or []
+    if str(entry or "").strip()
+]
+required_dense_builder_route_local_evidence_suffixes = [
+    "SECTION_HOST_RULESET_PARITY.generated.json",
+    "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+    "UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "UI_LOCAL_RELEASE_PROOF.generated.json",
+    "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+]
+missing_dense_builder_route_local_evidence_suffixes = [
+    suffix
+    for suffix in required_dense_builder_route_local_evidence_suffixes
+    if not any(entry.endswith(suffix) for entry in dense_builder_route_local_evidence)
+]
 flagship_readiness_status = str(flagship_product_readiness_receipt.get("status") or "").strip().lower()
 flagship_readiness_coverage = flagship_product_readiness_receipt.get("coverage") or {}
 flagship_readiness_open_coverage_keys = [
@@ -897,6 +927,12 @@ if ui_element_coverage_gap_keys:
     blocking_findings.append(
         "Top-level release gate cannot pass while parity audit still reports open coverage gaps: "
         + ", ".join(ui_element_coverage_gap_keys)
+        + "."
+    )
+if missing_dense_builder_route_local_evidence_suffixes:
+    blocking_findings.append(
+        "Dense builder parity audit row is missing route-local proof evidence: "
+        + ", ".join(missing_dense_builder_route_local_evidence_suffixes)
         + "."
     )
 if not status_ok(flagship_readiness_status):
@@ -1108,11 +1144,18 @@ payload = {
         ],
     },
     "uiElementParityAuditProof": {
-        "status": proof_status(ui_element_visual_no_count == 0, ui_element_behavioral_no_count == 0),
+        "status": proof_status(
+            ui_element_visual_no_count == 0,
+            ui_element_behavioral_no_count == 0,
+            not missing_dense_builder_route_local_evidence_suffixes,
+        ),
         "uiElementParityAuditReceiptPath": ui_element_parity_audit_receipt_path,
         "visualNoCount": ui_element_visual_no_count,
         "behavioralNoCount": ui_element_behavioral_no_count,
         "coverageGapKeys": ui_element_coverage_gap_keys,
+        "denseBuilderRouteLocalEvidence": dense_builder_route_local_evidence,
+        "requiredDenseBuilderRouteLocalEvidenceSuffixes": required_dense_builder_route_local_evidence_suffixes,
+        "missingDenseBuilderRouteLocalEvidenceSuffixes": missing_dense_builder_route_local_evidence_suffixes,
     },
     "desktopExecutableProof": {
         "status": desktop_executable_exit_gate_status,

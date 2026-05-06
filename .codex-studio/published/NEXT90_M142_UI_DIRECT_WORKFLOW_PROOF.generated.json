@@ -1,0 +1,128 @@
+{
+  "generatedAt": "2026-05-06T02:29:23.469860Z",
+  "contract_name": "chummer6-ui.next90_m142_ui_direct_workflow_proof",
+  "status": "pass",
+  "summary": "Milestone 142 direct workflow proof is closed on route-local evidence.",
+  "unresolved": [],
+  "evidence": {
+    "packageId": "next90-m142-ui-close-direct-screenshot-and-runtime-proof-for-dense-builder-and-career-fl",
+    "frontierId": 9095697868,
+    "milestoneId": 142,
+    "workTaskId": "142.1",
+    "wave": "W22P",
+    "repo": "chummer6-ui",
+    "allowedPaths": [
+      "Chummer.Avalonia",
+      "Chummer.Desktop.Runtime",
+      "Chummer.Tests",
+      "scripts"
+    ],
+    "ownedSurfaces": [
+      "close_direct_screenshot_and_runtime_proof_for_dense_buil:ui"
+    ],
+    "queueChecks": {
+      "registry_block_present": true,
+      "queue_block_present": true,
+      "design_queue_block_present": true,
+      "registry_title_matches": true,
+      "queue_title_matches": true,
+      "design_queue_title_matches": true,
+      "registry_status_complete": true,
+      "queue_status_complete": true,
+      "design_queue_status_complete": true,
+      "registry_completion_action_matches": true,
+      "queue_completion_action_matches": true,
+      "design_queue_completion_action_matches": true,
+      "registry_do_not_reopen_reason_matches": true,
+      "queue_do_not_reopen_reason_matches": true,
+      "design_queue_do_not_reopen_reason_matches": true,
+      "queue_frontier_matches": true,
+      "design_queue_frontier_matches": true,
+      "registry_evidence_exact": true,
+      "queue_proof_exact": true,
+      "design_queue_proof_exact": true
+    },
+    "familyChecks": {
+      "family:dense_builder_and_career_workflows": {
+        "row_present": true,
+        "visual_parity_yes": true,
+        "behavioral_parity_yes": true,
+        "required_suffixes_present": true,
+        "disallowed_external_receipts_clear": true
+      },
+      "family:dice_initiative_and_table_utilities": {
+        "row_present": true,
+        "visual_parity_yes": true,
+        "behavioral_parity_yes": true,
+        "required_suffixes_present": true,
+        "disallowed_external_receipts_clear": true
+      },
+      "family:identity_contacts_lifestyles_history": {
+        "row_present": true,
+        "visual_parity_yes": true,
+        "behavioral_parity_yes": true,
+        "required_suffixes_present": true,
+        "disallowed_external_receipts_clear": true
+      }
+    },
+    "receiptChecks": {
+      "audit_receipt_pass": true,
+      "screenshot_review_receipt_pass": true,
+      "workflow_execution_receipt_pass": true,
+      "route_local_dense_initiative_pass": true,
+      "route_local_dense_initiative_route_ids_match": true,
+      "route_local_dense_initiative_screenshots_match": true,
+      "workflow_dense_builder_career_pass": true,
+      "workflow_initiative_utility_pass": true,
+      "workflow_contacts_lifestyles_notes_pass": true,
+      "workflow_required_screenshots_present": true,
+      "workflow_missing_screenshots_clear": true
+    },
+    "sourceChecks": {
+      "scripts/ai/milestones/chummer5a-screenshot-review-gate.sh": {
+        "\"dense_workbench_and_initiative\"": true,
+        "\"menu:dice_roller_or_workflow:initiative_screenshot\"": true,
+        "\"05-dense-section-light.png\"": true,
+        "\"07-loaded-runner-tabs-light.png\"": true
+      },
+      "scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh": {
+        "\"dense_builder_career\"": true,
+        "\"initiative_utility\"": true,
+        "\"contacts_lifestyles_notes\"": true,
+        "\"10-contacts-section-light.png\"": true,
+        "\"11-diary-dialog-light.png\"": true,
+        "\"14-advancement-dialog-light.png\"": true
+      },
+      "scripts/ai/milestones/b14-flagship-ui-release-gate.sh": {
+        "\"family:dense_builder_and_career_workflows\"": true,
+        "\"SECTION_HOST_RULESET_PARITY.generated.json\"": true,
+        "\"CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json\"": true,
+        "\"CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json\"": true,
+        "\"UI_LOCAL_RELEASE_PROOF.generated.json\"": true
+      },
+      "scripts/ai/verify.sh": {
+        "checking next-90 M142 direct workflow proof guard": true,
+        "bash scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh": true
+      }
+    },
+    "proofFiles": [
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M142DirectWorkflowProofGuardTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+    ],
+    "proofCommands": [
+      "bash scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh",
+      "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M142DirectWorkflowProofGuardTests\" --no-restore"
+    ]
+  }
+}

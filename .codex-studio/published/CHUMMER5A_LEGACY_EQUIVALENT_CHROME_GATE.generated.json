@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T15:52:11.790805Z",
+  "generatedAt": "2026-05-06T05:57:36.091250Z",
   "contract_name": "chummer6-ui.chummer5a_legacy_equivalent_chrome_gate",
   "status": "pass",
   "summary": "Legacy-equivalent chrome stays stripped when Chummer5A already had the same function.",
@@ -23,7 +23,7 @@
     }
   },
   "evidence": {
-    "policyPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_POLICY.json",
+    "policyPath": "/docker/chummercomplete/chummer6-ui/docs/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_POLICY.json",
     "checkedRows": 2,
     "removableRowsChecked": 2,
     "forbiddenLiteralHits": [],

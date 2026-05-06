@@ -237,6 +237,9 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         focusSection?.BringIntoView();
     }
 
+    public static Task ShowAsync(Window owner, string headId)
+        => ShowAsync(owner, headId, portabilityActivity: null);
+
     public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
     {
         ArgumentNullException.ThrowIfNull(owner);

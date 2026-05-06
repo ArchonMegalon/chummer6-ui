@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-05-06T15:16:00.5780716Z",
+  "contract_name": "chummer6-ui.chummer5a_fixture_ui_reconstruction",
+  "status": "pass",
+  "summary": "UI reconstruction parity passed for Popstar.chum5.",
+  "fixtureName": "Popstar.chum5",
+  "characterName": "Popstar",
+  "linux_binary_under_test": true,
+  "used_internal_apis": false,
+  "screenshots": [
+    "Popstar.chum5-opened.png",
+    "Popstar.chum5-reloaded.png"
+  ],
+  "assertions": {
+    "openedByUi": true,
+    "savedByUi": true,
+    "reloadedByUi": true,
+    "roundTripPreservedIdentity": true
+  },
+  "reasons": [],
+  "evidence": {
+    "fixturePath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/TestFiles/Popstar.chum5",
+    "savedFilePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/test-fixture-ui-reconstruction/23ab45da696547dbab508fbc8419b997/Popstar.chum5.roundtrip.chum5",
+    "pickerTitles": [
+      "Open Character File",
+      "Open Character File"
+    ],
+    "sourceIdentity": {
+      "characterName": "Popstar",
+      "primaryToken": "Elizabeth Vepar (Dj3VI)",
+      "alias": "Elizabeth Vepar (Dj3VI)",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "openedIdentity": {
+      "characterName": "Elizabeth Vepar (Dj3VI)",
+      "primaryToken": "Elizabeth Vepar (Dj3VI)",
+      "alias": "Elizabeth Vepar (Dj3VI)",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "savedIdentity": {
+      "characterName": "Popstar",
+      "primaryToken": "Elizabeth Vepar (Dj3VI)",
+      "alias": "Elizabeth Vepar (Dj3VI)",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    },
+    "reloadedIdentity": {
+      "characterName": "Elizabeth Vepar (Dj3VI)",
+      "primaryToken": "Elizabeth Vepar (Dj3VI)",
+      "alias": "Elizabeth Vepar (Dj3VI)",
+      "buildMethod": "SumtoTen",
+      "metatype": "Human",
+      "rulesetId": "sr5"
+    }
+  }
+}

@@ -132,8 +132,8 @@ for label, tokens in {
         "Avalonia primary-route proof stays independent from Blazor fallback proof",
     ],
     "screenshot-backed parity review": [
-        "Run screenshot-backed parity review for menu, toolstrip, roster, master index, settings, and import",
-        "Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, and import is covered",
+        "Run screenshot-backed parity review for menu, toolstrip, roster, master index, settings, import, translator, XML amendment, and Hero Lab",
+        "Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, import, translator, XML amendment, and Hero Lab is covered",
     ],
 }.items():
     require_any_token(paths["post_flagship_feedback"], post_feedback_text, tokens, reasons, label, feedback_reasons)

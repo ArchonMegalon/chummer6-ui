@@ -6,6 +6,7 @@ cd "$repo_root"
 
 echo "[UI-DESIGN-MIRROR] checking canonical UI mirror parity..."
 
+check_design_mirror() {
 python3 - <<'PY'
 from __future__ import annotations
 
@@ -71,14 +72,19 @@ if missing or extra:
         problems.append("missing product files: " + ", ".join(missing))
     if extra:
         problems.append("unexpected product files: " + ", ".join(extra))
-    raise SystemExit("[UI-DESIGN-MIRROR] FAIL: " + " | ".join(problems))
+    raise SystemExit(
+        "[UI-DESIGN-MIRROR] FAIL: "
+        + " | ".join(problems)
+        + " Repair with `bash scripts/ai/sync-ui-design-mirror.sh`."
+    )
 
 for source_rel, target_rel in zip(expected_sources, expected_rel_paths):
     source = design_root / source_rel
     target = product_target / target_rel
     if source.read_bytes() != target.read_bytes():
         raise SystemExit(
-            f"[UI-DESIGN-MIRROR] FAIL: product mirror drift for {target_rel.as_posix()} relative to {source_rel}."
+            f"[UI-DESIGN-MIRROR] FAIL: product mirror drift for {target_rel.as_posix()} relative to {source_rel}. "
+            "Repair with `bash scripts/ai/sync-ui-design-mirror.sh`."
         )
 
 repo_source_rel = str(mirror.get("repo_source") or "")
@@ -88,11 +94,17 @@ review_target_rel = str(mirror.get("review_target") or ".codex-design/review/REV
 
 if repo_source_rel:
     if (design_root / repo_source_rel).read_bytes() != (repo_root / repo_target_rel).read_bytes():
-        raise SystemExit("[UI-DESIGN-MIRROR] FAIL: IMPLEMENTATION_SCOPE mirror drift detected.")
+        raise SystemExit(
+            "[UI-DESIGN-MIRROR] FAIL: IMPLEMENTATION_SCOPE mirror drift detected. "
+            "Repair with `bash scripts/ai/sync-ui-design-mirror.sh`."
+        )
 
 if review_source_rel:
     if (design_root / review_source_rel).read_bytes() != (repo_root / review_target_rel).read_bytes():
-        raise SystemExit("[UI-DESIGN-MIRROR] FAIL: REVIEW_CONTEXT mirror drift detected.")
+        raise SystemExit(
+            "[UI-DESIGN-MIRROR] FAIL: REVIEW_CONTEXT mirror drift detected. "
+            "Repair with `bash scripts/ai/sync-ui-design-mirror.sh`."
+        )
 
 queue_path = repo_root / ".codex-studio" / "published" / "QUEUE.generated.yaml"
 queue_payload = yaml.safe_load(queue_path.read_text(encoding="utf-8")) or {}
@@ -109,6 +121,11 @@ if len(matching_items) > 1:
     )
 
 target_item = matching_items[0] if matching_items else None
+
+expected_slice_text = (
+    "Auto-detect and repair recurring `ui` mirror drift after repeated audit observations; "
+    "keep one bounded queue slice for the affected local design mirror bundle instead of reopening one-off refresh work."
+)
 
 worklist_text = (repo_root / "WORKLIST.md").read_text(encoding="utf-8")
 applied_log_lines = {
@@ -132,6 +149,9 @@ if latest_applied_11708 not in worklist_text:
 if target_item is not None:
     expected_allowed_paths = [".codex-design"]
     expected_owned_surfaces = ["design_mirror:ui"]
+    expected_source_ref = "audit_task_candidates[11708]"
+    expected_audit_finding_key = "project.design_mirror_missing_or_stale"
+    expected_audit_scope_id = "ui"
     expected_source_items = [
         "/docker/chummercomplete/chummer-design/products/chummer/README.md",
         "/docker/chummercomplete/chummer-design/products/chummer/sync/sync-manifest.yaml",
@@ -141,7 +161,32 @@ if target_item is not None:
 
     allowed_paths = target_item.get("allowed_paths")
     owned_surfaces = target_item.get("owned_surfaces")
+    title = target_item.get("title")
+    task = target_item.get("task")
+    source_ref = target_item.get("source_ref")
+    audit_finding_key = target_item.get("audit_finding_key")
+    audit_scope_id = target_item.get("audit_scope_id")
     source_items = target_item.get("source_items")
+    if title != expected_slice_text or task != expected_slice_text:
+        raise SystemExit(
+            "[UI-DESIGN-MIRROR] FAIL: queue mirror slice title/task drifted from the bounded recurring-hygiene wording. "
+            "Keep one stable slice instead of republishing count-specific one-off refresh prose."
+        )
+    if source_ref != expected_source_ref:
+        raise SystemExit(
+            "[UI-DESIGN-MIRROR] FAIL: queue mirror slice source_ref drifted: "
+            + json.dumps(source_ref, sort_keys=True)
+        )
+    if audit_finding_key != expected_audit_finding_key:
+        raise SystemExit(
+            "[UI-DESIGN-MIRROR] FAIL: queue mirror slice audit_finding_key drifted: "
+            + json.dumps(audit_finding_key, sort_keys=True)
+        )
+    if audit_scope_id != expected_audit_scope_id:
+        raise SystemExit(
+            "[UI-DESIGN-MIRROR] FAIL: queue mirror slice audit_scope_id drifted: "
+            + json.dumps(audit_scope_id, sort_keys=True)
+        )
     if allowed_paths != expected_allowed_paths:
         raise SystemExit(
             "[UI-DESIGN-MIRROR] FAIL: queue mirror slice allowed_paths drifted: "
@@ -170,3 +215,20 @@ if not wl_214_done and not wl_214_active:
 
 print("[UI-DESIGN-MIRROR] PASS: canonical UI mirror subset and queue slice are aligned.")
 PY
+}
+
+output=""
+set +e
+output="$(check_design_mirror 2>&1)"
+status=$?
+set -e
+
+if [ "$status" -ne 0 ] && printf '%s\n' "$output" | rg -q 'Repair with `bash scripts/ai/sync-ui-design-mirror\.sh`'; then
+  echo "[UI-DESIGN-MIRROR] detected local mirror drift; running bounded repair sync..."
+  bash scripts/ai/sync-ui-design-mirror.sh >/dev/null
+  check_design_mirror
+  exit 0
+fi
+
+printf '%s\n' "$output"
+exit "$status"

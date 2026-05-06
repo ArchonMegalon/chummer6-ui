@@ -105,6 +105,9 @@ bash scripts/ai/milestones/b11-npc-persona-studio-check.sh
 echo "[verify] checking UI milestone coverage registry guard..."
 bash scripts/ai/milestones/ui-milestone-coverage-check.sh
 
+echo "[verify] syncing canonical UI design mirror subset..."
+bash scripts/ai/sync-ui-design-mirror.sh >/dev/null
+
 echo "[verify] checking UI design mirror hygiene guard..."
 bash scripts/ai/milestones/ui-design-mirror-hygiene-check.sh
 
@@ -214,6 +217,15 @@ bash scripts/ai/milestones/chummer-shared-legacy-equivalent-chrome-gate.sh
 
 echo "[verify] checking Chummer5a screenshot review gate..."
 bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh
+
+echo "[verify] checking next-90 M141 direct import-route proof guard..."
+bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh
+
+echo "[verify] checking next-90 M142 direct workflow proof guard..."
+bash scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh
+
+echo "[verify] checking next-90 M143 direct output proof guard..."
+bash scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh
 
 echo "[verify] checking dense workbench recovery gate..."
 bash scripts/ai/milestones/dense-workbench-recovery-gate.sh

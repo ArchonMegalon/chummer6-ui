@@ -1,30 +1,35 @@
 {
-  "startedAt": "2026-05-02T11:12:04.443625Z",
-  "completedAt": "2026-05-02T11:12:04.538482Z",
-  "status": "fail",
-  "summary": "Milestone exit rejected: Chummer6 is not yet practically identical to Chummer5a for the tested workflow. See failures.md and screenshot diffs for required corrections.",
+  "startedAt": "2026-05-06T15:18:00.029639Z",
+  "completedAt": "2026-05-06T15:18:00.138336Z",
+  "status": "pass",
+  "summary": "Parity gate passed for the default first-slice Chummer5a fixture set.",
   "mode": "proof_backed_structural_oracle",
   "proofScope": {
     "fixtureScope": "first_slice_default",
     "selectedFixtureCount": 5,
     "availableFixtureCount": 34,
-    "uiReconstructionExecuted": false,
-    "perFixtureRoundTripExecuted": false,
+    "uiReconstructionExecuted": true,
+    "perFixtureRoundTripExecuted": true,
     "legacyReferenceScreenshotsCaptured": false,
     "pixelDiffsGenerated": false,
-    "certifiesSelectedFixturesCanBeRebuiltOnlyUsingUi": false,
-    "certifiesEveryFixtureCanBeRebuiltOnlyUsingUi": false
+    "certifiesSelectedFixturesCanBeRebuiltOnlyUsingUi": true,
+    "certifiesEveryFixtureCanBeRebuiltOnlyUsingUi": false,
+    "recursiveSettingsAndElementsCertified": true,
+    "desktopWorkflowParityCertified": true,
+    "generatedDialogElementParityCertified": true,
+    "uiElementParityAuditCertified": true
   },
   "proofClaims": [
     "Selected Chummer5a fixtures were parsed as structural oracle inputs.",
-    "Published Chummer6 workflow receipts, screenshot control evidence, and release gates covered the workflow families inferred from the selected fixtures."
+    "Published Chummer6 workflow receipts, screenshot control evidence, and release gates covered the workflow families inferred from the selected fixtures.",
+    "Recursive menu workflows, legacy UI controls, quick-action roots, and generated dialog inventories are exhaustively classified and certified by published Chummer5a desktop workflow and element-parity receipts.",
+    "Each selected fixture had a passing per-fixture UI reconstruction receipt proving UI-driven open, save, reload, and identity-preserving roundtrip coverage."
   ],
   "proofLimitations": [
     "This tester run validated published proof artifacts; it did not itself drive the Chummer6 UI end-to-end.",
     "Legacy Chummer5a reference screenshots were not captured in this tester run.",
     "Pixel diff images were not generated in this tester run.",
-    "No per-fixture reconstruction, save, reload, or import/export roundtrip receipt was present for the selected fixture set.",
-    "A passing result does not certify that every selected .chum5 file can be rebuilt only through the Chummer6 UI."
+    "A passing result certifies only the explicitly selected fixture set, not the entire Chummer5a fixture corpus."
   ],
   "resolution": "1920x1080",
   "scale": "1.0",
@@ -267,7 +272,7 @@
     "desktop_controls": 29
   },
   "workflowFamilyCount": 10,
-  "failureCount": 7,
+  "failureCount": 0,
   "evidenceSources": {
     "fixtureInventory": "/docker/EA/docs/chummer5a_parity_lab/import_export_fixture_inventory.yaml",
     "oracleBaselines": "/docker/EA/docs/chummer5a_parity_lab/oracle_baselines.yaml",
@@ -281,10 +286,26 @@
     "userJourneyTrace": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/USER_JOURNEY_TESTER_TRACE.generated.json",
     "userJourneyAudit": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/USER_JOURNEY_TESTER_AUDIT.generated.json",
     "userJourneyScreenshotDir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots",
-    "reconstructionReceiptsDir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/chummer5a-fixture-ui-reconstruction"
+    "reconstructionReceiptsDir": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/chummer5a-fixture-ui-reconstruction",
+    "desktopWorkflowParityReceipt": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "generatedDialogElementParityReceipt": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+    "uiElementParityAuditReceipt": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json"
+  },
+  "recursiveParityReceiptReview": {
+    "status": "pass",
+    "summary": "Recursive settings, dialog, and element parity receipts are passing.",
+    "desktopWorkflowParityReasons": [],
+    "generatedDialogElementParityReasons": [],
+    "uiElementParityAuditReasons": []
+  },
+  "fixtureReconstructionReview": {
+    "status": "pass",
+    "summary": "Selected fixtures have passing per-fixture UI reconstruction receipts.",
+    "missingReconstructionDirReason": "",
+    "fixtureFailures": {}
   },
   "resolvedScreenshotRoots": [
-    "/tmp/chummer-ui-flagship-gate-screenshots.8wxXaO",
+    "/tmp/chummer-ui-flagship-gate-screenshots.NMhVex",
     "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots"
   ]
 }
