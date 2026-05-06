@@ -44,12 +44,14 @@ internal sealed class DesktopHomeWindow : Window
     private readonly TextBlock _installSummaryText;
     private readonly TextBlock _updateSummaryText;
     private readonly TextBlock _campaignText;
+    private readonly TextBlock _campaignMemoryText;
     private readonly TextBlock _supportText;
     private readonly TextBlock _buildExplainText;
     private readonly TextBlock _workspaceSummaryText;
     private readonly StackPanel _installActionsRow;
     private readonly StackPanel _updateActionsRow;
     private readonly StackPanel _campaignActionsRow;
+    private readonly StackPanel _campaignMemoryActionsRow;
     private readonly StackPanel _supportActionsRow;
     private readonly StackPanel _buildActionsRow;
     private readonly StackPanel _workspaceActionsRow;
@@ -141,6 +143,12 @@ internal sealed class DesktopHomeWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _campaignMemoryText = new TextBlock
+        {
+            Text = BuildCampaignMemoryPanelBody(),
+            TextWrapping = TextWrapping.Wrap
+        };
+
         _supportText = new TextBlock
         {
             Text = BuildSupportBody(),
@@ -162,6 +170,7 @@ internal sealed class DesktopHomeWindow : Window
         _installActionsRow = CreateActionRow(CreateInstallActions());
         _updateActionsRow = CreateActionRow(CreateUpdateActions());
         _campaignActionsRow = CreateActionRow(CreateCampaignActions());
+        _campaignMemoryActionsRow = CreateActionRow(CreateCampaignMemoryActions());
         _supportActionsRow = CreateActionRow(CreateSupportActions());
         _buildActionsRow = CreateActionRow(CreateBuildExplainActions());
         _workspaceActionsRow = CreateActionRow(CreateWorkspaceActions());
@@ -189,6 +198,10 @@ internal sealed class DesktopHomeWindow : Window
                             DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.campaign_return", _preferences.Language),
                             _campaignText,
                             _campaignActionsRow),
+                        CreateSection(
+                            "Campaign memory and return loop",
+                            _campaignMemoryText,
+                            _campaignMemoryActionsRow),
                         CreateSection(
                             DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.support_closure", _preferences.Language),
                             _supportText,
@@ -854,6 +867,19 @@ internal sealed class DesktopHomeWindow : Window
         return string.Join("\n", lines);
     }
 
+    private string BuildCampaignMemoryPanelBody()
+        => string.Join(
+            "\n",
+            [
+                "Campaign memory and return loop",
+                BuildCampaignConsequenceVisibilitySummary(),
+                BuildCampaignMemoryVisibilitySummary(),
+                BuildCampaignNextSessionReturnActionSummary(),
+                BuildCampaignStaleStateVisibilitySummary(),
+                BuildCampaignRestoreDecisionSummary(),
+                BuildCampaignConflictChoiceSummary()
+            ]);
+
     private string BuildCampaignConsequenceVisibilitySummary()
     {
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemorySummary))
@@ -1061,6 +1087,8 @@ internal sealed class DesktopHomeWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
+            actions.Add(CreateButton("Open GM Prep Packets", OpenGmPrepPacketsAsync));
+            actions.Add(CreateButton("Review Roster Movement", OpenRosterMovementAsync));
             actions.Add(CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
             actions.Add(CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
             actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync));
@@ -1082,6 +1110,14 @@ internal sealed class DesktopHomeWindow : Window
 
         return actions;
     }
+
+    private IReadOnlyList<Button> CreateCampaignMemoryActions()
+        =>
+        [
+            CreateButton("Review Campaign Memory", OpenCampaignWorkspaceAsync, isPrimary: true),
+            CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync),
+            CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
+        ];
 
     private IReadOnlyList<Button> CreateBuildExplainActions()
     {
@@ -1111,6 +1147,7 @@ internal sealed class DesktopHomeWindow : Window
         }
 
         actions.Add(CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport));
+        actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));
         return actions;
     }
 
@@ -1222,6 +1259,15 @@ internal sealed class DesktopHomeWindow : Window
 
     private Task OpenCampaignWorkspaceAsync()
         => DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId);
+
+    private Task OpenGmPrepPacketsAsync()
+        => DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId);
+
+    private Task OpenRosterMovementAsync()
+        => DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId);
+
+    private Task OpenRuleEnvironmentStudioAsync()
+        => DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId);
 
     private Task OpenUpdateWindowAsync()
         => DesktopUpdateWindow.ShowAsync(this, _installState.HeadId);
@@ -1436,12 +1482,14 @@ internal sealed class DesktopHomeWindow : Window
         _installSummaryText.Text = BuildInstallSummary();
         _updateSummaryText.Text = BuildUpdateSummary();
         _campaignText.Text = BuildCampaignBody();
+        _campaignMemoryText.Text = BuildCampaignMemoryPanelBody();
         _supportText.Text = BuildSupportBody();
         _buildExplainText.Text = BuildBuildExplainBody();
         _workspaceSummaryText.Text = BuildWorkspaceSummary();
         ResetActionRow(_installActionsRow, CreateInstallActions());
         ResetActionRow(_updateActionsRow, CreateUpdateActions());
         ResetActionRow(_campaignActionsRow, CreateCampaignActions());
+        ResetActionRow(_campaignMemoryActionsRow, CreateCampaignMemoryActions());
         ResetActionRow(_supportActionsRow, CreateSupportActions());
         ResetActionRow(_buildActionsRow, CreateBuildExplainActions());
         ResetActionRow(_workspaceActionsRow, CreateWorkspaceActions());

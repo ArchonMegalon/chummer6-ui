@@ -50,12 +50,30 @@ workflows:
       - NextStep runs the operator approval process.
       - Executive Assistant drafts news candidates and copy variants.
       - Hub or a world operator approves visibility grade and publication class.
-      - Media Factory renders ticker cards, short host reels, printable bulletins, and social-safe cuts.
+      - Media Factory renders flagship-poster-quality ticker cards, short host reels, printable bulletins, and social-safe cuts with vivid, runner-readable AR overlays.
       - Hub publishes the public, campaign, faction, or GM variants.
-      - Signitic may rotate approved outbound CTA campaigns to first-party world pages.
+      - Fleet or Hub emits a WorldTickSignatureCampaign packet when passive managed-signature amplification is approved.
+      - Signitic may rotate approved outbound CTA variants to first-party world pages.
     non_goals:
       - Media outputs do not become world truth.
       - Signitic metrics do not become canonical product analytics truth.
+      - Signitic segments do not encode private player, runner, support-case, account, or faction-secret state.
+
+  - key: world_tick_signature_campaign
+    owner_repo: chummer6-hub
+    external_tools:
+      - Signitic
+    steps:
+      - Hub receives an approved WorldTick publication package and first-party destination URLs.
+      - Product Governor or world operator approves public-safe banner claims, segment list, expiry, and rollback owner.
+      - Hub emits a WorldTickSignatureCampaign packet with source receipts, variants, UTM naming, and forbidden-state assertions.
+      - Signitic projects the approved variants through managed Chummer, Fleet, Hub, Shadowcasters, or operator signatures.
+      - Hub and Fleet read UTM landing conversions, support side effects, and world-effect receipts after the click.
+      - Campaigns are retired or superseded when the source tick, claim, destination, or visibility grade changes.
+    non_goals:
+      - Signitic does not own notification, campaign, world, support, analytics, or authorization truth.
+      - Segments do not encode private player, runner, faction-secret, account, entitlement, or support-case state.
+      - Banner clicks do not prove conversion or grant access.
 
   - key: gm_publishes_open_run
     owner_repo: chummer6-hub

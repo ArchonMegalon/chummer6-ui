@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T20:52:29.425263Z",
+  "generatedAt": "2026-04-26T04:17:47.466825Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family execution evidence is explicitly grounded for create-open-import-save-save-as-print-export.",
@@ -8,8 +8,8 @@
     "edition": "sr6",
     "familyId": "create-open-import-save-save-as-print-export",
     "proofKind": "sr6_family_release_gated_execution",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
       "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts"
@@ -25,7 +25,7 @@
     "dotnetTest": {
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
-      "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
+      "trxPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
       "exitCode": 0
     },
     "apiProbe": {

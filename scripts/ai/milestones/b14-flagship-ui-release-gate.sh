@@ -21,6 +21,8 @@ desktop_update_runtime_tests_path="$repo_root/Chummer.Tests/DesktopUpdateRuntime
 desktop_install_linking_runtime_tests_path="$repo_root/Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
 desktop_startup_smoke_runtime_tests_path="$repo_root/Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs"
 workflow_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json"
+chummer4_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json"
 layout_hard_gate_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
 sr4_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr6_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
@@ -185,6 +187,7 @@ required_avalonia_tests = [
     "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
     "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
     "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
+    "Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts",
     "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
     "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
     "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
@@ -372,6 +375,12 @@ run_with_retry 2 "cross-head workflow parity tests" \
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
 bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
 
+echo "[b14] running explicit Chummer5a legacy UI element parity gate..."
+bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh >/dev/null
+
+echo "[b14] running explicit Chummer4 legacy UI element parity gate..."
+bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh >/dev/null
+
 echo "[b14] running explicit Chummer5a layout hard gate..."
 bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
 
@@ -381,7 +390,7 @@ bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_shell_ruleset_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_shell_ruleset_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$legacy_ui_element_parity_receipt_path" "$chummer4_legacy_ui_element_parity_receipt_path" "$layout_hard_gate_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path"
 import json
 import os
 import sys
@@ -400,6 +409,8 @@ from datetime import datetime, timezone
     desktop_install_linking_runtime_tests_path,
     desktop_startup_smoke_runtime_tests_path,
     workflow_parity_receipt_path,
+    legacy_ui_element_parity_receipt_path,
+    chummer4_legacy_ui_element_parity_receipt_path,
     layout_hard_gate_receipt_path,
     sr4_workflow_parity_receipt_path,
     sr6_workflow_parity_receipt_path,
@@ -409,7 +420,7 @@ from datetime import datetime, timezone
     interactive_control_inventory_receipt_path,
     veteran_task_time_receipt_path,
     chummer5a_screenshot_review_receipt_path,
-) = sys.argv[1:22]
+) = sys.argv[1:24]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -429,6 +440,9 @@ expected_screenshots = [
     "16-master-index-dialog-light.png",
     "17-character-roster-dialog-light.png",
     "18-import-dialog-light.png",
+    "19-translator-dialog-light.png",
+    "20-xml-editor-dialog-light.png",
+    "21-hero-lab-importer-dialog-light.png",
 ]
 required_full_workflow_tests = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
@@ -443,6 +457,7 @@ required_full_workflow_tests = [
     "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
     "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details",
     "Avalonia_and_Blazor_character_settings_save_updates_shared_state",
+    "Avalonia_and_Blazor_hero_lab_importer_dialogs_preserve_matching_import_posture",
 ]
 required_blazor_shell_tests = [
     "MenuBar_invokes_toggle_and_execute_callbacks",
@@ -584,6 +599,22 @@ if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pas
         "[b14] FAIL: explicit Chummer5a desktop workflow parity proof is not passed: "
         + ", ".join(workflow_parity_receipt.get("reasons") or ["missing reason"])
     )
+with open(legacy_ui_element_parity_receipt_path, "r", encoding="utf-8") as handle:
+    legacy_ui_element_parity_receipt = json.load(handle)
+legacy_ui_element_parity_status = str(legacy_ui_element_parity_receipt.get("status") or "").strip().lower()
+if legacy_ui_element_parity_status not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit Chummer5a legacy UI element parity proof is not passed: "
+        + ", ".join(legacy_ui_element_parity_receipt.get("reasons") or ["missing reason"])
+    )
+with open(chummer4_legacy_ui_element_parity_receipt_path, "r", encoding="utf-8") as handle:
+    chummer4_legacy_ui_element_parity_receipt = json.load(handle)
+chummer4_legacy_ui_element_parity_status = str(chummer4_legacy_ui_element_parity_receipt.get("status") or "").strip().lower()
+if chummer4_legacy_ui_element_parity_status not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit Chummer4 legacy UI element parity proof is not passed: "
+        + ", ".join(chummer4_legacy_ui_element_parity_receipt.get("reasons") or ["missing reason"])
+    )
 if str(layout_hard_gate_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
     raise SystemExit(
         "[b14] FAIL: explicit Chummer5a layout hard gate proof is not passed: "
@@ -621,6 +652,8 @@ if localization_release_status not in {"pass", "passed", "ready"}:
 workflow_equivalence_status = proof_status(
     tests_present(dual_head_tests_text, required_full_workflow_tests),
     status_ok(str(workflow_parity_receipt.get("status") or "").strip().lower()),
+    status_ok(legacy_ui_element_parity_status),
+    status_ok(chummer4_legacy_ui_element_parity_status),
     status_ok(str(sr4_workflow_parity_receipt.get("status") or "").strip().lower()),
     status_ok(str(sr6_workflow_parity_receipt.get("status") or "").strip().lower()),
     status_ok(str(sr4_sr6_frontier_receipt.get("status") or "").strip().lower()),
@@ -784,6 +817,10 @@ payload = {
         "interactiveControlInventoryReceiptPath": interactive_control_inventory_receipt_path,
         "fullInteractiveControlInventory": full_interactive_control_inventory_status,
         "mainWindowInteractionInventory": main_window_interaction_inventory_status,
+        "legacyUiElementParityReceiptPath": legacy_ui_element_parity_receipt_path,
+        "legacyUiElementParity": legacy_ui_element_parity_status,
+        "chummer4LegacyUiElementParityReceiptPath": chummer4_legacy_ui_element_parity_receipt_path,
+        "chummer4LegacyUiElementParity": chummer4_legacy_ui_element_parity_status,
         "runtimeBackedLegacyWorkbench": runtime_backed_legacy_workbench_status,
         "legacyDenseBuilderRhythm": proof_status(
             status_ok(str(layout_hard_gate_receipt.get("status") or "").strip().lower()),
@@ -883,6 +920,8 @@ payload = {
         "status": workflow_equivalence_status,
         "sourceTestFile": dual_head_tests_path,
         "explicitParityReceiptPath": workflow_parity_receipt_path,
+        "explicitLegacyUiElementParityReceiptPath": legacy_ui_element_parity_receipt_path,
+        "explicitChummer4LegacyUiElementParityReceiptPath": chummer4_legacy_ui_element_parity_receipt_path,
         "explicitSr4ParityReceiptPath": sr4_workflow_parity_receipt_path,
         "explicitSr6ParityReceiptPath": sr6_workflow_parity_receipt_path,
         "explicitSr4Sr6FrontierReceiptPath": sr4_sr6_frontier_receipt_path,

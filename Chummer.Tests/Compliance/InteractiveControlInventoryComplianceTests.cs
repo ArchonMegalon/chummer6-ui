@@ -27,6 +27,8 @@ public sealed class InteractiveControlInventoryComplianceTests
         StringAssert.Contains(scriptText, "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events");
         StringAssert.Contains(scriptText, "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions");
         StringAssert.Contains(scriptText, "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available");
+        StringAssert.Contains(scriptText, "Runtime_backed_file_menu_new_character_opens_creation_dialog");
+        StringAssert.Contains(scriptText, "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live");
         StringAssert.Contains(scriptText, "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters");
         StringAssert.Contains(scriptText, "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end");
         StringAssert.Contains(scriptText, "\"delegate_route_receipt\": repo_root / \".codex-studio/published/DELEGATE_COMMAND_ROUTE_PARITY.generated.json\"");
@@ -91,9 +93,13 @@ public sealed class InteractiveControlInventoryComplianceTests
         string receiptText = root.GetRawText();
         StringAssert.Contains(receiptText, "\"Standalone_toolstrip_buttons_raise_expected_events\": true");
         StringAssert.Contains(receiptText, "\"Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions\": true");
+        StringAssert.Contains(receiptText, "\"Runtime_backed_file_menu_new_character_opens_creation_dialog\": true");
+        StringAssert.Contains(receiptText, "\"Runtime_backed_global_settings_visible_selects_and_toggles_remain_live\": true");
         StringAssert.Contains(receiptText, "\"Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end\": true");
         StringAssert.Contains(receiptText, "\"Name~Standalone_toolstrip_buttons_raise_expected_events");
-        StringAssert.Contains(receiptText, "\"Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters");
+        StringAssert.Contains(receiptText, "\"Name~Runtime_backed_file_menu_new_character_opens_creation_dialog");
+        StringAssert.Contains(receiptText, "|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live");
+        StringAssert.Contains(receiptText, "|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters");
         StringAssert.Contains(receiptText, "\"exitCode\": 0");
         StringAssert.Contains(receiptText, "\"noMatches\": false");
     }

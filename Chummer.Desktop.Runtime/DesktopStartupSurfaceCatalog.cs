@@ -4,6 +4,9 @@ public static class DesktopStartupSurfaceCatalog
 {
     public const string EnvironmentVariableName = "CHUMMER_DESKTOP_STARTUP_SURFACE";
     public const string CampaignWorkspace = "campaign_workspace";
+    public const string GmPrepPackets = "gm_prep_packets";
+    public const string RosterMovement = "roster_movement";
+    public const string RuleEnvironmentStudio = "rule_environment_studio";
     public const string Update = "update";
     public const string Support = "support";
     public const string SupportCase = "support_case";

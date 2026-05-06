@@ -988,6 +988,25 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_compatibility_posture()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: "sr6");
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.ExecuteCommandAsync("hero_lab_importer", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("dialog.hero_lab_importer", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "importRulesetId"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabXml"), "<character><name>Hero Lab Import</name></character>");
+        CollectionAssert.Contains(
+            presenter.State.ActiveDialog!.Actions.Select(action => action.Id).ToArray(),
+            "import");
+    }
+
+    [TestMethod]
     public async Task ExecuteCommandAsync_open_character_prefills_import_ruleset_from_initialized_shell_contract_when_no_workspace_is_active()
     {
         var client = new FakeChummerClient();

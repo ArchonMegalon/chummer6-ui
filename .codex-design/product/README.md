@@ -143,6 +143,7 @@ Use `PRODUCT_HEALTH_SCORECARD.yaml` when the question is "how does whole-product
 109. `ICANPRENEUR_DISCOVERY_AND_VALIDATION_LANE.md`
 110. `KARMA_FORGE_DISCOVERY_AND_HOUSE_RULE_INTAKE.md`
 111. `HOUSE_RULE_DISCOVERY_REGISTRY.yaml`
+112. `SIGNITIC_FACTION_WAR_AND_WORLD_TICK_CAMPAIGNS.md`
 
 `HORIZON_REGISTRY.yaml` is the machine-readable source for horizon existence, order, public-guide eligibility, and eventual build path.
 The current horizon set covers knowledge fabric, spatial/runsite artifacts, creator press, replay/forensics, and bounded table coaching in addition to the earlier continuity and simulation lanes.
@@ -190,6 +191,7 @@ The current horizon set covers knowledge fabric, spatial/runsite artifacts, crea
 `PRIVACY_AND_RETENTION_BOUNDARIES.md` defines the default retention clocks, redaction posture, and ownership split for support, crash, claim/install, survey, provider-trace, and publication telemetry surfaces.
 `PUBLIC_TRUST_CONTENT.yaml` is the canonical trust-content manifest for help, contact, and support statements surfaced at `/help`, `/contact`, and `/downloads`.
 `PUBLIC_VIDEO_BRIEFS.yaml`, `MEDIA_ARTIFACT_RECIPE_REGISTRY.yaml`, `STRUCTURED_VIDEO_AND_NARRATED_MEDIA_MODEL.md`, and `VIDBOARD_AND_LTD_WOW_FACTOR_WORKFLOWS.md` are the media/publication canon that turns owned LTD posture into repeatable artifact-factory workflows rather than isolated vendor notes.
+`SIGNITIC_FACTION_WAR_AND_WORLD_TICK_CAMPAIGNS.md` defines projection-only managed-signature campaigns for BLACK LEDGER world ticks, faction propaganda, Shadowcasters recruitment, intel drives, and season/newsreel amplification, with first-party destinations and no notification, world, support, analytics, or authorization truth.
 `COMPANION_PERSONA_AND_INTERACTION_MODEL.md`, `COMPANION_PACKET.md`, `COMPANION_TRIGGER_REGISTRY.yaml`, and `COMPANION_EVENT_SCHEMA.yaml` define the first-party companion identity, trigger truth, runtime packet contract, suppression discipline, and structured event lanes so desktop/mobile shells, public concierge surfaces, EA compile passes, and downstream media packs stay aligned.
 `journeys/*.md` defines the top end-to-end user flows and failure-mode recoveries that multiple repos must preserve.
 `BUILD_LAB_PRODUCT_MODEL.md` defines Build Lab as a flagship Build plus Explain surface rather than leaving it as a downstream milestone label without a canonical product promise.

@@ -58,7 +58,7 @@ feedback_sources = [
     repo_root / "feedback" / "2026-04-12-classic-dense-workbench-and-veteran-parity.md",
     repo_root / "feedback" / "2026-04-13-post-flagship-release-train-and-veteran-certification.md",
 ]
-frontier_ids = [3782970110, 2714856833, 1186439541, 4871476959]
+frontier_ids = [3782970110, 2714856833, 1186439541, 4871476959, 1922169755]
 review_jobs = {
     "dense_builder": {
         "frontierId": 3782970110,
@@ -83,6 +83,24 @@ review_jobs = {
         "screenshots": ["03-settings-open-light.png"],
         "evidenceKeys": ["runtime_backed_file_menu_routes"],
         "testMarkers": ["Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"],
+    },
+    "translator": {
+        "frontierId": 1922169755,
+        "screenshots": ["19-translator-dialog-light.png"],
+        "evidenceKeys": [],
+        "testMarkers": ["Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts"],
+    },
+    "xml_editor": {
+        "frontierId": 1922169755,
+        "screenshots": ["20-xml-editor-dialog-light.png"],
+        "evidenceKeys": [],
+        "testMarkers": ["Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts"],
+    },
+    "hero_lab_importer": {
+        "frontierId": 1922169755,
+        "screenshots": ["21-hero-lab-importer-dialog-light.png", "18-import-dialog-light.png"],
+        "evidenceKeys": [],
+        "testMarkers": ["Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts"],
     },
 }
 
@@ -262,7 +280,7 @@ payload = {
     "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
     "status": "pass" if not reasons else "fail",
     "summary": (
-        "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, and settings."
+        "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes."
         if not reasons
         else "Chummer5a screenshot-based compare review still has blocking proof gaps."
     ),

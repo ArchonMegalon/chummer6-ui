@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-21T20:52:29.531554Z",
+  "generatedAt": "2026-04-26T04:17:47.582024Z",
   "contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
   "channelId": "docker",
   "status": "pass",
@@ -8,19 +8,19 @@
   "evidence": {
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "dualHeadTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-    "complianceTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs",
-    "uiGateTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "dualHeadTestsPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+    "complianceTestsPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Compliance/MigrationComplianceTests.cs",
+    "uiGateTestsPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "executionExit": 0,
     "verificationExit": 0,
     "materializerExit": 0,
     "releaseChannelChannelId": "docker",
-    "releaseChannelGeneratedAt": "2026-04-21T15:36:03Z",
-    "releaseChannelAgeSeconds": 18986,
+    "releaseChannelGeneratedAt": "2026-04-25T11:38:04Z",
+    "releaseChannelAgeSeconds": 59983,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -39,7 +39,7 @@
       "uiGateTests": true
     },
     "sr4ReceiptChannelId": "docker",
-    "sr4ReceiptGeneratedAt": "2026-04-21T20:52:07.751192Z",
+    "sr4ReceiptGeneratedAt": "2026-04-26T04:17:26.948815Z",
     "failureCount": 0
   },
   "sourceArtifactReview": {
@@ -60,8 +60,8 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "docker",
-    "generatedAt": "2026-04-21T15:36:03Z",
-    "ageSeconds": 18986,
+    "generatedAt": "2026-04-25T11:38:04Z",
+    "ageSeconds": 59983,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -70,9 +70,9 @@
     "status": "pass",
     "summary": "SR4 baseline workflow parity proof is present and aligned for SR6 carry-forward closure.",
     "reasons": [],
-    "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "path": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "channelId": "docker",
-    "generatedAt": "2026-04-21T20:52:07.751192Z"
+    "generatedAt": "2026-04-26T04:17:26.948815Z"
   },
   "workflowFamilyReview": {
     "status": "pass",

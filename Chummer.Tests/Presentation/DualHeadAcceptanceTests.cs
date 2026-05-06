@@ -127,10 +127,7 @@ public class DualHeadAcceptanceTests
                 fileQueries,
                 sectionQueries,
                 metadataCommands),
-            new Sr6WorkspaceCodec(
-                fileQueries,
-                sectionQueries,
-                metadataCommands)
+            new Sr6WorkspaceCodec()
         ];
         IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(codecs);
         return new WorkspaceService(
@@ -1103,6 +1100,27 @@ public class DualHeadAcceptanceTests
             xmlEditorFields.Select(field => field.Id).ToArray());
         Assert.AreEqual("governed", xmlEditorFields.Single(field => string.Equals(field.Id, "xmlEditorLanePosture", StringComparison.Ordinal)).Value);
         Assert.AreEqual("governed", xmlEditorFields.Single(field => string.Equals(field.Id, "xmlEditorCustomDataLanePosture", StringComparison.Ordinal)).Value);
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_hero_lab_importer_dialogs_preserve_matching_import_posture()
+    {
+        string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
+        byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
+        string[] commandIds = ["hero_lab_importer"];
+
+        Dictionary<string, CommandDialogSnapshot> avaloniaSnapshots = await CaptureAvaloniaCommandDialogSnapshotsAsync(documentBytes, commandIds);
+        Dictionary<string, CommandDialogSnapshot> blazorSnapshots = await CaptureBlazorCommandDialogSnapshotsAsync(documentBytes, commandIds);
+
+        Assert.IsTrue(avaloniaSnapshots.TryGetValue("hero_lab_importer", out CommandDialogSnapshot? avalonia), "Missing Avalonia dialog snapshot for Hero Lab importer.");
+        Assert.IsTrue(blazorSnapshots.TryGetValue("hero_lab_importer", out CommandDialogSnapshot? blazor), "Missing Blazor dialog snapshot for Hero Lab importer.");
+        AssertCommandDialogSnapshotEqual(avalonia, blazor, "hero_lab_importer");
+
+        DialogFieldSnapshot[] importerFields = avalonia.Fields;
+        CollectionAssert.IsSubsetOf(
+            new[] { "importRulesetId", "heroLabXml" },
+            importerFields.Select(field => field.Id).ToArray());
+        Assert.AreEqual("sr6", importerFields.Single(field => string.Equals(field.Id, "importRulesetId", StringComparison.Ordinal)).Value);
     }
 
     [TestMethod]

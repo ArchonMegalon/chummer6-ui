@@ -1,0 +1,4500 @@
+{
+  "generatedAt": "2026-04-26T04:16:07.065947Z",
+  "contract_name": "chummer6-ui.chummer5a_legacy_ui_element_parity",
+  "status": "pass",
+  "summary": "Every extracted Chummer5a designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
+  "reasons": [],
+  "evidence": {
+    "receiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "legacySubject": "Chummer5a",
+    "legacySubjectSlug": "chummer5a",
+    "sourcePaths": {
+      "legacyRoot1": "Chummer/Forms",
+      "legacyRoot2": "Chummer/Controls",
+      "catalogResolver": "Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs",
+      "legacyUiControlCatalog": "Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
+      "sectionQuickActionCatalog": "Chummer.Presentation/Rulesets/SectionQuickActionCatalog.cs",
+      "desktopDialogFactory": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "desktopDialogWindow": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+      "avaloniaGateTests": "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "dualHeadTests": "Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+      "desktopDialogFactoryTests": "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+      "presenterTests": "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+      "verifyScript": "scripts/ai/verify.sh",
+      "b14Script": "scripts/ai/milestones/b14-flagship-ui-release-gate.sh"
+    },
+    "legacyDesignerEventHookCount": 1755,
+    "legacyRuntimeEventHookCount": 336,
+    "legacyDynamicInteractiveElementCount": 765,
+    "currentDynamicInteractiveElementCount": 43,
+    "currentNamedAxamlInteractiveElementCount": 37,
+    "legacyBehaviorFamilyCounts": {
+      "add_create": 13,
+      "browse_select": 118,
+      "cancel_close": 61,
+      "character_creation": 376,
+      "combat": 181,
+      "confirm_submit": 105,
+      "contacts": 23,
+      "delete_remove": 5,
+      "edit_update": 11,
+      "file_exit": 1,
+      "file_new": 4,
+      "file_open": 54,
+      "file_print_export": 25,
+      "file_save": 9,
+      "help_external": 10,
+      "inventory_progression": 143,
+      "magic_matrix": 44,
+      "notes": 60,
+      "qualities": 3,
+      "search_filter_category": 421,
+      "selection_dialog": 3,
+      "session_dashboard": 25,
+      "settings_character": 173,
+      "settings_global": 69,
+      "skills": 14,
+      "source_reference": 41,
+      "tools_utilities": 51,
+      "vehicles": 41,
+      "window_management": 7
+    },
+    "legacyDynamicBehaviorFamilyCounts": {
+      "add_create": 6,
+      "browse_select": 69,
+      "cancel_close": 159,
+      "character_creation": 164,
+      "confirm_submit": 34,
+      "contacts": 4,
+      "edit_update": 1,
+      "file_new": 3,
+      "file_open": 18,
+      "file_print_export": 8,
+      "file_save": 12,
+      "help_external": 8,
+      "inventory_progression": 27,
+      "magic_matrix": 2,
+      "notes": 39,
+      "search_filter_category": 61,
+      "session_dashboard": 29,
+      "settings_character": 24,
+      "settings_global": 27,
+      "skills": 1,
+      "source_reference": 29,
+      "tools_utilities": 37,
+      "window_management": 3
+    },
+    "currentInventoryCounts": {
+      "command": 39,
+      "action": 13,
+      "ui": 47,
+      "dialog-action": 22,
+      "current-dynamic": 8,
+      "current-named": 37
+    },
+    "familyReviews": {
+      "add_create": {
+        "legacyEventCount": 13,
+        "legacyDynamicElementCount": 6,
+        "mappedCurrentIds": [
+          "ui:create_entry",
+          "ui:gear_add",
+          "ui:quality_add"
+        ],
+        "availableCurrentIds": [
+          "ui:create_entry",
+          "ui:gear_add",
+          "ui:quality_add"
+        ],
+        "proofMarkers": [
+          "HandleUiControlAsync_all_catalog_controls_are_non_generic"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "browse_select": {
+        "legacyEventCount": 118,
+        "legacyDynamicElementCount": 69,
+        "mappedCurrentIds": [
+          "action:tab-gear.inventory",
+          "action:tab-combat.weapons",
+          "action:tab-contacts.contacts"
+        ],
+        "availableCurrentIds": [
+          "action:tab-gear.inventory",
+          "action:tab-combat.weapons",
+          "action:tab-contacts.contacts"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "cancel_close": {
+        "legacyEventCount": 61,
+        "legacyDynamicElementCount": 159,
+        "mappedCurrentIds": [
+          "dialog-action:cancel",
+          "dialog-action:close"
+        ],
+        "availableCurrentIds": [
+          "dialog-action:cancel",
+          "dialog-action:close"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "character_creation": {
+        "legacyEventCount": 376,
+        "legacyDynamicElementCount": 164,
+        "mappedCurrentIds": [
+          "command:new_character",
+          "action:tab-info.attributes",
+          "action:tab-skills.skills"
+        ],
+        "availableCurrentIds": [
+          "command:new_character",
+          "action:tab-info.attributes",
+          "action:tab-skills.skills"
+        ],
+        "proofMarkers": [
+          "Runtime_backed_file_menu_new_character_opens_creation_dialog",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "combat": {
+        "legacyEventCount": 181,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "ui:combat_reload",
+          "ui:combat_damage_track"
+        ],
+        "availableCurrentIds": [
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "ui:combat_reload",
+          "ui:combat_damage_track"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "confirm_submit": {
+        "legacyEventCount": 105,
+        "legacyDynamicElementCount": 34,
+        "mappedCurrentIds": [
+          "dialog-action:ok",
+          "dialog-action:apply",
+          "dialog-action:save_global_settings",
+          "dialog-action:create_character"
+        ],
+        "availableCurrentIds": [
+          "dialog-action:ok",
+          "dialog-action:apply",
+          "dialog-action:create_character"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "contacts": {
+        "legacyEventCount": 23,
+        "legacyDynamicElementCount": 4,
+        "mappedCurrentIds": [
+          "ui:contact_add",
+          "ui:contact_edit",
+          "ui:contact_remove",
+          "ui:contact_connection"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_add",
+          "ui:contact_edit",
+          "ui:contact_remove",
+          "ui:contact_connection"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "delete_remove": {
+        "legacyEventCount": 5,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:delete_entry",
+          "ui:gear_delete",
+          "ui:quality_delete"
+        ],
+        "availableCurrentIds": [
+          "ui:delete_entry",
+          "ui:gear_delete",
+          "ui:quality_delete"
+        ],
+        "proofMarkers": [
+          "HandleUiControlAsync_all_catalog_controls_are_non_generic"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "edit_update": {
+        "legacyEventCount": 11,
+        "legacyDynamicElementCount": 1,
+        "mappedCurrentIds": [
+          "ui:edit_entry",
+          "ui:gear_edit",
+          "ui:contact_edit"
+        ],
+        "availableCurrentIds": [
+          "ui:edit_entry",
+          "ui:gear_edit",
+          "ui:contact_edit"
+        ],
+        "proofMarkers": [
+          "HandleUiControlAsync_all_catalog_controls_are_non_generic"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_exit": {
+        "legacyEventCount": 1,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "command:exit"
+        ],
+        "availableCurrentIds": [
+          "command:exit"
+        ],
+        "proofMarkers": [
+          "ExecuteCommandAsync_all_catalog_commands_are_handled"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_new": {
+        "legacyEventCount": 4,
+        "legacyDynamicElementCount": 3,
+        "mappedCurrentIds": [
+          "command:new_character",
+          "command:new_critter"
+        ],
+        "availableCurrentIds": [
+          "command:new_character",
+          "command:new_critter"
+        ],
+        "proofMarkers": [
+          "Runtime_backed_file_menu_new_character_opens_creation_dialog",
+          "ExecuteCommandAsync_all_catalog_commands_are_handled"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_open": {
+        "legacyEventCount": 54,
+        "legacyDynamicElementCount": 18,
+        "mappedCurrentIds": [
+          "command:open_character",
+          "command:open_for_printing",
+          "command:open_for_export"
+        ],
+        "availableCurrentIds": [
+          "command:open_character",
+          "command:open_for_printing",
+          "command:open_for_export"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_print_export": {
+        "legacyEventCount": 25,
+        "legacyDynamicElementCount": 8,
+        "mappedCurrentIds": [
+          "command:print_character",
+          "command:export_character",
+          "command:print_multiple",
+          "command:print_setup"
+        ],
+        "availableCurrentIds": [
+          "command:print_character",
+          "command:export_character",
+          "command:print_multiple",
+          "command:print_setup"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_save": {
+        "legacyEventCount": 9,
+        "legacyDynamicElementCount": 12,
+        "mappedCurrentIds": [
+          "command:save_character",
+          "command:save_character_as"
+        ],
+        "availableCurrentIds": [
+          "command:save_character",
+          "command:save_character_as"
+        ],
+        "proofMarkers": [
+          "ExecuteCommandAsync_all_catalog_commands_are_handled"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "help_external": {
+        "legacyEventCount": 10,
+        "legacyDynamicElementCount": 8,
+        "mappedCurrentIds": [
+          "command:wiki",
+          "command:discord",
+          "command:revision_history",
+          "command:dumpshock",
+          "command:about",
+          "command:report_bug"
+        ],
+        "availableCurrentIds": [
+          "command:wiki",
+          "command:discord",
+          "command:revision_history",
+          "command:dumpshock",
+          "command:about",
+          "command:report_bug"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "inventory_progression": {
+        "legacyEventCount": 143,
+        "legacyDynamicElementCount": 27,
+        "mappedCurrentIds": [
+          "ui:gear_add",
+          "ui:gear_edit",
+          "ui:gear_delete",
+          "ui:create_entry",
+          "action:tab-gear.inventory"
+        ],
+        "availableCurrentIds": [
+          "ui:gear_add",
+          "ui:gear_edit",
+          "ui:gear_delete",
+          "ui:create_entry",
+          "action:tab-gear.inventory"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "magic_matrix": {
+        "legacyEventCount": 44,
+        "legacyDynamicElementCount": 2,
+        "mappedCurrentIds": [
+          "ui:spell_add",
+          "ui:adept_power_add",
+          "ui:complex_form_add",
+          "ui:spirit_add",
+          "ui:matrix_program_add"
+        ],
+        "availableCurrentIds": [
+          "ui:spell_add",
+          "ui:adept_power_add",
+          "ui:complex_form_add",
+          "ui:spirit_add",
+          "ui:matrix_program_add"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "notes": {
+        "legacyEventCount": 60,
+        "legacyDynamicElementCount": 39,
+        "mappedCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "availableCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "qualities": {
+        "legacyEventCount": 3,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:quality_add",
+          "ui:quality_delete",
+          "action:tab-qualities.qualities"
+        ],
+        "availableCurrentIds": [
+          "ui:quality_add",
+          "ui:quality_delete",
+          "action:tab-qualities.qualities"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "search_filter_category": {
+        "legacyEventCount": 421,
+        "legacyDynamicElementCount": 61,
+        "mappedCurrentIds": [
+          "ui:gear_add",
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "command:master_index"
+        ],
+        "availableCurrentIds": [
+          "ui:gear_add",
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "command:master_index"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "selection_dialog": {
+        "legacyEventCount": 3,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:gear_add",
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "ui:cyberware_add"
+        ],
+        "availableCurrentIds": [
+          "ui:gear_add",
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "ui:cyberware_add"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "session_dashboard": {
+        "legacyEventCount": 25,
+        "legacyDynamicElementCount": 29,
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "command:character_roster",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "command:character_roster",
+          "action:tab-info.summary"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "settings_character": {
+        "legacyEventCount": 173,
+        "legacyDynamicElementCount": 24,
+        "mappedCurrentIds": [
+          "command:character_settings"
+        ],
+        "availableCurrentIds": [
+          "command:character_settings"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "settings_global": {
+        "legacyEventCount": 69,
+        "legacyDynamicElementCount": 27,
+        "mappedCurrentIds": [
+          "command:global_settings"
+        ],
+        "availableCurrentIds": [
+          "command:global_settings"
+        ],
+        "proofMarkers": [
+          "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live",
+          "Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "skills": {
+        "legacyEventCount": 14,
+        "legacyDynamicElementCount": 1,
+        "mappedCurrentIds": [
+          "ui:skill_add",
+          "ui:skill_specialize",
+          "ui:skill_remove",
+          "ui:skill_group",
+          "action:tab-skills.skills"
+        ],
+        "availableCurrentIds": [
+          "ui:skill_add",
+          "ui:skill_specialize",
+          "ui:skill_remove",
+          "ui:skill_group",
+          "action:tab-skills.skills"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "source_reference": {
+        "legacyEventCount": 41,
+        "legacyDynamicElementCount": 29,
+        "mappedCurrentIds": [
+          "ui:show_source",
+          "ui:gear_source",
+          "ui:magic_source"
+        ],
+        "availableCurrentIds": [
+          "ui:show_source",
+          "ui:gear_source",
+          "ui:magic_source"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "tools_utilities": {
+        "legacyEventCount": 51,
+        "legacyDynamicElementCount": 37,
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "command:master_index",
+          "command:character_roster",
+          "command:global_settings",
+          "command:character_settings"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "command:master_index",
+          "command:character_roster",
+          "command:global_settings",
+          "command:character_settings"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "vehicles": {
+        "legacyEventCount": 41,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:vehicle_add",
+          "ui:vehicle_edit",
+          "ui:vehicle_delete",
+          "ui:vehicle_mod_add"
+        ],
+        "availableCurrentIds": [
+          "ui:vehicle_add",
+          "ui:vehicle_edit",
+          "ui:vehicle_delete",
+          "ui:vehicle_mod_add"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "window_management": {
+        "legacyEventCount": 7,
+        "legacyDynamicElementCount": 3,
+        "mappedCurrentIds": [
+          "command:new_window",
+          "command:close_window",
+          "command:close_all"
+        ],
+        "availableCurrentIds": [
+          "command:new_window",
+          "command:close_window",
+          "command:close_all"
+        ],
+        "proofMarkers": [
+          "ExecuteCommandAsync_all_catalog_commands_are_handled"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      }
+    },
+    "proofMarkers": {
+      "ExecuteCommandAsync_all_catalog_commands_are_handled": true,
+      "HandleUiControlAsync_all_catalog_controls_are_non_generic": true,
+      "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions": true,
+      "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions": true,
+      "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions": true,
+      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections": true,
+      "Avalonia_and_Blazor_workspace_action_summary_matches": true,
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts": true,
+      "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts": true,
+      "Runtime_backed_file_menu_new_character_opens_creation_dialog": true,
+      "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live": true,
+      "Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live": true,
+      "Runtime_generated_dialog_controls_expose_stable_inventory_names": true,
+      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true
+    },
+    "wiredIntoStandardVerify": true,
+    "b14ConsumesReceipt": true,
+    "missingFiles": [],
+    "legacyEventSamples": [
+      {
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 84,
+        "control": "cmdImproveATT",
+        "event": "Click",
+        "handler": "cmdImproveATT_Click",
+        "family": "inventory_progression",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 102,
+        "control": "cmdBurnEdge",
+        "event": "Click",
+        "handler": "cmdBurnEdge_Click",
+        "family": "inventory_progression",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 119,
+        "control": "nudKarma",
+        "event": "ValueChanged",
+        "handler": "nudKarma_ValueChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 133,
+        "control": "nudBase",
+        "event": "ValueChanged",
+        "handler": "nudBase_ValueChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 76,
+        "control": "tsContactOpen",
+        "event": "Click",
+        "handler": "tsContactOpen_Click",
+        "family": "contacts",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 91,
+        "control": "tsRemoveCharacter",
+        "event": "Click",
+        "handler": "tsRemoveCharacter_Click",
+        "family": "contacts",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 106,
+        "control": "tsAttachCharacter",
+        "event": "Click",
+        "handler": "tsAttachCharacter_Click",
+        "family": "contacts",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 116,
+        "control": "cboContactRole",
+        "event": "TextChanged",
+        "handler": "cboContactRole_TextChanged",
+        "family": "search_filter_category",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 153,
+        "control": "cmdExpand",
+        "event": "Click",
+        "handler": "cmdExpand_Click",
+        "family": "contacts",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 223,
+        "control": "cmdDelete",
+        "event": "Click",
+        "handler": "cmdDelete_Click",
+        "family": "contacts",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 311,
+        "control": "cmdNotes",
+        "event": "Click",
+        "handler": "cmdNotes_Click",
+        "family": "notes",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 905,
+        "control": "x",
+        "event": "TextChanged",
+        "handler": "y, x => x.GetNameAsync(token), (x, y) => x.SetNameAsync(y, token), 1000, token, token).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 912,
+        "control": "x",
+        "event": "TextChanged",
+        "handler": "y, x => x.GetLocationAsync(token), (x, y) => x.SetLocationAsync(y, token), 1000, token, token).ConfigureAwait(false)",
+        "family": "browse_select",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1035,
+        "control": "x.cmdLink",
+        "event": "Click",
+        "handler": "cmdLink_Click",
+        "family": "contacts",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1050,
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetIsGroupAsync(_objMyToken), (x, y) => x.SetIsGroupAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "family": "contacts",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1057,
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetFreeAsync(_objMyToken), (x, y) => x.SetFreeAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "family": "contacts",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1064,
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetFamilyAsync(_objMyToken), (x, y) => x.SetFamilyAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "family": "contacts",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1075,
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetBlackmailAsync(_objMyToken), (x, y) => x.SetBlackmailAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "family": "contacts",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1086,
+        "control": "x",
+        "event": "ValueChanged",
+        "handler": "y, x => x.GetLoyaltyAsync(_objMyToken), (x, y) => x.SetLoyaltyAsync(y, _objMyToken), 250, _objMyToken, token).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1095,
+        "control": "x",
+        "event": "ValueChanged",
+        "handler": "y, x => x.GetConnectionAsync(_objMyToken), (x, y) => x.SetConnectionAsync(y, _objMyToken), 250, _objMyToken, token).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1406,
+        "control": "x.cboMetatype",
+        "event": "TextChanged",
+        "handler": "MetatypeOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1407,
+        "control": "x.cboGender",
+        "event": "TextChanged",
+        "handler": "GenderOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1408,
+        "control": "x.cboAge",
+        "event": "TextChanged",
+        "handler": "AgeOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1409,
+        "control": "x.cboType",
+        "event": "TextChanged",
+        "handler": "TypeOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1410,
+        "control": "x.cboPersonalLife",
+        "event": "TextChanged",
+        "handler": "PersonalLifeOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1411,
+        "control": "x.cboPreferredPayment",
+        "event": "TextChanged",
+        "handler": "PreferredPaymentOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1412,
+        "control": "x.cboHobbiesVice",
+        "event": "TextChanged",
+        "handler": "HobbiesViceOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1717,
+        "control": "x.cboMetatype",
+        "event": "TextChanged",
+        "handler": "MetatypeOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1718,
+        "control": "x.cboGender",
+        "event": "TextChanged",
+        "handler": "GenderOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1719,
+        "control": "x.cboAge",
+        "event": "TextChanged",
+        "handler": "AgeOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1720,
+        "control": "x.cboType",
+        "event": "TextChanged",
+        "handler": "TypeOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1721,
+        "control": "x.cboPersonalLife",
+        "event": "TextChanged",
+        "handler": "PersonalLifeOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1722,
+        "control": "x.cboPreferredPayment",
+        "event": "TextChanged",
+        "handler": "PreferredPaymentOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1723,
+        "control": "x.cboHobbiesVice",
+        "event": "TextChanged",
+        "handler": "HobbiesViceOnTextChanged",
+        "family": "search_filter_category",
+        "kind": "runtime-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 82,
+        "control": "tsContactOpen",
+        "event": "Click",
+        "handler": "tsContactOpen_Click",
+        "family": "contacts",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 97,
+        "control": "tsRemoveCharacter",
+        "event": "Click",
+        "handler": "tsRemoveCharacter_Click",
+        "family": "contacts",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 112,
+        "control": "tsAttachCharacter",
+        "event": "Click",
+        "handler": "tsAttachCharacter_Click",
+        "family": "contacts",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 148,
+        "control": "cboMetatype",
+        "event": "TextChanged",
+        "handler": "cboMetatype_TextChanged",
+        "family": "search_filter_category",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 197,
+        "control": "cmdNotes",
+        "event": "Click",
+        "handler": "cmdNotes_Click",
+        "family": "notes",
+        "kind": "designer-event"
+      },
+      {
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 219,
+        "control": "cmdLink",
+        "event": "Click",
+        "handler": "cmdLink_Click",
+        "family": "contacts",
+        "kind": "designer-event"
+      }
+    ],
+    "legacyDynamicElementSamples": [
+      {
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 108,
+        "type": "NumericUpDownEx",
+        "context": "_64); cmdBurnEdge.Click += cmdBurnEdge_Click; flpRight.Controls.Add(cmdBurnEdge); } } else { nudKarma = new NumericUpDownEx { Anchor = AnchorStyles.Right, AutoSize = true, InterceptMouseWheel = GlobalSettings.InterceptMode, Marg",
+        "family": "tools_utilities",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 122,
+        "type": "NumericUpDownEx",
+        "context": "nudKarma.ValueChanged += nudKarma_ValueChanged; _tmrKarmaChangeTimer = new Timer { Interval = 250 }; _tmrKarmaChangeTimer.Tick += KarmaChangeTimer_Tick; nudBase = new NumericUpDownEx { Anchor = AnchorStyles.Right, AutoSize = true, InterceptMouseWheel = GlobalSettings.InterceptMode, Marg",
+        "family": "tools_utilities",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 33,
+        "type": "System.Windows.Forms.ContextMenuStrip",
+        "context": "y /// the contents of this method with the code editor. /// </summary> private void InitializeComponent() { this.components = new System.ComponentModel.Container(); this.cmsContact = new System.Windows.Forms.ContextMenuStrip(this.components); this.tsContactOpen = new Chummer.DpiFriendlyToolStripMenu",
+        "family": "browse_select",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 38,
+        "type": "System.Windows.Forms.TextBox",
+        "context": "moveCharacter = new Chummer.DpiFriendlyToolStripMenuItem(); this.tsAttachCharacter = new Chummer.DpiFriendlyToolStripMenuItem(); this.cboContactRole = new Chummer.ElasticComboBox(); this.txtContactName = new System.Windows.Forms.TextBox(); this.txtContactLocation = new System.Windows.Forms.TextBox()",
+        "family": "browse_select",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 39,
+        "type": "System.Windows.Forms.TextBox",
+        "context": "is.tsAttachCharacter = new Chummer.DpiFriendlyToolStripMenuItem(); this.cboContactRole = new Chummer.ElasticComboBox(); this.txtContactName = new System.Windows.Forms.TextBox(); this.txtContactLocation = new System.Windows.Forms.TextBox(); this.cmdExpand = new Chummer.DpiFriendlyImagedButton(); this",
+        "family": "browse_select",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 953,
+        "type": "NumericUpDownEx",
+        "context": "nection\", Tag = \"Label_Contact_Connection\", Text = \"Connection:\", TextAlign = ContentAlignment.MiddleRight }; x.nudConnection = new NumericUpDownEx { Anchor = AnchorStyles.Left | AnchorStyles.Right, AutoSize = true, Maximum = 12m, Minimum = decimal.One",
+        "family": "search_filter_category",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 971,
+        "type": "NumericUpDownEx",
+        "context": "me = \"lblLoyalty\", Tag = \"Label_Contact_Loyalty\", Text = \"Loyalty:\", TextAlign = ContentAlignment.MiddleRight }; x.nudLoyalty = new NumericUpDownEx { Anchor = AnchorStyles.Left | AnchorStyles.Right, AutoSize = true, Maximum = 6m, Minimum = decimal.One,",
+        "family": "search_filter_category",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 34,
+        "type": "System.Windows.Forms.TextBox",
+        "context": "/// the contents of this method with the code editor. /// </summary> private void InitializeComponent() { this.components = new System.ComponentModel.Container(); this.txtContactName = new System.Windows.Forms.TextBox(); this.cmsContact = new System.Windows.Forms.ContextMenuStrip(this.components); t",
+        "family": "search_filter_category",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 35,
+        "type": "System.Windows.Forms.ContextMenuStrip",
+        "context": "/// </summary> private void InitializeComponent() { this.components = new System.ComponentModel.Container(); this.txtContactName = new System.Windows.Forms.TextBox(); this.cmsContact = new System.Windows.Forms.ContextMenuStrip(this.components); this.tsContactOpen = new Chummer.DpiFriendlyToolStripMe",
+        "family": "search_filter_category",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Characters/SpiritControl.Designer.cs",
+        "line": 39,
+        "type": "System.Windows.Forms.ContextMenuStrip",
+        "context": "tem.Windows.Forms.Label(); this.nudForce = new Chummer.NumericUpDownEx(); this.chkBound = new Chummer.ColorableCheckBox(); this.cboSpiritName = new Chummer.ElasticComboBox(); this.cmsSpirit = new System.Windows.Forms.ContextMenuStrip(this.components); this.tsContactOpen = new Chummer.DpiFriendlyTool",
+        "family": "search_filter_category",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Characters/SpiritControl.Designer.cs",
+        "line": 44,
+        "type": "System.Windows.Forms.TextBox",
+        "context": "new Chummer.DpiFriendlyToolStripMenuItem(); this.tsAttachCharacter = new Chummer.DpiFriendlyToolStripMenuItem(); this.tsCreateCharacter = new Chummer.DpiFriendlyToolStripMenuItem(); this.txtCritterName = new System.Windows.Forms.TextBox(); this.chkFettered = new Chummer.ColorableCheckBox(); this.tlp",
+        "family": "notes",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Dashboards/ConditionMonitorUserControl.Designer.cs",
+        "line": 33,
+        "type": "System.Windows.Forms.Button",
+        "context": "private void InitializeComponent() { this._progressBarPhysical = new System.Windows.Forms.ProgressBar(); this._progressBarStun = new System.Windows.Forms.ProgressBar(); this._btnPhysical = new System.Windows.Forms.Button(); this._btnApplyStun = new System.Windows.Forms.Button(); this._lblPhysical = ",
+        "family": "session_dashboard",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Dashboards/ConditionMonitorUserControl.Designer.cs",
+        "line": 34,
+        "type": "System.Windows.Forms.Button",
+        "context": "._progressBarPhysical = new System.Windows.Forms.ProgressBar(); this._progressBarStun = new System.Windows.Forms.ProgressBar(); this._btnPhysical = new System.Windows.Forms.Button(); this._btnApplyStun = new System.Windows.Forms.Button(); this._lblPhysical = new System.Windows.Forms.Label(); this._l",
+        "family": "session_dashboard",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 36,
+        "type": "System.Windows.Forms.Button",
+        "context": "/// </summary> private void InitializeComponent() { this.components = new System.ComponentModel.Container(); this.tlpMain = new System.Windows.Forms.TableLayoutPanel(); this.btnNext = new System.Windows.Forms.Button(); this.btnSort = new System.Windows.Forms.Button(); this.btnDelay = new System.Wind",
+        "family": "session_dashboard",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 37,
+        "type": "System.Windows.Forms.Button",
+        "context": "{ this.components = new System.ComponentModel.Container(); this.tlpMain = new System.Windows.Forms.TableLayoutPanel(); this.btnNext = new System.Windows.Forms.Button(); this.btnSort = new System.Windows.Forms.Button(); this.btnDelay = new System.Windows.Forms.Button(); this.chkBoxChummer = new Syste",
+        "family": "session_dashboard",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 38,
+        "type": "System.Windows.Forms.Button",
+        "context": "el.Container(); this.tlpMain = new System.Windows.Forms.TableLayoutPanel(); this.btnNext = new System.Windows.Forms.Button(); this.btnSort = new System.Windows.Forms.Button(); this.btnDelay = new System.Windows.Forms.Button(); this.chkBoxChummer = new System.Windows.Forms.CheckedListBox(); this.tlpL",
+        "family": "session_dashboard",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 42,
+        "type": "System.Windows.Forms.Button",
+        "context": "; this.chkBoxChummer = new System.Windows.Forms.CheckedListBox(); this.tlpLeft = new System.Windows.Forms.TableLayoutPanel(); this.lblRound = new System.Windows.Forms.Label(); this.btnReset = new System.Windows.Forms.Button(); this.btnAdd = new System.Windows.Forms.Button(); this.btnRemove = new Sys",
+        "family": "session_dashboard",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 43,
+        "type": "System.Windows.Forms.Button",
+        "context": "heckedListBox(); this.tlpLeft = new System.Windows.Forms.TableLayoutPanel(); this.lblRound = new System.Windows.Forms.Label(); this.btnReset = new System.Windows.Forms.Button(); this.btnAdd = new System.Windows.Forms.Button(); this.btnRemove = new System.Windows.Forms.Button(); this.lblInitiativeMan",
+        "family": "session_dashboard",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 44,
+        "type": "System.Windows.Forms.Button",
+        "context": "orms.TableLayoutPanel(); this.lblRound = new System.Windows.Forms.Label(); this.btnReset = new System.Windows.Forms.Button(); this.btnAdd = new System.Windows.Forms.Button(); this.btnRemove = new System.Windows.Forms.Button(); this.lblInitiativeManeuvers = new System.Windows.Forms.Label(); this.labe",
+        "family": "session_dashboard",
+        "kind": "dynamic-element"
+      },
+      {
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 47,
+        "type": "System.Windows.Forms.Button",
+        "context": "ton(); this.btnRemove = new System.Windows.Forms.Button(); this.lblInitiativeManeuvers = new System.Windows.Forms.Label(); this.label1 = new System.Windows.Forms.Label(); this.btnMinusInit1 = new System.Windows.Forms.Button(); this.label3 = new System.Windows.Forms.Label(); this.btnAdd1Init = new Sy",
+        "family": "session_dashboard",
+        "kind": "dynamic-element"
+      }
+    ],
+    "unclassifiedLegacyEvents": [],
+    "unclassifiedLegacyDynamicElements": [],
+    "currentDynamicElementSamples": [
+      {
+        "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
+        "line": 124,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
+        "line": 188,
+        "type": "CheckBox"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
+        "line": 261,
+        "type": "ListBox"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
+        "line": 308,
+        "type": "ComboBox"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
+        "line": 413,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+        "line": 671,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs",
+        "line": 137,
+        "type": "MenuItem"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
+        "line": 626,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+        "line": 1053,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopCrashRecoveryWindow.cs",
+        "line": 38,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopCrashRecoveryWindow.cs",
+        "line": 348,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDevicesAccessWindow.cs",
+        "line": 612,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1825,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 219,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 242,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 277,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 339,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 511,
+        "type": "ListBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 704,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 776,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 799,
+        "type": "ComboBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 819,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 943,
+        "type": "TabControl"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 985,
+        "type": "CheckBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1062,
+        "type": "ComboBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1160,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1488,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1516,
+        "type": "CheckBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1543,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1627,
+        "type": "Button"
+      }
+    ],
+    "currentNamedAxamlElementSamples": [
+      {
+        "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+        "type": "MenuItem",
+        "name": "FileMenuButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+        "type": "MenuItem",
+        "name": "ToolsMenuButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+        "type": "MenuItem",
+        "name": "WindowsMenuButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+        "type": "MenuItem",
+        "name": "HelpMenuButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
+        "type": "TreeView",
+        "name": "NavigatorTree"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
+        "type": "TextBox",
+        "name": "CoachLaunchUriTextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
+        "type": "Button",
+        "name": "CopyCoachLaunchButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
+        "type": "ListBox",
+        "name": "ProviderHealthList"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
+        "type": "ListBox",
+        "name": "AuditList"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/WorkspaceStripControl.axaml",
+        "type": "Button",
+        "name": "LoadDemoRunnerQuickActionButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+        "type": "TabStrip",
+        "name": "LoadedRunnerTabStrip"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+        "type": "TabStrip",
+        "name": "SectionActionTabStrip"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+        "type": "ListBox",
+        "name": "SectionRowsList"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+        "type": "Expander",
+        "name": "SectionPayloadExpander"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+        "type": "Expander",
+        "name": "SectionReviewExpander"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+        "type": "TextBox",
+        "name": "SectionPreviewBox"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+        "type": "TextBox",
+        "name": "XmlInputBox"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml",
+        "type": "ListBox",
+        "name": "CommandsList"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "SaveButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "PrintButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "CopyButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "DesktopHomeButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "ImportFileButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "CloseWorkspaceButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "OpenForPrintingButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "OpenForExportButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "LoadDemoRunnerButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "ImportRawButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "SettingsButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "GmPrepButton"
+      }
+    ],
+    "legacyElementDispositionCount": 2856,
+    "legacyElementDispositionSamples": [
+      {
+        "legacyElementId": "Chummer/Controls/Attributes/AttributeControl.cs:84:runtime-event:cmdImproveATT.Click->cmdImproveATT_Click",
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 84,
+        "kind": "runtime-event",
+        "control": "cmdImproveATT",
+        "event": "Click",
+        "handler": "cmdImproveATT_Click",
+        "family": "inventory_progression",
+        "mappedCurrentIds": [
+          "action:tab-info.attributes",
+          "ui:create_entry",
+          "ui:edit_entry",
+          "ui:delete_entry"
+        ],
+        "availableCurrentIds": [
+          "action:tab-info.attributes",
+          "ui:create_entry",
+          "ui:edit_entry",
+          "ui:delete_entry"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:attributecontrol",
+          "legacy-control-token:karma+nuyen+expense"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Attributes/AttributeControl.cs:102:runtime-event:cmdBurnEdge.Click->cmdBurnEdge_Click",
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 102,
+        "kind": "runtime-event",
+        "control": "cmdBurnEdge",
+        "event": "Click",
+        "handler": "cmdBurnEdge_Click",
+        "family": "inventory_progression",
+        "mappedCurrentIds": [
+          "action:tab-info.attributes",
+          "ui:create_entry",
+          "ui:edit_entry",
+          "ui:delete_entry"
+        ],
+        "availableCurrentIds": [
+          "action:tab-info.attributes",
+          "ui:create_entry",
+          "ui:edit_entry",
+          "ui:delete_entry"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:attributecontrol",
+          "legacy-control-token:karma+nuyen+expense"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Attributes/AttributeControl.cs:119:runtime-event:nudKarma.ValueChanged->nudKarma_ValueChanged",
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 119,
+        "kind": "runtime-event",
+        "control": "nudKarma",
+        "event": "ValueChanged",
+        "handler": "nudKarma_ValueChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "action:tab-info.attributes",
+          "ui:create_entry",
+          "ui:edit_entry",
+          "ui:delete_entry"
+        ],
+        "availableCurrentIds": [
+          "action:tab-info.attributes",
+          "ui:create_entry",
+          "ui:edit_entry",
+          "ui:delete_entry"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:attributecontrol",
+          "legacy-control-token:karma+nuyen+expense"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Attributes/AttributeControl.cs:133:runtime-event:nudBase.ValueChanged->nudBase_ValueChanged",
+        "source": "Chummer/Controls/Attributes/AttributeControl.cs",
+        "line": 133,
+        "kind": "runtime-event",
+        "control": "nudBase",
+        "event": "ValueChanged",
+        "handler": "nudBase_ValueChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "action:tab-info.attributes"
+        ],
+        "availableCurrentIds": [
+          "action:tab-info.attributes"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:attributecontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.Designer.cs:76:designer-event:tsContactOpen.Click->tsContactOpen_Click",
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 76,
+        "kind": "designer-event",
+        "control": "tsContactOpen",
+        "event": "Click",
+        "handler": "tsContactOpen_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.Designer.cs:91:designer-event:tsRemoveCharacter.Click->tsRemoveCharacter_Click",
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 91,
+        "kind": "designer-event",
+        "control": "tsRemoveCharacter",
+        "event": "Click",
+        "handler": "tsRemoveCharacter_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.Designer.cs:106:designer-event:tsAttachCharacter.Click->tsAttachCharacter_Click",
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 106,
+        "kind": "designer-event",
+        "control": "tsAttachCharacter",
+        "event": "Click",
+        "handler": "tsAttachCharacter_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.Designer.cs:116:designer-event:cboContactRole.TextChanged->cboContactRole_TextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 116,
+        "kind": "designer-event",
+        "control": "cboContactRole",
+        "event": "TextChanged",
+        "handler": "cboContactRole_TextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.Designer.cs:153:designer-event:cmdExpand.Click->cmdExpand_Click",
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 153,
+        "kind": "designer-event",
+        "control": "cmdExpand",
+        "event": "Click",
+        "handler": "cmdExpand_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.Designer.cs:223:designer-event:cmdDelete.Click->cmdDelete_Click",
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 223,
+        "kind": "designer-event",
+        "control": "cmdDelete",
+        "event": "Click",
+        "handler": "cmdDelete_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.Designer.cs:311:designer-event:cmdNotes.Click->cmdNotes_Click",
+        "source": "Chummer/Controls/Characters/ContactControl.Designer.cs",
+        "line": 311,
+        "kind": "designer-event",
+        "control": "cmdNotes",
+        "event": "Click",
+        "handler": "cmdNotes_Click",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove",
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove",
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol",
+          "legacy-control-token:note"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:905:runtime-event:x.TextChanged->y, x => x.GetNameAsync(token), (x, y) => x.SetNameAsync(y, token), 1000, token, token).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 905,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "TextChanged",
+        "handler": "y, x => x.GetNameAsync(token), (x, y) => x.SetNameAsync(y, token), 1000, token, token).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:912:runtime-event:x.TextChanged->y, x => x.GetLocationAsync(token), (x, y) => x.SetLocationAsync(y, token), 1000, token, token).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 912,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "TextChanged",
+        "handler": "y, x => x.GetLocationAsync(token), (x, y) => x.SetLocationAsync(y, token), 1000, token, token).ConfigureAwait(false)",
+        "family": "browse_select",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1035:runtime-event:x.cmdLink.Click->cmdLink_Click",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1035,
+        "kind": "runtime-event",
+        "control": "x.cmdLink",
+        "event": "Click",
+        "handler": "cmdLink_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1050:runtime-event:x.CheckedChanged->y, x => x.GetIsGroupAsync(_objMyToken), (x, y) => x.SetIsGroupAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1050,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetIsGroupAsync(_objMyToken), (x, y) => x.SetIsGroupAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove",
+          "ui:move_up"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove",
+          "ui:move_up"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol",
+          "legacy-control-token:up"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1057:runtime-event:x.CheckedChanged->y, x => x.GetFreeAsync(_objMyToken), (x, y) => x.SetFreeAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1057,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetFreeAsync(_objMyToken), (x, y) => x.SetFreeAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1064:runtime-event:x.CheckedChanged->y, x => x.GetFamilyAsync(_objMyToken), (x, y) => x.SetFamilyAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1064,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetFamilyAsync(_objMyToken), (x, y) => x.SetFamilyAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1075:runtime-event:x.CheckedChanged->y, x => x.GetBlackmailAsync(_objMyToken), (x, y) => x.SetBlackmailAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1075,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetBlackmailAsync(_objMyToken), (x, y) => x.SetBlackmailAsync(y, _objMyToken), _objMyToken, token).ConfigureAwait(false)",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1086:runtime-event:x.ValueChanged->y, x => x.GetLoyaltyAsync(_objMyToken), (x, y) => x.SetLoyaltyAsync(y, _objMyToken), 250, _objMyToken, token).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1086,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "ValueChanged",
+        "handler": "y, x => x.GetLoyaltyAsync(_objMyToken), (x, y) => x.SetLoyaltyAsync(y, _objMyToken), 250, _objMyToken, token).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1095:runtime-event:x.ValueChanged->y, x => x.GetConnectionAsync(_objMyToken), (x, y) => x.SetConnectionAsync(y, _objMyToken), 250, _objMyToken, token).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1095,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "ValueChanged",
+        "handler": "y, x => x.GetConnectionAsync(_objMyToken), (x, y) => x.SetConnectionAsync(y, _objMyToken), 250, _objMyToken, token).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol",
+          "legacy-control-token:editcontact+connection"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1406:runtime-event:x.cboMetatype.TextChanged->MetatypeOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1406,
+        "kind": "runtime-event",
+        "control": "x.cboMetatype",
+        "event": "TextChanged",
+        "handler": "MetatypeOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1407:runtime-event:x.cboGender.TextChanged->GenderOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1407,
+        "kind": "runtime-event",
+        "control": "x.cboGender",
+        "event": "TextChanged",
+        "handler": "GenderOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1408:runtime-event:x.cboAge.TextChanged->AgeOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1408,
+        "kind": "runtime-event",
+        "control": "x.cboAge",
+        "event": "TextChanged",
+        "handler": "AgeOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1409:runtime-event:x.cboType.TextChanged->TypeOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1409,
+        "kind": "runtime-event",
+        "control": "x.cboType",
+        "event": "TextChanged",
+        "handler": "TypeOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1410:runtime-event:x.cboPersonalLife.TextChanged->PersonalLifeOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1410,
+        "kind": "runtime-event",
+        "control": "x.cboPersonalLife",
+        "event": "TextChanged",
+        "handler": "PersonalLifeOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1411:runtime-event:x.cboPreferredPayment.TextChanged->PreferredPaymentOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1411,
+        "kind": "runtime-event",
+        "control": "x.cboPreferredPayment",
+        "event": "TextChanged",
+        "handler": "PreferredPaymentOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1412:runtime-event:x.cboHobbiesVice.TextChanged->HobbiesViceOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1412,
+        "kind": "runtime-event",
+        "control": "x.cboHobbiesVice",
+        "event": "TextChanged",
+        "handler": "HobbiesViceOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1717:runtime-event:x.cboMetatype.TextChanged->MetatypeOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1717,
+        "kind": "runtime-event",
+        "control": "x.cboMetatype",
+        "event": "TextChanged",
+        "handler": "MetatypeOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1718:runtime-event:x.cboGender.TextChanged->GenderOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1718,
+        "kind": "runtime-event",
+        "control": "x.cboGender",
+        "event": "TextChanged",
+        "handler": "GenderOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1719:runtime-event:x.cboAge.TextChanged->AgeOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1719,
+        "kind": "runtime-event",
+        "control": "x.cboAge",
+        "event": "TextChanged",
+        "handler": "AgeOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1720:runtime-event:x.cboType.TextChanged->TypeOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1720,
+        "kind": "runtime-event",
+        "control": "x.cboType",
+        "event": "TextChanged",
+        "handler": "TypeOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1721:runtime-event:x.cboPersonalLife.TextChanged->PersonalLifeOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1721,
+        "kind": "runtime-event",
+        "control": "x.cboPersonalLife",
+        "event": "TextChanged",
+        "handler": "PersonalLifeOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1722:runtime-event:x.cboPreferredPayment.TextChanged->PreferredPaymentOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1722,
+        "kind": "runtime-event",
+        "control": "x.cboPreferredPayment",
+        "event": "TextChanged",
+        "handler": "PreferredPaymentOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/ContactControl.cs:1723:runtime-event:x.cboHobbiesVice.TextChanged->HobbiesViceOnTextChanged",
+        "source": "Chummer/Controls/Characters/ContactControl.cs",
+        "line": 1723,
+        "kind": "runtime-event",
+        "control": "x.cboHobbiesVice",
+        "event": "TextChanged",
+        "handler": "HobbiesViceOnTextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_connection",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:contactcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/PetControl.Designer.cs:82:designer-event:tsContactOpen.Click->tsContactOpen_Click",
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 82,
+        "kind": "designer-event",
+        "control": "tsContactOpen",
+        "event": "Click",
+        "handler": "tsContactOpen_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:petcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/PetControl.Designer.cs:97:designer-event:tsRemoveCharacter.Click->tsRemoveCharacter_Click",
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 97,
+        "kind": "designer-event",
+        "control": "tsRemoveCharacter",
+        "event": "Click",
+        "handler": "tsRemoveCharacter_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:petcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/PetControl.Designer.cs:112:designer-event:tsAttachCharacter.Click->tsAttachCharacter_Click",
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 112,
+        "kind": "designer-event",
+        "control": "tsAttachCharacter",
+        "event": "Click",
+        "handler": "tsAttachCharacter_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:petcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/PetControl.Designer.cs:148:designer-event:cboMetatype.TextChanged->cboMetatype_TextChanged",
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 148,
+        "kind": "designer-event",
+        "control": "cboMetatype",
+        "event": "TextChanged",
+        "handler": "cboMetatype_TextChanged",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:petcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/PetControl.Designer.cs:197:designer-event:cmdNotes.Click->cmdNotes_Click",
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 197,
+        "kind": "designer-event",
+        "control": "cmdNotes",
+        "event": "Click",
+        "handler": "cmdNotes_Click",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove",
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove",
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:petcontrol",
+          "legacy-control-token:note"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/PetControl.Designer.cs:219:designer-event:cmdLink.Click->cmdLink_Click",
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 219,
+        "kind": "designer-event",
+        "control": "cmdLink",
+        "event": "Click",
+        "handler": "cmdLink_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:petcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/PetControl.Designer.cs:241:designer-event:cmdDelete.Click->cmdDelete_Click",
+        "source": "Chummer/Controls/Characters/PetControl.Designer.cs",
+        "line": 241,
+        "kind": "designer-event",
+        "control": "cmdDelete",
+        "event": "Click",
+        "handler": "cmdDelete_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:petcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/PetControl.cs:454:runtime-event:x.TextChanged->y, x => x.GetNameAsync(token), (x, y) => x.SetNameAsync(y, token), 1000, token, token).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/PetControl.cs",
+        "line": 454,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "TextChanged",
+        "handler": "y, x => x.GetNameAsync(token), (x, y) => x.SetNameAsync(y, token), 1000, token, token).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_edit",
+          "ui:contact_remove"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:petcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.Designer.cs:177:designer-event:tsContactOpen.Click->tsContactOpen_Click",
+        "source": "Chummer/Controls/Characters/SpiritControl.Designer.cs",
+        "line": 177,
+        "kind": "designer-event",
+        "control": "tsContactOpen",
+        "event": "Click",
+        "handler": "tsContactOpen_Click",
+        "family": "contacts",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.Designer.cs:192:designer-event:tsRemoveCharacter.Click->tsRemoveCharacter_Click",
+        "source": "Chummer/Controls/Characters/SpiritControl.Designer.cs",
+        "line": 192,
+        "kind": "designer-event",
+        "control": "tsRemoveCharacter",
+        "event": "Click",
+        "handler": "tsRemoveCharacter_Click",
+        "family": "magic_matrix",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.Designer.cs:207:designer-event:tsAttachCharacter.Click->tsAttachCharacter_Click",
+        "source": "Chummer/Controls/Characters/SpiritControl.Designer.cs",
+        "line": 207,
+        "kind": "designer-event",
+        "control": "tsAttachCharacter",
+        "event": "Click",
+        "handler": "tsAttachCharacter_Click",
+        "family": "magic_matrix",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.Designer.cs:222:designer-event:tsCreateCharacter.Click->tsCreateCharacter_Click",
+        "source": "Chummer/Controls/Characters/SpiritControl.Designer.cs",
+        "line": 222,
+        "kind": "designer-event",
+        "control": "tsCreateCharacter",
+        "event": "Click",
+        "handler": "tsCreateCharacter_Click",
+        "family": "magic_matrix",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.Designer.cs:300:designer-event:cmdNotes.Click->cmdNotes_Click",
+        "source": "Chummer/Controls/Characters/SpiritControl.Designer.cs",
+        "line": 300,
+        "kind": "designer-event",
+        "control": "cmdNotes",
+        "event": "Click",
+        "handler": "cmdNotes_Click",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind",
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind",
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol",
+          "legacy-control-token:note"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.Designer.cs:322:designer-event:cmdLink.Click->cmdLink_Click",
+        "source": "Chummer/Controls/Characters/SpiritControl.Designer.cs",
+        "line": 322,
+        "kind": "designer-event",
+        "control": "cmdLink",
+        "event": "Click",
+        "handler": "cmdLink_Click",
+        "family": "magic_matrix",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.Designer.cs:344:designer-event:cmdDelete.Click->cmdDelete_Click",
+        "source": "Chummer/Controls/Characters/SpiritControl.Designer.cs",
+        "line": 344,
+        "kind": "designer-event",
+        "control": "cmdDelete",
+        "event": "Click",
+        "handler": "cmdDelete_Click",
+        "family": "magic_matrix",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.cs:74:runtime-event:x.CheckedChanged->y, x => x.GetBoundAsync(_objMyToken), (x, y) => x.SetBoundAsync(y, _objMyToken), _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/SpiritControl.cs",
+        "line": 74,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetBoundAsync(_objMyToken), (x, y) => x.SetBoundAsync(y, _objMyToken), _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "family": "magic_matrix",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.cs:85:runtime-event:x.TextChanged->y, x => x.GetNameAsync(_objMyToken), (x, y) => x.SetNameAsync(y, _objMyToken), 1000, _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/SpiritControl.cs",
+        "line": 85,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "TextChanged",
+        "handler": "y, x => x.GetNameAsync(_objMyToken), (x, y) => x.SetNameAsync(y, _objMyToken), 1000, _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.cs:92:runtime-event:x.TextChanged->y, x => x.GetCritterNameAsync(_objMyToken), (x, y) => x.SetCritterNameAsync(y, _objMyToken), 1000, _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/SpiritControl.cs",
+        "line": 92,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "TextChanged",
+        "handler": "y, x => x.GetCritterNameAsync(_objMyToken), (x, y) => x.SetCritterNameAsync(y, _objMyToken), 1000, _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.cs:108:runtime-event:x.ValueChanged->y, x => x.GetServicesOwedAsync(_objMyToken), (x, y) => x.SetServicesOwedAsync(y, _objMyToken), 250, _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/SpiritControl.cs",
+        "line": 108,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "ValueChanged",
+        "handler": "y, x => x.GetServicesOwedAsync(_objMyToken), (x, y) => x.SetServicesOwedAsync(y, _objMyToken), 250, _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.cs:117:runtime-event:x.ValueChanged->y, x => x.GetForceAsync(_objMyToken), (x, y) => x.SetForceAsync(y, _objMyToken), 250, _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/SpiritControl.cs",
+        "line": 117,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "ValueChanged",
+        "handler": "y, x => x.GetForceAsync(_objMyToken), (x, y) => x.SetForceAsync(y, _objMyToken), 250, _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "family": "search_filter_category",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Characters/SpiritControl.cs:129:runtime-event:x.CheckedChanged->y, x => x.GetFetteredAsync(_objMyToken), (x, y) => x.SetFetteredAsync(y, _objMyToken), _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "source": "Chummer/Controls/Characters/SpiritControl.cs",
+        "line": 129,
+        "kind": "runtime-event",
+        "control": "x",
+        "event": "CheckedChanged",
+        "handler": "y, x => x.GetFetteredAsync(_objMyToken), (x, y) => x.SetFetteredAsync(y, _objMyToken), _objMyToken, _objMyToken).ConfigureAwait(false)",
+        "family": "magic_matrix",
+        "mappedCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "availableCurrentIds": [
+          "ui:spirit_add",
+          "ui:magic_bind"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:spiritcontrol"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/ConditionMonitorUserControl.Designer.cs:65:designer-event:_btnPhysical.Click->_btnPhysical_Click",
+        "source": "Chummer/Controls/Dashboards/ConditionMonitorUserControl.Designer.cs",
+        "line": 65,
+        "kind": "designer-event",
+        "control": "_btnPhysical",
+        "event": "Click",
+        "handler": "_btnPhysical_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "ui:combat_damage_track"
+        ],
+        "availableCurrentIds": [
+          "ui:combat_damage_track"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:conditionmonitorusercontrol",
+          "legacy-control-token:damage+stuncm+physicalcm"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/ConditionMonitorUserControl.Designer.cs:75:designer-event:_btnApplyStun.Click->_btnApplyStun_Click",
+        "source": "Chummer/Controls/Dashboards/ConditionMonitorUserControl.Designer.cs",
+        "line": 75,
+        "kind": "designer-event",
+        "control": "_btnApplyStun",
+        "event": "Click",
+        "handler": "_btnApplyStun_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "ui:combat_damage_track"
+        ],
+        "availableCurrentIds": [
+          "ui:combat_damage_track"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:conditionmonitorusercontrol",
+          "legacy-control-token:damage+stuncm+physicalcm"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:94:designer-event:btnNext.Click->btnNext_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 94,
+        "kind": "designer-event",
+        "control": "btnNext",
+        "event": "Click",
+        "handler": "btnNext_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:108:designer-event:btnSort.Click->btnSort_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 108,
+        "kind": "designer-event",
+        "control": "btnSort",
+        "event": "Click",
+        "handler": "btnSort_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:122:designer-event:btnDelay.Click->btnDelay_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 122,
+        "kind": "designer-event",
+        "control": "btnDelay",
+        "event": "Click",
+        "handler": "btnDelay_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:134:designer-event:chkBoxChummer.MouseClick->chkBoxChummer_MouseClick",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 134,
+        "kind": "designer-event",
+        "control": "chkBoxChummer",
+        "event": "MouseClick",
+        "handler": "chkBoxChummer_MouseClick",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:135:designer-event:chkBoxChummer.SelectedIndexChanged->listBoxChummers_SelectedIndexChanged",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 135,
+        "kind": "designer-event",
+        "control": "chkBoxChummer",
+        "event": "SelectedIndexChanged",
+        "handler": "listBoxChummers_SelectedIndexChanged",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:185:designer-event:btnReset.Click->btnReset_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 185,
+        "kind": "designer-event",
+        "control": "btnReset",
+        "event": "Click",
+        "handler": "btnReset_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:200:designer-event:btnAdd.Click->btnAdd_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 200,
+        "kind": "designer-event",
+        "control": "btnAdd",
+        "event": "Click",
+        "handler": "btnAdd_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:215:designer-event:btnRemove.Click->btnRemove_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 215,
+        "kind": "designer-event",
+        "control": "btnRemove",
+        "event": "Click",
+        "handler": "btnRemove_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:254:designer-event:btnMinusInit1.Click->btnMinusInit1_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 254,
+        "kind": "designer-event",
+        "control": "btnMinusInit1",
+        "event": "Click",
+        "handler": "btnMinusInit1_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:279:designer-event:btnAdd1Init.Click->btnAdd1Init_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 279,
+        "kind": "designer-event",
+        "control": "btnAdd1Init",
+        "event": "Click",
+        "handler": "btnAdd1Init_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:304:designer-event:btnMinus5Init.Click->btnMinus5Init_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 304,
+        "kind": "designer-event",
+        "control": "btnMinus5Init",
+        "event": "Click",
+        "handler": "btnMinus5Init_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:329:designer-event:btnAdd5Init.Click->btnAdd5Init_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 329,
+        "kind": "designer-event",
+        "control": "btnAdd5Init",
+        "event": "Click",
+        "handler": "btnAdd5Init_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:354:designer-event:btnMinus10Init.Click->btnMinus10Init_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 354,
+        "kind": "designer-event",
+        "control": "btnMinus10Init",
+        "event": "Click",
+        "handler": "btnMinus10Init_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:379:designer-event:btnAdd10Init.Click->btnAdd10Init_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 379,
+        "kind": "designer-event",
+        "control": "btnAdd10Init",
+        "event": "Click",
+        "handler": "btnAdd10Init_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs:406:designer-event:btnApplyInterrupt.Click->btnApplyInterrupt_Click",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.Designer.cs",
+        "line": 406,
+        "kind": "designer-event",
+        "control": "btnApplyInterrupt",
+        "event": "Click",
+        "handler": "btnApplyInterrupt_Click",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary",
+          "ui:move_up"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary",
+          "ui:move_up"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol",
+          "legacy-control-token:up"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Dashboards/InitiativeUserControl.cs:37:runtime-event:chkBoxChummer.SelectedValueChanged->value",
+        "source": "Chummer/Controls/Dashboards/InitiativeUserControl.cs",
+        "line": 37,
+        "kind": "runtime-event",
+        "control": "chkBoxChummer",
+        "event": "SelectedValueChanged",
+        "handler": "value",
+        "family": "session_dashboard",
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "action:tab-info.summary"
+        ],
+        "mappingStrategies": [
+          "legacy-source-token:initiativeusercontrol"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Editors/RtfEditor.Designer.cs:110:designer-event:tsbBold.Click->UpdateFont",
+        "source": "Chummer/Controls/Editors/RtfEditor.Designer.cs",
+        "line": 110,
+        "kind": "designer-event",
+        "control": "tsbBold",
+        "event": "Click",
+        "handler": "UpdateFont",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata",
+          "ui:move_up"
+        ],
+        "availableCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata",
+          "ui:move_up"
+        ],
+        "mappingStrategies": [
+          "legacy-form-token:selecttext+editnotes+rtfeditor",
+          "legacy-source-token:editnotes+rtfeditor",
+          "legacy-control-token:up"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Editors/RtfEditor.Designer.cs:129:designer-event:tsbItalic.Click->UpdateFont",
+        "source": "Chummer/Controls/Editors/RtfEditor.Designer.cs",
+        "line": 129,
+        "kind": "designer-event",
+        "control": "tsbItalic",
+        "event": "Click",
+        "handler": "UpdateFont",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata",
+          "ui:move_up"
+        ],
+        "availableCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata",
+          "ui:move_up"
+        ],
+        "mappingStrategies": [
+          "legacy-form-token:selecttext+editnotes+rtfeditor",
+          "legacy-source-token:editnotes+rtfeditor",
+          "legacy-control-token:up"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Editors/RtfEditor.Designer.cs:148:designer-event:tsbUnderline.Click->UpdateFont",
+        "source": "Chummer/Controls/Editors/RtfEditor.Designer.cs",
+        "line": 148,
+        "kind": "designer-event",
+        "control": "tsbUnderline",
+        "event": "Click",
+        "handler": "UpdateFont",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata",
+          "ui:move_up"
+        ],
+        "availableCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata",
+          "ui:move_up"
+        ],
+        "mappingStrategies": [
+          "legacy-form-token:selecttext+editnotes+rtfeditor",
+          "legacy-source-token:editnotes+rtfeditor",
+          "legacy-control-token:up"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Editors/RtfEditor.Designer.cs:166:designer-event:tsbStrikeout.Click->UpdateFont",
+        "source": "Chummer/Controls/Editors/RtfEditor.Designer.cs",
+        "line": 166,
+        "kind": "designer-event",
+        "control": "tsbStrikeout",
+        "event": "Click",
+        "handler": "UpdateFont",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata",
+          "ui:move_up"
+        ],
+        "availableCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata",
+          "ui:move_up"
+        ],
+        "mappingStrategies": [
+          "legacy-form-token:selecttext+editnotes+rtfeditor",
+          "legacy-source-token:editnotes+rtfeditor",
+          "legacy-control-token:up"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Editors/RtfEditor.Designer.cs:189:designer-event:tsbFont.Click->tsbFont_Click",
+        "source": "Chummer/Controls/Editors/RtfEditor.Designer.cs",
+        "line": 189,
+        "kind": "designer-event",
+        "control": "tsbFont",
+        "event": "Click",
+        "handler": "tsbFont_Click",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "availableCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "mappingStrategies": [
+          "legacy-form-token:selecttext+editnotes+rtfeditor",
+          "legacy-source-token:editnotes+rtfeditor"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Editors/RtfEditor.Designer.cs:206:designer-event:tsbForeColor.Click->tsbForeColor_Click",
+        "source": "Chummer/Controls/Editors/RtfEditor.Designer.cs",
+        "line": 206,
+        "kind": "designer-event",
+        "control": "tsbForeColor",
+        "event": "Click",
+        "handler": "tsbForeColor_Click",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "availableCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "mappingStrategies": [
+          "legacy-form-token:selecttext+editnotes+rtfeditor",
+          "legacy-source-token:editnotes+rtfeditor"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      {
+        "legacyElementId": "Chummer/Controls/Editors/RtfEditor.Designer.cs:223:designer-event:tsbBackColor.Click->tsbBackColor_Click",
+        "source": "Chummer/Controls/Editors/RtfEditor.Designer.cs",
+        "line": 223,
+        "kind": "designer-event",
+        "control": "tsbBackColor",
+        "event": "Click",
+        "handler": "tsbBackColor_Click",
+        "family": "notes",
+        "mappedCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "availableCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "mappingStrategies": [
+          "legacy-form-token:selecttext+editnotes+rtfeditor",
+          "legacy-source-token:editnotes+rtfeditor"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      }
+    ],
+    "missingLegacyElementDispositionCount": 0,
+    "missingLegacyElementDispositions": [],
+    "familyFallbackLegacyElementDispositionCount": 0,
+    "familyFallbackLegacyElementDispositionSamples": [],
+    "verifyMarker": "checking Chummer5a legacy UI element parity guard",
+    "verifyInvocation": "bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh",
+    "b14Markers": {
+      "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json": true,
+      "chummer5a-legacy-ui-element-parity-check.sh": true,
+      "legacy_ui_element_parity_receipt": true
+    },
+    "testCommand": [
+      "bash",
+      "scripts/ai/test.sh",
+      "Chummer.Tests/Chummer.Tests.csproj",
+      "--no-build",
+      "--filter",
+      "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts|Name~Runtime_backed_file_menu_new_character_opens_creation_dialog|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live|Name~Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live|Name~Runtime_generated_dialog_controls_expose_stable_inventory_names|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+      "-v",
+      "minimal"
+    ],
+    "testFilter": "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts|Name~Runtime_backed_file_menu_new_character_opens_creation_dialog|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live|Name~Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live|Name~Runtime_generated_dialog_controls_expose_stable_inventory_names|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+    "buildCommand": [
+      "bash",
+      "scripts/ai/with-package-plane.sh",
+      "build",
+      "Chummer.Tests/Chummer.Tests.csproj",
+      "--nologo",
+      "--verbosity",
+      "quiet",
+      "--ignore-failed-sources",
+      "-p:NuGetAudit=false"
+    ],
+    "buildExitCode": 0,
+    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:07.18",
+    "testResult": {
+      "exitCode": 0,
+      "noMatches": false,
+      "outputTail": "Test run for /docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:    14, Skipped:     0, Total:    14, Duration: 8 s - Chummer.Tests.dll (net10.0)"
+    },
+    "observedFamilyCount": 29,
+    "observedFamilies": [
+      "add_create",
+      "browse_select",
+      "cancel_close",
+      "character_creation",
+      "combat",
+      "confirm_submit",
+      "contacts",
+      "delete_remove",
+      "edit_update",
+      "file_exit",
+      "file_new",
+      "file_open",
+      "file_print_export",
+      "file_save",
+      "help_external",
+      "inventory_progression",
+      "magic_matrix",
+      "notes",
+      "qualities",
+      "search_filter_category",
+      "selection_dialog",
+      "session_dashboard",
+      "settings_character",
+      "settings_global",
+      "skills",
+      "source_reference",
+      "tools_utilities",
+      "vehicles",
+      "window_management"
+    ],
+    "unclassifiedLegacyEventCount": 0,
+    "unclassifiedLegacyDynamicElementCount": 0,
+    "failureCount": 0,
+    "reasonCount": 0
+  },
+  "legacyExtractionReview": {
+    "status": "pass",
+    "summary": "Legacy designer, runtime handler, and dynamic interactive element extraction is classified.",
+    "designerEventHookCount": 1755,
+    "runtimeEventHookCount": 336,
+    "dynamicInteractiveElementCount": 765,
+    "unclassifiedLegacyEvents": [],
+    "unclassifiedLegacyDynamicElements": []
+  },
+  "currentMappingReview": {
+    "status": "pass",
+    "summary": "Every observed legacy UI element and behavior family maps to live Chummer6 IDs and executable proof markers.",
+    "familyReviews": {
+      "add_create": {
+        "legacyEventCount": 13,
+        "legacyDynamicElementCount": 6,
+        "mappedCurrentIds": [
+          "ui:create_entry",
+          "ui:gear_add",
+          "ui:quality_add"
+        ],
+        "availableCurrentIds": [
+          "ui:create_entry",
+          "ui:gear_add",
+          "ui:quality_add"
+        ],
+        "proofMarkers": [
+          "HandleUiControlAsync_all_catalog_controls_are_non_generic"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "browse_select": {
+        "legacyEventCount": 118,
+        "legacyDynamicElementCount": 69,
+        "mappedCurrentIds": [
+          "action:tab-gear.inventory",
+          "action:tab-combat.weapons",
+          "action:tab-contacts.contacts"
+        ],
+        "availableCurrentIds": [
+          "action:tab-gear.inventory",
+          "action:tab-combat.weapons",
+          "action:tab-contacts.contacts"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "cancel_close": {
+        "legacyEventCount": 61,
+        "legacyDynamicElementCount": 159,
+        "mappedCurrentIds": [
+          "dialog-action:cancel",
+          "dialog-action:close"
+        ],
+        "availableCurrentIds": [
+          "dialog-action:cancel",
+          "dialog-action:close"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "character_creation": {
+        "legacyEventCount": 376,
+        "legacyDynamicElementCount": 164,
+        "mappedCurrentIds": [
+          "command:new_character",
+          "action:tab-info.attributes",
+          "action:tab-skills.skills"
+        ],
+        "availableCurrentIds": [
+          "command:new_character",
+          "action:tab-info.attributes",
+          "action:tab-skills.skills"
+        ],
+        "proofMarkers": [
+          "Runtime_backed_file_menu_new_character_opens_creation_dialog",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "combat": {
+        "legacyEventCount": 181,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "ui:combat_reload",
+          "ui:combat_damage_track"
+        ],
+        "availableCurrentIds": [
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "ui:combat_reload",
+          "ui:combat_damage_track"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "confirm_submit": {
+        "legacyEventCount": 105,
+        "legacyDynamicElementCount": 34,
+        "mappedCurrentIds": [
+          "dialog-action:ok",
+          "dialog-action:apply",
+          "dialog-action:save_global_settings",
+          "dialog-action:create_character"
+        ],
+        "availableCurrentIds": [
+          "dialog-action:ok",
+          "dialog-action:apply",
+          "dialog-action:create_character"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "contacts": {
+        "legacyEventCount": 23,
+        "legacyDynamicElementCount": 4,
+        "mappedCurrentIds": [
+          "ui:contact_add",
+          "ui:contact_edit",
+          "ui:contact_remove",
+          "ui:contact_connection"
+        ],
+        "availableCurrentIds": [
+          "ui:contact_add",
+          "ui:contact_edit",
+          "ui:contact_remove",
+          "ui:contact_connection"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "delete_remove": {
+        "legacyEventCount": 5,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:delete_entry",
+          "ui:gear_delete",
+          "ui:quality_delete"
+        ],
+        "availableCurrentIds": [
+          "ui:delete_entry",
+          "ui:gear_delete",
+          "ui:quality_delete"
+        ],
+        "proofMarkers": [
+          "HandleUiControlAsync_all_catalog_controls_are_non_generic"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "edit_update": {
+        "legacyEventCount": 11,
+        "legacyDynamicElementCount": 1,
+        "mappedCurrentIds": [
+          "ui:edit_entry",
+          "ui:gear_edit",
+          "ui:contact_edit"
+        ],
+        "availableCurrentIds": [
+          "ui:edit_entry",
+          "ui:gear_edit",
+          "ui:contact_edit"
+        ],
+        "proofMarkers": [
+          "HandleUiControlAsync_all_catalog_controls_are_non_generic"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_exit": {
+        "legacyEventCount": 1,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "command:exit"
+        ],
+        "availableCurrentIds": [
+          "command:exit"
+        ],
+        "proofMarkers": [
+          "ExecuteCommandAsync_all_catalog_commands_are_handled"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_new": {
+        "legacyEventCount": 4,
+        "legacyDynamicElementCount": 3,
+        "mappedCurrentIds": [
+          "command:new_character",
+          "command:new_critter"
+        ],
+        "availableCurrentIds": [
+          "command:new_character",
+          "command:new_critter"
+        ],
+        "proofMarkers": [
+          "Runtime_backed_file_menu_new_character_opens_creation_dialog",
+          "ExecuteCommandAsync_all_catalog_commands_are_handled"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_open": {
+        "legacyEventCount": 54,
+        "legacyDynamicElementCount": 18,
+        "mappedCurrentIds": [
+          "command:open_character",
+          "command:open_for_printing",
+          "command:open_for_export"
+        ],
+        "availableCurrentIds": [
+          "command:open_character",
+          "command:open_for_printing",
+          "command:open_for_export"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_print_export": {
+        "legacyEventCount": 25,
+        "legacyDynamicElementCount": 8,
+        "mappedCurrentIds": [
+          "command:print_character",
+          "command:export_character",
+          "command:print_multiple",
+          "command:print_setup"
+        ],
+        "availableCurrentIds": [
+          "command:print_character",
+          "command:export_character",
+          "command:print_multiple",
+          "command:print_setup"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "file_save": {
+        "legacyEventCount": 9,
+        "legacyDynamicElementCount": 12,
+        "mappedCurrentIds": [
+          "command:save_character",
+          "command:save_character_as"
+        ],
+        "availableCurrentIds": [
+          "command:save_character",
+          "command:save_character_as"
+        ],
+        "proofMarkers": [
+          "ExecuteCommandAsync_all_catalog_commands_are_handled"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "help_external": {
+        "legacyEventCount": 10,
+        "legacyDynamicElementCount": 8,
+        "mappedCurrentIds": [
+          "command:wiki",
+          "command:discord",
+          "command:revision_history",
+          "command:dumpshock",
+          "command:about",
+          "command:report_bug"
+        ],
+        "availableCurrentIds": [
+          "command:wiki",
+          "command:discord",
+          "command:revision_history",
+          "command:dumpshock",
+          "command:about",
+          "command:report_bug"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "inventory_progression": {
+        "legacyEventCount": 143,
+        "legacyDynamicElementCount": 27,
+        "mappedCurrentIds": [
+          "ui:gear_add",
+          "ui:gear_edit",
+          "ui:gear_delete",
+          "ui:create_entry",
+          "action:tab-gear.inventory"
+        ],
+        "availableCurrentIds": [
+          "ui:gear_add",
+          "ui:gear_edit",
+          "ui:gear_delete",
+          "ui:create_entry",
+          "action:tab-gear.inventory"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "magic_matrix": {
+        "legacyEventCount": 44,
+        "legacyDynamicElementCount": 2,
+        "mappedCurrentIds": [
+          "ui:spell_add",
+          "ui:adept_power_add",
+          "ui:complex_form_add",
+          "ui:spirit_add",
+          "ui:matrix_program_add"
+        ],
+        "availableCurrentIds": [
+          "ui:spell_add",
+          "ui:adept_power_add",
+          "ui:complex_form_add",
+          "ui:spirit_add",
+          "ui:matrix_program_add"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "notes": {
+        "legacyEventCount": 60,
+        "legacyDynamicElementCount": 39,
+        "mappedCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "availableCurrentIds": [
+          "ui:open_notes",
+          "action:tab-notes.metadata"
+        ],
+        "proofMarkers": [
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "qualities": {
+        "legacyEventCount": 3,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:quality_add",
+          "ui:quality_delete",
+          "action:tab-qualities.qualities"
+        ],
+        "availableCurrentIds": [
+          "ui:quality_add",
+          "ui:quality_delete",
+          "action:tab-qualities.qualities"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "search_filter_category": {
+        "legacyEventCount": 421,
+        "legacyDynamicElementCount": 61,
+        "mappedCurrentIds": [
+          "ui:gear_add",
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "command:master_index"
+        ],
+        "availableCurrentIds": [
+          "ui:gear_add",
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "command:master_index"
+        ],
+        "proofMarkers": [
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "selection_dialog": {
+        "legacyEventCount": 3,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:gear_add",
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "ui:cyberware_add"
+        ],
+        "availableCurrentIds": [
+          "ui:gear_add",
+          "ui:combat_add_weapon",
+          "ui:combat_add_armor",
+          "ui:cyberware_add"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "session_dashboard": {
+        "legacyEventCount": 25,
+        "legacyDynamicElementCount": 29,
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "command:character_roster",
+          "action:tab-info.summary"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "command:character_roster",
+          "action:tab-info.summary"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_workspace_action_summary_matches"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "settings_character": {
+        "legacyEventCount": 173,
+        "legacyDynamicElementCount": 24,
+        "mappedCurrentIds": [
+          "command:character_settings"
+        ],
+        "availableCurrentIds": [
+          "command:character_settings"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "settings_global": {
+        "legacyEventCount": 69,
+        "legacyDynamicElementCount": 27,
+        "mappedCurrentIds": [
+          "command:global_settings"
+        ],
+        "availableCurrentIds": [
+          "command:global_settings"
+        ],
+        "proofMarkers": [
+          "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live",
+          "Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "skills": {
+        "legacyEventCount": 14,
+        "legacyDynamicElementCount": 1,
+        "mappedCurrentIds": [
+          "ui:skill_add",
+          "ui:skill_specialize",
+          "ui:skill_remove",
+          "ui:skill_group",
+          "action:tab-skills.skills"
+        ],
+        "availableCurrentIds": [
+          "ui:skill_add",
+          "ui:skill_specialize",
+          "ui:skill_remove",
+          "ui:skill_group",
+          "action:tab-skills.skills"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "source_reference": {
+        "legacyEventCount": 41,
+        "legacyDynamicElementCount": 29,
+        "mappedCurrentIds": [
+          "ui:show_source",
+          "ui:gear_source",
+          "ui:magic_source"
+        ],
+        "availableCurrentIds": [
+          "ui:show_source",
+          "ui:gear_source",
+          "ui:magic_source"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "tools_utilities": {
+        "legacyEventCount": 51,
+        "legacyDynamicElementCount": 37,
+        "mappedCurrentIds": [
+          "command:dice_roller",
+          "command:master_index",
+          "command:character_roster",
+          "command:global_settings",
+          "command:character_settings"
+        ],
+        "availableCurrentIds": [
+          "command:dice_roller",
+          "command:master_index",
+          "command:character_roster",
+          "command:global_settings",
+          "command:character_settings"
+        ],
+        "proofMarkers": [
+          "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "vehicles": {
+        "legacyEventCount": 41,
+        "legacyDynamicElementCount": 0,
+        "mappedCurrentIds": [
+          "ui:vehicle_add",
+          "ui:vehicle_edit",
+          "ui:vehicle_delete",
+          "ui:vehicle_mod_add"
+        ],
+        "availableCurrentIds": [
+          "ui:vehicle_add",
+          "ui:vehicle_edit",
+          "ui:vehicle_delete",
+          "ui:vehicle_mod_add"
+        ],
+        "proofMarkers": [
+          "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      },
+      "window_management": {
+        "legacyEventCount": 7,
+        "legacyDynamicElementCount": 3,
+        "mappedCurrentIds": [
+          "command:new_window",
+          "command:close_window",
+          "command:close_all"
+        ],
+        "availableCurrentIds": [
+          "command:new_window",
+          "command:close_window",
+          "command:close_all"
+        ],
+        "proofMarkers": [
+          "ExecuteCommandAsync_all_catalog_commands_are_handled"
+        ],
+        "missingProofMarkers": [],
+        "status": "pass"
+      }
+    }
+  },
+  "legacyElementDispositionReview": {
+    "status": "pass",
+    "summary": "Every extracted Chummer5a UI event hook and dynamic interactive element has an individual Chummer6 counterpart disposition.",
+    "legacyElementDispositionCount": 2856,
+    "missingLegacyElementDispositionCount": 0,
+    "familyFallbackLegacyElementDispositionCount": 0,
+    "missingLegacyElementDispositions": []
+  },
+  "dynamicElementReview": {
+    "status": "pass",
+    "summary": "Dynamically created legacy and current interactive elements are included in the parity evidence.",
+    "legacyDynamicInteractiveElementCount": 765,
+    "currentDynamicInteractiveElementCount": 43,
+    "currentNamedAxamlInteractiveElementCount": 37
+  },
+  "verifyWiringReview": {
+    "status": "pass",
+    "summary": "Legacy UI element parity guard is wired into the standard verify path.",
+    "verifyMarker": "checking Chummer5a legacy UI element parity guard",
+    "verifyInvocation": "bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh"
+  },
+  "b14ConsumptionReview": {
+    "status": "pass",
+    "summary": "B14 consumes the legacy UI element parity receipt.",
+    "markers": {
+      "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json": true,
+      "chummer5a-legacy-ui-element-parity-check.sh": true,
+      "legacy_ui_element_parity_receipt": true
+    }
+  },
+  "executionReview": {
+    "status": "pass",
+    "summary": "Legacy UI element parity proof tests executed cleanly.",
+    "reasons": [],
+    "buildExitCode": 0,
+    "testResult": {
+      "exitCode": 0,
+      "noMatches": false,
+      "outputTail": "Test run for /docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:    14, Skipped:     0, Total:    14, Duration: 8 s - Chummer.Tests.dll (net10.0)"
+    }
+  }
+}

@@ -65,6 +65,7 @@
 	    <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
 	    <Compile Include="Compliance\GeneratedDialogElementParityComplianceTests.cs" />
 	    <Compile Include="Compliance\InteractiveControlInventoryComplianceTests.cs" />
+	    <Compile Include="Compliance\LegacyUiElementParityComplianceTests.cs" />
 	    <Compile Include="Compliance\MigrationComplianceTests.cs" />
     <Compile Include="Compliance\Next90M103VeteranCertificationGuardTests.cs" />
     <Compile Include="Compliance\Next90M104ExplainReceiptsGuardTests.cs" />

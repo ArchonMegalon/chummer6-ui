@@ -33,6 +33,9 @@ internal static class MainWindowShellFrameProjector
                 "global_settings",
                 "character_settings",
                 "update",
+                "translator",
+                "xml_editor",
+                "hero_lab_importer",
                 "master_index",
                 "character_roster",
                 "report_bug"
