@@ -23,7 +23,7 @@ public sealed record DesktopPreferenceState(
         Theme: "classic",
         Language: "en-us",
         CompactMode: false,
-        CharacterPriority: "SumToTen",
+        CharacterPriority: "Priority",
         KarmaNuyenRatio: 2,
         HouseRulesEnabled: false,
         CharacterNotes: string.Empty,
