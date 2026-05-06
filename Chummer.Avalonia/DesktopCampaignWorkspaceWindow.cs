@@ -12,38 +12,28 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopCampaignWorkspaceWindow : Window
 {
-    private const string CampaignArtifactLaunchSummary = "Artifact launch: open the campaign primer or mission briefing directly from this desktop campaign route instead of browsing the shelf first.";
-    private const string CampaignConsequenceVisibilitySummary = "Campaign consequences: downtime, heat, faction, contact, reputation, and aftermath state stay visible on the desktop campaign route before the next session.";
-    private const string CampaignMemoryStaleStateSummary = "Campaign memory stale-state check: desktop compares the server-generated campaign memory packet with the local workspace timestamp and keeps both visible when they disagree.";
-    private const string CampaignNextSessionReturnActionSummary = "Next-session return actions: review Campaign Workspace, open the current workspace, review devices/access, or open Workspace Support before continuing play.";
-    private const string GmPrepPacketSurfaceSummary = "GM prep packets stay tied to the live campaign memory packet, publication packet, and primer/briefing artifacts before the table sees the next handoff.";
-    private const string RosterMovementSurfaceSummary = "Roster movement keeps travel posture, device access, workspace roster choices, and follow-through visible before any runner is moved between campaign contexts.";
-
-    private enum DesktopCampaignWorkspaceSurface
-    {
-        Overview,
-        GmPrepPackets,
-        RosterMovement
-    }
-
+    private const string RestoreConflictChoiceOrder = "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.";
+    private const string PrimaryDesktopRouteDecisionGate = "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement. Decision gate: Chummer will not replace local work automatically; keep local work visible, save local work when available, review Campaign Workspace, or open Workspace Support.";
+    private const string RestoreDecisionOrderSummary = "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.";
+    private const string RestoreLocalAuthoritySummary = "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.";
+    private const string RestoreReplacementGuardSummary = "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.";
+    private const string RestoreSupportHandoffSummary = "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.";
+    private const string RestoreDecisionInitialStatus = "Decision gate: no restore replacement is pending; local work stays visible until you choose Campaign Workspace review or Workspace Support.";
     private DesktopInstallLinkingState _installState;
     private readonly DesktopPreferenceState _preferences;
     private IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
     private DesktopHomeCampaignProjection _campaignProjection;
     private DesktopHomeCampaignServerPlane? _campaignServerPlane;
     private DesktopHomeSupportProjection _supportProjection;
+    private string _restoreDecisionStatus = RestoreDecisionInitialStatus;
     private readonly TextBlock _introText;
     private readonly TextBlock _statusText;
     private readonly TextBlock _readinessText;
     private readonly TextBlock _restoreText;
-    private readonly TextBlock _gmPrepText;
-    private readonly TextBlock _rosterMovementText;
     private readonly TextBlock _supportText;
     private readonly TextBlock _workspaceText;
     private readonly StackPanel _readinessActionsRow;
     private readonly StackPanel _restoreActionsRow;
-    private readonly StackPanel _gmPrepActionsRow;
-    private readonly StackPanel _rosterMovementActionsRow;
     private readonly StackPanel _supportActionsRow;
     private readonly StackPanel _workspaceActionsRow;
 
@@ -53,8 +43,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         IReadOnlyList<WorkspaceListItem> recentWorkspaces,
         DesktopHomeCampaignProjection campaignProjection,
         DesktopHomeCampaignServerPlane? campaignServerPlane,
-        DesktopHomeSupportProjection supportProjection,
-        DesktopCampaignWorkspaceSurface initialSurface)
+        DesktopHomeSupportProjection supportProjection)
     {
         _installState = installState;
         _preferences = preferences;
@@ -95,18 +84,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
-        _gmPrepText = new TextBlock
-        {
-            Text = BuildGmPrepBody(),
-            TextWrapping = TextWrapping.Wrap
-        };
-
-        _rosterMovementText = new TextBlock
-        {
-            Text = BuildRosterMovementBody(),
-            TextWrapping = TextWrapping.Wrap
-        };
-
         _supportText = new TextBlock
         {
             Text = BuildSupportBody(),
@@ -121,60 +98,43 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
         _readinessActionsRow = CreateActionRow(CreateReadinessActions());
         _restoreActionsRow = CreateActionRow(CreateRestoreActions());
-        _gmPrepActionsRow = CreateActionRow(CreateGmPrepActions());
-        _rosterMovementActionsRow = CreateActionRow(CreateRosterMovementActions());
         _supportActionsRow = CreateActionRow(CreateSupportActions());
         _workspaceActionsRow = CreateActionRow(CreateWorkspaceActions());
-
-        Border readinessSection = CreateSection(
-            S("desktop.campaign.section.runboard"),
-            _readinessText,
-            _readinessActionsRow);
-        Border restoreSection = CreateSection(
-            S("desktop.campaign.section.restore"),
-            _restoreText,
-            _restoreActionsRow);
-        Border gmPrepSection = CreateSection(
-            "GM prep packets",
-            _gmPrepText,
-            _gmPrepActionsRow);
-        Border rosterMovementSection = CreateSection(
-            "Roster movement",
-            _rosterMovementText,
-            _rosterMovementActionsRow);
-        Border supportSection = CreateSection(
-            S("desktop.campaign.section.support"),
-            _supportText,
-            _supportActionsRow);
-        Border workspaceSection = CreateSection(
-            S("desktop.campaign.section.recent_workspaces"),
-            _workspaceText,
-            _workspaceActionsRow);
 
         Content = new ScrollViewer
         {
             Content = new Border
             {
-                Padding = new Thickness(16),
+                Padding = new Thickness(22),
                 Child = new StackPanel
                 {
-                    Spacing = 12,
+                    Spacing = 16,
                     Children =
                     {
                         new TextBlock
                         {
                             Text = S("desktop.campaign.heading"),
-                            FontSize = 20,
+                            FontSize = 24,
                             FontWeight = FontWeight.SemiBold
                         },
                         _introText,
                         _statusText,
-                        readinessSection,
-                        restoreSection,
-                        gmPrepSection,
-                        rosterMovementSection,
-                        supportSection,
-                        workspaceSection,
+                        CreateSection(
+                            S("desktop.campaign.section.runboard"),
+                            _readinessText,
+                            _readinessActionsRow),
+                        CreateSection(
+                            S("desktop.campaign.section.restore"),
+                            _restoreText,
+                            _restoreActionsRow),
+                        CreateSection(
+                            S("desktop.campaign.section.support"),
+                            _supportText,
+                            _supportActionsRow),
+                        CreateSection(
+                            S("desktop.campaign.section.recent_workspaces"),
+                            _workspaceText,
+                            _workspaceActionsRow),
                         new StackPanel
                         {
                             Orientation = Orientation.Horizontal,
@@ -190,37 +150,18 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
                 }
             }
         };
-
-        Control? focusSection = initialSurface switch
-        {
-            DesktopCampaignWorkspaceSurface.GmPrepPackets => gmPrepSection,
-            DesktopCampaignWorkspaceSurface.RosterMovement => rosterMovementSection,
-            _ => null
-        };
-        focusSection?.BringIntoView();
     }
 
     public static async Task ShowAsync(Window owner, string headId)
-        => await ShowSurfaceAsync(owner, headId, DesktopCampaignWorkspaceSurface.Overview).ConfigureAwait(true);
-
-    public static Task ShowGmPrepAsync(Window owner, string headId)
-        => ShowSurfaceAsync(owner, headId, DesktopCampaignWorkspaceSurface.GmPrepPackets);
-
-    public static Task ShowRosterMovementAsync(Window owner, string headId)
-        => ShowSurfaceAsync(owner, headId, DesktopCampaignWorkspaceSurface.RosterMovement);
-
-    private static async Task ShowSurfaceAsync(Window owner, string headId, DesktopCampaignWorkspaceSurface initialSurface)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopCampaignWorkspaceWindow dialog = await CreateAsync(headId, initialSurface).ConfigureAwait(true);
+        DesktopCampaignWorkspaceWindow dialog = await CreateAsync(headId).ConfigureAwait(true);
         await dialog.ShowDialog(owner);
     }
 
-    private static async Task<DesktopCampaignWorkspaceWindow> CreateAsync(
-        string headId,
-        DesktopCampaignWorkspaceSurface initialSurface)
+    private static async Task<DesktopCampaignWorkspaceWindow> CreateAsync(string headId)
     {
         IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
             ?? throw new InvalidOperationException("Desktop campaign workspace requires an IChummerClient instance."));
@@ -241,8 +182,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             workspaces,
             campaignProjection,
             campaignServerPlane,
-            supportProjection,
-            initialSurface);
+            supportProjection);
     }
 
     private static DesktopPreferenceState ReadPreferences(string headId)
@@ -388,10 +328,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             lines.Add($"Publication lane: {_campaignServerPlane.PublicationSummary}");
         }
 
-        lines.Add(BuildCampaignConsequenceVisibilitySummary());
-        lines.Add(BuildCampaignNextSessionReturnActionSummary());
-        lines.Add(CampaignArtifactLaunchSummary);
-
         foreach (string highlight in _campaignProjection.ReadinessHighlights)
         {
             lines.Add(highlight);
@@ -411,13 +347,20 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         [
             _campaignProjection.RestoreSummary,
             _campaignProjection.DeviceRoleSummary,
-            BuildCampaignConsequenceVisibilitySummary(),
-            BuildCampaignRestoreContinuitySummary(),
-            BuildCampaignMemoryVisibilitySummary(),
-            BuildCampaignNextSessionReturnActionSummary(),
+            BuildRestoreContinuityChoiceSummary(),
             BuildRestoreStaleStateVisibilitySummary(),
-            "Review before continuing: keep local work visible until the restore, stale-state, and conflict choices below are resolved.",
-            BuildRestoreConflictChoiceSummary()
+            BuildRestorePrimaryRouteDecisionGateSummary(),
+            BuildRestoreDecisionOrderSummary(),
+            BuildRestoreLocalAuthoritySummary(),
+            BuildRestoreReplacementGuardSummary(),
+            BuildRestoreContinuityDecisionSummary(),
+            BuildRestoreConflictChoiceSummary(),
+            BuildRestoreSupportHandoffSummary(),
+            BuildCampaignConsequenceSummary(),
+            BuildCampaignConsequenceEvidenceSummary(),
+            BuildCampaignNextSessionReturnSummary(),
+            BuildCampaignNextSessionReturnActionSummary(),
+            "Review campaign consequences before continuing this restore route."
         ];
 
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.TravelModeSummary))
@@ -452,71 +395,66 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             lines.Add(S("desktop.campaign.restore.no_workspace"));
         }
 
+        if (_supportProjection.NeedsAttention)
+        {
+            lines.Add("Support choice: open the tracked case before replacing local work or accepting a newer server snapshot.");
+        }
+
         return string.Join("\n", lines);
     }
 
-    private string BuildGmPrepBody()
+    private string BuildCampaignConsequenceSummary()
+        => ResolveCampaignMemorySummary();
+
+    private string BuildCampaignConsequenceEvidenceSummary()
+        => ResolveCampaignMemoryEvidence();
+
+    private string BuildCampaignNextSessionReturnSummary()
+        => ResolveCampaignMemoryReturnSummary();
+
+    private string BuildCampaignNextSessionReturnActionSummary()
+        => ResolveCampaignMemoryNextSafeAction();
+
+    private string ResolveCampaignMemorySummary()
     {
-        List<string> lines =
-        [
-            GmPrepPacketSurfaceSummary,
-            $"GM prep packets: {_campaignProjection.NextSafeAction}",
-            $"Prep publication packet: {FirstNonBlank(_campaignServerPlane?.PublicationSummary, CampaignArtifactLaunchSummary)}",
-            $"GM prep memory packet: {FirstNonBlank(_campaignServerPlane?.CampaignMemorySummary, BuildCampaignMemoryVisibilitySummary())}",
-            BuildCampaignConsequenceVisibilitySummary(),
-            BuildCampaignNextSessionReturnActionSummary()
-        ];
-
-        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.SessionReadinessSummary))
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemorySummary))
         {
-            lines.Add($"Session readiness: {_campaignServerPlane.SessionReadinessSummary}");
+            return $"Campaign consequence summary: {_campaignServerPlane.CampaignMemorySummary}";
         }
 
-        if (_campaignProjection.ReadinessHighlights.Count > 0)
-        {
-            lines.AddRange(_campaignProjection.ReadinessHighlights.Take(4));
-        }
-
-        if (_campaignProjection.Watchouts.Count > 0)
-        {
-            lines.AddRange(_campaignProjection.Watchouts.Take(4).Select(watchout => $"GM prep watchout: {watchout}"));
-        }
-
-        return string.Join("\n", lines);
+        return "Campaign consequence summary: no consequence summary is currently projected.";
     }
 
-    private string BuildRosterMovementBody()
+    private string ResolveCampaignMemoryReturnSummary()
     {
-        string workspaceChoices = _recentWorkspaces.Count == 0
-            ? "No local workspace roster is loaded yet."
-            : string.Join(
-                "; ",
-                _recentWorkspaces
-                    .Take(4)
-                    .Select(static workspace => $"{workspace.Summary.Name} ({workspace.RulesetId})"));
-
-        List<string> lines =
-        [
-            RosterMovementSurfaceSummary,
-            $"Roster movement: {FirstNonBlank(_campaignServerPlane?.RosterSummary, _campaignProjection.RestoreSummary)}",
-            $"Travel posture: {FirstNonBlank(_campaignServerPlane?.TravelModeSummary, "No server travel posture is published yet.")}",
-            $"Roster movement inventory: {FirstNonBlank(_campaignServerPlane?.TravelPrefetchInventorySummary, _campaignProjection.DeviceRoleSummary)}",
-            $"Workspace roster choices: {workspaceChoices}",
-            $"Roster movement follow-through: {BuildRestoreContinuityChoiceSummary()}",
-            BuildCampaignMemoryVisibilitySummary(),
-            BuildRestoreStaleStateVisibilitySummary()
-        ];
-
-        foreach (string notice in _campaignServerPlane?.DecisionNotices ?? [])
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemoryReturnSummary))
         {
-            lines.Add($"Roster decision notice: {notice}");
+            return $"Campaign next-session return: {_campaignServerPlane.CampaignMemoryReturnSummary}";
         }
 
-        return string.Join("\n", lines);
+        return "Campaign next-session return: no return summary is currently projected.";
     }
 
-    private string BuildCampaignRestoreContinuitySummary()
-        => BuildRestoreContinuityChoiceSummary();
+    private string ResolveCampaignMemoryEvidence()
+    {
+        string? evidenceLine = _campaignProjection.ReadinessHighlights
+            .FirstOrDefault(static highlight => highlight.StartsWith("Campaign memory evidence:", StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(evidenceLine))
+        {
+            return evidenceLine.Replace("Campaign memory evidence", "Campaign consequence proof", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return "Campaign consequence proof: no consequence evidence is available.";
+    }
+
+    private string ResolveCampaignMemoryNextSafeAction()
+    {
+        string? safeAction = _campaignProjection.ReadinessHighlights
+            .FirstOrDefault(static highlight => highlight.StartsWith("Campaign-ready lane:", StringComparison.OrdinalIgnoreCase));
+        return string.IsNullOrWhiteSpace(safeAction)
+            ? "Review next-session return action: no next-session return action is currently projected."
+            : $"Review next-session return action: {safeAction}";
+    }
 
     private string BuildRestoreContinuityChoiceSummary()
     {
@@ -527,7 +465,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
         if (_recentWorkspaces.Count > 0)
         {
-            return "Restore choice: continue the current local workspace, review devices/access, or use workspace support before replacing local work.";
+            return "Restore choice: continue from the newest local workspace, review devices/access, or use workspace support before replacing local work.";
         }
 
         return DesktopInstallLinkingRuntime.IsClaimed(_installState)
@@ -542,49 +480,63 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             return "Stale state: server continuity is unavailable, so the desktop is showing the last local workspace list and claimed-install actions.";
         }
 
-        return "Stale state: server continuity is available, but local workspace choices stay visible before any restore replaces desktop work.";
-    }
-
-    private string BuildCampaignConsequenceVisibilitySummary()
-    {
-        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemorySummary))
+        if (IsServerContinuityOlderThanLocalWorkspace())
         {
-            return $"{CampaignConsequenceVisibilitySummary} Live memory packet: {_campaignServerPlane.CampaignMemorySummary}";
+            DateTimeOffset latestLocalWorkspaceUpdate = _recentWorkspaces
+                .Select(static workspace => workspace.LastUpdatedUtc.ToUniversalTime())
+                .DefaultIfEmpty(DateTimeOffset.MinValue)
+                .Max();
+            return $"Stale state: local workspace changed at {latestLocalWorkspaceUpdate:yyyy-MM-dd HH:mm} UTC after server continuity {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC; local workspace choices stay visible before any restore replaces desktop work.";
         }
 
-        return $"{CampaignConsequenceVisibilitySummary} Live memory packet is not available yet, so the local workspace remains the visible source of truth.";
+        return $"Stale state: server continuity is current as of {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC; local workspace choices stay visible before any restore replaces desktop work.";
     }
 
-    private string BuildCampaignMemoryVisibilitySummary()
+    private bool IsServerContinuityOlderThanLocalWorkspace()
     {
-        if (_campaignServerPlane is null)
+        if (_campaignServerPlane is null || _recentWorkspaces.Count == 0)
         {
-            return $"{CampaignMemoryStaleStateSummary} Server continuity is unavailable, so the desktop keeps local workspace choices visible.";
+            return false;
         }
 
-        return $"{CampaignMemoryStaleStateSummary} Server memory packet refreshed at {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
+        DateTimeOffset latestLocalWorkspaceUpdate = _recentWorkspaces
+            .Select(static workspace => workspace.LastUpdatedUtc.ToUniversalTime())
+            .DefaultIfEmpty(DateTimeOffset.MinValue)
+            .Max();
+        return latestLocalWorkspaceUpdate > _campaignServerPlane.GeneratedAtUtc.ToUniversalTime();
     }
 
-    private string BuildCampaignNextSessionReturnActionSummary()
-    {
-        string returnSummary = !string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemoryReturnSummary)
-            ? _campaignServerPlane.CampaignMemoryReturnSummary
-            : _campaignProjection.NextSafeAction;
-        return $"{CampaignNextSessionReturnActionSummary} Return lane: {returnSummary}";
-    }
+    private string BuildRestoreContinuityDecisionSummary()
+        => $"Decision order: keep local work visible, save local work when available, review Campaign Workspace, or open Workspace Support before accepting restore replacement. {_restoreDecisionStatus}";
+
+    private static string BuildRestorePrimaryRouteDecisionGateSummary()
+        => PrimaryDesktopRouteDecisionGate;
+
+    private static string BuildRestoreDecisionOrderSummary()
+        => RestoreDecisionOrderSummary;
+
+    private static string BuildRestoreLocalAuthoritySummary()
+        => RestoreLocalAuthoritySummary;
+
+    private static string BuildRestoreReplacementGuardSummary()
+        => RestoreReplacementGuardSummary;
+
+    private static string BuildRestoreSupportHandoffSummary()
+        => RestoreSupportHandoffSummary;
 
     private string BuildRestoreConflictChoiceSummary()
     {
-        if (_campaignProjection.Watchouts.Count > 0)
+        if (_campaignProjection.Watchouts.Count == 0)
         {
-            return string.Join(
-                "\n",
-                new[] { "Conflict choices: keep local work, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement." }
-                    .Concat(_campaignProjection.Watchouts.Take(4).Select(watchout =>
-                        $"Conflict choice: keep local work, restore the claimed-device copy, or route support before merging - {watchout}")));
+            return $"{RestoreConflictChoiceOrder} No campaign conflicts are waiting.";
         }
 
-        return "Conflict choices: keep local work, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.";
+        IEnumerable<string> watchoutLines = _campaignProjection.Watchouts
+            .Take(4)
+            .Select(watchout => $"Review before continuing: {watchout}");
+        return string.Join(
+            "\n",
+            new[] { RestoreConflictChoiceOrder }.Concat(watchoutLines));
     }
 
     private string BuildSupportBody()
@@ -618,11 +570,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             lines.Add(S("desktop.campaign.support.no_watchouts"));
         }
 
-        if (_supportProjection.NeedsAttention)
-        {
-            lines.Add("Support choice: open the tracked case before replacing local work or accepting a newer server snapshot.");
-        }
-
         foreach (string watchout in _campaignProjection.Watchouts)
         {
             lines.Add(F("desktop.home.watchout", watchout));
@@ -652,44 +599,26 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     {
         if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
         {
-            List<Button> actions =
+            return
             [
                 CreateButton(S("desktop.home.button.open_current_workspace"), OpenLeadWorkspace, isPrimary: true),
                 CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
             ];
-
-            if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
-            {
-                actions.Insert(1, CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
-                actions.Insert(2, CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
-            }
-
-            return actions;
         }
 
         if (_recentWorkspaces.Count > 0)
         {
-            List<Button> actions =
+            return
             [
                 CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true),
                 CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
             ];
-
-            if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
-            {
-                actions.Insert(1, CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
-                actions.Insert(2, CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
-            }
-
-            return actions;
         }
 
         return DesktopInstallLinkingRuntime.IsClaimed(_installState)
             ?
             [
                 CreateButton(S("desktop.home.button.open_campaign_followthrough"), OpenCampaignFollowThroughAsync, isPrimary: true),
-                CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact),
-                CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact),
                 CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
             ]
             :
@@ -701,56 +630,83 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
     private IReadOnlyList<Button> CreateRestoreActions()
     {
-        List<Button> actions =
-        [
-            DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true)
-                : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
-            CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
-        ];
+        List<Button> actions = [];
+
+        actions.Add(CreateButton("Keep Local Work", KeepLocalWorkVisible, isPrimary: _recentWorkspaces.Count == 0 && string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)));
+
+        if (ResolveSupportWorkspace() is not null)
+        {
+            actions.Add(CreateButton("Save Local Work", SaveLocalWorkBeforeRestoreAsync));
+        }
+
+        if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
+        {
+            actions.Add(CreateButton(S("desktop.home.button.open_current_workspace"), OpenLeadWorkspace, isPrimary: true));
+        }
+        else if (_recentWorkspaces.Count > 0)
+        {
+            actions.Add(CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true));
+        }
+        else if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        {
+            actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true));
+        }
+        else
+        {
+            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
+        }
+
+        if (DesktopInstallLinkingRuntime.IsClaimed(_installState)
+            && (_recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)))
+        {
+            actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync));
+        }
+
+        actions.Add(_recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
+            ? CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
+            : CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport));
+        actions.Add(CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync));
 
         if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), () => DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_installState)));
+            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal()));
         }
 
-        if (_campaignProjection.Watchouts.Count > 0)
+        return actions;
+    }
+
+    private bool KeepLocalWorkVisible()
+    {
+        _restoreDecisionStatus = "Decision result: local work remains visible; no server restore replaced desktop state.";
+        _restoreText.Text = BuildRestoreBody();
+        return true;
+    }
+
+    private async Task SaveLocalWorkBeforeRestoreAsync()
+    {
+        WorkspaceListItem? workspace = ResolveSupportWorkspace();
+        if (workspace is null)
         {
-            actions.Add(CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport));
+            _restoreDecisionStatus = "Decision result: no local workspace is available to save before restore review.";
+            _restoreText.Text = BuildRestoreBody();
+            return;
         }
 
-        return actions;
-    }
+        try
+        {
+            IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
+                ?? throw new InvalidOperationException("Desktop campaign workspace save requires an IChummerClient instance."));
+            CommandResult<WorkspaceSaveReceipt> result = await client.SaveAsync(workspace.Id, CancellationToken.None).ConfigureAwait(true);
+            _restoreDecisionStatus = result.Success
+                ? $"Decision result: saved local workspace {workspace.Id.Value} before restore or conflict review; no server restore replaced desktop state."
+                : $"Decision result: local save for workspace {workspace.Id.Value} needs attention before restore review; no server restore replaced desktop state.";
+        }
+        catch
+        {
+            _restoreDecisionStatus = $"Decision result: local save for workspace {workspace.Id.Value} failed; keep local work visible or open Workspace Support before accepting restore replacement.";
+        }
 
-    private IReadOnlyList<Button> CreateGmPrepActions()
-    {
-        List<Button> actions =
-        [
-            DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact, isPrimary: true)
-                : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
-            CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact),
-            CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync),
-            CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
-        ];
-
-        return actions;
-    }
-
-    private IReadOnlyList<Button> CreateRosterMovementActions()
-    {
-        List<Button> actions =
-        [
-            !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
-                ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenLeadWorkspace, isPrimary: true)
-                : _recentWorkspaces.Count > 0
-                    ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true)
-                    : CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true),
-            CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync),
-            CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
-        ];
-
-        return actions;
+        _restoreText.Text = BuildRestoreBody();
     }
 
     private IReadOnlyList<Button> CreateSupportActions()
@@ -821,30 +777,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         => _recentWorkspaces.Count > 0
            ? OpenWorkspaceInDesktopShellAsync(_recentWorkspaces[0].Id.Value)
            : Task.CompletedTask;
-
-    private Task OpenCampaignPrimerArtifact()
-        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
-            ? DesktopCampaignArtifactWindow.ShowPrimerAsync(
-                this,
-                _installState,
-                _preferences,
-                _recentWorkspaces,
-                _campaignProjection,
-                _campaignServerPlane,
-                _supportProjection)
-            : Task.CompletedTask;
-
-    private Task OpenMissionBriefingArtifact()
-        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
-            ? DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(
-                this,
-                _installState,
-                _preferences,
-                _recentWorkspaces,
-                _campaignProjection,
-                _campaignServerPlane,
-                _supportProjection)
-            : Task.CompletedTask;
 
     private Task OpenCampaignFollowThroughAsync()
         => !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)
@@ -967,14 +899,10 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         _statusText.Text = BuildStatus();
         _readinessText.Text = BuildReadinessBody();
         _restoreText.Text = BuildRestoreBody();
-        _gmPrepText.Text = BuildGmPrepBody();
-        _rosterMovementText.Text = BuildRosterMovementBody();
         _supportText.Text = BuildSupportBody();
         _workspaceText.Text = BuildWorkspaceSummary();
         ResetActionRow(_readinessActionsRow, CreateReadinessActions());
         ResetActionRow(_restoreActionsRow, CreateRestoreActions());
-        ResetActionRow(_gmPrepActionsRow, CreateGmPrepActions());
-        ResetActionRow(_rosterMovementActionsRow, CreateRosterMovementActions());
         ResetActionRow(_supportActionsRow, CreateSupportActions());
         ResetActionRow(_workspaceActionsRow, CreateWorkspaceActions());
     }
@@ -983,14 +911,14 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     {
         StackPanel content = new()
         {
-            Spacing = 6,
+            Spacing = 10,
             Children =
             {
                 new TextBlock
                 {
                     Text = title,
                     FontWeight = FontWeight.SemiBold,
-                    FontSize = 15
+                    FontSize = 18
                 },
                 body
             }
@@ -1006,8 +934,8 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             Background = new SolidColorBrush(Color.Parse("#F4F6FA")),
             BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(10),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(16),
             Child = content
         };
     }
@@ -1017,7 +945,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         StackPanel actionRow = new()
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6
+            Spacing = 10
         };
 
         foreach (Button action in actions)
@@ -1053,7 +981,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         Button button = new()
         {
             Content = label,
-            MinWidth = 104
+            MinWidth = 120
         };
         if (isPrimary)
         {
@@ -1070,9 +998,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         };
         return button;
     }
-
-    private static string FirstNonBlank(params string?[] values)
-        => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value)) ?? "pending";
 
     private string S(string key)
         => DesktopLocalizationCatalog.GetRequiredString(key, _preferences.Language);

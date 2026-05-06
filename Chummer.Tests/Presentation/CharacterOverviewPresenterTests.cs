@@ -3,7 +3,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System;
 using System.Text;
@@ -26,6 +25,57 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public class CharacterOverviewPresenterTests
 {
+    private static readonly string[] LegacyUiControlIds =
+    [
+        "create_entry",
+        "edit_entry",
+        "delete_entry",
+        "move_up",
+        "move_down",
+        "toggle_free_paid",
+        "show_source",
+        "open_notes",
+        "gear_add",
+        "gear_edit",
+        "gear_delete",
+        "gear_mount",
+        "gear_source",
+        "cyberware_add",
+        "cyberware_edit",
+        "cyberware_delete",
+        "drug_add",
+        "drug_delete",
+        "magic_add",
+        "magic_delete",
+        "magic_bind",
+        "magic_source",
+        "spell_add",
+        "adept_power_add",
+        "complex_form_add",
+        "initiation_add",
+        "spirit_add",
+        "critter_power_add",
+        "matrix_program_add",
+        "skill_add",
+        "skill_specialize",
+        "skill_remove",
+        "skill_group",
+        "combat_add_weapon",
+        "combat_add_armor",
+        "combat_reload",
+        "combat_damage_track",
+        "vehicle_add",
+        "vehicle_edit",
+        "vehicle_delete",
+        "vehicle_mod_add",
+        "contact_add",
+        "contact_edit",
+        "contact_remove",
+        "contact_connection",
+        "quality_add",
+        "quality_delete"
+    ];
+
     [TestMethod]
     public async Task InitializeAsync_loads_command_catalog()
     {
@@ -110,6 +160,10 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.Build);
         Assert.IsNotNull(presenter.State.Movement);
         Assert.IsNotNull(presenter.State.Awakening);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import ready:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import completed");
+        Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
+        Assert.AreEqual("Last portable import", presenter.State.LatestPortabilityActivity?.Title);
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
         Assert.AreEqual("BLUE", presenter.State.Profile.Alias);
     }
@@ -168,6 +222,42 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("profile", presenter.State.ActiveSectionId);
         Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
         StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_new_character_imports_starter_workspace()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync("new_character", CancellationToken.None);
+
+        Assert.IsNotNull(client.LastImportedDocument);
+        Assert.AreEqual(RulesetDefaults.Sr5, client.LastImportedDocument!.RulesetId);
+        Assert.AreEqual(WorkspaceDocumentFormat.NativeXml, client.LastImportedDocument.Format);
+        StringAssert.Contains(client.LastImportedDocument.Content, "<name>New Character</name>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<gameedition>SR5</gameedition>");
+        Assert.AreEqual("new_character", presenter.State.LastCommandId);
+        Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
+        Assert.IsNotNull(presenter.State.Profile);
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_new_critter_imports_starter_critter_workspace()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync("new_critter", CancellationToken.None);
+
+        Assert.IsNotNull(client.LastImportedDocument);
+        Assert.AreEqual(RulesetDefaults.Sr5, client.LastImportedDocument!.RulesetId);
+        StringAssert.Contains(client.LastImportedDocument.Content, "<name>New Critter</name>");
+        Assert.AreEqual("new_critter", presenter.State.LastCommandId);
+        Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
     }
 
     [TestMethod]
@@ -547,217 +637,6 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
-    public async Task ExecuteCommandAsync_new_character_opens_creation_dialog()
-    {
-        var client = new FakeChummerClient();
-        var presenter = new CharacterOverviewPresenter(client);
-
-        await presenter.ExecuteCommandAsync("new_character", CancellationToken.None);
-
-        Assert.AreEqual("new_character", presenter.State.LastCommandId);
-        Assert.AreEqual("dialog.new_character", presenter.State.ActiveDialog?.Id);
-        Assert.AreEqual("Select Build Method", presenter.State.ActiveDialog?.Title);
-        Assert.IsNull(client.LastImportedDocument);
-        Assert.AreEqual("Priority", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "newCharacterBuildMethod"));
-    }
-
-    [TestMethod]
-    public async Task ExecuteDialogActionAsync_create_character_imports_starter_workspace()
-    {
-        var client = new FakeChummerClient();
-        var presenter = new CharacterOverviewPresenter(client);
-
-        await presenter.ExecuteCommandAsync("new_character", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("newCharacterRulesetId", RulesetDefaults.Sr6, CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("newCharacterBuildMethod", "Karma", CancellationToken.None);
-        await presenter.ExecuteDialogActionAsync("create_character", CancellationToken.None);
-
-        Assert.IsNotNull(client.LastImportedDocument);
-        Assert.AreEqual(RulesetDefaults.Sr6, client.LastImportedDocument!.RulesetId);
-        StringAssert.Contains(client.LastImportedDocument.Content, "<name>New Character</name>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<alias>Runner</alias>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<buildmethod>Karma</buildmethod>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<attributes>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<newskills>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<qualities>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<contacts>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<gears>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<weapons>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<armors>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<cyberwares>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<vehicles>");
-        Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
-
-        await presenter.SelectTabAsync("tab-attributes", CancellationToken.None);
-        Assert.AreEqual("attributes", presenter.State.ActiveSectionId);
-        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
-
-        await presenter.SelectTabAsync("tab-skills", CancellationToken.None);
-        Assert.AreEqual("skills", presenter.State.ActiveSectionId);
-        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
-
-        await presenter.SelectTabAsync("tab-qualities", CancellationToken.None);
-        Assert.AreEqual("qualities", presenter.State.ActiveSectionId);
-        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
-
-        await presenter.SelectTabAsync("tab-contacts", CancellationToken.None);
-        Assert.AreEqual("contacts", presenter.State.ActiveSectionId);
-        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
-
-        await presenter.SelectTabAsync("tab-gear", CancellationToken.None);
-        Assert.IsTrue(
-            presenter.State.ActiveSectionId is "inventory" or "gear",
-            "Gear tab must land on a populated inventory-facing section.");
-        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
-    }
-
-    [TestMethod]
-    public async Task ExecuteDialogActionAsync_gear_add_mutates_workspace_and_restores_section()
-    {
-        var client = new FakeChummerClient();
-        var presenter = new CharacterOverviewPresenter(client);
-
-        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
-        await presenter.SelectTabAsync("tab-gear", CancellationToken.None);
-        string originalSectionId = presenter.State.ActiveSectionId ?? string.Empty;
-        await presenter.HandleUiControlAsync("gear_add", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("uiGearName", "Fake SIN", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("uiGearCost", "2500", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("uiGearQuantity", "2", CancellationToken.None);
-        await presenter.ExecuteDialogActionAsync("add", CancellationToken.None);
-
-        Assert.AreEqual(1, client.DownloadCalls);
-        Assert.IsNotNull(client.LastImportedDocument);
-        StringAssert.Contains(client.LastImportedDocument!.Content, "<gears>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<gear><name>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<qty>2</qty>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<cost>2500</cost>");
-        Assert.IsNull(presenter.State.ActiveDialog);
-        Assert.IsNull(presenter.State.Error);
-        Assert.AreEqual(originalSectionId, presenter.State.ActiveSectionId);
-    }
-
-    [TestMethod]
-    public async Task ExecuteDialogActionAsync_quality_add_mutates_workspace_and_restores_section()
-    {
-        var client = new FakeChummerClient();
-        var presenter = new CharacterOverviewPresenter(client);
-
-        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
-        await presenter.SelectTabAsync("tab-qualities", CancellationToken.None);
-        await presenter.HandleUiControlAsync("quality_add", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("uiQualityName", "First Impression", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("uiQualityType", "Positive", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("uiQualityKarma", "10", CancellationToken.None);
-        await presenter.ExecuteDialogActionAsync("add", CancellationToken.None);
-
-        Assert.AreEqual(1, client.DownloadCalls);
-        Assert.IsNotNull(client.LastImportedDocument);
-        StringAssert.Contains(client.LastImportedDocument!.Content, "<qualities>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<name>First Impression</name>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<bp>10</bp>");
-        Assert.IsNull(presenter.State.ActiveDialog);
-        Assert.IsNull(presenter.State.Error);
-        Assert.AreEqual("qualities", presenter.State.ActiveSectionId);
-    }
-
-    [TestMethod]
-    public async Task ExecuteDialogActionAsync_runtime_backed_dense_add_routes_mutate_workspace_xml()
-    {
-        (string UiControlId, (string FieldId, string Value)[] Updates, string[] ExpectedMarkers)[] scenarios =
-        [
-            (
-                "drug_add",
-                [("uiDrugName", "Jazz"), ("uiDrugQuantity", "2")],
-                ["<drugs>", "<name>Jazz</name>", "<qty>2</qty>"]
-            ),
-            (
-                "cyberware_add",
-                [("uiCyberwareName", "Wired Reflexes 2"), ("uiCyberwareRating", "2"), ("uiCyberwareGrade", "Alpha"), ("uiCyberwareEssence", "2.70")],
-                ["<cyberwares>", "<name>Wired Reflexes 2</name>", "<grade>Alpha</grade>", "<ess>2.70</ess>"]
-            ),
-            (
-                "spell_add",
-                [("uiSpellName", "Heal"), ("uiSpellCategory", "Health")],
-                ["<spells>", "<name>Heal</name>", "<category>Health</category>"]
-            ),
-            (
-                "adept_power_add",
-                [("uiAdeptPowerName", "Combat Sense"), ("uiAdeptPowerLevel", "2")],
-                ["<powers>", "<name>Combat Sense</name>", "<rating>2</rating>"]
-            ),
-            (
-                "complex_form_add",
-                [("uiComplexFormName", "Cleaner"), ("uiComplexFormLevel", "3")],
-                ["<complexforms>", "<name>Cleaner</name>", "<fv>Level 3</fv>"]
-            ),
-            (
-                "matrix_program_add",
-                [("uiMatrixProgramName", "Baby Monitor"), ("uiMatrixProgramSlot", "Hacking")],
-                ["<aiprograms>", "<name>Baby Monitor</name>", "<rating>Hacking</rating>"]
-            ),
-            (
-                "initiation_add",
-                [("uiInitiationTrack", "Submersion"), ("uiInitiationGrade", "2"), ("uiInitiationReward", "Overclocking")],
-                ["<initiationgrades>", "<grade>2</grade>", "<reward>Overclocking</reward>"]
-            ),
-            (
-                "spirit_add",
-                [("uiSpiritName", "Watcher Spirit"), ("uiSpiritForce", "4")],
-                ["<spirits>", "<name>Watcher Spirit</name>", "<force>4</force>"]
-            ),
-            (
-                "critter_power_add",
-                [("uiCritterPowerName", "Natural Weapon"), ("uiCritterPowerRating", "3")],
-                ["<critterpowers>", "<name>Natural Weapon</name>", "<rating>3</rating>"]
-            )
-        ];
-
-        foreach ((string uiControlId, (string FieldId, string Value)[] updates, string[] expectedMarkers) in scenarios)
-        {
-            var client = new FakeChummerClient();
-            var presenter = new CharacterOverviewPresenter(client);
-
-            await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
-            await presenter.HandleUiControlAsync(uiControlId, CancellationToken.None);
-            foreach ((string fieldId, string value) in updates)
-            {
-                await presenter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None);
-            }
-
-            await presenter.ExecuteDialogActionAsync("add", CancellationToken.None);
-
-            Assert.AreEqual(1, client.DownloadCalls, $"'{uiControlId}' should download the current workspace once.");
-            Assert.IsNotNull(client.LastImportedDocument, $"'{uiControlId}' should import a mutated workspace.");
-            foreach (string marker in expectedMarkers)
-            {
-                StringAssert.Contains(client.LastImportedDocument!.Content, marker, $"'{uiControlId}' should emit '{marker}'.");
-            }
-
-            Assert.IsNull(presenter.State.ActiveDialog, $"'{uiControlId}' should close after a successful add.");
-            Assert.IsNull(presenter.State.Error, $"'{uiControlId}' should not leave a presenter error.");
-        }
-    }
-
-    [TestMethod]
-    public async Task ExecuteCommandAsync_new_critter_imports_starter_workspace()
-    {
-        var client = new FakeChummerClient();
-        var presenter = new CharacterOverviewPresenter(client);
-
-        await presenter.ExecuteCommandAsync("new_critter", CancellationToken.None);
-
-        Assert.IsNotNull(client.LastImportedDocument);
-        Assert.AreEqual(RulesetDefaults.Sr5, client.LastImportedDocument!.RulesetId);
-        StringAssert.Contains(client.LastImportedDocument.Content, "<name>New Critter</name>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<alias>Critter</alias>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<attributes>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<newskills>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<qualities>");
-        Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
-    }
-
-    [TestMethod]
     public async Task ExecuteCommandAsync_master_index_opens_dialog_with_catalog_parity_fields()
     {
         var client = new FakeChummerClient();
@@ -844,15 +723,21 @@ public class CharacterOverviewPresenterTests
 
         Assert.IsNotNull(presenter.State.ActiveDialog);
         Assert.AreEqual("dialog.master_index", presenter.State.ActiveDialog?.Id);
-        Assert.AreEqual("All", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexFileSelection"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexCurrentSourcebook"), "Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexCurrentFile"), "All data files");
-        Assert.AreEqual(string.Empty, DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexActiveResultKey"));
-        Assert.AreEqual(string.Empty, DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSnippetPreview"));
-        Assert.AreEqual("/books/core-rulebook.pdf", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSelectedSource"));
-        Assert.IsNull(presenter.State.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "masterIndexSourcebookSelection", StringComparison.Ordinal)));
-        Assert.IsNull(presenter.State.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "masterIndexDetails", StringComparison.Ordinal)));
-        CollectionAssert.AreEqual(new[] { "open_source", "close" }, presenter.State.ActiveDialog!.Actions.Select(action => action.Id).ToArray());
+        Assert.AreEqual("11", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourcebooks"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSettingsLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionSummary"), "2 sourcebooks");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourcebook1"), "Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleLane"), "75%");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleMatrix"), "Chummer4 fixtures 18");
+        Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleMissingSources"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageLane"), "50%");
+        Assert.AreEqual("50% (1/2)", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageCoverage"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6SupplementLane"));
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6DesignerToolsLane"));
+        Assert.AreEqual("4/5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6DesignerCoverage"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexHouseRuleLane"));
+        Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexHouseRuleOverlayCount"));
+        Assert.AreEqual("source selection governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionReceipt"));
     }
 
     [TestMethod]
@@ -873,12 +758,11 @@ public class CharacterOverviewPresenterTests
                 TranslatorLanguageCount: 6,
                 EnabledLanguageOverlayCount: 3),
             new TranslatorLanguagesResponse(
-                Count: 2,
                 EnabledLanguageOverlayCount: 1,
                 Languages:
                 [
-                    new TranslatorLanguageEntry("en-us", "English"),
-                    new TranslatorLanguageEntry("de-de", "Deutsch")
+                    new TranslatorLanguageEntry("en-us", "English", true),
+                    new TranslatorLanguageEntry("de-de", "Deutsch", true)
                 ],
                 TranslatorBridgePosture: "partial"));
         var presenter = new CharacterOverviewPresenter(client);
@@ -905,25 +789,57 @@ public class CharacterOverviewPresenterTests
                 SourcebookCount: 1,
                 Sourcebooks: [],
                 CustomDataLanePosture: "partial",
-                CustomDataLaneReceipt: "custom-data partial",
                 CustomDataAuthoringLaneReceipt: "custom-data authoring partial",
-                DistinctCustomDataDirectoryCount: 2,
                 XmlBridgePosture: "governed",
-                XmlBridgeLaneReceipt: "xml bridge is governed: 2 enabled data overlays expose XML payloads.",
-                EnabledDataOverlayCount: 2),
-            new TranslatorLanguagesResponse(0, []));
+                XmlBridgeLaneReceipt: "xml bridge governed"));
         var presenter = new CharacterOverviewPresenter(client);
 
-        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
         await presenter.ExecuteCommandAsync("xml_editor", CancellationToken.None);
 
         Assert.IsNotNull(presenter.State.ActiveDialog);
         Assert.AreEqual("dialog.xml_editor", presenter.State.ActiveDialog?.Id);
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorLanePosture"));
-        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorOverlayCount"));
         Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorCustomDataLanePosture"));
-        Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorCustomDataDirectoryCount"));
-        Assert.AreEqual("xml bridge is governed: 2 enabled data overlays expose XML payloads.", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorReceipt"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorXmlBridgePosture"));
+        Assert.AreEqual("custom-data authoring partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorCustomDataAuthoringReceipt"));
+        Assert.AreEqual("xml bridge governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorXmlBridgeReceipt"));
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture()
+    {
+        var client = new FakeChummerClient();
+        client.SeedToolCatalog(
+            new MasterIndexResponse(
+                Count: 1,
+                GeneratedUtc: DateTimeOffset.UtcNow,
+                Files: [],
+                ReferenceLanePosture: "governed",
+                SourcebookCount: 1,
+                Sourcebooks: [],
+                ImportOracleLanePosture: "partial",
+                ImportOracleReceiptPosture: "stale",
+                LegacyChummer4FixtureCount: 18,
+                LegacyChummer5FixtureCount: 31,
+                HeroLabFixtureCount: 0,
+                AdjacentSr6OracleReceiptPosture: "partial",
+                AdjacentSr6OracleSourcesCovered: 1,
+                AdjacentSr6OracleSourcesExpected: 2,
+                ImportOracleSourcesCovered: 3,
+                ImportOracleSourcesExpected: 4,
+                ImportOracleCoveragePercent: 75,
+                ImportOracleMissingSources: ["Hero Lab"],
+                ImportOracleLaneReceipt: "import oracle partial",
+                AdjacentSr6OracleLaneReceipt: "adjacent oracle partial"));
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ExecuteCommandAsync("hero_lab_importer", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("dialog.hero_lab_importer", presenter.State.ActiveDialog?.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabImportOracleLanePosture"), "partial");
+        Assert.AreEqual("import oracle partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabImportOracleReceipt"));
+        Assert.AreEqual("adjacent oracle partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabAdjacentSr6OracleReceipt"));
+        Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabImportOracleMissingSources"));
     }
 
     [TestMethod]
@@ -966,8 +882,7 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("sr6", client.LastImportedDocument.RulesetId);
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
         Assert.IsNull(presenter.State.ActiveDialog);
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import ready:");
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import completed");
+        Assert.AreEqual("Character imported.", presenter.State.Notice);
 
         await presenter.ExecuteCommandAsync("open_character", CancellationToken.None);
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "importRulesetId"));
@@ -985,25 +900,6 @@ public class CharacterOverviewPresenterTests
         await presenter.ExecuteCommandAsync("open_character", CancellationToken.None);
 
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "importRulesetId"));
-    }
-
-    [TestMethod]
-    public async Task ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_compatibility_posture()
-    {
-        var client = new FakeChummerClient();
-        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: "sr6");
-        var presenter = new CharacterOverviewPresenter(client);
-
-        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
-        await presenter.ExecuteCommandAsync("hero_lab_importer", CancellationToken.None);
-
-        Assert.IsNotNull(presenter.State.ActiveDialog);
-        Assert.AreEqual("dialog.hero_lab_importer", presenter.State.ActiveDialog?.Id);
-        Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "importRulesetId"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabXml"), "<character><name>Hero Lab Import</name></character>");
-        CollectionAssert.Contains(
-            presenter.State.ActiveDialog!.Actions.Select(action => action.Id).ToArray(),
-            "import");
     }
 
     [TestMethod]
@@ -1071,7 +967,7 @@ public class CharacterOverviewPresenterTests
     {
         var presenter = new CharacterOverviewPresenter(new FakeChummerClient());
 
-        foreach (string controlId in LegacyUiControlCatalog.All)
+        foreach (string controlId in LegacyUiControlIds)
         {
             await presenter.HandleUiControlAsync(controlId, CancellationToken.None);
             Assert.AreNotEqual("dialog.ui.generic", presenter.State.ActiveDialog?.Id, $"Control '{controlId}' fell back to generic dialog.");
@@ -1176,26 +1072,6 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
-    public async Task ExecuteCommandAsync_dice_roller_opens_legacy_roll_surface()
-    {
-        var client = new FakeChummerClient();
-        client.SeedWorkspace("ws-legacy-1", "Legacy One", "L1", DateTimeOffset.UtcNow.AddMinutes(-10), RulesetDefaults.Sr5);
-        client.SeedWorkspace("ws-legacy-2", "Legacy Two", "L2", DateTimeOffset.UtcNow.AddMinutes(-1), RulesetDefaults.Sr6);
-        var presenter = new CharacterOverviewPresenter(client);
-
-        await presenter.InitializeAsync(CancellationToken.None);
-        await presenter.ExecuteCommandAsync("dice_roller", CancellationToken.None);
-
-        Assert.AreEqual("dialog.dice_roller", presenter.State.ActiveDialog?.Id);
-        Assert.AreEqual("Standard", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceMethod"));
-        Assert.AreEqual("1", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceCount"));
-        Assert.AreEqual("Dice roller + initiative preview + roster context", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceUtilityLane"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "L2 · Legacy Two [sr6]");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "initiativePreview"), "L2 · Legacy Two [sr6]");
-        Assert.IsNotNull(presenter.State.ActiveDialog?.Actions.FirstOrDefault(action => string.Equals(action.Id, "reroll_misses", StringComparison.Ordinal)));
-    }
-
-    [TestMethod]
     public async Task ExecuteCommandAsync_dice_roller_opens_utility_lane_with_roster_context()
     {
         var client = new FakeChummerClient();
@@ -1207,10 +1083,9 @@ public class CharacterOverviewPresenterTests
         await presenter.ExecuteCommandAsync("dice_roller", CancellationToken.None);
 
         Assert.AreEqual("dialog.dice_roller", presenter.State.ActiveDialog?.Id);
-        Assert.AreEqual("Dice roller + initiative preview + roster context", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceUtilityLane"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "Open Runners | 2");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "L2/sr6");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "initiativePreview"), "Initiative preview uses the active roster runner");
+        Assert.AreEqual("ruleset-backed roll + initiative preview", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceUtilityLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "2 open runners");
+        Assert.AreEqual("10 + 1d6 · pass 1 · range 11-16 · avg 13.5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "initiativePreview"));
     }
 
     [TestMethod]
@@ -1228,51 +1103,6 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterOpenCount"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterRulesetMix"), "sr5");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterRulesetMix"), "sr6");
-    }
-
-    [TestMethod]
-    public async Task ExecuteCommandAsync_character_roster_rebuilds_when_watch_folder_changes()
-    {
-        string rosterPath = Path.Combine(Path.GetTempPath(), $"chummer-roster-presenter-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(rosterPath);
-        DesktopPreferenceState originalPreferences = DesktopPreferenceStateRuntime.Current;
-        DesktopPreferenceStateRuntime.SetCurrent(originalPreferences with
-        {
-            CharacterRosterPath = rosterPath
-        });
-
-        try
-        {
-            var client = new FakeChummerClient();
-            client.SeedWorkspace("ws-legacy-1", "Legacy One", "L1", DateTimeOffset.UtcNow.AddMinutes(-10), RulesetDefaults.Sr5);
-            var presenter = new CharacterOverviewPresenter(client);
-
-            await presenter.InitializeAsync(CancellationToken.None);
-            await presenter.ExecuteCommandAsync("character_roster", CancellationToken.None);
-
-            Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterWatchedCount"));
-
-            File.WriteAllText(Path.Combine(rosterPath, "L1.chum5"), "runner");
-
-            await WaitUntilAsync(
-                () => presenter.State.ActiveDialog is not null
-                    && string.Equals(presenter.State.ActiveDialog.Id, "dialog.character_roster", StringComparison.Ordinal)
-                    && string.Equals(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog, "rosterWatchedCount"), "1", StringComparison.Ordinal)
-                    && string.Equals(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog, "rosterSelectedWatchFile"), "L1.chum5", StringComparison.Ordinal),
-                timeout: TimeSpan.FromSeconds(3));
-
-            Assert.AreEqual("1", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterWatchedCount"));
-            Assert.AreEqual("L1.chum5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterSelectedWatchFile"));
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "rosterWatchFolderStatus"), "FileSystemWatcher active");
-        }
-        finally
-        {
-            DesktopPreferenceStateRuntime.SetCurrent(originalPreferences);
-            if (Directory.Exists(rosterPath))
-            {
-                Directory.Delete(rosterPath, recursive: true);
-            }
-        }
     }
 
     [TestMethod]
@@ -1351,41 +1181,12 @@ public class CharacterOverviewPresenterTests
         var presenter = new CharacterOverviewPresenter(new FakeChummerClient());
 
         await presenter.ExecuteCommandAsync("dice_roller", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("diceCount", "3", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("diceThreshold", "2", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("diceExpression", "3d6+2", CancellationToken.None);
         await presenter.ExecuteDialogActionAsync("roll", CancellationToken.None);
 
         Assert.IsNotNull(presenter.State.ActiveDialog);
-        Assert.AreNotEqual(
-            "Roll dice to see hits, glitches, and the summed total.",
-            DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceResultsSummary"));
-        StringAssert.Contains(
-            DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceResultsList"),
-            "Die 1:");
-        Assert.IsFalse(string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceLastRollState")));
-    }
-
-    [TestMethod]
-    public async Task UpdateDialogFieldAsync_dice_method_disables_rule_of_6_when_not_standard()
-    {
-        var presenter = new CharacterOverviewPresenter(new FakeChummerClient());
-
-        await presenter.ExecuteCommandAsync("dice_roller", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("diceRuleOf6", "true", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("diceMethod", "Large", CancellationToken.None);
-
-        DesktopDialogField? disabledRuleOf6 = presenter.State.ActiveDialog?.Fields
-            .FirstOrDefault(field => string.Equals(field.Id, "diceRuleOf6", StringComparison.Ordinal));
-        Assert.IsNotNull(disabledRuleOf6);
-        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRuleOf6"));
-        Assert.IsTrue(disabledRuleOf6!.IsReadOnly);
-
-        await presenter.UpdateDialogFieldAsync("diceMethod", "Standard", CancellationToken.None);
-
-        DesktopDialogField? enabledRuleOf6 = presenter.State.ActiveDialog?.Fields
-            .FirstOrDefault(field => string.Equals(field.Id, "diceRuleOf6", StringComparison.Ordinal));
-        Assert.IsNotNull(enabledRuleOf6);
-        Assert.IsFalse(enabledRuleOf6!.IsReadOnly);
+        Assert.IsNotNull(presenter.State.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "diceResult", StringComparison.Ordinal)));
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "3d6+2");
     }
 
     [TestMethod]
@@ -1397,42 +1198,14 @@ public class CharacterOverviewPresenterTests
         await presenter.UpdateDialogFieldAsync("globalUiScale", "125", CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("globalTheme", "dark-steel", CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("globalLanguage", "de-de", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("globalSheetLanguage", "fr-fr", CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("globalCompactMode", "true", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("globalPreferNightlyBuilds", "true", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("globalCharacterRosterPath", "/var/chummer/roster", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("globalHideMasterIndex", "true", CancellationToken.None);
         await presenter.ExecuteDialogActionAsync("save", CancellationToken.None);
 
         Assert.AreEqual(125, presenter.State.Preferences.UiScalePercent);
         Assert.AreEqual("dark-steel", presenter.State.Preferences.Theme);
         Assert.AreEqual("de-de", presenter.State.Preferences.Language);
-        Assert.AreEqual("fr-fr", presenter.State.Preferences.SheetLanguage);
         Assert.IsTrue(presenter.State.Preferences.CompactMode);
-        Assert.AreEqual("Preview channel · check weekly", presenter.State.Preferences.UpdateChannel);
-        Assert.AreEqual("/var/chummer/roster", presenter.State.Preferences.CharacterRosterPath);
-        Assert.IsTrue(presenter.State.Preferences.HideMasterIndex);
         Assert.IsNull(presenter.State.ActiveDialog);
-    }
-
-    [TestMethod]
-    public async Task UpdateDialogFieldAsync_global_settings_preserves_minimal_legacy_surface()
-    {
-        var presenter = new CharacterOverviewPresenter(new FakeChummerClient());
-
-        await presenter.ExecuteCommandAsync("global_settings", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync("globalPreferNightlyBuilds", "true", CancellationToken.None);
-
-        Assert.IsNotNull(presenter.State.ActiveDialog);
-        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "globalPreferNightlyBuilds"));
-        Assert.AreEqual(
-            DesktopDialogFieldLayoutSlots.Right,
-            presenter.State.ActiveDialog!.Fields.Single(field => string.Equals(field.Id, "globalPreferNightlyBuilds", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual(
-            DesktopDialogFieldLayoutSlots.Hidden,
-            presenter.State.ActiveDialog!.Fields.Single(field => string.Equals(field.Id, "globalUpdatePolicy", StringComparison.Ordinal)).LayoutSlot);
-        Assert.IsFalse(presenter.State.ActiveDialog!.Fields.Any(field => string.Equals(field.Id, "globalActivePane", StringComparison.Ordinal)));
-        Assert.IsFalse(presenter.State.ActiveDialog!.Fields.Any(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)));
     }
 
     [TestMethod]
@@ -1459,40 +1232,6 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("profile", presenter.State.ActiveSectionId);
         StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
         Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
-    }
-
-    private sealed class SuccessfulDiceEvaluator : IEngineEvaluator
-    {
-        public ValueTask<RulesetCapabilityInvocationResult> InvokeAsync(RulesetCapabilityInvocationRequest request, CancellationToken ct)
-        {
-            ct.ThrowIfCancellationRequested();
-            string expression = request.Arguments
-                .FirstOrDefault(argument => string.Equals(argument.Name, "expression", StringComparison.Ordinal))
-                ?.Value.StringValue
-                ?? "1d6";
-            return ValueTask.FromResult(new RulesetCapabilityInvocationResult(
-                Success: true,
-                Output: new RulesetCapabilityValue(
-                    Kind: RulesetCapabilityValueKinds.String,
-                    StringValue: $"{expression} => 13"),
-                Diagnostics: []));
-        }
-    }
-
-    private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan timeout)
-    {
-        DateTimeOffset deadline = DateTimeOffset.UtcNow + timeout;
-        while (DateTimeOffset.UtcNow < deadline)
-        {
-            if (predicate())
-            {
-                return;
-            }
-
-            await Task.Delay(50);
-        }
-
-        Assert.Fail("Timed out waiting for the expected condition.");
     }
 
     private sealed class FakeChummerClient : IChummerClient
