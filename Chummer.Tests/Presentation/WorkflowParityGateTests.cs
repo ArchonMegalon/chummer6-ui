@@ -548,7 +548,7 @@ public sealed class WorkflowParityGateTests
                 ("BP", "BP"),
                 ("Karma", "Karma")),
             ("dialog.new_character", "newCharacterBuildMethod", _) => Create(
-                "SumToTen",
+                DesktopPreferenceState.Default.CharacterPriority,
                 ("Priority", "Priority"),
                 ("SumToTen", "Sum-to-Ten"),
                 ("Karma", "Karma"),

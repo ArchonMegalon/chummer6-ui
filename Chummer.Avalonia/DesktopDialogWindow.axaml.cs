@@ -202,8 +202,8 @@ public partial class DesktopDialogWindow : Window
         shell.Children.Add(CreateLegacyFieldGroup(
             "Global Options",
             CreateSplitFieldRow(languageField, sheetLanguageField),
-            CreateSplitFieldRow(characterPriorityField, updateCheckField),
-            CreateSplitFieldRow(preferNightlyField, hideMasterIndexField),
+            CreateSplitFieldRow(characterPriorityField, preferNightlyField),
+            CreateSplitFieldRow(updateCheckField, hideMasterIndexField),
             CreateLegacyRosterPathRow(rosterPathField)));
 
         return shell;
@@ -1056,7 +1056,8 @@ public partial class DesktopDialogWindow : Window
                 Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
                 Content = field.Label,
                 IsChecked = ParseCheckbox(field.Value),
-                IsEnabled = !field.IsReadOnly
+                IsEnabled = !field.IsReadOnly,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
             };
             ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
             return checkBox.Also(checkBox =>

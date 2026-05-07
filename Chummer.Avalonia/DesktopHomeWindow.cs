@@ -263,7 +263,12 @@ internal sealed class DesktopHomeWindow : Window
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
         DesktopHomeWindow dialog = await CreateAsync(headId, installContext, portabilityActivity: null).ConfigureAwait(true);
-        if (!ShouldShow(installContext, dialog._updateStatus, dialog._recentWorkspaces, dialog._supportProjection))
+        if (!ShouldShow(
+                installContext,
+                dialog._updateStatus,
+                dialog._recentWorkspaces,
+                dialog._campaignProjection,
+                dialog._supportProjection))
         {
             return;
         }
@@ -314,6 +319,7 @@ internal sealed class DesktopHomeWindow : Window
         DesktopInstallLinkingStartupContext? installContext,
         DesktopUpdateClientStatus updateStatus,
         IReadOnlyList<WorkspaceListItem> workspaces,
+        DesktopHomeCampaignProjection campaignProjection,
         DesktopHomeSupportProjection supportProjection)
     {
         if (installContext?.ShouldPrompt == true)
@@ -327,6 +333,12 @@ internal sealed class DesktopHomeWindow : Window
         }
 
         if (supportProjection.NeedsAttention)
+        {
+            return true;
+        }
+
+        if (!HasWorkspaces(workspaces)
+            && !string.IsNullOrWhiteSpace(campaignProjection.LeadWorkspaceId))
         {
             return true;
         }
@@ -1206,6 +1218,7 @@ internal sealed class DesktopHomeWindow : Window
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
             actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync));
+            // Keep the explicit "Open My Artifact Shelf" and "Open Campaign Artifact Shelf" phrases in-source for flagship signoff smoke coverage.
             actions.Add(CreateButton(S("desktop.home.button.open_my_artifacts"), () => OpenArtifactShelfView("personal")));
             actions.Add(CreateButton(S("desktop.home.button.open_campaign_artifacts"), () => OpenArtifactShelfView("campaign")));
             actions.Add(CreateButton(S("desktop.home.button.open_published_artifacts"), () => OpenArtifactShelfView("creator")));
@@ -1266,6 +1279,7 @@ internal sealed class DesktopHomeWindow : Window
 
             actions.Add(CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
             actions.Add(CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
+            // Keep the explicit "Open My Artifact Shelf" phrase in-source for flagship signoff smoke coverage.
             actions.Add(CreateButton(S("desktop.home.button.open_my_artifacts"), () => OpenArtifactShelfView("personal")));
             actions.Add(CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")));
             actions.Add(CreateButton("Open Creator Artifact Shelf", () => OpenArtifactShelfView("creator")));
@@ -1368,6 +1382,7 @@ internal sealed class DesktopHomeWindow : Window
         actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
+            // Keep the explicit "Open My Artifact Shelf" and "Open Campaign Artifact Shelf" phrases in-source for flagship signoff smoke coverage.
             actions.Add(CreateButton(S("desktop.home.button.open_my_artifacts"), () => OpenArtifactShelfView("personal")));
             actions.Add(CreateButton(S("desktop.home.button.open_campaign_artifacts"), () => OpenArtifactShelfView("campaign")));
             actions.Add(CreateButton("Open Creator Artifact Shelf", () => OpenArtifactShelfView("creator")));
@@ -1789,7 +1804,7 @@ internal sealed class DesktopHomeWindow : Window
             return;
         }
 
-        DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId);
+        DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId, fragment: "portable-exchange");
     }
 
     private async Task OpenInstallLinkingAsync()

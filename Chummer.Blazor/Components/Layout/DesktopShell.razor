@@ -59,7 +59,10 @@
         }
 
         <main class="center-pane">
-            <SectionPane State="@State" />
+            <SectionPane State="@State"
+                         IsCommandEnabled="@IsCommandEnabled"
+                         ExecuteCommandRequested="@ExecuteCommandAsync"
+                         LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))" />
         </main>
 
         <aside class="right-pane">

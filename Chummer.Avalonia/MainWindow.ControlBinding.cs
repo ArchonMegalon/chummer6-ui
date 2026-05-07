@@ -11,6 +11,7 @@ internal static class MainWindowControlBinder
         ToolStripControl toolStrip,
         SummaryHeaderControl summaryHeader,
         ShellMenuBarControl menuBar,
+        CharacterRosterControl characterRoster,
         NavigatorPaneControl navigatorPane,
         SectionHostControl sectionHost,
         CommandDialogPaneControl commandDialogPane,
@@ -38,6 +39,7 @@ internal static class MainWindowControlBinder
         EventHandler onKeepLocalWorkRequested,
         EventHandler onWorkspaceSupportRequested,
         EventHandler<string> onMenuSelected,
+        EventHandler<string> onRosterWorkspaceSelected,
         EventHandler<string> onWorkspaceSelected,
         EventHandler<string> onNavigationTabSelected,
         EventHandler<string> onSectionActionSelected,
@@ -68,11 +70,13 @@ internal static class MainWindowControlBinder
         toolStrip.ReportIssueRequested += onReportIssueRequested;
         toolStrip.SettingsRequested += onSettingsRequested;
         toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
+        summaryHeader.NavigationTabSelected += onNavigationTabSelected;
         summaryHeader.KeepLocalWorkRequested += onKeepLocalWorkRequested;
         summaryHeader.SaveLocalWorkRequested += onSaveRequested;
         summaryHeader.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
         summaryHeader.WorkspaceSupportRequested += onWorkspaceSupportRequested;
         menuBar.MenuSelected += onMenuSelected;
+        characterRoster.SelectionChanged += (_, args) => onRosterWorkspaceSelected(characterRoster, args.SelectedNode.Id);
         navigatorPane.WorkspaceSelected += onWorkspaceSelected;
         navigatorPane.NavigationTabSelected += onNavigationTabSelected;
         navigatorPane.SectionActionSelected += onSectionActionSelected;
@@ -90,6 +94,7 @@ internal static class MainWindowControlBinder
             toolStrip,
             summaryHeader,
             menuBar,
+            characterRoster,
             navigatorPane,
             sectionHost,
             commandDialogPane,
@@ -102,6 +107,7 @@ internal sealed record MainWindowControls(
     ToolStripControl ToolStrip,
     SummaryHeaderControl SummaryHeader,
     ShellMenuBarControl MenuBar,
+    CharacterRosterControl CharacterRoster,
     NavigatorPaneControl NavigatorPane,
     SectionHostControl SectionHost,
     CommandDialogPaneControl CommandDialogPane,
@@ -116,6 +122,7 @@ internal sealed record MainWindowControls(
         MenuBar.SetState(shellFrame.HeaderState.MenuBar);
         SummaryHeader.SetState(shellFrame.ChromeState.SummaryHeader);
         StatusStrip.SetState(shellFrame.ChromeState.StatusStrip);
+        CharacterRoster.SetState(shellFrame.RosterPaneState);
         CommandDialogPane.SetState(shellFrame.CommandDialogPaneState);
         NavigatorPane.SetState(shellFrame.NavigatorPaneState);
         SectionHost.SetState(shellFrame.SectionHostState);

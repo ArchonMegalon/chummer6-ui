@@ -4191,6 +4191,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "if [[ ! -d \"$lock_dir\" ]]; then");
         StringAssert.Contains(flagshipGateScriptText, "cp \"$staged_screenshot_dir\"/*.png \"$screenshot_dir\"/");
         StringAssert.Contains(flagshipGateScriptText, "trap cleanup EXIT");
+        StringAssert.Contains(flagshipGateScriptText, "rm -f \"$lock_owner_pid_path\"");
+        StringAssert.Contains(flagshipGateScriptText, "rmdir \"$lock_dir\" 2>/dev/null || rm -rf \"$lock_dir\" 2>/dev/null || true");
         StringAssert.Contains(flagshipGateScriptText, "run_with_retry() {");
         StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"flagship Avalonia headless UI gate tests\"");
         StringAssert.Contains(flagshipGateScriptText, "run_with_retry 2 \"flagship Blazor desktop shell gate tests\"");
@@ -5436,6 +5438,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "next90_m141_direct_import_route_proof_path");
         StringAssert.Contains(workflowGateScriptText, "next90-m141-ui-direct-import-route-proof-check.sh");
         StringAssert.Contains(workflowGateScriptText, "\"next90_m141_direct_import_route_proof\", next90_m141_direct_import_route_proof");
+        StringAssert.Contains(workflowGateScriptText, "CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS=0");
+        StringAssert.Contains(workflowGateScriptText, "CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS=1");
+        StringAssert.Contains(workflowGateScriptText, "ui_flagship_release_gate|$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh|$flagship_gate_path");
         StringAssert.Contains(workflowGateScriptText, "upstream_receipt_review_reasons");
         StringAssert.Contains(workflowGateScriptText, "release_channel_review_reasons");
         StringAssert.Contains(workflowGateScriptText, "flagship_head_review_reasons");

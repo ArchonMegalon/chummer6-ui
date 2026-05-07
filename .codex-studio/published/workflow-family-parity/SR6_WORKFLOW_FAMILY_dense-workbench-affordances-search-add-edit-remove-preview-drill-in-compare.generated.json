@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-05T23:37:22.326439Z",
+  "generatedAt": "2026-05-07T10:44:06.830850Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family parity evidence is incomplete for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
-  "reasons": [
-    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail)"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family parity evidence is explicitly grounded for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
@@ -31,10 +29,10 @@
         "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
       ]
     },
-    "verificationReceipts": [],
-    "verificationFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail)"
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json"
     ],
+    "verificationFailures": [],
     "verificationExternalBlockers": []
   }
 }

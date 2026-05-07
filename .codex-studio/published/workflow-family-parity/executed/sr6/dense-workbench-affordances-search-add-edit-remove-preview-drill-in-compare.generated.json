@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T23:43:49.128068Z",
+  "generatedAt": "2026-05-07T10:44:06.602214Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family execution evidence is explicitly grounded for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
@@ -33,7 +33,9 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
-      "exitCode": 0
+      "exitCode": 0,
+      "attemptCount": 1,
+      "maxAttempts": 2
     },
     "apiProbe": {
       "baseUrl": "http://127.0.0.1:8088",

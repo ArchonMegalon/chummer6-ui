@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-05T23:37:22.323701Z",
+  "generatedAt": "2026-05-07T10:44:06.828447Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family parity evidence is incomplete for attributes-skills-skill-groups-specializations-knowledge-languages.",
-  "reasons": [
-    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail)"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family parity evidence is explicitly grounded for attributes-skills-skill-groups-specializations-knowledge-languages.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
@@ -27,10 +25,10 @@
         "Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices"
       ]
     },
-    "verificationReceipts": [],
-    "verificationFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail)"
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json"
     ],
+    "verificationFailures": [],
     "verificationExternalBlockers": []
   }
 }

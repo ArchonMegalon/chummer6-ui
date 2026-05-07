@@ -8,6 +8,8 @@ namespace Chummer.Avalonia;
 internal static class MainWindowDesktopFileCoordinator
 {
     private const string BundledDemoRelativePath = "Samples/Legacy/Soma-Career.chum5";
+    private const string RepoRootMarkerFileName = "Chummer.sln";
+    private const string BundledDemoOverrideEnvironmentVariable = "CHUMMER_BUNDLED_DEMO_RUNNER_PATH";
     internal static Func<IStorageProvider, string, CancellationToken, Task<DesktopImportFileResult>>? OpenImportFileOverride { get; set; }
     internal static Func<IStorageProvider, string, CancellationToken, Task<string?>>? OpenFolderPickerOverride { get; set; }
     internal static Func<IStorageProvider, PendingDownloadDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? SaveDownloadOverride { get; set; }
@@ -71,19 +73,61 @@ internal static class MainWindowDesktopFileCoordinator
 
     private static string? ResolveBundledDemoRunnerPath()
     {
-        string[] candidates =
+        string? overridePath = Environment.GetEnvironmentVariable(BundledDemoOverrideEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(overridePath))
+        {
+            string normalizedOverridePath = Path.GetFullPath(overridePath);
+            if (File.Exists(normalizedOverridePath))
+            {
+                return normalizedOverridePath;
+            }
+        }
+
+        IEnumerable<string> workingDirectories = EnumerateWorkingDirectories();
+        IEnumerable<string> repoRootCandidates = workingDirectories
+            .Select(TryFindRepoRoot)
+            .Where(static path => !string.IsNullOrWhiteSpace(path))!;
+        IEnumerable<string> candidates =
         [
-            Path.Combine(AppContext.BaseDirectory, BundledDemoRelativePath),
-            Path.Combine(AppContext.BaseDirectory, "..", BundledDemoRelativePath),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", BundledDemoRelativePath),
-            Path.Combine(Directory.GetCurrentDirectory(), BundledDemoRelativePath),
-            Path.Combine(Directory.GetCurrentDirectory(), "Chummer.Avalonia", BundledDemoRelativePath),
-            Path.Combine("/docker/chummercomplete/chummer-presentation/Chummer.Avalonia", BundledDemoRelativePath)
+            .. workingDirectories.Select(path => Path.Combine(path, BundledDemoRelativePath)),
+            .. workingDirectories.Select(path => Path.Combine(path, "Chummer.Avalonia", BundledDemoRelativePath)),
+            .. repoRootCandidates.Select(path => Path.Combine(path, "Chummer.Avalonia", BundledDemoRelativePath))
         ];
 
         return candidates
-            .Select(path => Path.GetFullPath(path))
+            .Where(static path => !string.IsNullOrWhiteSpace(path))
+            .Select(Path.GetFullPath)
+            .Distinct(StringComparer.Ordinal)
             .FirstOrDefault(File.Exists);
+    }
+
+    private static IEnumerable<string> EnumerateWorkingDirectories()
+    {
+        yield return AppContext.BaseDirectory;
+        yield return Path.Combine(AppContext.BaseDirectory, "..");
+        yield return Path.Combine(AppContext.BaseDirectory, "..", "..");
+        yield return Directory.GetCurrentDirectory();
+    }
+
+    private static string? TryFindRepoRoot(string startPath)
+    {
+        if (string.IsNullOrWhiteSpace(startPath))
+        {
+            return null;
+        }
+
+        DirectoryInfo? directory = new(Path.GetFullPath(startPath));
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, RepoRootMarkerFileName)))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        return null;
     }
 
     public static async Task<string?> OpenFolderAsync(

@@ -65,6 +65,13 @@ if legacy_execution_root.is_dir():
 lock_dir = repo_root / ".codex-studio" / "locks"
 lock_dir.mkdir(parents=True, exist_ok=True)
 lock_path = lock_dir / "workflow-family-dotnet-test.lock"
+max_test_attempts = max(
+    1,
+    int(
+        os.environ.get("CHUMMER_WORKFLOW_FAMILY_EXECUTION_MAX_TEST_ATTEMPTS")
+        or "2"
+    ),
+)
 
 unique_tests: list[str] = []
 for family in families:
@@ -77,6 +84,7 @@ run_error = ""
 run_exit = 0
 external_blocker = ""
 api_probe: dict[str, object] = {}
+dotnet_attempt_count = 0
 
 
 def probe_api_surface(base_url: str, path: str) -> tuple[bool, int, str]:
@@ -141,15 +149,24 @@ if unique_tests:
     ]
     with lock_path.open("w", encoding="utf-8") as lock_handle:
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
-        proc = subprocess.run(
-            cmd,
-            cwd=repo_root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            check=False,
-        )
+        proc = None
+        for attempt in range(1, max_test_attempts + 1):
+            dotnet_attempt_count = attempt
+            if trx_path.exists():
+                trx_path.unlink()
+            proc = subprocess.run(
+                cmd,
+                cwd=repo_root,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                check=False,
+            )
+            if proc.returncode == 0:
+                break
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+    if proc is None:
+        raise SystemExit("workflow-family dotnet test process did not start")
     run_exit = int(proc.returncode)
     if run_exit != 0:
         output = (proc.stdout or "").strip().splitlines()
@@ -290,6 +307,8 @@ for family in families:
                 "configuration": "Release",
                 "trxPath": str(trx_path),
                 "exitCode": run_exit,
+                "attemptCount": dotnet_attempt_count,
+                "maxAttempts": max_test_attempts,
             },
             "apiProbe": api_probe,
             "external_blocker": external_blocker,

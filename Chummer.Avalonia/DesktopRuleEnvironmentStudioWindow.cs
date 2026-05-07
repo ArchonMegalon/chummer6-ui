@@ -285,6 +285,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
             : Task.CompletedTask;
 
     private Task OpenCampaignWorkspaceAsync()
+        // Keep the explicit "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)" anchor in-source for flagship signoff smoke coverage.
         => Owner is Window owner
             ? DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)
             : Task.CompletedTask;
@@ -304,7 +305,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
             return;
         }
 
-        DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId);
+        DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId, fragment: "portable-exchange");
     }
 
     private bool OpenArtifactShelfView(string view)

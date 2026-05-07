@@ -497,6 +497,48 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void SectionPane_renders_startup_workbench_with_first_class_restore_and_utility_actions()
+    {
+        using var context = new BunitContext();
+
+        string? executedCommandId = null;
+        string? loadedWorkspaceId = null;
+        CharacterOverviewState startupState = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(
+                ActiveWorkspaceId: null,
+                OpenWorkspaces: [],
+                RecentWorkspaceIds: [new CharacterWorkspaceId("ws-recent-1"), new CharacterWorkspaceId("ws-recent-2")]),
+            Commands =
+            [
+                new AppCommandDefinition("open_character", "Open", "file", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("new_character", "New", "file", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("character_roster", "Roster", "tools", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("master_index", "Index", "tools", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("global_settings", "Options", "tools", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("report_bug", "Report Issue", "help", false, true, RulesetDefaults.Sr5)
+            ]
+        };
+
+        IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
+            .Add(component => component.State, startupState)
+            .Add(component => component.IsCommandEnabled, _ => true)
+            .Add(component => component.ExecuteCommandRequested, (Action<string>)(commandId => executedCommandId = commandId))
+            .Add(component => component.LoadWorkspaceRequested, (Action<string>)(workspaceId => loadedWorkspaceId = workspaceId)));
+
+        StringAssert.Contains(cut.Markup, "Continue Your Workbench");
+        StringAssert.Contains(cut.Markup, "Character Roster");
+        StringAssert.Contains(cut.Markup, "Master Index");
+        StringAssert.Contains(cut.Markup, "ws-recent-1");
+
+        cut.Find("[data-startup-command='open_character']").Click();
+        cut.Find("[data-recent-workspace-id='ws-recent-1']").Click();
+
+        Assert.AreEqual("open_character", executedCommandId);
+        Assert.AreEqual("ws-recent-1", loadedWorkspaceId);
+    }
+
+    [TestMethod]
     public void SectionPane_formats_named_context_for_collection_sections()
     {
         using var context = new BunitContext();

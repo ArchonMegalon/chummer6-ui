@@ -141,7 +141,7 @@ public class ShellPresenterTests
 
         string[] menuIds = presenter.State.MenuRoots.Select(command => command.Id).ToArray();
 
-        CollectionAssert.AreEqual(["file", "edit", "special", "tools", "windows", "help"], menuIds);
+        CollectionAssert.AreEqual(new[] { "file", "edit", "special", "tools", "windows", "help" }, menuIds);
         Assert.IsTrue(
             presenter.State.Commands.Any(command => string.Equals(command.Id, "copy", StringComparison.Ordinal)),
             "Classic edit commands must be synthesized when the active ruleset catalog omits them.");

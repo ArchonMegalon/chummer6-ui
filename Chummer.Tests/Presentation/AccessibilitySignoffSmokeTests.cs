@@ -38,6 +38,7 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopOrganizerOperations_keeps_role_boundaries_visible();
             DesktopRuleEnvironmentStudioSurface_is_a_real_top_level_surface();
             DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible();
+            CharacterRosterStructureParityGuardTests.Run();
             DesktopUpdateSurface_is_a_real_top_level_surface();
             DesktopSupportSurface_is_a_real_top_level_surface();
             DesktopSupportCaseSurface_is_a_real_top_level_surface();
@@ -1940,6 +1941,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(navigationSource, "_interactionCoordinator.ExecuteCommandAsync");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "DesktopHomeWindow.ShowIfNeededAsync(owner, \"avalonia\", installContext: null)");
         RequireContains(appSource, "DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.Settings)");
         RequireContains(appSource, "owner.OpenDesktopCommandFromSurfaceAsync(\"global_settings\", \"open global settings\")");
     }

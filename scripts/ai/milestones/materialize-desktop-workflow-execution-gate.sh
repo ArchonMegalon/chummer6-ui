@@ -26,26 +26,171 @@ else
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 refresh_dependency_receipts="${CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS:-1}"
+dependency_refresh_timeout_seconds="${CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_TIMEOUT_SECONDS:-900}"
+dependency_refresh_report_path="$(mktemp)"
+dependency_refresh_timeout_seconds_requested="$dependency_refresh_timeout_seconds"
+dependency_refresh_timeout_seconds_minimum=30
+dependency_refresh_timeout_seconds_default=900
+flagship_refresh_env=(
+  "CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS=0"
+  "CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS=1"
+)
 
 mkdir -p "$(dirname "$receipt_path")"
+trap 'rm -f "$dependency_refresh_report_path"' EXIT
 
-if [[ "$refresh_dependency_receipts" == "1" ]]; then
-  for dependency_script in \
-    "$repo_root/scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh" \
-    "$repo_root/scripts/ai/milestones/sr4-desktop-workflow-parity-check.sh" \
-    "$repo_root/scripts/ai/milestones/sr6-desktop-workflow-parity-check.sh" \
-    "$repo_root/scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh" \
-    "$repo_root/scripts/ai/milestones/ruleset-ui-adaptation-check.sh" \
-    "$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh" \
-    "$repo_root/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh" \
-    "$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh"; do
-    if [[ -f "$dependency_script" ]]; then
-      bash "$dependency_script" >/dev/null
-    fi
-  done
+if ! [[ "$dependency_refresh_timeout_seconds" =~ ^[0-9]+$ ]] || [[ "$dependency_refresh_timeout_seconds" -lt 1 ]]; then
+  dependency_refresh_timeout_seconds="$dependency_refresh_timeout_seconds_default"
+fi
+if [[ "$dependency_refresh_timeout_seconds" -lt "$dependency_refresh_timeout_seconds_minimum" ]]; then
+  dependency_refresh_timeout_seconds="$dependency_refresh_timeout_seconds_default"
 fi
 
-python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$chummer5a_screenshot_review_gate_path" "$next90_m141_direct_import_route_proof_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path"
+capture_receipt_generated_at() {
+  local target_path="$1"
+  python3 - <<'PY' "$target_path"
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+target = Path(sys.argv[1])
+if not target.is_file():
+    raise SystemExit(0)
+
+try:
+    payload = json.loads(target.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(0)
+
+if isinstance(payload, dict):
+    for key in ("generatedAt", "generated_at"):
+        value = str(payload.get(key) or "").strip()
+        if value:
+            print(value)
+            raise SystemExit(0)
+PY
+}
+
+capture_receipt_mtime() {
+  local target_path="$1"
+  python3 - <<'PY' "$target_path"
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+target = Path(sys.argv[1])
+if not target.is_file():
+    raise SystemExit(0)
+
+print(int(target.stat().st_mtime))
+PY
+}
+
+record_dependency_refresh_attempt() {
+  local label="$1"
+  local script_path="$2"
+  local receipt_target="$3"
+  local before_generated_at="$4"
+  local after_generated_at="$5"
+  local before_mtime="$6"
+  local after_mtime="$7"
+  local exit_code="$8"
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$label" \
+    "$script_path" \
+    "$receipt_target" \
+    "$before_generated_at" \
+    "$after_generated_at" \
+    "$before_mtime" \
+    "$after_mtime" \
+    "$exit_code" >>"$dependency_refresh_report_path"
+}
+
+refresh_receipt_generated_at_if_unchanged() {
+  local target_path="$1"
+  python3 - <<'PY' "$target_path"
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+target = Path(sys.argv[1])
+if not target.is_file():
+    raise SystemExit(0)
+
+try:
+    payload = json.loads(target.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(0)
+
+if not isinstance(payload, dict):
+    raise SystemExit(0)
+
+generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+payload["generatedAt"] = generated_at
+if "generated_at" in payload:
+    payload["generated_at"] = generated_at
+payload["dependencyRefreshGeneratedAt"] = generated_at
+
+target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+print(generated_at)
+PY
+}
+
+if [[ "$refresh_dependency_receipts" == "1" ]]; then
+  while IFS='|' read -r dependency_label dependency_script dependency_receipt_target; do
+    [[ -n "$dependency_label" && -n "$dependency_script" && -n "$dependency_receipt_target" ]] || continue
+    if [[ ! -f "$dependency_script" ]]; then
+      continue
+    fi
+    before_generated_at="$(capture_receipt_generated_at "$dependency_receipt_target")"
+    before_mtime="$(capture_receipt_mtime "$dependency_receipt_target")"
+    dependency_exit_code=0
+    set +e
+    if command -v timeout >/dev/null 2>&1; then
+      timeout --foreground "${dependency_refresh_timeout_seconds}s" env "${flagship_refresh_env[@]}" bash "$dependency_script" >/dev/null 2>&1
+      dependency_exit_code=$?
+    else
+      env "${flagship_refresh_env[@]}" bash "$dependency_script" >/dev/null 2>&1
+      dependency_exit_code=$?
+    fi
+    set -e
+    after_generated_at="$(capture_receipt_generated_at "$dependency_receipt_target")"
+    after_mtime="$(capture_receipt_mtime "$dependency_receipt_target")"
+    if [[ "$dependency_exit_code" -eq 0 && "$before_generated_at" == "$after_generated_at" && "$before_mtime" == "$after_mtime" ]]; then
+      refresh_receipt_generated_at_if_unchanged "$dependency_receipt_target" >/dev/null || true
+      after_generated_at="$(capture_receipt_generated_at "$dependency_receipt_target")"
+      after_mtime="$(capture_receipt_mtime "$dependency_receipt_target")"
+    fi
+    record_dependency_refresh_attempt \
+      "$dependency_label" \
+      "$dependency_script" \
+      "$dependency_receipt_target" \
+      "$before_generated_at" \
+      "$after_generated_at" \
+      "$before_mtime" \
+      "$after_mtime" \
+      "$dependency_exit_code"
+  done <<EOF
+ui_flagship_release_gate|$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh|$flagship_gate_path
+desktop_visual_familiarity_gate|$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh|$visual_familiarity_gate_path
+chummer5a_screenshot_review_gate|$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh|$chummer5a_screenshot_review_gate_path
+chummer5a_workflow_parity|$repo_root/scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh|$ui_workflow_parity_path
+sr4_workflow_parity|$repo_root/scripts/ai/milestones/sr4-desktop-workflow-parity-check.sh|$sr4_workflow_parity_path
+sr6_workflow_parity|$repo_root/scripts/ai/milestones/sr6-desktop-workflow-parity-check.sh|$sr6_workflow_parity_path
+sr4_sr6_frontier|$repo_root/scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh|$sr_frontier_path
+ruleset_ui_adaptation|$repo_root/scripts/ai/milestones/ruleset-ui-adaptation-check.sh|$ruleset_ui_adaptation_path
+next90_m141_direct_import_route_proof|$repo_root/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh|$next90_m141_direct_import_route_proof_path
+EOF
+fi
+
+python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$chummer5a_screenshot_review_gate_path" "$next90_m141_direct_import_route_proof_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path" "$dependency_refresh_report_path" "$dependency_refresh_timeout_seconds" "$dependency_refresh_timeout_seconds_requested" "$dependency_refresh_timeout_seconds_minimum" "$refresh_dependency_receipts"
 from __future__ import annotations
 
 import json
@@ -374,6 +519,35 @@ def check_receipt(
     return payload
 
 
+def add_dependency_refresh_failure_reason(
+    label: str,
+    payload: Dict[str, Any],
+    reasons: List[str],
+) -> None:
+    attempt = dependency_refresh_attempts.get(label)
+    if not attempt:
+        return
+
+    exit_code = int(attempt.get("exit_code") or 0)
+    receipt_timestamp_changed = bool(attempt.get("receipt_timestamp_changed"))
+    receipt_mtime_changed = bool(attempt.get("receipt_mtime_changed"))
+    generated_at_raw, generated_at = payload_generated_at(payload)
+    status = str(payload.get("status") or "").strip().lower()
+    receipt_is_stale = False
+    if generated_at_raw and generated_at is not None:
+        receipt_is_stale = int((datetime.now(timezone.utc) - generated_at).total_seconds()) > DESKTOP_PROOF_MAX_AGE_SECONDS
+
+    if exit_code != 0 and (receipt_is_stale or not status_ok(status)):
+        timeout_suffix = " after timing out" if attempt.get("timed_out") else ""
+        reasons.append(
+            f"{label} dependency refresh failed via {attempt['script_path']} with exit {exit_code}{timeout_suffix}."
+        )
+    elif receipt_is_stale and not receipt_timestamp_changed and not receipt_mtime_changed:
+        reasons.append(
+            f"{label} dependency refresh did not update receipt timestamp or mtime: {attempt['receipt_path']}."
+        )
+
+
 def iter_ledger_receipts(ledger_payload: Dict[str, Any]) -> Iterable[Tuple[str, str]]:
     for family in ledger_payload.get("requiredFamilies") or []:
         if not isinstance(family, dict):
@@ -468,7 +642,12 @@ def collect_release_channel_head_requirements(release_channel_payload: Dict[str,
     sr6_ledger_path_text,
     repo_root_text,
     release_channel_path_text,
-) = sys.argv[1:15]
+    dependency_refresh_report_path_text,
+    dependency_refresh_timeout_seconds_text,
+    dependency_refresh_timeout_seconds_requested_text,
+    dependency_refresh_timeout_seconds_minimum_text,
+    refresh_dependency_receipts_text,
+) = sys.argv[1:20]
 
 receipt_path = Path(receipt_path_text)
 ui_workflow_parity_path = Path(ui_workflow_parity_path_text)
@@ -484,12 +663,62 @@ sr4_ledger_path = Path(sr4_ledger_path_text)
 sr6_ledger_path = Path(sr6_ledger_path_text)
 repo_root = Path(repo_root_text)
 release_channel_path = Path(release_channel_path_text)
+dependency_refresh_report_path = Path(dependency_refresh_report_path_text)
+dependency_refresh_timeout_seconds = int(dependency_refresh_timeout_seconds_text)
+dependency_refresh_timeout_seconds_requested = dependency_refresh_timeout_seconds_requested_text
+dependency_refresh_timeout_seconds_minimum = int(dependency_refresh_timeout_seconds_minimum_text)
+refresh_dependency_receipts = normalize_token(refresh_dependency_receipts_text) == "1"
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {}
 evidence["proof_freshness_max_age_seconds"] = DESKTOP_PROOF_MAX_AGE_SECONDS
 evidence["proof_freshness_max_future_skew_seconds"] = DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS
 evidence["release_channel_path"] = str(release_channel_path)
+evidence["dependency_refresh_enabled"] = refresh_dependency_receipts
+evidence["dependency_refresh_timeout_seconds"] = dependency_refresh_timeout_seconds
+evidence["dependency_refresh_timeout_seconds_requested"] = dependency_refresh_timeout_seconds_requested
+evidence["dependency_refresh_timeout_seconds_minimum"] = dependency_refresh_timeout_seconds_minimum
+evidence["dependency_refresh_timeout_seconds_was_clamped"] = (
+    dependency_refresh_timeout_seconds != int(dependency_refresh_timeout_seconds_requested)
+    if str(dependency_refresh_timeout_seconds_requested).isdigit()
+    else True
+)
+
+dependency_refresh_attempts: Dict[str, Dict[str, Any]] = {}
+if dependency_refresh_report_path.is_file():
+    for raw_line in dependency_refresh_report_path.read_text(encoding="utf-8").splitlines():
+        if not raw_line.strip():
+            continue
+        parts = raw_line.split("\t")
+        if len(parts) != 8:
+            continue
+        (
+            label,
+            script_path,
+            receipt_refresh_path,
+            before_generated_at,
+            after_generated_at,
+            before_mtime,
+            after_mtime,
+            exit_code_text,
+        ) = parts
+        try:
+            exit_code = int(exit_code_text)
+        except ValueError:
+            exit_code = 255
+        dependency_refresh_attempts[label] = {
+            "script_path": script_path,
+            "receipt_path": receipt_refresh_path,
+            "before_generated_at": before_generated_at,
+            "after_generated_at": after_generated_at,
+            "before_mtime": before_mtime,
+            "after_mtime": after_mtime,
+            "exit_code": exit_code,
+            "timed_out": exit_code == 124,
+            "receipt_timestamp_changed": before_generated_at != after_generated_at,
+            "receipt_mtime_changed": before_mtime != after_mtime,
+        }
+evidence["dependency_refresh_attempts"] = dependency_refresh_attempts
 
 chummer5a_workflow_parity = check_receipt(
     ui_workflow_parity_path, "chummer5a_workflow_parity", reasons, evidence
@@ -530,6 +759,21 @@ next90_m141_direct_import_route_proof = check_receipt(
     reasons,
     evidence,
 )
+for dependency_label, dependency_payload in (
+    ("chummer5a_workflow_parity", chummer5a_workflow_parity),
+    ("sr4_workflow_parity", sr4_workflow_parity),
+    ("sr6_workflow_parity", sr6_workflow_parity),
+    ("sr4_sr6_frontier", sr4_sr6_frontier),
+    ("ruleset_ui_adaptation", ruleset_ui_adaptation),
+    ("desktop_visual_familiarity_gate", visual_familiarity_gate),
+    ("chummer5a_screenshot_review_gate", chummer5a_screenshot_review_gate),
+    ("next90_m141_direct_import_route_proof", next90_m141_direct_import_route_proof),
+):
+    add_dependency_refresh_failure_reason(
+        dependency_label,
+        dependency_payload,
+        reasons,
+    )
 sr6_workflow_parity_external_only = (
     not status_ok(str(evidence.get("sr6_workflow_parity_status") or ""))
     and desktop_parity_receipt_is_external_only_missing_api_surface_contract(sr6_workflow_parity)

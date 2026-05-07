@@ -4,7 +4,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-ARTIFACT_PATH="$(realpath "${1:?artifact path is required}")"
+ARTIFACT_PATH="$(
+  python3 - "${1:?artifact path is required}" <<'PY'
+import os
+import sys
+
+print(os.path.abspath(sys.argv[1]))
+PY
+)"
 APP_KEY="${2:?app key is required}"
 RID="${3:?rid is required}"
 LAUNCH_TARGET="${4:?launch target is required}"

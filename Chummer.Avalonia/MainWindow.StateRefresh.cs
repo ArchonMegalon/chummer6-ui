@@ -18,13 +18,29 @@ public partial class MainWindow
             _commandAvailabilityEvaluator);
 
         ApplyShellFrame(shellFrame);
+        BindRosterToWorkspaces(state);
         QueueCoachSidecarRefreshIfNeeded(shellSurface);
         ApplyPostRefreshEffects(state);
     }
 
+    private void BindRosterToWorkspaces(CharacterOverviewState state)
+    {
+        IReadOnlyList<OpenWorkspaceState> rosterWorkspaces = ResolveRosterWorkspaces(state);
+        var rosterNodes = CharacterRosterDataBinder.CreateRosterNodes(rosterWorkspaces);
+        CharacterRosterControl.RosterItems = rosterNodes;
+        CharacterRosterControl.SelectedWorkspaceId =
+            state.Session.ActiveWorkspaceId?.Value
+            ?? state.WorkspaceId?.Value;
+    }
+
+    internal static IReadOnlyList<OpenWorkspaceState> ResolveRosterWorkspaces(CharacterOverviewState state)
+        => state.Session.OpenWorkspaces.Count > 0
+            ? state.Session.OpenWorkspaces
+            : state.OpenWorkspaces;
+
     private void ApplyShellFrame(MainWindowShellFrame shellFrame)
     {
-        _transientStateCoordinator.ApplyShellFrame(shellFrame);
+        shellFrame = _transientStateCoordinator.ApplyShellFrame(shellFrame);
         _controls.ApplyShellFrame(shellFrame);
         ApplyWorkbenchChromeVisibility(shellFrame);
     }
@@ -32,8 +48,11 @@ public partial class MainWindow
     private void ApplyWorkbenchChromeVisibility(MainWindowShellFrame shellFrame)
     {
         bool showNavigatorPane = shellFrame.ShowNavigatorPane;
+        bool showRosterPane = !showNavigatorPane;
         bool showSummaryHeader = shellFrame.ChromeState.SummaryHeader.HasVisibleContent;
 
+        RosterPaneRegion.IsVisible = showRosterPane;
+        RosterPaneRegion.IsHitTestVisible = showRosterPane;
         LeftNavigatorRegion.IsVisible = showNavigatorPane;
         LeftNavigatorRegion.IsHitTestVisible = showNavigatorPane;
         SummaryHeaderRegion.IsVisible = showSummaryHeader;
@@ -41,10 +60,10 @@ public partial class MainWindow
 
         if (ContentRegion.ColumnDefinitions.Count >= 3)
         {
-            ContentRegion.ColumnDefinitions[0].Width = showNavigatorPane
+            ContentRegion.ColumnDefinitions[0].Width = showRosterPane || showNavigatorPane
                 ? new GridLength(228)
                 : new GridLength(0);
-            ContentRegion.ColumnSpacing = showNavigatorPane ? 2 : 0;
+            ContentRegion.ColumnSpacing = showRosterPane || showNavigatorPane ? 2 : 0;
         }
     }
 
