@@ -1025,6 +1025,12 @@ bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh
 echo "[verify] checking next-90 M113 GM prep and roster movement desktop surface guard..."
 bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh
 
+echo "[verify] checking CharacterRosterStructureParityGuardTests..."
+if ! rg -n "CharacterRosterStructureParityGuardTests|Chummer6_roster" Chummer.Tests/Compliance/CharacterRosterStructureParityGuardTests.cs Chummer.Tests/Presentation/CharacterRosterStructureParityGuardTests.cs >/dev/null; then
+  echo "[verify] FAIL: CharacterRosterStructureParityGuardTests must exist and contain roster structure tests."
+  exit 170
+fi
+
 echo "[verify] checking next-90 M114 rule-environment studio desktop surface guard..."
 bash scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh
 

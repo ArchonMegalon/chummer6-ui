@@ -118,6 +118,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
                                             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
                                             : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language),
                                         OpenFollowThroughAsync),
+                                    CreateButton(
+                                        DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language),
+                                        OpenAccountAsync),
                                     CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _language), LinkAsync, isDefault: true),
                                     CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_guest", _language), ContinueAsGuestAsync)
                                 }
@@ -245,6 +248,12 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private Task OpenReportIssueAsync()
     {
         return DesktopReportIssueWindow.ShowAsync(this, _state.HeadId);
+    }
+
+    private Task OpenAccountAsync()
+    {
+        DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state);
+        return Task.CompletedTask;
     }
 
     private async Task LinkAsync()

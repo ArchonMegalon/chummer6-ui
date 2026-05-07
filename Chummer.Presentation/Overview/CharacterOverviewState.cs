@@ -76,3 +76,18 @@ public sealed record CharacterOverviewState(
         PendingPrintVersion: 0,
         ActiveNpcPersonaStudio: null);
 }
+
+/// <summary>
+/// Character roster tabs matching Chummer5a oracle:
+/// Description, Concept, Background, Character Notes, Game Notes
+/// </summary>
+public static class CharacterRosterTabs
+{
+    public const string Description = "Description";
+    public const string Concept = "Concept";
+    public const string Background = "Background";
+    public const string CharacterNotes = "Character Notes";
+    public const string GameNotes = "Game Notes";
+    
+    public static readonly string[] All = [Description, Concept, Background, CharacterNotes, GameNotes];
+}

@@ -2,13 +2,90 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Chummer.Contracts.Presentation
 @using Chummer.Presentation.Overview
+@using Chummer.Presentation.UiKit
 @using System.Text.Json.Nodes
 
 <section class="panel section-preview classic-section-preview">
     <h2>@BuildSectionHeading()</h2>
     @if (string.IsNullOrWhiteSpace(State.ActiveSectionJson))
     {
-        <p class="note">Select a tab to render a workspace section.</p>
+        @if (ShouldRenderStartupWorkbench())
+        {
+            <section class="startup-workbench" data-testid="startup-workbench">
+                <header class="startup-workbench-header">
+                    <div>
+                        <h3>Continue Your Workbench</h3>
+                        <p class="note">Start a fresh dossier, reopen a saved runner, or jump straight into classic utilities without leaving the desktop client.</p>
+                    </div>
+                    <p class="startup-workbench-posture note">File remains the primary route. Character Roster and Master Index stay first-class from first paint.</p>
+                </header>
+
+                <div class="startup-workbench-grid">
+                    <section class="startup-workbench-card" data-testid="startup-primary-actions">
+                        <h4>Primary Actions</h4>
+                        <div class="startup-command-list">
+                            @foreach (AppCommandDefinition command in GetStartupPrimaryCommands())
+                            {
+                                <button type="button"
+                                        class="mini-btn"
+                                        data-startup-command="@command.Id"
+                                        disabled="@(!IsCommandEnabled(command) || State.IsBusy)"
+                                        @onclick="() => ExecuteCommandRequested.InvokeAsync(command.Id)">
+                                    @ShellChromeBoundary.FormatCommandLabel(command.Id)
+                                </button>
+                            }
+                        </div>
+                    </section>
+
+                    <section class="startup-workbench-card" data-testid="startup-recent-workspaces">
+                        <h4>Recent Dossiers</h4>
+                        @if (State.Session.RecentWorkspaceIds.Count == 0)
+                        {
+                            <p class="note">No recent dossier receipts yet. Use <strong>Open...</strong> to restore a workspace from disk.</p>
+                        }
+                        else
+                        {
+                            <div class="startup-recent-list">
+                                @foreach (CharacterWorkspaceId workspaceId in State.Session.RecentWorkspaceIds.Take(5))
+                                {
+                                    <button type="button"
+                                            class="startup-recent-item"
+                                            data-recent-workspace-id="@workspaceId.Value"
+                                            disabled="@(!LoadWorkspaceRequested.HasDelegate || State.IsBusy)"
+                                            @onclick="() => LoadWorkspaceRequested.InvokeAsync(workspaceId.Value)">
+                                        <strong>@workspaceId.Value</strong>
+                                        <span>Restore this desktop workspace continuation.</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </section>
+                </div>
+
+                @if (GetStartupSupportCommands().Count > 0)
+                {
+                    <section class="startup-workbench-card startup-workbench-card--support" data-testid="startup-support-actions">
+                        <h4>Desktop Utilities</h4>
+                        <div class="startup-command-list">
+                            @foreach (AppCommandDefinition command in GetStartupSupportCommands())
+                            {
+                                <button type="button"
+                                        class="mini-btn"
+                                        data-startup-command="@command.Id"
+                                        disabled="@(!IsCommandEnabled(command) || State.IsBusy)"
+                                        @onclick="() => ExecuteCommandRequested.InvokeAsync(command.Id)">
+                                    @ShellChromeBoundary.FormatCommandLabel(command.Id)
+                                </button>
+                            }
+                        </div>
+                    </section>
+                }
+            </section>
+        }
+        else
+        {
+            <p class="note">Select a tab to render a workspace section.</p>
+        }
     }
     else if (State.ActiveBuildLab is { } buildLab)
     {
@@ -656,6 +733,15 @@
     [Parameter]
     public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
 
+    [Parameter]
+    public Func<AppCommandDefinition, bool> IsCommandEnabled { get; set; } = _ => false;
+
+    [Parameter]
+    public EventCallback<string> ExecuteCommandRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> LoadWorkspaceRequested { get; set; }
+
     protected override void OnParametersSet()
     {
         BrowseWorkspaceState? browseWorkspace = State.ActiveBrowseWorkspace;
@@ -992,6 +1078,43 @@
         => target is null
             ? action.Label
             : $"{action.Label} -> {target.Label}";
+
+    private bool ShouldRenderStartupWorkbench()
+        => State.ActiveBuildLab is null
+            && State.ActiveNpcPersonaStudio is null
+            && State.ActiveBrowseWorkspace is null
+            && State.OpenWorkspaces.Count == 0
+            && State.Commands.Count > 0;
+
+    private IReadOnlyList<AppCommandDefinition> GetStartupPrimaryCommands()
+        => ResolveStartupCommands(
+            "open_character",
+            "new_character",
+            "character_roster",
+            "master_index");
+
+    private IReadOnlyList<AppCommandDefinition> GetStartupSupportCommands()
+        => ResolveStartupCommands(
+            "global_settings",
+            "report_bug");
+
+    private IReadOnlyList<AppCommandDefinition> ResolveStartupCommands(params string[] orderedIds)
+    {
+        Dictionary<string, AppCommandDefinition> commandsById = State.Commands
+            .GroupBy(command => command.Id, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+
+        List<AppCommandDefinition> commands = [];
+        foreach (string commandId in orderedIds)
+        {
+            if (commandsById.TryGetValue(commandId, out AppCommandDefinition? command))
+            {
+                commands.Add(command);
+            }
+        }
+
+        return commands;
+    }
 
     private string BuildSectionHeading()
     {

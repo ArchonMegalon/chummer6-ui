@@ -372,15 +372,19 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Avalonia_startup_enters_the_workbench_without_reopening_the_desktop_home_cockpit()
+    public void Avalonia_startup_keeps_the_workbench_as_first_paint_but_still_invokes_restore_continuation_when_needed()
     {
         string appPath = ResolveSourceFile("Chummer.Avalonia", "App.axaml.cs");
         string appText = File.ReadAllText(appPath);
 
         StringAssert.Contains(appText, "DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);");
+        StringAssert.Contains(appText, "DesktopHomeWindow.ShowIfNeededAsync(owner, \"avalonia\", installContext: null);");
         Assert.IsTrue(
             appText.Contains("if (installLinkingContext is not null)", StringComparison.Ordinal),
             "Startup modal prompts should still be gated on active install-linking context.");
+        Assert.IsTrue(
+            appText.Contains("else", StringComparison.Ordinal),
+            "The desktop home surface should stay on the default-launch path instead of pre-empting explicit startup-surface routes.");
     }
 
     [TestMethod]
@@ -402,13 +406,18 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         string projectorPath = ResolveSourceFile("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs");
         string summaryHeaderPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "SummaryHeaderControl.axaml.cs");
+        string summaryHeaderMarkupPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "SummaryHeaderControl.axaml");
         string projectorText = File.ReadAllText(projectorPath);
         string summaryHeaderText = File.ReadAllText(summaryHeaderPath);
+        string summaryHeaderMarkupText = File.ReadAllText(summaryHeaderMarkupPath);
 
         StringAssert.Contains(projectorText, "ShowNavigatorPane: false");
         StringAssert.Contains(projectorText, "return [];");
-        StringAssert.Contains(summaryHeaderText, "RestoreContinuityStatusBorder.IsVisible = false;");
-        StringAssert.Contains(summaryHeaderText, "RestoreContinuityActionPanel.IsVisible = false;");
+        StringAssert.Contains(projectorText, "if (shellNotice.StartsWith(\"Restored \", StringComparison.OrdinalIgnoreCase))");
+        StringAssert.Contains(summaryHeaderText, "bool hasRecoveryContext =");
+        StringAssert.Contains(summaryHeaderText, "SaveLocalWorkButton.IsEnabled = state.CanSaveLocalWorkBeforeRestore;");
+        StringAssert.Contains(summaryHeaderMarkupText, "Keep Local Work");
+        StringAssert.Contains(summaryHeaderMarkupText, "Review Campaign Workspace");
     }
 
     [TestMethod]
@@ -465,6 +474,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         StringAssert.Contains(releaseGateText, "chummer5a-layout-hard-gate.sh");
         StringAssert.Contains(visualGateText, "chummer5a-layout-hard-gate.sh");
+        StringAssert.Contains(visualGateText, "promote_fresh_runtime_screenshot_pack");
+        StringAssert.Contains(visualGateText, ".codex-studio/out/chummer5a-ultimate-parity-tester/live/screenshots/actual");
+        StringAssert.Contains(visualGateText, ".codex-studio/out/chummer5a-parity-tester/live/screenshots/actual");
+        StringAssert.Contains(visualGateText, ".codex-studio/out/ui-flagship-release-gate-screenshots-debug");
         StringAssert.Contains(layoutGateText, "defaultSingleRunnerKeepsWorkspaceChromeCollapsed");
         StringAssert.Contains(appAxamlText, "FontFamily\" Value=\"Trebuchet MS,Verdana,Geneva,Arial\"");
         StringAssert.Contains(toolStripText, "x:Name=\"DesktopHomeButton\"");
@@ -952,6 +965,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .ToArray();
             string[] shellChromeLabels = harness.Window.GetVisualDescendants()
                 .OfType<TextBlock>()
+                .Where(text => text.IsVisible)
                 .Select(text => text.Text ?? string.Empty)
                 .Where(static value => !string.IsNullOrWhiteSpace(value))
                 .ToArray();
@@ -1429,7 +1443,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Standalone_summary_header_stays_hidden_for_strict_shell_parity()
+    public void Standalone_summary_header_stays_hidden_without_restore_handoff()
     {
         WithStandaloneControl<SummaryHeaderControl>(control =>
         {
@@ -1448,6 +1462,55 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Assert.IsFalse(control.IsVisible, "Summary header must stay hidden in the strict Chummer5a-faithful shell.");
             Assert.AreEqual(0d, control.Height, "Summary header must collapse out of layout when hidden.");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_summary_header_surfaces_restore_handoff_actions_when_present()
+    {
+        WithStandaloneControl<SummaryHeaderControl>(control =>
+        {
+            int keepLocalRequests = 0;
+            int saveLocalRequests = 0;
+            int campaignWorkspaceRequests = 0;
+            int workspaceSupportRequests = 0;
+
+            control.KeepLocalWorkRequested += (_, _) => keepLocalRequests++;
+            control.SaveLocalWorkRequested += (_, _) => saveLocalRequests++;
+            control.CampaignWorkspaceRequested += (_, _) => campaignWorkspaceRequests++;
+            control.WorkspaceSupportRequested += (_, _) => workspaceSupportRequests++;
+
+            control.SetState(new SummaryHeaderState(
+                NavigationTabsHeading: "Runner Tabs",
+                NavigationTabs:
+                [
+                    new NavigatorTabItem("tab-profile", "Profile", "profile", "runner", true),
+                    new NavigatorTabItem("tab-gear", "Gear", "gear", "runner", true),
+                ],
+                ActiveTabId: "tab-profile",
+                HasVisibleContent: true,
+                RestoreContinuitySummary: "Restore choice: continue from runner-1.",
+                StaleStateSummary: "Stale state: runner-1 stays visible.",
+                ConflictChoiceSummary: "Conflict choices: keep local work, save local work, or review Campaign Workspace.",
+                CanSaveLocalWorkBeforeRestore: true));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            Assert.IsTrue(control.IsVisible, "Summary header must surface a real restore handoff when the shell has one.");
+            Assert.IsTrue(FindDescendant<Control>(control, "RestoreContinuityStatusBorder").IsVisible);
+            Assert.IsTrue(FindDescendant<Control>(control, "RestoreContinuityActionPanel").IsVisible);
+            Assert.IsTrue(FindDescendant<Button>(control, "SaveLocalWorkButton").IsEnabled);
+
+            RaiseClick(FindDescendant<Button>(control, "KeepLocalWorkButton"));
+            RaiseClick(FindDescendant<Button>(control, "SaveLocalWorkButton"));
+            RaiseClick(FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton"));
+            RaiseClick(FindDescendant<Button>(control, "OpenWorkspaceSupportButton"));
+
+            Assert.AreEqual(1, keepLocalRequests);
+            Assert.AreEqual(1, saveLocalRequests);
+            Assert.AreEqual(1, campaignWorkspaceRequests);
+            Assert.AreEqual(1, workspaceSupportRequests);
         });
     }
 
@@ -4957,7 +5020,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         return match;
     }
 
-    private static IReadOnlyList<string> ResolveChummer5aFixtureUiReconstructionFixtureNames()
+    private static string[] ResolveChummer5aFixtureUiReconstructionFixtureNames()
     {
         string? configuredFixtureFile = Environment.GetEnvironmentVariable("CHUMMER_FIXTURE_UI_RECONSTRUCTION_FIXTURES_FILE");
         if (!string.IsNullOrWhiteSpace(configuredFixtureFile))

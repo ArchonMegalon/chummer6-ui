@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-05T23:37:22.295694Z",
+  "generatedAt": "2026-05-07T10:44:06.827662Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family parity evidence is incomplete for create-open-import-save-save-as-print-export.",
-  "reasons": [
-    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/create-open-import-save-save-as-print-export.generated.json (fail)"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family parity evidence is explicitly grounded for create-open-import-save-save-as-print-export.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "create-open-import-save-save-as-print-export",
@@ -25,10 +23,10 @@
         "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts"
       ]
     },
-    "verificationReceipts": [],
-    "verificationFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/create-open-import-save-save-as-print-export.generated.json (fail)"
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/create-open-import-save-save-as-print-export.generated.json"
     ],
+    "verificationFailures": [],
     "verificationExternalBlockers": []
   }
 }

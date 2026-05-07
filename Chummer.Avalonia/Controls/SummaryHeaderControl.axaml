@@ -1,18 +1,90 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
              x:Class="Chummer.Avalonia.Controls.SummaryHeaderControl">
-  <Grid Height="0"
-        MinHeight="0"
-        MaxHeight="0"
-        IsVisible="False"
-        IsHitTestVisible="False">
-    <Border x:Name="RestoreContinuityStatusBorder"
-            IsVisible="False"
-            Width="0"
-            Height="0" />
-    <StackPanel x:Name="RestoreContinuityActionPanel"
-                IsVisible="False"
-                Width="0"
-                Height="0" />
-  </Grid>
+  <Border x:Name="RootBorder"
+          Background="#E9EEF4"
+          BorderBrush="#C8D2DD"
+          BorderThickness="0,0,0,1"
+          Padding="14,10"
+          IsVisible="False">
+    <StackPanel Spacing="10">
+      <StackPanel x:Name="NavigationTabsPanel"
+                  Spacing="6">
+        <TextBlock x:Name="NavigationTabsHeadingText"
+                   FontSize="12"
+                   FontWeight="SemiBold"
+                   Foreground="#4D6175" />
+        <WrapPanel x:Name="NavigationTabsButtonsPanel"
+                   HorizontalAlignment="Left" />
+      </StackPanel>
+
+      <Border x:Name="RestoreContinuityStatusBorder"
+              Background="#F7FAFD"
+              BorderBrush="#9EB2C7"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="12"
+              IsVisible="False">
+        <StackPanel Spacing="6">
+          <TextBlock x:Name="RestoreContinuityStatusText"
+                     TextWrapping="Wrap"
+                     FontWeight="SemiBold" />
+          <TextBlock x:Name="StaleStateStatusText"
+                     TextWrapping="Wrap" />
+          <TextBlock x:Name="ConflictChoiceStatusText"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <Border x:Name="RestoreContinuityActionPanel"
+              Background="#FFFFFF"
+              BorderBrush="#C8D2DD"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="12"
+              IsVisible="False">
+        <StackPanel Spacing="8">
+          <TextBlock x:Name="RestoreContinuityDecisionText"
+                     TextWrapping="Wrap"
+                     FontWeight="SemiBold" />
+          <TextBlock x:Name="RestoreContinuityDecisionOrderText"
+                     TextWrapping="Wrap" />
+          <TextBlock x:Name="RestoreContinuityLocalAuthorityText"
+                     TextWrapping="Wrap" />
+          <TextBlock x:Name="RestoreContinuityReplacementGuardText"
+                     TextWrapping="Wrap" />
+          <TextBlock x:Name="RestoreContinuitySupportHandoffText"
+                     TextWrapping="Wrap" />
+          <WrapPanel x:Name="RestoreActionButtonsPanel"
+                     HorizontalAlignment="Left" />
+          <WrapPanel HorizontalAlignment="Left"
+                     ItemHeight="32"
+                     ItemWidth="0">
+            <Button x:Name="KeepLocalWorkButton"
+                    Margin="0,0,8,0"
+                    Click="KeepLocalWorkButton_OnClick"
+                    Content="Keep Local Work" />
+            <Button x:Name="SaveLocalWorkButton"
+                    Margin="0,0,8,0"
+                    Click="SaveLocalWorkButton_OnClick"
+                    Content="Save Local Work" />
+            <Button x:Name="ReviewCampaignWorkspaceButton"
+                    Margin="0,0,8,0"
+                    Click="ReviewCampaignWorkspaceButton_OnClick"
+                    Content="Review Campaign Workspace" />
+            <Button x:Name="OpenWorkspaceSupportButton"
+                    Click="OpenWorkspaceSupportButton_OnClick"
+                    Content="Workspace Support" />
+          </WrapPanel>
+          <TextBlock x:Name="RestoreContinuityActionStatusText"
+                     TextWrapping="Wrap"
+                     FontSize="12"
+                     Foreground="#41566A" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Border>
 </UserControl>

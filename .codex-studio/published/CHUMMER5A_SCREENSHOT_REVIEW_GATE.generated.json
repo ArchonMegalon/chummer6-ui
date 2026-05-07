@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T01:39:08.583719Z",
+  "generatedAt": "2026-05-07T14:07:23.642753Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "preview",
   "releaseVersion": "run-20260503-163502",
@@ -74,7 +74,7 @@
     "undersizedScreenshots": [],
     "staleScreenshots": [],
     "screenshotsOlderThanFlagshipReceipt": [],
-    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots"
+    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots"
   },
   "reviewJobsSummary": {
     "status": "pass",
@@ -92,7 +92,7 @@
     "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
     "flagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
   },
-  "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+  "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
   "reviewJobs": {
     "dense_builder": {
       "frontierId": 3782970110,
@@ -267,7 +267,7 @@
       "flagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
     },
     "controlEvidencePath": "",
-    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",

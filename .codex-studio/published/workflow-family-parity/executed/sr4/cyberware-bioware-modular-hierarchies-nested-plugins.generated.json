@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T00:29:13.969499Z",
+  "generatedAt": "2026-05-07T10:46:07.267675Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family execution evidence is explicitly grounded for cyberware-bioware-modular-hierarchies-nested-plugins.",
@@ -26,7 +26,9 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/sr4-workflow-family-execution.trx",
-      "exitCode": 0
+      "exitCode": 0,
+      "attemptCount": 1,
+      "maxAttempts": 2
     },
     "apiProbe": {
       "baseUrl": "http://127.0.0.1:8088",

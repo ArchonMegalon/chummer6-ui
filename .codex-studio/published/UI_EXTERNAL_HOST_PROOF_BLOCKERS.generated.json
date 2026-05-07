@@ -1,65 +1,17 @@
 {
   "contract_name": "chummer6-ui.external_host_proof_blockers",
-  "generated_at": "2026-05-06T18:32:19Z",
-  "manifest_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
-  "downloads_dir": "/tmp/tmp.Ze5NKlj7jb",
-  "startup_smoke_dir": "/tmp/tmp.uTgFfz4g1U",
+  "generated_at": "2026-05-06T23:47:10Z",
+  "manifest_path": "/tmp/chummer-generate-release-sync-302bce6367be4d28827a23a00898fc40/canonical/RELEASE_CHANNEL.generated.json",
+  "downloads_dir": "/tmp/chummer-generate-release-sync-302bce6367be4d28827a23a00898fc40/downloads/files",
+  "startup_smoke_dir": "/tmp/tmp.kfBubHSk4M",
   "base_url": "https://chummer.run",
   "timeout_seconds": 10,
   "max_receipt_age_seconds": 604800,
-  "release_published_at": "2026-05-06T18:32:16Z",
-  "status": "blocked",
-  "missing_required_platform_head_rid_tuples": [
-    "avalonia:linux-x64:linux"
-  ],
-  "unresolved_hosts": [
-    "linux"
-  ],
-  "unresolved_tuples": [
-    "avalonia:linux-x64:linux"
-  ],
-  "external_proof_request_count": 1,
-  "external_proof_requests": [
-    {
-      "tupleId": "avalonia:linux-x64:linux",
-      "requiredHost": "linux",
-      "expectedPublicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
-      "requiredProofs": [
-        "promoted_installer_artifact",
-        "startup_smoke_receipt"
-      ],
-      "expectedArtifactId": "avalonia-linux-x64-installer",
-      "installAccessClass": "",
-      "expectedInstallerRelativePath": "files/chummer-avalonia-linux-x64-installer.deb",
-      "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
-      "installerPresent": true,
-      "installerSha256": "84d5c3a7065666286c5e3a5feccbc2ee3c04117cf5afaa116c09e1e2d9e44643",
-      "expectedInstallerSha256": "84d5c3a7065666286c5e3a5feccbc2ee3c04117cf5afaa116c09e1e2d9e44643",
-      "startupSmokeReceiptPresent": false,
-      "startupSmokeReceiptRecordedAtUtc": "",
-      "startupSmokeReceiptAgeSeconds": null,
-      "startupSmokeReceiptStatus": "",
-      "startupSmokeReceiptChannelId": "",
-      "startupSmokeReceiptVersion": "",
-      "publicRouteProbe": {
-        "checked": true,
-        "url": "https://chummer.run/downloads/install/avalonia-linux-x64-installer",
-        "http_status": 403,
-        "ok": false,
-        "error": "http_403",
-        "installAccessClass": "",
-        "authExpected": false,
-        "authChallengeAccepted": false
-      },
-      "blockerCodes": [
-        "receipt_missing",
-        "public_route_unhealthy"
-      ],
-      "blockerMessages": [
-        "startup smoke receipt missing at /tmp/tmp.uTgFfz4g1U/startup-smoke-avalonia-linux-x64.receipt.json",
-        "public install route unhealthy (status=403, error=http_403)"
-      ],
-      "ready": false
-    }
-  ]
+  "release_published_at": "2026-05-06T23:47:10Z",
+  "status": "ready",
+  "missing_required_platform_head_rid_tuples": [],
+  "unresolved_hosts": [],
+  "unresolved_tuples": [],
+  "external_proof_request_count": 0,
+  "external_proof_requests": []
 }

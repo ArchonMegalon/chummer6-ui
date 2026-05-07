@@ -1756,7 +1756,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferNightlyBuilds ? "true" : "false",
                 "true",
                 InputType: "checkbox",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField(
                 "globalCharacterRosterPath",
                 "Character Roster Watch Folder",

@@ -2,6 +2,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 oracle_path="$repo_root/docs/CHUMMER4_SR4_PARITY_ORACLE.json"
 ledger_path="$repo_root/docs/SR4_WORKFLOW_PARITY_LEDGER.json"

@@ -44,7 +44,7 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr5, "runtime/provider attention required");
         StringAssert.Contains(sr6, "setup tools");
         StringAssert.Contains(sr6, ".chum6");
-        StringAssert.Contains(sr6, "experimental-host honesty visible");
+        StringAssert.Contains(sr6, "setup-tools runtime honesty remains visible");
     }
 
     [TestMethod]
@@ -122,9 +122,9 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr5Resume, "Shadowrun 5 resume");
         StringAssert.Contains(sr5Resume, "SR5 character");
         StringAssert.Contains(sr5Resume, "Apex / Ghost");
-        StringAssert.Contains(sr6Open, "SR6 character");
+        StringAssert.Contains(sr6Open, "SR6 runner");
         StringAssert.Contains(sr4FollowThrough, "SR4 import details");
-        StringAssert.Contains(sr6WorkspaceFollowThrough, "SR6 character details");
+        StringAssert.Contains(sr6WorkspaceFollowThrough, "SR6 runner details");
         Assert.AreEqual("SR5", sr5Prefix);
     }
 

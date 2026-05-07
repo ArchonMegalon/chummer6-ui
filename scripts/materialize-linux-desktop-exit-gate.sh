@@ -309,12 +309,15 @@ import subprocess
 import sys
 
 output_path = pathlib.Path(sys.argv[1])
-repo_root = pathlib.Path(sys.argv[2]).resolve()
-output_base_root = pathlib.Path(sys.argv[3]).resolve()
-canonical_proof_path = pathlib.Path(sys.argv[4]).resolve()
+repo_root_text = sys.argv[2]
+output_base_root_text = sys.argv[3]
+canonical_proof_path_text = sys.argv[4]
+repo_root = pathlib.Path(repo_root_text).resolve()
+output_base_root = pathlib.Path(output_base_root_text).resolve()
+canonical_proof_path = pathlib.Path(canonical_proof_path_text).resolve()
 
 payload = {
-    "repo_root": str(repo_root),
+    "repo_root": repo_root_text,
     "available": False,
     "head": "",
     "tracked_diff_sha256": "",
@@ -508,12 +511,18 @@ import stat
 import subprocess
 import sys
 
-repo_root = pathlib.Path(sys.argv[1]).resolve()
-snapshot_root = pathlib.Path(sys.argv[2]).resolve()
-output_base_root = pathlib.Path(sys.argv[3]).resolve()
-canonical_proof_path = pathlib.Path(sys.argv[4]).resolve()
-manifest_path = pathlib.Path(sys.argv[5]).resolve()
-entries_path = pathlib.Path(sys.argv[6]).resolve()
+repo_root_text = sys.argv[1]
+snapshot_root_text = sys.argv[2]
+output_base_root_text = sys.argv[3]
+canonical_proof_path_text = sys.argv[4]
+manifest_path_text = sys.argv[5]
+entries_path_text = sys.argv[6]
+repo_root = pathlib.Path(repo_root_text).resolve()
+snapshot_root = pathlib.Path(snapshot_root_text).resolve()
+output_base_root = pathlib.Path(output_base_root_text).resolve()
+canonical_proof_path = pathlib.Path(canonical_proof_path_text).resolve()
+manifest_path = pathlib.Path(manifest_path_text).resolve()
+entries_path = pathlib.Path(entries_path_text).resolve()
 
 GATE_INPUT_MARKERS = (
     "Chummer.Avalonia/",
@@ -705,9 +714,9 @@ for relative in SUPPLEMENTAL_SNAPSHOT_PATHS:
 
 manifest = {
     "mode": "filesystem_copy",
-    "repo_root": str(repo_root),
-    "snapshot_root": str(snapshot_root),
-    "entries_path": str(entries_path),
+    "repo_root": repo_root_text,
+    "snapshot_root": snapshot_root_text,
+    "entries_path": entries_path_text,
     "entry_count": entry_count,
     "worktree_sha256": digest.hexdigest(),
 }
@@ -1668,8 +1677,11 @@ if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PRO
     && -n "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" && -f "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" ]]; then
     mkdir -p "$DIST_DIR" "$SMOKE_INSTALLER_DIR"
     cp "$PROMOTED_INSTALLER_PATH" "$INSTALLER_PATH"
-    cp "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" "$INSTALLER_RECEIPT_PATH"
-    INSTALLER_SMOKE_ARTIFACT_PATH="$PROMOTED_INSTALLER_PATH"
+    INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
+
+    CURRENT_STAGE="startup_smoke_installer"
+    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
+    test -f "$INSTALLER_RECEIPT_PATH"
 
     CURRENT_STAGE="promoted_installer_proof_integrity"
     python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
@@ -1723,6 +1735,14 @@ def sha256(path: pathlib.Path) -> str:
     return digest.hexdigest().lower()
 
 
+def path_is_within(path: pathlib.Path, root: pathlib.Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except Exception:
+        return False
+
+
 def parse_iso(value: object) -> dt.datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -1757,6 +1777,7 @@ if expected_artifact is None:
     if promoted_mode:
         reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
 else:
+    canonical_output_root = repo_root / ".codex-studio" / "out" / "linux-desktop-exit-gate"
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
@@ -1778,10 +1799,15 @@ else:
         reasons.append("Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes.")
     if promoted_mode and shelf_path.is_file():
         try:
-            if installer_smoke_artifact_path.resolve() != shelf_path.resolve():
-                reasons.append("Linux startup smoke installer artifact path does not resolve to promoted repo-local shelf bytes.")
+            if (
+                installer_smoke_artifact_path.resolve() != shelf_path.resolve()
+                and not path_is_within(installer_smoke_artifact_path, canonical_output_root)
+            ):
+                reasons.append(
+                    "Linux startup smoke installer artifact path is neither the promoted repo-local shelf bytes nor a canonical gate-run copy."
+                )
         except Exception:
-            reasons.append("Linux startup smoke installer artifact path could not be resolved for promoted shelf verification.")
+            reasons.append("Linux startup smoke installer artifact path could not be resolved for promoted or canonical gate-run verification.")
 
     receipt = load_json(installer_receipt_path)
     if not receipt:
@@ -1883,7 +1909,7 @@ if [[ "$EFFECTIVE_USE_PROMOTED_INSTALLER" == "1" ]]; then
     exit 1
   fi
   cp "$PROMOTED_INSTALLER_PATH" "$INSTALLER_PATH"
-  INSTALLER_SMOKE_ARTIFACT_PATH="$PROMOTED_INSTALLER_PATH"
+  INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
 fi
 
 CURRENT_STAGE="startup_smoke_archive"
@@ -1977,6 +2003,14 @@ def path_uses_legacy_chummer5a_root(path: pathlib.Path) -> bool:
     return "/chummer5a/" in normalized
 
 
+def path_is_within(path: pathlib.Path, root: pathlib.Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except Exception:
+        return False
+
+
 def resolve_receipt_artifact_path(
     raw_candidates: list[str],
     repo_root: pathlib.Path,
@@ -2006,6 +2040,7 @@ def resolve_receipt_artifact_path(
 if not release_channel_path.is_file():
     reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
 else:
+    canonical_output_root = repo_root / ".codex-studio" / "out" / "linux-desktop-exit-gate"
     try:
         release_channel = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
     except Exception as ex:
@@ -2072,13 +2107,16 @@ else:
 
             if promoted_mode:
                 try:
-                    if installer_smoke_artifact_path.resolve() != promoted_shelf_artifact_path.resolve():
+                    if (
+                        installer_smoke_artifact_path.resolve() != promoted_shelf_artifact_path.resolve()
+                        and not path_is_within(installer_smoke_artifact_path, canonical_output_root)
+                    ):
                         reasons.append(
-                            "Linux startup smoke installer artifact path does not resolve to promoted repo-local shelf bytes."
+                            "Linux startup smoke installer artifact path is neither the promoted repo-local shelf bytes nor a canonical gate-run copy."
                         )
                 except Exception:
                     reasons.append(
-                        "Linux startup smoke installer artifact path could not be resolved for promoted shelf verification."
+                        "Linux startup smoke installer artifact path could not be resolved for promoted or canonical gate-run verification."
                     )
 
         if not installer_receipt_path.is_file():
@@ -2179,13 +2217,14 @@ else:
                         if (
                             promoted_shelf_artifact_path.is_file()
                             and receipt_artifact_path_obj.resolve() != promoted_shelf_artifact_path.resolve()
+                            and not path_is_within(receipt_artifact_path_obj, canonical_output_root)
                         ):
                             reasons.append(
-                                "Linux startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes."
+                                "Linux startup smoke receipt artifactPath is neither the promoted installer shelf bytes nor a canonical gate-run copy."
                             )
                     except Exception:
                         reasons.append(
-                            "Linux startup smoke receipt artifactPath could not be resolved for promoted shelf verification."
+                            "Linux startup smoke receipt artifactPath could not be resolved for promoted or canonical gate-run verification."
                         )
             if not receipt_recorded_at:
                 reasons.append("Linux startup smoke receipt timestamp is missing.")

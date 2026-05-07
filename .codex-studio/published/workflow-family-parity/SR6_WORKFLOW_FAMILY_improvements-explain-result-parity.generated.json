@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-05T23:37:22.325747Z",
+  "generatedAt": "2026-05-07T10:44:06.830139Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family parity evidence is incomplete for improvements-explain-result-parity.",
-  "reasons": [
-    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/improvements-explain-result-parity.generated.json (fail)"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family parity evidence is explicitly grounded for improvements-explain-result-parity.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "improvements-explain-result-parity",
@@ -24,10 +22,10 @@
         "Avalonia_and_Blazor_workspace_action_summary_matches"
       ]
     },
-    "verificationReceipts": [],
-    "verificationFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/improvements-explain-result-parity.generated.json (fail)"
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/improvements-explain-result-parity.generated.json"
     ],
+    "verificationFailures": [],
     "verificationExternalBlockers": []
   }
 }

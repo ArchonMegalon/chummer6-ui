@@ -1950,7 +1950,6 @@ def validate_windows_gate(
     }
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
-    validate_receipt_freshness("windows desktop exit gate proof", gate_payload, gate_evidence, reasons)
     gate_contract_name = normalize_contract_name(gate_payload)
     gate_evidence["contract_name"] = gate_contract_name
     if gate_contract_name != "chummer6-ui.windows_desktop_exit_gate":
@@ -1982,6 +1981,13 @@ def validate_windows_gate(
     startup_smoke_external_blocker = normalize_token(gate_checks.get("startup_smoke_external_blocker"))
     gate_evidence["host_supports_windows_startup_smoke"] = host_supports_windows_startup_smoke
     gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
+    validate_receipt_freshness(
+        "windows desktop exit gate proof",
+        gate_payload,
+        gate_evidence,
+        reasons,
+        allow_stale_pass_receipt=not host_supports_windows_startup_smoke,
+    )
     embedded_payload_marker_present = bool(gate_checks.get("embedded_payload_marker_present"))
     embedded_sample_marker_present = bool(gate_checks.get("embedded_sample_marker_present"))
     gate_evidence["embedded_payload_marker_present"] = embedded_payload_marker_present
@@ -2420,7 +2426,6 @@ def validate_macos_gate(
     }
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
-    validate_receipt_freshness(f"macOS desktop exit gate proof for {head} ({rid})", gate_payload, gate_evidence, reasons)
     gate_contract_name = normalize_contract_name(gate_payload)
     gate_evidence["contract_name"] = gate_contract_name
     if gate_contract_name != "chummer6-ui.macos_desktop_exit_gate":
@@ -2589,6 +2594,13 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_receipt_source"] = "file" if startup_receipt_file else "missing"
     gate_evidence["host_supports_macos_startup_smoke"] = host_supports_macos_startup_smoke
     gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
+    validate_receipt_freshness(
+        f"macOS desktop exit gate proof for {head} ({rid})",
+        gate_payload,
+        gate_evidence,
+        reasons,
+        allow_stale_pass_receipt=not host_supports_macos_startup_smoke,
+    )
     register_external_blocker(
         evidence,
         platform="macos",
@@ -3056,6 +3068,7 @@ def startup_smoke_receipt_matches_any_published_artifact(
 def collect_stale_passing_startup_smoke_receipts_against_published_artifacts(
     startup_smoke_roots: List[Path],
     published_desktop_artifacts_by_tuple: Dict[str, List[Dict[str, Any]]],
+    published_installer_tuples: set[str],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -3063,6 +3076,9 @@ def collect_stale_passing_startup_smoke_receipts_against_published_artifacts(
     stale_windows: List[Dict[str, Any]] = []
     stale_macos: List[Dict[str, Any]] = []
     stale_passing: List[str] = []
+    ignored_linux: List[Dict[str, Any]] = []
+    ignored_windows: List[Dict[str, Any]] = []
+    ignored_macos: List[Dict[str, Any]] = []
     seen_paths: set[str] = set()
 
     for startup_smoke_root in startup_smoke_roots:
@@ -3085,6 +3101,21 @@ def collect_stale_passing_startup_smoke_receipts_against_published_artifacts(
 
             platform_token = tuple_token.rsplit(":", 1)[-1]
             if platform_token not in {"linux", "windows", "macos"}:
+                continue
+
+            if tuple_token not in published_installer_tuples:
+                ignored_record = {
+                    "path": str(receipt_file),
+                    "tuple": tuple_token,
+                    "status": normalize_token(payload.get("status")),
+                    "ignoredReason": "no_published_promoted_installer_tuple",
+                }
+                if platform_token == "linux":
+                    ignored_linux.append(ignored_record)
+                elif platform_token == "windows":
+                    ignored_windows.append(ignored_record)
+                else:
+                    ignored_macos.append(ignored_record)
                 continue
 
             published_artifacts = published_desktop_artifacts_by_tuple.get(tuple_token, [])
@@ -3125,6 +3156,9 @@ def collect_stale_passing_startup_smoke_receipts_against_published_artifacts(
     evidence["stale_windows_startup_smoke_receipts_against_published_artifacts"] = stale_windows
     evidence["stale_macos_startup_smoke_receipts_against_published_artifacts"] = stale_macos
     evidence["stale_passing_startup_smoke_receipts_against_published_artifacts"] = stale_passing
+    evidence["ignored_linux_startup_smoke_receipts_without_published_installer_tuple"] = ignored_linux
+    evidence["ignored_windows_startup_smoke_receipts_without_published_installer_tuple"] = ignored_windows
+    evidence["ignored_macos_startup_smoke_receipts_without_published_installer_tuple"] = ignored_macos
     if stale_passing:
         reasons.append(
             "Stale passing startup smoke receipts exist for non-promoted or artifact-drifted desktop proof: "
@@ -5988,13 +6022,13 @@ published_windows_tuples = {
 }
 published_macos_tuples = {
     f"{normalize_token(item.get('head'))}:{macos_rid_from_artifact(item)}"
-    for item in artifacts
+    for item in desktop_install_artifacts
     if normalize_token(item.get("platform")) == "macos"
     and normalize_token(item.get("head"))
     and macos_rid_from_artifact(item)
 }
 published_desktop_artifacts_by_tuple: Dict[str, List[Dict[str, Any]]] = {}
-for item in artifacts:
+for item in desktop_install_artifacts:
     platform_token = normalize_token(item.get("platform"))
     if platform_token not in {"linux", "windows", "macos"}:
         continue
@@ -6006,11 +6040,13 @@ for item in artifacts:
     if not tuple_token:
         continue
     published_desktop_artifacts_by_tuple.setdefault(tuple_token, []).append(item)
+published_installer_startup_smoke_tuples = sorted(published_desktop_artifacts_by_tuple)
 startup_smoke_roots = [receipt_path.parent / "startup-smoke"]
 if hub_registry_root is not None:
     startup_smoke_roots.append(hub_registry_root / ".codex-studio" / "published" / "startup-smoke")
 evidence["published_startup_smoke_roots"] = [str(path) for path in startup_smoke_roots]
 evidence["published_desktop_artifact_tuples"] = sorted(published_desktop_artifacts_by_tuple)
+evidence["published_installer_startup_smoke_tuples"] = published_installer_startup_smoke_tuples
 collect_stale_platform_gate_receipts_without_promoted_tuples(
     receipt_path.parent,
     promoted_linux_tuples,
@@ -6025,6 +6061,7 @@ collect_stale_platform_gate_receipts_without_promoted_tuples(
 collect_stale_passing_startup_smoke_receipts_against_published_artifacts(
     startup_smoke_roots,
     published_desktop_artifacts_by_tuple,
+    set(published_installer_startup_smoke_tuples),
     evidence,
     reasons,
 )

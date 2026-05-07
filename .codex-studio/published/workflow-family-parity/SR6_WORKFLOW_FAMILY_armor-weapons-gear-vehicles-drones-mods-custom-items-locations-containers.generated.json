@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-05T23:37:22.324615Z",
+  "generatedAt": "2026-05-07T10:44:06.829123Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family parity evidence is incomplete for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
-  "reasons": [
-    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail)"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family parity evidence is explicitly grounded for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
@@ -30,10 +28,10 @@
         "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
       ]
     },
-    "verificationReceipts": [],
-    "verificationFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail)"
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json"
     ],
+    "verificationFailures": [],
     "verificationExternalBlockers": []
   }
 }

@@ -48,7 +48,16 @@ public partial class DesktopShell
         if (_bridge is null || string.IsNullOrWhiteSpace(LoadWorkspaceId))
             return;
 
-        await _bridge.LoadAsync(new CharacterWorkspaceId(LoadWorkspaceId.Trim()), CancellationToken.None);
+        await LoadWorkspaceAsync(LoadWorkspaceId.Trim());
+    }
+
+    private async Task LoadWorkspaceAsync(string workspaceId)
+    {
+        if (_bridge is null || string.IsNullOrWhiteSpace(workspaceId))
+            return;
+
+        LoadWorkspaceId = workspaceId.Trim();
+        await _bridge.LoadAsync(new CharacterWorkspaceId(LoadWorkspaceId), CancellationToken.None);
         await SyncShellWorkspaceContextAsync();
         SyncMetadataDraftFromState();
     }

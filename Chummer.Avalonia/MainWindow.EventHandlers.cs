@@ -58,6 +58,11 @@ public partial class MainWindow
 
     private async void ToolStrip_OnSaveRequested(object? sender, EventArgs e)
     {
+        if (sender is Controls.SummaryHeaderControl)
+        {
+            _transientStateCoordinator.RecordSaveLocalWorkDecision(ResolveActiveWorkspaceId());
+        }
+
         await RunUiActionAsync(
             () => _interactionCoordinator.SaveAsync(CancellationToken.None),
             "save workspace");
@@ -140,6 +145,11 @@ public partial class MainWindow
 
     private async void ToolStrip_OnCampaignWorkspaceRequested(object? sender, EventArgs e)
     {
+        if (sender is Controls.SummaryHeaderControl)
+        {
+            _transientStateCoordinator.RecordCampaignWorkspaceDecision(ResolveActiveWorkspaceId());
+        }
+
         await RunUiActionAsync(
             async () =>
             {
@@ -213,11 +223,13 @@ public partial class MainWindow
 
     private void SummaryHeader_OnKeepLocalWorkRequested(object? sender, EventArgs e)
     {
+        _transientStateCoordinator.RecordKeepLocalWorkDecision(ResolveActiveWorkspaceId());
         MainWindowFeedbackCoordinator.ShowLocalWorkspaceKept(_controls.ToolStrip);
     }
 
     private async void SummaryHeader_OnWorkspaceSupportRequested(object? sender, EventArgs e)
     {
+        _transientStateCoordinator.RecordWorkspaceSupportDecision(ResolveActiveWorkspaceId());
         await RunUiActionAsync(
             async () =>
             {
@@ -233,6 +245,9 @@ public partial class MainWindow
             },
             "open workspace support");
     }
+
+    private string? ResolveActiveWorkspaceId()
+        => _adapter.State.Session.ActiveWorkspaceId?.Value ?? _adapter.State.WorkspaceId?.Value;
 
     private WorkspaceListItem? ResolveActiveSupportWorkspace()
     {

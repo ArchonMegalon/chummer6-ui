@@ -35,6 +35,7 @@ chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHU
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
 flagship_product_readiness_receipt_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json}"
 refresh_supporting_receipts="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS:-1}"
+skip_downstream_receipt_materialization="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS:-0}"
 desktop_workflow_execution_gate_script_path="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh}"
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 ui_parity_audit_probe_path="${CHUMMER_UI_PARITY_AUDIT_PROBE_PATH:-/docker/fleet/scripts/codex-shims/codexea_ui_parity_audit_probe.py}"
@@ -110,7 +111,8 @@ fi
 
 cleanup() {
   rm -rf "$capture_screenshot_dir" "$staged_screenshot_dir"
-  rmdir "$lock_dir" 2>/dev/null || true
+  rm -f "$lock_owner_pid_path"
+  rmdir "$lock_dir" 2>/dev/null || rm -rf "$lock_dir" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -300,6 +302,8 @@ from __future__ import annotations
 
 import shutil
 import sys
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 capture_dir = Path(sys.argv[1])
@@ -314,6 +318,12 @@ control_evidence_path = capture_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.jso
 if not control_evidence_path.is_file():
     raise SystemExit(f"[b14] FAIL: screenshot control evidence was not produced in capture directory: {control_evidence_path}")
 shutil.copy2(control_evidence_path, target_dir / control_evidence_path.name)
+
+# The published proof pack must reflect when this gate ran, even if a test copied
+# baseline assets into the capture directory with older source mtimes.
+proof_timestamp = datetime.now(timezone.utc).timestamp()
+for path in list(target_dir.glob("*.png")) + [target_dir / control_evidence_path.name]:
+    os.utime(path, (proof_timestamp, proof_timestamp))
 PY
 
 echo "[b14] normalizing screenshot PNG CRC chunks..."
@@ -377,6 +387,21 @@ rm -rf "$screenshot_dir"
 mkdir -p "$screenshot_dir"
 cp "$staged_screenshot_dir"/*.png "$screenshot_dir"/
 cp "$staged_screenshot_dir"/SCREENSHOT_CONTROL_EVIDENCE.generated.json "$screenshot_dir"/
+
+python3 - <<'PY' "$screenshot_dir"
+from __future__ import annotations
+
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+screenshot_dir = Path(sys.argv[1])
+proof_timestamp = datetime.now(timezone.utc).timestamp()
+for path in list(screenshot_dir.glob("*.png")) + [screenshot_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"]:
+    if path.is_file():
+        os.utime(path, (proof_timestamp, proof_timestamp))
+PY
 
 echo "[b14] running cross-head workflow parity tests..."
 run_with_retry 2 "cross-head workflow parity tests" \
@@ -1192,21 +1217,25 @@ with open(receipt_path, "w", encoding="utf-8") as handle:
     handle.write("\n")
 PY
 
-echo "[b14] materializing desktop workflow execution gate..."
-bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
+if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
+  echo "[b14] materializing desktop workflow execution gate..."
+  bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
 
-echo "[b14] materializing desktop visual familiarity exit gate..."
-CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
-  bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
+  echo "[b14] materializing desktop visual familiarity exit gate..."
+  CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
+    bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
 
-echo "[b14] materializing classic dense workbench posture gate..."
-bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh >/dev/null
+  echo "[b14] materializing classic dense workbench posture gate..."
+  bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh >/dev/null
 
-echo "[b14] materializing veteran task-time evidence gate..."
-bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh >/dev/null
+  echo "[b14] materializing veteran task-time evidence gate..."
+  bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh >/dev/null
 
-echo "[b14] materializing Chummer5a screenshot review gate..."
-bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
+  echo "[b14] materializing Chummer5a screenshot review gate..."
+  bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
+else
+  echo "[b14] skipping downstream proof materialization for screenshot refresh-only pass..."
+fi
 
 python3 - <<'PY' "$receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path" "$classic_dense_workbench_receipt_path"
 import json
