@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Content;
+using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
@@ -13,20 +15,21 @@ namespace Chummer.Avalonia;
 internal sealed class DesktopRuleEnvironmentStudioWindow : Window
 {
     private readonly DesktopInstallLinkingState _installState;
-    private readonly RuleEnvironmentStudioProjection _projection;
-    private readonly string? _leadWorkspaceId;
+    private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
     private readonly WorkspacePortabilityActivity? _portabilityActivity;
+    private readonly RuleEnvironmentStudioProjection _projection;
 
     private DesktopRuleEnvironmentStudioWindow(
+        Window owner,
         DesktopInstallLinkingState installState,
-        RuleEnvironmentStudioProjection projection,
-        string? leadWorkspaceId,
-        WorkspacePortabilityActivity? portabilityActivity)
+        IReadOnlyList<WorkspaceListItem> recentWorkspaces,
+        WorkspacePortabilityActivity? portabilityActivity,
+        RuleEnvironmentStudioProjection projection)
     {
         _installState = installState;
-        _projection = projection;
-        _leadWorkspaceId = leadWorkspaceId;
+        _recentWorkspaces = recentWorkspaces;
         _portabilityActivity = portabilityActivity;
+        _projection = projection;
 
         Title = "Rule Environment Studio";
         Width = 860;
@@ -49,17 +52,13 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
                         {
                             Text = "Rule Environment Studio",
                             FontSize = 20,
-                            FontWeight = FontWeight.SemiBold
+                            FontWeight = FontWeight.SemiBold,
+                            TextWrapping = TextWrapping.Wrap
                         },
-                        new TextBlock
-                        {
-                            Text = "Rule-environment studio keeps amend-package lifecycle, before-after diffs, explain receipts, and support reuse together before a ruleset handoff is trusted.",
-                            TextWrapping = TextWrapping.Wrap,
-                            Foreground = Brushes.DarkSlateGray
-                        },
-                        CreateSection("Amend-package lifecycle", BuildLifecycleBody(), CreateActionRow(CreateLifecycleActions())),
-                        CreateSection("Before-after diffs", BuildDiffBody(), CreateActionRow(CreateDiffActions())),
-                        CreateSection("Explain receipts", BuildReceiptBody(), CreateActionRow(CreateReceiptActions())),
+                        CreateSection("Amend-package lifecycle", BuildLifecycleBody()),
+                        CreateSection("Before-after diffs", BuildDiffBody()),
+                        CreateSection("Explain receipts", BuildReceiptBody()),
+                        CreateActionRow(CreatePrimaryActions(owner)),
                         new StackPanel
                         {
                             Orientation = Orientation.Horizontal,
@@ -81,11 +80,12 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopRuleEnvironmentStudioWindow dialog = await CreateAsync(headId, portabilityActivity).ConfigureAwait(true);
+        DesktopRuleEnvironmentStudioWindow dialog = await CreateAsync(owner, headId, portabilityActivity).ConfigureAwait(true);
         await dialog.ShowDialog(owner);
     }
 
     private static async Task<DesktopRuleEnvironmentStudioWindow> CreateAsync(
+        Window owner,
         string headId,
         WorkspacePortabilityActivity? portabilityActivity)
     {
@@ -93,137 +93,17 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
             ?? throw new InvalidOperationException("Desktop rule environment studio requires an IChummerClient instance."));
 
         DesktopInstallLinkingState installState = DesktopInstallLinkingRuntime.LoadOrCreateState(headId);
-        RuleEnvironmentStudioProjection projection = await ReadBuildExplainProjectionAsync(client, portabilityActivity).ConfigureAwait(true);
-        return new DesktopRuleEnvironmentStudioWindow(installState, projection, projection.LeadWorkspaceId, portabilityActivity);
-    }
-
-    private static async Task<RuleEnvironmentStudioProjection> ReadBuildExplainProjectionAsync(
-        IChummerClient client,
-        WorkspacePortabilityActivity? portabilityActivity)
-    {
-        IReadOnlyList<WorkspaceListItem> workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(false);
-        WorkspaceListItem? leadWorkspace = workspaces.FirstOrDefault();
-        string? rulesetId = leadWorkspace?.RulesetId;
-        string? runtimeSummary = null;
-        string? buildPathSummary = null;
-        string? buildAndRulesSummary = null;
-
-        try
-        {
-            var bootstrap = await client.GetShellBootstrapAsync(rulesetId, CancellationToken.None).ConfigureAwait(false);
-            string effectiveRulesetId = string.IsNullOrWhiteSpace(bootstrap.ActiveRulesetId)
-                ? bootstrap.RulesetId
-                : bootstrap.ActiveRulesetId;
-
-            runtimeSummary = bootstrap.ActiveRuntime is null
-                ? $"Runtime: {effectiveRulesetId} has no active runtime profile advertised."
-                : $"Runtime: {effectiveRulesetId} uses {bootstrap.ActiveRuntime.ProfileId}.";
-
-            if (bootstrap.ActiveRuntime is not null)
-            {
-                var runtimeInspector = await client.GetRuntimeInspectorProfileAsync(
-                    bootstrap.ActiveRuntime.ProfileId,
-                    rulesetId ?? bootstrap.ActiveRuntime.RulesetId,
-                    CancellationToken.None).ConfigureAwait(false);
-                if (runtimeInspector is not null)
-                {
-                    runtimeSummary = $"{runtimeSummary}\n{RuntimeInspectorDiagnostics.BuildProfileDiagnosticsSummary(runtimeInspector)}";
-                }
-            }
-
-            IReadOnlyList<DesktopBuildPathSuggestion> suggestions = await client.GetBuildPathSuggestionsAsync(effectiveRulesetId, CancellationToken.None).ConfigureAwait(false);
-            DesktopBuildPathSuggestion? leadSuggestion = suggestions.FirstOrDefault();
-            if (leadSuggestion is not null && leadWorkspace is not null)
-            {
-                DesktopBuildPathPreview? preview = await client.GetBuildPathPreviewAsync(
-                    leadSuggestion.BuildKitId,
-                    leadWorkspace.Id,
-                    effectiveRulesetId,
-                    CancellationToken.None).ConfigureAwait(false);
-                buildPathSummary = preview is null
-                    ? $"Build path: {leadSuggestion.Title} is available without preview details."
-                    : $"Build path: {leadSuggestion.Title} -> {preview.State}; {FirstNonBlank(preview.RuntimeCompatibilitySummary, preview.CampaignReturnSummary, preview.SupportClosureSummary)}";
-            }
-            else
-            {
-                buildPathSummary = suggestions.Count == 0
-                    ? "Build path: no build-path suggestions are advertised for this ruleset."
-                    : $"Build path: {suggestions[0].Title} is ready once a workspace is selected.";
-            }
-        }
-        catch (Exception ex)
-        {
-            runtimeSummary = $"Runtime: rule environment bootstrap is unavailable locally ({ex.GetType().Name}).";
-            buildPathSummary = "Build path: preview is deferred until the bootstrap route responds.";
-        }
-
-        if (leadWorkspace is not null)
-        {
-            try
-            {
-                Task<CharacterBuildSection> buildTask = client.GetBuildAsync(leadWorkspace.Id, CancellationToken.None);
-                Task<CharacterRulesSection> rulesTask = client.GetRulesAsync(leadWorkspace.Id, CancellationToken.None);
-                await Task.WhenAll(buildTask, rulesTask).ConfigureAwait(false);
-                buildAndRulesSummary = $"Workspace rules: {leadWorkspace.Summary} [{leadWorkspace.RulesetId}] loaded build and rules sections for diff review.";
-            }
-            catch (Exception ex)
-            {
-                buildAndRulesSummary = $"Workspace rules: build/rules sections are unavailable for {leadWorkspace.Summary} ({ex.GetType().Name}).";
-            }
-        }
-        else
-        {
-            buildAndRulesSummary = "Workspace rules: no current workspace is loaded, so diff review is limited to bootstrap and import receipts.";
-        }
-
-        string importRuleEnvironment;
-        string diffBefore;
-        string diffAfter;
-        string explainReceipt;
-        string supportReuse;
-        if (portabilityActivity is not null)
-        {
-            importRuleEnvironment = DesktopTrustReceiptText.BuildImportRuleEnvironment(portabilityActivity.Receipt);
-            diffBefore = DesktopTrustReceiptText.BuildImportDiffBefore(portabilityActivity.Receipt);
-            diffAfter = DesktopTrustReceiptText.BuildImportDiffAfter(portabilityActivity.Receipt);
-            explainReceipt = DesktopTrustReceiptText.BuildImportExplainReceipt(portabilityActivity.Receipt);
-            supportReuse = DesktopTrustReceiptText.BuildImportSupportReuse(portabilityActivity.Receipt);
-        }
-        else
-        {
-            importRuleEnvironment = "No portable import receipt is active; ruleset bootstrap and workspace sections are the current rule environment evidence.";
-            diffBefore = "Before: current desktop ruleset bootstrap and workspace rule sections.";
-            diffAfter = "After: pending amend-package import or ruleset switch.";
-            explainReceipt = "Explain receipt: no import receipt is active yet.";
-            supportReuse = "Support reuse: cite this studio after an import/export receipt is available.";
-        }
-
-        return new RuleEnvironmentStudioProjection(
-            LeadWorkspaceId: leadWorkspace?.Id.Value,
-            LifecycleBody: string.Join("\n", [
-                $"Import rule environment: {importRuleEnvironment}",
-                runtimeSummary,
-                buildPathSummary,
-                "Amend-package lifecycle: review bootstrap, runtime profile, build-path preview, workspace build/rules sections, then support reuse before trusting a ruleset change."
-            ]),
-            DiffBody: string.Join("\n", [
-                $"Before: {diffBefore}",
-                $"After: {diffAfter}",
-                buildAndRulesSummary,
-                "Before-after diffs: keep old and new rule environment claims visible until the workspace opens under the intended ruleset."
-            ]),
-            ReceiptBody: string.Join("\n", [
-                $"Explain receipt: {explainReceipt}",
-                $"Support reuse: {supportReuse}",
-                "Explain receipts: carry import hash, runtime diagnostics, build-path preview, and workspace rule posture into support or campaign handoff."
-            ]));
+        IReadOnlyList<WorkspaceListItem> workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
+        RuleEnvironmentStudioProjection projection = await ReadBuildExplainProjectionAsync(client, workspaces).ConfigureAwait(true);
+        return new DesktopRuleEnvironmentStudioWindow(owner, installState, workspaces, portabilityActivity, projection);
     }
 
     private static async Task<IReadOnlyList<WorkspaceListItem>> ReadWorkspacesAsync(IChummerClient client)
     {
         try
         {
-            return (await client.ListWorkspacesAsync(CancellationToken.None).ConfigureAwait(false))
+            IReadOnlyList<WorkspaceListItem> workspaces = await client.ListWorkspacesAsync(CancellationToken.None).ConfigureAwait(false);
+            return workspaces
                 .OrderByDescending(static workspace => workspace.LastUpdatedUtc)
                 .Take(5)
                 .ToArray();
@@ -292,13 +172,162 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
 
     private async Task OpenLeadWorkspaceAsync()
     {
-        string? workspaceId = _leadWorkspaceId;
-        if (string.IsNullOrWhiteSpace(workspaceId))
+        string? rulesetId = workspaces.FirstOrDefault()?.RulesetId;
+        string effectiveRulesetId = rulesetId ?? "unresolved";
+        string lifecycleSummary = "Rule-environment studio is waiting for a workspace before it can bind amendment packages to a concrete ruleset.";
+        string diffSummary = "No before-after workspace diff is available yet.";
+        string receiptSummary = "Explain receipts will attach after the active runtime and build path can be read.";
+        ActiveRuntimeStatusProjection? activeRuntime = null;
+        RuntimeInspectorProjection? runtimeInspector = null;
+        IReadOnlyList<DesktopBuildPathSuggestion> suggestions = [];
+        DesktopBuildPathPreview? preview = null;
+
+        try
         {
-            return;
+            ShellBootstrapSnapshot bootstrap = await client.GetShellBootstrapAsync(rulesetId, CancellationToken.None).ConfigureAwait(false);
+            activeRuntime = bootstrap.ActiveRuntime;
+            effectiveRulesetId = string.IsNullOrWhiteSpace(bootstrap.ActiveRulesetId)
+                ? bootstrap.RulesetId
+                : bootstrap.ActiveRulesetId;
+            if (activeRuntime is not null)
+            {
+                runtimeInspector = await client.GetRuntimeInspectorProfileAsync(activeRuntime.ProfileId, rulesetId ?? activeRuntime.RulesetId, CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+            activeRuntime = null;
+            runtimeInspector = null;
         }
 
-        if (Owner is MainWindow mainWindow)
+        try
+        {
+            suggestions = await client.GetBuildPathSuggestionsAsync(effectiveRulesetId, CancellationToken.None).ConfigureAwait(false);
+            DesktopBuildPathSuggestion? suggestion = suggestions.FirstOrDefault();
+            WorkspaceListItem? workspace = workspaces.FirstOrDefault();
+            if (suggestion is not null && workspace is not null)
+            {
+                preview = await client.GetBuildPathPreviewAsync(suggestion.BuildKitId, workspace.Id, effectiveRulesetId, CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+            suggestions = [];
+            preview = null;
+        }
+
+        WorkspaceListItem? leadWorkspace = workspaces.FirstOrDefault();
+        if (leadWorkspace is not null)
+        {
+            try
+            {
+                Task<CharacterBuildSection> buildTask = client.GetBuildAsync(leadWorkspace.Id, CancellationToken.None);
+                Task<CharacterRulesSection> rulesTask = client.GetRulesAsync(leadWorkspace.Id, CancellationToken.None);
+                await Task.WhenAll(buildTask, rulesTask).ConfigureAwait(false);
+                lifecycleSummary = $"Rule-environment studio is grounded on {leadWorkspace.Summary.Name} with {buildTask.Result.BuildMethod} build posture.";
+                diffSummary = $"Before-after diffs compare {rulesTask.Result.GameEdition} rules with {preview?.RuntimeCompatibilitySummary ?? "the current runtime fingerprint"}.";
+                receiptSummary = $"Explain receipts bind {activeRuntime?.RuntimeFingerprint ?? leadWorkspace.RulesetId} to {preview?.SupportClosureSummary ?? "workspace support reuse"}.";
+            }
+            catch
+            {
+                lifecycleSummary = $"Rule-environment studio loaded {leadWorkspace.Summary.Name}, but build and rules sections need refresh before amendment.";
+            }
+        }
+
+        string runtimeSummary = runtimeInspector is null
+            ? "Runtime inspector profile is not attached."
+            : $"Runtime inspector profile {runtimeInspector.TargetId} is attached.";
+        string suggestionSummary = suggestions.Count == 0
+            ? "No build-path suggestion is published."
+            : $"Recommended build-path suggestion: {suggestions[0].Title}.";
+
+        return new RuleEnvironmentStudioProjection(
+            effectiveRulesetId,
+            leadWorkspace?.Id.Value,
+            lifecycleSummary,
+            diffSummary,
+            receiptSummary,
+            runtimeSummary,
+            suggestionSummary);
+    }
+
+    private string BuildLifecycleBody()
+        => string.Join(
+            "\n",
+            [
+                "Rule-environment studio",
+                $"Ruleset: {_projection.RulesetId}",
+                $"Amend-package lifecycle: {_projection.LifecycleSummary}",
+                _projection.RuntimeSummary,
+                _projection.SuggestionSummary
+            ]);
+
+    private string BuildDiffBody()
+        => string.Join(
+            "\n",
+            [
+                $"Before-after diffs: {_projection.DiffSummary}",
+                _portabilityActivity is null
+                    ? "No recent portable import/export receipt is attached."
+                    : $"Import environment before: {DesktopTrustReceiptText.BuildImportDiffBefore(_portabilityActivity.Receipt)}",
+                _portabilityActivity is null
+                    ? "No after-state receipt is attached."
+                    : $"Import environment after: {DesktopTrustReceiptText.BuildImportDiffAfter(_portabilityActivity.Receipt)}"
+            ]);
+
+    private string BuildReceiptBody()
+    {
+        if (_portabilityActivity is null)
+        {
+            return string.Join(
+                "\n",
+                [
+                    $"Explain receipts: {_projection.ReceiptSummary}",
+                    "Rule environment: no recent import receipt is attached.",
+                    "Support reuse: support can reuse runtime, build-path, and workspace summaries after the next portable import/export."
+                ]);
+        }
+
+        WorkspacePortabilityReceipt receipt = _portabilityActivity.Receipt;
+        return string.Join(
+            "\n",
+            [
+                $"Explain receipts: {_projection.ReceiptSummary}",
+                $"Rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(receipt)}",
+                $"Explain receipt: {DesktopTrustReceiptText.BuildImportExplainReceipt(receipt)}",
+                $"Support reuse: {DesktopTrustReceiptText.BuildImportSupportReuse(receipt)}"
+            ]);
+    }
+
+    private IReadOnlyList<Button> CreatePrimaryActions(Window owner)
+    {
+        List<Button> actions =
+        [
+            CreateButton("Desktop Home", () => OpenHomeAsync(owner), isPrimary: true),
+            CreateButton("Campaign Workspace", () => OpenCampaignWorkspaceAsync(owner)),
+            CreateButton("Support", () => OpenSupportAsync(owner))
+        ];
+
+        if (!string.IsNullOrWhiteSpace(_projection.WorkspaceId))
+        {
+            actions.Add(CreateButton("Open Workspace", () => OpenWorkspaceInDesktopShellAsync(owner, _projection.WorkspaceId!)));
+        }
+
+        return actions;
+    }
+
+    private Task OpenHomeAsync(Window owner)
+        => DesktopHomeWindow.ShowAsync(owner, _installState.HeadId);
+
+    private Task OpenSupportAsync(Window owner)
+        => DesktopSupportWindow.ShowAsync(owner, _installState.HeadId);
+
+    private Task OpenCampaignWorkspaceAsync(Window owner)
+        => DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId);
+
+    private async Task OpenWorkspaceInDesktopShellAsync(Window owner, string workspaceId)
+    {
+        if (owner is MainWindow mainWindow)
         {
             await mainWindow.OpenWorkspaceFromDesktopSurfaceAsync(workspaceId).ConfigureAwait(true);
             Close();
@@ -308,53 +337,41 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId, fragment: "portable-exchange");
     }
 
-    private bool OpenArtifactShelfView(string view)
-        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
-           && DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/artifacts?view={Uri.EscapeDataString(view)}");
-
-    private static Border CreateSection(string title, string body, Control? actionContent)
-    {
-        StackPanel content = new()
-        {
-            Spacing = 6,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = title,
-                    FontWeight = FontWeight.SemiBold,
-                    FontSize = 15
-                },
-                new TextBlock
-                {
-                    Text = body,
-                    TextWrapping = TextWrapping.Wrap
-                }
-            }
-        };
-
-        if (actionContent is not null)
-        {
-            content.Children.Add(actionContent);
-        }
-
-        return new Border
+    private static Border CreateSection(string title, string body)
+        => new()
         {
             Background = new SolidColorBrush(Color.Parse("#F8FBFF")),
             BorderBrush = new SolidColorBrush(Color.Parse("#CBD7E6")),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
             Padding = new Thickness(10),
-            Child = content
+            Child = new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = title,
+                        FontWeight = FontWeight.SemiBold,
+                        FontSize = 15,
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    new TextBlock
+                    {
+                        Text = body,
+                        TextWrapping = TextWrapping.Wrap
+                    }
+                }
+            }
         };
-    }
 
     private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
     {
         StackPanel actionRow = new()
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6
+            Spacing = 8
         };
 
         foreach (Button action in actions)
@@ -370,7 +387,9 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         Button button = new()
         {
             Content = label,
-            MinWidth = 112
+            MinWidth = 104,
+            MinHeight = 34,
+            Padding = new Thickness(12, 7)
         };
         if (isPrimary)
         {
@@ -388,12 +407,12 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         return button;
     }
 
-    private static string FirstNonBlank(params string?[] values)
-        => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value)) ?? "pending";
+    private sealed record RuleEnvironmentStudioProjection(
+        string RulesetId,
+        string? WorkspaceId,
+        string LifecycleSummary,
+        string DiffSummary,
+        string ReceiptSummary,
+        string RuntimeSummary,
+        string SuggestionSummary);
 }
-
-internal sealed record RuleEnvironmentStudioProjection(
-    string? LeadWorkspaceId,
-    string LifecycleBody,
-    string DiffBody,
-    string ReceiptBody);

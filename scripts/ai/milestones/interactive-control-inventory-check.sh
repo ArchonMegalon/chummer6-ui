@@ -31,6 +31,8 @@ STANDALONE_TEST_MARKERS = [
 ]
 
 MAIN_WINDOW_TEST_MARKERS = [
+    "Runtime_backed_file_menu_new_character_opens_creation_dialog",
+    "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live",
     "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
     "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
     "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
@@ -47,7 +49,9 @@ STANDALONE_FILTER = (
 )
 
 MAIN_WINDOW_FILTER = (
-    "Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters"
+    "Name~Runtime_backed_file_menu_new_character_opens_creation_dialog"
+    "|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live"
+    "|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters"
     "|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load"
     "|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
 )

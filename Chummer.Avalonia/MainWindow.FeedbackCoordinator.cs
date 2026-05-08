@@ -47,17 +47,7 @@ internal static class MainWindowFeedbackCoordinator
 
     public static void ShowRuleEnvironmentStudioReviewed(ToolStripControl toolStrip)
     {
-        toolStrip.SetStatusText("Rule Environment Studio opened with runtime, import, and explain receipts visible.");
-    }
-
-    public static void ShowExplainFollowUpReviewed(ToolStripControl toolStrip)
-    {
-        toolStrip.SetStatusText("Explain follow-up stayed text-first with source-anchor and stale-state posture visible.");
-    }
-
-    public static void ShowExplainFollowUpUnavailable(ToolStripControl toolStrip)
-    {
-        toolStrip.SetStatusText("Explain follow-up is unavailable because the current section has no explain packet.");
+        toolStrip.SetStatusText("Rule environment studio reviewed.");
     }
 
     public static void ShowLocalWorkspaceKept(ToolStripControl toolStrip)

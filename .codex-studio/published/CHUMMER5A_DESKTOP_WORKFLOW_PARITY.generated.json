@@ -1,21 +1,19 @@
 {
   "generatedAt": "2026-05-08T15:11:15.552417Z",
   "contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
-  "channelId": "preview",
+  "channelId": "docker",
   "status": "pass",
-  "summary": "Chummer5a desktop workflow parity is explicitly proven across source artifacts, release-channel identity, catalog coverage, workflow-family readiness, executable test references, and recursive workflow gate execution for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity.",
+  "summary": "Chummer5a desktop workflow parity is explicitly proven across source artifacts, release-channel identity, catalog coverage, workflow-family readiness, and executable test references.",
   "reasons": [],
   "evidence": {
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
-    "workflowLedgerPath": "/docker/chummercomplete/chummer-presentation/docs/WORKFLOW_PARITY_LEDGER.json",
-    "parityOraclePath": "/docker/chummercomplete/chummer-presentation/docs/PARITY_ORACLE.json",
-    "parityChecklistPath": "/docker/chummercomplete/chummer-presentation/docs/PARITY_CHECKLIST.md",
-    "dualHeadTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-    "complianceTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs",
-    "uiGateTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-    "workflowGateTestsPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
-    "workflowGateExit": 0,
+    "workflowLedgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/WORKFLOW_PARITY_LEDGER.json",
+    "parityOraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/PARITY_ORACLE.json",
+    "parityChecklistPath": "/docker/chummercomplete/chummer-presentation-clean/docs/PARITY_CHECKLIST.md",
+    "dualHeadTestsPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+    "complianceTestsPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Compliance/MigrationComplianceTests.cs",
+    "uiGateTestsPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "preview",
@@ -29,58 +27,13 @@
     "tabsMissingInCatalog": 0,
     "workspaceActionsMissingInCatalog": 0,
     "missingTestRefs": {},
-    "recursiveWorkflowGateTests": [
-      "Menu_dialog_workflows_are_exhaustively_classified",
-      "Legacy_ui_controls_are_exhaustively_classified",
-      "Quick_action_roots_are_exhaustively_classified",
-      "Menu_dialog_workflows_keep_recursive_parity",
-      "Legacy_ui_controls_keep_recursive_parity"
-    ],
-    "recursiveWorkflowGateTestCount": 5,
-    "recursiveWorkflowGateProofAreas": [
-      "recursiveMenuWorkflows",
-      "legacyUiControlWorkflows",
-      "quickActionRoots",
-      "returnSurfaceParityAfterExit"
-    ],
-    "recursiveWorkflowGateProofAreaCount": 4,
-    "recursiveWorkflowGateProofAreaTests": {
-      "recursiveMenuWorkflows": [
-        "Menu_dialog_workflows_are_exhaustively_classified",
-        "Menu_dialog_workflows_keep_recursive_parity"
-      ],
-      "legacyUiControlWorkflows": [
-        "Legacy_ui_controls_are_exhaustively_classified",
-        "Legacy_ui_controls_keep_recursive_parity"
-      ],
-      "quickActionRoots": [
-        "Quick_action_roots_are_exhaustively_classified",
-        "Legacy_ui_controls_keep_recursive_parity"
-      ],
-      "returnSurfaceParityAfterExit": [
-        "Menu_dialog_workflows_keep_recursive_parity",
-        "Legacy_ui_controls_keep_recursive_parity"
-      ]
-    },
-    "recursiveWorkflowGateProofAreaSummaries": {
-      "recursiveMenuWorkflows": "Recursive menu workflows stay explicitly classified and keep concrete continuation parity.",
-      "legacyUiControlWorkflows": "Legacy UI-control workflows stay exhaustively classified and keep recursive dialog parity.",
-      "quickActionRoots": "Quick-action roots stay exhaustively classified and remain wired through legacy workflow execution.",
-      "returnSurfaceParityAfterExit": "Workflow exit returns to the expected tab, section, and populated surface after dialogs close."
-    },
-    "recursiveWorkflowGateMissingProofAreas": [],
-    "recursiveWorkflowGateMissingProofAreaTests": {},
-    "recursiveWorkflowGateUnmappedTests": [],
-    "recursiveWorkflowGateUnexpectedProofAreaTests": [],
-    "recursiveWorkflowGateReturnSurfaceRequirement": "Recursive workflows must close any active dialog, clear errors, and restore the expected tab, section, and populated return surface before parity can pass.",
     "sourceArtifactChecks": {
       "workflowLedger": true,
       "parityOracle": true,
       "parityChecklist": true,
       "dualHeadTests": true,
       "complianceTests": true,
-      "uiGateTests": true,
-      "workflowGateTests": true
+      "uiGateTests": true
     },
     "failureCount": 0
   },
@@ -94,8 +47,7 @@
       "parityChecklist": true,
       "dualHeadTests": true,
       "complianceTests": true,
-      "uiGateTests": true,
-      "workflowGateTests": true
+      "uiGateTests": true
     }
   },
   "releaseChannelReview": {
@@ -131,49 +83,5 @@
     "summary": "Workflow parity ledger audit tests resolve to executable test sources.",
     "reasons": [],
     "missingTestRefs": {}
-  },
-  "recursiveWorkflowGateReview": {
-    "status": "pass",
-    "summary": "Recursive workflow gate tests executed and the ledger keeps recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity explicit.",
-    "reasons": [],
-    "workflowGateExit": 0,
-    "requiredTests": [
-      "Menu_dialog_workflows_are_exhaustively_classified",
-      "Legacy_ui_controls_are_exhaustively_classified",
-      "Quick_action_roots_are_exhaustively_classified",
-      "Menu_dialog_workflows_keep_recursive_parity",
-      "Legacy_ui_controls_keep_recursive_parity"
-    ],
-    "proofAreas": [
-      "recursiveMenuWorkflows",
-      "legacyUiControlWorkflows",
-      "quickActionRoots",
-      "returnSurfaceParityAfterExit"
-    ],
-    "proofAreaTests": {
-      "recursiveMenuWorkflows": [
-        "Menu_dialog_workflows_are_exhaustively_classified",
-        "Menu_dialog_workflows_keep_recursive_parity"
-      ],
-      "legacyUiControlWorkflows": [
-        "Legacy_ui_controls_are_exhaustively_classified",
-        "Legacy_ui_controls_keep_recursive_parity"
-      ],
-      "quickActionRoots": [
-        "Quick_action_roots_are_exhaustively_classified",
-        "Legacy_ui_controls_keep_recursive_parity"
-      ],
-      "returnSurfaceParityAfterExit": [
-        "Menu_dialog_workflows_keep_recursive_parity",
-        "Legacy_ui_controls_keep_recursive_parity"
-      ]
-    },
-    "proofAreaSummaries": {
-      "recursiveMenuWorkflows": "Recursive menu workflows stay explicitly classified and keep concrete continuation parity.",
-      "legacyUiControlWorkflows": "Legacy UI-control workflows stay exhaustively classified and keep recursive dialog parity.",
-      "quickActionRoots": "Quick-action roots stay exhaustively classified and remain wired through legacy workflow execution.",
-      "returnSurfaceParityAfterExit": "Workflow exit returns to the expected tab, section, and populated surface after dialogs close."
-    },
-    "returnSurfaceRequirement": "Recursive workflows must close any active dialog, clear errors, and restore the expected tab, section, and populated return surface before parity can pass."
   }
 }

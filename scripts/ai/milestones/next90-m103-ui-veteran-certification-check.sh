@@ -427,6 +427,84 @@ REQUIRED_SURFACE_EVIDENCE = {
         ],
         "screenshot": "18-import-dialog-light.png",
     },
+    "translator": {
+        "source_markers": ["translator", "Translator"],
+        "capture_markers": [
+            'CaptureDialogFrameInFreshHarness(',
+            'GetVeteranCertificationReviewStep("translator").ScreenshotFileName,',
+            '"ToolsMenuButton",',
+            '"translator",',
+            '"Translator"',
+            "AssertDialogContainsAll(",
+            'GetVeteranCertificationReviewStep("translator").RequiredDialogMarkers',
+            "translatorLanePosture",
+            "translatorBridgePosture",
+            "translatorOverlayCount",
+        ],
+        "source_file_markers": [
+            {
+                "file": "test",
+                "markers": [
+                    'GetVeteranCertificationReviewStep("translator").ScreenshotFileName',
+                    "Execute translator and capture the governed localization bridge dialog.",
+                    "Chummer5a Translator utility lineage.",
+                ],
+            },
+        ],
+        "screenshot": "19-translator-dialog-light.png",
+    },
+    "xml_editor": {
+        "source_markers": ["xml_editor", "XML Editor"],
+        "capture_markers": [
+            'CaptureDialogFrameInFreshHarness(',
+            'GetVeteranCertificationReviewStep("xml_editor").ScreenshotFileName,',
+            '"ToolsMenuButton",',
+            '"xml_editor",',
+            '"XML Editor"',
+            "AssertDialogContainsAll(",
+            'GetVeteranCertificationReviewStep("xml_editor").RequiredDialogMarkers',
+            "xmlEditorLanePosture",
+            "xmlEditorCustomDataLanePosture",
+            "xmlEditorOverlayCount",
+            "xmlEditorCustomDataDirectoryCount",
+        ],
+        "source_file_markers": [
+            {
+                "file": "test",
+                "markers": [
+                    'GetVeteranCertificationReviewStep("xml_editor").ScreenshotFileName',
+                    "Execute xml_editor and capture the governed XML bridge editor dialog.",
+                    "Chummer5a Test Data Entries and XML amend/editor lineage.",
+                ],
+            },
+        ],
+        "screenshot": "20-xml-editor-dialog-light.png",
+    },
+    "hero_lab_importer": {
+        "source_markers": ["hero_lab_importer", "Hero Lab Importer"],
+        "capture_markers": [
+            'CaptureDialogFrameInFreshHarness(',
+            'GetVeteranCertificationReviewStep("hero_lab_importer").ScreenshotFileName,',
+            '"ToolsMenuButton",',
+            '"hero_lab_importer",',
+            '"Hero Lab Importer"',
+            "AssertDialogContainsAll(",
+            'GetVeteranCertificationReviewStep("hero_lab_importer").RequiredDialogMarkers',
+            "heroLabXml",
+            "importRulesetId",
+        ],
+        "source_file_markers": [
+            {
+                "file": "test",
+                "markers": [
+                    'GetVeteranCertificationReviewStep("hero_lab_importer").ScreenshotFileName',
+                    "Execute hero_lab_importer and capture the Hero Lab compatibility import dialog.",
+                    "Chummer5a Hero Lab Importer utility lineage.",
+                ],
+            },
+        ],
+        "screenshot": "21-hero-lab-importer-dialog-light.png",
+    },
 }
 VETERAN_WORKFLOW_MAP = {
     "menu": {
@@ -464,6 +542,24 @@ VETERAN_WORKFLOW_MAP = {
         "promotedHeadTaskProof": "Load the bundled legacy runner, then open File > Open Character on the promoted desktop head.",
         "parityQuestion": "Can a veteran find the classic import route after landing in the modern workbench?",
         "screenshotEvidenceRole": "import-dialog",
+    },
+    "translator": {
+        "legacyFamiliarity": "The Translator utility still exists as a named desktop Tools route rather than buried in generic settings.",
+        "promotedHeadTaskProof": "Open Translator from the promoted desktop command surface and confirm the governed localization bridge posture.",
+        "parityQuestion": "Can a veteran find the translator-era localization route and understand its governed replacement state?",
+        "screenshotEvidenceRole": "translator-dialog",
+    },
+    "xml_editor": {
+        "legacyFamiliarity": "The XML editing and amend workflow still exists as a named desktop route with explicit XML bridge posture.",
+        "promotedHeadTaskProof": "Open XML Editor from the promoted desktop command surface and verify overlay plus custom-data posture.",
+        "parityQuestion": "Can a veteran inspect XML amend/custom-data posture without dropping into unsupported hidden tooling?",
+        "screenshotEvidenceRole": "xml-editor-dialog",
+    },
+    "hero_lab_importer": {
+        "legacyFamiliarity": "Hero Lab importer remains a named compatibility import route instead of disappearing behind the generic open flow.",
+        "promotedHeadTaskProof": "Open Hero Lab Importer from the promoted desktop Tools surface and confirm the compatibility import payload.",
+        "parityQuestion": "Can a veteran still find the Hero Lab-specific import route when adjacent import oracles matter?",
+        "screenshotEvidenceRole": "hero-lab-importer-dialog",
     },
 }
 MIN_SCREENSHOT_WIDTH = 1280
@@ -522,6 +618,30 @@ LEGACY_BASELINE_EVIDENCE = {
             'this.cmdSelectFile.Text = "Select POR File";',
             'this.cmdImport.Text = "Import Character";',
             'this.treCharacterList.Name = "treCharacterList";',
+        ],
+    },
+    "translator": {
+        "file": Path("Chummer/Forms/ChummerMainForm.Designer.cs"),
+        "markers": [
+            'this.mnuToolsTranslator.Name = "mnuToolsTranslator";',
+            'this.mnuToolsTranslator.Text = "&Translator";',
+            'this.mnuToolsTranslator.Click += new System.EventHandler(this.mnuToolsTranslator_Click);',
+        ],
+    },
+    "xml_editor": {
+        "file": Path("Chummer/Forms/Utility Forms/TestDataEntries.Designer.cs"),
+        "markers": [
+            '"armor.xml",',
+            '"cyberware.xml",',
+            '"vehicles.xml",',
+        ],
+    },
+    "hero_lab_importer": {
+        "file": Path("Chummer/Forms/Utility Forms/HeroLabImporter.Designer.cs"),
+        "markers": [
+            'this.Text = "Hero Lab Importer";',
+            'this.cmdSelectFile.Text = "Select POR File";',
+            'this.cmdImport.Text = "Import Character";',
         ],
     },
 }

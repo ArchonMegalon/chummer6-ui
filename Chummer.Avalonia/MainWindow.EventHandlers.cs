@@ -97,10 +97,17 @@ public partial class MainWindow
         await RunUiActionAsync(
             async () =>
             {
-                await DesktopHomeWindow.ShowAsync(this, "avalonia", _adapter.State.LatestPortabilityActivity);
+                await DesktopHomeWindow.ShowAsync(this, "avalonia");
                 MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip);
             },
             "open desktop home");
+    }
+
+    private async void ToolStrip_OnCloseWorkspaceRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.ExecuteCommandAsync("close_window", CancellationToken.None),
+            "close workspace");
     }
 
     private async void ToolStrip_OnGmPrepRequested(object? sender, EventArgs e)
@@ -108,7 +115,7 @@ public partial class MainWindow
         await RunUiActionAsync(
             async () =>
             {
-                await DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity);
+                await DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId);
                 MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
             },
             "open GM prep packets");
@@ -119,10 +126,10 @@ public partial class MainWindow
         await RunUiActionAsync(
             async () =>
             {
-                await DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity);
+                await DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId);
                 MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
             },
-            "review roster movement");
+            "open roster movement");
     }
 
     private async void ToolStrip_OnRuleEnvironmentStudioRequested(object? sender, EventArgs e)
@@ -136,13 +143,6 @@ public partial class MainWindow
             "open rule environment studio");
     }
 
-    private async void ToolStrip_OnCloseWorkspaceRequested(object? sender, EventArgs e)
-    {
-        await RunUiActionAsync(
-            () => _interactionCoordinator.ExecuteCommandAsync("close_window", CancellationToken.None),
-            "close workspace");
-    }
-
     private async void ToolStrip_OnCampaignWorkspaceRequested(object? sender, EventArgs e)
     {
         if (sender is Controls.SummaryHeaderControl)
@@ -153,7 +153,7 @@ public partial class MainWindow
         await RunUiActionAsync(
             async () =>
             {
-                await DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia", _adapter.State.LatestPortabilityActivity);
+                await DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia");
                 MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
             },
             "open campaign workspace");

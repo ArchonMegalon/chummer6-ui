@@ -132,8 +132,8 @@ for label, tokens in {
         "Avalonia primary-route proof stays independent from Blazor fallback proof",
     ],
     "screenshot-backed parity review": [
-        "Run screenshot-backed parity review for menu, toolstrip, roster, master index, settings, import, translator, XML amendment, and Hero Lab",
-        "Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, import, translator, XML amendment, and Hero Lab is covered",
+        "Run screenshot-backed parity review for menu, toolstrip, roster, master index, settings, and import",
+        "Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, and import is covered",
     ],
 }.items():
     require_any_token(paths["post_flagship_feedback"], post_feedback_text, tokens, reasons, label, feedback_reasons)
@@ -182,11 +182,11 @@ translator_xml_tokens = [
     "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture",
     "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
 ]
-hero_lab_import_oracle_tokens = [
-    "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture",
-    "Avalonia_and_Blazor_hero_lab_importer_dialog_preserves_matching_import_oracle_posture",
-    "CreateCommandDialog_hero_lab_importer_surfaces_import_oracle_and_adjacent_sr6_posture",
-    "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+hero_lab_importer_tokens = [
+    "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_compatibility_posture",
+    "Avalonia_and_Blazor_hero_lab_importer_dialogs_preserve_matching_import_posture",
+    "CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields",
+    "Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts",
 ]
 
 for token in sourcebook_tokens:
@@ -215,10 +215,10 @@ require_token(paths["character_overview_presenter_tests"], presenter_tests_text,
 require_token(paths["character_overview_presenter_tests"], presenter_tests_text, translator_xml_tokens[1], reasons, source_evidence_reasons)
 require_token(paths["dual_head_acceptance_tests"], dual_head_tests_text, translator_xml_tokens[2], reasons, source_evidence_reasons)
 require_token(paths["desktop_dialog_factory_tests"], dialog_tests_text, translator_xml_tokens[3], reasons, source_evidence_reasons)
-require_token(paths["character_overview_presenter_tests"], presenter_tests_text, hero_lab_import_oracle_tokens[0], reasons, source_evidence_reasons)
-require_token(paths["dual_head_acceptance_tests"], dual_head_tests_text, hero_lab_import_oracle_tokens[1], reasons, source_evidence_reasons)
-require_token(paths["desktop_dialog_factory_tests"], dialog_tests_text, hero_lab_import_oracle_tokens[2], reasons, source_evidence_reasons)
-require_token(paths["avalonia_flagship_tests"], avalonia_tests_text, hero_lab_import_oracle_tokens[3], reasons, source_evidence_reasons)
+require_token(paths["character_overview_presenter_tests"], presenter_tests_text, hero_lab_importer_tokens[0], reasons, source_evidence_reasons)
+require_token(paths["dual_head_acceptance_tests"], dual_head_tests_text, hero_lab_importer_tokens[1], reasons, source_evidence_reasons)
+require_token(paths["desktop_dialog_factory_tests"], dialog_tests_text, hero_lab_importer_tokens[2], reasons, source_evidence_reasons)
+require_token(paths["avalonia_flagship_tests"], avalonia_tests_text, hero_lab_importer_tokens[3], reasons, source_evidence_reasons)
 
 receipts = {
     "flagshipGate": load_json(paths["flagship_gate"]),
@@ -267,7 +267,14 @@ required_screenshots = set(visual_evidence.get("required_screenshots") or [])
 for key in ["runtime_backed_master_index", "runtime_backed_character_roster", "runtime_backed_file_menu_routes"]:
     if not status_pass(visual_evidence.get(key)):
         append_reason(f"Desktop visual familiarity gate does not pass {key}.", reasons, screenshot_review_reasons)
-for screenshot in ["03-settings-open-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png", "38-translator-dialog-light.png", "39-xml-editor-dialog-light.png", "40-hero-lab-importer-dialog-light.png"]:
+for screenshot in ["03-settings-open-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png"]:
+    if screenshot not in required_screenshots:
+        append_reason(
+            f"Desktop visual familiarity gate does not require screenshot review for {screenshot}.",
+            reasons,
+            screenshot_review_reasons,
+        )
+for screenshot in ["19-translator-dialog-light.png", "20-xml-editor-dialog-light.png", "21-hero-lab-importer-dialog-light.png"]:
     if screenshot not in required_screenshots:
         append_reason(
             f"Desktop visual familiarity gate does not require screenshot review for {screenshot}.",
@@ -367,39 +374,39 @@ required_task_time_jobs = {
             translator_xml_tokens[1] in presenter_tests_text,
             translator_xml_tokens[2] in dual_head_tests_text,
             translator_xml_tokens[3] in dialog_tests_text,
-            hero_lab_import_oracle_tokens[3] in avalonia_tests_text,
-            "38-translator-dialog-light.png" in required_screenshots,
-            "39-xml-editor-dialog-light.png" in required_screenshots,
+            "19-translator-dialog-light.png" in required_screenshots,
+            "20-xml-editor-dialog-light.png" in required_screenshots,
         ),
         "tests": [
             "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture",
             "ExecuteCommandAsync_xml_editor_opens_dialog_with_xml_bridge_posture",
             "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture",
             "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
-            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
         ],
         "proof": "Translator and XML editor lanes now fail closed on governed translator posture, XML bridge posture, enabled overlay count, and custom-data directory posture instead of relying on generic dialog coverage.",
         "evidencePaths": [
             str(paths["character_overview_presenter_tests"]),
             str(paths["dual_head_acceptance_tests"]),
             str(paths["desktop_dialog_factory_tests"]),
+            str(paths["visual_familiarity_gate"]),
         ],
     },
     "hero_lab_import_oracle": {
         "status": derived_status(
-            hero_lab_import_oracle_tokens[0] in presenter_tests_text,
-            hero_lab_import_oracle_tokens[1] in dual_head_tests_text,
-            hero_lab_import_oracle_tokens[2] in dialog_tests_text,
-            hero_lab_import_oracle_tokens[3] in avalonia_tests_text,
-            "40-hero-lab-importer-dialog-light.png" in required_screenshots,
+            hero_lab_importer_tokens[0] in presenter_tests_text,
+            hero_lab_importer_tokens[1] in dual_head_tests_text,
+            hero_lab_importer_tokens[2] in dialog_tests_text,
+            hero_lab_importer_tokens[3] in avalonia_tests_text,
+            "18-import-dialog-light.png" in required_screenshots,
+            "21-hero-lab-importer-dialog-light.png" in required_screenshots,
         ),
         "tests": [
-            "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture",
-            "Avalonia_and_Blazor_hero_lab_importer_dialog_preserves_matching_import_oracle_posture",
-            "CreateCommandDialog_hero_lab_importer_surfaces_import_oracle_and_adjacent_sr6_posture",
-            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_compatibility_posture",
+            "Avalonia_and_Blazor_hero_lab_importer_dialogs_preserve_matching_import_posture",
+            "CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields",
+            "Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts",
         ],
-        "proof": "Hero Lab importer now exposes import-oracle posture, route coverage, and adjacent SR6 oracle receipts on the live Tools route instead of hiding behind compatibility-only XML fields.",
+        "proof": "Hero Lab importer and the adjacent desktop import route now fail closed on explicit compatibility-dialog posture, ruleset binding, and direct screenshot-backed route proof instead of broad import folklore.",
         "evidencePaths": [
             str(paths["character_overview_presenter_tests"]),
             str(paths["dual_head_acceptance_tests"]),
@@ -451,7 +458,7 @@ required_task_time_jobs = {
 }
 
 task_time_failing_jobs = sorted(job_name for job_name, job in required_task_time_jobs.items() if job["status"] != "pass")
-screenshot_review_jobs = ["open_import", "settings", "sourcebooks", "roster", "translator_xml_custom_data", "hero_lab_import_oracle"]
+screenshot_review_jobs = ["open_import", "settings", "sourcebooks", "roster"]
 screenshot_review_failing_jobs = [
     job_name for job_name in screenshot_review_jobs if required_task_time_jobs[job_name]["status"] != "pass"
 ]

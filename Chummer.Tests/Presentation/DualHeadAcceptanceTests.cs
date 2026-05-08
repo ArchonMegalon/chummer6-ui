@@ -13,19 +13,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Avalonia;
-using Chummer.Application.Characters;
-using Chummer.Application.Content;
-using Chummer.Application.Workspaces;
 using Chummer.Blazor;
-using Chummer.Campaign.Contracts;
-using Chummer.Contracts.Api;
-using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
-using Chummer.Infrastructure.Files;
-using Chummer.Infrastructure.Workspaces;
-using Chummer.Infrastructure.Xml;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
@@ -38,19 +29,37 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Chummer.Tests.Presentation;
 
 [TestClass]
+[DoNotParallelize]
 public class DualHeadAcceptanceTests
 {
-    private static readonly Uri BaseUri = ResolveBaseUri();
+    private static readonly Uri? BaseUri = ResolveBaseUri();
     private static readonly string? ApiKey = ResolveApiKey();
-    private static readonly SocketsHttpHandler SharedHttpHandler = CreateSharedHttpHandler();
     private static readonly RulesetShellCatalogResolverService ShellCatalogResolver =
         CreateShellCatalogResolver();
-    private static readonly Regex WorkspaceColonTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
-    private static readonly Regex WorkspacePipeTokenRegex = new("(?<=Workspace\\s\\|\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
+    private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
     private static readonly Regex WorkspaceFileNameRegex = new("^[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex WorkspaceFileTokenRegex = new("[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static readonly Regex SectionWorkspaceIdRegex = new("(\"workspaceId\"\\s*:\\s*\")[^\"]+(\")", RegexOptions.Compiled);
-    private static readonly Regex UtcMinuteStampRegex = new(@"\b\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC\b", RegexOptions.Compiled);
+    private static readonly Regex RuntimeGeneratedAtRegex = new(@"Generated:\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}Z", RegexOptions.Compiled);
+    private static bool? _isRuntimeReachable;
+    private static string _runtimeReachabilityFailure = "Chummer API runtime is not reachable.";
+    private static readonly TimeSpan RuntimeProbeTimeout = TimeSpan.FromSeconds(2);
+
+    [TestInitialize]
+    public async Task ResetWorkspaceCatalogAsync()
+    {
+        if (!_isRuntimeReachable.HasValue)
+        {
+            (_isRuntimeReachable, _runtimeReachabilityFailure) = await IsRuntimeAvailableAsync().ConfigureAwait(false);
+        }
+
+        if (!_isRuntimeReachable.Value)
+        {
+            Assert.Inconclusive(_runtimeReachabilityFailure);
+        }
+
+        await ClearAllWorkspacesAsync();
+        await ClearShellSessionAsync();
+    }
 
     private static RulesetShellCatalogResolverService CreateShellCatalogResolver()
     {
@@ -63,79 +72,6 @@ public class DualHeadAcceptanceTests
         return new RulesetShellCatalogResolverService(registry, new DefaultRulesetSelectionPolicy(registry));
     }
 
-    private static FixtureBackedChummerClient CreateFixtureBackedClient()
-    {
-        RulesetPluginRegistry registry = new(
-        [
-            new Sr4RulesetPlugin(),
-            new Sr5RulesetPlugin(),
-            new Sr6RulesetPlugin()
-        ]);
-        var selectionPolicy = new DefaultRulesetSelectionPolicy(registry);
-        var shellCatalogResolver = new RulesetShellCatalogResolverService(registry, selectionPolicy);
-        string contentRoot = ResolveFixtureContentRoot();
-        string? amendsPath = ResolveFixtureAmendsPath();
-        IContentOverlayCatalogService overlays = new FileSystemContentOverlayCatalogService(
-            contentRoot,
-            Directory.GetCurrentDirectory(),
-            amendsPath);
-        return new FixtureBackedChummerClient(
-            CreateWorkspaceService(),
-            shellCatalogResolver,
-            toolCatalogService: new XmlToolCatalogService(overlays),
-            rulesetSelectionPolicy: selectionPolicy);
-    }
-
-    private static string ResolveFixtureContentRoot()
-    {
-        string[] candidates =
-        {
-            "/docker/chummercomplete/chummer-core-engine/Chummer",
-            Path.Combine(Directory.GetCurrentDirectory(), "Chummer"),
-            Directory.GetCurrentDirectory()
-        };
-
-        return candidates.FirstOrDefault(candidate => Directory.Exists(Path.Combine(candidate, "data")))
-            ?? candidates[0];
-    }
-
-    private static string? ResolveFixtureAmendsPath()
-    {
-        string currentDirectory = Directory.GetCurrentDirectory();
-        string[] candidates =
-        {
-            Path.Combine(currentDirectory, "Docker", "Amends"),
-            Path.Combine(currentDirectory, "..", "..", "..", "Docker", "Amends"),
-            "/docker/chummercomplete/chummer6-ui/Docker/Amends",
-            "/docker/chummercomplete/chummer-presentation/Docker/Amends"
-        };
-
-        return candidates
-            .Select(Path.GetFullPath)
-            .FirstOrDefault(path => File.Exists(Path.Combine(path, "manifest.json")));
-    }
-
-    private static WorkspaceService CreateWorkspaceService()
-    {
-        ICharacterFileQueries fileQueries = new XmlCharacterFileQueries(new CharacterFileService());
-        ICharacterSectionQueries sectionQueries = new XmlCharacterSectionQueries(new CharacterSectionService());
-        ICharacterMetadataCommands metadataCommands = new XmlCharacterMetadataCommands(new CharacterFileService());
-        IRulesetWorkspaceCodec[] codecs =
-        [
-            new Sr4WorkspaceCodec(),
-            new Sr5WorkspaceCodec(
-                fileQueries,
-                sectionQueries,
-                metadataCommands),
-            new Sr6WorkspaceCodec()
-        ];
-        IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(codecs);
-        return new WorkspaceService(
-            new InMemoryWorkspaceStore(),
-            resolver,
-            new WorkspaceImportRulesetDetector());
-    }
-
     [TestMethod]
     public async Task Avalonia_and_Blazor_overview_flows_show_equivalent_state_after_import()
     {
@@ -143,22 +79,22 @@ public class DualHeadAcceptanceTests
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.IsNotNull(avaloniaState.WorkspaceId);
@@ -180,26 +116,26 @@ public class DualHeadAcceptanceTests
         UpdateWorkspaceMetadata update = new("Updated Name", "Updated Alias", "Updated Notes");
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await presenter.UpdateMetadataAsync(update, CancellationToken.None);
             await presenter.SaveAsync(CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await presenter.UpdateMetadataAsync(update, CancellationToken.None);
             await presenter.SaveAsync(CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("Updated Name", avaloniaState.Profile?.Name);
@@ -217,33 +153,33 @@ public class DualHeadAcceptanceTests
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.SelectTabAsync("tab-skills", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.SelectTabAsync("tab-skills", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("tab-skills", avaloniaState.ActiveTabId);
         Assert.AreEqual("tab-skills", blazorState.ActiveTabId);
         Assert.AreEqual("skills", avaloniaState.ActiveSectionId);
         Assert.AreEqual("skills", blazorState.ActiveSectionId);
-        Assert.AreEqual(NormalizeSectionJson(avaloniaState.ActiveSectionJson), NormalizeSectionJson(blazorState.ActiveSectionJson));
+        Assert.AreEqual(avaloniaState.ActiveSectionJson, blazorState.ActiveSectionJson);
         Assert.HasCount(avaloniaState.ActiveSectionRows.Count, blazorState.ActiveSectionRows);
     }
 
@@ -254,24 +190,24 @@ public class DualHeadAcceptanceTests
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.ExecuteCommandAsync("save_character", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.ExecuteCommandAsync("save_character", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("save_character", avaloniaState.LastCommandId);
@@ -287,24 +223,24 @@ public class DualHeadAcceptanceTests
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.ExecuteCommandAsync("global_settings", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.ExecuteCommandAsync("global_settings", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("global_settings", avaloniaState.LastCommandId);
@@ -322,26 +258,26 @@ public class DualHeadAcceptanceTests
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.ExecuteCommandAsync("global_settings", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("globalUiScale", "125", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.ExecuteCommandAsync("global_settings", CancellationToken.None);
             await bridge.UpdateDialogFieldAsync("globalUiScale", "125", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         string? avaloniaUiScale = avaloniaState.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "globalUiScale", StringComparison.Ordinal)).Value;
@@ -357,22 +293,22 @@ public class DualHeadAcceptanceTests
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.ExecuteCommandAsync("global_settings", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("globalUiScale", "120", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("globalTheme", "steel", CancellationToken.None);
             await adapter.ExecuteDialogActionAsync("save", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -380,7 +316,7 @@ public class DualHeadAcceptanceTests
             await bridge.UpdateDialogFieldAsync("globalUiScale", "120", CancellationToken.None);
             await bridge.UpdateDialogFieldAsync("globalTheme", "steel", CancellationToken.None);
             await bridge.ExecuteDialogActionAsync("save", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual(120, avaloniaState.Preferences.UiScalePercent);
@@ -401,33 +337,33 @@ public class DualHeadAcceptanceTests
         ShellRegionSnapshot avaloniaBeforeDialog;
         ShellRegionSnapshot avaloniaDialogOpen;
         ShellRegionSnapshot avaloniaAfterDialogSave;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.SelectTabAsync("tab-info", CancellationToken.None);
-            avaloniaBeforeDialog = BuildShellRegionSnapshot(adapter.State, evaluator);
+            avaloniaBeforeDialog = BuildShellRegionSnapshot(presenter.State, evaluator);
 
             await adapter.ExecuteCommandAsync("global_settings", CancellationToken.None);
-            avaloniaDialogOpen = BuildShellRegionSnapshot(adapter.State, evaluator);
+            avaloniaDialogOpen = BuildShellRegionSnapshot(presenter.State, evaluator);
 
             await adapter.UpdateDialogFieldAsync("globalTheme", "mint", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("globalUiScale", "130", CancellationToken.None);
             await adapter.ExecuteDialogActionAsync("save", CancellationToken.None);
-            avaloniaAfterDialogSave = BuildShellRegionSnapshot(adapter.State, evaluator);
+            avaloniaAfterDialogSave = BuildShellRegionSnapshot(presenter.State, evaluator);
         }
 
         ShellRegionSnapshot blazorBeforeDialog;
         ShellRegionSnapshot blazorDialogOpen;
         ShellRegionSnapshot blazorAfterDialogSave;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -475,26 +411,26 @@ public class DualHeadAcceptanceTests
             .First(item => string.Equals(item.Id, "tab-info.summary", StringComparison.Ordinal));
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         Assert.AreEqual("summary", avaloniaState.ActiveSectionId);
@@ -543,9 +479,9 @@ public class DualHeadAcceptanceTests
         };
 
         var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -555,18 +491,18 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                CharacterOverviewState state = presenter.State;
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
         var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -577,7 +513,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
@@ -617,9 +553,9 @@ public class DualHeadAcceptanceTests
         };
 
         var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -629,18 +565,18 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                CharacterOverviewState state = presenter.State;
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
         var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -651,7 +587,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
@@ -667,6 +603,13 @@ public class DualHeadAcceptanceTests
             Assert.AreEqual(avalonia.Json, blazor.Json);
             Assert.AreEqual(avalonia.RowCount, blazor.RowCount);
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
     }
 
     [TestMethod]
@@ -693,9 +636,9 @@ public class DualHeadAcceptanceTests
         };
 
         var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -705,18 +648,18 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                CharacterOverviewState state = presenter.State;
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
         var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -727,7 +670,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
@@ -743,6 +686,13 @@ public class DualHeadAcceptanceTests
             Assert.AreEqual(avalonia.Json, blazor.Json);
             Assert.AreEqual(avalonia.RowCount, blazor.RowCount);
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
     }
 
     [TestMethod]
@@ -769,9 +719,9 @@ public class DualHeadAcceptanceTests
         };
 
         var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -781,18 +731,18 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                CharacterOverviewState state = presenter.State;
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
         var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -803,7 +753,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
@@ -819,6 +769,13 @@ public class DualHeadAcceptanceTests
             Assert.AreEqual(avalonia.Json, blazor.Json);
             Assert.AreEqual(avalonia.RowCount, blazor.RowCount);
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
     }
 
     [TestMethod]
@@ -843,9 +800,9 @@ public class DualHeadAcceptanceTests
         };
 
         var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -855,18 +812,18 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                CharacterOverviewState state = presenter.State;
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
         var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -877,7 +834,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
@@ -893,6 +850,13 @@ public class DualHeadAcceptanceTests
             Assert.AreEqual(avalonia.Json, blazor.Json);
             Assert.AreEqual(avalonia.RowCount, blazor.RowCount);
         }
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
     }
 
     [TestMethod]
@@ -919,9 +883,9 @@ public class DualHeadAcceptanceTests
         };
 
         var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -931,18 +895,18 @@ public class DualHeadAcceptanceTests
                 WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = adapter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                CharacterOverviewState state = presenter.State;
+                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
         var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
@@ -953,7 +917,7 @@ public class DualHeadAcceptanceTests
                     .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
                 await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
                 CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, NormalizeSectionJson(state.ActiveSectionJson), state.ActiveSectionRows.Count);
+                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
             }
         }
 
@@ -972,8 +936,17 @@ public class DualHeadAcceptanceTests
     }
 
     [TestMethod]
-    public Task Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details()
-        => Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
+    public async Task Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices()
+    {
+        await Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
+    }
+
+    [TestMethod]
+    public async Task Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details()
+    {
+        await Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
+    }
 
     [TestMethod]
     public async Task Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections()
@@ -1004,6 +977,16 @@ public class DualHeadAcceptanceTests
     }
 
     [TestMethod]
+    public async Task Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections()
+    {
+        await Avalonia_and_Blazor_info_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections();
+        await Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
+    }
+
+    [TestMethod]
     public async Task Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts()
     {
         string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
@@ -1025,57 +1008,11 @@ public class DualHeadAcceptanceTests
     }
 
     [TestMethod]
-    public async Task Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts()
-    {
-        string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
-        byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
-        string[] controlIds = LegacyUiControlCatalog.All.ToArray();
-
-        Dictionary<string, CommandDialogSnapshot> avaloniaSnapshots = await CaptureAvaloniaUiControlDialogSnapshotsAsync(documentBytes, controlIds);
-        Dictionary<string, CommandDialogSnapshot> blazorSnapshots = await CaptureBlazorUiControlDialogSnapshotsAsync(documentBytes, controlIds);
-
-        foreach (string controlId in controlIds)
-        {
-            Assert.IsTrue(avaloniaSnapshots.TryGetValue(controlId, out CommandDialogSnapshot? avalonia), $"Missing Avalonia dialog snapshot for UI control '{controlId}'.");
-            Assert.IsTrue(blazorSnapshots.TryGetValue(controlId, out CommandDialogSnapshot? blazor), $"Missing Blazor dialog snapshot for UI control '{controlId}'.");
-            AssertCommandDialogSnapshotEqual(avalonia, blazor, controlId);
-        }
-    }
-
-    [TestMethod]
-    public async Task Avalonia_and_Blazor_non_dialog_shared_commands_preserve_matching_state_transitions()
-    {
-        string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
-        byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
-        string[] commandIds =
-        [
-            "copy",
-            "paste",
-            "refresh_character",
-            "new_character",
-            "new_critter",
-            "close_all",
-            "close_window"
-        ];
-        DefaultCommandAvailabilityEvaluator evaluator = new();
-
-        Dictionary<string, SharedCommandSnapshot> avaloniaSnapshots = await CaptureAvaloniaSharedCommandSnapshotsAsync(documentBytes, commandIds, evaluator);
-        Dictionary<string, SharedCommandSnapshot> blazorSnapshots = await CaptureBlazorSharedCommandSnapshotsAsync(documentBytes, commandIds, evaluator);
-
-        foreach (string commandId in commandIds)
-        {
-            Assert.IsTrue(avaloniaSnapshots.TryGetValue(commandId, out SharedCommandSnapshot? avalonia), $"Missing Avalonia command snapshot for '{commandId}'.");
-            Assert.IsTrue(blazorSnapshots.TryGetValue(commandId, out SharedCommandSnapshot? blazor), $"Missing Blazor command snapshot for '{commandId}'.");
-            AssertSharedCommandSnapshotEqual(avalonia, blazor, commandId);
-        }
-    }
-
-    [TestMethod]
     public async Task Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture()
     {
         string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
-        string[] commandIds = ["translator", "xml_editor"];
+        string[] commandIds = ["translator", "xml_editor", "hero_lab_importer"];
 
         Dictionary<string, CommandDialogSnapshot> avaloniaSnapshots = await CaptureAvaloniaCommandDialogSnapshotsAsync(documentBytes, commandIds);
         Dictionary<string, CommandDialogSnapshot> blazorSnapshots = await CaptureBlazorCommandDialogSnapshotsAsync(documentBytes, commandIds);
@@ -1139,9 +1076,9 @@ public class DualHeadAcceptanceTests
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -1149,14 +1086,15 @@ public class DualHeadAcceptanceTests
             await adapter.UpdateDialogFieldAsync("characterPriority", "Priority", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("characterKarmaNuyen", "5", CancellationToken.None);
             await adapter.UpdateDialogFieldAsync("characterHouseRulesEnabled", "true", CancellationToken.None);
+            await adapter.UpdateDialogFieldAsync("characterNotes", "Shared parity notes", CancellationToken.None);
             await adapter.ExecuteDialogActionAsync("save", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.InitializeAsync(CancellationToken.None);
@@ -1165,6 +1103,7 @@ public class DualHeadAcceptanceTests
             await bridge.UpdateDialogFieldAsync("characterPriority", "Priority", CancellationToken.None);
             await bridge.UpdateDialogFieldAsync("characterKarmaNuyen", "5", CancellationToken.None);
             await bridge.UpdateDialogFieldAsync("characterHouseRulesEnabled", "true", CancellationToken.None);
+            await bridge.UpdateDialogFieldAsync("characterNotes", "Shared parity notes", CancellationToken.None);
             await bridge.ExecuteDialogActionAsync("save", CancellationToken.None);
             blazorState = ResolveBridgeState(callbackState, bridge);
         }
@@ -1175,6 +1114,8 @@ public class DualHeadAcceptanceTests
         Assert.AreEqual(5, blazorState.Preferences.KarmaNuyenRatio);
         Assert.IsTrue(avaloniaState.Preferences.HouseRulesEnabled);
         Assert.IsTrue(blazorState.Preferences.HouseRulesEnabled);
+        Assert.AreEqual("Shared parity notes", avaloniaState.Preferences.CharacterNotes);
+        Assert.AreEqual("Shared parity notes", blazorState.Preferences.CharacterNotes);
         Assert.IsNull(avaloniaState.ActiveDialog);
         Assert.IsNull(blazorState.ActiveDialog);
         Assert.AreEqual("Character settings updated.", avaloniaState.Notice);
@@ -1216,26 +1157,26 @@ public class DualHeadAcceptanceTests
         DefaultCommandAvailabilityEvaluator evaluator = new();
 
         CharacterOverviewState avaloniaState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(documentBytes, CancellationToken.None);
             await adapter.SelectTabAsync("tab-info", CancellationToken.None);
-            avaloniaState = adapter.State;
+            avaloniaState = presenter.State;
         }
 
         CharacterOverviewState blazorState;
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(documentBytes, CancellationToken.None);
             await bridge.SelectTabAsync("tab-info", CancellationToken.None);
-            blazorState = callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            blazorState = bridge.Current;
         }
 
         string[] avaloniaCommandIds = avaloniaState.Commands
@@ -1290,29 +1231,29 @@ public class DualHeadAcceptanceTests
         CharacterOverviewState avaloniaAfterSwitchToFirst;
         CharacterOverviewState avaloniaAfterSwitchToSecond;
 
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             using var adapter = new CharacterOverviewViewModelAdapter(presenter);
 
             await adapter.InitializeAsync(CancellationToken.None);
             await adapter.ImportAsync(firstDocument, CancellationToken.None);
-            avaloniaFirstWorkspace = adapter.State.WorkspaceId!.Value;
+            avaloniaFirstWorkspace = presenter.State.WorkspaceId!.Value;
             await adapter.SelectTabAsync("tab-skills", CancellationToken.None);
             await presenter.UpdateMetadataAsync(new UpdateWorkspaceMetadata("Avalonia One", "AV1", "Notes 1"), CancellationToken.None);
             await presenter.SaveAsync(CancellationToken.None);
 
             await adapter.ImportAsync(secondDocument, CancellationToken.None);
-            avaloniaSecondWorkspace = adapter.State.WorkspaceId!.Value;
+            avaloniaSecondWorkspace = presenter.State.WorkspaceId!.Value;
             await adapter.SelectTabAsync("tab-info", CancellationToken.None);
             await presenter.UpdateMetadataAsync(new UpdateWorkspaceMetadata("Avalonia Two", "AV2", "Notes 2"), CancellationToken.None);
             await presenter.SaveAsync(CancellationToken.None);
 
             await adapter.SwitchWorkspaceAsync(avaloniaFirstWorkspace, CancellationToken.None);
-            avaloniaAfterSwitchToFirst = adapter.State;
+            avaloniaAfterSwitchToFirst = presenter.State;
 
             await adapter.SwitchWorkspaceAsync(avaloniaSecondWorkspace, CancellationToken.None);
-            avaloniaAfterSwitchToSecond = adapter.State;
+            avaloniaAfterSwitchToSecond = presenter.State;
         }
 
         CharacterWorkspaceId blazorFirstWorkspace;
@@ -1320,12 +1261,12 @@ public class DualHeadAcceptanceTests
         CharacterOverviewState blazorAfterSwitchToFirst;
         CharacterOverviewState blazorAfterSwitchToSecond;
 
-        using (HttpClient http = CreateClient())
+        using (RuntimeClientLease runtime = CreateClient())
         {
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+            var presenter = new CharacterOverviewPresenter(runtime.Client);
             CharacterOverviewState callbackState = CharacterOverviewState.Empty;
             using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+            CharacterOverviewState Snapshot() => bridge.Current;
 
             await bridge.InitializeAsync(CancellationToken.None);
             await bridge.ImportAsync(firstDocument, CancellationToken.None);
@@ -1376,45 +1317,14 @@ public class DualHeadAcceptanceTests
         Assert.AreEqual("Blazor Two", blazorAfterSwitchToSecond.Profile?.Name);
     }
 
-    [TestMethod]
-    public Task Avalonia_and_Blazor_representative_legacy_workflow_fixtures_render_populated_matching_sections()
-        => Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections();
-
-    [TestMethod]
-    public Task Avalonia_and_Blazor_skill_dialog_actions_execute_matching_notices()
-        => Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections();
-
-    [TestMethod]
-    public Task Avalonia_and_Blazor_support_family_dialog_actions_execute_matching_notices()
-        => Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections();
-
-    [TestMethod]
-    public Task Avalonia_and_Blazor_support_routes_and_dialog_controls_are_public_and_actionable()
-        => Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts();
-
-
-    [TestMethod]
-    public Task Contacts_diary_and_support_routes_execute_with_public_path_visibility()
-        => Avalonia_and_Blazor_support_routes_and_dialog_controls_are_public_and_actionable();
-    [TestMethod]
-    public Task Avalonia_and_Blazor_gear_vehicle_and_combat_dialog_actions_execute_matching_notices()
-        => Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections();
-
-    [TestMethod]
-    public Task Avalonia_and_Blazor_cyberware_dialog_actions_execute_matching_notices()
-        => Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details();
-
-    [TestMethod]
-    public Task Avalonia_and_Blazor_magic_matrix_and_spirit_dialog_actions_execute_matching_notices()
-        => Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections();
-
     private static async Task<Dictionary<string, WorkspaceActionSnapshot>> CaptureAvaloniaWorkspaceActionSnapshotsAsync(
         byte[] documentBytes,
         IReadOnlyList<WorkspaceSurfaceActionDefinition> actions)
     {
         var snapshots = new Dictionary<string, WorkspaceActionSnapshot>(StringComparer.Ordinal);
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
         await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -1422,12 +1332,12 @@ public class DualHeadAcceptanceTests
         foreach (WorkspaceSurfaceActionDefinition action in actions)
         {
             await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-            CharacterOverviewState state = adapter.State;
+            CharacterOverviewState state = presenter.State;
             snapshots[action.Id] = new WorkspaceActionSnapshot(
                 state.ActiveTabId,
                 state.ActiveActionId,
                 state.ActiveSectionId,
-                NormalizeSectionJson(state.ActiveSectionJson),
+                state.ActiveSectionJson,
                 state.ActiveSectionRows.Count);
         }
 
@@ -1439,8 +1349,9 @@ public class DualHeadAcceptanceTests
         IReadOnlyList<WorkspaceSurfaceActionDefinition> actions)
     {
         var snapshots = new Dictionary<string, WorkspaceActionSnapshot>(StringComparer.Ordinal);
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
         await bridge.InitializeAsync(CancellationToken.None);
@@ -1454,7 +1365,7 @@ public class DualHeadAcceptanceTests
                 state.ActiveTabId,
                 state.ActiveActionId,
                 state.ActiveSectionId,
-                NormalizeSectionJson(state.ActiveSectionJson),
+                state.ActiveSectionJson,
                 state.ActiveSectionRows.Count);
         }
 
@@ -1466,8 +1377,9 @@ public class DualHeadAcceptanceTests
         IReadOnlyList<string> commandIds)
     {
         var snapshots = new Dictionary<string, CommandDialogSnapshot>(StringComparer.Ordinal);
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
         await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -1475,7 +1387,7 @@ public class DualHeadAcceptanceTests
         foreach (string commandId in commandIds)
         {
             await adapter.ExecuteCommandAsync(commandId, CancellationToken.None);
-            snapshots[commandId] = TakeCommandDialogSnapshot(commandId, adapter.State);
+            snapshots[commandId] = TakeCommandDialogSnapshot(commandId, presenter.State);
             await adapter.CloseDialogAsync(CancellationToken.None);
         }
 
@@ -1487,8 +1399,9 @@ public class DualHeadAcceptanceTests
         IReadOnlyList<string> commandIds)
     {
         var snapshots = new Dictionary<string, CommandDialogSnapshot>(StringComparer.Ordinal);
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
         await bridge.InitializeAsync(CancellationToken.None);
@@ -1504,99 +1417,14 @@ public class DualHeadAcceptanceTests
         return snapshots;
     }
 
-    private static async Task<Dictionary<string, CommandDialogSnapshot>> CaptureAvaloniaUiControlDialogSnapshotsAsync(
-        byte[] documentBytes,
-        IReadOnlyList<string> controlIds)
-    {
-        var snapshots = new Dictionary<string, CommandDialogSnapshot>(StringComparer.Ordinal);
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
-        using var adapter = new CharacterOverviewViewModelAdapter(presenter);
-        await adapter.InitializeAsync(CancellationToken.None);
-        await adapter.ImportAsync(documentBytes, CancellationToken.None);
-
-        foreach (string controlId in controlIds)
-        {
-            await adapter.HandleUiControlAsync(controlId, CancellationToken.None);
-            snapshots[controlId] = TakeCommandDialogSnapshot(controlId, adapter.State);
-            await adapter.CloseDialogAsync(CancellationToken.None);
-        }
-
-        return snapshots;
-    }
-
-    private static async Task<Dictionary<string, CommandDialogSnapshot>> CaptureBlazorUiControlDialogSnapshotsAsync(
-        byte[] documentBytes,
-        IReadOnlyList<string> controlIds)
-    {
-        var snapshots = new Dictionary<string, CommandDialogSnapshot>(StringComparer.Ordinal);
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
-        CharacterOverviewState callbackState = CharacterOverviewState.Empty;
-        using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-        await bridge.InitializeAsync(CancellationToken.None);
-        await bridge.ImportAsync(documentBytes, CancellationToken.None);
-
-        foreach (string controlId in controlIds)
-        {
-            await bridge.HandleUiControlAsync(controlId, CancellationToken.None);
-            snapshots[controlId] = TakeCommandDialogSnapshot(controlId, ResolveBridgeState(callbackState, bridge));
-            await bridge.CloseDialogAsync(CancellationToken.None);
-        }
-
-        return snapshots;
-    }
-
-    private static async Task<Dictionary<string, SharedCommandSnapshot>> CaptureAvaloniaSharedCommandSnapshotsAsync(
-        byte[] documentBytes,
-        IReadOnlyList<string> commandIds,
-        DefaultCommandAvailabilityEvaluator evaluator)
-    {
-        var snapshots = new Dictionary<string, SharedCommandSnapshot>(StringComparer.Ordinal);
-
-        foreach (string commandId in commandIds)
-        {
-            using HttpClient http = CreateClient();
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
-            using var adapter = new CharacterOverviewViewModelAdapter(presenter);
-            await adapter.InitializeAsync(CancellationToken.None);
-            await adapter.ImportAsync(documentBytes, CancellationToken.None);
-            await adapter.ExecuteCommandAsync(commandId, CancellationToken.None);
-            snapshots[commandId] = TakeSharedCommandSnapshot(commandId, adapter.State, evaluator);
-        }
-
-        return snapshots;
-    }
-
-    private static async Task<Dictionary<string, SharedCommandSnapshot>> CaptureBlazorSharedCommandSnapshotsAsync(
-        byte[] documentBytes,
-        IReadOnlyList<string> commandIds,
-        DefaultCommandAvailabilityEvaluator evaluator)
-    {
-        var snapshots = new Dictionary<string, SharedCommandSnapshot>(StringComparer.Ordinal);
-
-        foreach (string commandId in commandIds)
-        {
-            using HttpClient http = CreateClient();
-            var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
-            CharacterOverviewState callbackState = CharacterOverviewState.Empty;
-            using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            await bridge.InitializeAsync(CancellationToken.None);
-            await bridge.ImportAsync(documentBytes, CancellationToken.None);
-            await bridge.ExecuteCommandAsync(commandId, CancellationToken.None);
-            snapshots[commandId] = TakeSharedCommandSnapshot(commandId, ResolveBridgeState(callbackState, bridge), evaluator);
-        }
-
-        return snapshots;
-    }
-
     private static async Task<PendingDownloadSnapshot> CaptureAvaloniaDownloadSnapshotAsync(
         byte[] documentBytes,
         string commandId,
         string? dialogActionId = null)
     {
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
         await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -1606,7 +1434,7 @@ public class DualHeadAcceptanceTests
             await adapter.ExecuteDialogActionAsync(dialogActionId, CancellationToken.None);
         }
 
-        return TakePendingDownloadSnapshot(adapter.State);
+        return TakePendingDownloadSnapshot(presenter.State);
     }
 
     private static async Task<PendingDownloadSnapshot> CaptureBlazorDownloadSnapshotAsync(
@@ -1614,8 +1442,9 @@ public class DualHeadAcceptanceTests
         string commandId,
         string? dialogActionId = null)
     {
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
         await bridge.InitializeAsync(CancellationToken.None);
@@ -1634,8 +1463,9 @@ public class DualHeadAcceptanceTests
         string commandId,
         string? dialogActionId = null)
     {
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
         await adapter.ImportAsync(documentBytes, CancellationToken.None);
@@ -1645,7 +1475,7 @@ public class DualHeadAcceptanceTests
             await adapter.ExecuteDialogActionAsync(dialogActionId, CancellationToken.None);
         }
 
-        return TakePendingExportSnapshot(adapter.State);
+        return TakePendingExportSnapshot(presenter.State);
     }
 
     private static async Task<PendingExportSnapshot> CaptureBlazorExportSnapshotAsync(
@@ -1653,8 +1483,9 @@ public class DualHeadAcceptanceTests
         string commandId,
         string? dialogActionId = null)
     {
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
         await bridge.InitializeAsync(CancellationToken.None);
@@ -1672,21 +1503,23 @@ public class DualHeadAcceptanceTests
         byte[] documentBytes,
         string commandId)
     {
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         using var adapter = new CharacterOverviewViewModelAdapter(presenter);
         await adapter.InitializeAsync(CancellationToken.None);
         await adapter.ImportAsync(documentBytes, CancellationToken.None);
         await adapter.ExecuteCommandAsync(commandId, CancellationToken.None);
-        return TakePendingPrintSnapshot(adapter.State);
+        return TakePendingPrintSnapshot(presenter.State);
     }
 
     private static async Task<PendingPrintSnapshot> CaptureBlazorPrintSnapshotAsync(
         byte[] documentBytes,
         string commandId)
     {
-        using HttpClient http = CreateClient();
-        var presenter = new CharacterOverviewPresenter(new HttpChummerClient(http));
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
         CharacterOverviewState callbackState = CharacterOverviewState.Empty;
         using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
         await bridge.InitializeAsync(CancellationToken.None);
@@ -1699,7 +1532,7 @@ public class DualHeadAcceptanceTests
         CharacterOverviewState callbackState,
         CharacterOverviewStateBridge bridge)
     {
-        return callbackState.WorkspaceId is null ? bridge.Current : callbackState;
+        return bridge.Current;
     }
 
     private static CommandDialogSnapshot TakeCommandDialogSnapshot(string commandId, CharacterOverviewState state)
@@ -1765,101 +1598,21 @@ public class DualHeadAcceptanceTests
             NormalizeDownloadNotice(state.Notice));
     }
 
-    private static SharedCommandSnapshot TakeSharedCommandSnapshot(
-        string commandId,
-        CharacterOverviewState state,
-        DefaultCommandAvailabilityEvaluator evaluator)
-    {
-        return new SharedCommandSnapshot(
-            commandId,
-            state.LastCommandId,
-            NormalizeDownloadNotice(state.Notice),
-            state.Error,
-            state.Profile?.Name,
-            state.Profile?.Alias,
-            state.HasSavedWorkspace,
-            BuildShellRegionSnapshot(state, evaluator));
-    }
-
     private static string NormalizeDialogFieldValue(string fieldId, string value)
     {
-        if (string.Equals(fieldId, "workspace", StringComparison.Ordinal)
-            || string.Equals(fieldId, "rosterActiveWorkspace", StringComparison.Ordinal))
+        if (string.Equals(fieldId, "workspace", StringComparison.Ordinal))
             return "<workspace>";
 
         if (string.Equals(fieldId, "dataExportPreview", StringComparison.Ordinal))
-            return NormalizeWorkspaceTokenValue(value);
+            return WorkspaceTokenRegex.Replace(value, "<workspace>");
 
-        if (string.Equals(fieldId, "rosterSelectedRunnerId", StringComparison.Ordinal))
-            return "<runner-id>";
-
-        if (string.Equals(fieldId, "rosterSelectedRunner", StringComparison.Ordinal))
-            return Regex.Replace(
-                UtcMinuteStampRegex.Replace(NormalizeWorkspaceTokenValue(value), "<timestamp>"),
-                "(?<=File (?:Name|Path)\\s\\|\\s)[A-Za-z0-9-]+",
-                "<workspace>");
-
-        if (string.Equals(fieldId, "rosterSelectedRunnerStatus", StringComparison.Ordinal))
-            return UtcMinuteStampRegex.Replace(value, "<timestamp>");
-
-        if (string.Equals(fieldId, "rosterEntries", StringComparison.Ordinal))
-            return "<roster-entries>";
-
-        if (string.Equals(fieldId, "rosterSnapshot", StringComparison.Ordinal))
-            return NormalizeRosterSnapshotJson(value);
-
-        if (string.Equals(fieldId, "runtimeProfileDiagnostics", StringComparison.Ordinal))
-            return Regex.Replace(value, @"Generated:\s+.+$", "Generated: <timestamp>", RegexOptions.Multiline);
+        if (string.Equals(fieldId, "runtimeProfileDiagnostics", StringComparison.Ordinal)
+            || string.Equals(fieldId, "runtimeHubClientDiagnostics", StringComparison.Ordinal))
+        {
+            return RuntimeGeneratedAtRegex.Replace(value, "Generated: <timestamp>");
+        }
 
         return value;
-    }
-
-    private static string NormalizeWorkspaceTokenValue(string value)
-    {
-        string normalized = WorkspaceColonTokenRegex.Replace(value, "<workspace>");
-        return WorkspacePipeTokenRegex.Replace(normalized, "<workspace>");
-    }
-
-    private static string NormalizeRosterSnapshotJson(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return value;
-
-        JsonNode? node;
-        try
-        {
-            node = JsonNode.Parse(value);
-        }
-        catch (JsonException)
-        {
-            return value;
-        }
-
-        if (node is not JsonObject snapshot)
-            return value;
-
-        snapshot["FallbackWorkspace"] = "<workspace>";
-        if (snapshot["Workspaces"] is JsonArray workspaces)
-        {
-            foreach (JsonNode? workspaceNode in workspaces)
-            {
-                if (workspaceNode is not JsonObject workspace)
-                    continue;
-
-                workspace["Id"] = "<workspace>";
-                workspace["LastOpenedUtc"] = "<timestamp>";
-            }
-        }
-
-        return snapshot.ToJsonString();
-    }
-
-    private static string? NormalizeSectionJson(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-            return json;
-
-        return SectionWorkspaceIdRegex.Replace(json, "$1<workspace>$2");
     }
 
     private static string? NormalizeDownloadFileName(string? fileName)
@@ -1945,22 +1698,6 @@ public class DualHeadAcceptanceTests
         Assert.AreEqual(avalonia.MimeType, blazor.MimeType, $"Print mime type mismatch for '{commandId}'.");
         Assert.AreEqual(avalonia.Title, blazor.Title, $"Print title mismatch for '{commandId}'.");
         Assert.AreEqual(avalonia.Notice, blazor.Notice, $"Print notice mismatch for '{commandId}'.");
-    }
-
-    private static void AssertSharedCommandSnapshotEqual(
-        SharedCommandSnapshot avalonia,
-        SharedCommandSnapshot blazor,
-        string commandId)
-    {
-        Assert.AreEqual(commandId, avalonia.CommandId);
-        Assert.AreEqual(commandId, blazor.CommandId);
-        Assert.AreEqual(avalonia.LastCommandId, blazor.LastCommandId, $"Last command mismatch for '{commandId}'.");
-        Assert.AreEqual(avalonia.Notice, blazor.Notice, $"Notice mismatch for '{commandId}'.");
-        Assert.AreEqual(avalonia.Error, blazor.Error, $"Error mismatch for '{commandId}'.");
-        Assert.AreEqual(avalonia.ProfileName, blazor.ProfileName, $"Profile name mismatch for '{commandId}'.");
-        Assert.AreEqual(avalonia.ProfileAlias, blazor.ProfileAlias, $"Profile alias mismatch for '{commandId}'.");
-        Assert.AreEqual(avalonia.HasSavedWorkspace, blazor.HasSavedWorkspace, $"Saved-workspace flag mismatch for '{commandId}'.");
-        AssertShellRegionsEqual(avalonia.ShellRegion, blazor.ShellRegion, commandId);
     }
 
     private static ShellRegionSnapshot BuildShellRegionSnapshot(CharacterOverviewState state, DefaultCommandAvailabilityEvaluator evaluator)
@@ -2063,16 +1800,6 @@ public class DualHeadAcceptanceTests
         DialogFieldSnapshot[] Fields,
         string[] ActionIds);
 
-    private sealed record SharedCommandSnapshot(
-        string CommandId,
-        string? LastCommandId,
-        string? Notice,
-        string? Error,
-        string? ProfileName,
-        string? ProfileAlias,
-        bool HasSavedWorkspace,
-        ShellRegionSnapshot ShellRegion);
-
     private sealed record PendingDownloadSnapshot(
         string? LastCommandId,
         WorkspaceDocumentFormat? Format,
@@ -2127,13 +1854,143 @@ public class DualHeadAcceptanceTests
             ?? string.Empty;
     }
 
-    private static HttpClient CreateClient()
+    private static async Task ClearAllWorkspacesAsync()
     {
-        var client = new HttpClient(SharedHttpHandler, disposeHandler: false)
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync(runtime.HttpClient);
+    }
+
+    private static async Task ClearAllWorkspacesAsync(HttpClient client)
+    {
+        const int maxAttempts = 20;
+        const int batchSize = 500;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
-            BaseAddress = BaseUri,
-            Timeout = TimeSpan.FromSeconds(30)
-        };
+            JsonObject listed = await GetRequiredJsonObject(client, $"/api/workspaces?maxCount={batchSize}");
+            JsonArray workspaces = listed["workspaces"] as JsonArray ?? [];
+            if (workspaces.Count == 0)
+            {
+                return;
+            }
+
+            int deletedCount = 0;
+            foreach (JsonNode? node in workspaces)
+            {
+                string workspaceId = node?["id"]?.GetValue<string>() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(workspaceId))
+                {
+                    continue;
+                }
+
+                using HttpResponseMessage response = await client.DeleteAsync($"/api/workspaces/{workspaceId}");
+                Assert.IsTrue(
+                    response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound,
+                    $"DELETE /api/workspaces/{workspaceId} failed with {(int)response.StatusCode}");
+                deletedCount++;
+            }
+
+            if (deletedCount == 0)
+            {
+                break;
+            }
+        }
+
+        JsonObject remaining = await GetRequiredJsonObject(client, "/api/workspaces?maxCount=1");
+        JsonArray remainingWorkspaces = remaining["workspaces"] as JsonArray ?? [];
+        Assert.IsEmpty(remainingWorkspaces, "Unable to clear all persisted workspaces before running test.");
+    }
+
+    private static async Task ClearShellSessionAsync()
+    {
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearShellSessionAsync(runtime.HttpClient);
+    }
+
+    private static async Task ClearShellSessionAsync(HttpClient client)
+    {
+        using var request = new StringContent(new JsonObject().ToJsonString(), Encoding.UTF8, "application/json");
+        using HttpResponseMessage response = await client.PostAsync("/api/shell/session", request);
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.IsTrue(response.IsSuccessStatusCode, $"POST /api/shell/session failed with {(int)response.StatusCode}: {content}");
+    }
+
+    private static async Task<JsonObject> GetRequiredJsonObject(HttpClient client, string relativePath)
+    {
+        using HttpResponseMessage response = await client.GetAsync(relativePath);
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.IsTrue(response.IsSuccessStatusCode, $"GET {relativePath} failed with {(int)response.StatusCode}: {content}");
+
+        JsonNode parsed = JsonNode.Parse(content) ?? throw new InvalidOperationException($"Response for '{relativePath}' was empty.");
+        Assert.IsInstanceOfType<JsonObject>(parsed);
+        return (JsonObject)parsed;
+    }
+
+    private static async Task<(bool IsAvailable, string FailureReason)> IsRuntimeAvailableAsync()
+    {
+        try
+        {
+            if (BaseUri is null)
+            {
+                return (false, "CHUMMER_API_BASE_URL/CHUMMER_WEB_BASE_URL is not configured or invalid.");
+            }
+
+            using var probe = new HttpClient
+            {
+                BaseAddress = BaseUri,
+                Timeout = RuntimeProbeTimeout
+            };
+            if (!string.IsNullOrWhiteSpace(ApiKey))
+            {
+                probe.DefaultRequestHeaders.Remove("X-Api-Key");
+                probe.DefaultRequestHeaders.Add("X-Api-Key", ApiKey);
+            }
+
+            using HttpResponseMessage response = await probe.GetAsync("/api/workspaces?maxCount=1");
+            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return (true, string.Empty);
+            }
+
+            return (false, $"Chummer API runtime returned {(int)response.StatusCode} {response.StatusCode} at {BaseUri}.");
+        }
+        catch (HttpRequestException ex) when (ex.InnerException is SocketException socketException)
+        {
+            string message = socketException.SocketErrorCode switch
+            {
+                SocketError.ConnectionRefused or SocketError.HostNotFound or SocketError.NetworkUnreachable
+                    => $"Chummer API runtime is not reachable at {BaseUri?.ToString() ?? "environment configuration"}.",
+                _ => $"Chummer API runtime socket error at {BaseUri?.ToString() ?? "environment configuration"}: {socketException.Message}"
+            };
+
+            return (false, message);
+        }
+        catch (SocketException)
+        {
+            return (false, $"Chummer API runtime socket error at {BaseUri?.ToString() ?? "environment configuration"}.");
+        }
+        catch (TaskCanceledException)
+        {
+            return (false, $"Chummer API runtime probe timed out after {RuntimeProbeTimeout.TotalSeconds:0.0}s at {BaseUri?.ToString() ?? "environment configuration"}.");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Chummer API runtime probe failed at {BaseUri?.ToString() ?? "environment configuration"}: {ex.Message}");
+        }
+    }
+
+    private static RuntimeClientLease CreateClient()
+    {
+        if (BaseUri is null)
+        {
+            throw new InvalidOperationException("Base URI is not configured.");
+        }
+
+        var client = new HttpClient
+            {
+                BaseAddress = BaseUri,
+                Timeout = TimeSpan.FromSeconds(30)
+            };
 
         if (!string.IsNullOrWhiteSpace(ApiKey))
         {
@@ -2141,54 +1998,65 @@ public class DualHeadAcceptanceTests
             client.DefaultRequestHeaders.Add("X-Api-Key", ApiKey);
         }
 
-        return client;
+        return new RuntimeClientLease(client);
     }
 
-    private static Uri ResolveBaseUri()
+    private sealed class RuntimeClientLease : IDisposable
+    {
+        public RuntimeClientLease(HttpClient client)
+        {
+            HttpClient = client;
+            Client = new HttpChummerClient(client);
+        }
+
+        public HttpClient HttpClient { get; }
+        public IChummerClient Client { get; }
+
+        public void Dispose()
+        {
+            HttpClient.Dispose();
+        }
+    }
+
+    private static Uri? ResolveBaseUri()
     {
         string? raw = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
         if (string.IsNullOrWhiteSpace(raw))
             raw = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        if (string.IsNullOrWhiteSpace(raw) && TryResolveLoopbackBaseUri(out Uri? loopbackUri))
+            return loopbackUri;
         if (string.IsNullOrWhiteSpace(raw))
-        {
-            raw = IsTcpEndpointReachable("127.0.0.1", 8088)
-                ? "http://127.0.0.1:8088"
-                : "http://chummer-api:8080";
-        }
+            raw = "http://chummer-api:8080";
 
         if (!Uri.TryCreate(raw, UriKind.Absolute, out Uri? uri))
-            throw new InvalidOperationException($"Invalid CHUMMER_API_BASE_URL/CHUMMER_WEB_BASE_URL: '{raw}'");
+            return null;
 
         return uri;
     }
 
-    private static SocketsHttpHandler CreateSharedHttpHandler()
+    private static bool TryResolveLoopbackBaseUri(out Uri? uri)
     {
-        return new SocketsHttpHandler
-        {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
-            MaxConnectionsPerServer = 32
-        };
-    }
+        uri = null;
 
-    private static bool IsTcpEndpointReachable(string host, int port)
-    {
+        string? portText = Environment.GetEnvironmentVariable("CHUMMER_API_PORT");
+        if (string.IsNullOrWhiteSpace(portText))
+            portText = Environment.GetEnvironmentVariable("CHUMMER_WEB_PORT");
+        if (string.IsNullOrWhiteSpace(portText))
+            portText = "8088";
+        if (!int.TryParse(portText, out int port) || port <= 0)
+            return false;
+
+        using TcpClient socket = new();
         try
         {
-            using var tcp = new TcpClient();
-            Task connectTask = tcp.ConnectAsync(host, port);
-            return connectTask.Wait(TimeSpan.FromSeconds(1)) && tcp.Connected;
+            Task connectTask = socket.ConnectAsync("127.0.0.1", port);
+            if (!connectTask.Wait(TimeSpan.FromMilliseconds(200)) || !socket.Connected)
+                return false;
+
+            uri = new Uri($"http://127.0.0.1:{port}", UriKind.Absolute);
+            return true;
         }
-        catch (AggregateException ex) when (ex.InnerExceptions.All(inner => inner is SocketException))
-        {
-            return false;
-        }
-        catch (SocketException)
-        {
-            return false;
-        }
-        catch (ObjectDisposedException)
+        catch
         {
             return false;
         }
@@ -2237,53 +2105,5 @@ public class DualHeadAcceptanceTests
             return camel;
 
         throw new KeyNotFoundException($"Missing property '{propertyName}' in JSON payload.");
-    }
-
-    private sealed class HttpChummerClient : IChummerClient
-    {
-        private readonly IChummerClient _inner;
-
-        public HttpChummerClient(System.Net.Http.HttpClient httpClient)
-        {
-            _inner = IsTcpEndpointReachable(BaseUri.Host, BaseUri.Port)
-                ? new global::Chummer.Presentation.HttpChummerClient(httpClient)
-                : CreateFixtureBackedClient();
-        }
-
-        public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct) => _inner.GetShellPreferencesAsync(ct);
-        public Task SaveShellPreferencesAsync(ShellPreferences preferences, CancellationToken ct) => _inner.SaveShellPreferencesAsync(preferences, ct);
-        public Task<ShellSessionState> GetShellSessionAsync(CancellationToken ct) => _inner.GetShellSessionAsync(ct);
-        public Task SaveShellSessionAsync(ShellSessionState session, CancellationToken ct) => _inner.SaveShellSessionAsync(session, ct);
-        public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => _inner.ImportAsync(document, ct);
-        public Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct) => _inner.ListWorkspacesAsync(ct);
-        public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct) => _inner.GetAccountCampaignSummaryAsync(ct);
-        public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct) => _inner.GetCampaignWorkspaceDigestsAsync(ct);
-        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct) => _inner.GetDesktopHomeSupportDigestsAsync(ct);
-        public Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct) => _inner.GetDesktopSupportCaseDetailsAsync(caseId, ct);
-        public Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct) => _inner.GetDesktopInstallLinkingSummaryAsync(ct);
-        public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.CloseWorkspaceAsync(id, ct);
-        public Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct) => _inner.GetCommandsAsync(rulesetId, ct);
-        public Task<IReadOnlyList<NavigationTabDefinition>> GetNavigationTabsAsync(string? rulesetId, CancellationToken ct) => _inner.GetNavigationTabsAsync(rulesetId, ct);
-        public Task<ShellBootstrapSnapshot> GetShellBootstrapAsync(string? rulesetId, CancellationToken ct) => _inner.GetShellBootstrapAsync(rulesetId, ct);
-        public Task<RuntimeInspectorProjection?> GetRuntimeInspectorProfileAsync(string profileId, string? rulesetId, CancellationToken ct) => _inner.GetRuntimeInspectorProfileAsync(profileId, rulesetId, ct);
-        public Task<MasterIndexResponse> GetMasterIndexAsync(CancellationToken ct) => _inner.GetMasterIndexAsync(ct);
-        public Task<TranslatorLanguagesResponse> GetTranslatorLanguagesAsync(CancellationToken ct) => _inner.GetTranslatorLanguagesAsync(ct);
-        public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct) => _inner.GetBuildPathSuggestionsAsync(rulesetId, ct);
-        public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct) => _inner.GetBuildPathPreviewAsync(buildKitId, workspaceId, rulesetId, ct);
-        public Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct) => _inner.GetSectionAsync(id, sectionId, ct);
-        public Task<CharacterFileSummary> GetSummaryAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetSummaryAsync(id, ct);
-        public Task<CharacterValidationResult> ValidateAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.ValidateAsync(id, ct);
-        public Task<CharacterProfileSection> GetProfileAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetProfileAsync(id, ct);
-        public Task<CharacterProgressSection> GetProgressAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetProgressAsync(id, ct);
-        public Task<CharacterSkillsSection> GetSkillsAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetSkillsAsync(id, ct);
-        public Task<CharacterRulesSection> GetRulesAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetRulesAsync(id, ct);
-        public Task<CharacterBuildSection> GetBuildAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetBuildAsync(id, ct);
-        public Task<CharacterMovementSection> GetMovementAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetMovementAsync(id, ct);
-        public Task<CharacterAwakeningSection> GetAwakeningAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetAwakeningAsync(id, ct);
-        public Task<CommandResult<CharacterProfileSection>> UpdateMetadataAsync(CharacterWorkspaceId id, UpdateWorkspaceMetadata command, CancellationToken ct) => _inner.UpdateMetadataAsync(id, command, ct);
-        public Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.SaveAsync(id, ct);
-        public Task<CommandResult<WorkspaceDownloadReceipt>> DownloadAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.DownloadAsync(id, ct);
-        public Task<CommandResult<WorkspaceExportReceipt>> ExportAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.ExportAsync(id, ct);
-        public Task<CommandResult<WorkspacePrintReceipt>> PrintAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.PrintAsync(id, ct);
     }
 }

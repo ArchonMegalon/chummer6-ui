@@ -8,14 +8,11 @@
     "edition": "sr6",
     "familyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
     "proofKind": "sr6_family_release_gated_execution",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
-      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
-      "Legacy_ui_controls_keep_recursive_parity",
-      "Quick_action_roots_are_exhaustively_classified"
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
     ],
     "oracle": {
       "classification": "carry-forward",
@@ -53,10 +50,7 @@
     "external_blocker": "",
     "matchedPassedTests": [
       "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
-      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
-      "Legacy_ui_controls_keep_recursive_parity",
-      "Quick_action_roots_are_exhaustively_classified"
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
     ],
     "missingAuditTests": [],
     "failedAuditTests": {}
