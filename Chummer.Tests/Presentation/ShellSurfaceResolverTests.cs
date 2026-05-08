@@ -207,6 +207,58 @@ public sealed class ShellSurfaceResolverTests
         Assert.AreEqual("action.allowed", surface.ActiveWorkflowSurfaceActions[0].ActionId);
     }
 
+    [TestMethod]
+    public void Resolve_filters_catalog_only_loaded_runner_tabs_and_normalizes_hidden_active_tab()
+    {
+        var createTab = new NavigationTabDefinition("tab-create", "Create", "build-lab", "character", true, true, "sr4");
+        var infoTab = new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, "sr4");
+        var gearTab = new NavigationTabDefinition("tab-gear", "Gear", "gear", "character", true, true, "sr4");
+        var rulesTab = new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, "sr4");
+        var shellWorkspaceId = new Chummer.Contracts.Workspaces.CharacterWorkspaceId("ws-sr4");
+        var shellState = ShellState.Empty with
+        {
+            ActiveRulesetId = "sr4",
+            ActiveWorkspaceId = shellWorkspaceId,
+            OpenWorkspaces =
+            [
+                new ShellWorkspaceState(
+                    Id: shellWorkspaceId,
+                    Name: "SR4 Runner",
+                    Alias: "SR4",
+                    LastOpenedUtc: DateTimeOffset.UtcNow,
+                    RulesetId: "sr4",
+                    HasSavedWorkspace: true)
+            ],
+            NavigationTabs = [createTab, infoTab, gearTab, rulesTab],
+            ActiveTabId = createTab.Id
+        };
+
+        var workspaceAction = new WorkspaceSurfaceActionDefinition(
+            Id: "action.profile",
+            Label: "Profile",
+            TabId: infoTab.Id,
+            Kind: WorkspaceSurfaceActionKind.Section,
+            TargetId: "profile",
+            RequiresOpenCharacter: false,
+            EnabledByDefault: true,
+            RulesetId: "sr4");
+        var catalogResolver = new StubShellCatalogResolver([workspaceAction]);
+        var availability = new StubAvailabilityEvaluator(
+            commandEnabled: true,
+            tabEnabled: true,
+            actionEnabled: true);
+        var resolver = new ShellSurfaceResolver(catalogResolver, availability);
+
+        ShellSurfaceState surface = resolver.Resolve(CharacterOverviewState.Empty, shellState);
+
+        CollectionAssert.AreEqual(
+            ["tab-info", "tab-gear"],
+            surface.NavigationTabs.Select(tab => tab.Id).ToArray());
+        Assert.AreEqual("tab-info", surface.ActiveTabId);
+        Assert.AreEqual("tab-info", catalogResolver.LastWorkspaceActionTabId);
+        Assert.AreEqual("sr4", catalogResolver.LastWorkspaceActionRulesetId);
+    }
+
     private sealed class StubShellCatalogResolver : IRulesetShellCatalogResolver
     {
         private readonly IReadOnlyList<WorkspaceSurfaceActionDefinition> _workspaceActions;

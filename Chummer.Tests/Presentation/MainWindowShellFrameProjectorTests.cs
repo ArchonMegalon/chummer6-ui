@@ -1,10 +1,12 @@
 #nullable enable annotations
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Chummer.Avalonia;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
+using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -127,17 +129,176 @@ public sealed class MainWindowShellFrameProjectorTests
         Assert.AreEqual("tab-info.profile", frame.SectionHostState.ActiveActionId);
     }
 
+    [TestMethod]
+    public void Project_surfaces_restore_continuity_and_conflict_guidance_for_unsaved_active_workspace()
+    {
+        CharacterWorkspaceId workspaceId = new("runner-007");
+        DateTimeOffset lastOpenedUtc = new(2026, 5, 7, 4, 15, 0, TimeSpan.Zero);
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr5,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            openWorkspaces:
+            [
+                new OpenWorkspaceState(
+                    workspaceId,
+                    "Runner 007",
+                    "Ghostwire",
+                    lastOpenedUtc,
+                    RulesetDefaults.Sr5,
+                    HasSavedWorkspace: false)
+            ],
+            activeWorkspaceId: workspaceId,
+            shellNotice: "Restored 1 workspace(s).");
+
+        StringAssert.Contains(
+            frame.ChromeState.SummaryHeader.RestoreContinuitySummary ?? string.Empty,
+            "Restore choice: keep runner-007 open before accepting a newer continuity packet.");
+        StringAssert.Contains(
+            frame.ChromeState.SummaryHeader.RestoreContinuitySummary ?? string.Empty,
+            "runner-007 stays visible on the current desktop head until you choose review or support.");
+        StringAssert.Contains(
+            frame.ChromeState.SummaryHeader.ConflictChoiceSummary ?? string.Empty,
+            "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.");
+        StringAssert.Contains(
+            frame.ChromeState.SummaryHeader.ConflictChoiceSummary ?? string.Empty,
+            "runner-007 was last touched locally at 2026-05-07 04:15 UTC and stays visible before any replacement;");
+        Assert.IsTrue(frame.ChromeState.SummaryHeader.CanSaveLocalWorkBeforeRestore);
+    }
+
+    [TestMethod]
+    public void Project_surfaces_stale_state_warning_when_no_active_workspace_is_open()
+    {
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr6,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            openWorkspaces:
+            [
+                new OpenWorkspaceState(
+                    new CharacterWorkspaceId("runner-011"),
+                    "Runner 011",
+                    "Switchback",
+                    new DateTimeOffset(2026, 5, 7, 5, 0, 0, TimeSpan.Zero),
+                    RulesetDefaults.Sr6,
+                    HasSavedWorkspace: true)
+            ],
+            activeWorkspaceId: null,
+            shellNotice: "Restored 1 workspace(s).");
+
+        StringAssert.Contains(
+            frame.ChromeState.SummaryHeader.RestoreContinuitySummary ?? string.Empty,
+            "keep the current desktop workspace review visible before accepting a newer continuity packet.");
+        StringAssert.Contains(
+            frame.ChromeState.SummaryHeader.StaleStateSummary ?? string.Empty,
+            "Stale state: service continuity is unavailable until a local workspace is opened for review.");
+        StringAssert.Contains(
+            frame.ChromeState.SummaryHeader.StaleStateSummary ?? string.Empty,
+            "no active workspace stays visible on the current desktop head before any replacement;");
+        Assert.IsFalse(frame.ChromeState.SummaryHeader.CanSaveLocalWorkBeforeRestore);
+    }
+
+    [TestMethod]
+    public void Project_omits_restore_chrome_when_no_workspace_review_context_exists()
+    {
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr6,
+            activeSectionId: "summary",
+            activeTabId: "tab-info");
+
+        Assert.IsNull(frame.ChromeState.SummaryHeader.RestoreContinuitySummary);
+        Assert.IsNull(frame.ChromeState.SummaryHeader.StaleStateSummary);
+        Assert.IsNull(frame.ChromeState.SummaryHeader.ConflictChoiceSummary);
+        Assert.IsFalse(frame.ChromeState.SummaryHeader.HasVisibleContent);
+        Assert.IsFalse(frame.ChromeState.SummaryHeader.CanSaveLocalWorkBeforeRestore);
+    }
+
+    [TestMethod]
+    public void Project_populates_character_roster_pane_from_open_workspaces()
+    {
+        CharacterWorkspaceId activeWorkspaceId = new("runner-011");
+        OpenWorkspaceState[] openWorkspaces =
+        [
+            new(
+                activeWorkspaceId,
+                "Runner 011",
+                "Switchback",
+                new DateTimeOffset(2026, 5, 7, 5, 0, 0, TimeSpan.Zero),
+                RulesetDefaults.Sr6,
+                HasSavedWorkspace: true),
+            new(
+                new CharacterWorkspaceId("runner-012"),
+                "Runner 012",
+                "Glitch",
+                new DateTimeOffset(2026, 5, 7, 5, 15, 0, TimeSpan.Zero),
+                RulesetDefaults.Sr6,
+                HasSavedWorkspace: false)
+        ];
+
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr6,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            openWorkspaces: openWorkspaces,
+            activeWorkspaceId: activeWorkspaceId);
+
+        Assert.AreEqual(2, frame.RosterPaneState.Items.Length);
+        Assert.AreEqual("runner-011", frame.RosterPaneState.SelectedWorkspaceId);
+        Assert.AreEqual("Runner 011", frame.RosterPaneState.Items[0].Name);
+        Assert.AreEqual("Switchback", frame.RosterPaneState.Items[0].Meta);
+        CollectionAssert.AreEqual(new[] { "runner-011", "runner-012" }, frame.RosterPaneState.Items.Select(item => item.Id).ToArray());
+    }
+
+    [TestMethod]
+    public void ResolveRosterWorkspaces_prefers_session_open_workspaces_over_legacy_overview_list()
+    {
+        OpenWorkspaceState legacyWorkspace = new(
+            new CharacterWorkspaceId("ws-legacy"),
+            "Legacy Runner",
+            "Legacy",
+            new DateTimeOffset(2026, 5, 7, 4, 0, 0, TimeSpan.Zero),
+            RulesetDefaults.Sr5,
+            HasSavedWorkspace: true);
+        OpenWorkspaceState sessionWorkspace = new(
+            new CharacterWorkspaceId("ws-session"),
+            "Session Runner",
+            "Session",
+            new DateTimeOffset(2026, 5, 7, 5, 0, 0, TimeSpan.Zero),
+            RulesetDefaults.Sr5,
+            HasSavedWorkspace: false);
+        CharacterOverviewState state = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(
+                ActiveWorkspaceId: sessionWorkspace.Id,
+                OpenWorkspaces: [sessionWorkspace],
+                RecentWorkspaceIds: [sessionWorkspace.Id]),
+            OpenWorkspaces = [legacyWorkspace],
+            WorkspaceId = sessionWorkspace.Id
+        };
+
+        IReadOnlyList<OpenWorkspaceState> resolved = MainWindow.ResolveRosterWorkspaces(state);
+
+        Assert.AreEqual(1, resolved.Count);
+        Assert.AreEqual("ws-session", resolved[0].Id.Value);
+    }
+
     private static MainWindowShellFrame ProjectFrame(
         string rulesetId,
         string activeSectionId,
         string activeTabId,
-        WorkspaceSurfaceActionDefinition[]? workspaceActions = null)
+        WorkspaceSurfaceActionDefinition[]? workspaceActions = null,
+        OpenWorkspaceState[]? openWorkspaces = null,
+        CharacterWorkspaceId? activeWorkspaceId = null,
+        string? shellNotice = null)
     {
+        OpenWorkspaceState[] resolvedOpenWorkspaces = openWorkspaces ?? [];
         CharacterOverviewState overviewState = CharacterOverviewState.Empty with
         {
             ActiveSectionId = activeSectionId,
             ActiveSectionJson = $"{{\"section\":\"{activeSectionId}\"}}",
             ActiveSectionRows = [new SectionRowState($"{activeSectionId}.value", "ready")],
+            OpenWorkspaces = resolvedOpenWorkspaces,
+            WorkspaceId = activeWorkspaceId,
             ActiveActionId = workspaceActions?
                 .FirstOrDefault(action => string.Equals(action.TargetId, activeSectionId, StringComparison.Ordinal))
                 ?.Id
@@ -150,15 +311,18 @@ public sealed class MainWindowShellFrameProjectorTests
             NavigationTabs: [],
             WorkspaceActions: workspaceActions ?? [],
             ActiveWorkflowSurfaceActions: [],
-            OpenWorkspaces: [],
+            OpenWorkspaces: resolvedOpenWorkspaces,
             ActiveRulesetId: rulesetId,
             PreferredRulesetId: rulesetId,
-            ActiveWorkspaceId: null,
+            ActiveWorkspaceId: activeWorkspaceId,
             ActiveTabId: activeTabId,
             LastCommandId: null,
             WorkflowDefinitions: [],
             WorkflowSurfaces: [],
-            ActiveRuntime: null);
+            ActiveRuntime: null)
+        {
+            Notice = shellNotice
+        };
 
         return MainWindowShellFrameProjector.Project(overviewState, shellSurface, AlwaysAvailableEvaluator.Instance);
     }

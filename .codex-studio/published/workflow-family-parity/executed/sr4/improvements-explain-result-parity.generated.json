@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T11:09:09.876163Z",
+  "generatedAt": "2026-05-08T15:00:38.115948Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family execution evidence is explicitly grounded for improvements-explain-result-parity.",
@@ -11,7 +11,9 @@
     "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
     "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
     "auditTests": [
-      "Avalonia_and_Blazor_workspace_action_summary_matches"
+      "Avalonia_and_Blazor_workspace_action_summary_matches",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
@@ -21,7 +23,9 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/sr4-workflow-family-execution.trx",
-      "exitCode": 0
+      "exitCode": 0,
+      "attemptCount": 1,
+      "maxAttempts": 2
     },
     "apiProbe": {
       "baseUrl": "http://127.0.0.1:8088",
@@ -42,7 +46,9 @@
     },
     "external_blocker": "",
     "matchedPassedTests": [
-      "Avalonia_and_Blazor_workspace_action_summary_matches"
+      "Avalonia_and_Blazor_workspace_action_summary_matches",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity"
     ],
     "missingAuditTests": [],
     "failedAuditTests": {}

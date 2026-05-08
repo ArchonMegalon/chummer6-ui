@@ -24,7 +24,7 @@ STANDALONE_TEST_MARKERS = [
     "Standalone_toolstrip_buttons_raise_expected_events",
     "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
     "Standalone_workspace_strip_quick_start_button_raises_expected_event",
-    "Standalone_summary_header_stays_hidden_for_strict_shell_parity",
+    "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff",
     "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
     "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
     "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
@@ -40,7 +40,7 @@ STANDALONE_FILTER = (
     "Name~Standalone_toolstrip_buttons_raise_expected_events"
     "|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
     "|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event"
-    "|Name~Standalone_summary_header_stays_hidden_for_strict_shell_parity"
+    "|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff"
     "|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events"
     "|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions"
     "|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available"
@@ -84,14 +84,14 @@ STANDALONE_SOURCE_MARKERS = {
         "LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);",
     ],
     "summary_header_axaml": [
-        'Height="0"',
+        'x:Name="NavigationTabsPanel"',
         'IsVisible="False"',
-        'IsHitTestVisible="False"',
+        'x:Name="RestoreContinuityStatusBorder"',
     ],
     "summary_header_codebehind": [
-        "Chummer5a parity posture",
-        "IsVisible = false;",
-        "Height = 0d;",
+        "bool showNavigation = NavigationTabsPanel.IsVisible;",
+        "bool showRestore = RestoreContinuityStatusBorder.IsVisible || RestoreContinuityActionPanel.IsVisible;",
+        "Height = IsVisible ? double.NaN : 0d;",
     ],
     "navigator_axaml": [
         "NavigatorTree",

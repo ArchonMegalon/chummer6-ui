@@ -12,6 +12,9 @@ namespace Chummer.Presentation.Overview;
 
 public sealed class DesktopDialogFactory : IDesktopDialogFactory
 {
+    private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
+    private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
+
     public DesktopDialogState CreateExplainTraceDialog(
         LocalizedRulesetExplainTrace? trace,
         LocalizedExplainChrome chrome)
@@ -96,18 +99,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Open for Export",
                 "Paste Chummer XML to stage export workflows.",
                 rulesetId),
-            "new_character" => new DesktopDialogState(
-                "dialog.new_character",
-                "Select Build Method",
-                "Choose the ruleset and build method before opening the new character workspace.",
-                [
-                    CreateRulesetField("newCharacterRulesetId", rulesetId),
-                    CreateBuildMethodField("newCharacterBuildMethod", rulesetId)
-                ],
-                [
-                    new DesktopDialogAction("create_character", "OK", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+            "new_character" => BuildNewCharacterDialog(preferences, rulesetId),
             "print_setup" => new DesktopDialogState(
                 "dialog.print_setup",
                 "Print Setup",
@@ -124,7 +116,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.dice_roller",
                 "Dice Roller",
                 "Legacy dice roller posture with roll method, threshold, gremlins, and reroll support.",
-                BuildDiceToolFields(currentWorkspace, openWorkspaces),
+                BuildDiceToolFields(currentWorkspace, openWorkspaces, rulesetId),
                 [
                     new DesktopDialogAction("roll", "Roll", true),
                     new DesktopDialogAction("reroll_misses", "Re-Roll Misses"),
@@ -252,10 +244,47 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "hero_lab_importer" => new DesktopDialogState(
                 "dialog.hero_lab_importer",
                 "Hero Lab Importer",
-                "Paste Hero Lab XML payload to import using compatibility mode.",
+                masterIndex is null
+                    ? "Paste Hero Lab XML payload to import while keeping the import-oracle lane visible."
+                    : $"Paste Hero Lab XML payload to import while import-oracle posture is {masterIndex.ImportOracleLanePosture} across {masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} route families with adjacent SR6 oracle {masterIndex.AdjacentSr6OracleReceiptPosture}.",
                 [
                     new DesktopDialogField("heroLabSource", "Input File", ".por/.xml", ".por/.xml"),
                     CreateRulesetField("importRulesetId", rulesetId),
+                    new DesktopDialogField("heroLabImportOracleLanePosture", "Import Oracle Lane", masterIndex?.ImportOracleLanePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleCoverage",
+                        "Import Oracle Coverage",
+                        masterIndex is null
+                            ? "0/4 · 0%"
+                            : $"{masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} · {masterIndex.ImportOracleCoveragePercent}%",
+                        "0/4 · 0%",
+                        IsReadOnly: true),
+                    new DesktopDialogField("heroLabFixtureCount", "Hero Lab Fixtures", (masterIndex?.HeroLabFixtureCount ?? 0).ToString(), "0", IsReadOnly: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleMatrix",
+                        "Import Oracle Matrix",
+                        masterIndex is null ? "missing" : BuildImportOracleMatrix(masterIndex),
+                        "missing",
+                        IsReadOnly: true,
+                        IsMultiline: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleReceipt",
+                        "Import Oracle Receipt",
+                        masterIndex is null
+                            ? "missing"
+                            : NormalizeMasterIndexValue(masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleReceiptPosture),
+                        "missing",
+                        IsReadOnly: true,
+                        IsMultiline: true),
+                    new DesktopDialogField(
+                        "heroLabAdjacentSr6OracleReceipt",
+                        "Adjacent SR6 Oracle",
+                        masterIndex is null
+                            ? "missing"
+                            : NormalizeMasterIndexValue(masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleReceiptPosture),
+                        "missing",
+                        IsReadOnly: true,
+                        IsMultiline: true),
                     new DesktopDialogField(
                         "heroLabXml",
                         "Hero Lab XML",
@@ -444,10 +473,50 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogFieldOption("sr6", "SR6")
         };
 
-    private static DesktopDialogField CreateBuildMethodField(string fieldId, string? rulesetId)
+    private static DesktopDialogState BuildNewCharacterDialog(
+        DesktopPreferenceState preferences,
+        string? rulesetId)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string preferredBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, preferences.CharacterPriority);
+        bool houseRulesEnabled = preferences.HouseRulesEnabled;
+        string houseRulesValue = houseRulesEnabled ? "true" : "false";
+
+        return new DesktopDialogState(
+            "dialog.new_character",
+            "Select Build Method",
+            BuildNewCharacterMessage(normalizedRulesetId, preferredBuildMethod, houseRulesEnabled),
+            [
+                CreateRulesetField("newCharacterRulesetId", normalizedRulesetId),
+                CreateBuildMethodField("newCharacterBuildMethod", normalizedRulesetId, preferredBuildMethod),
+                new DesktopDialogField(
+                    "newCharacterPreferredBuildMethod",
+                    "Preferred Build Method",
+                    preferredBuildMethod,
+                    preferredBuildMethod,
+                    IsReadOnly: true,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    "newCharacterHouseRulesEnabled",
+                    "House Rules",
+                    houseRulesValue,
+                    houseRulesValue,
+                    IsReadOnly: true,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+            ],
+            [
+                new DesktopDialogAction("create_character", "OK", true),
+                new DesktopDialogAction("cancel", "Cancel")
+            ]);
+    }
+
+    private static DesktopDialogField CreateBuildMethodField(string fieldId, string? rulesetId, string? preferredBuildMethod = null)
     {
         DesktopDialogFieldOption[] options = BuildBuildMethodOptions(rulesetId).ToArray();
-        DesktopDialogFieldOption selected = options[0];
+        string rulesetToken = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string selectedValue = ResolvePreferredBuildMethod(rulesetToken, preferredBuildMethod);
+        DesktopDialogFieldOption selected = options
+            .First(option => string.Equals(option.Value, selectedValue, StringComparison.Ordinal));
         return new DesktopDialogField(
             Id: fieldId,
             Label: "Build Method",
@@ -477,19 +546,399 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
     }
 
+    internal static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string? rulesetId,
+        string? buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string resolvedBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, buildMethod);
+        return UsesPriorityWorkflow(resolvedBuildMethod)
+            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias)
+            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias);
+    }
+
+    private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
+        string rulesetId,
+        string buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias)
+    {
+        string category = "Standard";
+        string metatype = ResolveDefaultMetatype(category);
+        string heritagePriority = "D";
+        string attributesPriority = "B";
+        string talentPriority = "E";
+        string skillsPriority = "C";
+        string resourcesPriority = "A";
+        string talentChoice = "Mundane";
+        string houseRulesValue = houseRulesEnabled ? "true" : "false";
+        string summary = BuildNewCharacterPriorityWorkflowSummary(
+            rulesetId,
+            buildMethod,
+            category,
+            metatype,
+            heritagePriority,
+            attributesPriority,
+            talentPriority,
+            skillsPriority,
+            resourcesPriority,
+            talentChoice,
+            houseRulesEnabled);
+
+        return new DesktopDialogState(
+            NewCharacterPriorityWorkflowDialogId,
+            "Select Metatype Priority",
+            "Legacy priority-table creation must materialize its metatype and priority continuation before the workspace opens.",
+            [
+                BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
+                BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                new DesktopDialogField(
+                    "newCharacterMetatypeCategory",
+                    "Metatype Category",
+                    category,
+                    category,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildMetatypeCategoryOptions()),
+                new DesktopDialogField(
+                    "newCharacterMetatype",
+                    "Metatype",
+                    metatype,
+                    metatype,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: BuildMetatypeOptions(category)),
+                new DesktopDialogField(
+                    "newCharacterPriorityHeritage",
+                    "Heritage Priority",
+                    heritagePriority,
+                    heritagePriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPriorityAttributes",
+                    "Attributes Priority",
+                    attributesPriority,
+                    attributesPriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPriorityTalent",
+                    "Talent Priority",
+                    talentPriority,
+                    talentPriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPrioritySkills",
+                    "Skills Priority",
+                    skillsPriority,
+                    skillsPriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPriorityResources",
+                    "Resources Priority",
+                    resourcesPriority,
+                    resourcesPriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPriorityTalentChoice",
+                    "Talent Choice",
+                    talentChoice,
+                    talentChoice,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: BuildTalentChoiceOptions()),
+                new DesktopDialogField(
+                    "newCharacterPriorityWorkflowSummary",
+                    "Workflow Summary",
+                    summary,
+                    summary,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            ],
+            [
+                new DesktopDialogAction("complete_new_character_workflow", "OK", true),
+                new DesktopDialogAction("cancel", "Cancel")
+            ]);
+    }
+
+    private static DesktopDialogState BuildNewCharacterKarmaWorkflowDialog(
+        string rulesetId,
+        string buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias)
+    {
+        string category = "Standard";
+        string metatype = ResolveDefaultMetatype(category);
+        string houseRulesValue = houseRulesEnabled ? "true" : "false";
+        string summary = BuildNewCharacterKarmaWorkflowSummary(
+            rulesetId,
+            buildMethod,
+            category,
+            metatype,
+            houseRulesEnabled);
+
+        return new DesktopDialogState(
+            NewCharacterKarmaWorkflowDialogId,
+            "Select Metatype",
+            "Legacy karma and life-module creation must materialize the metatype continuation before the workspace opens.",
+            [
+                BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
+                BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                new DesktopDialogField(
+                    "newCharacterMetatypeCategory",
+                    "Metatype Category",
+                    category,
+                    category,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildMetatypeCategoryOptions()),
+                new DesktopDialogField(
+                    "newCharacterMetatype",
+                    "Metatype",
+                    metatype,
+                    metatype,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: BuildMetatypeOptions(category)),
+                new DesktopDialogField(
+                    "newCharacterKarmaWorkflowSummary",
+                    "Workflow Summary",
+                    summary,
+                    summary,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            ],
+            [
+                new DesktopDialogAction("complete_new_character_workflow", "OK", true),
+                new DesktopDialogAction("cancel", "Cancel")
+            ]);
+    }
+
+    private static DesktopDialogField BuildNewCharacterContextField(string id, string label, string value)
+        => new(
+            id,
+            label,
+            value,
+            value,
+            IsReadOnly: true,
+            LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden);
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeCategoryOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("Standard", "Standard"),
+            new DesktopDialogFieldOption("Metahuman", "Metahuman"),
+            new DesktopDialogFieldOption("Show All", "Show All")
+        };
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeOptions(string? category)
+    {
+        string normalizedCategory = string.IsNullOrWhiteSpace(category) ? "Standard" : category.Trim();
+        return normalizedCategory switch
+        {
+            "Metahuman" =>
+            [
+                new DesktopDialogFieldOption("Elf", "Elf"),
+                new DesktopDialogFieldOption("Dwarf", "Dwarf"),
+                new DesktopDialogFieldOption("Ork", "Ork"),
+                new DesktopDialogFieldOption("Troll", "Troll")
+            ],
+            "Show All" =>
+            [
+                new DesktopDialogFieldOption("Human", "Human"),
+                new DesktopDialogFieldOption("Elf", "Elf"),
+                new DesktopDialogFieldOption("Dwarf", "Dwarf"),
+                new DesktopDialogFieldOption("Ork", "Ork"),
+                new DesktopDialogFieldOption("Troll", "Troll")
+            ],
+            _ =>
+            [
+                new DesktopDialogFieldOption("Human", "Human"),
+                new DesktopDialogFieldOption("Elf", "Elf"),
+                new DesktopDialogFieldOption("Dwarf", "Dwarf"),
+                new DesktopDialogFieldOption("Ork", "Ork"),
+                new DesktopDialogFieldOption("Troll", "Troll")
+            ]
+        };
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildPriorityLetterOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("A", "A"),
+            new DesktopDialogFieldOption("B", "B"),
+            new DesktopDialogFieldOption("C", "C"),
+            new DesktopDialogFieldOption("D", "D"),
+            new DesktopDialogFieldOption("E", "E")
+        };
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildTalentChoiceOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("Mundane", "Mundane"),
+            new DesktopDialogFieldOption("Adept", "Adept"),
+            new DesktopDialogFieldOption("Magician", "Magician"),
+            new DesktopDialogFieldOption("Mystic Adept", "Mystic Adept"),
+            new DesktopDialogFieldOption("Technomancer", "Technomancer")
+        };
+
+    private static string ResolveDefaultMetatype(string? category)
+        => string.Equals(category, "Metahuman", StringComparison.Ordinal) ? "Elf" : "Human";
+
+    private static string ResolvePreferredBuildMethod(string rulesetId, string? preferredBuildMethod)
+    {
+        DesktopDialogFieldOption[] options = BuildBuildMethodOptions(rulesetId).ToArray();
+        string normalizedPreferred = NormalizeBuildMethodValue(preferredBuildMethod);
+        return options
+            .Select(option => option.Value)
+            .FirstOrDefault(option => string.Equals(
+                NormalizeBuildMethodValue(option),
+                normalizedPreferred,
+                StringComparison.Ordinal))
+            ?? options[0].Value;
+    }
+
+    private static string NormalizeBuildMethodValue(string? buildMethod)
+    {
+        string normalized = string.IsNullOrWhiteSpace(buildMethod) ? string.Empty : buildMethod.Trim();
+        return normalized.ToLowerInvariant() switch
+        {
+            "priority" => "Priority",
+            "karma" => "Karma",
+            "bp" => "BP",
+            "lifemodule" => "LifeModule",
+            "life modules" => "LifeModule",
+            "sumtoten" => "SumToTen",
+            "sum-to-ten" => "SumToTen",
+            _ => normalized
+        };
+    }
+
+    private static bool UsesPriorityWorkflow(string buildMethod)
+        => string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
+            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal);
+
+    private static string BuildNewCharacterMessage(
+        string rulesetId,
+        string buildMethod,
+        bool houseRulesEnabled)
+    {
+        string route = UsesPriorityWorkflow(buildMethod)
+            ? "The priority-table continuation will materialize after you confirm this selection."
+            : "The metatype continuation will materialize after you confirm this selection.";
+        string houseRules = houseRulesEnabled
+            ? " House rules are enabled in Character Settings."
+            : " House rules are currently disabled.";
+        return $"Choose the ruleset and build method before opening the new character workflow for {rulesetId.ToUpperInvariant()}. {route}{houseRules}";
+    }
+
+    private static string BuildNewCharacterPriorityWorkflowSummary(
+        string rulesetId,
+        string buildMethod,
+        string category,
+        string metatype,
+        string heritagePriority,
+        string attributesPriority,
+        string talentPriority,
+        string skillsPriority,
+        string resourcesPriority,
+        string talentChoice,
+        bool houseRulesEnabled)
+    {
+        string[] lines =
+        [
+            $"Route | {rulesetId.ToUpperInvariant()} {buildMethod}",
+            $"Metatype | {metatype} ({category})",
+            $"Priority Ladder | Heritage {heritagePriority}, Attributes {attributesPriority}, Talent {talentPriority}, Skills {skillsPriority}, Resources {resourcesPriority}",
+            $"Talent Choice | {talentChoice}",
+            $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
+        ];
+        if (string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal))
+        {
+            int total = GetPriorityLetterValue(heritagePriority)
+                + GetPriorityLetterValue(attributesPriority)
+                + GetPriorityLetterValue(talentPriority)
+                + GetPriorityLetterValue(skillsPriority)
+                + GetPriorityLetterValue(resourcesPriority);
+            return string.Join(Environment.NewLine, lines.Concat(new[] { $"Sum-to-Ten Total | {total}" }));
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildNewCharacterKarmaWorkflowSummary(
+        string rulesetId,
+        string buildMethod,
+        string category,
+        string metatype,
+        bool houseRulesEnabled)
+        => string.Join(
+            Environment.NewLine,
+            new[]
+            {
+                $"Route | {rulesetId.ToUpperInvariant()} {buildMethod}",
+                $"Metatype | {metatype} ({category})",
+                "Posture | legacy metatype continuation",
+                $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
+            });
+
+    private static int GetPriorityLetterValue(string priority)
+        => priority switch
+        {
+            "A" => 4,
+            "B" => 3,
+            "C" => 2,
+            "D" => 1,
+            _ => 0
+        };
+
     private static IReadOnlyList<DesktopDialogField> BuildDiceToolFields(
         CharacterWorkspaceId? currentWorkspace,
-        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces,
+        string? rulesetId)
     {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string ruleOf6Label = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "using Rule of 6"
+            : "Rule of 6";
+        string cinematicGameplayLabel = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "Hit on 4, 5, or 6"
+            : "Cinematic Gameplay";
+        string rushJobLabel = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "Rushed Job (Glitch on 1 or 2)"
+            : "Rush Job";
+
         return
         [
+            new DesktopDialogField("diceCount", "Dice", "1", "1", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("diceMethod", "Method", "Standard", "Standard", InputType: "select", Options: BuildDiceMethodOptions(), LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("diceCount", "Dice", "1", "1", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("diceThreshold", "Threshold", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("diceGremlins", "Gremlins", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("diceRuleOf6", "Rule of 6", "false", "false", InputType: "checkbox"),
-            new DesktopDialogField("diceCinematicGameplay", "Cinematic Gameplay", "false", "false", InputType: "checkbox"),
-            new DesktopDialogField("diceRushJob", "Rush Job", "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceRuleOf6", ruleOf6Label, "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceCinematicGameplay", cinematicGameplayLabel, "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceRushJob", rushJobLabel, "false", "false", InputType: "checkbox"),
             new DesktopDialogField("diceVariableGlitch", "Variable Glitch", "false", "false", InputType: "checkbox"),
             new DesktopDialogField("diceBubbleDie", "Bubble Die", "false", "false", InputType: "checkbox"),
             new DesktopDialogField("diceResultsSummary", "Results", "Roll dice to see hits, glitches, and the summed total.", "Roll dice to see hits, glitches, and the summed total.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
@@ -620,6 +1069,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return dialog.Id switch
         {
             "dialog.new_character" => RebuildNewCharacterDialog(dialog),
+            NewCharacterPriorityWorkflowDialogId => RebuildNewCharacterPriorityWorkflowDialog(dialog),
+            NewCharacterKarmaWorkflowDialogId => RebuildNewCharacterKarmaWorkflowDialog(dialog),
             "dialog.dice_roller" => RebuildDiceRollerDialog(dialog),
             "dialog.character_roster" => RebuildCharacterRosterDialog(dialog, fallback),
             "dialog.master_index" => RebuildMasterIndexDialog(dialog),
@@ -640,11 +1091,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string rulesetId = RulesetDefaults.NormalizeOptional(
                 DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"))
             ?? RulesetDefaults.Sr5;
+        string preferredBuildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPreferredBuildMethod") ?? string.Empty;
+        bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterHouseRulesEnabled", false);
         DesktopDialogFieldOption[] buildMethodOptions = BuildBuildMethodOptions(rulesetId).ToArray();
         string currentBuildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod") ?? string.Empty;
         string resolvedBuildMethod = buildMethodOptions.Any(option => string.Equals(option.Value, currentBuildMethod, StringComparison.Ordinal))
             ? currentBuildMethod
-            : buildMethodOptions[0].Value;
+            : ResolvePreferredBuildMethod(rulesetId, preferredBuildMethod);
 
         DesktopDialogField[] updatedFields = dialog.Fields
             .Select(field => field.Id switch
@@ -660,6 +1113,112 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     Value = resolvedBuildMethod,
                     Placeholder = resolvedBuildMethod,
                     Options = buildMethodOptions
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with
+        {
+            Message = BuildNewCharacterMessage(rulesetId, resolvedBuildMethod, houseRulesEnabled),
+            Fields = updatedFields
+        };
+    }
+
+    private static DesktopDialogState RebuildNewCharacterPriorityWorkflowDialog(DesktopDialogState dialog)
+    {
+        string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId") ?? RulesetDefaults.Sr5;
+        string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? "Priority";
+        bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard";
+        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category).ToArray();
+        string currentMetatype = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? ResolveDefaultMetatype(category);
+        string metatype = metatypeOptions.Any(option => string.Equals(option.Value, currentMetatype, StringComparison.Ordinal))
+            ? currentMetatype
+            : metatypeOptions[0].Value;
+        string heritagePriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityHeritage") ?? "D";
+        string attributesPriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityAttributes") ?? "B";
+        string talentPriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityTalent") ?? "E";
+        string skillsPriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPrioritySkills") ?? "C";
+        string resourcesPriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityResources") ?? "A";
+        string talentChoice = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityTalentChoice") ?? "Mundane";
+        string summary = BuildNewCharacterPriorityWorkflowSummary(
+            rulesetId,
+            buildMethod,
+            category,
+            metatype,
+            heritagePriority,
+            attributesPriority,
+            talentPriority,
+            skillsPriority,
+            resourcesPriority,
+            talentChoice,
+            houseRulesEnabled);
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "newCharacterMetatypeCategory" => field with
+                {
+                    Value = category,
+                    Placeholder = category,
+                    Options = BuildMetatypeCategoryOptions()
+                },
+                "newCharacterMetatype" => field with
+                {
+                    Value = metatype,
+                    Placeholder = metatype,
+                    Options = metatypeOptions
+                },
+                "newCharacterPriorityWorkflowSummary" => field with
+                {
+                    Value = summary,
+                    Placeholder = summary
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with { Fields = updatedFields };
+    }
+
+    private static DesktopDialogState RebuildNewCharacterKarmaWorkflowDialog(DesktopDialogState dialog)
+    {
+        string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId") ?? RulesetDefaults.Sr5;
+        string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? "Karma";
+        bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard";
+        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category).ToArray();
+        string currentMetatype = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? ResolveDefaultMetatype(category);
+        string metatype = metatypeOptions.Any(option => string.Equals(option.Value, currentMetatype, StringComparison.Ordinal))
+            ? currentMetatype
+            : metatypeOptions[0].Value;
+        string summary = BuildNewCharacterKarmaWorkflowSummary(
+            rulesetId,
+            buildMethod,
+            category,
+            metatype,
+            houseRulesEnabled);
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "newCharacterMetatypeCategory" => field with
+                {
+                    Value = category,
+                    Placeholder = category,
+                    Options = BuildMetatypeCategoryOptions()
+                },
+                "newCharacterMetatype" => field with
+                {
+                    Value = metatype,
+                    Placeholder = metatype,
+                    Options = metatypeOptions
+                },
+                "newCharacterKarmaWorkflowSummary" => field with
+                {
+                    Value = summary,
+                    Placeholder = summary
                 },
                 _ => field
             })
@@ -1235,6 +1794,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogFieldOption("Karma", "Karma")
         };
 
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildSelectionCategoryOptions(params string[] categories)
+        => categories
+            .Where(category => !string.IsNullOrWhiteSpace(category))
+            .Distinct(StringComparer.Ordinal)
+            .Select(category => new DesktopDialogFieldOption(category, category))
+            .ToArray();
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildSelectionDataFileOptions(params string[] dataFiles)
+        => dataFiles
+            .Where(dataFile => !string.IsNullOrWhiteSpace(dataFile))
+            .Distinct(StringComparer.Ordinal)
+            .Select(dataFile => new DesktopDialogFieldOption(dataFile, dataFile))
+            .ToArray();
+
     private static IReadOnlyList<DesktopDialogFieldOption> BuildStartupOptions()
         => new[]
         {
@@ -1580,11 +2153,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"Search Scope | {searchScope}",
             $"Data File | {selected.Book}",
             "Move the tree without losing grade or availability posture",
-            "Review suites and accessories after picking the base implant"
+            "Suites and accessories after picking the base implant"
         ]);
         string resultCommands = BuildSelectionList(
         [
-            $"Review source, cost, and essence for {selected.Name}",
+            $"Source, cost, and essence for {selected.Name}",
             $"Use OK once or Add & More for repeated {selected.Branch.ToLowerInvariant()} picks",
             $"Keep grade {grade} and rating posture visible while browsing"
         ]);
@@ -1693,7 +2266,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ]);
         string resultCommands = BuildSelectionList(
         [
-            $"Review price, rating, and legality for {selected.Name}",
+            $"Price, rating, and legality for {selected.Name}",
             $"Use OK once or Add & More to keep shopping in {selected.Branch}",
             "Keep quantity, markup, and source visible while confirming"
         ]);
@@ -1799,11 +2372,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"Search Scope | {searchScope}",
             $"Data File | {selected.Book}",
             $"Black Market | {(blackMarket ? "On" : "Off")}",
-            "Review accessories and ammo follow-through after choosing the base weapon"
+            "Accessories and ammo follow-through after choosing the base weapon"
         ]);
         string resultCommands = BuildSelectionList(
         [
-            $"Review damage, mode, and accessories for {selected.Name}",
+            $"Damage, mode, and accessories for {selected.Name}",
             "Use OK for one add or Add & More to keep the selector open",
             $"Keep ammo, source, and legality visible while confirming {selected.Name}"
         ]);
@@ -1915,7 +2488,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ]);
         string resultCommands = BuildSelectionList(
         [
-            $"Review armor value and source for {selected.Name}",
+            $"Armor value and source for {selected.Name}",
             "Use OK for one add or Add & More to keep the selector open",
             $"Keep free-item and cost posture visible while confirming {selected.Name}"
         ]);
@@ -2039,7 +2612,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ]);
         string resultCommands = BuildSelectionList(
         [
-            $"Review handling, armor, and source for {selected.Name}",
+            $"Handling, armor, and source for {selected.Name}",
             "Keep cost and used-vehicle posture visible through confirmation",
             $"Use OK once or Add & More to keep browsing {selected.Role.ToLowerInvariant()} entries"
         ]);
@@ -2340,7 +2913,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Category | Bodyware",
                 "Data File | Core Rulebook",
                 "Move the tree without losing grade or availability posture",
-                "Review suites and accessories after picking the base implant"),
+                "Suites and accessories after picking the base implant"),
             new DesktopDialogField("uiCyberwareFilterSummary", "Filter Summary", "Filtered Catalog | 3 shown / 9 total" + Environment.NewLine + "Category Path | Cyberware > Core Systems > Bodyware" + Environment.NewLine + "Filter Posture | grade, availability, and source stay live", "Filtered Catalog | 3 shown / 9 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiCyberwareLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥149,000" + Environment.NewLine + "Recalculated Essence | 3.00" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥149,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiCyberwareResultCommands", "Result Commands",
@@ -2384,6 +2957,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildGearSelectionFields()
     {
+        IReadOnlyList<DesktopDialogFieldOption> categoryOptions = BuildSelectionCategoryOptions(
+            "Show All",
+            "Armor",
+            "Visual",
+            "Pistols",
+            "Medical");
+        IReadOnlyList<DesktopDialogFieldOption> dataFileOptions = BuildSelectionDataFileOptions(
+            "All Books",
+            "Core Rulebook");
         string categoryTree = BuildSelectionGroupedBranchTree(
             "Gear",
             [
@@ -2408,10 +2990,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionSectionsField("uiGearSections"),
             BuildSelectionTreeField("uiGearCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiGearSearch", "Search", string.Empty, "Search gear"),
-            new DesktopDialogField("uiGearCategory", "Category", "Show All", "Show All"),
+            new DesktopDialogField("uiGearCategory", "Category", "Show All", "Show All", InputType: "select", Options: categoryOptions),
             new DesktopDialogField("uiGearSelectedBranch", "Selected Branch", "Pistols", "Pistols", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             BuildFilterToggleField("uiGearSearchInCategoryOnly", "Search In Category Only", true),
-            new DesktopDialogField("uiGearBookFilter", "Data File", "All Books", "All Books"),
+            new DesktopDialogField("uiGearBookFilter", "Data File", "All Books", "All Books", InputType: "select", Options: dataFileOptions),
             new DesktopDialogField("uiGearName", "Gear Name", "Ares Predator V", "Ares Predator V"),
             new DesktopDialogField("uiGearCandidateList", "Available Gear", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiGearBrowseGrid", "Catalog Grid", BuildSelectionBrowseGrid(("Ares Predator V", "Pistols", "5R", "¥725"), ("Armor Jacket", "Armor", "12", "¥1,000"), ("Medkit Rating 6", "Medical", "8", "¥1,500")), "Name | Category | Avail | Cost", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
@@ -2619,7 +3201,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"> {entityName}" + Environment.NewLine +
             "Next Entry";
         string recoveryCommands =
-            "Review parent section totals" + Environment.NewLine +
+            "Check parent section totals" + Environment.NewLine +
             "Re-open the same picker family" + Environment.NewLine +
             "Return to the current workbench tab";
 
@@ -2646,7 +3228,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Armor Jacket", "Armor Jacket", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Armor"), ("Cost", "¥1000"), ("Source", "Core Rulebook p. 437"), ("Encumbrance", "none")), "Category | Armor", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner inventory only"), ("Armor Totals", "recalculate after remove"), ("Undo Posture", "re-add from gear selector"), ("Workbench", "inventory tab stays active")), "Removal Scope | runner inventory only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to gear tab" + Environment.NewLine + "Re-open Add Gear" + Environment.NewLine + "Review armor totals and mods", "Return to gear tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to gear tab" + Environment.NewLine + "Re-open Add Gear" + Environment.NewLine + "Armor totals and mods", "Return to gear tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected item will be removed from the runner inventory while the current gear list remains visible in the same utility posture.", "The selected item will be removed from the runner inventory while the current gear list remains visible in the same utility posture.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -2661,7 +3243,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Cybereyes Rating 4", "Cybereyes Rating 4", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Headware"), ("Essence", "0.40"), ("Capacity", "16"), ("Source", "Core Rulebook p. 455")), "Category | Headware", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "installed ware only"), ("Essence Refund", "none"), ("Undo Posture", "re-add from selector"), ("Workbench", "cyberware tab stays active")), "Removal Scope | installed ware only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to cyberware tab" + Environment.NewLine + "Re-open Add Cyberware" + Environment.NewLine + "Review essence and capacity totals", "Return to cyberware tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to cyberware tab" + Environment.NewLine + "Re-open Add Cyberware" + Environment.NewLine + "Essence and capacity totals", "Return to cyberware tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected implant will be removed from the runner while essence and capacity posture stay explicit in the same utility pane.", "The selected implant will be removed from the runner while essence and capacity posture stay explicit in the same utility pane.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -2675,8 +3257,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current Garage", "Hyundai Shin-Hyung" + Environment.NewLine + "> GMC Roadmaster" + Environment.NewLine + "MCT Fly-Spy", "Hyundai Shin-Hyung", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "GMC Roadmaster", "GMC Roadmaster", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Role", "Truck"), ("Armor", "16"), ("Seats", "6"), ("Source", "Core Rulebook p. 466")), "Role | Truck", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "garage only"), ("Mounted Gear", "review after remove"), ("Undo Posture", "re-add from vehicle selector"), ("Workbench", "vehicle tab stays active")), "Removal Scope | garage only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to vehicle tab" + Environment.NewLine + "Re-open Add Vehicle / Drone" + Environment.NewLine + "Review mods, mounts, and seats", "Return to vehicle tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "garage only"), ("Mounted Gear", "check after remove"), ("Undo Posture", "re-add from vehicle selector"), ("Workbench", "vehicle tab stays active")), "Removal Scope | garage only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to vehicle tab" + Environment.NewLine + "Re-open Add Vehicle / Drone" + Environment.NewLine + "Mods, mounts, and seats", "Return to vehicle tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected vehicle or drone will be removed while garage context remains visible for the next decision.", "The selected vehicle or drone will be removed while garage context remains visible for the next decision.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -2691,7 +3273,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Perception", "Perception", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Active Skill"), ("Rating", "6"), ("Linked Attribute", "Intuition"), ("Specialization", "Visual")), "Category | Active Skill", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "skill list only"), ("Derived Dice", "recalculate after remove"), ("Undo Posture", "re-add from skill selector"), ("Workbench", "skills tab stays active")), "Removal Scope | skill list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to skills tab" + Environment.NewLine + "Re-open Add Skill" + Environment.NewLine + "Review linked attribute totals", "Return to skills tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to skills tab" + Environment.NewLine + "Re-open Add Skill" + Environment.NewLine + "Linked attribute totals", "Return to skills tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected skill will be removed while surrounding skill context remains visible like the old utility flow.", "The selected skill will be removed while surrounding skill context remains visible like the old utility flow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -2706,7 +3288,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Current Entry", "Current Entry", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Group", "Entry Group"), ("Operation", "irreversible remove"), ("Source Posture", "current utility list"), ("Workbench", "current tab stays active")), "Group | Entry Group", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "active list only"), ("Undo Posture", "re-create manually from the same utility"), ("Neighbor Context", "surrounding entries remain visible"), ("Focus", "selection moves to adjacent entry")), "Removal Scope | active list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to current list" + Environment.NewLine + "Re-open Add Entry" + Environment.NewLine + "Review adjacent entries", "Return to current list", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to current list" + Environment.NewLine + "Re-open Add Entry" + Environment.NewLine + "Adjacent entries", "Return to current list", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected entry will be removed while the surrounding list stays visible in the same compact legacy utility posture.", "The selected entry will be removed while the surrounding list stays visible in the same compact legacy utility posture.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -2720,8 +3302,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current Ledger", "Cram" + Environment.NewLine + "> Jazz" + Environment.NewLine + "Kamikaze", "Cram", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Jazz", "Jazz", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Quantity", "1"), ("Speed", "1 Combat Turn"), ("Crash", "Stun + fatigue"), ("Source", "Core Rulebook p. 411")), "Quantity | 1", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner ledger only"), ("Crash Tracking", "manual review after remove"), ("Undo Posture", "re-add from drug selector"), ("Workbench", "drugs tab stays active")), "Removal Scope | runner ledger only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to drugs tab" + Environment.NewLine + "Re-open Add Drug" + Environment.NewLine + "Review crash and addiction notes", "Return to drugs tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner ledger only"), ("Crash Tracking", "check after remove"), ("Undo Posture", "re-add from drug selector"), ("Workbench", "drugs tab stays active")), "Removal Scope | runner ledger only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to drugs tab" + Environment.NewLine + "Re-open Add Drug" + Environment.NewLine + "Crash and addiction notes", "Return to drugs tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected drug entry will be removed while quantity, crash posture, and nearby doses remain visible in the same utility flow.", "The selected drug entry will be removed while quantity, crash posture, and nearby doses remain visible in the same utility flow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -2735,8 +3317,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current List", "Heal" + Environment.NewLine + "> Stunbolt" + Environment.NewLine + "Increase Reflexes", "Heal", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Stunbolt", "Stunbolt", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Combat"), ("Drain", "F-3"), ("Type", "Mana"), ("Source", "Core Rulebook p. 288")), "Category | Combat", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "magic list only"), ("Drain Notes", "review current drain options"), ("Undo Posture", "re-learn from spell selector"), ("Workbench", "magic tab stays active")), "Removal Scope | magic list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to magic tab" + Environment.NewLine + "Re-open Add Spell / Power" + Environment.NewLine + "Review drain and category posture", "Return to magic tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "magic list only"), ("Drain Notes", "current drain options stay visible"), ("Undo Posture", "re-learn from spell selector"), ("Workbench", "magic tab stays active")), "Removal Scope | magic list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to magic tab" + Environment.NewLine + "Re-open Add Spell / Power" + Environment.NewLine + "Drain and category posture", "Return to magic tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected magical entry will be removed while category, drain, and neighboring spell context stay visible like the old utility flow.", "The selected magical entry will be removed while category, drain, and neighboring spell context stay visible like the old utility flow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -2750,8 +3332,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current Roster", "Cecilia Vargas" + Environment.NewLine + "> Mr. Johnson" + Environment.NewLine + "Nyx", "Cecilia Vargas", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Mr. Johnson", "Mr. Johnson", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Role", "Fixer"), ("Connection / Loyalty", "5 / 3"), ("Location", "Seattle"), ("Notes", "Premium jobs")), "Role | Fixer", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "contact roster only"), ("Linked Notes", "manual review after remove"), ("Undo Posture", "re-add from contact dialog"), ("Workbench", "contacts tab stays active")), "Removal Scope | contact roster only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to contacts tab" + Environment.NewLine + "Re-open Add Contact" + Environment.NewLine + "Review nearby contact notes", "Return to contacts tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "contact roster only"), ("Linked Notes", "check after remove"), ("Undo Posture", "re-add from contact dialog"), ("Workbench", "contacts tab stays active")), "Removal Scope | contact roster only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to contacts tab" + Environment.NewLine + "Re-open Add Contact" + Environment.NewLine + "Nearby contact notes", "Return to contacts tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected contact will be removed while connection, loyalty, and surrounding roster context remain visible in the same utility pane.", "The selected contact will be removed while connection, loyalty, and surrounding roster context remain visible in the same utility pane.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -2766,7 +3348,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "First Impression", "First Impression", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Type", "Positive"), ("Karma", "11"), ("Source", "Core Rulebook p. 73"), ("Tag", "Social")), "Type | Positive", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "quality list only"), ("Karma Posture", "recalculate after remove"), ("Undo Posture", "re-add from quality selector"), ("Workbench", "qualities tab stays active")), "Removal Scope | quality list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to qualities tab" + Environment.NewLine + "Re-open Add Quality" + Environment.NewLine + "Review karma totals and tags", "Return to qualities tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to qualities tab" + Environment.NewLine + "Re-open Add Quality" + Environment.NewLine + "Karma totals and tags", "Return to qualities tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected quality will be removed while karma, source, and surrounding list context remain visible like the legacy utility posture.", "The selected quality will be removed while karma, source, and surrounding list context remain visible like the legacy utility posture.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -3522,19 +4104,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "move_up" => new DesktopDialogState(
                 "dialog.ui.move_up",
                 "Move Entry Up",
-                "Review the reordered list and continue in the same utility pane.",
+                "The reordered list stays visible in the same utility pane.",
                 BuildActionReceiptFields("Move Up", "Selected entry moved one position higher in the current ordered list.", "Ordering stays compact and list-oriented like the legacy utility flows."),
                 [new DesktopDialogAction("continue", "Continue", true)]),
             "move_down" => new DesktopDialogState(
                 "dialog.ui.move_down",
                 "Move Entry Down",
-                "Review the reordered list and continue in the same utility pane.",
+                "The reordered list stays visible in the same utility pane.",
                 BuildActionReceiptFields("Move Down", "Selected entry moved one position lower in the current ordered list.", "Ordering stays compact and list-oriented like the legacy utility flows."),
                 [new DesktopDialogAction("continue", "Continue", true)]),
             "toggle_free_paid" => new DesktopDialogState(
                 "dialog.ui.toggle_free_paid",
                 "Pricing Posture",
-                "Review the new pricing posture and continue in the same utility pane.",
+                "The new pricing posture stays visible in the same utility pane.",
                 BuildActionReceiptFields("Toggle Free/Paid", "Selected item pricing posture was toggled between free and paid.", "Pricing state changes remain compact and explicit instead of disappearing into background chrome."),
                 [new DesktopDialogAction("continue", "Continue", true)]),
             "show_source" => new DesktopDialogState(
@@ -3571,7 +4153,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "gear_mount" => new DesktopDialogState(
                 "dialog.ui.gear_mount",
                 "Mount Gear",
-                "Select the host and review the mountable gear summary before applying the change.",
+                "Select the host and keep the mountable gear summary visible before applying the change.",
                 [
                     BuildUtilitySectionsField("uiGearMountSections", "Mount", "Details", "Notes"),
                     new DesktopDialogField("uiGearMountTarget", "Selected Gear", "Smartgun System", "Smartgun System", IsReadOnly: true),
@@ -3593,7 +4175,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogState(
                     "dialog.ui.cyberware_add",
                     "Add Cyberware",
-                    "Search, filter, review source/cost/essence details, and confirm the selected implant.",
+                    "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
                     BuildCyberwareSelectionFields(),
                     BuildLegacySelectionActions())),
             "cyberware_edit" => new DesktopDialogState(
@@ -3632,7 +4214,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "magic_add" => new DesktopDialogState(
                 "dialog.ui.magic_add",
                 "Add Spell/Power",
-                "Choose the magical entry, review category and drain, then confirm the selection.",
+                "Choose the magical entry, keep category and drain visible, then confirm the selection.",
                 BuildMagicSelectionFields(),
                 BuildAddAndMoreActions()),
             "magic_delete" => new DesktopDialogState(
@@ -3647,7 +4229,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "magic_bind" => new DesktopDialogState(
                 "dialog.ui.magic_bind",
                 "Bind/Link",
-                "Review the selected magical item before applying the bind/link action.",
+                "Selected magical item stays visible before applying the bind/link action.",
                 [
                     BuildUtilitySectionsField("uiMagicBindSections", "Binding", "Details", "Notes"),
                     new DesktopDialogField("uiMagicBindTarget", "Selected Entry", "Force 4 Focus", "Force 4 Focus", IsReadOnly: true),
@@ -3686,7 +4268,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "initiation_add" => new DesktopDialogState(
                 "dialog.ui.initiation_add",
                 "Add Initiation / Submersion",
-                "Choose the reward, review grade and track, then confirm the initiation or submersion step.",
+                "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
                 BuildInitiationSelectionFields(),
                 BuildAddAndMoreActions()),
             "spirit_add" => new DesktopDialogState(
@@ -3734,7 +4316,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "skill_group" => new DesktopDialogState(
                 "dialog.ui.skill_group",
                 "Skill Group",
-                "Review the skill group and ratings before assigning or breaking the group.",
+                "Skill group and ratings stay visible before assigning or breaking the group.",
                 [
                     BuildUtilitySectionsField("uiSkillGroupSections", "Group", "Details", "Notes"),
                     new DesktopDialogField("uiSkillGroupName", "Group", "Stealth", "Stealth", IsReadOnly: true),
@@ -3763,7 +4345,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "combat_reload" => new DesktopDialogState(
                 "dialog.ui.combat_reload",
                 "Reload Weapon",
-                "Review weapon and ammo state before applying the reload.",
+                "Weapon and ammo state stays visible before applying the reload.",
                 [
                     BuildUtilitySectionsField("uiCombatReloadSections", "Weapon", "Details", "Notes"),
                     new DesktopDialogField("uiCombatReloadWeapon", "Weapon", "Colt M23", "Colt M23", IsReadOnly: true),
@@ -3779,7 +4361,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "combat_damage_track" => new DesktopDialogState(
                 "dialog.ui.combat_damage_track",
                 "Damage Track",
-                "Review current physical and stun track posture before applying the change.",
+                "Current physical and stun track posture stays visible before applying the change.",
                 [
                     BuildUtilitySectionsField("uiDamageTrackSections", "Tracks", "Details", "Notes"),
                     new DesktopDialogField("uiDamageTrackPhysical", "Physical", "3 / 10", "3 / 10", IsReadOnly: true),
@@ -3956,7 +4538,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                     Options: [new DesktopDialogFieldOption(string.Empty, "No indexed entries discovered.")]),
                 new DesktopDialogField("masterIndexSnippetPreview", "Notes", string.Empty, string.Empty, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                new DesktopDialogField("masterIndexCurrentSourcebook", "Source", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField("masterIndexCurrentSourcebook", "Source", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField("masterIndexCurrentFile", "Current Data File", "All data files", "All data files", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexSnapshot", "Snapshot", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -3972,7 +4554,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", "0/0 · missing", "0/0 · missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexHouseRuleLane", "House Rules", "missing · 0 overlays", "missing · 0 overlays", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-                new DesktopDialogField("masterIndexSettingsSummary", "Use Setting", "Current defaults", "Current defaults", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+                new DesktopDialogField("masterIndexSettingsSummary", "Use Setting", "Current defaults", "Current defaults", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Full)
             ];
 
             emptyStateFields.InsertRange(10, BuildSourcebookSelectionFields(masterIndex, []));
@@ -4051,7 +4633,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                 Options: resultOptions),
             new DesktopDialogField("masterIndexSnippetPreview", "Notes", snippetPreview, snippetPreview, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("masterIndexCurrentSourcebook", "Source", sourcebookDisplay, sourcebookDisplay, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("masterIndexCurrentSourcebook", "Source", sourcebookDisplay, sourcebookDisplay, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", selectedSource, selectedSource, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexCurrentFile", "Current Data File", selectedFileSummary, selectedFileSummary, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexSnapshot", "Snapshot", snapshot, snapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -4073,7 +4655,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 $"Current defaults · {masterIndex.SettingsProfileCount} profiles · {masterIndex.SettingsLanePosture}",
                 "Current defaults",
                 IsReadOnly: true,
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Full)
         ];
 
         fields.InsertRange(10, BuildSourcebookSelectionFields(masterIndex, sourcebooks));
@@ -4226,7 +4808,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     Label = "Source",
                     Value = $"{selectedSourcebook.Code} · {selectedSourcebook.Name}",
                     Placeholder = $"{selectedSourcebook.Code} · {selectedSourcebook.Name}",
-                    LayoutSlot = DesktopDialogFieldLayoutSlots.Left
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Right
                 },
                 "masterIndexFileSelection" => field with
                 {

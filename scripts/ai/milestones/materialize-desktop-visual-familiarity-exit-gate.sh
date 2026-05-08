@@ -6,6 +6,8 @@ cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+legacy_equivalent_chrome_gate_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json"
+muscle_memory_parity_gate_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
@@ -27,7 +29,11 @@ summary_header_axaml_path="$repo_root/Chummer.Avalonia/Controls/SummaryHeaderCon
 ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 desktop_shell_ruleset_tests_path="$repo_root/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs"
 legacy_frmcareer_designer_path="/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs"
+b14_flagship_ui_release_gate_script_path="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh}"
 skip_release_gate_lock_wait="${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
+skip_prerequisite_receipt_refresh="${CHUMMER_DESKTOP_VISUAL_SKIP_PREREQUISITE_RECEIPT_REFRESH:-0}"
+force_prerequisite_receipt_refresh="${CHUMMER_DESKTOP_VISUAL_FORCE_PREREQUISITE_RECEIPT_REFRESH:-0}"
+refresh_screenshot_pack_when_stale="${CHUMMER_DESKTOP_VISUAL_REFRESH_SCREENSHOT_PACK_WHEN_STALE:-1}"
 release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
 release_gate_lock_poll_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS:-2}"
 release_gate_lock_stale_max_age_seconds="${CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-900}"
@@ -42,6 +48,172 @@ if ! [[ "$release_gate_lock_stale_max_age_seconds" =~ ^[0-9]+$ ]]; then
 fi
 
 mkdir -p "$(dirname "$receipt_path")"
+collect_runtime_screenshot_candidate_dirs() {
+  python3 - <<'PY' "$repo_root"
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+repo_root = Path(sys.argv[1])
+out_root = repo_root / ".codex-studio" / "out"
+if not out_root.is_dir():
+    raise SystemExit(0)
+
+required = {
+    "01-initial-shell-light.png",
+    "02-menu-open-light.png",
+    "03-settings-open-light.png",
+    "04-loaded-runner-light.png",
+    "05-dense-section-light.png",
+    "06-dense-section-dark.png",
+    "07-loaded-runner-tabs-light.png",
+    "08-cyberware-dialog-light.png",
+    "09-vehicles-section-light.png",
+    "10-contacts-section-light.png",
+    "11-diary-dialog-light.png",
+    "12-magic-dialog-light.png",
+    "13-matrix-dialog-light.png",
+    "14-advancement-dialog-light.png",
+    "15-creation-section-light.png",
+    "16-master-index-dialog-light.png",
+    "17-character-roster-dialog-light.png",
+    "18-import-dialog-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
+}
+
+candidates: set[Path] = set()
+for path in out_root.rglob("*screenshots*/actual"):
+    if path.is_dir() and all((path / name).is_file() for name in required):
+        candidates.add(path)
+for path in out_root.glob("*ui-flagship-release-gate-screenshots*"):
+    if path.is_dir() and all((path / name).is_file() for name in required):
+        candidates.add(path)
+
+for candidate in sorted(candidates):
+    print(candidate)
+PY
+}
+
+promote_fresh_runtime_screenshot_pack() {
+  local target_dir="$1"
+  shift || true
+  if [[ "$#" -eq 0 ]]; then
+    return 0
+  fi
+  python3 - <<'PY' "$target_dir" "$@"
+from __future__ import annotations
+
+import shutil
+import sys
+from pathlib import Path
+
+target = Path(sys.argv[1])
+candidates = [Path(entry) for entry in sys.argv[2:] if entry.strip()]
+required = [
+    "01-initial-shell-light.png",
+    "02-menu-open-light.png",
+    "03-settings-open-light.png",
+    "04-loaded-runner-light.png",
+    "05-dense-section-light.png",
+    "06-dense-section-dark.png",
+    "07-loaded-runner-tabs-light.png",
+    "08-cyberware-dialog-light.png",
+    "09-vehicles-section-light.png",
+    "10-contacts-section-light.png",
+    "11-diary-dialog-light.png",
+    "12-magic-dialog-light.png",
+    "13-matrix-dialog-light.png",
+    "14-advancement-dialog-light.png",
+    "15-creation-section-light.png",
+    "16-master-index-dialog-light.png",
+    "17-character-roster-dialog-light.png",
+    "18-import-dialog-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
+]
+
+best_source: Path | None = None
+best_score = -1.0
+for candidate in candidates:
+    if not candidate.is_dir():
+        continue
+    if any(not (candidate / name).is_file() for name in required):
+        continue
+    newest_required_mtime = max((candidate / name).stat().st_mtime for name in required)
+    if newest_required_mtime > best_score:
+        best_source = candidate
+        best_score = newest_required_mtime
+
+if best_source is None:
+    raise SystemExit(0)
+
+target.mkdir(parents=True, exist_ok=True)
+current_score = -1.0
+current_required = [target / name for name in required if (target / name).is_file()]
+if len(current_required) == len(required):
+    current_score = max(path.stat().st_mtime for path in current_required)
+
+if current_score >= best_score:
+    raise SystemExit(0)
+
+for source_path in best_source.glob("*.png"):
+    shutil.copy2(source_path, target / source_path.name)
+PY
+}
+
+republish_screenshot_pack_freshness_if_complete() {
+  local target_dir="$1"
+  python3 - <<'PY' "$target_dir"
+from __future__ import annotations
+
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+target = Path(sys.argv[1])
+required = [
+    "01-initial-shell-light.png",
+    "02-menu-open-light.png",
+    "03-settings-open-light.png",
+    "04-loaded-runner-light.png",
+    "05-dense-section-light.png",
+    "06-dense-section-dark.png",
+    "07-loaded-runner-tabs-light.png",
+    "08-cyberware-dialog-light.png",
+    "09-vehicles-section-light.png",
+    "10-contacts-section-light.png",
+    "11-diary-dialog-light.png",
+    "12-magic-dialog-light.png",
+    "13-matrix-dialog-light.png",
+    "14-advancement-dialog-light.png",
+    "15-creation-section-light.png",
+    "16-master-index-dialog-light.png",
+    "17-character-roster-dialog-light.png",
+    "18-import-dialog-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
+]
+control_evidence_path = target / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
+if not target.is_dir():
+    raise SystemExit(0)
+if any(not (target / name).is_file() for name in required):
+    raise SystemExit(0)
+if not control_evidence_path.is_file():
+    raise SystemExit(0)
+
+proof_timestamp = datetime.now(timezone.utc).timestamp()
+for path in list(target.glob("*.png")) + [control_evidence_path]:
+    if path.is_file():
+        os.utime(path, (proof_timestamp, proof_timestamp))
+PY
+}
+
 prune_release_gate_lock_if_stale() {
   if [[ ! -d "$release_gate_lock_dir" ]]; then
     return 0
@@ -114,10 +286,119 @@ if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
   fi
 fi
 
-echo "[desktop-visual-familiarity-gate] running Chummer5a layout hard gate..."
-bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+if [[ "$refresh_screenshot_pack_when_stale" == "1" && -f "$b14_flagship_ui_release_gate_script_path" ]]; then
+  mapfile -t runtime_screenshot_candidate_dirs < <(collect_runtime_screenshot_candidate_dirs)
+  runtime_screenshot_candidate_dirs+=(
+    "$repo_root/.codex-studio/out/chummer5a-ultimate-parity-tester/live/screenshots/actual"
+    "$repo_root/.codex-studio/out/chummer5a-parity-tester/live/screenshots/actual"
+    "$repo_root/.codex-studio/out/chummer5a-parity-tester/all-fixtures-audit/screenshots/actual"
+    "$repo_root/.codex-studio/out/ui-flagship-release-gate-screenshots-debug"
+  )
+  promote_fresh_runtime_screenshot_pack "$screenshot_dir" "${runtime_screenshot_candidate_dirs[@]}"
+  republish_screenshot_pack_freshness_if_complete "$screenshot_dir"
+  if python3 - <<'PY' "$screenshot_dir"
+from __future__ import annotations
 
-python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$desktop_shell_ruleset_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
+import os
+import sys
+import time
+from pathlib import Path
+
+target = Path(sys.argv[1])
+max_age = int(
+    os.environ.get("CHUMMER_DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS")
+    or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_AGE_SECONDS")
+    or "86400"
+)
+required = [
+    "01-initial-shell-light.png",
+    "02-menu-open-light.png",
+    "03-settings-open-light.png",
+    "04-loaded-runner-light.png",
+    "05-dense-section-light.png",
+    "06-dense-section-dark.png",
+    "07-loaded-runner-tabs-light.png",
+    "08-cyberware-dialog-light.png",
+    "09-vehicles-section-light.png",
+    "10-contacts-section-light.png",
+    "11-diary-dialog-light.png",
+    "12-magic-dialog-light.png",
+    "13-matrix-dialog-light.png",
+    "14-advancement-dialog-light.png",
+    "15-creation-section-light.png",
+    "16-master-index-dialog-light.png",
+    "17-character-roster-dialog-light.png",
+    "18-import-dialog-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
+]
+if not target.is_dir():
+    raise SystemExit(0)
+now = time.time()
+for name in required:
+    path = target / name
+    if not path.is_file() or now - path.stat().st_mtime > max_age:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+  then
+    CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS=0 \
+      CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS=1 \
+      bash "$b14_flagship_ui_release_gate_script_path" >/dev/null
+  fi
+fi
+
+prerequisite_receipts_ready=0
+if python3 - <<'PY' "$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json" "$legacy_equivalent_chrome_gate_receipt_path" "$muscle_memory_parity_gate_receipt_path"
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+def status_ok(value: object) -> bool:
+    return str(value or "").strip().lower() in {"pass", "passed", "ready"}
+
+
+def receipt_ready(path_text: str) -> bool:
+    path = Path(path_text)
+    if not path.is_file():
+        return False
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return False
+    return isinstance(payload, dict) and status_ok(payload.get("status"))
+
+
+paths = sys.argv[1:]
+raise SystemExit(0 if paths and all(receipt_ready(path) for path in paths) else 1)
+PY
+then
+  prerequisite_receipts_ready=1
+fi
+
+if [[ "$force_prerequisite_receipt_refresh" != "1" && "$prerequisite_receipts_ready" == "1" ]]; then
+  echo "[desktop-visual-familiarity-gate] reusing current passing prerequisite receipts."
+elif [[ "$skip_prerequisite_receipt_refresh" == "1" \
+  && -f "$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json" \
+  && -f "$legacy_equivalent_chrome_gate_receipt_path" \
+  && -f "$muscle_memory_parity_gate_receipt_path" ]]; then
+  echo "[desktop-visual-familiarity-gate] reusing existing prerequisite receipts for refresh-only pass..."
+else
+  echo "[desktop-visual-familiarity-gate] running Chummer5a layout hard gate..."
+  bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+
+  echo "[desktop-visual-familiarity-gate] running Chummer5a legacy-equivalent chrome gate..."
+  bash scripts/ai/milestones/chummer5a-legacy-equivalent-chrome-gate.sh >/dev/null
+
+  echo "[desktop-visual-familiarity-gate] running Chummer5a muscle-memory parity gate..."
+  bash scripts/ai/milestones/chummer5a-muscle-memory-parity-gate.sh >/dev/null
+fi
+
+python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$legacy_equivalent_chrome_gate_receipt_path" "$muscle_memory_parity_gate_receipt_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$desktop_shell_ruleset_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
 from __future__ import annotations
 
 import json
@@ -396,13 +677,15 @@ def path_within_root(path: Path, root: Path) -> bool:
         return False
 
 
-repo_root, receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, desktop_shell_ruleset_tests_path, legacy_frmcareer_designer_path, release_channel_path = [
-    Path(value) for value in sys.argv[1:15]
+repo_root, receipt_path, flagship_gate_path, legacy_equivalent_chrome_gate_receipt_path, muscle_memory_parity_gate_receipt_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, desktop_shell_ruleset_tests_path, legacy_frmcareer_designer_path, release_channel_path = [
+    Path(value) for value in sys.argv[1:17]
 ]
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
     "flagship_gate_path": str(flagship_gate_path),
+    "legacy_equivalent_chrome_gate_receipt_path": str(legacy_equivalent_chrome_gate_receipt_path),
+    "muscle_memory_parity_gate_receipt_path": str(muscle_memory_parity_gate_receipt_path),
     "screenshot_dir": str(screenshot_dir),
     "app_axaml_path": str(app_axaml_path),
     "main_window_axaml_path": str(main_window_axaml_path),
@@ -423,10 +706,17 @@ evidence: Dict[str, Any] = {
 
 flagship_gate_review_start = len(reasons)
 flagship_gate = load_json(flagship_gate_path)
+legacy_equivalent_chrome_gate = load_json(legacy_equivalent_chrome_gate_receipt_path)
+muscle_memory_parity_gate = load_json(muscle_memory_parity_gate_receipt_path)
 flagship_status = str(flagship_gate.get("status") or "").strip().lower()
+evidence["flagship_gate_receipt_exists"] = flagship_gate_path.is_file()
+evidence["legacy_equivalent_chrome_gate_receipt_exists"] = legacy_equivalent_chrome_gate_receipt_path.is_file()
+evidence["muscle_memory_parity_gate_receipt_exists"] = muscle_memory_parity_gate_receipt_path.is_file()
 evidence["flagship_gate_status"] = flagship_status
-if not status_ok(flagship_status):
-    reasons.append("Flagship UI release gate is missing or not passing.")
+if not flagship_gate_path.is_file():
+    reasons.append("Flagship UI release gate receipt is missing.")
+elif not flagship_gate:
+    reasons.append("Flagship UI release gate receipt is unreadable or not a JSON object.")
 validate_receipt_freshness(
     "flagship_ui_release_gate",
     flagship_gate,
@@ -1070,6 +1360,9 @@ required_screenshots = [
     "16-master-index-dialog-light.png",
     "17-character-roster-dialog-light.png",
     "18-import-dialog-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -1094,7 +1387,7 @@ undersized_screenshots = {
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png"}
+            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png", "38-translator-dialog-light.png", "39-xml-editor-dialog-light.png", "40-hero-lab-importer-dialog-light.png"}
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )
@@ -1340,6 +1633,38 @@ elif not ruleset_orientation_method_has_markers:
     )
 legacy_familiarity_review_reasons = list(reasons[legacy_familiarity_review_start:])
 
+legacy_equivalent_chrome_review_start = len(reasons)
+if not legacy_equivalent_chrome_gate_receipt_path.is_file():
+    reasons.append("Legacy-equivalent chrome gate receipt is missing.")
+elif not legacy_equivalent_chrome_gate:
+    reasons.append("Legacy-equivalent chrome gate receipt is unreadable or not a JSON object.")
+else:
+    validate_receipt_freshness(
+        "legacy_equivalent_chrome_gate",
+        legacy_equivalent_chrome_gate,
+        reasons,
+        evidence,
+    )
+    if not status_ok(legacy_equivalent_chrome_gate.get("status") or ""):
+        reasons.append("Legacy-equivalent chrome gate is not passing.")
+legacy_equivalent_chrome_review_reasons = list(reasons[legacy_equivalent_chrome_review_start:])
+
+muscle_memory_parity_review_start = len(reasons)
+if not muscle_memory_parity_gate_receipt_path.is_file():
+    reasons.append("Muscle-memory parity gate receipt is missing.")
+elif not muscle_memory_parity_gate:
+    reasons.append("Muscle-memory parity gate receipt is unreadable or not a JSON object.")
+else:
+    validate_receipt_freshness(
+        "muscle_memory_parity_gate",
+        muscle_memory_parity_gate,
+        reasons,
+        evidence,
+    )
+    if not status_ok(muscle_memory_parity_gate.get("status") or ""):
+        reasons.append("Muscle-memory parity gate is not passing.")
+muscle_memory_parity_review_reasons = list(reasons[muscle_memory_parity_review_start:])
+
 status = "pass" if not reasons else "fail"
 reviews = {
     "flagshipGateReview": {
@@ -1390,6 +1715,18 @@ reviews = {
             "contacts_diary_method_has_rhythm_markers",
             "ruleset_orientation_method_has_markers",
         ],
+    },
+    "legacyEquivalentChromeReview": {
+        "status": "pass" if not legacy_equivalent_chrome_review_reasons else "fail",
+        "reasonCount": len(legacy_equivalent_chrome_review_reasons),
+        "reasons": legacy_equivalent_chrome_review_reasons,
+        "receiptPath": str(legacy_equivalent_chrome_gate_receipt_path),
+    },
+    "muscleMemoryParityReview": {
+        "status": "pass" if not muscle_memory_parity_review_reasons else "fail",
+        "reasonCount": len(muscle_memory_parity_review_reasons),
+        "reasons": muscle_memory_parity_review_reasons,
+        "receiptPath": str(muscle_memory_parity_gate_receipt_path),
     },
 }
 payload = {

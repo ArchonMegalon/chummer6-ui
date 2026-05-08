@@ -55,6 +55,7 @@ public sealed class DesktopStartupSmokeRuntimeTests
             Assert.AreEqual("runtime_test_ready", receipt.RootElement.GetProperty("readyCheckpoint").GetString());
             Assert.AreEqual(artifactDigest, receipt.RootElement.GetProperty("artifactDigest").GetString());
             Assert.AreEqual("environment", receipt.RootElement.GetProperty("artifactDigestSource").GetString());
+            Assert.AreEqual("local-docker", receipt.RootElement.GetProperty("version").GetString());
             Assert.AreEqual("local-docker", receipt.RootElement.GetProperty("releaseVersion").GetString());
             Assert.AreEqual("linux-x64", receipt.RootElement.GetProperty("rid").GetString());
             Assert.IsFalse(string.IsNullOrWhiteSpace(receipt.RootElement.GetProperty("platform").GetString()));

@@ -25,6 +25,12 @@ public sealed record RulesetUiDirective(
 
 public static class RulesetUiDirectiveCatalog
 {
+    private static readonly HashSet<string> CatalogOnlyLoadedRunnerTabIds = new(StringComparer.Ordinal)
+    {
+        "tab-create",
+        "tab-rules"
+    };
+
     private static readonly RulesetUiDirective Generic = new(
         RulesetId: "shared",
         DisplayName: "Shared shell",
@@ -396,6 +402,13 @@ public static class RulesetUiDirectiveCatalog
             RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules",
             _ => fallbackLabel
         };
+    }
+
+    public static bool IsLoadedRunnerVisibleNavigationTab(string? tabId)
+    {
+        string? normalizedTabId = RulesetDefaults.NormalizeOptional(tabId);
+        return normalizedTabId is not null
+            && !CatalogOnlyLoadedRunnerTabIds.Contains(normalizedTabId);
     }
 
     public static string FormatWorkspaceActionLabel(string? rulesetId, string? actionId, string? targetId, string fallbackLabel)

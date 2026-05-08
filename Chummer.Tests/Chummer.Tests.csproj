@@ -62,13 +62,28 @@
     <Compile Include="CharacterSectionServiceTests.cs" />
     <Compile Include="Compliance\DesktopInstallerParityComplianceTests.cs" />
     <Compile Include="Compliance\DelegateCommandRouteParityComplianceTests.cs" />
-	    <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
-	    <Compile Include="Compliance\GeneratedDialogElementParityComplianceTests.cs" />
+    <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
+    <Compile Include="Compliance\DesktopWorkflowExecutionGateRefreshComplianceTests.cs" />
+    <Compile Include="Compliance\GeneratedDialogElementParityComplianceTests.cs" />
 	    <Compile Include="Compliance\InteractiveControlInventoryComplianceTests.cs" />
 	    <Compile Include="Compliance\MigrationComplianceTests.cs" />
     <Compile Include="Compliance\Next90M103VeteranCertificationGuardTests.cs" />
     <Compile Include="Compliance\Next90M104ExplainReceiptsGuardTests.cs" />
+    <Compile Include="Compliance\Next90M141DirectImportRouteProofGuardTests.cs" />
+    <Compile Include="Compliance\Next90M142DirectWorkflowProofGuardTests.cs" />
+    <Compile Include="Compliance\Next90M143DirectOutputProofGuardTests.cs" />
+    <Compile Include="Compliance\Next90M135DesktopSurfaceCoverageGuardTests.cs" />
+    <Compile Include="Compliance\Next90M145DesktopExplainDrawerGuardTests.cs" />
+    <Compile Include="Compliance\Next90M114RuleEnvironmentStudioGuardTests.cs" />
+    <Compile Include="Compliance\Next90M115PortableDossierGuardTests.cs" />
+    <Compile Include="Compliance\Next90M116CreatorPublicationGuardTests.cs" />
+    <Compile Include="Compliance\Next90M118OrganizerOperationsGuardTests.cs" />
+    <Compile Include="Compliance\Next90M119FirstSessionFlowGuardTests.cs" />
+    <Compile Include="Compliance\Next90M121GmRunboardRouteGuardTests.cs" />
     <Compile Include="Compliance\Next90M109BuildExplainArtifactsGuardTests.cs" />
+    <Compile Include="Compliance\Next90M112CampaignMemoryGuardTests.cs" />
+    <Compile Include="Compliance\Next90M113GmPrepRosterSurfaceGuardTests.cs" />
+    <Compile Include="Compliance\CharacterRosterStructureParityGuardTests.cs" />
     <Compile Include="Compliance\Next90M105PrimaryRouteDecisionGuardTests.cs" />
     <Compile Include="Compliance\Next90M105RestoreContinuityGuardTests.cs" />
     <Compile Include="Compliance\SectionHostRulesetParityComplianceTests.cs" />
@@ -84,6 +99,8 @@
     <Compile Include="Presentation\CharacterOverviewPresenterTests.cs" />
     <Compile Include="Presentation\CommandAvailabilityEvaluatorTests.cs" />
     <Compile Include="Presentation\DialogCoordinatorTests.cs" />
+    <Compile Include="Presentation\DesktopFileCoordinatorTests.cs" />
+    <Compile Include="Presentation\DesktopHomeWindowTests.cs" />
     <Compile Include="Presentation\DesktopDialogFactoryTests.cs" />
     <Compile Include="Presentation\DesktopShellRulesetCatalogTests.cs" />
     <Compile Include="Presentation\FakeWorkbenchCoachApiClient.cs" />
@@ -93,6 +110,7 @@
     <Compile Include="Presentation\MainWindowShellFrameProjectorTests.cs" />
     <Compile Include="Presentation\RulesetUiDirectiveCatalogTests.cs" />
     <Compile Include="Presentation\SectionQuickActionCatalogTests.cs" />
+    <Compile Include="Presentation\WorkflowParityGateTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">

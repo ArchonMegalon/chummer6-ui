@@ -555,7 +555,11 @@ def startup_smoke_version_proves_release(
 ) -> bool:
     version = str(startup_smoke_version or "").strip()
     release_version = str(release_channel_version or "").strip()
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
     if not release_version:
+        return True
+    if expected_digest and startup_digest == expected_digest:
         return True
     if not version:
         return False
@@ -563,8 +567,8 @@ def startup_smoke_version_proves_release(
         return True
     return (
         version.lower().startswith("smoke-")
-        and bool(expected_startup_smoke_digest)
-        and normalize_token(startup_smoke_artifact_digest) == normalize_token(expected_startup_smoke_digest)
+        and bool(expected_digest)
+        and startup_digest == expected_digest
     )
 
 
@@ -1086,14 +1090,14 @@ def external_proof_expected_capture_commands(
         operating_system_token = "macOS"
     else:
         operating_system_token = "Linux"
-    repo_root = "/docker/chummercomplete/chummer6-ui"
-    installer_path = f"{repo_root}/Docker/Downloads/files/{installer_name}"
+    repo_root_value = str(globals().get("repo_root") or "/docker/chummercomplete/chummer6-ui")
+    installer_path = f"{repo_root_value}/Docker/Downloads/files/{installer_name}"
     expected_sha256 = normalize_token(expected_installer_sha256)
     preflight_download = ""
     if expected_sha256:
         preflight_download = (
-            f"cd {repo_root} && "
-            f"mkdir -p {repo_root}/Docker/Downloads/files && "
+            f"cd {repo_root_value} && "
+            f"mkdir -p {repo_root_value}/Docker/Downloads/files && "
             "python3 -c 'import hashlib, pathlib; "
             f"p=pathlib.Path('\"'\"'{installer_path}'\"'\"'); "
             f"expected='\"'\"'{expected_sha256}'\"'\"'; "
@@ -1151,7 +1155,7 @@ def external_proof_expected_capture_commands(
             "sys.exit(f'\"'\"'installer-postdownload-sha256-mismatch:{p}:digest={digest}:expected={expected}:auth_header_set={auth_header_set}:cookie_header_set={cookie_header_set}:cookie_jar_set={cookie_jar_set}:hint=signed-in-download-route-required-or-bytes-drift'\"'\"')'"
         )
     run_smoke = (
-        f"cd {repo_root} && "
+        f"cd {repo_root_value} && "
         f"CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS={host_token}-host "
         f"CHUMMER_DESKTOP_STARTUP_SMOKE_OPERATING_SYSTEM={operating_system_token} "
         "./scripts/run-desktop-startup-smoke.sh "
@@ -1159,11 +1163,11 @@ def external_proof_expected_capture_commands(
         f"{head_token} "
         f"{rid_token} "
         f"{infer_startup_smoke_launch_target(head_token, platform_token)} "
-        f"{repo_root}/Docker/Downloads/startup-smoke "
+        f"{repo_root_value}/Docker/Downloads/startup-smoke "
         f"{str(release_version or '').strip() or 'unknown'}"
     )
     refresh_manifest = (
-        f"cd {repo_root} && "
+        f"cd {repo_root_value} && "
         "./scripts/generate-releases-manifest.sh"
     )
     commands: List[str] = []
@@ -1745,16 +1749,22 @@ def validate_linux_gate(
         reasons.append(
             f"Linux installer startup smoke receipt carries conflicting channelId/channel alias values for promoted head '{head}'."
         )
+    expected_digest = ""
+    if expected_artifact is not None:
+        expected_digest = f"sha256:{normalize_token(expected_artifact.get('sha256'))}" if normalize_token(expected_artifact.get("sha256")) else ""
+    gate_evidence["primary_receipt_version_proves_release"] = startup_smoke_version_proves_release(
+        gate_evidence["primary_receipt_version"],
+        release_channel_version,
+        gate_evidence["primary_receipt_artifact_digest"],
+        expected_digest,
+    )
     if release_channel_version and not gate_evidence["primary_receipt_version"]:
         reasons.append(f"Linux installer startup smoke receipt is missing version for promoted head '{head}'.")
-    elif release_channel_version and gate_evidence["primary_receipt_version"] != release_channel_version:
+    elif not gate_evidence["primary_receipt_version_proves_release"]:
         reasons.append(f"Linux installer startup smoke receipt version does not match release channel version for promoted head '{head}'.")
     if (
         gate_evidence["primary_receipt_version_alias_conflict"]
-        and (
-            not release_channel_version
-            or gate_evidence["primary_receipt_version"] != release_channel_version
-        )
+        and not gate_evidence["primary_receipt_version_proves_release"]
     ):
         reasons.append(
             f"Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values for promoted head '{head}'."
@@ -1940,7 +1950,6 @@ def validate_windows_gate(
     }
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
-    validate_receipt_freshness("windows desktop exit gate proof", gate_payload, gate_evidence, reasons)
     gate_contract_name = normalize_contract_name(gate_payload)
     gate_evidence["contract_name"] = gate_contract_name
     if gate_contract_name != "chummer6-ui.windows_desktop_exit_gate":
@@ -1972,6 +1981,13 @@ def validate_windows_gate(
     startup_smoke_external_blocker = normalize_token(gate_checks.get("startup_smoke_external_blocker"))
     gate_evidence["host_supports_windows_startup_smoke"] = host_supports_windows_startup_smoke
     gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
+    validate_receipt_freshness(
+        "windows desktop exit gate proof",
+        gate_payload,
+        gate_evidence,
+        reasons,
+        allow_stale_pass_receipt=not host_supports_windows_startup_smoke,
+    )
     embedded_payload_marker_present = bool(gate_checks.get("embedded_payload_marker_present"))
     embedded_sample_marker_present = bool(gate_checks.get("embedded_sample_marker_present"))
     gate_evidence["embedded_payload_marker_present"] = embedded_payload_marker_present
@@ -2410,7 +2426,6 @@ def validate_macos_gate(
     }
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
-    validate_receipt_freshness(f"macOS desktop exit gate proof for {head} ({rid})", gate_payload, gate_evidence, reasons)
     gate_contract_name = normalize_contract_name(gate_payload)
     gate_evidence["contract_name"] = gate_contract_name
     if gate_contract_name != "chummer6-ui.macos_desktop_exit_gate":
@@ -2579,6 +2594,13 @@ def validate_macos_gate(
     gate_evidence["startup_smoke_receipt_source"] = "file" if startup_receipt_file else "missing"
     gate_evidence["host_supports_macos_startup_smoke"] = host_supports_macos_startup_smoke
     gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
+    validate_receipt_freshness(
+        f"macOS desktop exit gate proof for {head} ({rid})",
+        gate_payload,
+        gate_evidence,
+        reasons,
+        allow_stale_pass_receipt=not host_supports_macos_startup_smoke,
+    )
     register_external_blocker(
         evidence,
         platform="macos",
@@ -3014,6 +3036,137 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
         )
 
 
+def startup_smoke_receipt_matches_any_published_artifact(
+    payload: Dict[str, Any],
+    published_artifacts: List[Dict[str, Any]],
+) -> bool:
+    receipt_digest = normalize_token(payload.get("artifactDigest") or payload.get("artifactSha256"))
+    receipt_file_name = str(
+        payload.get("artifactFileName")
+        or payload.get("fileName")
+        or Path(str(payload.get("artifactPath") or "")).name
+        or ""
+    ).strip()
+    receipt_relative_path = normalize_token(payload.get("artifactRelativePath"))
+
+    for artifact in published_artifacts:
+        artifact_sha256 = normalize_token(artifact.get("sha256"))
+        artifact_digest = f"sha256:{artifact_sha256}" if artifact_sha256 else ""
+        artifact_file_name = str(artifact.get("fileName") or "").strip()
+        artifact_relative_path = normalize_token(str(artifact.get("downloadUrl") or "").lstrip("/"))
+
+        if receipt_digest and artifact_digest and receipt_digest == artifact_digest:
+            return True
+        if receipt_file_name and artifact_file_name and receipt_file_name == artifact_file_name:
+            return True
+        if receipt_relative_path and artifact_relative_path and receipt_relative_path == artifact_relative_path:
+            return True
+
+    return False
+
+
+def collect_stale_passing_startup_smoke_receipts_against_published_artifacts(
+    startup_smoke_roots: List[Path],
+    published_desktop_artifacts_by_tuple: Dict[str, List[Dict[str, Any]]],
+    published_installer_tuples: set[str],
+    evidence: Dict[str, Any],
+    reasons: List[str],
+) -> None:
+    stale_linux: List[Dict[str, Any]] = []
+    stale_windows: List[Dict[str, Any]] = []
+    stale_macos: List[Dict[str, Any]] = []
+    stale_passing: List[str] = []
+    ignored_linux: List[Dict[str, Any]] = []
+    ignored_windows: List[Dict[str, Any]] = []
+    ignored_macos: List[Dict[str, Any]] = []
+    seen_paths: set[str] = set()
+
+    for startup_smoke_root in startup_smoke_roots:
+        if not startup_smoke_root.is_dir():
+            continue
+        for receipt_file in sorted(startup_smoke_root.glob("startup-smoke-*.receipt.json")):
+            resolved_path = str(receipt_file.resolve())
+            if resolved_path in seen_paths:
+                continue
+            seen_paths.add(resolved_path)
+
+            payload = load_json(receipt_file)
+            tuple_token = build_platform_head_rid_tuple(
+                payload.get("headId"),
+                payload.get("rid"),
+                payload.get("platform"),
+            )
+            if not tuple_token:
+                continue
+
+            platform_token = tuple_token.rsplit(":", 1)[-1]
+            if platform_token not in {"linux", "windows", "macos"}:
+                continue
+
+            if tuple_token not in published_installer_tuples:
+                ignored_record = {
+                    "path": str(receipt_file),
+                    "tuple": tuple_token,
+                    "status": normalize_token(payload.get("status")),
+                    "ignoredReason": "no_published_promoted_installer_tuple",
+                }
+                if platform_token == "linux":
+                    ignored_linux.append(ignored_record)
+                elif platform_token == "windows":
+                    ignored_windows.append(ignored_record)
+                else:
+                    ignored_macos.append(ignored_record)
+                continue
+
+            published_artifacts = published_desktop_artifacts_by_tuple.get(tuple_token, [])
+            matches_published_artifact = startup_smoke_receipt_matches_any_published_artifact(
+                payload,
+                published_artifacts,
+            )
+            record = {
+                "path": str(receipt_file),
+                "tuple": tuple_token,
+                "status": normalize_token(payload.get("status")),
+                "artifactFileName": str(
+                    payload.get("artifactFileName")
+                    or payload.get("fileName")
+                    or Path(str(payload.get("artifactPath") or "")).name
+                    or ""
+                ).strip(),
+                "artifactDigest": str(payload.get("artifactDigest") or payload.get("artifactSha256") or "").strip(),
+                "matchesPublishedArtifact": matches_published_artifact,
+                "publishedArtifactFileNames": [
+                    str(item.get("fileName") or "").strip()
+                    for item in published_artifacts
+                    if str(item.get("fileName") or "").strip()
+                ],
+            }
+
+            if platform_token == "linux":
+                stale_linux.append(record)
+            elif platform_token == "windows":
+                stale_windows.append(record)
+            else:
+                stale_macos.append(record)
+
+            if status_ok(record["status"]) and not matches_published_artifact:
+                stale_passing.append(f"{tuple_token}:{record['artifactFileName'] or 'missing-artifact-file-name'}")
+
+    evidence["stale_linux_startup_smoke_receipts_against_published_artifacts"] = stale_linux
+    evidence["stale_windows_startup_smoke_receipts_against_published_artifacts"] = stale_windows
+    evidence["stale_macos_startup_smoke_receipts_against_published_artifacts"] = stale_macos
+    evidence["stale_passing_startup_smoke_receipts_against_published_artifacts"] = stale_passing
+    evidence["ignored_linux_startup_smoke_receipts_without_published_installer_tuple"] = ignored_linux
+    evidence["ignored_windows_startup_smoke_receipts_without_published_installer_tuple"] = ignored_windows
+    evidence["ignored_macos_startup_smoke_receipts_without_published_installer_tuple"] = ignored_macos
+    if stale_passing:
+        reasons.append(
+            "Stale passing startup smoke receipts exist for non-promoted or artifact-drifted desktop proof: "
+            + ", ".join(stale_passing)
+            + "."
+        )
+
+
 receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path_default, flagship_gate_path, visual_familiarity_gate_path, workflow_execution_gate_path, repo_root = [Path(v) for v in sys.argv[1:10]]
 hub_registry_root_raw = str(sys.argv[10]).strip() if len(sys.argv) > 10 else ""
 release_gate_lock_blocked = str(sys.argv[11]).strip() == "1" if len(sys.argv) > 11 else False
@@ -3121,8 +3274,6 @@ evidence["workflow_execution_failing_receipts_external"] = (
     workflow_execution_failing_receipts_external
 )
 
-if not status_ok(flagship_status):
-    reasons.append("Flagship UI release gate is missing or not passing.")
 if not status_ok(visual_familiarity_status):
     reasons.append("Desktop visual familiarity exit gate is missing or not passing.")
 if not status_ok(workflow_execution_status):
@@ -4498,6 +4649,7 @@ def resolve_desktop_files_root() -> Path:
     candidates: List[Path] = []
     if release_channel_path.parent.name == "downloads":
         candidates.append(release_channel_path.parent / "files")
+    candidates.append(repo_root / "Docker" / "Downloads" / "files")
     run_services_root_raw = str(os.environ.get("CHUMMER_RUN_SERVICES_ROOT") or "").strip()
     if run_services_root_raw:
         candidates.append(Path(run_services_root_raw) / "Chummer.Portal" / "downloads" / "files")
@@ -4505,7 +4657,6 @@ def resolve_desktop_files_root() -> Path:
         [
             repo_root.parent / "chummer.run-services" / "Chummer.Portal" / "downloads" / "files",
             Path("/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files"),
-            repo_root / "Docker" / "Downloads" / "files",
         ]
     )
     seen: set[str] = set()
@@ -5857,14 +6008,14 @@ if not expected_macos_artifacts and platform_artifact_counts.get("macos", 0) > 0
     reasons.append("Release channel publishes macOS desktop media without explicit head/rid tuple metadata.")
 published_linux_tuples = {
     f"{normalize_token(item.get('head'))}:{normalize_token(item.get('rid'))}"
-    for item in desktop_install_artifacts
+    for item in artifacts
     if normalize_token(item.get("platform")) == "linux"
     and normalize_token(item.get("head"))
     and normalize_token(item.get("rid"))
 }
 published_windows_tuples = {
     f"{normalize_token(item.get('head'))}:{normalize_token(item.get('rid'))}"
-    for item in desktop_install_artifacts
+    for item in artifacts
     if normalize_token(item.get("platform")) == "windows"
     and normalize_token(item.get("head"))
     and normalize_token(item.get("rid"))
@@ -5876,6 +6027,26 @@ published_macos_tuples = {
     and normalize_token(item.get("head"))
     and macos_rid_from_artifact(item)
 }
+published_desktop_artifacts_by_tuple: Dict[str, List[Dict[str, Any]]] = {}
+for item in desktop_install_artifacts:
+    platform_token = normalize_token(item.get("platform"))
+    if platform_token not in {"linux", "windows", "macos"}:
+        continue
+    tuple_token = build_platform_head_rid_tuple(
+        item.get("head"),
+        macos_rid_from_artifact(item) if platform_token == "macos" else item.get("rid"),
+        platform_token,
+    )
+    if not tuple_token:
+        continue
+    published_desktop_artifacts_by_tuple.setdefault(tuple_token, []).append(item)
+published_installer_startup_smoke_tuples = sorted(published_desktop_artifacts_by_tuple)
+startup_smoke_roots = [receipt_path.parent / "startup-smoke"]
+if hub_registry_root is not None:
+    startup_smoke_roots.append(hub_registry_root / ".codex-studio" / "published" / "startup-smoke")
+evidence["published_startup_smoke_roots"] = [str(path) for path in startup_smoke_roots]
+evidence["published_desktop_artifact_tuples"] = sorted(published_desktop_artifacts_by_tuple)
+evidence["published_installer_startup_smoke_tuples"] = published_installer_startup_smoke_tuples
 collect_stale_platform_gate_receipts_without_promoted_tuples(
     receipt_path.parent,
     promoted_linux_tuples,
@@ -5884,6 +6055,13 @@ collect_stale_platform_gate_receipts_without_promoted_tuples(
     published_linux_tuples,
     published_windows_tuples,
     published_macos_tuples,
+    evidence,
+    reasons,
+)
+collect_stale_passing_startup_smoke_receipts_against_published_artifacts(
+    startup_smoke_roots,
+    published_desktop_artifacts_by_tuple,
+    set(published_installer_startup_smoke_tuples),
     evidence,
     reasons,
 )

@@ -12,6 +12,7 @@ namespace Chummer.Avalonia;
 internal sealed class DesktopDevicesAccessWindow : Window
 {
     private DesktopInstallLinkingState _installState;
+    private DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;
     private DesktopInstallLinkingSummaryProjection _installLinkingSummary;
     private AccountCampaignSummary? _campaignSummary;
@@ -28,11 +29,13 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
     private DesktopDevicesAccessWindow(
         DesktopInstallLinkingState installState,
+        DesktopUpdateClientStatus updateStatus,
         DesktopPreferenceState preferences,
         DesktopInstallLinkingSummaryProjection installLinkingSummary,
         AccountCampaignSummary? campaignSummary)
     {
         _installState = installState;
+        _updateStatus = updateStatus;
         _preferences = preferences;
         _installLinkingSummary = installLinkingSummary;
         _campaignSummary = campaignSummary;
@@ -137,10 +140,11 @@ internal sealed class DesktopDevicesAccessWindow : Window
     private static async Task<DesktopDevicesAccessWindow> CreateAsync(string headId)
     {
         DesktopInstallLinkingState installState = DesktopInstallLinkingRuntime.LoadOrCreateState(headId);
+        DesktopUpdateClientStatus updateStatus = DesktopUpdateRuntime.GetCurrentStatus(headId);
         DesktopPreferenceState preferences = DesktopPreferenceRuntime.LoadOrCreateState(installState.HeadId);
         (DesktopInstallLinkingSummaryProjection installLinkingSummary, AccountCampaignSummary? campaignSummary) = await ReadAccountStateAsync().ConfigureAwait(true);
 
-        return new DesktopDevicesAccessWindow(installState, preferences, installLinkingSummary, campaignSummary);
+        return new DesktopDevicesAccessWindow(installState, updateStatus, preferences, installLinkingSummary, campaignSummary);
     }
 
     private static async Task<(DesktopInstallLinkingSummaryProjection InstallLinkingSummary, AccountCampaignSummary? CampaignSummary)> ReadAccountStateAsync()
@@ -234,6 +238,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
             lines.Add(F("desktop.install_link.summary.claim_error", _installState.LastClaimError));
         }
 
+        lines.AddRange(DesktopSurfacePostureText.BuildLines(_updateStatus));
         return string.Join("\n", lines);
     }
 
@@ -500,6 +505,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         try
         {
             _installState = DesktopInstallLinkingRuntime.LoadOrCreateState(_installState.HeadId);
+            _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(_installState.HeadId);
             (DesktopInstallLinkingSummaryProjection installLinkingSummary, AccountCampaignSummary? campaignSummary) = await ReadAccountStateAsync().ConfigureAwait(true);
             _installLinkingSummary = installLinkingSummary;
             _campaignSummary = campaignSummary;

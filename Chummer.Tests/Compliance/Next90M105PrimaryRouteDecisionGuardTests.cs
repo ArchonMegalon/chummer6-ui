@@ -56,9 +56,9 @@ public sealed class Next90M105PrimaryRouteDecisionGuardTests
         StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityDecisionOrderText, \"Restore decision order\")");
         StringAssert.Contains(code, "AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, \"Open support with restore, stale-state, and conflict-choice context.\")");
 
-        StringAssert.Contains(projector, "RestoreContinuitySummary: BuildRestoreContinuitySummary(workspaceContext, language)");
+        StringAssert.Contains(projector, "RestoreContinuitySummary: BuildRestoreContinuitySummary(shellSurface, workspaceContext, language)");
         StringAssert.Contains(projector, "StaleStateSummary: BuildStaleStateSummary(shellSurface, workspaceContext, language)");
-        StringAssert.Contains(projector, "ConflictChoiceSummary: BuildConflictChoiceSummary(workspaceContext, language)");
+        StringAssert.Contains(projector, "ConflictChoiceSummary: BuildConflictChoiceSummary(shellSurface, workspaceContext, language)");
         StringAssert.Contains(projector, "CanSaveLocalWorkBeforeRestore: CanSaveLocalWorkBeforeRestore(workspaceContext)");
 
         StringAssert.Contains(eventHandlers, "SummaryHeader_OnWorkspaceSupportRequested");

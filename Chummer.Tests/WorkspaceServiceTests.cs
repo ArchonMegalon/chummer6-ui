@@ -169,6 +169,94 @@ public class WorkspaceServiceTests
     }
 
     [TestMethod]
+    public void Import_get_build_roundtrip_accepts_sr6_priority_starter_payload()
+    {
+        const string xml =
+            "<character>" +
+            "<name>Nova</name>" +
+            "<alias>Cipher</alias>" +
+            "<playername>Desktop User</playername>" +
+            "<metatype>Elf</metatype>" +
+            "<metatypecategory>Metahuman</metatypecategory>" +
+            "<sex>Unspecified</sex>" +
+            "<age>28</age>" +
+            "<height>178 cm</height>" +
+            "<weight>78 kg</weight>" +
+            "<hair>Black</hair>" +
+            "<eyes>Brown</eyes>" +
+            "<skin>Light</skin>" +
+            "<concept>SR6 street operator starter dossier</concept>" +
+            "<description>Starter runner profile seeded with practical data for section-level parity checks.</description>" +
+            "<background>A deterministic starter payload for the Avalonia workspace and parity tests.</background>" +
+            "<notes>Starter workspace seeded by the desktop parity flow.</notes>" +
+            "<buildmethod>Priority</buildmethod>" +
+            "<createdversion>5.225.0</createdversion>" +
+            "<appversion>5.225.0</appversion>" +
+            "<karma>35</karma>" +
+            "<nuyen>8500</nuyen>" +
+            "<startingnuyen>8500</startingnuyen>" +
+            "<streetcred>0</streetcred>" +
+            "<notoriety>0</notoriety>" +
+            "<publicawareness>0</publicawareness>" +
+            "<burntstreetcred>0</burntstreetcred>" +
+            "<buildkarma>35</buildkarma>" +
+            "<created>True</created>" +
+            "<gameedition>SR6</gameedition>" +
+            "<gameplayoption>Standard</gameplayoption>" +
+            "<settings>Core Rulebook</settings>" +
+            "<gameplayoptionqualitylimit>25</gameplayoptionqualitylimit>" +
+            "<maxnuyen>50000</maxnuyen>" +
+            "<maxkarma>50</maxkarma>" +
+            "<contactmultiplier>3</contactmultiplier>" +
+            "<prioritymetatype>D,1</prioritymetatype>" +
+            "<priorityattributes>B,3</priorityattributes>" +
+            "<priorityspecial>E,0</priorityspecial>" +
+            "<priorityskills>C,2</priorityskills>" +
+            "<priorityresources>A,4</priorityresources>" +
+            "<prioritytalent>Mundane</prioritytalent>" +
+            "<sumtoten>0</sumtoten>" +
+            "<special>2</special>" +
+            "<totalspecial>2</totalspecial>" +
+            "<totalattributes>28</totalattributes>" +
+            "<contactpoints>12</contactpoints>" +
+            "<contactpointsused>8</contactpointsused>" +
+            "<walk>10</walk>" +
+            "<run>15</run>" +
+            "<sprint>20</sprint>" +
+            "<walkalt>10</walkalt>" +
+            "<runalt>15</runalt>" +
+            "<sprintalt>20</sprintalt>" +
+            "<physicalcmfilled>0</physicalcmfilled>" +
+            "<stuncmfilled>0</stuncmfilled>" +
+            "<totaless>5.85</totaless>" +
+            "<initiategrade>0</initiategrade>" +
+            "<submersiongrade>0</submersiongrade>" +
+            "<magenabled>False</magenabled>" +
+            "<resenabled>False</resenabled>" +
+            "<depenabled>False</depenabled>" +
+            "<adept>False</adept>" +
+            "<magician>False</magician>" +
+            "<technomancer>False</technomancer>" +
+            "<ai>False</ai>" +
+            "</character>";
+
+        IWorkspaceStore store = new InMemoryWorkspaceStore();
+        ICharacterFileQueries fileQueries = new XmlCharacterFileQueries(new CharacterFileService());
+        ICharacterSectionQueries sectionQueries = new XmlCharacterSectionQueries(new CharacterSectionService());
+        ICharacterMetadataCommands metadataCommands = new XmlCharacterMetadataCommands(new CharacterFileService());
+        WorkspaceService workspaceService = CreateWorkspaceService(store, fileQueries, sectionQueries, metadataCommands);
+
+        WorkspaceImportResult imported = workspaceService.Import(new WorkspaceImportDocument(
+            xml,
+            RulesetDefaults.Sr6,
+            WorkspaceDocumentFormat.NativeXml));
+        CharacterBuildSection? build = workspaceService.GetBuild(imported.Id);
+
+        Assert.IsNotNull(build);
+        Assert.AreEqual("Priority", build.BuildMethod);
+    }
+
+    [TestMethod]
     public void Import_requires_explicit_or_detectable_ruleset()
     {
         IWorkspaceStore store = new InMemoryWorkspaceStore();

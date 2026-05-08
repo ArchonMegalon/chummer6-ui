@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-23T15:49:57.179725Z",
+  "generatedAt": "2026-05-08T14:50:38.576667Z",
   "contract_name": "chummer6-ui.generated_dialog_element_parity",
   "status": "pass",
   "summary": "Generated dialog command/control inventories are locked, exhaustively shape-tested, and wired into standard verification.",
@@ -288,7 +288,7 @@
       "-p:NuGetAudit=false"
     ],
     "buildExitCode": 0,
-    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:15.59",
+    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:09.03",
     "testResults": [
       {
         "command": [
@@ -303,7 +303,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 150 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 163 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -318,7 +318,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 86 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 78 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -333,7 +333,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 156 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 184 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -348,7 +348,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 187 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 202 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -363,7 +363,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 98 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 81 ms - Chummer.Tests.dll (net10.0)"
       }
     ],
     "failureCount": 0,
@@ -525,7 +525,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 150 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 163 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -540,7 +540,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 86 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 78 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -555,7 +555,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 156 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 184 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -570,7 +570,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 187 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 202 ms - Chummer.Tests.dll (net10.0)"
       },
       {
         "command": [
@@ -585,7 +585,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 98 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 81 ms - Chummer.Tests.dll (net10.0)"
       }
     ]
   }

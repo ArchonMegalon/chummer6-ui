@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T11:09:09.874815Z",
+  "generatedAt": "2026-05-08T15:00:38.114288Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family execution evidence is explicitly grounded for attributes-skills-skill-groups-specializations-knowledge-languages.",
@@ -12,7 +12,10 @@
     "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
@@ -22,7 +25,9 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/sr4-workflow-family-execution.trx",
-      "exitCode": 0
+      "exitCode": 0,
+      "attemptCount": 1,
+      "maxAttempts": 2
     },
     "apiProbe": {
       "baseUrl": "http://127.0.0.1:8088",
@@ -44,7 +49,10 @@
     "external_blocker": "",
     "matchedPassedTests": [
       "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "missingAuditTests": [],
     "failedAuditTests": {}

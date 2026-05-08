@@ -35,6 +35,7 @@ chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHU
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
 flagship_product_readiness_receipt_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json}"
 refresh_supporting_receipts="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS:-1}"
+skip_downstream_receipt_materialization="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS:-0}"
 desktop_workflow_execution_gate_script_path="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh}"
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 ui_parity_audit_probe_path="${CHUMMER_UI_PARITY_AUDIT_PROBE_PATH:-/docker/fleet/scripts/codex-shims/codexea_ui_parity_audit_probe.py}"
@@ -110,7 +111,8 @@ fi
 
 cleanup() {
   rm -rf "$capture_screenshot_dir" "$staged_screenshot_dir"
-  rmdir "$lock_dir" 2>/dev/null || true
+  rm -f "$lock_owner_pid_path"
+  rmdir "$lock_dir" 2>/dev/null || rm -rf "$lock_dir" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -189,8 +191,12 @@ required_avalonia_tests = [
     "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
     "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
     "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+    "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+    "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
     "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
     "Character_creation_preserves_familiar_dense_builder_rhythm",
+    "Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6",
+    "Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults",
     "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
     "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
     "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
@@ -296,6 +302,8 @@ from __future__ import annotations
 
 import shutil
 import sys
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 capture_dir = Path(sys.argv[1])
@@ -310,6 +318,12 @@ control_evidence_path = capture_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.jso
 if not control_evidence_path.is_file():
     raise SystemExit(f"[b14] FAIL: screenshot control evidence was not produced in capture directory: {control_evidence_path}")
 shutil.copy2(control_evidence_path, target_dir / control_evidence_path.name)
+
+# The published proof pack must reflect when this gate ran, even if a test copied
+# baseline assets into the capture directory with older source mtimes.
+proof_timestamp = datetime.now(timezone.utc).timestamp()
+for path in list(target_dir.glob("*.png")) + [target_dir / control_evidence_path.name]:
+    os.utime(path, (proof_timestamp, proof_timestamp))
 PY
 
 echo "[b14] normalizing screenshot PNG CRC chunks..."
@@ -373,6 +387,21 @@ rm -rf "$screenshot_dir"
 mkdir -p "$screenshot_dir"
 cp "$staged_screenshot_dir"/*.png "$screenshot_dir"/
 cp "$staged_screenshot_dir"/SCREENSHOT_CONTROL_EVIDENCE.generated.json "$screenshot_dir"/
+
+python3 - <<'PY' "$screenshot_dir"
+from __future__ import annotations
+
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+screenshot_dir = Path(sys.argv[1])
+proof_timestamp = datetime.now(timezone.utc).timestamp()
+for path in list(screenshot_dir.glob("*.png")) + [screenshot_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"]:
+    if path.is_file():
+        os.utime(path, (proof_timestamp, proof_timestamp))
+PY
 
 echo "[b14] running cross-head workflow parity tests..."
 run_with_retry 2 "cross-head workflow parity tests" \
@@ -476,6 +505,9 @@ expected_screenshots = [
     "35-workflow-rules-section-light.png",
     "36-workflow-new-character-dialog-light.png",
     "37-workflow-calendar-section-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
 ]
 required_workflow_family_ids = [
     "create-open-import-save-save-as-print-export",
@@ -691,6 +723,33 @@ ui_element_coverage_gap_keys = [
     for key in ui_element_parity_summary.get("coverage_gap_keys") or []
     if str(key or "").strip()
 ]
+ui_element_rows = ui_element_parity_audit_receipt.get("rows") or []
+dense_builder_parity_row = next(
+    (
+        row
+        for row in ui_element_rows
+        if str(row.get("id") or "").strip() == "family:dense_builder_and_career_workflows"
+    ),
+    {},
+)
+dense_builder_route_local_evidence = [
+    str(entry or "").strip()
+    for entry in dense_builder_parity_row.get("evidence") or []
+    if str(entry or "").strip()
+]
+required_dense_builder_route_local_evidence_suffixes = [
+    "SECTION_HOST_RULESET_PARITY.generated.json",
+    "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+    "UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "UI_LOCAL_RELEASE_PROOF.generated.json",
+    "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+]
+missing_dense_builder_route_local_evidence_suffixes = [
+    suffix
+    for suffix in required_dense_builder_route_local_evidence_suffixes
+    if not any(entry.endswith(suffix) for entry in dense_builder_route_local_evidence)
+]
 flagship_readiness_status = str(flagship_product_readiness_receipt.get("status") or "").strip().lower()
 flagship_readiness_coverage = flagship_product_readiness_receipt.get("coverage") or {}
 flagship_readiness_open_coverage_keys = [
@@ -895,6 +954,12 @@ if ui_element_coverage_gap_keys:
         + ", ".join(ui_element_coverage_gap_keys)
         + "."
     )
+if missing_dense_builder_route_local_evidence_suffixes:
+    blocking_findings.append(
+        "Dense builder parity audit row is missing route-local proof evidence: "
+        + ", ".join(missing_dense_builder_route_local_evidence_suffixes)
+        + "."
+    )
 if not status_ok(flagship_readiness_status):
     blocking_findings.append(
         "Top-level release gate cannot pass while flagship readiness is not passed."
@@ -1037,8 +1102,12 @@ payload = {
                 "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
                 "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
                 "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+                "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+                "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
                 "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
                 "Character_creation_preserves_familiar_dense_builder_rhythm",
+                "Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6",
+                "Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults",
                 "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm",
                 "Gear_builder_preserves_familiar_browse_detail_confirm_rhythm",
                 "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
@@ -1099,12 +1168,35 @@ payload = {
             "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
         ],
     },
+    "directImportRouteProof": {
+        "reviewJobs": [
+            "translator_xml_custom_data",
+            "hero_lab_import_oracle",
+        ],
+        "screenshots": [
+            "38-translator-dialog-light.png",
+            "39-xml-editor-dialog-light.png",
+            "40-hero-lab-importer-dialog-light.png",
+        ],
+        "characterOverviewPresenterTests": [
+            "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture",
+            "ExecuteCommandAsync_xml_editor_opens_dialog_with_xml_bridge_posture",
+            "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture",
+        ],
+    },
     "uiElementParityAuditProof": {
-        "status": proof_status(ui_element_visual_no_count == 0, ui_element_behavioral_no_count == 0),
+        "status": proof_status(
+            ui_element_visual_no_count == 0,
+            ui_element_behavioral_no_count == 0,
+            not missing_dense_builder_route_local_evidence_suffixes,
+        ),
         "uiElementParityAuditReceiptPath": ui_element_parity_audit_receipt_path,
         "visualNoCount": ui_element_visual_no_count,
         "behavioralNoCount": ui_element_behavioral_no_count,
         "coverageGapKeys": ui_element_coverage_gap_keys,
+        "denseBuilderRouteLocalEvidence": dense_builder_route_local_evidence,
+        "requiredDenseBuilderRouteLocalEvidenceSuffixes": required_dense_builder_route_local_evidence_suffixes,
+        "missingDenseBuilderRouteLocalEvidenceSuffixes": missing_dense_builder_route_local_evidence_suffixes,
     },
     "desktopExecutableProof": {
         "status": desktop_executable_exit_gate_status,
@@ -1141,21 +1233,26 @@ with open(receipt_path, "w", encoding="utf-8") as handle:
     handle.write("\n")
 PY
 
-echo "[b14] materializing desktop workflow execution gate..."
-bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
+if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
+  echo "[b14] materializing desktop workflow execution gate..."
+  CHUMMER_DESKTOP_WORKFLOW_SKIP_FLAGSHIP_DEPENDENCY_REFRESH=1 \
+    bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
 
-echo "[b14] materializing desktop visual familiarity exit gate..."
-CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
-  bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
+  echo "[b14] materializing desktop visual familiarity exit gate..."
+  CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
+    bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
 
-echo "[b14] materializing classic dense workbench posture gate..."
-bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh >/dev/null
+  echo "[b14] materializing classic dense workbench posture gate..."
+  bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh >/dev/null
 
-echo "[b14] materializing veteran task-time evidence gate..."
-bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh >/dev/null
+  echo "[b14] materializing veteran task-time evidence gate..."
+  bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh >/dev/null
 
-echo "[b14] materializing Chummer5a screenshot review gate..."
-bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
+  echo "[b14] materializing Chummer5a screenshot review gate..."
+  bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
+else
+  echo "[b14] skipping downstream proof materialization for screenshot refresh-only pass..."
+fi
 
 python3 - <<'PY' "$receipt_path" "$veteran_task_time_receipt_path" "$chummer5a_screenshot_review_receipt_path" "$classic_dense_workbench_receipt_path"
 import json

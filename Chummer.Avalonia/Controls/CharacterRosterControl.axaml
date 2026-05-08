@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
+             mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="500"
+             x:Class="Chummer.Avalonia.Controls.CharacterRosterControl">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Border Padding="2">
+      <Grid RowDefinitions="Auto,*" RowSpacing="2">
+        <!-- Roster header matching Chummer5a posture -->
+        <Border Grid.Row="0" Classes="shell-section-title" Padding="4,2,4,4">
+          <TextBlock Classes="shell-kicker" Text="Character Roster" />
+        </Border>
+
+        <!-- TreeView matching Chummer5a treCharacterList structure -->
+        <TreeView x:Name="RosterTree"
+                  Grid.Row="1"
+                  Margin="0"
+                  SelectionChanged="RosterTree_OnSelectionChanged">
+          <TreeView.Styles>
+            <Style Selector="TreeViewItem">
+              <Setter Property="Padding" Value="2,1" />
+              <Setter Property="Margin" Value="0" />
+            </Style>
+          </TreeView.Styles>
+          <TreeView.ItemsPanel>
+            <ItemsPanelTemplate>
+              <VirtualizingStackPanel />
+            </ItemsPanelTemplate>
+          </TreeView.ItemsPanel>
+          <TreeView.ItemTemplate>
+            <TreeDataTemplate ItemsSource="{Binding Children}">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4" Margin="0,1">
+                <!-- Character icon/mugshot placeholder -->
+                <Border Grid.Column="0"
+                      Width="24"
+                      Height="24"
+                      Background="#E0E0E0"
+                      CornerRadius="2"
+                      Margin="0,0,4,0">
+                  <TextBlock Text="{Binding Initials}"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             FontSize="10"
+                             Foreground="#666" />
+                </Border>
+                <!-- Character name and metadata -->
+                <StackPanel Grid.Column="1" Spacing="0">
+                  <TextBlock Classes="shell-tree-label"
+                             Text="{Binding Name}"
+                             FontWeight="SemiBold" />
+                  <TextBlock Classes="shell-caption"
+                             Text="{Binding Meta}"
+                             FontSize="10"
+                             IsVisible="{Binding HasMeta}" />
+                </StackPanel>
+              </Grid>
+            </TreeDataTemplate>
+          </TreeView.ItemTemplate>
+        </TreeView>
+      </Grid>
+    </Border>
+  </ScrollViewer>
+</UserControl>

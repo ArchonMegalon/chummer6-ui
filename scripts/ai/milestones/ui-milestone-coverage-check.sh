@@ -90,7 +90,7 @@ if rg -q "Add milestone mapping or executable queue work for Final accessibility
 fi
 
 if rg -q "Sync the approved Chummer design bundle into \`ui\` under \\.codex-design/ and refresh repo-local review context\\." .codex-studio/published/QUEUE.generated.yaml; then
-  if ! rg -q '^\| WL-214 \| (queued|done) \| P1 \| Refresh local design mirror for `ui` and keep repo-local review context in sync with canonical `chummer6-design`\.' WORKLIST.md; then
+  if ! rg -q '^\| WL-214 \| (queued|active|done) \| P1 \| (Refresh local design mirror for `ui` and keep repo-local review context in sync with canonical `chummer6-design`|Auto-detect and repair recurring `ui` mirror drift after repeated audit observations; keep one bounded queue slice for the affected local design mirror bundle instead of reopening one-off refresh work)\.' WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: queue has design-mirror refresh publication but WORKLIST lacks WL-214 coverage entry."
     exit 44
   fi
@@ -102,7 +102,7 @@ if rg -q "Sync the approved Chummer design bundle into \`ui\` under \\.codex-des
 fi
 
 if rg -q "Auto-detect and repair recurring \`ui\` mirror drift after [0-9]+ repeated audit observations; keep one bounded queue slice for the affected local design mirror bundle instead of reopening one-off mirror refresh work\\." .codex-studio/published/QUEUE.generated.yaml; then
-  if ! rg -q '^\| WL-214 \| (queued|done) \| P1 \| Refresh local design mirror for `ui` and keep repo-local review context in sync with canonical `chummer6-design`\.' WORKLIST.md; then
+  if ! rg -q '^\| WL-214 \| (queued|active|done) \| P1 \| Auto-detect and repair recurring `ui` mirror drift after repeated audit observations; keep one bounded queue slice for the affected local design mirror bundle instead of reopening one-off refresh work\.' WORKLIST.md; then
     echo "[UI-MILESTONES] FAIL: recurring design-mirror stabilization slice lacks WL-214 backlog coverage."
     exit 51
   fi

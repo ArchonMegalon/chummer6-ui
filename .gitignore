@@ -275,6 +275,7 @@ Chummer/Resources/source/upscaling/4x_FireAlpha.pth
 /scripts/ai/logs/
 /*.log
 !/.codex-studio/
+/.codex-studio/out/
 !/.codex-studio/published/
 !/.codex-studio/published/QUEUE.generated.yaml
 !/.codex-studio/published/WORKPACKAGES.generated.yaml

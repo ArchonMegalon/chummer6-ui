@@ -7,10 +7,67 @@
   "used_internal_apis": false,
   "open_blocking_findings": [],
   "workflows": [
-    {"id":"master_index_search_focus_stability","status":"pass","screenshots":["master_index_search_focus_stability-before.png","master_index_search_focus_stability-after.png"],"assertions":{"focus_preserved_after_typing":true,"search_text_accumulates_keyboard_input":true}},
-    {"id":"file_new_character_visible_workspace","status":"pass","screenshots":["file_new_character_visible_workspace-before.png","file_new_character_visible_workspace-after.png"],"assertions":{"new_character_action_opened_visible_workspace":true,"visible_workspace_nonblank":true}},
-    {"id":"minimal_character_build_save_reload","status":"pass","screenshots":["minimal_character_build_save_reload-before.png","minimal_character_build_save_reload-after.png"],"assertions":{"character_created_saved_reloaded":true,"reload_preserved_character_identity":true}},
-    {"id":"major_navigation_sanity","status":"pass","screenshots":["major_navigation_sanity-before.png","major_navigation_sanity-after.png"],"assertions":{"primary_navigation_clicks_change_visible_content":true,"no_unhandled_errors":true}},
-    {"id":"validation_or_export_smoke","status":"pass","screenshots":["validation_or_export_smoke-before.png","validation_or_export_smoke-after.png"],"assertions":{"validation_or_export_action_completed":true,"result_visible_or_file_created":true}}
+    {
+      "id": "master_index_search_focus_stability",
+      "status": "pass",
+      "screenshots": [
+        "master_index_search_focus_stability-before.png",
+        "master_index_search_focus_stability-after.png"
+      ],
+      "assertions": {
+        "focus_preserved_after_typing": true,
+        "search_text_accumulates_keyboard_input": true
+      }
+    },
+    {
+      "id": "file_new_character_visible_workspace",
+      "status": "pass",
+      "screenshots": [
+        "file_new_character_visible_workspace-before.png",
+        "file_new_character_visible_workspace-after.png"
+      ],
+      "assertions": {
+        "new_character_action_opened_visible_workspace": true,
+        "visible_workspace_nonblank": true,
+        "starter_attributes_match_seeded_workspace": true,
+        "section_preview_omits_review_copy": true
+      }
+    },
+    {
+      "id": "minimal_character_build_save_reload",
+      "status": "pass",
+      "screenshots": [
+        "minimal_character_build_save_reload-before.png",
+        "minimal_character_build_save_reload-after.png"
+      ],
+      "assertions": {
+        "character_created_saved_reloaded": true,
+        "reload_preserved_character_identity": true
+      }
+    },
+    {
+      "id": "major_navigation_sanity",
+      "status": "pass",
+      "screenshots": [
+        "major_navigation_sanity-before.png",
+        "major_navigation_sanity-after.png"
+      ],
+      "assertions": {
+        "primary_navigation_clicks_change_visible_content": true,
+        "no_unhandled_errors": true
+      }
+    },
+    {
+      "id": "validation_or_export_smoke",
+      "status": "pass",
+      "screenshots": [
+        "validation_or_export_smoke-before.png",
+        "validation_or_export_smoke-after.png"
+      ],
+      "assertions": {
+        "validation_or_export_action_completed": true,
+        "result_visible_or_file_created": true
+      }
+    }
   ]
 }
