@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-08T15:10:56.698162Z",
+  "generatedAt": "2026-05-08T15:28:37.648583Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "preview",
   "releaseVersion": "run-20260503-163502",
@@ -13,15 +13,15 @@
     4871476959
   ],
   "feedbackSources": [
-    "/docker/chummercomplete/chummer-presentation/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
-    "/docker/chummercomplete/chummer-presentation/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
+    "/docker/chummercomplete/chummer6-ui/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
+    "/docker/chummercomplete/chummer6-ui/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
   ],
   "feedbackClosureReview": {
     "status": "pass",
     "reasons": [],
     "feedbackSources": [
-      "/docker/chummercomplete/chummer-presentation/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
-      "/docker/chummercomplete/chummer-presentation/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
+      "/docker/chummercomplete/chummer6-ui/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
+      "/docker/chummercomplete/chummer6-ui/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
     ]
   },
   "supportingReceiptReview": {
@@ -75,7 +75,7 @@
     "undersizedScreenshots": [],
     "staleScreenshots": [],
     "screenshotsOlderThanFlagshipReceipt": [],
-    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots"
+    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots"
   },
   "reviewJobsSummary": {
     "status": "pass",
@@ -90,10 +90,10 @@
     ]
   },
   "supportingReceipts": {
-    "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-    "flagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+    "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
   },
-  "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+  "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
   "reviewJobs": {
     "dense_builder": {
       "frontierId": 3782970110,
@@ -260,15 +260,15 @@
   },
   "evidence": {
     "feedbackSources": [
-      "/docker/chummercomplete/chummer-presentation/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
-      "/docker/chummercomplete/chummer-presentation/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
+      "/docker/chummercomplete/chummer6-ui/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
+      "/docker/chummercomplete/chummer6-ui/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
     ],
     "supportingReceipts": {
-      "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-      "flagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+      "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+      "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
     },
     "controlEvidencePath": "",
-    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
